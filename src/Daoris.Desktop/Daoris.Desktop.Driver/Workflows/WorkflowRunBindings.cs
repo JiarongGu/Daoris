@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// does today.</para>
 ///
 /// <para>The versions a kept run names (<see cref="KeptVersions(IEnumerable{JsonElement}, string)"/>) are held to the table's
-/// <c>kept</c> rows, and <c>daoris driver workflow edit</c> keeps them through here since PUSH1f2b (<see cref="DriverWorkflowsCommand"/>). The file is the driver's
+/// <c>kept</c> rows, and <c>daoris workflow edit</c> keeps them through here since PUSH1f2b (<see cref="DriverWorkflowsCommand"/>). The file is the driver's
 /// alone to write. Machine-local, never on the wire (D47 §4).</para>
 ///
 /// <para><b>Over ports</b> (STRUCT3b, D166): the runs' use cases, written against <see cref="IWorkflowRunStore"/> and

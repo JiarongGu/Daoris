@@ -5,7 +5,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver handover</c> (MIXAGENT1c; FOUNDATION1 mod-iii): the course's own verb, the settings' port
+/// <c>daoris settings handover</c> (MIXAGENT1c; FOUNDATION1 mod-iii): the course's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="HandOverRules"/>).
 /// </summary>
 public sealed class HandOverVerb : ChoiceVerb
@@ -19,7 +19,7 @@ public sealed class HandOverVerb : ChoiceVerb
         void Say(string line) => world.Instance.Out.WriteLine(line);
         string[] valued = ["--workspace", "--mode"];
         const string usage = "`driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. "
-            + "`daoris driver handover web-app --mode on`.";
+            + "`daoris settings handover web-app --mode on`.";
         Flags(args, valued, ["--clear"], "settings handover", usage);
         var workspace = FlagValue(args, "--workspace");
         var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
@@ -67,7 +67,7 @@ public sealed class HandOverVerb : ChoiceVerb
         foreach (var (workspace, rule) in choices.WorkspaceHandOver) Say($"  hand-over  workspace {workspace}  {rule.Mode}  (for each repository there that sets none)");
         if (choices.HandOver.Count == 0 && choices.WorkspaceHandOver.Count == 0)
         {
-            Say("  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris driver handover "
+            Say("  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris settings handover "
                 + "<repository> --mode on|off` sets one");
         }
     }

@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// A repository's integration, the page's `bridge/repositories/integration.ts` (INTEGRATE1h; the integration design §5.8): the read the
-/// Integration view and `daoris-driver integrate` draw, and the owner's acts, which are Person routes (D156), a card in the window.
+/// Integration view and `daoris integrate` draw, and the owner's acts, which are Person routes (D156), a card in the window.
 /// </summary>
 public sealed class IntegrateRoutes(DriverContext context)
 {

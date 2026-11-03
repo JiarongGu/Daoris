@@ -444,7 +444,7 @@ public sealed class WorkInventoryTests
         Assert.Equal("1 ignored path(s) your checkout does not have: local/notes.md", kept.Facts!["keeps"]);
         Assert.Equal(tree.Path, kept.Facts["tree"]);
         Assert.Contains("keeps it too, since its tree holds 1 ignored path(s) your checkout does not have: local/notes.md", kept.Detail);
-        Assert.Contains($"daoris-driver trees remove {tree.Path} --force", kept.Detail);
+        Assert.Contains($"daoris tree remove {tree.Path} --force", kept.Detail);
         Assert.DoesNotContain("removes it once you press it", kept.Detail);
 
         var taken = Wait(null);

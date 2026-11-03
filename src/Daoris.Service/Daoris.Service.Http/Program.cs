@@ -475,7 +475,7 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     // host it started proves it holds it, so a process that took the port first never learns it. None without a key.
     Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove),
     Home: homeId,
-    // What this host is (WIRING1b): This Daoris shows it beside the tier, and a terminal's `daoris-driver wiring` reads it too.
+    // What this host is (WIRING1b): This Daoris shows it beside the tier, and a terminal's `daoris wiring` reads it too.
     Version: HostVersion.Stamped,
     // FABRIC-CLOSE1b's handshake: a driver binds a quest to a closure graph only against a host that says it knows one.
     Closure: true,
@@ -1619,7 +1619,7 @@ if (mode == ServiceMode.Local)
     });
 
     // One quest's handback whole (HANDBACK1, D219), by the quest's id or the id of the session that served it, in any state: what
-    // `daoris-driver sessions handback` prints, in the read's words the connector's `handback_read` answers too. Every workspace, or
+    // `daoris session handback` prints, in the read's words the connector's `handback_read` answers too. Every workspace, or
     // the one named. Any id is answered, one naming nothing as not found, so a client tells this door from an older host's 404.
     app.MapGet("/api/handbacks/{id}", async (ComposedService s, string id, string? workspace, CancellationToken ct) =>
         Results.Ok(HandbackResponse.Of(await new HandbackReader(s.Quests, s.Ledger).ReadAsync(id, workspace, ct))));
@@ -2286,7 +2286,7 @@ app.MapPost("/api/sessions/{id}/state", async (
     };
 });
 
-// Where `daoris connect` lands. It accepts a repository's description of ITSELF — the only thing a
+// Where `daoris repository connect` lands. It accepts a repository's description of ITSELF — the only thing a
 // repository is authoritative about — and persists it, because for a remote service the pushed
 // registrations ARE the family: one that forgot them on restart would drop every connected
 // repository off the map without anyone being told.
@@ -2404,7 +2404,7 @@ app.MapPost("/api/registry/{repository}/workspace", async (
     if (existing is null)
     {
         return Results.NotFound(new ErrorResponse(
-            $"`{repository}` is not registered here — `daoris connect` from inside it, or add it from Repositories."));
+            $"`{repository}` is not registered here — `daoris repository connect` from inside it, or add it from Repositories."));
     }
 
     var wired = await s.Service.RegisterAsync(
@@ -2709,7 +2709,7 @@ else
     });
 
     // Where a circle stands (SYNC6a): read from the store, so it answers without reaching the remote —
-    // what the status bar polls and `daoris-driver sync status` prints.
+    // what the status bar polls and `daoris remote sync status` prints.
     app.MapGet("/api/sync", async (ComposedService s, string? workspace, CancellationToken ct) =>
     {
         var circle = Workspaces.Normalize(workspace);

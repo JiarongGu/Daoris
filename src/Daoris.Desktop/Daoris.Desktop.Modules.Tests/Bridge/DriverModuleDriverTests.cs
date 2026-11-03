@@ -110,7 +110,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
     /// <summary>
     /// Session trees (D51): the desktop half of the standing opt-in, over the same file the CLI's
-    /// `daoris driver trees <repo> on|off` edits — two editors, one truth (D50).
+    /// `daoris place trees <repo> on|off` edits — two editors, one truth (D50).
     /// </summary>
     [Fact]
     public async Task Opting_a_repository_into_session_trees_writes_the_same_file()
@@ -148,7 +148,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
     /// <summary>
     /// Notifications (SURF5b): the desktop half of a machine-local switch whose other door is
-    /// `daoris driver notify on|off`. One file, two editors (D50) — and it is ON until somebody
+    /// `daoris settings notify on|off`. One file, two editors (D50) — and it is ON until somebody
     /// says otherwise, because a driver nobody has to watch is the whole point of one.
     /// </summary>
     [Fact]
@@ -187,7 +187,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The intake's harness (INT4b) over the bridge — the screen's half of `daoris driver intake`. Off
+    /// The intake's harness (INT4b) over the bridge — the screen's half of `daoris role set intake`. Off
     /// until named, and 🔴 kept by every other edit: the state is what the page shows, and a control
     /// that deleted it would switch the intake off with nobody touching it.
     /// </summary>

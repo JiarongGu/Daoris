@@ -4,7 +4,7 @@ import { keys } from '../../data/queries';
 import type { TraceAnswer, TraceKind } from '../../work/head/trace';
 import { call } from '../call';
 
-// How a session or a quest came to be (TRACE1b, D143, D50): the screen's door to `daoris-driver trace`, the same read over
+// How a session or a quest came to be (TRACE1b, D143, D50): the screen's door to `daoris trace`, the same read over
 // the same stores. Shell-only: it reads this machine's records of its sessions, its rules files and its landings (D47 §4).
 
 /**

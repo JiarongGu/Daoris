@@ -6,7 +6,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver brainstorms</c> (BRAINSTORM1b, D176 point 9; FOUNDATION1 mod-iii): the work orders' own verb, the settings' port
+/// <c>daoris settings brainstorms</c> (BRAINSTORM1b, D176 point 9; FOUNDATION1 mod-iii): the work orders' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the policy it edits (<see cref="BrainstormRules"/>). Which of its words change the policy is
 /// the settings' grammar (<see cref="ChoiceGrammar"/>), whose minutes' flags are these.
 /// </summary>
@@ -68,7 +68,7 @@ public sealed class BrainstormsVerb : ChoiceVerb
         void Say(string line) => world.Instance.Out.WriteLine(line);
         Say(choices.Brainstorms is { } brainstorms
             ? $"  brainstorms  {BrainstormRules.Listed(brainstorms)}"
-            : $"  brainstorms  none set — {BrainstormRules.Listed(BrainstormRule.Default)}; `daoris driver brainstorms --agents <a,b>` sets one");
+            : $"  brainstorms  none set — {BrainstormRules.Listed(BrainstormRule.Default)}; `daoris settings brainstorms --agents <a,b>` sets one");
         foreach (var (workspace, rule) in choices.WorkspaceBrainstorms) Say($"  brainstorms  workspace {workspace}  {BrainstormRules.Listed(rule)}  (for its repositories' questions)");
     }
 
@@ -86,7 +86,7 @@ public sealed class BrainstormsVerb : ChoiceVerb
     {
         const string usage = "`driver brainstorms` takes [--workspace <name>], then --mode ask|off, --agents <adapter,adapter>, --pass-minutes, "
             + "--synthesis-minutes, --challenge-minutes and --request-minutes <n>, or --clear — e.g. "
-            + "`daoris driver brainstorms --agents claude-code,codex-acp --pass-minutes 10`.";
+            + "`daoris settings brainstorms --agents claude-code,codex-acp --pass-minutes 10`.";
         string[] valued = ["--workspace", "--mode", "--agents", .. MinuteFlags.Select(each => each.Flag)];
         for (var at = 1; at < args.Count; at++)
         {

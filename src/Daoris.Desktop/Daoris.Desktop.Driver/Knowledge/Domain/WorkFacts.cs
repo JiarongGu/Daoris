@@ -221,7 +221,7 @@ public sealed record PausedBy(WorkScope Scope, string Id)
     public string Word => Scope == WorkScope.Ask ? "ask" : "quest";
 
     /// <summary>The terminal's door that resumes it (D50, design §7.2).</summary>
-    public string Door => Scope == WorkScope.Ask ? $"daoris-driver ask --resume {Id}" : $"daoris-driver quest resume {Id}";
+    public string Door => Scope == WorkScope.Ask ? $"daoris ask resume {Id}" : $"daoris quest resume {Id}";
 
     /// <summary>
     /// What the record of a session this pause stopped says (design §4.1): a person reads it, and nothing decides from it

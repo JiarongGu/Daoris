@@ -443,7 +443,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
 
   /**
    * AUTONOMY1d (D184 points 1-3): its sessions' access as the driver resolves it, each pause with where it was set, changed on
-   * DAORIS.DRIVER over the file `daoris-driver access` edits, and full access only through its ask; what stands above it is read off
+   * DAORIS.DRIVER over the file `daoris place access` edits, and full access only through its ask; what stands above it is read off
    * the driver's state, so turning off a full access its workspace gives sets today's pauses here.
    */
   it("sets its sessions' access on DAORIS.DRIVER, full access only through its ask, and says what changed", async () => {
@@ -543,7 +543,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
 
   /**
    * HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): this machine's heavy gates for it, read off the driver's state by its name in any case as
-   * the driver keys them, the whole list sent on DAORIS.DRIVER over the key `daoris-driver heavy` edits, and the driver's refusal said
+   * the driver keys them, the whole list sent on DAORIS.DRIVER over the key `daoris place heavy` edits, and the driver's refusal said
    * where Save was pressed, the list still open.
    */
   it('sets its heavy gates whole on DAORIS.DRIVER, says what changed, and says a refusal where Save was pressed', async () => {
@@ -598,7 +598,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
   /**
    * FABRIC-PIPELINE1b (D192 point 4): which checks its sessions run, read off the driver's state by its name in any case, said beside the
    * heavy gates with its light gates and its heavy ones as the driver read its file, and sent on DAORIS.DRIVER over the key
-   * `daoris-driver checks` edits.
+   * `daoris place checks` edits.
    */
   it("sets its sessions' checks on DAORIS.DRIVER and says what light leaves to the verification", async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -816,7 +816,7 @@ describe("a workspace's page (UX6g)", () => {
 
   /**
    * AUTONOMY1d (D184 point 1): the access its repositories' sessions start under, resolved on the page from the driver's state, the
-   * workspace's over this machine's, and set as `daoris-driver access --workspace` sets it.
+   * workspace's over this machine's, and set as `daoris place access --workspace` sets it.
    */
   it("sets its sessions' access on Setup, each pause from the workspace or this machine, and says what changed", async () => {
     machine({
@@ -922,7 +922,7 @@ describe("a workspace's page (UX6g)", () => {
 
   /**
    * LAND3b (D102's LAND3 note): a failed or superseded attempt's branch, which no clean-up takes, is discarded from
-   * Branches as `daoris-driver trees remove <branch> --repository <name> --force` discards it: offered beside the row the
+   * Branches as `daoris tree remove <branch> --repository <name> --force` discards it: offered beside the row the
    * driver says it may be, asked once, pressed forced, and the list read again.
    */
   it("discards a failed attempt's branch from Branches after asking once, as the terminal's forced removal", async () => {
@@ -989,7 +989,7 @@ describe("a workspace's page (UX6g)", () => {
 
   /**
    * LANDRETIRE1 part 2 (D102's note): a landing's branch the line took another way is withdrawn from Branches as
-   * `daoris-driver trees remove <branch> --repository <name> --why "…"` withdraws it: offered beside the row whose files still differ, with
+   * `daoris tree remove <branch> --repository <name> --why "…"` withdraws it: offered beside the row whose files still differ, with
    * its age and closed quest said, asked once with the person's reason, and the list read again once it landed.
    */
   it('withdraws a landing\'s branch from Branches after asking for the reason, and reads the list again', async () => {
@@ -1339,7 +1339,7 @@ describe('the shell-attached registry management', () => {
   });
 
   /**
-   * Setting a folder up as a workspace (D77, FG4): `daoris import <folder> --workspace <name>`'s
+   * Setting a folder up as a workspace (D77, FG4): `daoris repository import <folder> --workspace <name>`'s
    * screen twin. The Workspace menu's import used to state no workspace at all, so a folder set up from
    * the window landed in `default`. The folder's name is offered, since that is what setting a folder up
    * as a workspace means; the service's sentence comes back verbatim.

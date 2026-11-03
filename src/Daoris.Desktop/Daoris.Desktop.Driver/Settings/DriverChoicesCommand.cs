@@ -162,48 +162,47 @@ public static class DriverChoicesCommand
 
     public const string Usage =
         """
-        usage: daoris-driver driver [list]
-               daoris-driver driver drive|undrive|hold|resume <repository>
-               daoris-driver driver trees <repository> on|off · notify on|off
-               daoris-driver driver cap <n> · cooloff <minutes>
-               daoris-driver driver retry <quest> [--at <n> | --session <id>]
-               daoris-driver driver line <repository>|--workspace <name> <branch>|--clear
-               daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear
+        usage: daoris place list
+               daoris place drive|undrive|hold|resume <repository>
+               daoris place trees <repository> on|off · notify on|off
+               daoris settings cap <n> · cooloff <minutes>
+               daoris quest retry <quest> [--at <n> | --session <id>]
+               daoris place line <repository>|--workspace <name> <branch>|--clear
+               daoris place landing <repository>|--workspace <name> merge|branch <pattern>|--clear
                       (serves only a place that follows Current; converting retires the old landing rule)
                       [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]
                       [--cycle <file>|--no-cycle]
-               daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear
-               daoris-driver driver across <repository>|--workspace <name> read on|off|--clear
-               daoris-driver driver across <repository> write-to <other> [--clear]
-               daoris-driver driver standing <repository> "…"|--clear
-               daoris-driver driver language <repository>|--workspace <name> en|zh|--clear
-               daoris-driver driver review <repository>|--workspace <name> <environment> --kind local|deployed --procedure <path>
+               daoris place work-cycle <repository>|--workspace <name> quest|ask <file>|--clear
+               daoris place across <repository>|--workspace <name> read on|off|--clear
+               daoris place across <repository> write-to <other> [--clear]
+               daoris place standing <repository> "…"|--clear
+               daoris place language <repository>|--workspace <name> en|zh|--clear
+               daoris place review <repository>|--workspace <name> <environment> --kind local|deployed --procedure <path>
                       [--address <url>] [--run "…"] [--required|--not-required]; none, --drop <environment>, or --clear
-               daoris-driver driver opinion <repository>|--workspace <name> --agents <adapter,adapter> [--on landing,steps]
+               daoris place opinion <repository>|--workspace <name> --agents <adapter,adapter> [--on landing,steps]
                       [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]; none, or --clear
-               daoris-driver driver helpers <repository>|--workspace <name> [--mode ask|on|off] [--agents <a,b>] | --clear
-               daoris-driver driver handover <repository>|--workspace <name> --mode ask|on|off | --clear
-               daoris-driver driver commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end]
+               daoris place helpers <repository>|--workspace <name> [--mode ask|on|off] [--agents <a,b>] | --clear
+               daoris settings handover <repository>|--workspace <name> --mode ask|on|off | --clear
+               daoris place commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end]
                       [--convention "…"|--no-convention] | --clear
-               daoris-driver driver brainstorms [--workspace <name>] [--mode ask|off] [--agents <a,b>] [--pass-minutes <n>]
+               daoris settings brainstorms [--workspace <name>] [--mode ask|off] [--agents <a,b>] [--pass-minutes <n>]
                       [--synthesis-minutes <n>] [--challenge-minutes <n>] [--request-minutes <n>] | --clear
-               daoris-driver driver workflow list · show <id>[@<version>] · show --repository <name>|--workspace <name> [--kind <kind>]
-               daoris-driver driver workflow defaults [<default> [--to <file>]]
-               daoris-driver driver workflow new <id> --from <default>|<id>[@<version>]
+               daoris workflow list · show <id>[@<version>] · show --repository <name>|--workspace <name> [--kind <kind>]
+               daoris workflow defaults [<default> [--to <file>]]
+               daoris workflow new <id> --from <default>|<id>[@<version>]
                       [--with-opinion] [--with-look] [--name "…"]
-               daoris-driver driver workflow apply <id> <file> [--base <version>]
-               daoris-driver driver workflow export <id> [--to <file>] · import <file>
-               daoris-driver driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
+               daoris workflow apply <id> <file> [--base <version>]
+               daoris workflow export <id> [--to <file>] · import <file>
+               daoris workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
                       (current only with --landed: no verification)
-               daoris-driver driver workflow kind <workspace> <kind> --label "…" [--paths <path,…>] | --drop
+               daoris workflow kind <workspace> <kind> --label "…" [--paths <path,…>] | --drop
                       (a workflow's writes say their change, and with --plan save nothing)
-               daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
+               daoris settings keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
-               daoris-driver driver actor found [take|dismiss <n>]
-               daoris-driver driver role [<id>] · role set <id> [--name "…"] [--name-in <tag>="…"]… [--takes <work,…>]
+               daoris settings actor found [take|dismiss <n>]
+               daoris role [<id>] · role set <id> [--name "…"] [--name-in <tag>="…"]… [--takes <work,…>]
                       [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" … | off]
                       · role remove|default <id> · role suggested [--use]
-        `daoris driver …` runs these.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
@@ -259,7 +258,7 @@ public static class DriverChoicesCommand
         var verb = args.Count > 0 ? args[0] : "list";
         if (!Verbs.Contains(verb, StringComparer.Ordinal))
         {
-            await error.WriteLineAsync($"daoris-driver driver: `{verb}` is not a verb of this program's.").ConfigureAwait(false);
+            await error.WriteLineAsync($"daoris: `{verb}` is not a verb of this program's.").ConfigureAwait(false);
             await error.WriteLineAsync(Usage).ConfigureAwait(false);
             return 2;
         }
@@ -382,7 +381,7 @@ public static class DriverChoicesCommand
             {
                 var repository = Named(args, verb);
                 var direction = args.Skip(1).FirstOrDefault(token => token is "on" or "off")
-                    ?? throw new ChoiceWords("`driver trees` needs on|off — e.g. `daoris driver trees aurora-engine on`.");
+                    ?? throw new ChoiceWords("`driver trees` needs on|off — e.g. `daoris place trees aurora-engine on`.");
                 var on = direction == "on";
                 return Change(ChoiceRoutes.Trees, new JsonObject { ["repository"] = repository, ["ownTree"] = on },
                     config => config.WithTrees(repository, on), () =>
@@ -405,7 +404,7 @@ public static class DriverChoicesCommand
             case "notify":
             {
                 var direction = args.Skip(1).FirstOrDefault(token => token is "on" or "off")
-                    ?? throw new ChoiceWords("`driver notify` needs on|off — e.g. `daoris driver notify off`.");
+                    ?? throw new ChoiceWords("`driver notify` needs on|off — e.g. `daoris settings notify off`.");
                 var on = direction == "on";
                 return Change(ChoiceRoutes.Notify, new JsonObject { ["notify"] = on }, config => config.WithNotify(on), () =>
                 {
@@ -426,7 +425,7 @@ public static class DriverChoicesCommand
                 var value = Number(Named(args, verb));
                 if (!IsWhole(value) || value < 1 || value > int.MaxValue)
                 {
-                    throw new ChoiceWords("`driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris driver cap 3`.");
+                    throw new ChoiceWords("`driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris settings cap 3`.");
                 }
 
                 var cap = (int)value;
@@ -442,7 +441,7 @@ public static class DriverChoicesCommand
                 var value = Number(Named(args, verb));
                 if (!IsWhole(value) || value < 1 || value > int.MaxValue)
                 {
-                    throw new ChoiceWords("`driver cooloff` needs a whole number of minutes, at least 1 — e.g. `daoris driver cooloff 60`; a zero "
+                    throw new ChoiceWords("`driver cooloff` needs a whole number of minutes, at least 1 — e.g. `daoris settings cooloff 60`; a zero "
                         + "cool-off would start a spent account again at every look.");
                 }
 
@@ -468,7 +467,7 @@ public static class DriverChoicesCommand
                 if (string.IsNullOrEmpty(name) || (!clear && string.IsNullOrEmpty(branch)))
                 {
                     throw new ChoiceWords("`driver line` needs <repository>|--workspace <name>, then <branch>|--clear — "
-                        + "e.g. `daoris driver line aurora-engine develop`.");
+                        + "e.g. `daoris place line aurora-engine develop`.");
                 }
 
                 if (!clear && !BranchName.IsValid(branch!)) throw new ChoiceWords($"`{branch}` is not a branch name git would take.");
@@ -485,7 +484,7 @@ public static class DriverChoicesCommand
                             : $"daoris: work in {whose} grows from `{set}` and lands on it.");
                         if (set is not null && workspace is not null)
                         {
-                            Say("  A repository with a line of its own keeps it — `daoris driver line <repository> --clear` hands it back.");
+                            Say("  A repository with a line of its own keeps it — `daoris place line <repository> --clear` hands it back.");
                         }
 
                         Say("  A session already running keeps the line it started from.");
@@ -506,7 +505,7 @@ public static class DriverChoicesCommand
                 if (string.IsNullOrEmpty(repository) || (!clear && says.Length == 0))
                 {
                     throw new ChoiceWords("`driver standing` needs <repository>, then the answer in your words, or --clear — e.g. "
-                        + "`daoris driver standing work-app \"dev writes allowed; test locally against dev; prod only on a yes\"`.");
+                        + "`daoris place standing work-app \"dev writes allowed; test locally against dev; prod only on a yes\"`.");
                 }
 
                 if (!clear && says.Length > DriverConfig.StandingLimit)
@@ -549,7 +548,7 @@ public static class DriverChoicesCommand
                 if (string.IsNullOrEmpty(name) || (!clear && string.IsNullOrEmpty(spelled)))
                 {
                     throw new ChoiceWords("`driver language` needs <repository>|--workspace <name>, then en|zh|--clear — "
-                        + "e.g. `daoris driver language aurora-engine zh`.");
+                        + "e.g. `daoris place language aurora-engine zh`.");
                 }
 
                 var code = clear ? null : SessionLanguages.Code(spelled);
@@ -579,7 +578,7 @@ public static class DriverChoicesCommand
                             Say("  language is Settings → Appearance, and neither sets the other.");
                             if (workspace is not null)
                             {
-                                Say("  A repository with a language of its own keeps it — `daoris driver language <repository> --clear` hands it back.");
+                                Say("  A repository with a language of its own keeps it — `daoris place language <repository> --clear` hands it back.");
                             }
                         }
 
@@ -595,7 +594,7 @@ public static class DriverChoicesCommand
         }
     }
 
-    /// <summary><c>list</c>: what this machine drives, as <c>daoris driver list</c> always said it.</summary>
+    /// <summary><c>list</c>: what this machine drives, as <c>daoris place list</c> always said it.</summary>
     private static int List(DriverConfig choices, DriverChoicesWorld world)
     {
         var write = world.Instance.Out;
@@ -617,7 +616,7 @@ public static class DriverChoicesCommand
             {
                 var when = pause.At is { } at ? $"since {Moment(at)}" : "when is not recorded";
                 var stops = pause.Stopped.Keys.OrderBy(quest => quest, StringComparer.Ordinal).Select(quest => $"#{quest}'s session {pause.Stopped[quest]}").ToList();
-                var resume = scope == "ask" ? $"daoris-driver ask --resume {id}" : $"daoris-driver quest resume {id}";
+                var resume = scope == "ask" ? $"daoris ask resume {id}" : $"daoris quest resume {id}";
                 Say($"  paused     {scope} #{id}  ({when}{(stops.Count > 0 ? $"; its pause stopped {string.Join(", ", stops)}" : "")}) — resume: {resume}");
             }
         }
@@ -627,20 +626,20 @@ public static class DriverChoicesCommand
         Say(choices.CoolOffMinutes is { } cooloff
             ? $"  cooloff    {cooloff} minutes an account cools when its agent names no time for its limit"
             : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "
-              + "`daoris driver cooloff <minutes>` changes it)");
+              + "`daoris settings cooloff <minutes>` changes it)");
         Say($"  notify     {(choices.Notify ? "on" : "off")}  (a session parking, or ending without you asking{(choices.Notify ? "" : " — not said")})");
 
         if (choices.Drivable.Count == 0)
         {
             Say("  drivable   nothing — this machine drives no repository, which is the default (D46 §2).");
-            Say("             `daoris driver drive <repository>` opts one in.");
+            Say("             `daoris place drive <repository>` opts one in.");
         }
 
         foreach (var repository in choices.Drivable)
         {
             var held = FindName(choices.Holds, repository) is not null;
             var trees = FindName(choices.Trees, repository) is not null;
-            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris driver resume` releases it)" : "")}{(trees ? "  (sessions open their own tree — D51)" : "")}");
+            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris place resume` releases it)" : "")}{(trees ? "  (sessions open their own tree — D51)" : "")}");
         }
 
         foreach (var repository in choices.Trees.Where(each => FindName(choices.Drivable, each) is null))
@@ -666,7 +665,7 @@ public static class DriverChoicesCommand
         foreach (var (workspace, code) in choices.WorkspaceLanguages) Say($"  language   workspace {workspace}  {code} ({SessionLanguages.NameOf(code)})  (for each repository there that sets none)");
         if (choices.Languages.Count == 0 && choices.WorkspaceLanguages.Count == 0)
         {
-            Say("  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one");
+            Say("  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one");
         }
 
         Section("review");
@@ -710,14 +709,14 @@ public static class DriverChoicesCommand
         if (string.IsNullOrEmpty(name))
         {
             throw new ChoiceWords("`driver across` needs <repository>|--workspace <name>, then read on|off|--clear or write-to <other> "
-                + "[--clear] — e.g. `daoris driver across engine read off`.");
+                + "[--clear] — e.g. `daoris place across engine read off`.");
         }
 
         if (what == "read")
         {
             if (!clear && value is not ("on" or "off"))
             {
-                throw new ChoiceWords("`driver across … read` needs on|off|--clear — e.g. `daoris driver across engine read off`.");
+                throw new ChoiceWords("`driver across … read` needs on|off|--clear — e.g. `daoris place across engine read off`.");
             }
 
             bool? set = clear ? null : value == "on";
@@ -748,7 +747,7 @@ public static class DriverChoicesCommand
 
                 if (set is not null && workspace is not null)
                 {
-                    Say("  A repository with a setting of its own keeps it — `daoris driver across <repository> read --clear` hands it back.");
+                    Say("  A repository with a setting of its own keeps it — `daoris place across <repository> read --clear` hands it back.");
                 }
 
                 Say("  A session already running keeps what it started with.");
@@ -761,7 +760,7 @@ public static class DriverChoicesCommand
         {
             if (workspace is not null)
             {
-                throw new ChoiceWords("a relationship is declared from one repository — `daoris driver across <repository> write-to <other>`.");
+                throw new ChoiceWords("a relationship is declared from one repository — `daoris place across <repository> write-to <other>`.");
             }
 
             if (AcrossDeclarations.Problem(name, value ?? "") is { } problem) throw new ChoiceWords(problem);
@@ -780,7 +779,7 @@ public static class DriverChoicesCommand
                     Say($"daoris: sessions in `{name}` may also write into `{value}` — its files, and a commit there —");
                     Say("  where both are in one workspace with a checkout here. This is your standing say-so for writing");
                     Say($"  across; it has one direction, so `{value}` writes nothing into `{name}` unless you declare that too.");
-                    Say($"  `daoris driver across {name} write-to {value} --clear` takes it back.");
+                    Say($"  `daoris place across {name} write-to {value} --clear` takes it back.");
                 }
 
                 Say($"  Written to {path} — the driver reads it at every start, so nothing restarts.");
@@ -788,8 +787,8 @@ public static class DriverChoicesCommand
             });
         }
 
-        throw new ChoiceWords($"`driver across` sets read or write-to, not `{what ?? ""}` — e.g. `daoris driver across engine read off`, "
-            + "`daoris driver across plugins write-to engine`.");
+        throw new ChoiceWords($"`driver across` sets read or write-to, not `{what ?? ""}` — e.g. `daoris place across engine read off`, "
+            + "`daoris place across plugins write-to engine`.");
     }
 
     /// <summary>Whether the file sets a key, read where it holds a whole number, as the CLI reads a choice set rather than defaulted.</summary>

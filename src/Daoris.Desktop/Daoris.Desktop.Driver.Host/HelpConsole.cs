@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Ask Daoris's history from a terminal (ASKHIST1, D50): <c>daoris-driver help list|resume|rename|pin|unpin|delete</c>, and its
+/// Ask Daoris's history from a terminal (ASKHIST1, D50): <c>daoris ask-daoris list|resume|rename|pin|unpin|delete</c>, and its
 /// access mode, <c>help mode</c> (HELPMODE1a1), which reads and writes the driver's file alone. The
 /// words are the library's (<see cref="HelpCommand"/>); this wires the real world as <c>sessions</c> does: the service, the
 /// home's choices and files, the configured agent's wire, and this host's machine log, where a delete says the terminal's door.

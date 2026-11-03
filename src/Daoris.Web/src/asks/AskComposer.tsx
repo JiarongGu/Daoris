@@ -37,7 +37,7 @@ const NOBODY = '*';
 const BY_RULE = '*';
 
 /**
- * The ask composer (INT4c) — the screen twin of `daoris-driver ask --workspace … [--to …] [--file …]
+ * The ask composer (INT4c) — the screen twin of `daoris ask --workspace … [--to …] [--file …]
  * [--url …] "…"` (D50, D65 §1a).
  *
  * @remarks

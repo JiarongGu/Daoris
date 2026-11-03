@@ -16,7 +16,7 @@ public sealed record CycleFixture(string? Step, string Unit, IReadOnlyList<strin
 }
 
 /// <summary>
-/// The kit's cycle, `daoris-driver plugins try &lt;folder&gt; --cycle &lt;fixture&gt;` (FABRIC-PERFORM1e, the fabric events design §D9): a
+/// The kit's cycle, `daoris plugin try &lt;folder&gt; --cycle &lt;fixture&gt;` (FABRIC-PERFORM1e, the fabric events design §D9): a
 /// performer driven through synthetic eligibility, duplicate delivery, failure, timeout, restart and a stale attempt's successor, then
 /// its resource's cleanup asked twice, without a real deployment.
 /// </summary>

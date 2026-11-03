@@ -79,7 +79,7 @@ public sealed class PauseTickTests : IDisposable
 
             var sitting = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Paused, sitting.Verdict);
-            Assert.Equal("paused with ask `#a1`; Resume carries it on — `daoris-driver ask --resume a1`.", sitting.Reason);
+            Assert.Equal("paused with ask `#a1`; Resume carries it on — `daoris ask resume a1`.", sitting.Reason);
             Assert.Equal(1, service.SessionCount);
         }
 
@@ -117,7 +117,7 @@ public sealed class PauseTickTests : IDisposable
 
             var sitting = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Paused, sitting.Verdict);
-            Assert.Equal("you paused `#q1`; Resume starts it — `daoris-driver quest resume q1`.", sitting.Reason);
+            Assert.Equal("you paused `#q1`; Resume starts it — `daoris quest resume q1`.", sitting.Reason);
             Assert.Equal(0, service.SessionCount);
             Assert.False(File.Exists(log));
         }

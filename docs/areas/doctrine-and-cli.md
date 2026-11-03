@@ -244,8 +244,8 @@ one `change` skill, and `co-working` as a pack.
    of groups, no `driver` group): the note and the code read right.
 6. D117 point 7 and D124 point 5 (`daoris-driver setup [--workspace]`) vs `CommandWords.cs:63` and
    `WorkspaceSetupCommand.cs:24` (`daoris place … --adoption`): the code reads right.
-7. `CommandWords.cs:35-36` (no one types `daoris-driver`) vs about 69 usage and lease strings still naming it
-   (`PlaceCommand.cs:19`, `WorkspaceSetupCommand.cs:24`, `Agents/AgentLoginCommand.cs:274`): `CommandWords` reads right.
+7. `CommandWords.cs` (one name, `daoris`) vs about a hundred doc comments and the older `CHANGELOG.md` entries that still
+   spell `daoris-driver …` or `daoris driver …`: the code reads right. `app/daoris-driver/` is the program's folder, kept.
 8. D27 (the devkit verifies itself against the hash) vs `src/Daoris.Devkit/README.md:255` (deliberately not built; the
    installer verifies): the README reads right.
 9. `src/Daoris.Devkit/README.md:264` (the CLI's service client) and `AGENTS.md:23` (a service seam) vs `dogfood.test.ts:659`
@@ -273,4 +273,3 @@ one `change` skill, and `co-working` as a pack.
 - No row: a `PowerShell(…)` rule for a set-up waits on the canary that a driven Windows session uses that tool, and codex
   and dsh get no safe-work rules until measured (`SetupPress.cs` remarks; D122 point 6).
 - No row: the newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`lockversion.ts:30-31`).
-- No row: remove the dead CLI modules (contradiction 15) and the stale `daoris-driver` strings (contradiction 7).

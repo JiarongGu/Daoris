@@ -155,7 +155,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
     const client = holding([]);
     client.setQueryData(keys.considerations, { considered: [{
       quest: 'abc123', repository: 'engine', verdict: 'Exhausted',
-      reason: '3 sessions failed on this quest, so it is parked. `daoris driver retry abc123` starts it again.',
+      reason: '3 sessions failed on this quest, so it is parked. `daoris quest retry abc123` starts it again.',
     }], untrusted: [], waits: [] });
     show(<QuestsView notify={notify} />, client);
 
@@ -176,7 +176,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
     const client = holding([]);
     client.setQueryData(keys.considerations, { considered: [{
       quest: 'abc123', repository: 'engine', verdict: 'Stopped', heldBy: 's1a2b3c4',
-      reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris driver retry abc123 --session s1a2b3c4`.',
+      reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris quest retry abc123 --session s1a2b3c4`.',
     }], untrusted: [], waits: [] });
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'RETRY_QUEST'
       ? { ...DRIVER_STATE, retried: { quest: 'abc123', did: 'released', session: 's1a2b3c4' } }
@@ -256,7 +256,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
 });
 
 /**
- * TRACE1b (D143, D50): how a quest came to be, the screen's door to `daoris-driver trace`. Its section opens folded and asks
+ * TRACE1b (D143, D50): how a quest came to be, the screen's door to `daoris trace`. Its section opens folded and asks
  * the driver nothing; the press reads this quest's chain through `TRACE`, and the page draws what the route answered.
  */
 describe('how a quest came to be', () => {

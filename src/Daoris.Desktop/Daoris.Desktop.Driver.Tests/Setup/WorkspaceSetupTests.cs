@@ -181,7 +181,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         var preview = await PreviewAsync(World(Four), Driven(cap), new(AtOnce: atOnce));
 
         Assert.Equal(pressable, preview.Pressable);
-        if (!pressable) Assert.Contains(preview.Refusals, refusal => refusal.Sentence.Contains("`daoris driver cap", StringComparison.Ordinal));
+        if (!pressable) Assert.Contains(preview.Refusals, refusal => refusal.Sentence.Contains("`daoris settings cap", StringComparison.Ordinal));
     }
 
     /// <summary>A doctrine tool this machine cannot run refuses the press whole: nothing it wrote could be set up.</summary>
@@ -343,7 +343,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         var said = (await TickAsync(world, config)).Concat(await TickAsync(world, config)).ToList();
 
         Assert.Contains(said, line => line.StartsWith("setup  my team: paused after the pilot", StringComparison.Ordinal)
-            && line.EndsWith("then `daoris-driver place --workspace \"my team\" --resume` carries on.", StringComparison.Ordinal));
+            && line.EndsWith("then `daoris place --workspace \"my team\" --resume` carries on.", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -415,7 +415,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal(["billing", "cargo", "docs"], Asked(world));
         var skip = Plan().Skipped["atlas"];
         Assert.Equal(SetupRefusals.NoOwnTree, skip.Code);
-        Assert.Contains("`daoris driver trees atlas on`", skip.Said, StringComparison.Ordinal);
+        Assert.Contains("`daoris place trees atlas on`", skip.Said, StringComparison.Ordinal);
         Assert.Contains(said, line => line.StartsWith("setup  work: skipped `atlas`", StringComparison.Ordinal));
         Assert.Equal(judged, world.LinesRead.Count(read => read == "atlas"));
         var logged = Assert.Single(world.Logged, line => line.Event == "setup.skipped");

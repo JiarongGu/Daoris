@@ -203,9 +203,9 @@ describe("a workspace's Setup", () => {
     at();
     await userEvent.click(section('Defaults'));
 
-    expect(screen.getByText(code('daoris driver line --workspace aurora <branch>|--clear'))).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver language --workspace aurora en|zh|--clear'))).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver across --workspace aurora read on|off|--clear'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris place line --workspace aurora <branch>|--clear'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris place language --workspace aurora en|zh|--clear'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris place across --workspace aurora read on|off|--clear'))).toBeInTheDocument();
   });
 
   /**
@@ -215,7 +215,7 @@ describe("a workspace's Setup", () => {
   it('spells the workspace in each twin for a shell', async () => {
     at({ workspace: 'my team' });
     await userEvent.click(section('Defaults'));
-    expect(screen.getByText(code('daoris driver line --workspace "my team" <branch>|--clear'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris place line --workspace "my team" <branch>|--clear'))).toBeInTheDocument();
     await userEvent.click(section('Remote and reach'));
     expect(screen.getByText(code('daoris remote add "my team" --url <url>'))).toBeInTheDocument();
     expect(screen.getByText(code('daoris remote remove "my team"'))).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe("a workspace's Setup", () => {
   it('names a workspace no shell can take by a placeholder in each twin', async () => {
     at({ workspace: 'R&D' });
     await userEvent.click(section('Defaults'));
-    expect(screen.getByText(code('daoris driver line --workspace <workspace> <branch>|--clear'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris place line --workspace <workspace> <branch>|--clear'))).toBeInTheDocument();
   });
 
   it('sets a default where none is: its line, its language and its reading', async () => {
@@ -397,7 +397,7 @@ describe("a workspace's review before landing", () => {
     await userEvent.click(section('Defaults'));
     expect(screen.getByText('None: work is offered to land once its quest is done.')).toBeInTheDocument();
     expect(screen.getByText(code(
-      'daoris driver review --workspace aurora <environment> --kind local|deployed --procedure <path>|--drop <environment>|--clear'))).toBeInTheDocument();
+      'daoris place review --workspace aurora <environment> --kind local|deployed --procedure <path>|--drop <environment>|--clear'))).toBeInTheDocument();
     const row = screen.getByText('Review before landing', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
     expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();
@@ -441,7 +441,7 @@ describe("a workspace's second opinion before landing", () => {
       "each checkout's own line (Daoris's default) · no second opinion (Daoris's default)");
     await userEvent.click(section('Defaults'));
     expect(screen.getByText('None: no other agent reads work here.')).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver opinion --workspace aurora --reviewers <adapter,adapter>|--clear'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris place opinion --workspace aurora --reviewers <adapter,adapter>|--clear'))).toBeInTheDocument();
     const row = screen.getByText('Second opinion before landing', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
     expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();
@@ -487,9 +487,9 @@ describe("a workspace's commits and helpers", () => {
     expect(section('Defaults')).toHaveAccessibleDescription(
       "each checkout's own line (Daoris's default) · commits as it goes (Daoris's default) · helpers start at once (Daoris's default)");
     await userEvent.click(section('Defaults'));
-    expect(screen.getByText(code('daoris driver commits --workspace aurora --mode as-you-go|ask|at-end --convention "…"|--clear')))
+    expect(screen.getByText(code('daoris place commits --workspace aurora --mode as-you-go|ask|at-end --convention "…"|--clear')))
       .toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver helpers --workspace aurora --mode ask|on|off --agents <adapter,adapter>|--clear')))
+    expect(screen.getByText(code('daoris place helpers --workspace aurora --mode ask|on|off --agents <adapter,adapter>|--clear')))
       .toBeInTheDocument();
 
     const commitRow = screen.getByText('Commits', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
@@ -568,7 +568,7 @@ describe("a workspace's sessions' access", () => {
     expect(section("Sessions' access")).toHaveAttribute('aria-expanded', 'true');
     expect(row('Intake routing')).toHaveTextContent(
       'An ask its declarations do not settle goes where its intake routed it; you may route it again. Set for this workspace.');
-    expect(within(row('Intake routing')).getByText(code('daoris-driver access --workspace aurora routing=person|intake'))).toBeInTheDocument();
+    expect(within(row('Intake routing')).getByText(code('daoris place access --workspace aurora routing=person|intake'))).toBeInTheDocument();
     await userEvent.click(within(row('Intake routing')).getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith({ access: { routing: null } }, expect.anything());
   });

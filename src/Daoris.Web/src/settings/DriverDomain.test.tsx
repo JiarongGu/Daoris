@@ -61,7 +61,7 @@ describe('the driver domain', () => {
 
   /**
    * AUTONOMY1d (D184 point 1): this machine's sessions' access, the default for every workspace and repository that sets none of
-   * its own, the same rows as a repository's Setup, each set as `daoris-driver access` with no repository or workspace sets it.
+   * its own, the same rows as a repository's Setup, each set as `daoris place access` with no repository or workspace sets it.
    */
   it("sets this machine's sessions' access, full access only through its ask", async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
@@ -79,7 +79,7 @@ describe('the driver domain', () => {
     expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the quest or your words demand. Set for this machine.');
     expect(row('Permission prompts')).toHaveTextContent("Daoris's default: nothing is set.");
     expect(within(row('Permission prompts')).getByRole('button', { name: 'Set for this machine' })).toBeTruthy();
-    expect(within(row('Go-aheads')).getByText(code('daoris-driver access goAheads=named|never'))).toBeTruthy();
+    expect(within(row('Go-aheads')).getByText(code('daoris place access goAheads=named|never'))).toBeTruthy();
 
     await userEvent.click(within(row('Go-aheads')).getByRole('button', { name: 'Clear' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { machine: true, access: { goAheads: null } } });
@@ -279,7 +279,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * CAPSET1 (D130's CAPCOUNT1 note): how many sessions Daoris starts at once, the `cap` `daoris driver cap` edits. Written
+   * CAPSET1 (D130's CAPCOUNT1 note): how many sessions Daoris starts at once, the `cap` `daoris settings cap` edits. Written
    * only when changed to a whole number of at least one; an older shell that answers no such field is offered no row.
    */
   it('sets the cap of sessions Daoris starts, and offers nothing to a shell older than it', async () => {
@@ -312,7 +312,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * TOOL4g (D125 §2.2, §6): how long an account cools when its agent names no reset, the `cooloff` `daoris driver cooloff`
+   * TOOL4g (D125 §2.2, §6): how long an account cools when its agent names no reset, the `cooloff` `daoris settings cooloff`
    * edits. Written only when changed to a whole number of at least one; an older shell that answers no such field is offered no
    * row.
    */
@@ -347,7 +347,7 @@ describe('the driver domain', () => {
 
   /**
    * Notifications (SURF5b): the desktop's door onto the same `driver.json` field
-   * `daoris driver notify on|off` edits. It is ON until somebody says otherwise — a driver nobody
+   * `daoris settings notify on|off` edits. It is ON until somebody says otherwise — a driver nobody
    * has to watch is the point of one — and the surface names the other door so a person on a
    * machine they reach over ssh does not go looking for a second setting.
    */
@@ -360,7 +360,7 @@ describe('the driver domain', () => {
     // Found by its loaded STATE rather than by its label, because the switch renders before the
     // machine has answered and its default is on — a bare label query would pass either way.
     const check = await screen.findByRole('checkbox', { checked: true });
-    expect(screen.getByText(code(/daoris driver notify on\|off/))).toBeTruthy();
+    expect(screen.getByText(code(/daoris settings notify on\|off/))).toBeTruthy();
 
     await userEvent.click(check);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_NOTIFY', { payload: { notify: false } });
@@ -408,7 +408,7 @@ describe('the driver domain', () => {
 /**
  * UPDATE1b (D139 §3, §6): the install's update in the application's own domain, read from `DAORIS.UPDATE` · `STATE` and
  * said with `SET`. The banner is the screen's other door and is gone once dismissed; this row stands: what is staged, the
- * drain and what it waits on, how the last swap ended, and the three words the terminal's `daoris-driver update` takes.
+ * drain and what it waits on, how the last swap ended, and the three words the terminal's `daoris update` takes.
  */
 describe("the driver domain: the install's update", () => {
   const STAGED = { id: '20261003T120000Z-ab12cd34', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
@@ -438,7 +438,7 @@ describe("the driver domain: the install's update", () => {
     const row = await section();
 
     expect(await row.findByText('Nothing is staged beside this install.')).toBeTruthy();
-    expect(row.getByText(code(/daoris-driver update --when-idle/))).toBeTruthy();
+    expect(row.getByText(code(/daoris update --when-idle/))).toBeTruthy();
     for (const word of ['Update when idle', 'Update now', 'Not now']) expect(row.queryByRole('button', { name: word })).toBeNull();
     // No swap to tell of: no row for one.
     expect(row.queryByText('Last update')).toBeNull();

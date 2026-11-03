@@ -10,7 +10,7 @@ public enum LeaseKind
     /// <summary>The desktop application's loop: an instance.</summary>
     Desktop,
 
-    /// <summary>A terminal's <c>daoris-driver drive</c>: an instance.</summary>
+    /// <summary>A terminal's <c>daoris drive</c>: an instance.</summary>
     Headless,
 
     /// <summary>A terminal's verb acting alone, for its mutation (the terminal RPC design §7.2).</summary>

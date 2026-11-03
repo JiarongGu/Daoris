@@ -206,7 +206,7 @@ public sealed class PipeCensus
     /// </summary>
     public static string? SecretRefusal(string route, System.Text.Json.JsonElement? payload) =>
         route == "GIT_IDENTITY" && payload is { ValueKind: System.Text.Json.JsonValueKind.Object } sent && sent.TryGetProperty("token", out _)
-            ? "a token is never sent over the pipe, where it would be kept and shown; pipe it to `daoris-driver git identity add-https --token-stdin` at the terminal."
+            ? "a token is never sent over the pipe, where it would be kept and shown; pipe it to `daoris git identity add-https --token-stdin` at the terminal."
             : null;
 
     /// <summary>Whether <paramref name="module"/>'s <paramref name="route"/> is one of <see cref="KeyedRoutes"/>, its module matched ignoring case.</summary>

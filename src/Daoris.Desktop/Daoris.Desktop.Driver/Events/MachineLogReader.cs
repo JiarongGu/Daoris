@@ -35,7 +35,7 @@ public sealed record LogArguments(LogFilter Filter, bool Json, string? Problem);
 
 /// <summary>
 /// The machine log's reader (LOG1c, D94): every source's files under the home's <c>logs/</c>, merged by
-/// time, filtered — one reading for both doors, <c>daoris-driver logs</c> and the Settings domain's
+/// time, filtered — one reading for both doors, <c>daoris logs</c> and the Settings domain's
 /// <c>DAORIS.LOG</c> · <c>LINES</c>.
 /// </summary>
 /// <remarks>
@@ -61,7 +61,7 @@ public static class MachineLogReader
 
     /// <summary>The terminal door's usage line.</summary>
     public const string Usage =
-        "usage: daoris-driver logs [--since <30m|2h|3d>] [--source <desktop|host|mcp|browser|driver>] "
+        "usage: daoris logs [--since <30m|2h|3d>] [--source <desktop|host|mcp|browser|driver>] "
         + "[--event <name>] [--level <warn|error>] [--json]";
 
     private static readonly Regex FileName = new(

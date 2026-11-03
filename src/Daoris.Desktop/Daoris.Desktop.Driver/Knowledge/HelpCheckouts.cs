@@ -140,7 +140,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
         {
             return CheckoutAnswer.Refusal(operation, CheckoutAnswer.NotReadable,
                 $"`{row.Repository}` lets no agent outside it read its checkout. The person turns that on under Repositories → the repository's "
-                + $"page → Setup → Reach, or with `daoris driver across {row.Repository} read on`.");
+                + $"page → Setup → Reach, or with `daoris place across {row.Repository} read on`.");
         }
 
         if (!ConfiguredAccess.Read(home).Reads(row.Repository))

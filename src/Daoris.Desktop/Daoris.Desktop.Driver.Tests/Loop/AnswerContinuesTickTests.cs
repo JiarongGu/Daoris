@@ -231,7 +231,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Equal(heard, Heard().Length);
         var held = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.HeldAgentGone.Code) == true).Parts![0];
         Assert.Equal(("acp-stub", "s1"), ((string?)held.Value("agent"), (string?)held.Value("session")));
-        Assert.Contains(look.Considerations, c => c.Quest.Id == "q1" && c.Reason.Contains("daoris-driver sessions hand-over s1", StringComparison.Ordinal));
+        Assert.Contains(look.Considerations, c => c.Quest.Id == "q1" && c.Reason.Contains("daoris session hand-over s1", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -328,7 +328,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         var held = Assert.Single(look.Considerations, c => c.Quest.Id == "q1");
         Assert.Contains("`acp-stub`", held.Reason);
         Assert.Contains("`unrestricted`", held.Reason);
-        Assert.Contains("daoris-driver access engine permissions=auto", held.Reason);
+        Assert.Contains("daoris place access engine permissions=auto", held.Reason);
         Assert.False(File.Exists(Log));
         Assert.Equal("Open", service.Status("q1"));
     }

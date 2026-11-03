@@ -915,7 +915,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     // ——— Where a circle stands (SYNC6a): what this machine has not pushed, the quests carrying a
-    // conflict, and how the last pass ended — what the status bar and `daoris-driver sync status` read.
+    // conflict, and how the last pass ended — what the status bar and `daoris remote sync status` read.
 
     [Fact]
     public async Task A_circle_stands_at_what_is_unpushed_and_when_it_last_reached_its_remote()

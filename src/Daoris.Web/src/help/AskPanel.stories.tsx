@@ -62,7 +62,7 @@ export const Talking: Story = {
       body: (
         <div className="grid gap-3 text-small text-ink">
           <p className="m-0 rounded-control bg-raised px-3 py-2">how do I make engine land on a feature branch?</p>
-          <p className="m-0">Repositories → engine → Setup → Line and landing, or `daoris driver landing engine branch feature/&#123;slug&#125;`.</p>
+          <p className="m-0">Repositories → engine → Setup → Line and landing, or `daoris place landing engine branch feature/&#123;slug&#125;`.</p>
         </div>
       ),
       composer: <div className="border-t border-line px-4 py-3 text-small text-ink-faint">the composer</div>,
@@ -84,7 +84,7 @@ export const Proposing: Story = {
             proposal={{
               id: 'p1a2b3c4', kind: 'setting',
               describe: 'Land `engine`\'s accepted work on a branch `feature/{quest}-{slug}`, its tree removed once landed.',
-              terminal: 'daoris driver landing engine branch feature/{quest}-{slug} --tidy',
+              terminal: 'daoris place landing engine branch feature/{quest}-{slug} --tidy',
               why: 'you asked for its work on feature branches',
             }}
             onApply={() => {}}
@@ -121,7 +121,7 @@ export const ProposingEveryKind: Story = {
             {
               id: 'd1', kind: 'delete' as const,
               describe: 'Delete ask `#a1b2c3d4` “a test ask”, with the quest it became: `#q1a2b3c4` “Cap the chunk budget”.',
-              terminal: 'daoris-driver ask --delete a1b2c3d4', why: 'it was a test',
+              terminal: 'daoris ask delete a1b2c3d4', why: 'it was a test',
             },
             {
               id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
@@ -140,7 +140,7 @@ export const ProposingEveryKind: Story = {
             {
               id: 'h1', kind: 'hand' as const,
               describe: 'Hand `feature/0fda18-fix-the-api-gap` (in `engine`) to plugin `example.github-pull-request`: it pushes the branch and opens the pull request against the line, signed in as you, for the work landed from session `s1a2b3c4` “Fix the API gap”.',
-              terminal: 'daoris-driver trees hand feature/0fda18-fix-the-api-gap --repository engine', why: 'you want its pull request opened',
+              terminal: 'daoris tree hand feature/0fda18-fix-the-api-gap --repository engine', why: 'you want its pull request opened',
             },
             // HELP10: the browser's settings, and bringing up to date before and after the person looked.
             {
@@ -151,13 +151,13 @@ export const ProposingEveryKind: Story = {
             {
               id: 'y1', kind: 'sync' as const,
               describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you — only origin\'s own refs move — and this card then lists what the press would do.',
-              terminal: 'daoris-driver trees sync --repository engine', why: 'your pull request merged',
+              terminal: 'daoris tree sync --repository engine', why: 'your pull request merged',
               sync: { looked: false, rows: [] },
             },
             {
               id: 'y2', kind: 'sync' as const,
               describe: 'Bring `engine` up to date: 3 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
-              terminal: 'daoris-driver trees sync --repository engine --yes', why: 'your pull request merged',
+              terminal: 'daoris tree sync --repository engine --yes', why: 'your pull request merged',
               sync: {
                 looked: true,
                 rows: [
@@ -172,7 +172,7 @@ export const ProposingEveryKind: Story = {
             {
               id: 'y3', kind: 'sync' as const,
               describe: 'Bring every repository with a checkout here up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
-              terminal: 'daoris-driver trees sync --yes', why: 'your pull request merged',
+              terminal: 'daoris tree sync --yes', why: 'your pull request merged',
               sync: {
                 looked: true,
                 rows: [
@@ -190,7 +190,7 @@ export const ProposingEveryKind: Story = {
             {
               id: 'a1', kind: 'accept' as const,
               describe: 'Accept the departure on quest `#he0he0` “Stream the tiles from the cold cache”, for `engine`: it departed from requirement 2, and what it held goes on — its next step, “Verify he0he0 in a playtest” to `game`, is published.',
-              terminal: 'daoris-driver quest accept he0he0', why: 'you said the first frame may go over',
+              terminal: 'daoris quest accept he0he0', why: 'you said the first frame may go over',
               accept: {
                 quest: 'he0he0', title: 'Stream the tiles from the cold cache',
                 departures: [{
@@ -248,22 +248,22 @@ const workflowCards = (): ReactNode => (
     {[
       {
         id: 'w1', kind: 'workflow' as const, describe: 'Save version 1 of workflow `docs-to-pr`.', why: 'you asked for a docs flow',
-        terminal: 'daoris driver workflow import docs-to-pr.json',
+        terminal: 'daoris workflow import docs-to-pr.json',
         workflow: { ...WORKFLOW_SHOWN, base: null, version: 1, diff: ['+ The work', '+ Landing on a branch'], yourPart: ['= You merge its pull request'], outward: [] },
       },
       {
         id: 'w2', kind: 'workflow' as const, describe: 'Save version 2 of workflow `docs-to-pr`.', why: 'you asked to make docs-only work land without review',
-        terminal: 'daoris driver workflow apply docs-to-pr plan.json --base 1', workflow: WORKFLOW_SHOWN,
+        terminal: 'daoris workflow apply docs-to-pr plan.json --base 1', workflow: WORKFLOW_SHOWN,
       },
       {
         id: 'w3', kind: 'workflow' as const, describe: 'Save version 2 of workflow `docs-to-pr`.', why: 'you asked to make docs-only work land without review',
-        terminal: 'daoris driver workflow apply docs-to-pr plan.json --base 1',
+        terminal: 'daoris workflow apply docs-to-pr plan.json --base 1',
         workflow: { ...WORKFLOW_SHOWN, choose: false, needs: ['The plugin `azure-devops-pull-request` is not installed: add it on Plugins.'] },
       },
       // FABRIC-PIPELINE1i: a verification pipeline's graph for the landed route, lowering the person's part; a kind's route alone.
       {
         id: 'w4', kind: 'workflow' as const, describe: 'Save `line-verify` v1 → v2 (Verify the line).', why: 'you asked failures to ask for their fix',
-        terminal: 'daoris driver workflow apply line-verify <file> --base 1',
+        terminal: 'daoris workflow apply line-verify <file> --base 1',
         workflow: {
           ...WORKFLOW_SHOWN, id: 'line-verify', name: 'Verify the line', route: 'landed', saves: true, verifies: true,
           diff: ['~ gates · check'], yourPart: [], outward: ['`gates` asks for a fix of each failed gate with no press of yours.'],
@@ -272,7 +272,7 @@ const workflowCards = (): ReactNode => (
       },
       {
         id: 'w5', kind: 'workflow' as const, describe: 'Choose `docs-to-pr` for the workspace `work`\'s kind `docs`.', why: 'you asked docs work to follow it',
-        terminal: 'daoris driver workflow use docs-to-pr --workspace work --kind docs',
+        terminal: 'daoris workflow use docs-to-pr --workspace work --kind docs',
         workflow: { ...WORKFLOW_SHOWN, base: null, scope: 'work', route: 'kind:docs', saves: false, diff: [], yourPart: [], outward: [] },
       },
     ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
@@ -310,7 +310,7 @@ const ANSWER = [
   '',
   '```bash',
   'curl -sS "https://example.atlassian.net/rest/api/2/issue/TK-2205?fields=summary,status,assignee,comment&expand=renderedFields" | jq ".fields.summary"',
-  'daoris-driver help rename h1a2b3c4 "Landing on feature branches, and what the line keeps when a squash merge lands"',
+  'daoris ask-daoris rename h1a2b3c4 "Landing on feature branches, and what the line keeps when a squash merge lands"',
   '```',
   '',
   '| key | what it holds |',

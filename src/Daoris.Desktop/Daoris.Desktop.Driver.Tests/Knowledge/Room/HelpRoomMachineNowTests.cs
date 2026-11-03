@@ -82,7 +82,7 @@ public sealed class HelpRoomMachineNowTests
             + "`feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3).", some);
         Assert.Contains("- Landed branches: none recorded.", HelpRoom.Render(HelpRoomFixture.Machine));
         Assert.Contains("`hand_propose`", some);
-        Assert.Contains("`daoris-driver trees hand <session|branch> [--plugin <id>]`", some);
+        Assert.Contains("`daoris tree hand <session|branch> [--plugin <id>]`", some);
     }
 
     [Fact]

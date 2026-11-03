@@ -151,14 +151,14 @@ describe("the review choice for an ask's work", () => {
   // REVIEWENV1j2 (D50): each screen that sets the choice names its terminal twin, quietly.
   it("names the terminal twin under the composer's review field, and on a live ask's page with its id", () => {
     render(<Composer onSubmit={vi.fn()} />);
-    expect(document.body).toHaveTextContent('daoris-driver ask --review rule|on|<environment>|off "…"');
+    expect(document.body).toHaveTextContent('daoris ask --review rule|on|<environment>|off "…"');
     expect(document.body).toHaveTextContent('--review-words "…"');
   });
 
   it("names the ask page's twin with the ask's id, on a live ask only", () => {
     const { unmount } = render(<AskPage ask={PROPOSED} receivers={[]} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onOpenQuest={vi.fn()} onChooseReview={vi.fn()} />);
     const section = screen.getByRole('region', { name: 'Review before it lands' });
-    expect(section).toHaveTextContent(`daoris-driver ask --set-review ${PROPOSED.id} on|<environment>|off "…"`);
+    expect(section).toHaveTextContent(`daoris ask review ${PROPOSED.id} on|<environment>|off "…"`);
     unmount();
 
     render(<AskPage ask={{ ...CLOSED, reviewChoices: CHOSEN.reviewChoices }} receivers={[]} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onOpenQuest={vi.fn()} onChooseReview={vi.fn()} />);
@@ -168,7 +168,7 @@ describe("the review choice for an ask's work", () => {
   it('keeps the twins\' commands the same in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<AskPage ask={PROPOSED} receivers={[]} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onOpenQuest={vi.fn()} onChooseReview={vi.fn()} />);
-    expect(screen.getByRole('region', { name: '落地前审阅' })).toHaveTextContent(`daoris-driver ask --set-review ${PROPOSED.id} on|<environment>|off "…"`);
+    expect(screen.getByRole('region', { name: '落地前审阅' })).toHaveTextContent(`daoris ask review ${PROPOSED.id} on|<environment>|off "…"`);
   });
 
   it('says it in 中文', async () => {

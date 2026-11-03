@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The programs Daoris runs beside its agents from a terminal (PUSH1f2c, D194, D50): <c>daoris-driver tool</c>, the words
+/// The programs Daoris runs beside its agents from a terminal (PUSH1f2c, D194, D50): <c>daoris tool</c>, the words
 /// <c>daoris tool …</c> hands this program. The grammar, the switch, the download and the words are the library's
 /// (<see cref="ToolsCommand"/>); this hands it the process's terminal, the home the host resolves, and its machine log.
 /// </summary>

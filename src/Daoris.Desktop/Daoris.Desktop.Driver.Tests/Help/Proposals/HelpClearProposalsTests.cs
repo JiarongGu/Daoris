@@ -119,7 +119,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
             "Clears `#q1done00` from this machine: 1 quest and 2 sessions, with what this machine kept of them (3 KB): their words, "
             + "transcripts and files. Nothing brings it back.",
             plan.Describe);
-        Assert.Equal("daoris-driver quest clear q1done00 --yes", plan.Terminal);
+        Assert.Equal("daoris quest clear q1done00 --yes", plan.Terminal);
         Assert.Equal(new HistoryUnitName(HistoryKinds.Quest, "q1done00"), Assert.Single(plan.Clear!.Units));
         Assert.Equal(HistoryScope.Quest, plan.Clear.Scope);
         Assert.False(plan.Clear.Held);
@@ -135,7 +135,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
             "Clears ask `#a1done00` from this machine: 1 ask, 2 quests, 3 sessions and 1 teammate's copy, with what this machine kept "
             + "of them (9 KB): their words, transcripts and files. Nothing brings it back.",
             plan.Describe);
-        Assert.Equal("daoris-driver ask --clear a1done00 --yes", plan.Terminal);
+        Assert.Equal("daoris ask clear a1done00 --yes", plan.Terminal);
         Assert.Equal([new HistoryUnitName(HistoryKinds.Ask, "a1done00")], plan.Clear!.Units);
     }
 
@@ -187,7 +187,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
             "Clears `#q1done00`'s failed sessions from this machine: 2 sessions, with what this machine kept of them (1 KB): their "
             + "words, transcripts and files. Nothing brings it back. It keeps `t1team00`: session `t1team00` ran on north and stays there.",
             plan.Describe);
-        Assert.Equal("daoris-driver quest clear q1done00 --failed --yes", plan.Terminal);
+        Assert.Equal("daoris quest clear q1done00 --failed --yes", plan.Terminal);
         Assert.Equal(new HistoryUnitName(HistoryKinds.Failed, "q1done00"), Assert.Single(plan.Clear!.Units));
         Assert.Equal(HistoryScope.Failed, plan.Clear.Scope);
     }
@@ -223,7 +223,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Assert.Equal(["HISTORY_CLEAR failed q1done00 failed:q1done00"], doors.Calls);
         Assert.True(applied.Applied);
         Assert.Equal(
-            "Applied: `#p6` (`daoris-driver quest clear q1done00 --failed --yes`) — cleared `#q1done00`'s failed sessions from this "
+            "Applied: `#p6` (`daoris quest clear q1done00 --failed --yes`) — cleared `#q1done00`'s failed sessions from this "
             + "machine: 2 sessions, 1 KB.",
             applied.Told);
     }
@@ -245,7 +245,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
             + "to publish or close it. The remote for `work` keeps the team's copy of 1 of these quests; this machine will not "
             + "fetch it again. Apply clears what this card lists, each judged again as it goes.",
             plan.Describe);
-        Assert.Equal("daoris-driver history clear --workspace work --yes", plan.Terminal);
+        Assert.Equal("daoris history clear --workspace work --yes", plan.Terminal);
         Assert.Equal(
             [new HistoryUnitName("quest", "q1done00"), new HistoryUnitName("quest", "q4done00"), new HistoryUnitName("ask", "a1done00")],
             plan.Clear!.Units);
@@ -267,7 +267,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
             + "`#q2open00` is still open: its record is work in progress.",
             plan.Describe);
         Assert.Null(plan.Clear);
-        Assert.Equal("daoris-driver history clear --workspace work", plan.Terminal);
+        Assert.Equal("daoris history clear --workspace work", plan.Terminal);
         Assert.Equal("`default` keeps no finished work on this machine, so applying changes nothing.", empty.Describe);
         Assert.True(applied.Applied);
         Assert.Empty(doors.Calls);
@@ -330,7 +330,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Assert.Equal(["HISTORY_CLEAR workspace work quest:q1done00,quest:q4done00,ask:a1done00"], doors.Calls);
         Assert.True(applied.Applied);
         Assert.Equal(
-            "Applied: `#p6` (`daoris-driver history clear --workspace work --yes`) — cleared `work`'s finished history from this "
+            "Applied: `#p6` (`daoris history clear --workspace work --yes`) — cleared `work`'s finished history from this "
             + "machine: 1 of 3 listed, 1 quest and 2 sessions, 3 KB; 2 changed since the list and were kept. Kept `#q4done00`, "
             + "which changed since the list: session `s4ended0` is still running; stop it first. Kept ask `#a1done00`, which "
             + "changed since the list: No ask `#a1done00` on this machine.",
@@ -351,7 +351,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Assert.Equal(["HISTORY_CLEAR quest q1done00 quest:q1done00"], doors.Calls);
         Assert.True(applied.Applied);
         Assert.Equal(
-            "Applied: `#p6` (`daoris-driver quest clear q1done00 --yes`) — cleared `#q1done00` from this machine: 1 quest and 2 "
+            "Applied: `#p6` (`daoris quest clear q1done00 --yes`) — cleared `#q1done00` from this machine: 1 quest and 2 "
             + "sessions, 3 KB.",
             applied.Told);
     }
@@ -370,7 +370,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
 
         Assert.False(applied.Applied);
         Assert.Equal(
-            "Not applied: `#p6` (`daoris-driver quest clear q1done00 --yes`) — kept `#q1done00`, which changed since the list: "
+            "Not applied: `#p6` (`daoris quest clear q1done00 --yes`) — kept `#q1done00`, which changed since the list: "
             + "session `s1ended0` is still running; stop it first.",
             applied.Told);
         Assert.Equal("refused", HelpProposals.Find(_home, "p6")!.State);

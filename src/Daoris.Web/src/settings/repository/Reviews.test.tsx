@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import { ReviewField, type ReviewRule, reviewRowSays, reviewSays, reviewSummary, reviewToast } from './Reviews';
 
 // REVIEWENV1a (D154 point 2, the review-environment design §1.7–§1.8): where a repository's work is shown to the person before
-// it lands, set on a repository's Setup and a workspace's Defaults as `daoris driver review` sets it from a terminal (D50).
+// it lands, set on a repository's Setup and a workspace's Defaults as `daoris place review` sets it from a terminal (D50).
 // The words each door says are the twins' (`reviews.ts`, `ReviewRules.cs`), held here in English to rows of their one table
 // (the driver suite's `fixtures/review-rules.json`, `says`), copied, and the field sends the twins' edit, which the driver judges.
 
@@ -59,7 +59,7 @@ const SAYS: SaysRow[] = [
  * reads it (REVIEWENV1c). None here says nothing after.
  */
 const WAITING = 'Where work here waits for your review, it lands only once you say it is reviewed, '
-  + '`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. '
+  + '`daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. '
   + 'No set-up step is composed for you yet.';
 
 const t = i18n.t.bind(i18n);
@@ -116,17 +116,17 @@ describe('what a review rule says', () => {
     expect(reviewRowSays(t, LOCAL, { source: 'repository' })).toBe([
       '这里的工作落地之前，会在 `dev` 中展示给你，并等你确认无误。',
       '这里的搭建步骤在它自己的工作树中构建工作，并在 Daoris 的浏览器中于 `http://localhost:4200` 展示；你自己的服务器和进程不会被动到。',
-      '这里等你审阅的工作，要等你说已审阅（`daoris-driver quest review <quest> reviewed`）或跳过审阅（`daoris-driver quest review <quest> skip`）之后才会落地。目前还不会为你组成搭建步骤。',
+      '这里等你审阅的工作，要等你说已审阅（`daoris quest review <quest> reviewed`）或跳过审阅（`daoris quest review <quest> skip`）之后才会落地。目前还不会为你组成搭建步骤。',
       '为这个仓库设定。',
     ].join(t('projects.setup.sentenceJoin')));
-    expect(reviewRowSays(t, { none: true, environments: [] })).not.toContain('daoris-driver quest review');
+    expect(reviewRowSays(t, { none: true, environments: [] })).not.toContain('daoris quest review');
     expect(reviewToast(t, 'work', { put: { name: 'dev', kind: 'deployed', procedure: 'README.md' } })).toBe(
       'work 声明了审阅环境 dev。那里等你审阅的工作，要等你审阅或跳过审阅之后才会落地。');
   });
 
   /**
    * REVIEWENV1g: the Setup row's terminal twin joins its alternatives with `|` inside its one command, as its neighbours'
-   * twins do (`daoris driver line … <branch>|--clear`), in both languages; a command is code, never translated, so 中文 says
+   * twins do (`daoris place line … <branch>|--clear`), in both languages; a command is code, never translated, so 中文 says
    * it as English does, never with 、 between spans.
    */
   it("says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages", () => {

@@ -46,7 +46,7 @@ public sealed class HelpPluginApprovalProposalsTests : HelpProposalsFixture
         Assert.Equal(["browser_click"], grant.Accepted);
         Assert.False(grant.Withdraw);
         foreach (var tool in new[] { "browser_navigate", "browser_snapshot", "browser_click", "browser_type" }) Assert.Contains($"`{tool}`", plan.Describe);
-        Assert.Equal("daoris-driver plugins approve in-app-browser browser --writes browser_click", plan.Terminal);
+        Assert.Equal("daoris plugin approve in-app-browser browser --writes browser_click", plan.Terminal);
 
         var doors = new HelpStandInDoors { GrantsHome = _home };
         var (applied, _, _) = await ApplyAsync(proposal, doors, facts);
@@ -67,7 +67,7 @@ public sealed class HelpPluginApprovalProposalsTests : HelpProposalsFixture
 
         Assert.Null(plan.Refusal);
         Assert.Empty(plan.Grant!.Accepted);
-        Assert.Equal("daoris-driver plugins approve in-app-browser browser --reads-only", plan.Terminal);
+        Assert.Equal("daoris plugin approve in-app-browser browser --reads-only", plan.Terminal);
         Assert.Contains("refused", plan.Describe);
     }
 
@@ -79,7 +79,7 @@ public sealed class HelpPluginApprovalProposalsTests : HelpProposalsFixture
 
         Assert.Null(plan.Refusal);
         Assert.Equal("browser", plan.Grant!.Server);
-        Assert.Equal("daoris-driver plugins approve in-app-browser browser", plan.Terminal);
+        Assert.Equal("daoris plugin approve in-app-browser browser", plan.Terminal);
     }
 
     [Theory]
@@ -120,7 +120,7 @@ public sealed class HelpPluginApprovalProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Refusal);
         Assert.True(plan.Grant!.Withdraw);
         Assert.Equal(["browser_click"], plan.Grant.Accepted);
-        Assert.Equal("daoris-driver plugins withdraw in-app-browser browser", plan.Terminal);
+        Assert.Equal("daoris plugin withdraw in-app-browser browser", plan.Terminal);
         Assert.Contains("`browser_navigate`", plan.Describe);
 
         var doors = new HelpStandInDoors { GrantsHome = _home };

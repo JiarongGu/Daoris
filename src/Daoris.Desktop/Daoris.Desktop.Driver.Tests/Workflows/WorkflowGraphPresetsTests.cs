@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// INTEGRATE1q (the integration design §17.7): <i>Integrated into the line</i> and <i>A pull request</i> as graph presets beside the four of
-/// steps, each saved by <c>daoris driver workflow new --from</c> as a graph version that reads and binds a run, with the opinion and look
+/// steps, each saved by <c>daoris workflow new --from</c> as a graph version that reads and binds a run, with the opinion and look
 /// variants read by the graph's own order; <i>with no press</i> refused where the line does not declare its gates and have them accepted.
 /// </summary>
 public sealed class WorkflowGraphPresetsTests : IDisposable

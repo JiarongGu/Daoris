@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Following a line from a terminal (WSSETUP5, D124 §3.1, D50): <c>daoris-driver register [--repository &lt;name&gt;]</c>. The
+/// Following a line from a terminal (WSSETUP5, D124 §3.1, D50): <c>daoris repository register [--repository &lt;name&gt;]</c>. The
 /// words are the library's (<see cref="RegisterCommand"/>); this wires the real world: the service, the home's choices,
 /// each repository's line, and this host's machine log, where each outcome is a <c>registry.followed</c> line.
 /// </summary>

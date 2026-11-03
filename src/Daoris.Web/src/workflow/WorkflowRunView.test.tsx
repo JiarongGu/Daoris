@@ -217,7 +217,7 @@ describe("the session's Workflow view", () => {
     expect(within(opinion).getByText('waiting on you')).toHaveClass('text-ink-open');
     expect(opinion).toHaveTextContent('1 finding is disputed: a must the working session did not fix and no recheck withdrew.');
     expect(opinion).toHaveTextContent("Go on anyway is on the session's own page, beside its second opinion, and at a terminal");
-    expect(opinion).toHaveTextContent('daoris-driver opinion anyway s1 "…" goes on without it');
+    expect(opinion).toHaveTextContent('daoris session opinion anyway s1 "…" goes on without it');
     await userEvent.click(within(opinion).getByRole('button', { name: 'Open its review' }));
     expect(review).toHaveBeenCalledWith('s1');
     expect(document.body).toHaveTextContent('At Second opinion · waiting on you');
@@ -231,7 +231,7 @@ describe("the session's Workflow view", () => {
     const opinion = row('opinion');
 
     expect(within(opinion).getByRole('button', { name: 'Go on anyway…' })).toBeInTheDocument();
-    expect(opinion).not.toHaveTextContent('daoris-driver opinion anyway');
+    expect(opinion).not.toHaveTextContent('daoris session opinion anyway');
   });
 
   it("words each of the gate's states", async () => {

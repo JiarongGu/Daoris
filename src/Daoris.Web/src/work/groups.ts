@@ -9,7 +9,7 @@ import { sessionOrigin } from './identity';
 
 /**
  * The groups the session list shows by state (D126 §2.1), in the order the person acts on them, and Archived: the
- * host's spelling, which `daoris-driver sessions --group` shares.
+ * host's spelling, which `daoris session list --group` shares.
  */
 export type SessionGroupName = 'you' | 'review' | 'working' | 'later' | 'ended' | 'archived';
 

@@ -35,7 +35,7 @@ public sealed class SessionBranchDoorTests : IDisposable
         var offer = SessionBranchDoors.RemovalOffered(item);
 
         if (!offered) Assert.Null(offer);
-        else Assert.Contains("`daoris-driver trees remove daoris/s-1a2b3c4d --repository engine --force`", offer);
+        else Assert.Contains("`daoris tree remove daoris/s-1a2b3c4d --repository engine --force`", offer);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public sealed class SessionBranchDoorTests : IDisposable
 
         Assert.Equal(tree && state is not null ? "4e6837ed" : null, session?.Id);
         if (!offered) Assert.Null(offer);
-        else Assert.Equal($"if its work is wanted: `daoris-driver trees land 4e6837ed` accepts it (session 4e6837ed, {state}, its tree here)", offer);
+        else Assert.Equal($"if its work is wanted: `daoris tree land 4e6837ed` accepts it (session 4e6837ed, {state}, its tree here)", offer);
     }
 
     /// <summary>LAND4: records the service does not answer name no session, so a clean-up's list stands without its landing lines.</summary>

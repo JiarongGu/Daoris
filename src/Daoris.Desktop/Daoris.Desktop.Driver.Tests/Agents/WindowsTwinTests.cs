@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// <c>windows.json</c> read (TOOL6c, D130 §5.2): the driver writes what each account's agent said about its windows, and
-/// the walk reads it here, and <c>daoris-driver agent list</c> and <c>profile use</c>. The CLI's <c>windows.ts</c> and its
+/// the walk reads it here, and <c>daoris agent list</c> and <c>profile use</c>. The CLI's <c>windows.ts</c> and its
 /// <c>windows.test.ts</c>, which held this table row for row, left with <c>daoris agent list</c> (PUSH1f2e4); the rows stay.
 /// </summary>
 /// <remarks>

@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// ACCESSSWAP1b (D183's note, D184's AUTONOMY1b) through REAL ticks: a driven session's changed setup applies at its next turn. The
-/// session starts under `asking`; while its first turn runs the person holds a word for it and the terminal's <c>daoris-driver access</c>
+/// session starts under `asking`; while its first turn runs the person holds a word for it and the terminal's <c>daoris place access</c>
 /// writes `unrestricted` to the driver's file from outside the run. At that turn's end the run reads the file, ends there, never
 /// mid-turn, and hands the word back to its record, which concludes completed, neither parked nor failed; the next look goes on in the
 /// same conversation under the new setup, saying the change. On the protocol door and on the native door.
@@ -50,7 +50,7 @@ public sealed class AccessSwapTickTests : IDisposable
 
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
-    /// <summary>The terminal's door, as `daoris-driver access engine permissions=…` writes the driver's file from another process.</summary>
+    /// <summary>The terminal's door, as `daoris place access engine permissions=…` writes the driver's file from another process.</summary>
     private void Terminal(string permissions)
     {
         var ask = AccessCommand.Read(["engine", $"permissions={permissions}"], out var problem) ?? throw new InvalidOperationException(problem);

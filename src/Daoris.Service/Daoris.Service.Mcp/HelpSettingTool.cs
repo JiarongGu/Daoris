@@ -16,7 +16,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
     /// doors' words change together, this one with them.
     /// </summary>
     private const string ReviewWaiting = "Where work here waits for your review, it lands only once you say it is reviewed, "
-        + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "
+        + "`daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. "
         + "No set-up step is composed for you yet.";
 
     /// <summary>
@@ -42,7 +42,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         "Ask Daoris only: propose a change to how this machine drives its repositories, for the person to "
         + "apply. It becomes a card saying what it changes and the terminal command that does the same, with "
         + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
-        + "their next message. Each door is a `daoris driver` verb: drive, undrive, hold, resume, trees, line, "
+        + "their next message. Each door is a `daoris place`, `daoris settings` or `daoris quest` verb: drive, undrive, hold, resume, trees, line, "
         + "landing, across, standing, language, review, opinion, helpers, commits, retry, notify, cap, "
         + "cooloff, keep, git-use. A role's agents are no setting: `role_propose` proposes them. `git-use` points a repository's remote (the target; `--remote <name>` for one other than origin) or a workspace's host "
         + "(`--host <host>`) at a git identity already set up on this machine, by its label, or takes the choice back with `--clear`; it never sets "
@@ -88,7 +88,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         + "for a push, a merge, a discard, a sign-in or an account's key: those "
         + "stay the person's own presses.")]
     public string ProposeSetting(
-        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, commits, retry, notify, cap, cooloff, keep or git-use.")]
+        [Description("The door, as its terminal verb spells it: drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, commits, retry, notify, cap, cooloff, keep or git-use.")]
         string door,
         [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
         string why,

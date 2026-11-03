@@ -27,7 +27,7 @@ describe("a place's plan and apply", () => {
   afterEach(() => invoke.mockReset());
 
   it('reads the plan with the ask and answers what the driver planned', async () => {
-    invoke.mockResolvedValueOnce({ asked: ASK, repositories: [], changes: [], refusals: [], terminal: 'daoris-driver place engine', applies: true, digest: 'a'.repeat(64) });
+    invoke.mockResolvedValueOnce({ asked: ASK, repositories: [], changes: [], refusals: [], terminal: 'daoris place engine', applies: true, digest: 'a'.repeat(64) });
     const { result } = renderHook(() => usePlacePlan(ASK), { wrapper });
     await waitFor(() => expect(result.current.plan?.digest).toBe('a'.repeat(64)));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLACE_PLAN', expect.objectContaining({ payload: ASK }));

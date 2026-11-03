@@ -55,7 +55,7 @@
   "person.drainSessions_other": "{{count}} sessions",
   "person.drainTurns": "{{count}} turn",
   "person.drainTurns_other": "{{count}} turns",
-  "person.drainDoor": "Install later holds the update for this build; in a terminal, daoris-driver update --cancel does the same.",
+  "person.drainDoor": "Install later holds the update for this build; in a terminal, daoris update --cancel does the same.",
   "person.installLater": "Install later",
   "person.restarting": "Daoris is restarting now.",
   "person.unrecorded": "Daoris could not keep your answer just now; nothing was done, and it still waits.",

@@ -494,7 +494,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1c end to end: <c>daoris-driver sessions archive</c> sent over the real pipe to the running Daoris, shown to the window,
+    /// RPC1c end to end: <c>daoris session archive</c> sent over the real pipe to the running Daoris, shown to the window,
     /// archived once on the person's Confirm through the window's own route, and said by the terminal in the alone path's words.
     /// </summary>
     [Fact]
@@ -543,15 +543,15 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal("sessions: archived done1." + Environment.NewLine, output.ToString());
         // CONFIRMWAIT1b (the confirm-wait design §4.1): the request's id and the two verbs that read and take it back, said at once.
         Assert.Matches(
-            @"\Asessions: waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris-driver result \k<id>` "
-            + @"says how it ended, and `daoris-driver withdraw \k<id>` takes it back…\r?\n\z",
+            @"\Asessions: waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris press result \k<id>` "
+            + @"says how it ended, and `daoris press withdraw \k<id>` takes it back…\r?\n\z",
             error.ToString());
         Assert.Contains("done1", new SessionArchive(Home).Marks().Keys);
         Assert.Empty(pipe.Confirmations.Now().Waiting);
     }
 
     /// <summary>
-    /// RPC1d end to end: <c>daoris-driver sessions stop</c> and <c>delete</c> sent over the real pipe wait on the window, run once on the
+    /// RPC1d end to end: <c>daoris session stop</c> and <c>delete</c> sent over the real pipe wait on the window, run once on the
     /// person's Confirm through the route asked for its words, and are said by the terminal in the alone path's.
     /// </summary>
     [Fact]
@@ -844,7 +844,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1g (D126 §7.1): <c>daoris-driver sessions --json</c> prints this route's answer, field for field, so the screen
+    /// SESSUX1g (D126 §7.1): <c>daoris session list --json</c> prints this route's answer, field for field, so the screen
     /// and the terminal cannot disagree about a session's place.
     /// </summary>
     [Fact]

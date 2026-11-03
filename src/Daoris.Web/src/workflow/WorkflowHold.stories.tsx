@@ -10,7 +10,7 @@ import { WorkflowHold } from './WorkflowHold';
 const meta: Meta<typeof WorkflowHold> = {
   title: 'Workflow/WorkflowHold', component: WorkflowHold,
   args: { gate: { state: 'kind-paths', holds: true,
-    says: 'Holds: this work changed `src/report.ts` outside Documentation. Keep its workflow with `daoris-driver workflow keep s1`.' } },
+    says: 'Holds: this work changed `src/report.ts` outside Documentation. Keep its workflow with `daoris workflow keep s1`.' } },
   decorators: [sessionWidths.half],
 };
 export default meta;

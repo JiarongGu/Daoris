@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words of <c>daoris driver role policy</c> (STAFFPOLICY1b, the staff policy design §6.4) as a policy press: a draft (the stored policy
+/// The words of <c>daoris role policy</c> (STAFFPOLICY1b, the staff policy design §6.4) as a policy press: a draft (the stored policy
 /// or today's order, or a preset's fill) with each flag laid over it, in the order typed. It judges nothing; the role door's judge does.
 /// </summary>
 internal static class StaffPolicyFlags

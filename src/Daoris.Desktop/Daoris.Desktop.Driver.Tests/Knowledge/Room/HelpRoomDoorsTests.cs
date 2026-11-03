@@ -16,39 +16,39 @@ public sealed class HelpRoomDoorsTests
 
         foreach (var command in new[]
         {
-            "daoris driver drive|undrive <repository>", "daoris driver hold|resume <repository>",
-            "daoris driver trees <repository> on|off", "daoris driver line <repository> <branch>|--clear",
-            "daoris driver landing <repository> merge|branch <pattern>|--clear",
+            "daoris place drive|undrive <repository>", "daoris place hold|resume <repository>",
+            "daoris place trees <repository> on|off", "daoris place line <repository> <branch>|--clear",
+            "daoris place landing <repository> merge|branch <pattern>|--clear",
             // ONEWAY1a: a role's agents through the role door alone, Build's, Intake's and Ask Daoris's among them.
-            "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off", "daoris driver strikes <n>",
-            "daoris driver notify on|off", "daoris agent rules", "daoris-driver ask --workspace <name>",
+            "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off",
+            "daoris settings notify on|off", "daoris agent rules", "daoris ask --workspace <name>",
             // BRSCOPE1a: the clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
-            "daoris-driver trees clean [--workspace <name>]",
+            "daoris tree clean [--workspace <name>]",
             // WSR6: bringing a repository up to date after its pull request merged; WSR7 (D112): every repository with `--all`.
-            "daoris-driver trees sync [--repository <name>] [--workspace <name>] [--all] [--yes]",
+            "daoris tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]",
             // D107: reading and writing across, the CLI's `driver across` verbs.
-            "daoris driver across <repository> read on|off|--clear", "daoris driver across <repository> write-to <other> [--clear]",
+            "daoris place across <repository> read on|off|--clear", "daoris place across <repository> write-to <other> [--clear]",
             // HELP9: every `daoris driver` verb that changes something, and the doors Ask Daoris owes, named where they are.
             // SESSUX1b: and a stop's release, which names the session stopped.
-            "daoris driver retry <quest>", "daoris driver retry <quest> --session <id>", "daoris driver cap <n>",
+            "daoris quest retry <quest>", "daoris quest retry <quest> --session <id>", "daoris settings cap <n>",
             // LEFT3's default and its clear left with POOL1b (D197 point 6).
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // WORKFLOWCLEAN1 1f: the one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
-            "daoris-driver place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
+            "daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
             "daoris agent account order <agent> <profile>…|--clear",
-            "daoris agent account ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
+            "daoris agent account ready <agent> <profile>|--own", "daoris settings cooloff <minutes>",
             // TOOL6a (D130 §16.6): how a list is used, the terminal's door (on the screen since TOOL4g); its switch and the
             // person's curve since SWITCH1d.
             "daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
                 + "[--curve <window>=<elapsed>:<used>,…] [--no-curve]",
             // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's, the ask page's and the gate's.
-            "daoris-driver ask … --short \"…\"", "daoris-driver ask … --review rule|on|<environment>|off","daoris-driver ask --set-review <id> on|<environment>|off",
-            "daoris-driver quest review <quest> off [\"…\"]", "daoris-driver quest review <quest> on|<environment>",
+            "daoris ask … --short \"…\"", "daoris ask … --review rule|on|<environment>|off","daoris ask review <id> on|<environment>|off",
+            "daoris quest review <quest> off [\"…\"]", "daoris quest review <quest> on|<environment>",
             // WORKFLOW1e (D157 point 10): which workflow work follows and a workspace's kinds, and an ask's kind and workflow.
-            "daoris driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
-            "daoris driver workflow kind <workspace> <kind>", "daoris-driver ask … --kind <kind> [--workflow <id>|current]",
-            "daoris-driver ask --set-workflow <id>",
+            "daoris workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
+            "daoris workflow kind <workspace> <kind>", "daoris ask … --kind <kind> [--workflow <id>|current]",
+            "daoris ask workflow <id>",
             // XAGENT1f4 (D155 point 10, design §9): the person's presses at the second opinion's gate, which Ask Daoris names and
             // proposes none of.
             "daoris session opinion ask <session> [--agent <adapter>] [--same-agent] [\"…\"]",
@@ -137,11 +137,11 @@ public sealed class HelpRoomDoorsTests
     [Fact]
     public void The_room_says_ask_daoris_proposes_a_workflow_s_version_and_its_choice()
     {
-        var named = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow new <id>", StringComparison.Ordinal));
+        var named = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow new <id>", StringComparison.Ordinal));
         Assert.Equal(("workflow", "new"), named.Ask?.Through);
         Assert.EndsWith("(Ask Daoris proposes it, a whole version, new or after the newest, which you apply; not an import yet)", named.To);
 
-        var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow use <id>", StringComparison.Ordinal));
+        var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow use <id>", StringComparison.Ordinal));
         Assert.Equal(("workflow", "use"), chosen.Ask?.Through);
         Assert.EndsWith("(Ask Daoris proposes it, the choice with a version it proposes, as a repository's or a workspace's default; not a "
             + "kind yet)", chosen.To);
@@ -165,15 +165,15 @@ public sealed class HelpRoomDoorsTests
         Assert.Contains("only a place still on Current", landing.To);
         Assert.Contains("converting retires", landing.To);
 
-        var show = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow show --repository", StringComparison.Ordinal));
+        var show = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow show --repository", StringComparison.Ordinal));
         Assert.DoesNotContain("read from its rules", show.To);
 
-        var created = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow new <id>", StringComparison.Ordinal));
+        var created = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow new <id>", StringComparison.Ordinal));
         Assert.Contains("--from <default>|<id>[@<version>]", created.Terminal);
         Assert.DoesNotContain("current:", created.Terminal);
         Assert.DoesNotContain("workflow edit", created.Terminal);
 
-        var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow use <id>", StringComparison.Ordinal));
+        var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow use <id>", StringComparison.Ordinal));
         Assert.DoesNotContain("|current|", chosen.Terminal);
         Assert.Contains("no development route's choice", chosen.To);
     }
@@ -181,16 +181,16 @@ public sealed class HelpRoomDoorsTests
     /// <summary>
     /// WORKFLOW1c4 (D157 point 12; the workflow design §6.1, §7): the room named none of the places how work moves is drawn, so
     /// asked how a repository's work lands, or where a quest's work stands, the helper could not send the person there. Current
-    /// is a repository's and a workspace's *Workflow* tab, with `daoris driver workflow show` its twin (WORKFLOW1a, WORKFLOW1b);
+    /// is a repository's and a workspace's *Workflow* tab, with `daoris workflow show` its twin (WORKFLOW1a, WORKFLOW1b);
     /// a run is the session's *Workflow* view, the *Workflow:* line in a quest's and an ask's head, and What needs you's
-    /// *Workflow* door, with `daoris-driver workflow run` its twin (WORKFLOW1c, WORKFLOW1c2). Both only read, so Ask Daoris
+    /// *Workflow* door, with `daoris workflow run` its twin (WORKFLOW1c, WORKFLOW1c2). Both only read, so Ask Daoris
     /// proposes neither; changing a workflow is WORKFLOW1h's proposal, and today a step opens the Setup row that sets it.
     /// </summary>
     [Fact]
     public void The_room_names_where_how_work_moves_is_drawn_and_where_a_run_stands_with_their_terminal_twins()
     {
-        var current = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow show --repository", StringComparison.Ordinal));
-        Assert.Equal("`daoris driver workflow show --repository <name>|--workspace <name>`", current.Terminal);
+        var current = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow show --repository", StringComparison.Ordinal));
+        Assert.Equal("`daoris workflow show --repository <name>|--workspace <name>`", current.Terminal);
         Assert.Equal("Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
             current.Screen);
         foreach (var said in new[]
@@ -202,8 +202,8 @@ public sealed class HelpRoomDoorsTests
             Assert.Contains(said, current.To);
         }
 
-        var run = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver workflow run", StringComparison.Ordinal));
-        Assert.Equal("`daoris-driver workflow run --session|--quest|--ask <id>`", run.Terminal);
+        var run = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris workflow run", StringComparison.Ordinal));
+        Assert.Equal("`daoris workflow run --session|--quest|--ask <id>`", run.Terminal);
         foreach (var said in new[]
         {
             "Sessions → the session's *Workflow* view", "beside Timeline and Review", "View → Workflow",
@@ -229,7 +229,7 @@ public sealed class HelpRoomDoorsTests
         // WORKFLOW1d's row keeps the named workflows' verbs, its `show` the one that names a saved workflow, so the two shows
         // are not read as one.
         var named = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("name a workflow", StringComparison.Ordinal));
-        Assert.Contains("`daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`", named.Terminal);
+        Assert.Contains("`daoris workflow list`, `daoris workflow show <id>[@<version>]`", named.Terminal);
         Assert.DoesNotContain("workflow list|show`", named.Terminal);
     }
 
@@ -247,8 +247,8 @@ public sealed class HelpRoomDoorsTests
         var choose = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("choose which workflow", StringComparison.Ordinal));
         Assert.Contains("each run binds the newest version at its first start, and how it lands, your look and its second opinion follow that version", choose.To);
 
-        var keep = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver workflow keep", StringComparison.Ordinal));
-        Assert.Equal("`daoris-driver workflow keep <session> [\"…\"]`", keep.Terminal);
+        var keep = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris workflow keep", StringComparison.Ordinal));
+        Assert.Equal("`daoris workflow keep <session> [\"…\"]`", keep.Terminal);
         Assert.Equal("(no screen yet)", keep.Screen);
         Assert.Equal(new HelpDoorAsk.Never("it is yours alone"), keep.Ask);
         Assert.Contains("nothing switches by itself", keep.To);
@@ -286,22 +286,22 @@ public sealed class HelpRoomDoorsTests
 
     /// <summary>
     /// DOORS1a (D163 point 3; D164's amendment points 1-3): the room names the helpers rule and the commit rule, each with its
-    /// Setup row and the terminal's twin as <c>daoris driver helpers|commits</c> spells it, said to be Ask Daoris's to propose;
+    /// Setup row and the terminal's twin as <c>daoris place helpers|commits</c> spells it, said to be Ask Daoris's to propose;
     /// and the landing's row names the ticket's key and the squash beside its other switches.
     /// </summary>
     [Fact]
     public void The_room_names_the_helpers_and_commit_rules_and_the_landings_key_and_squash()
     {
-        var helpers = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris driver helpers", StringComparison.Ordinal));
-        var commits = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris driver commits", StringComparison.Ordinal));
-        var landing = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris driver landing", StringComparison.Ordinal));
+        var helpers = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris place helpers", StringComparison.Ordinal));
+        var commits = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris place commits", StringComparison.Ordinal));
+        var landing = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris place landing", StringComparison.Ordinal));
 
-        Assert.Contains("`daoris driver helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]`", helpers.Terminal);
-        Assert.Contains("`daoris driver helpers <repository> --clear`", helpers.Terminal);
+        Assert.Contains("`daoris place helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]`", helpers.Terminal);
+        Assert.Contains("`daoris place helpers <repository> --clear`", helpers.Terminal);
         Assert.Contains("Repositories → the repository's page → Setup → Sessions → Helpers", helpers.Screen);
         Assert.Contains("Repositories → the workspace's page → Setup → Defaults → Helpers", helpers.Screen);
-        Assert.Contains("`daoris driver commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]`", commits.Terminal);
-        Assert.Contains("`daoris driver commits <repository> --clear`", commits.Terminal);
+        Assert.Contains("`daoris place commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]`", commits.Terminal);
+        Assert.Contains("`daoris place commits <repository> --clear`", commits.Terminal);
         Assert.Contains("Repositories → the repository's page → Setup → Line and landing → Commits", commits.Screen);
         Assert.Contains("Repositories → the workspace's page → Setup → Defaults → Commits", commits.Screen);
         foreach (var door in new[] { helpers, commits })
@@ -318,19 +318,19 @@ public sealed class HelpRoomDoorsTests
 
     /// <summary>
     /// SESSUX1h2b (D126 §7.3): the room names Sessions' archive, archive what ended and unarchive, and a conversation's delete,
-    /// each with its press and the terminal's twin as <c>daoris-driver sessions</c> spells it, beside a quest's or an ask's delete.
+    /// each with its press and the terminal's twin as <c>daoris session list</c> spells it, beside a quest's or an ask's delete.
     /// </summary>
     [Fact]
     public void The_rooms_rows_name_a_sessions_archive_and_a_conversations_delete_with_their_twins()
     {
         var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
-        var archive = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver sessions archive", StringComparison.Ordinal));
-        var delete = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver sessions delete", StringComparison.Ordinal));
+        var archive = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris session archive", StringComparison.Ordinal));
+        var delete = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris session delete", StringComparison.Ordinal));
 
-        Assert.Equal("`daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…`", archive.Terminal);
+        Assert.Equal("`daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…`", archive.Terminal);
         Assert.Equal("Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived", archive.Screen);
         Assert.Contains("a session running, waiting on you or to review is never archived", archive.To);
-        Assert.Equal("`daoris-driver sessions delete <id>`", delete.Terminal);
+        Assert.Equal("`daoris session delete <id>`", delete.Terminal);
         Assert.Equal("Sessions → a session's ⋯ → Delete…", delete.Screen);
         Assert.StartsWith("delete a conversation that served no quest", delete.To);
         Assert.Equal(order.IndexOf("delete a quest or an ask made by mistake") + 1, order.IndexOf(archive.To));
@@ -344,8 +344,8 @@ public sealed class HelpRoomDoorsTests
     [Fact]
     public void The_rooms_rows_name_where_pause_resume_and_abandon_are_pressed()
     {
-        var pause = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver ask --pause|--resume", StringComparison.Ordinal));
-        var abandon = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver ask --abandon", StringComparison.Ordinal));
+        var pause = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris ask pause|--resume", StringComparison.Ordinal));
+        var abandon = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris ask abandon", StringComparison.Ordinal));
 
         Assert.Equal(
             "Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → "
@@ -363,8 +363,8 @@ public sealed class HelpRoomDoorsTests
     public void The_rooms_row_names_where_finished_history_is_cleared_with_its_twins()
     {
         var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
-        var clear = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver history clear", StringComparison.Ordinal));
-        var delete = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver sessions delete", StringComparison.Ordinal));
+        var clear = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris history clear", StringComparison.Ordinal));
+        var delete = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris session delete", StringComparison.Ordinal));
 
         Assert.StartsWith("clear finished history from this machine: a closed quest's work, an ask's with every quest it became", clear.To);
         Assert.Equal(
@@ -372,25 +372,25 @@ public sealed class HelpRoomDoorsTests
             + "sessions…; Repositories → the workspace's page → Details → Kept on this machine → Clear history…",
             clear.Screen);
         Assert.Equal(
-            "`daoris-driver history [--workspace <name>]`, `daoris-driver history clear --workspace <name> [--yes]`, "
-            + "`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`",
+            "`daoris history [--workspace <name>]`, `daoris history clear --workspace <name> [--yes]`, "
+            + "`daoris quest clear <id> [--failed] [--yes]`, `daoris ask clear <id> [--yes]`",
             clear.Terminal);
         Assert.Equal(order.IndexOf(delete.To) + 1, order.IndexOf(clear.To));
     }
 
     /// <summary>
     /// ASKSCOPE1e (D158's ASKSCOPE1d note point 1): the history's terminal door names its workspace flags as
-    /// <c>daoris-driver help list</c>'s usage spells them, so a helper asked for another workspace's conversation sends the
+    /// <c>daoris ask-daoris list</c>'s usage spells them, so a helper asked for another workspace's conversation sends the
     /// person to a list that holds it.
     /// </summary>
     [Fact]
     public void The_rooms_history_row_names_the_list_s_workspace_flags()
     {
-        var history = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver help list", StringComparison.Ordinal));
+        var history = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris ask-daoris list", StringComparison.Ordinal));
 
         Assert.Equal(
-            "`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`, `daoris-driver help resume <id> \"…\"`, "
-            + "`daoris-driver help rename|pin|unpin|delete <id>`",
+            "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris ask-daoris resume <id> \"…\"`, "
+            + "`daoris ask-daoris rename|pin|unpin|delete <id>`",
             history.Terminal);
         Assert.Contains("[--workspace <name> | --all]", DriverCommand.Usage);
         Assert.Contains("[--workspace <name> | --all]", HelpCommand.Usage);

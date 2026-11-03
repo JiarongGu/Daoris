@@ -10,7 +10,7 @@ public sealed class HelpSetupTool(IntakeScope? intake = null, HelpProposalBox? h
     [McpServerTool(Name = "setup_propose")]
     [Description(
         "Ask Daoris only: propose a quick set-up of one workspace's repositories registered on this machine, for the person to "
-        + "apply (`repository` and `repositories`; the one door that adopts a repository is the place's, `daoris-driver place "
+        + "apply (`repository` and `repositories`; the one door that adopts a repository is the place's, `daoris place "
         + "<repository>… --preset keep --adoption`, and its page's *Set up…*). A `preset` is always given: how their work lands "
         + "(`keep` where they follow a saved workflow or the person only wants to adopt, or to turn driving or a tick on), a "
         + "second opinion, the person's look, adoption with what it builds, and general driving. Adoption publishes one quest to "
@@ -18,7 +18,7 @@ public sealed class HelpSetupTool(IntakeScope? intake = null, HelpProposalBox? h
         + "shared doctrine, writes down what the repository owns and its instructions, and lands by the workspace's rule, and a "
         + "rule is added to the repository's own rules so its session may run the doctrine tool. Daoris never writes into the "
         + "repository. Propose it with `preset` `keep` and `adoption` when the person asks to include, adopt or set up a "
-        + "repository registered here. The card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, "
+        + "repository registered here. The card shows the plan `daoris place <repository>… --preset <id> --plan` prints, "
         + "every refusal in its words (not registered here, no tree of its own, no doctrine tool, a set-up already open), and its "
         + "Apply opens the Agents place's Setup with *Set up…* open on your ask, where the person reads the plan and presses "
         + "Apply there; your card writes nothing.")]

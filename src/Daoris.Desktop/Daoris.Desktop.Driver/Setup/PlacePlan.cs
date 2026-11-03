@@ -101,7 +101,7 @@ public sealed record PlaceApplied(DriverConfig After, IReadOnlyList<PlaceChange>
 public sealed record PlaceSave(string Id, string Default, bool Opinion, bool Look);
 
 /// <summary>
-/// A place's plan (AGENTSPLACE1a2, <c>PLACE_PLAN</c> and <c>daoris-driver place … --plan</c>; the Agents-place design §4): the parts applied to a
+/// A place's plan (AGENTSPLACE1a2, <c>PLACE_PLAN</c> and <c>daoris place … --plan</c>; the Agents-place design §4): the parts applied to a
 /// copy of the configuration through today's doors' own edits (driving, trees, the workflow choice, the landing rule by
 /// <see cref="LandingRules.Put"/>, the second opinion and the review rule), read before and after through the resolvers a start uses
 /// (<see cref="PlaceProjection.ValuesAt"/>, <see cref="WorkflowProcesses.Otherwise(IWorkflowStore, DriverConfig, string, string?, string?)"/>,
@@ -187,7 +187,7 @@ public static class PlacePlans
             refusals.Add(new(null, Adoption, "at-once", atOnce < 1
                 ? "at least one set-up must be open at once, or the plan would never ask anything."
                 : $"{atOnce} at once is more than this machine's cap of {config.Cap} leaves: at most {most}, so other work always keeps a slot. "
-                  + "Raise the cap with `daoris driver cap <n>` first, or ask for fewer."));
+                  + "Raise the cap with `daoris settings cap <n>` first, or ask for fewer."));
         }
 
         if (ask.Pilot is < 0) refusals.Add(new(null, Adoption, "pilot", "the pilot is a number, zero for none."));
@@ -290,7 +290,7 @@ public static class PlacePlans
         if (land.Method == LandNodes.Integrate && CanonicalLine.Choose(config, name, workspace, tip.Line).Branch is null)
         {
             refuse(Delivery, "no-line",
-                $"`{name}`'s line is not known here, so there is no line to integrate into: name it on its Setup → Line, or with `daoris driver line {name} <branch>`.");
+                $"`{name}`'s line is not known here, so there is no line to integrate into: name it on its Setup → Line, or with `daoris place line {name} <branch>`.");
             refused = true;
         }
 
@@ -308,7 +308,7 @@ public static class PlacePlans
         {
             refuse(Delivery, "no-review-environment",
                 $"your look needs a review environment for `{name}`, where its work runs for you before it lands, and none is set: add one on "
-                + $"its Setup → Review, or with `daoris driver review {name}`.");
+                + $"its Setup → Review, or with `daoris place review {name}`.");
             refused = true;
         }
 
@@ -482,6 +482,6 @@ public static class PlacePlans
         return new PlaceDeclaration(line, commit, gates, tip.Text, acceptances);
     }
 
-    /// <summary>The terminal's twin of a plan: <c>daoris-driver place … --plan</c>, in the order its usage names the words.</summary>
+    /// <summary>The terminal's twin of a plan: <c>daoris place … --plan</c>, in the order its usage names the words.</summary>
     public static string Terminal(PlaceAsk ask) => string.Join(' ', ["daoris-driver", "place", .. PlaceCommand.ArgsOf(ask)]);
 }

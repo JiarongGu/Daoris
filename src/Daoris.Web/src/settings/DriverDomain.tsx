@@ -30,7 +30,7 @@ import type { SettingsDomainProps } from './domains';
 export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
   const { t } = useTranslation();
   // Whether this machine interrupts the person (SURF5b) — the same `driver.json` field
-  // `daoris driver notify on|off` edits, which is what makes this a door rather than the door.
+  // `daoris settings notify on|off` edits, which is what makes this a door rather than the door.
   const driver = useDriver();
   // The catalogue the Plugins place reads, for its folder and its plugins' settings. An older shell names none, and the row is absent.
   const plugins = usePlugins();

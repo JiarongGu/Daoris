@@ -91,10 +91,10 @@ describe('the acts on a work', () => {
    * host older than the facts hands none, and the driver's sentence stands, as English always passes it through.
    */
   describe('a resume says what still holds a quest of it in the reader’s language', () => {
-    const STOP = 'you stopped session `b3f0re00`; Try again carries it on — `daoris driver retry q8 --session b3f0re00`.';
-    const PAUSE_QUEST = 'you paused `#q9`; Resume starts it — `daoris-driver quest resume q9`.';
-    const PAUSE_ASK = 'paused with ask `#b2`; Resume starts it — `daoris-driver ask --resume b2`.';
-    const PARK = '3 session(s) have failed on `#q10` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry q10` starts it again once you know why.';
+    const STOP = 'you stopped session `b3f0re00`; Try again carries it on — `daoris quest retry q8 --session b3f0re00`.';
+    const PAUSE_QUEST = 'you paused `#q9`; Resume starts it — `daoris quest resume q9`.';
+    const PAUSE_ASK = 'paused with ask `#b2`; Resume starts it — `daoris ask resume b2`.';
+    const PARK = '3 session(s) have failed on `#q10` without landing anything — parked, because trying again spends an account rather than making progress. `daoris quest retry q10` starts it again once you know why.';
     const OVER = 'the take is theirs, so session `cut0ff00` is not carried on over it.';
     const TEAMMATE = `Quest \`#q11\` is taken on \`laptop\`, by session \`laptop/s7\`: ${OVER}`;
     const ANOTHER = `Quest \`#q11\` is taken on another machine: ${OVER}`;
@@ -103,22 +103,22 @@ describe('the acts on a work', () => {
       {
         name: 'the person’s stop, by its session',
         hold: { quest: 'q8', verdict: 'Stopped', reason: STOP, heldBy: 'b3f0re00' },
-        zh: '#q8 仍在搁置：你停止了会话 `b3f0re00`，这条委托被留在本机，直到你选择重试——`daoris driver retry q8 --session b3f0re00`。',
+        zh: '#q8 仍在搁置：你停止了会话 `b3f0re00`，这条委托被留在本机，直到你选择重试——`daoris quest retry q8 --session b3f0re00`。',
       },
       {
         name: 'the quest’s own pause',
         hold: { quest: 'q9', verdict: 'Paused', reason: PAUSE_QUEST, pausedBy: { scope: 'quest', id: 'q9' } },
-        zh: '#q9 仍在搁置：随委托 `#q9` 暂缓；恢复后会继续——`daoris-driver quest resume q9`。',
+        zh: '#q9 仍在搁置：随委托 `#q9` 暂缓；恢复后会继续——`daoris quest resume q9`。',
       },
       {
         name: 'another ask’s pause',
         hold: { quest: 'q9', verdict: 'Paused', reason: PAUSE_ASK, pausedBy: { scope: 'ask', id: 'b2' } },
-        zh: '#q9 仍在搁置：已随需求 `#b2` 暂缓；恢复后会继续——`daoris-driver ask --resume b2`。',
+        zh: '#q9 仍在搁置：已随需求 `#b2` 暂缓；恢复后会继续——`daoris ask resume b2`。',
       },
       {
         name: 'a park, by how many failed',
         hold: { quest: 'q10', verdict: 'Exhausted', reason: PARK, strikes: 3 },
-        zh: '#q10 仍在搁置：`#q10` 上已有 3 个会话失败，且没有落地任何工作——已挂起，因为继续尝试只会消耗账户，而不会有进展。弄清原因后，`daoris driver retry q10` 会让它重新开始。',
+        zh: '#q10 仍在搁置：`#q10` 上已有 3 个会话失败，且没有落地任何工作——已挂起，因为继续尝试只会消耗账户，而不会有进展。弄清原因后，`daoris quest retry q10` 会让它重新开始。',
       },
       {
         name: 'a teammate’s take, by its machine and session',

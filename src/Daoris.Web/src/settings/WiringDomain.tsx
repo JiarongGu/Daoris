@@ -65,7 +65,7 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const spaceOlder = space.query.isError && refusedNoRoute(space.query.error);
   useErrorNotify(spaceOlder ? null : space.query.error, notify);
   const clearDownloads = useClearDownloads();
-  // KEEP1d: each rule's *Change…*, the same `keep` `daoris driver keep` edits; a refusal is said under its editor.
+  // KEEP1d: each rule's *Change…*, the same `keep` `daoris settings keep` edits; a refusal is said under its editor.
   const setKeep = useSetKeep();
   // KEEP1e: Free up space…, listed first under the card's head, then pressed; a refusal stays beside the press (R3).
   const spaceFree = useSpaceFree();

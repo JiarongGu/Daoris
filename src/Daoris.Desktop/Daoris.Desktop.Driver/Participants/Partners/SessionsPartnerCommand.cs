@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver sessions partner</c> (COAGENT1b, D199 point 2; the co-agent design §6.4): the person's terminal door to a piece.
+/// <c>daoris session partner</c> (COAGENT1b, D199 point 2; the co-agent design §6.4): the person's terminal door to a piece.
 /// <c>partner &lt;session&gt; "&lt;piece&gt;" --agent &lt;name&gt; [--paths &lt;path&gt;…]</c> asks one, by the judge and writer the page's press
 /// shares (<see cref="PartnerPersonAsk"/>), reaching the running Daoris as the sessions family's presses do. <c>partner &lt;session&gt;
 /// --list</c> shows the session's pieces and where each stands, read off the pieces' box. <c>partner &lt;piece&gt; --stop</c> is its

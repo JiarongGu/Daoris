@@ -19,7 +19,7 @@ public static class StandingText
         if (cut)
         {
             text.Append($"\n  (… and {standing.Says.Length - Limit} more characters of it, left out here to keep this instruction ")
-                .Append("bounded; `daoris driver list` shows it whole.)");
+                .Append("bounded; `daoris place list` shows it whole.)");
         }
 
         return text.ToString();

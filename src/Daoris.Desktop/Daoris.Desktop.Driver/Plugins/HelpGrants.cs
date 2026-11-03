@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// tool's name, so the manifest's own rules already refuse one (<see cref="PluginCatalog"/>).</para>
 ///
 /// <para><b>Machine-local and the driver's alone</b>: <c>&lt;home&gt;/plugin-approvals.json</c>, written by the page's press and
-/// <c>daoris-driver plugins approve|withdraw</c>, read at each spawn of Ask Daoris. A file that does not read approves nothing,
+/// <c>daoris plugin approve|withdraw</c>, read at each spawn of Ask Daoris. A file that does not read approves nothing,
 /// the safe direction, and is never written over; an edit keeps every key it does not own (KEEPALL1d).</para>
 /// </remarks>
 public static class HelpGrants
@@ -145,7 +145,7 @@ public static class HelpGrants
         var declared = entry?.Manifest.Servers.FirstOrDefault(each =>
             string.Equals(each.Name, server, StringComparison.Ordinal) && each.HandedTo(PluginServerTo.Help))
             ?? throw new DriverException(
-                $"no plugin `{plugin}` on this machine, switched on and sound, offers Ask Daoris a server `{server}`; `daoris-driver plugins show {plugin}` says what it offers.");
+                $"no plugin `{plugin}` on this machine, switched on and sound, offers Ask Daoris a server `{server}`; `daoris plugin show {plugin}` says what it offers.");
         return (entry!, declared);
     }
 

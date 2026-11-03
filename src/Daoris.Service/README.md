@@ -192,7 +192,7 @@ are **listed and marked** with who can answer them, because "who cannot be asked
 question as "who can", and a silent omission reads as the repository not existing.
 
 **A folder becomes a workspace in one statement** (D77). `POST /api/registry/import` with a
-`workspace` wires every row it registers to that circle (`daoris import <folder> --workspace <name>`).
+`workspace` wires every row it registers to that circle (`daoris repository import <folder> --workspace <name>`).
 A statement re-points, and an import that names none moves nobody.
 
 | Tool | What it answers |
@@ -521,7 +521,7 @@ did not start*. A malformed rule, a scope with no name or an empty reason is ref
 written. With no home at all, every proposal is refused.
 
 **Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
-offers `setting_propose` (one of the `daoris driver` doors: every verb but `list`, since HELP9 and HELP10
+offers `setting_propose` (one of the setting doors: every verb but `list`, since HELP9 and HELP10
 `across`, `cap`, `adapter` and `retry` among them, and since DOORS1a `helpers` and `commits`, shape-checked by the flags
 their verbs take, and a landing's `--key` and `--squash`; the tool says a repository's own instructions only seed a
 proposal the person applies) and `ask_propose` (something to start, as
@@ -655,7 +655,7 @@ bare, and `daoris-knowledge-http-<rid>.tar.gz` carrying its web bundle beside th
 
 **Remote — transfer of request and task, opt-in.** The HTTP host is the deployable half. It runs with
 **no model at all** (D24) and still carries what a remote deployment exists to carry: registrations
-pushed by `daoris connect` — persisted, because for a remote service the pushed registrations *are*
+pushed by `daoris repository connect` — persisted, because for a remote service the pushed registrations *are*
 the family — and quests, published and answered over the same `QuestExchange` the MCP host uses. A
 repository's knowledge travels only if that repository opts in (D21); moving work never required
 moving knowledge.
@@ -669,7 +669,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `GET /api/protocol` | the host's process `run` and versioned `marks`: `settled: 1`, `opens: 2`, `head: 1` and `journal: 1` (D212). Answers carry `x-daoris-run`; a changed or absent run invalidates the driver's cached marks |
 | Keyed `POST /api/sessions` · `POST /api/sessions/chat` | optional `opens` with `from` names a destination open (D212, row d-i). Its exclusive step replays `session_opens` before any validation; a new key requires a local, inactive line head. The answer echoes `opens` and its `transfer`. A keyed open's `moves` (`from`, the record the words move from, which stands in for a start's missing `from`; `words`, the ids the course named; `read`, the ids it saw there) moves, in the same step, each named word still waiting and each unattempted word of the person's kept there since the read onto the new record, ids and producer keys kept and attempts cleared, and the receipt keeps the transfer (`word`, `id`, `key`, `transfer` as the key and the word's id, `order`) that every replay answers (D212, row d-ii part 3); `moves` without `opens` answers 400, and a request without `moves` moves nothing. Deleting the destination keeps a terminal `gone` receipt until its predecessor is deleted. Every advance out of an ended or parked predecessor is refused while its keyed destination stands. The driver's `SessionOpenDoors` negotiates marks before sending a key, re-reads them before retrying a lost answer, and holds a retry without its echo with candidate records for the person; adoption by the move executors is their later row |
 | `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's; a local host's status also answers `home`, its home's id (`HomeIdentity`, HOMEID1), which a terminal checks before it takes the address |
-| `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands, with the words of the lanes it declares (`lanes`: id, title, summary, steward; absent keeps the row's, D115). A shared deployment orders a checkout's declaration by the commit it names, as it orders knowledge: a declaration from an older commit, another line, or no commit where one is held is not taken, as information (SYNC5b) |
+| `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris repository connect` lands, with the words of the lanes it declares (`lanes`: id, title, summary, steward; absent keeps the row's, D115). A shared deployment orders a checkout's declaration by the commit it names, as it orders knowledge: a declaration from an older commit, another line, or no commit where one is held is not taken, as information (SYNC5b) |
 | `DELETE /api/registry/{repository}` | take a repository off the map; nothing on disk is touched. At a shared deployment it is how a machine's retire reaches the circle (SYNC5b) |
 | `GET /api/registry/retired?workspace=` · `DELETE /api/registry/retired/{repository}?workspace=` | local mode only: the retires this machine's checkouts owe a circle, written by the store as a joined checkout's row leaves it (retired, re-wired, or re-registered unjoined), and cleared once the driver's pass has carried them (SYNC5b) |
 | `GET /api/code-map/{repository}` | a repository's own code map (MAP3a), read from its committed `docs/code-map.json` and judged whole; a repository with a checkout here is read from it, and one without answers with what was fed at a shared deployment (MAP3b) or brought down by a machine's sync (MAP3e), with `fed` naming the commit, its line and the key that fed it, or with no file |

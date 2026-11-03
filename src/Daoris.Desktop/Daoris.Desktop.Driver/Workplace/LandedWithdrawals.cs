@@ -121,14 +121,14 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
         switch (item.Kind)
         {
             case LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside or LandedKind.PullRequest:
-                return $"{subject}: the line holds its work ({LandedWords.Clause(item)}), which `daoris-driver trees clean` removes with that proof.";
+                return $"{subject}: the line holds its work ({LandedWords.Clause(item)}), which `daoris tree clean` removes with that proof.";
             case LandedKind.CheckedOut:
                 return $"{subject}: it is checked out in a working tree, the repository's own checkout included.";
             case LandedKind.AheadOfRemote:
                 return $"{subject}: it holds {item.Commits} commit(s) its remote does not have, so it was pushed and then moved; the clean-up keeps it too.";
             case LandedKind.LeanedOn:
                 // Only a branch the line's proof clears reads leaned on, so the line holds its work: the clean-up takes it, once that session branch goes.
-                return $"{subject}: the line holds its work, and {LandedWords.Clause(item)}; `daoris-driver trees clean` takes both with its proof.";
+                return $"{subject}: the line holds its work, and {LandedWords.Clause(item)}; `daoris tree clean` takes both with its proof.";
             case LandedKind.Unknown when judged.Tip.Length == 0:
                 return $"{subject}: {item.Detail}.";
         }

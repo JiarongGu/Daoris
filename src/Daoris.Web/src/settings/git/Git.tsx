@@ -388,7 +388,7 @@ export function GitDefaults({ identities, acts, onError }: {
             <SettingRow
               key={`${way}:${host}`}
               label={t(`settings.git.defaultOf.${way}`, { host })}
-              hint={`\`daoris-driver git default ${host} <identity>\``}
+              hint={`\`daoris git default ${host} <identity>\``}
               control={(
                 <SelectField
                   ariaLabel={t('settings.git.defaultAria', { host, way: t(`settings.git.way.${way}`) })}

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver notices</c> (NOTIFY2i, D196 point 8, the notification design §9): through the running Daoris, its <c>NOTIFICATIONS</c>
+/// <c>daoris notices</c> (NOTIFY2i, D196 point 8, the notification design §9): through the running Daoris, its <c>NOTIFICATIONS</c>
 /// lines as it answers them, this process reading nothing; alone, the notices' record, the presses, what needs the person and the
 /// messages said not read; as text and as <c>--json</c>; and nothing changed either way.
 /// </summary>

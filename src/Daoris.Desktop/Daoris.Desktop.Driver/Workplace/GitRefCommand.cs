@@ -12,7 +12,7 @@ public sealed record GitRefVerb(string Kind, string Repository, string Name, str
 public sealed record GitRefWorld(Func<string, CancellationToken, Task<string?>> CheckoutOf, Func<ActRuns> Runs, Func<string, string, CancellationToken, Task<string?>>? LineOf = null);
 
 /// <summary>
-/// <c>daoris-driver git branch|tag &lt;repository&gt; &lt;name&gt; [&lt;commit&gt;] [--delete] [--plan|--yes]</c> (GITAPP2c and d, D204; the
+/// <c>daoris git branch|tag &lt;repository&gt; &lt;name&gt; [&lt;commit&gt;] [--delete] [--plan|--yes]</c> (GITAPP2c and d, D204; the
 /// git-writes design §9): the terminal's twin of the Branches tab's <i>New branch</i> and <i>New tag</i>, and of its <i>Delete</i>. Without
 /// <c>--yes</c> (or with <c>--plan</c>) it says what it would make or delete and changes nothing. With <c>--yes</c> it is the running Daoris's
 /// client (<see cref="InstanceDoor.PressAsync"/>): the person's press, confirmed in the window; with no Daoris running it makes the change
@@ -21,9 +21,9 @@ public sealed record GitRefWorld(Func<string, CancellationToken, Task<string?>> 
 /// <remarks>Exit codes: 0 done or planned · 1 refused, nothing changed · 2 could not, or the outcome is not known.</remarks>
 public static class GitRefCommand
 {
-    public const string Usage = "usage: daoris-driver git branch|tag <repository> <name> [<commit>] [--delete | --rename <new-name>] [--plan | --yes]";
+    public const string Usage = "usage: daoris git branch|tag <repository> <name> [<commit>] [--delete | --rename <new-name>] [--plan | --yes]";
 
-    private const string Prefix = "daoris-driver git";
+    private const string Prefix = "daoris git";
 
     /// <summary>Whether the words after <c>git</c> are this verb's.</summary>
     public static bool Answers(IReadOnlyList<string> args) => args.Count > 0 && args[0] is "branch" or "tag";

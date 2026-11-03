@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver role</c> (FOUNDATION1y-i, the foundation design §2.7): the terminal's door into the role catalogue, the window
+/// <c>daoris role</c> (FOUNDATION1y-i, the foundation design §2.7): the terminal's door into the role catalogue, the window
 /// twin of Agents → <i>Roles</i> over <c>SET_ROLE</c>. <c>role</c> says every role, <c>role &lt;id&gt;</c> one;
 /// <c>role set</c> adds or changes a working role (its names, work, scope and choices), <c>role remove</c> takes one out and
 /// <c>role default</c> gives a seeded one back its seed. Each change is judged by the role door's judge before anything is sent or
@@ -39,7 +39,7 @@ public sealed class RoleVerb : ChoiceVerb
         foreach (var each in table) said.WriteLine($"  {each.Role,-12}{Choices(each.Choices)}");
         if (!use)
         {
-            said.WriteLine("  This can spend more than the order it replaces. Use them for new work on this machine: `daoris driver role suggested --use`.");
+            said.WriteLine("  This can spend more than the order it replaces. Use them for new work on this machine: `daoris role suggested --use`.");
             said.WriteLine("  The window leaves out an agent this machine has not set up; here the choices are set as listed.");
             return 0;
         }

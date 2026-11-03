@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The branch list from a terminal (GIT1c, D147 §3.3, D50): <c>daoris-driver git branches</c>, and Review's read,
+/// The branch list from a terminal (GIT1c, D147 §3.3, D50): <c>daoris git branches</c>, and Review's read,
 /// <c>git review</c> (GITAPP1a-i), whose <c>--time</c> appends one log line. The words are the library's
 /// (<see cref="GitBranchesCommand"/>, <see cref="GitReviewCommand"/>); this wires the real world: the registry's checkouts, the
 /// session records, the home and the person's choices. Beyond that line it writes nothing: the host routes it before the machine

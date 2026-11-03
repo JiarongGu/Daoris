@@ -1,5 +1,5 @@
 {
-  "note": "The sentences `daoris driver landing`, `helpers` and `commits` say as a rule is set, which Ask Daoris's cards say too (TWINWORDS1, D164's DOORS1a note). The CLI's driverconfig.ts and the driver's HelpSettingProposals each say them from their own code; each suite reads this table, so a change to one side's words fails the other's test.",
+  "note": "The sentences `daoris place landing`, `helpers` and `commits` say as a rule is set, which Ask Daoris's cards say too (TWINWORDS1, D164's DOORS1a note). The CLI's driverconfig.ts and the driver's HelpSettingProposals each say them from their own code; each suite reads this table, so a change to one side's words fails the other's test.",
   "ticket": [
     { "key": null, "says": "`{ticket}` is the first match of `[A-Z][A-Z0-9]+-\\d+` in the title, then the request, then its links, as written (the default shape); where none is found, the session's id stands in." },
     { "key": "TK-\\d+", "says": "`{ticket}` is the first match of `TK-\\d+` in the title, then the request, then its links, as written; where none is found, the session's id stands in." }

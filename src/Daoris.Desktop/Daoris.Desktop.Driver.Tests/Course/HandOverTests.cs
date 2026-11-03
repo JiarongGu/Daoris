@@ -75,7 +75,7 @@ public sealed class HandOverTests : IDisposable
         { "nobody00", "codex-acp", null, WordsNever.NotFound, "no session here is nobody00." },
         { "laptop/s9", "codex-acp", null, WordsNever.Teammate, "laptop/s9 ran on laptop, where its conversation is; nothing said here reaches it." },
         { "1ntake00", "codex-acp", null, WordsNever.Intake, "1ntake00 is an intake; answer its ask #a1 instead: publish it or close it." },
-        { "qu3st000", "codex-acp", null, HandOver.NotConversation, "qu3st000 is a quest's session: it is handed over from a terminal, `daoris-driver sessions hand-over qu3st000 --agent <adapter>`; its page's press comes later." },
+        { "qu3st000", "codex-acp", null, HandOver.NotConversation, "qu3st000 is a quest's session: it is handed over from a terminal, `daoris session hand-over qu3st000 --agent <adapter>`; its page's press comes later." },
         { "c0nv0001", "gemini", null, HandOver.UnknownAgent, "no agent here is called gemini." },
         { "c0nv0001", "codex-acp", "other", HandOver.NotItsAccount, "other is not an account of codex-acp." },
         { "c0nv0001", "claude-code", "account-1", HandOver.SameAgent, "c0nv0001 already runs on claude-code as account-1." },
@@ -584,7 +584,7 @@ public sealed class HandOverTests : IDisposable
         Assert.EndsWith("\n\nAlso log the port.", message.Prompt, StringComparison.Ordinal);
     }
 
-    // ——— The terminal's door (D50): `daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]`.
+    // ——— The terminal's door (D50): `daoris session hand-over <id> --agent <adapter> [--account <name>]`.
 
     [Fact]
     public void The_terminal_reads_an_id_an_agent_and_an_account_and_its_usage_says_the_verb()

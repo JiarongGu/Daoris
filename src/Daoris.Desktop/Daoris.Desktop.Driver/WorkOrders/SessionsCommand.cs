@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris-driver sessions</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2; MSG1g's <c>go-on-new</c>; MSG1f3's
+/// What <c>daoris session list</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2; MSG1g's <c>go-on-new</c>; MSG1f3's
 /// <c>start-from</c>).
 /// </summary>
 /// <param name="Verb">
@@ -202,7 +202,7 @@ public static class KeepingStops
 }
 
 /// <summary>
-/// <c>daoris-driver sessions</c> (SESSUX1g, D126 §7.1): Sessions' terminal door. It lists this machine's sessions by what
+/// <c>daoris session list</c> (SESSUX1g, D126 §7.1): Sessions' terminal door. It lists this machine's sessions by what
 /// they need, from <see cref="SessionGroups"/>, the one reader <c>SESSION_GROUPS</c> hands the page; stops, finishes and
 /// declines a session; and archives, unarchives and deletes through the owners the screen's routes call. In the library,
 /// so its words are held by a test.
@@ -230,21 +230,21 @@ public static class SessionsCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
-               daoris-driver sessions stop <id> [--turn]  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
-               daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
-               daoris-driver sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
-               daoris-driver sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
-               daoris-driver sessions go-on-new <id>
-               daoris-driver sessions start-from <id>
-               daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]
-               daoris-driver sessions hand-over <id> --approve|--decline
-               daoris-driver sessions helper <id> "<question>" [--agent <name>]
-               daoris-driver sessions helper --approve|--decline <ask>
-               daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
-               daoris-driver sessions partner <id> --list  ·  sessions partner <piece> --stop
-               daoris-driver sessions supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
-               daoris-driver sessions handback <session|quest> [--json]
+        usage: daoris session [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
+               daoris session stop <id> [--turn]  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
+               daoris session archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
+               daoris session say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
+               daoris session take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
+               daoris session go-on-new <id>
+               daoris session start-from <id>
+               daoris session hand-over <id> --agent <adapter> [--account <name>]
+               daoris session hand-over <id> --approve|--decline
+               daoris session helper <id> "<question>" [--agent <name>]
+               daoris session helper --approve|--decline <ask>
+               daoris session partner <id> "<piece>" --agent <name> [--paths <path>…]
+               daoris session partner <id> --list  ·  sessions partner <piece> --stop
+               daoris session supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
+               daoris session handback <session|quest> [--json]
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -883,7 +883,7 @@ public static class SessionsCommand
         if (row.Lands is { } lands)
         {
             yield return $"{lands.Commits} commit{(lands.Commits == 1 ? "" : "s")} on {lands.Branch} in its tree {lands.Tree}, not landed: "
-                + $"daoris-driver trees land {row.Session}";
+                + $"daoris tree land {row.Session}";
         }
 
         // SQUASHTIDY1b: commits the line holds by content are never offered to land again; the door that discards the tree is,
@@ -891,7 +891,7 @@ public static class SessionsCommand
         if (row.Discards is { Work: var held } discards)
         {
             yield return held.Keeps is { } keeps
-                ? $"{held.Held.Said}, in its tree {discards.Tree}: daoris-driver trees remove {row.Session} discards it, keeping its "
+                ? $"{held.Held.Said}, in its tree {discards.Tree}: daoris tree remove {row.Session} discards it, keeping its "
                   + $"commits at `{keeps}`"
                 : $"{held.Held.Said}, in its tree {discards.Tree}, which stays: {held.Stays}";
         }
@@ -900,8 +900,8 @@ public static class SessionsCommand
         if (row.HoldsQuest && record.Quest is { } quest)
         {
             yield return record.State == "failed"
-                ? $"held here until you try again: daoris driver retry {quest}"
-                : $"held here until you try again: daoris driver retry {quest} --session {row.Session}";
+                ? $"held here until you try again: daoris quest retry {quest}"
+                : $"held here until you try again: daoris quest retry {quest} --session {row.Session}";
         }
         // PAUSE1b (D132 §6.1): a pause, never a hold, in its words: Resume is the press that moves it.
         if (row.PausedBy is { } pause)
@@ -949,7 +949,7 @@ public static class SessionsCommand
             KeepingStops.Stopped => $"sessions: stopping {id}'s turn: what waits goes next, and what it has done stays.",
             KeepingStops.NoInterrupt =>
                 $"sessions: {id}'s door cannot stop a turn and keep the session, so nothing was stopped: what waits goes when its turn ends, "
-                + $"and `daoris-driver sessions stop {id}` ends the session.",
+                + $"and `daoris session stop {id}` ends the session.",
             KeepingStops.NotHere => $"sessions: nothing here runs {id}, so it has no turn to stop.",
             _ => $"sessions: {id} has no turn running with words waiting for its end, so nothing was stopped.",
         });
@@ -1102,7 +1102,7 @@ public static class SessionsCommand
         if (quest?.Status is "Open" or "Taken")
         {
             output.WriteLine(
-                $"  its quest #{quest.Id} is still {quest.Status.ToLowerInvariant()}: daoris-driver quest done {quest.Id} [--note \"…\"] "
+                $"  its quest #{quest.Id} is still {quest.Status.ToLowerInvariant()}: daoris quest done {quest.Id} [--note \"…\"] "
                 + "marks it done as yours.");
         }
     }
@@ -1134,7 +1134,7 @@ public static class SessionsCommand
             ? $"sessions: nothing that runs {record.Id} took the request within {seconds} seconds, so it was withdrawn: it runs in "
               + "another Daoris process on this machine that takes no requests (a terminal's chat stops with its own Ctrl+C)."
             : $"sessions: the loop that runs {record.Id} took the request, and its record had not moved after {seconds} seconds; "
-              + "`daoris-driver sessions` says where it stands.");
+              + "`daoris session list` says where it stands.");
         return 2;
     }
 
@@ -1143,7 +1143,7 @@ public static class SessionsCommand
     {
         if (record.Quest is { } quest)
         {
-            output.WriteLine($"  its quest #{quest} is held here until you try again: daoris driver retry {quest} --session {record.Id}");
+            output.WriteLine($"  its quest #{quest} is held here until you try again: daoris quest retry {quest} --session {record.Id}");
         }
     }
 
@@ -1263,7 +1263,7 @@ public static class SessionsCommand
         {
             output.WriteLine(
                 $"sessions: the loop that runs {id} took your words, and gave no answer of where they stand; "
-                + "`daoris-driver sessions` says where it stands.");
+                + "`daoris session list` says where it stands.");
             return 2;
         }
 
@@ -1431,7 +1431,7 @@ public static class SessionsCommand
             {
                 output.WriteLine($"sessions: kept, but it cannot go on in this session, because {Because(note)}.");
                 // MSG1f3: the terminal's *Start a conversation with these words*, which takes them off this session.
-                output.WriteLine($"  start a conversation with them instead: daoris-driver sessions start-from {record.Id}");
+                output.WriteLine($"  start a conversation with them instead: daoris session start-from {record.Id}");
                 return 1;
             }
 
@@ -1449,7 +1449,7 @@ public static class SessionsCommand
         }
 
         output.WriteLine(gone
-            ? "sessions: taken: the session took it, and has moved since; `daoris-driver sessions` says where it stands."
+            ? "sessions: taken: the session took it, and has moved since; `daoris session list` says where it stands."
             : $"sessions: {await HeldAsync(world, record, ct).ConfigureAwait(false)}");
         return 0;
     }
@@ -1508,7 +1508,7 @@ public static class SessionsCommand
                     // ASKHIST1: Ask Daoris's conversation goes on in the window, whose panel holds it.
                     ? $"sessions: {record.Id} is Ask Daoris's conversation, which goes on in the window: start Daoris, then say it again."
                     : $"sessions: {record.Id} is a conversation, and no driver runs on this machine to open it again: start the desktop, "
-                      + "or `daoris-driver drive`, then say it again.");
+                      + "or `daoris drive`, then say it again.");
             return loop ? 2 : 1;
         }
 
@@ -1552,7 +1552,7 @@ public static class SessionsCommand
     /// <param name="next">The conversation a conversation went on in (HANDWORDS1), where it was read; else its code says the sentence it came with.</param>
     private static string Refusal(string code, string id, SessionRecord? record, string? last, string? message, string? next = null) => code switch
     {
-        WordsNever.Continued when next is not null => $"{WordsNever.WentOn(id, next).TrimEnd('.')}: daoris-driver sessions say {next} \"…\"",
+        WordsNever.Continued when next is not null => $"{WordsNever.WentOn(id, next).TrimEnd('.')}: daoris session say {next} \"…\"",
         WordsNever.NotFound => $"no session here is {id}.",
         WordsNever.Teammate =>
             $"{id} ran on {(id.Contains('/') ? id[..id.IndexOf('/')] : "another machine")}, where its conversation is; nothing said here reaches it.",
@@ -1561,7 +1561,7 @@ public static class SessionsCommand
         WordsNever.Intake => $"{id} is an intake; answer its ask #{record?.Ask} instead: publish it or close it.",
         WordsNever.StoodDown => $"it stood down: #{record?.Quest} is someone else's, so it has nothing to go on with.",
         WordsNever.Superseded =>
-            $"#{record?.Quest} went on in a later session here, {last}; say it to that one: daoris-driver sessions say {last} \"…\"",
+            $"#{record?.Quest} went on in a later session here, {last}; say it to that one: daoris session say {last} \"…\"",
         _ => message ?? $"{id} did not take your words ({code}).",
     };
 
@@ -1627,7 +1627,7 @@ public static class SessionsCommand
 
             output.WriteLine(
                 $"sessions: {waiting.Count} word{(waiting.Count == 1 ? " waits" : "s wait")} on {id}; take one back with "
-                + $"`daoris-driver sessions take-back {id} <word>`:");
+                + $"`daoris session take-back {id} <word>`:");
             foreach (var each in waiting) output.WriteLine($"  {each.Id}  {OneLine(each.Text)}");
             return 0;
         }
@@ -1718,7 +1718,7 @@ public static class SessionsCommand
     {
         if (world.StartFrom is { } open) return await open(id, ct).ConfigureAwait(false);
 
-        output.WriteLine($"sessions: no conversation can be opened from here; run `daoris-driver sessions start-from {id}` at a terminal.");
+        output.WriteLine($"sessions: no conversation can be opened from here; run `daoris session start-from {id}` at a terminal.");
         return 2;
     }
 
@@ -1768,7 +1768,7 @@ public static class SessionsCommand
 
         if (world.HandOver is { } open) return await open(ask.Ids[0], ask.Agent!, ask.Account, ct).ConfigureAwait(false);
 
-        output.WriteLine($"sessions: nothing here can hand a conversation over; run `daoris-driver sessions hand-over {ask.Ids[0]} --agent {ask.Agent}` at a terminal.");
+        output.WriteLine($"sessions: nothing here can hand a conversation over; run `daoris session hand-over {ask.Ids[0]} --agent {ask.Agent}` at a terminal.");
         return 2;
     }
 

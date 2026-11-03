@@ -330,7 +330,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
         Assert.Empty(_frames);
         Assert.NotNull(pressed.Withheld);
         Assert.Contains("its push was not tried", pressed.Message);
-        Assert.Contains("`daoris-driver trees hand s1`", pressed.Message);
+        Assert.Contains("`daoris tree hand s1`", pressed.Message);
         Assert.Equal(1, TreesWords.Land(pressed, []).Code);
     }
 
@@ -378,6 +378,6 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
         Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", $"main..{PushBranch}")).Trim());
         Assert.False(new LandedBranches(_home).Landing("s1")!.Pushed);
         Assert.Contains("`s1`'s push was held back", landed.Message);
-        Assert.Contains("`daoris-driver trees hand s1`", landed.Parts[0].Landing!.Message);
+        Assert.Contains("`daoris tree hand s1`", landed.Parts[0].Landing!.Message);
     }
 }

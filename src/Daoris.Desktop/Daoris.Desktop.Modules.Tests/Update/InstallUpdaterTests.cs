@@ -399,7 +399,7 @@ public sealed class InstallUpdaterTests : Bridge
     /// <summary>
     /// UPDATE1d (D139's UPDATE1b note, D50): the last swap is the journal's record, told or not, on every state, apart from
     /// the outcome the banner says once. It outlives the banner's *Dismiss* and a later start that says nothing, as the
-    /// terminal's plain <c>daoris-driver update</c> still says it from the same journal.
+    /// terminal's plain <c>daoris update</c> still says it from the same journal.
     /// </summary>
     [Fact]
     public async Task The_last_swap_outlives_a_dismissal_and_a_later_start_told_or_not()

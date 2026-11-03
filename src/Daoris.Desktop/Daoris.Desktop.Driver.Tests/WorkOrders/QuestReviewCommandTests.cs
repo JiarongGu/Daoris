@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1c (D154 point 8; the review environment design §3.3–§3.4, D50): <c>daoris-driver quest review</c>, the terminal's door
+/// REVIEWENV1c (D154 point 8; the review environment design §3.3–§3.4, D50): <c>daoris quest review</c>, the terminal's door
 /// to the person's verdict. It prints what the set-up step showed and how to show it again, sends the verdict with that set-up by
 /// its <c>machine</c> and <c>sequence</c> (REVIEWENV1b3), says a <i>not yet</i>'s words to the step's session as its next turn, and
 /// says what the gate now says. A service stood in (<see cref="ReviewStandIn"/>): the fast half (MOD8).
@@ -60,7 +60,7 @@ public sealed class QuestReviewCommandTests
             + "  look: http://localhost:4200/reports\n"
             + "  again: open reports\n"
             + "daoris-driver: Reviewed set-up step `#q2` in `local` at `01234567`: what its review held goes on.\n"
-            + "daoris-driver: the gate: work up to `01234567` in `web-app` may land: the review's Accept, `daoris-driver trees land <session>`, "
+            + "daoris-driver: the gate: work up to `01234567` in `web-app` may land: the review's Accept, `daoris tree land <session>`, "
             + "or the next look where it is accepted automatically. Work added after it waits for its own review.\n",
             output.ToString().ReplaceLineEndings("\n"));
         var (path, body) = heard.Single(each => each.Path.EndsWith("/review", StringComparison.Ordinal));
@@ -136,7 +136,7 @@ public sealed class QuestReviewCommandTests
     public void The_usage_names_the_terminals_verdict()
     {
         Assert.Contains("\n  quest review <id> reviewed|not-yet|skip [\"…\"]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.StartsWith("usage: daoris-driver quest review <id> reviewed|not-yet|skip [\"…\"]", QuestReviewCommand.Usage);
+        Assert.StartsWith("usage: daoris quest review <id> reviewed|not-yet|skip [\"…\"]", QuestReviewCommand.Usage);
     }
 
     private static QuestView Step() => ReviewStandIn.Step();

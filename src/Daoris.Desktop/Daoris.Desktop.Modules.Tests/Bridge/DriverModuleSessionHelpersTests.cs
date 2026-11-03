@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// *Ask another agent…* over the bridge (MIXAGENT2b, D163 point 2; the mixed-agents design §3, §5): the person's own ask of a
-/// helper for a session, the file `daoris-driver sessions helper` writes, judged as that verb judges; the session's asks as its
+/// helper for a session, the file `daoris session helper` writes, judged as that verb judges; the session's asks as its
 /// page lists them, each with where the driver's look left it; and the person's yes to an agent's ask that waits on it under the
 /// `helpers` rule's `ask`, the `approved` state the look reads.
 /// </summary>

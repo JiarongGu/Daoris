@@ -266,7 +266,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// 🔴 The desktop and a verb: while this process writes the checkout, <c>daoris-driver trees sync --yes</c> in its own process leaves the
+    /// 🔴 The desktop and a verb: while this process writes the checkout, <c>daoris tree sync --yes</c> in its own process leaves the
     /// line, naming what this process said it holds it for; once this one lets go, the verb pulls it.
     /// </summary>
     [Fact]

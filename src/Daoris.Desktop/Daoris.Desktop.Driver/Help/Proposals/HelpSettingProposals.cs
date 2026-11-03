@@ -108,27 +108,27 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         switch (proposal.Door)
         {
             case "drive":
-                planned = ($"Drive `{target}`: a quest for it starts a session on this machine.", $"daoris driver drive {target}", c => c.WithDrivable(target!, true));
+                planned = ($"Drive `{target}`: a quest for it starts a session on this machine.", $"daoris place drive {target}", c => c.WithDrivable(target!, true));
                 break;
             case "undrive":
-                planned = ($"Stop driving `{target}`.", $"daoris driver undrive {target}", c => c.WithDrivable(target!, false));
+                planned = ($"Stop driving `{target}`.", $"daoris place undrive {target}", c => c.WithDrivable(target!, false));
                 break;
             case "hold":
-                planned = ($"Hold `{target}`: nothing new starts there until it is resumed.", $"daoris driver hold {target}", c => c.WithHold(target!, true));
+                planned = ($"Hold `{target}`: nothing new starts there until it is resumed.", $"daoris place hold {target}", c => c.WithHold(target!, true));
                 break;
             case "resume":
-                planned = ($"Resume `{target}`.", $"daoris driver resume {target}", c => c.WithHold(target!, false));
+                planned = ($"Resume `{target}`.", $"daoris place resume {target}", c => c.WithHold(target!, false));
                 break;
             case "trees":
                 planned = value == "on"
-                    ? ($"Sessions in `{target}` open their own tree.", $"daoris driver trees {target} on", c => c.WithTrees(target!, true))
-                    : ($"Sessions in `{target}` work in its checkout.", $"daoris driver trees {target} off", c => c.WithTrees(target!, false));
+                    ? ($"Sessions in `{target}` open their own tree.", $"daoris place trees {target} on", c => c.WithTrees(target!, true))
+                    : ($"Sessions in `{target}` work in its checkout.", $"daoris place trees {target} off", c => c.WithTrees(target!, false));
                 break;
             case "line":
             {
                 var branch = value == "--clear" ? null : value;
                 planned = (branch is null ? $"Clear {whose}'s line." : $"Set {whose}'s line to `{branch}`.",
-                    $"daoris driver line {scope} {value}",
+                    $"daoris place line {scope} {value}",
                     c => workspace is { Length: > 0 } ? c.WithWorkspaceLine(workspace, branch) : c.WithLine(target!, branch));
                 break;
             }
@@ -149,20 +149,20 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             case "standing":
             {
                 // KNOWUSE1b (D135 §3): the person's words for one repository, kept on this machine as `SET_STANDING` and
-                // `daoris driver standing` keep them; `--clear` takes the answer back.
+                // `daoris place standing` keep them; `--clear` takes the answer back.
                 var says = value == "--clear" ? null : value;
                 var at = DateTimeOffset.UtcNow;
                 planned = (says is null
                         ? $"Clear `{target}`'s standing answer: its sessions are handed none."
                         : $"Keep a standing answer for `{target}`, handed to every session in `{target}` beneath its quest: \"{says}\"",
-                    $"daoris driver standing {target} {(says is null ? "--clear" : $"\"{says.Replace("\"", "\\\"", StringComparison.Ordinal)}\"")}",
+                    $"daoris place standing {target} {(says is null ? "--clear" : $"\"{says.Replace("\"", "\\\"", StringComparison.Ordinal)}\"")}",
                     c => c.WithStanding(target!, says, at));
                 break;
             }
             case "language":
             {
                 // LANG1c (D142 point 7): the work's session language, for a repository or a workspace, judged by the closed
-                // table as `SET_LANGUAGE` and `daoris driver language` judge it. A door since LANG1c2, whose service writer
+                // table as `SET_LANGUAGE` and `daoris place language` judge it. A door since LANG1c2, whose service writer
                 // checks only the shape; the registry and the workspace are judged here.
                 var circle = workspace is { Length: > 0 };
                 if (circle == target is { Length: > 0 })
@@ -174,7 +174,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 if (value != "--clear" && code is null)
                 {
                     return Refused(value.Length == 0
-                        ? "`language` names a language, `en` or `zh`, or `--clear` — e.g. `daoris driver language engine zh`."
+                        ? "`language` names a language, `en` or `zh`, or `--clear` — e.g. `daoris place language engine zh`."
                         : SessionLanguages.Refusal(value), "", "");
                 }
 
@@ -188,7 +188,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                             : $"Sessions in `{target}` write to you in {language}")
                           + ": a question to you, a closing note, a decline's reason, their last words. The window's own language "
                           + "stays yours, in Settings → Appearance.",
-                    $"daoris driver language {scope} {code ?? "--clear"}",
+                    $"daoris place language {scope} {code ?? "--clear"}",
                     c => circle ? c.WithWorkspaceLanguage(workspace!, code) : c.WithLanguage(target!, code));
                 break;
             }
@@ -222,21 +222,21 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             }
             case "notify" when value is "on" or "off":
                 planned = (value == "on" ? "Say so when a session parks, or ends without being asked." : "Stop saying so when a session parks.",
-                    $"daoris driver notify {value}", c => c.WithNotify(value == "on"));
+                    $"daoris settings notify {value}", c => c.WithNotify(value == "on"));
                 break;
-            // HELP9: the dial only a terminal set before, judged as `daoris driver cap` takes it.
+            // HELP9: the dial only a terminal set before, judged as `daoris settings cap` takes it.
             case "cap" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1:
                 planned = (cap == 1 ? "Run one session at a time on this machine, across every repository."
                         : $"Run at most {cap} sessions at once on this machine, across every repository.",
-                    $"daoris driver cap {cap}", c => c.WithCap(cap));
+                    $"daoris settings cap {cap}", c => c.WithCap(cap));
                 break;
-            // TOOL4l-b (D125 §6): how long an account cools when its limit names no time, as `daoris driver cooloff` takes it;
+            // TOOL4l-b (D125 §6): how long an account cools when its limit names no time, as `daoris settings cooloff` takes it;
             // a zero would start a spent account again at every look, so less than a minute falls to the refusal below.
             case "cooloff" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1:
                 planned = ($"An account whose limit names no time cools for {cool} minute{(cool == 1 ? "" : "s")} before it is offered again.",
-                    $"daoris driver cooloff {cool}", c => c.WithCoolOff(cool));
+                    $"daoris settings cooloff {cool}", c => c.WithCoolOff(cool));
                 break;
-            // KEEP1d (D195 point 2; the cleanup design §2.2): one kind's keep rule, its words `<kind> <rule>` as `daoris driver keep`
+            // KEEP1d (D195 point 2; the cleanup design §2.2): one kind's keep rule, its words `<kind> <rule>` as `daoris settings keep`
             // takes them, judged by the one judgement the terminal and SET_KEEP make, so a value out of its bounds is refused here.
             case "keep":
             {
@@ -255,7 +255,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 }
 
                 var said = KeepRules.Said(set.Kind, after.Keep);
-                planned = ($"{char.ToUpperInvariant(said[0])}{said[1..]}.", $"daoris driver keep {set.Kind} {words[1]}", c => KeepRules.Apply(c, set));
+                planned = ($"{char.ToUpperInvariant(said[0])}{said[1..]}.", $"daoris settings keep {set.Kind} {words[1]}", c => KeepRules.Apply(c, set));
                 break;
             }
             default:
@@ -277,7 +277,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// <c>retry</c> (HELP10, D110), as <c>daoris driver retry</c> reads it: a quest by id, <c>#</c> or not, which the
+    /// <c>retry</c> (HELP10, D110), as <c>daoris quest retry</c> reads it: a quest by id, <c>#</c> or not, which the
     /// loop's last look parked by its strikes, marked forgiven at its failures as that look counted them, as
     /// <c>RETRY_QUEST</c> marks it (RETRY1b); or one the person's stop holds (SESSUX1b, D126 §3.4), released from the
     /// session the look named, as <c>RETRY_QUEST</c> releases it. Either is said in the terminal's words.
@@ -293,7 +293,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         if (quest.Length == 0)
         {
             return new HelpPlan(
-                "`retry` names the quest its failed sessions parked or your stop holds, by id — `daoris driver retry <quest>`.",
+                "`retry` names the quest its failed sessions parked or your stop holds, by id — `daoris quest retry <quest>`.",
                 "", "", null);
         }
 
@@ -302,12 +302,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             return new HelpPlan(null,
                 $"Quest `#{quest}` is released from your stop of session `{stopped.Session}`: the driver takes it up again at its "
                 + "next look, and a later stop holds it again.",
-                $"daoris driver retry {quest} --session {stopped.Session}",
+                $"daoris quest retry {quest} --session {stopped.Session}",
                 // RETRY_QUEST's own edit for a stop: released from that session, and no mark, since a stop is not a strike.
                 c => c.WithReleased(quest, stopped.Session));
         }
 
-        var terminal = $"daoris driver retry {quest}";
+        var terminal = $"daoris quest retry {quest}";
         if (facts.Parked.FirstOrDefault(parked => string.Equals(parked.Quest, quest, StringComparison.OrdinalIgnoreCase))
             is not { } parkedQuest)
         {
@@ -333,7 +333,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// <c>landing</c>, as <c>daoris driver landing</c> reads its words (HELP8): the form, a branch's pattern, and <c>--tidy</c>,
+    /// <c>landing</c>, as <c>daoris place landing</c> reads its words (HELP8): the form, a branch's pattern, and <c>--tidy</c>,
     /// <c>--plugin &lt;id&gt;</c>, <c>--auto-accept</c> or <c>--no-auto-accept</c> (LAND2a), <c>--key &lt;shape&gt;</c> or
     /// <c>--no-key</c> (PROCESS1b-i) and <c>--squash</c> or <c>--no-squash</c> (PROCESS1b-ii) in any order, a quoted word kept
     /// whole; each refused as the terminal refuses it, and the rule's shape by its edit, in <see cref="LandingRules.Problem(LandingRule)"/>'s words.
@@ -363,7 +363,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var unsquashed = words.Remove("--no-squash");
         var keyless = words.Remove("--no-key");
 
-        // Refused in the order `daoris driver landing` refuses them.
+        // Refused in the order `daoris place landing` refuses them.
         var (key, keyMissing) = Valued(words, "--key");
         if (keyMissing) return ($"`--key` needs the shape of a ticket's key — `--key <shape>`, e.g. `--key \"{LandingRules.DefaultKey}\"`.", default);
         if (key is not null && keyless) return ("a rule names its ticket's key or reads the default — say `--key <shape>` or `--no-key`, not both.", default);
@@ -423,7 +423,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
         if (leaves is { Squash: true }) lands += " " + LandingRules.Squashed;
         else if (leaves is { Form: LandingForm.Branch } && unsquashed) lands += " The branch holds the session's own commits.";
-        return (null, (lands, $"daoris driver landing {scope} {value}",
+        return (null, (lands, $"daoris place landing {scope} {value}",
             c => circle ? c.WithWorkspaceLanding(workspace!, Kept(c)) : c.WithLanding(target!, Kept(c))));
     }
 
@@ -441,7 +441,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
 
     /// <summary>
-    /// <c>across</c> (HELP9, D107), as <c>daoris driver across</c> reads its words: <c>read on|off|--clear</c> for a
+    /// <c>across</c> (HELP9, D107), as <c>daoris place across</c> reads its words: <c>read on|off|--clear</c> for a
     /// repository or a whole workspace, or <c>write-to &lt;other&gt; [--clear]</c> from a repository, <c>--clear</c>
     /// wherever it stands — said as the terminal says it, or refused in its words.
     /// </summary>
@@ -464,7 +464,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 bool? read = words.Count == 2 && !clear ? words[1] switch { "on" => true, "off" => false, _ => null } : null;
                 if (clear ? words.Count != 1 : read is null)
                 {
-                    return ("`across … read` is `read on|off|--clear` — e.g. `daoris driver across engine read off`.", default);
+                    return ("`across … read` is `read on|off|--clear` — e.g. `daoris place across engine read off`.", default);
                 }
 
                 var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target;
@@ -479,14 +479,14 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                         : $"`{target}` takes its workspace's reading again, else on.",
                 };
                 if (circle && read is not null) describe += " A repository with a setting of its own keeps it.";
-                return (null, (describe, $"daoris driver across {scope} read {(clear ? "--clear" : words[1])}",
+                return (null, (describe, $"daoris place across {scope} read {(clear ? "--clear" : words[1])}",
                     c => circle ? c.WithWorkspaceReadAcross(workspace!, read) : c.WithReadAcross(target!, read)));
             }
             case "write-to":
             {
                 if (circle || !named)
                 {
-                    return ("a relationship is declared from one repository — `daoris driver across <repository> write-to <other>`.", default);
+                    return ("a relationship is declared from one repository — `daoris place across <repository> write-to <other>`.", default);
                 }
 
                 if (words.Count > 2)
@@ -506,12 +506,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                     : $"Sessions in `{target}` may also write into `{other}` — its files, and a commit there — where both are in one "
                       + "workspace with a checkout here. Applying it is your standing say-so for writing across, one way: "
                       + $"`{other}` writes nothing into `{target}` unless you declare that too.";
-                return (null, (describe, $"daoris driver across {target} write-to {other}{(clear ? " --clear" : "")}",
+                return (null, (describe, $"daoris place across {target} write-to {other}{(clear ? " --clear" : "")}",
                     c => c.WithWriteAcross(target!, other, !clear)));
             }
             default:
-                return ("`across` sets `read on|off|--clear` or `write-to <other> [--clear]` — e.g. `daoris driver across engine read off`, "
-                    + "`daoris driver across plugins write-to engine`.", default);
+                return ("`across` sets `read on|off|--clear` or `write-to <other> [--clear]` — e.g. `daoris place across engine read off`, "
+                    + "`daoris place across plugins write-to engine`.", default);
         }
     }
 
@@ -519,10 +519,10 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     private const string ReviewUsage =
         "`review` is `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] "
         + "[--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` — e.g. "
-        + "`daoris driver review storefront dev --kind local --procedure README.md --address http://localhost:4200 --required`.";
+        + "`daoris place review storefront dev --kind local --procedure README.md --address http://localhost:4200 --required`.";
 
     /// <summary>
-    /// <c>review</c> (REVIEWENV1a, D154 point 2, the review-environment design §1.7), as <c>daoris driver review</c> reads its
+    /// <c>review</c> (REVIEWENV1a, D154 point 2, the review-environment design §1.7), as <c>daoris place review</c> reads its
     /// words: an environment added or replaced with its parts, <c>none</c>, <c>--drop</c>, <c>--required|--not-required</c>
     /// or <c>--clear</c>, for a repository or a whole workspace, a quoted word kept whole. Judged by the twin's table
     /// (<see cref="ReviewRules.Apply"/>), and an environment's procedure looked for in the checkouts it reaches, as the
@@ -631,7 +631,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             ? [.. ReviewRules.Says(standing), .. ReviewRules.Gate(standing)]
             : [];
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
-        return (null, (string.Join(" ", [head, .. said, .. notes]), $"daoris driver review {scope} {value}", c => ReviewRules.Apply(c, edit)));
+        return (null, (string.Join(" ", [head, .. said, .. notes]), $"daoris place review {scope} {value}", c => ReviewRules.Apply(c, edit)));
     }
 
     /// <summary>What an <c>opinion</c> proposal's words may say, in the refusal that names the shape.</summary>
@@ -741,10 +741,10 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <summary>What a <c>helpers</c> proposal's words may say, in the refusal that names the shape.</summary>
     private const string HelpersUsage =
         "`helpers` is `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear` — e.g. "
-        + "`daoris driver helpers web-app --mode on --agents codex-acp`.";
+        + "`daoris place helpers web-app --mode on --agents codex-acp`.";
 
     /// <summary>
-    /// <c>helpers</c> (DOORS1a; D163 point 3, MIXAGENT2a-i), as <c>daoris driver helpers</c> reads its words: <c>--mode</c> and
+    /// <c>helpers</c> (DOORS1a; D163 point 3, MIXAGENT2a-i), as <c>daoris place helpers</c> reads its words: <c>--mode</c> and
     /// <c>--agents</c> set over the rule set there, or <c>--clear</c>, for a repository or a whole workspace, a quoted list kept
     /// whole. Judged by the twin's table (<see cref="HelperRules.Apply"/>); the card says the rule it leaves and what an agent's
     /// ask then does, in the terminal's sentences.
@@ -793,16 +793,16 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 ? $"Clear workspace `{workspace}`'s helpers rule: each repository there keeps its own, else each helper waits for your yes."
                 : $"Clear `{target}`'s helpers rule: it takes its workspace's again, else each helper waits for your yes.";
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
-        return (null, (describe, $"daoris driver helpers {scope} {value}", c => HelperRules.Apply(c, edit)));
+        return (null, (describe, $"daoris place helpers {scope} {value}", c => HelperRules.Apply(c, edit)));
     }
 
     /// <summary>What a <c>commits</c> proposal's words may say, in the refusal that names the shape.</summary>
     private const string CommitsUsage =
         "`commits` is `--mode as-you-go|ask|at-end` and/or `--convention \"<your words>\"` (one paragraph, at most 400 characters) or "
-        + "`--no-convention`, or `--clear` — e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`.";
+        + "`--no-convention`, or `--clear` — e.g. `daoris place commits web-app --mode ask --convention \"Imperative subject line.\"`.";
 
     /// <summary>
-    /// <c>commits</c> (DOORS1a; D164's amendment points 1 and 5, PROCESS1a), as <c>daoris driver commits</c> reads its words:
+    /// <c>commits</c> (DOORS1a; D164's amendment points 1 and 5, PROCESS1a), as <c>daoris place commits</c> reads its words:
     /// <c>--mode</c> and <c>--convention</c> set over the rule set there, <c>--no-convention</c> the empty convention that takes
     /// the standing one away, or <c>--clear</c>, for a repository or a whole workspace, a quoted convention kept whole. Judged by
     /// the twin's table (<see cref="CommitRules.Apply"/>); the card says how work is then committed, in the terminal's sentences,
@@ -861,7 +861,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 ? $"Clear workspace `{workspace}`'s commit rule: each repository there keeps its own, else work is committed as it goes."
                 : $"Clear `{target}`'s commit rule: it takes its workspace's again, else work is committed as it goes.";
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
-        return (null, (describe, $"daoris driver commits {scope} {value}", c => CommitRules.Apply(c, edit)));
+        return (null, (describe, $"daoris place commits {scope} {value}", c => CommitRules.Apply(c, edit)));
     }
 
     /// <summary>
@@ -948,7 +948,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// <c>git-use</c> (GITAUTH1e, D198 point 15; the git-auth design §9), as <c>daoris-driver git use</c> reads it: a repository's remote
+    /// <c>git-use</c> (GITAUTH1e, D198 point 15; the git-auth design §9), as <c>daoris git use</c> reads it: a repository's remote
     /// (<c>origin</c> unless <c>--remote</c> names one) or, with <c>--host</c> and the target a workspace, a workspace's host pointed at an
     /// identity that exists on this machine, or cleared with <c>--clear</c>. Never <c>own</c>: the person's own sign-ins are a widening
     /// only the person's press makes; never an identity created, tested or removed.
@@ -989,7 +989,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 return Refused($"git identity `{identity.Label}` is for {identity.Host}, not {GitIdentityActs.HostOf(host)}.");
             return new HelpPlan(null,
                 identity is null ? $"Take back workspace `{workspace}`'s choice of git identity for {host}." : $"Use git identity `{identity.Label}` for {host} in workspace `{workspace}`.",
-                $"daoris-driver git use --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} --host {host}{(identity is null ? " --clear" : named)}", c => c)
+                $"daoris git use --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} --host {host}{(identity is null ? " --clear" : named)}", c => c)
             { GitUse = new HelpGitUse("workspace", null, workspace, remote, host, identity?.Id) };
         }
 
@@ -997,7 +997,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         remote ??= "origin";
         return new HelpPlan(null,
             identity is null ? $"Take back the git identity chosen for {remote} of `{target}`." : $"Use git identity `{identity.Label}` for {remote} of `{target}`.",
-            $"daoris-driver git use {target}{(remote == "origin" ? "" : $" --remote {remote}")}{(identity is null ? " --clear" : named)}", c => c)
+            $"daoris git use {target}{(remote == "origin" ? "" : $" --remote {remote}")}{(identity is null ? " --clear" : named)}", c => c)
         { GitUse = new HelpGitUse("repository", target, null, remote, null, identity?.Id) };
     }
 

@@ -148,7 +148,7 @@ describe('a setting row', () => {
       <Tooltip.Provider>
         <SettingRow
           label="Park a quest after this many failed sessions"
-          hint="Also `daoris driver strikes <n>`."
+          hint="Also `daoris settings cap <n>`."
           why="One quest whose session could not start ran eighteen times."
           control={<input aria-label="count" defaultValue="3" />}
         >
@@ -158,7 +158,7 @@ describe('a setting row', () => {
     );
 
     expect(screen.getByText('Park a quest after this many failed sessions')).toBeTruthy();
-    expect(screen.getByText(code(/daoris driver strikes/))).toBeTruthy();
+    expect(screen.getByText(code(/daoris settings cap/))).toBeTruthy();
     expect(screen.getByLabelText('count')).toBeTruthy();
     expect(screen.getByText('zero means it keeps trying')).toBeTruthy();
     // The why is announced on its glyph and is not a paragraph anyone has to scroll past.
@@ -491,7 +491,7 @@ describe('the strip mark', () => {
 
 /**
  * The catalogues and the service mark a command or a name with backticks, and nothing rendered them:
- * the installed window printed `daoris driver notify on|off` with its backticks, in both languages.
+ * the installed window printed `daoris settings notify on|off` with its backticks, in both languages.
  */
 describe('a code span in a sentence', () => {
   it('sets a backticked span as code and drops the backticks, the words unchanged', () => {
@@ -510,8 +510,8 @@ describe('a code span in a sentence', () => {
   });
 
   it('is the setting row hint, because every hint is a sentence of the console', () => {
-    const { container } = render(<SettingRow label="notify" hint="Also `daoris driver notify on|off`." />);
-    expect(container.querySelector('code')).toHaveTextContent('daoris driver notify on|off');
+    const { container } = render(<SettingRow label="notify" hint="Also `daoris settings notify on|off`." />);
+    expect(container.querySelector('code')).toHaveTextContent('daoris settings notify on|off');
   });
 });
 
@@ -523,7 +523,7 @@ describe('a code span in a sentence', () => {
  * boxes are the span's only loose text.
  */
 describe('a code span breaks only between its words', () => {
-  const COMMAND = 'daoris agent profile use claude-code --keep <account>|--no-keep --workspace work';
+  const COMMAND = 'daoris agent account use claude-code --keep <account>|--no-keep --workspace work';
 
   /** Each word's box, or the span itself where it is one word, with what lies loose between them. */
   const boxesOf = (code: Element) => ({

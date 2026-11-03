@@ -4,7 +4,7 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// The <c>setup</c> kind's writer (LAYOUT8, D170 point 1; WORKFLOWCLEAN1 1f): a place's set-up of registered repositories, by the
-/// registry's names, whose adoption part is <c>daoris-driver place … --adoption</c>; its one door is <c>place</c>.
+/// registry's names, whose adoption part is <c>daoris place … --adoption</c>; its one door is <c>place</c>.
 /// </summary>
 public sealed class HelpSetupProposalTests : HelpProposalBoxFixture
 {

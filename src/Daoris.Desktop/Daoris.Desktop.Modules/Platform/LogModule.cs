@@ -15,7 +15,7 @@ namespace Daoris.Desktop;
 /// one.</para>
 ///
 /// <para><b><c>LINES</c></b> reads every source's lines through <see cref="MachineLogReader"/>, the
-/// reader <c>daoris-driver logs</c> uses (D50: the two doors filter alike), with the filters applied here
+/// reader <c>daoris logs</c> uses (D50: the two doors filter alike), with the filters applied here
 /// and a cap, so the page is handed the recent lines and never the month. <b><c>OPEN_FOLDER</c></b> opens
 /// the log's own folder in the file manager; the page names no path. Both are the shell's only: no HTTP
 /// route serves the log, and a browser sees none of it (D47 §4).</para>

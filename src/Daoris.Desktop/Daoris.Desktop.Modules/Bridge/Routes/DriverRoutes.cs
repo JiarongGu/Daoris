@@ -65,7 +65,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Session trees (D51): the desktop's half of the standing opt-in, over the same file
-    // `daoris driver trees <repo> on|off` edits — two editors, one truth (D50).
+    // `daoris place trees <repo> on|off` edits — two editors, one truth (D50).
     [DriverRoute("SET_TREES")]
     [Publishes("SET_TREES", StateScopes.Driver)]
     private object? SetTrees(IpcRequest request)
@@ -89,7 +89,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // A repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, over the same
-    // file `daoris driver standing <repo> "…"|--clear` edits — one truth, two doors (D50). No words clears it; blank words or
+    // file `daoris place standing <repo> "…"|--clear` edits — one truth, two doors (D50). No words clears it; blank words or
     // words past the bound are the driver's refusal.
     [DriverRoute("SET_STANDING")]
     [Publishes("SET_STANDING", StateScopes.Driver)]
@@ -103,7 +103,7 @@ public sealed class DriverRoutes(DriverContext context)
 
     /// <summary>
     /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none (HEAVYRUN1b2b, D180's HEAVYRUN1b2a
-    /// note), the setup page's half of <c>daoris-driver heavy</c> over the same key (D50): <c>repository</c>, and <c>gates</c>, the whole
+    /// note), the setup page's half of <c>daoris place heavy</c> over the same key (D50): <c>repository</c>, and <c>gates</c>, the whole
     /// list in the order its gates run, each <c>{name, run, cwd?}</c>, or none or null to clear it. Judged by
     /// <see cref="HeavyMapping.Apply"/> against the file before anything is written, so a list the mapping would not read is refused
     /// whole in its words. Never an edit to the repository; one gate at a time is not offered, since the list's order is the point.
@@ -257,7 +257,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Whether this machine interrupts the person at all (SURF5b). The same file
-    // `daoris driver notify on|off` edits — one truth, two doors (D50).
+    // `daoris settings notify on|off` edits — one truth, two doors (D50).
     [DriverRoute("SET_NOTIFY")]
     [Publishes("SET_NOTIFY", StateScopes.Driver)]
     private object? SetNotify(IpcRequest request)
@@ -268,7 +268,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // How long an account cools when its agent names no time: whole minutes, at least one, the same
-    // `cooloff` `daoris driver cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
+    // `cooloff` `daoris settings cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_COOLOFF")]
     [Publishes("SET_COOLOFF", StateScopes.Driver)]
     private object? SetCoolOff(IpcRequest request)
@@ -280,7 +280,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2, §4.4): the set-aside folders' days, `whole` or not, the
-    // downloads' days or `never`, the logs' days, or a kind's default again; the same `keep` `daoris driver keep` edits, judged by the
+    // downloads' days or `never`, the logs' days, or a kind's default again; the same `keep` `daoris settings keep` edits, judged by the
     // one judgement (`KeepRules.Apply`) before anything is written, a value out of its bounds refused as KEEP_OUT_OF_RANGE. What the
     // Disk space card shows moves with it, so it declares the wiring with the state.
     [DriverRoute("SET_KEEP")]
@@ -306,7 +306,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // How many sessions Daoris starts at once on this machine (CAPSET1, D130's CAPCOUNT1 note): the person's dial, the same
-    // `cap` `daoris driver cap <n>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
+    // `cap` `daoris settings cap <n>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_CAP")]
     [Publishes("SET_CAP", StateScopes.Driver)]
     private object? SetCap(IpcRequest request)
@@ -340,7 +340,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role, the seed's and the person's, with its work, scope and
-    // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
+    // stored choices, and the work codes a role may take; a read, the same `daoris role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
     [ByEvent("ROLES", Untold = "the store's roles, role policies, rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
@@ -540,7 +540,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Ask Daoris's access mode: `restricted` or `full`, the person's press alone, over the same key
-    // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
+    // `daoris ask-daoris mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
     // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.
     // A mode it does not know, or none, is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_MODE")]
@@ -646,7 +646,7 @@ public sealed class DriverRoutes(DriverContext context)
         var considered = _loop.Look.Latest
             ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken, _loop.Home)
                 .ConfigureAwait(false);
-        // PUSH1f2a: the verdict's switch is the library's operation, which `daoris-driver driver retry` acting alone calls too; a
+        // PUSH1f2a: the verdict's switch is the library's operation, which `daoris quest retry` acting alone calls too; a
         // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
         var decision = QuestRetry.Decide(quest, considered);
         _context.Change(decision.Change);
@@ -692,7 +692,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // *Sync now* (SYNC6b): the tick's own pass for one circle, through the loop's own set —
-    // `daoris-driver sync` is the other door to the same pass (D50). What it says comes back
+    // `daoris remote sync` is the other door to the same pass (D50). What it says comes back
     // in the driver's words; a circle with no remote is its refusal, mapped above. A pass can move where each circle stands,
     // the quests and sessions it fed, and the registry, and a wall it hit is answered as its report (STATEHUB1d, D169).
     [DriverRoute("SYNC_NOW")]

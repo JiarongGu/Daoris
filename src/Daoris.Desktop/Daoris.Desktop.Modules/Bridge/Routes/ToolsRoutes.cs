@@ -145,7 +145,7 @@ public sealed class ToolsRoutes(DriverContext context)
             case "file":
             {
                 // Checked before it is written (§4.1): a file that is there, by its whole path, that starts and answers a
-                // version. The library's operation (PUSH1f2c), which `daoris-driver tool use … file` calls alone; its coded
+                // version. The library's operation (PUSH1f2c), which `daoris tool use … file` calls alone; its coded
                 // refusals are the module's one mapping's (ToolCodes).
                 var file = Optional(request, "file") ?? "";
                 var version = await ToolChoices.UseFileAsync(home, declared.Id, file, VersionOfAsync, cancellationToken);
@@ -177,7 +177,7 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     // A downloaded version nothing uses, removed (§3.6): the one in use refuses, and so does one the system holds. Its coded refusals
-    // (missing, in use, held) are the module's one mapping's (ToolCodes, PUSH1f2c), the codes `daoris-driver tool delete` says alone.
+    // (missing, in use, held) are the module's one mapping's (ToolCodes, PUSH1f2c), the codes `daoris tool delete` says alone.
     // KEEP1b (D195 point 6): through the downloads' one act, judged under the use files' locks against the running sessions, moved aside
     // first; off the window's thread, since it asks the service and walks the version.
     [DriverRoute("TOOLS_DELETE")]
@@ -243,7 +243,7 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     // Settings → Git (GITAUTH1e, the git-auth design §7.1-§7.2): one act on an identity — add (ssh or https), test, rename, commits-as,
-    // read-only, remove, default — the screen's half of `daoris-driver git identity` and `git default`, over the same typed operations.
+    // read-only, remove, default — the screen's half of `daoris git identity` and `git default`, over the same typed operations.
     // The page is the person's own press, so a widening is confirmed in place before it is sent. A change lifts every hold, so each
     // remote is tried once with what now serves it (§5.2).
     [DriverRoute("GIT_IDENTITY")]
@@ -317,7 +317,7 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     // A repository's remote, a workspace's host or this machine's host pointed at an identity, at the person's own sign-ins, or cleared
-    // (`daoris-driver git use`). Two remotes at one address must point at one identity: the operation refuses otherwise.
+    // (`daoris git use`). Two remotes at one address must point at one identity: the operation refuses otherwise.
     [DriverRoute("GIT_USE")]
     [Publishes("GIT_USE", StateScopes.Tools | StateScopes.Driver)]
     private async Task<object?> GitUseAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -569,7 +569,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
         var answer = await ToolQuestions.AskAsync(file, tool.Version, ct);
         var version = answer.Started ? ToolQuestions.VersionIn(answer.Output) : null;
-        // The words ToolQuestions.VersionOfAsync says for a file that answered none, which `daoris-driver tool use … file` asks alone.
+        // The words ToolQuestions.VersionOfAsync says for a file that answered none, which `daoris tool use … file` asks alone.
         var problem = answer.Problem
             ?? (version is null ? $"{file} answered no version to `{string.Join(' ', tool.Version)}`" : null);
         if (!answer.Started || answer.ExitCode is not null) _versions[file] = (info.LastWriteTimeUtc, info.Length, version, problem);

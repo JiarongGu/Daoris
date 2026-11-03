@@ -58,7 +58,13 @@ public static class ChoiceArgs
     /// <summary>The verb's name, the first operand after it: a flag's value is never the name (REV3).</summary>
     public static string Named(IReadOnlyList<string> args, string verb) =>
         Operands(args, ["--at", "--session"]).ElementAtOrDefault(1)
-        ?? throw new ChoiceWords($"`driver {verb}` needs a name — e.g. `daoris driver {verb} aurora-engine`.");
+        ?? throw new ChoiceWords($"`driver {verb}` needs a name — e.g. `daoris {Tree(verb)} aurora-engine`.");
+
+    /// <summary>A verb of these words as the tree spells it: <c>quest retry</c>, a machine setting's, or a place's.</summary>
+    private static string Tree(string verb) =>
+        verb == "retry" ? "quest retry"
+        : CommandWords.Group("settings")!.Verbs.Contains(verb, StringComparer.Ordinal) ? $"settings {verb}"
+        : $"place {verb}";
 
     /// <summary>The positional operands, in order: every token that is neither a flag nor the value of one (the CLI's <c>operands</c>).</summary>
     public static List<string> Operands(IReadOnlyList<string> args, string[] valued)

@@ -146,7 +146,7 @@ export function planOf(ask: PlaceAsk, mix: Record<string, Partial<PlaceRepositor
     repositories: rows,
     changes,
     refusals,
-    terminal: `daoris-driver place ${ask.repositories.join(' ')} --preset ${ask.preset}${ask.adoption ? ' --adoption' : ''} --plan`,
+    terminal: `daoris place ${ask.repositories.join(' ')} --preset ${ask.preset}${ask.adoption ? ' --adoption' : ''} --plan`,
     applies: refusals.length === 0,
     digest: digestOf(ask),
   };

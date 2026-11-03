@@ -90,9 +90,9 @@ public sealed class HistoryCommandTests : IDisposable
     public void The_usage_names_each_verb_and_the_hosts_usage_carries_them()
     {
         Assert.Equal(
-            "usage: daoris-driver history [--workspace <name>] [--json]\n"
-            + "       daoris-driver history clear --workspace <name> [--yes]\n"
-            + "       daoris-driver quest clear <id> [--failed] [--yes]  ·  daoris-driver ask --clear <id> [--yes]",
+            "usage: daoris history [--workspace <name>] [--json]\n"
+            + "       daoris history clear --workspace <name> [--yes]\n"
+            + "       daoris quest clear <id> [--failed] [--yes]  ·  daoris ask clear <id> [--yes]",
             HistoryCommand.Usage.ReplaceLineEndings("\n"));
 
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
@@ -175,7 +175,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.StartsWith("daoris-driver: clearing #q1 would take 1 quest and 2 sessions, with what this machine kept of them (", said);
-        Assert.Contains("their words, transcripts and files. Nothing brings it back; `daoris-driver quest clear q1 --yes` clears it.", said);
+        Assert.Contains("their words, transcripts and files. Nothing brings it back; `daoris quest clear q1 --yes` clears it.", said);
         Assert.Empty(service.Pressed);
         Assert.True(Holds("s1") && Holds("s2"));
         Assert.DoesNotContain(_home, said, StringComparison.OrdinalIgnoreCase);
@@ -349,7 +349,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         Assert.Equal(0, listedExit);
         Assert.StartsWith("daoris-driver: clearing #q1's failed sessions would take 1 session, with what this machine kept of them (", listed);
-        Assert.Contains("#q1 and its other sessions stay. Nothing brings it back; `daoris-driver quest clear q1 --failed --yes` clears it.", listed);
+        Assert.Contains("#q1 and its other sessions stay. Nothing brings it back; `daoris quest clear q1 --failed --yes` clears it.", listed);
         Assert.Contains("  keeps laptop/f2: Session `laptop/f2` ran on `laptop`; its record is theirs.", listed.Split('\n'));
 
         var (exit, said) = await QuestAsync(service, "clear", "q1", "--failed", "--yes");
@@ -386,7 +386,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         Assert.Equal(0, listedExit);
         Assert.StartsWith("daoris-driver: clearing ask #a1 would take 1 ask, 1 quest and 2 sessions, with what this machine kept of them (", listed);
-        Assert.Contains("`daoris-driver ask --clear a1 --yes` clears it.", listed);
+        Assert.Contains("`daoris ask clear a1 --yes` clears it.", listed);
         Assert.Equal(0, exit);
         Assert.StartsWith("daoris-driver: cleared ask #a1 from this machine: 1 ask, 1 quest and 2 sessions, ", said);
         Assert.Equal(["ask:a1"], service.Pressed);
@@ -436,7 +436,7 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.Equal(0, exit);
         var lines = said.TrimEnd('\n').Split('\n');
         Assert.StartsWith("daoris-driver: clearing aurora's finished history would take 1 quest, 1 session and the intake's room, ", lines[0]);
-        Assert.EndsWith(", and keep 1; `daoris-driver history clear --workspace aurora --yes` clears what this list holds. Nothing brings it back.", lines[0]);
+        Assert.EndsWith(", and keep 1; `daoris history clear --workspace aurora --yes` clears what this list holds. Nothing brings it back.", lines[0]);
         Assert.StartsWith("  takes #q1: 1 quest and 1 session, ", lines[1]);
         Assert.Contains(lines, line => line.StartsWith("  takes the intake's room, ", StringComparison.Ordinal));
         Assert.Contains("  keeps #q2: Session `s2`'s tree is still here; clean it up, or discard it, first.", lines);
@@ -493,11 +493,11 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.Equal((0, 0), (readExit, listedExit));
         Assert.StartsWith($"daoris-driver: {workspace} keeps 1 closed quest on this machine, with 1 session: ", read);
         Assert.Contains(read.Split('\n'), line => line.StartsWith("  a clear would take 1 quest and 1 session, ", StringComparison.Ordinal)
-            && line.EndsWith($": `daoris-driver history clear --workspace {spelled}` lists it first.", StringComparison.Ordinal));
+            && line.EndsWith($": `daoris history clear --workspace {spelled}` lists it first.", StringComparison.Ordinal));
         var first = listed.Split('\n')[0];
         Assert.StartsWith($"daoris-driver: clearing {workspace}'s finished history would take 1 quest and 1 session, ", first);
         Assert.EndsWith(
-            $", and keep 0; `daoris-driver history clear --workspace {spelled} --yes` clears what this list holds. Nothing brings it back.", first);
+            $", and keep 0; `daoris history clear --workspace {spelled} --yes` clears what this list holds. Nothing brings it back.", first);
         Assert.Empty(service.Pressed);
     }
 
@@ -534,13 +534,13 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.StartsWith("daoris-driver: aurora keeps 2 closed quests on this machine, with 2 sessions: ", lines[0]);
         Assert.Contains(lines, line => line.StartsWith("  on the disk: ", StringComparison.Ordinal) && line.Contains(" of conversations", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.StartsWith("  a clear would take 1 quest, 1 session and the intake's room, ", StringComparison.Ordinal)
-            && line.EndsWith(": `daoris-driver history clear --workspace aurora` lists it first.", StringComparison.Ordinal));
+            && line.EndsWith(": `daoris history clear --workspace aurora` lists it first.", StringComparison.Ordinal));
         Assert.Contains(
-            "  1 kept: a session's tree is still here; `daoris-driver trees clean` removes it once its work has landed, or "
-            + "`daoris-driver trees remove <session> --force` discards it.",
+            "  1 kept: a session's tree is still here; `daoris tree clean` removes it once its work has landed, or "
+            + "`daoris tree remove <session> --force` discards it.",
             lines);
         Assert.Contains(lines, line => line.StartsWith("  1 conversation that served no quest, ", StringComparison.Ordinal)
-            && line.EndsWith(": a clear never takes one; `daoris-driver sessions delete <id>` does.", StringComparison.Ordinal));
+            && line.EndsWith(": a clear never takes one; `daoris session delete <id>` does.", StringComparison.Ordinal));
         Assert.StartsWith("daoris-driver: the home as a whole: nothing left over from records already gone; the machine log holds ", lines[^1]);
         Assert.Empty(service.Pressed);
         Assert.DoesNotContain(_home, said, StringComparison.OrdinalIgnoreCase);

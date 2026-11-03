@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A person's verification from a terminal (FABRIC-PIPELINE1d): <c>daoris-driver verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c>,
+/// A person's verification from a terminal (FABRIC-PIPELINE1d): <c>daoris gate verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c>,
 /// run in a checkout of that repository. The words and the binding are the library's (<see cref="VerifyCommand"/>); this hands it the home,
 /// the checkout this process runs in and the repository's landed route from the driver's file.
 /// </summary>
@@ -18,7 +18,7 @@ internal static class VerifyConsole
 
         if (DaorisHome.Resolve() is not { } home)
         {
-            Console.Error.WriteLine("verify: a verification run is bound under Daoris's home, and none is named here: run the installed daoris-driver, or name the home with DAORIS_HOME.");
+            Console.Error.WriteLine("verify: a verification run is bound under Daoris's home, and none is named here: run the installed daoris, or name the home with DAORIS_HOME.");
             return 2;
         }
 

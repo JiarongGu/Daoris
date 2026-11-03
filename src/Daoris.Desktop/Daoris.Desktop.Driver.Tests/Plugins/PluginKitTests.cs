@@ -846,7 +846,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Contains("made `acme.gate`", said);
         Assert.Contains("plugin.test.mjs", said);
         Assert.Contains("node --test", said);
-        Assert.Contains("daoris-driver plugins try", said);
+        Assert.Contains("daoris plugin try", said);
         Assert.Contains("daoris plugin add", said);
         Assert.True(File.Exists(Path.Combine(_scratch, "acme.gate", "plugin.mjs")));
     }
@@ -875,7 +875,7 @@ public sealed class PluginKitTests : IDisposable
     [InlineData(new[] { "new", "Acme", "--point", "quest/consider" }, "is not a plugin id")]
     [InlineData(new[] { "try" }, "needs a folder")]
     [InlineData(new[] { "try", "acme.nowhere" }, "no folder `acme.nowhere`")]
-    [InlineData(new[] { "explode" }, "usage: daoris-driver plugins")]
+    [InlineData(new[] { "explode" }, "usage: daoris plugin new")]
     public async Task What_the_terminal_cannot_do_is_a_sentence_and_exit_2(string[] args, string sentence)
     {
         var output = new StringWriter();

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-ii (D208; the supervisor design §2.2, §3.2, §4.4 and §11 row 1a-ii): <c>daoris-driver sessions supervise</c>, the
+/// SUPERVISOR1a-ii (D208; the supervisor design §2.2, §3.2, §4.4 and §11 row 1a-ii): <c>daoris session supervise</c>, the
 /// holder's verb. It has no alone path; it takes no key as an argument and reads it from its terminal's environment alone; it sends
 /// nothing to a pipe whose server is not the install's <c>app/Daoris.Desktop.exe</c>; it sends a proof over the hello's nonce and never
 /// the key, so a fake server that draws its own nonce holds a proof no other nonce verifies, and one that relays a real nonce delivers

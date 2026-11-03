@@ -4,7 +4,7 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// The <c>accept</c> kind's writer (DRIFT1d2, D133 §4): the person's yes to a done's departure from what they required,
-/// by the quest's id — the quest page's *Accept the departure* and <c>daoris-driver quest accept</c>.
+/// by the quest's id — the quest page's *Accept the departure* and <c>daoris quest accept</c>.
 /// </summary>
 public sealed class HelpAcceptProposalTests : HelpProposalBoxFixture
 {

@@ -302,7 +302,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A terminal's `daoris driver line` writes the file no press declares: the home's watch tells the facts (HomeWatch's config topic,
+    /// A terminal's `daoris place line` writes the file no press declares: the home's watch tells the facts (HomeWatch's config topic,
     /// through DriverWatch's Heard), which judge the service's answers again, and their landing wakes the slice.
     /// </summary>
     [Fact]

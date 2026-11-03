@@ -55,7 +55,7 @@
   "person.drainSessions_other": "{{count}} 个会话",
   "person.drainTurns": "{{count}} 轮对话",
   "person.drainTurns_other": "{{count}} 轮对话",
-  "person.drainDoor": "稍后安装只对这个版本暂缓更新；在终端中，daoris-driver update --cancel 效果相同。",
+  "person.drainDoor": "稍后安装只对这个版本暂缓更新；在终端中，daoris update --cancel 效果相同。",
   "person.installLater": "稍后安装",
   "person.restarting": "Daoris 正在重启。",
   "person.unrecorded": "Daoris 暂时无法记下你的回答；未执行任何操作，它仍在等待。",

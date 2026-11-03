@@ -18,11 +18,11 @@ public sealed class HelpGitUseProposalsTests : HelpProposalsFixture
     };
 
     [Theory]
-    [InlineData("engine", null, "Work", "daoris-driver git use engine Work", "Use git identity `Work` for origin of `engine`")]
-    [InlineData("engine", null, "--remote upstream work", "daoris-driver git use engine --remote upstream Work", "for upstream of `engine`")]
-    [InlineData("engine", null, "--clear", "daoris-driver git use engine --clear", "Take back the git identity chosen for origin of `engine`")]
-    [InlineData(null, "work", "--host github.com Work", "daoris-driver git use --workspace work --host github.com Work", "for github.com in workspace `work`")]
-    [InlineData(null, "work", "--host github.com --clear", "daoris-driver git use --workspace work --host github.com --clear", "Take back workspace `work`'s choice")]
+    [InlineData("engine", null, "Work", "daoris git use engine Work", "Use git identity `Work` for origin of `engine`")]
+    [InlineData("engine", null, "--remote upstream work", "daoris git use engine --remote upstream Work", "for upstream of `engine`")]
+    [InlineData("engine", null, "--clear", "daoris git use engine --clear", "Take back the git identity chosen for origin of `engine`")]
+    [InlineData(null, "work", "--host github.com Work", "daoris git use --workspace work --host github.com Work", "for github.com in workspace `work`")]
+    [InlineData(null, "work", "--host github.com --clear", "daoris git use --workspace work --host github.com --clear", "Take back workspace `work`'s choice")]
     public void A_pointer_is_planned_as_what_it_changes_and_the_command_that_does_the_same(string? target, string? workspace, string value, string terminal, string says)
     {
         var plan = HelpProposals.Plan(Setting("git-use", target, workspace, value), DriverConfig.Empty, WithIdentities);

@@ -29,7 +29,7 @@ const PASTED = `to complete this ${URL} so the sprint closes`;
 const ROWS: HelpConversationRow[] = [
   row({ session: 'h1a2b3c4', title: 'Landing on feature branches', name: 'Landing on feature branches', pinned: minutesAgo(60),
     opening: 'how do I make engine land on a feature branch?', last: daysAgo(9),
-    about: 'Repositories → engine → Setup → **Line and landing**, or `daoris driver landing engine branch feature/{slug}`.' }),
+    about: 'Repositories → engine → Setup → **Line and landing**, or `daoris place landing engine branch feature/{slug}`.' }),
   row({ session: 'h2b3c4d5', title: 'why is engine held?', opening: 'why is engine held?', live: true, last: minutesAgo(1),
     about: 'It is held by your press on Repositories → engine; *Resume* lets its quests start again.' }),
   row({ session: 'u1v2w3x4', title: PASTED, opening: PASTED, last: minutesAgo(50), from: 'h1a2b3c4', handed: 'transcript',
@@ -45,7 +45,7 @@ const ROWS: HelpConversationRow[] = [
 
 const CHINESE_ROWS: HelpConversationRow[] = [
   row({ session: 'z1a2b3c4', title: '功能分支上的落地', name: '功能分支上的落地', pinned: minutesAgo(20), last: daysAgo(8),
-    opening: '怎样让 engine 落在功能分支上？', about: '仓库 → engine → 设置 → **主线与落地**，或 `daoris driver landing engine branch feature/{slug}`。' }),
+    opening: '怎样让 engine 落在功能分支上？', about: '仓库 → engine → 设置 → **主线与落地**，或 `daoris place landing engine branch feature/{slug}`。' }),
   row({ session: 'z2b3c4d5', title: '为什么 engine 被暂停了？', live: true, last: minutesAgo(3), about: '是你在仓库 → engine 上按下的暂停；*继续* 会让它的委托重新开始。' }),
   row({ session: 'z3c4d5e6', title: `把 ${URL} 这个工单做完`, last: daysAgo(1), resumable: false, about: `打开了 ${URL} 并读了工单的完整描述。` }),
 ];

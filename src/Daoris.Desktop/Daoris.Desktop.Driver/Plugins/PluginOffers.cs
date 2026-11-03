@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// install makes its <c>data/</c>. The CLI on a terminal has only the home, so it looks beside it; in an
 /// install the two are one folder.</para>
 ///
-/// <para><c>daoris-driver plugin list</c> reads the offers here.</para>
+/// <para><c>daoris plugin list</c> reads the offers here.</para>
 ///
 /// <para>The use case (STRUCT3a): the folders are read through <see cref="PluginFolders"/>, each manifest by the
 /// catalogue's own rules, and a README's needs by <see cref="PluginOffer.NeedsIn"/>.</para>

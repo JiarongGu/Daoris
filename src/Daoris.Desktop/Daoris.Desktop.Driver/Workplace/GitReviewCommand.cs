@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver git review</c> was asked: whose review, and in which form.</summary>
+/// <summary>What <c>daoris git review</c> was asked: whose review, and in which form.</summary>
 /// <param name="Session">The session whose review is read.</param>
 /// <param name="Json">The review written as JSON, its files without their patches, rather than said.</param>
 /// <param name="Time">Each git start the read made, with its node, budget, gate wait, creation and run, and <c>review.read</c> written.</param>
@@ -21,7 +21,7 @@ public sealed record GitReviewSources(
     SessionTrees Trees);
 
 /// <summary>
-/// <c>daoris-driver git review &lt;session&gt; [--json] [--time]</c> (GITAPP1a-i, D202 point 2, the git-app design P1.5, D50): the
+/// <c>daoris git review &lt;session&gt; [--json] [--time]</c> (GITAPP1a-i, D202 point 2, the git-app design P1.5, D50): the
 /// terminal's door to Review's read, through the same code as <c>SESSION_DIFF</c> (<see cref="SessionReviews"/>), and the bench's verb
 /// (§10.3): with <c>--time</c> it prints every git start the read made, by node and budget, with the gate's wait, the creation and the
 /// run apart, and writes <c>review.read</c>.
@@ -37,7 +37,7 @@ public static class GitReviewCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver git review <session> [--json] [--time]
+        usage: daoris git review <session> [--json] [--time]
         """;
 
     /// <summary>Whether the words are this command's.</summary>

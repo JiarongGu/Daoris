@@ -117,7 +117,7 @@ function offersOf(raw: unknown): OfferShown[] {
  * on the machine.
  *
  * **Every act has its terminal twin** (D50), named at the page's foot: `daoris plugin enable|disable|update|remove`,
- * `daoris plugin add --offer`, and `daoris-driver plugins new|try`.
+ * `daoris plugin add --offer`, and `daoris plugin new|try`.
  */
 export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   /** The view is in front: only then is the catalogue asked for. */

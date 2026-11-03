@@ -84,7 +84,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(2, exit);
         Assert.StartsWith("daoris: cannot count the failures of `#q7`: this machine's session records could not be read — No connection could be made.",
             _error.ToString(), StringComparison.Ordinal);
-        Assert.Contains("`daoris driver retry q7 --at <n>`", _error.ToString(), StringComparison.Ordinal);
+        Assert.Contains("`daoris quest retry q7 --at <n>`", _error.ToString(), StringComparison.Ordinal);
         Assert.False(File.Exists(Config));
     }
 

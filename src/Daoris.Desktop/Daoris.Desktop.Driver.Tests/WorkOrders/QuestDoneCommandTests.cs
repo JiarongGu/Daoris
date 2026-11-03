@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// QUESTCLOSE1 (D126's note, D50): <c>daoris-driver quest done</c>, the terminal's door to the person's done, beside the quest
+/// QUESTCLOSE1 (D126's note, D50): <c>daoris quest done</c>, the terminal's door to the person's done, beside the quest
 /// page's <i>Mark done…</i>. It posts the person's words to the service's own door for it, never to respond's, and says the
 /// service's sentence: 0 closed, 1 refused (a closed quest, no such quest), 2 the usage.
 /// </summary>
@@ -82,7 +82,7 @@ public sealed class QuestDoneCommandTests
     public void The_usage_names_the_terminals_done()
     {
         Assert.Contains("\n  quest done <id> [--note \"…\"]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.StartsWith("usage: daoris-driver quest done <id> [--note \"…\"]", QuestDoneCommand.Usage);
+        Assert.StartsWith("usage: daoris quest done <id> [--note \"…\"]", QuestDoneCommand.Usage);
     }
 
     /// <summary>A service standing in: each request answered, or 404 with no JSON where the answer is null.</summary>

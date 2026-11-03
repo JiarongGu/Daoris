@@ -33,7 +33,7 @@ export function sessionChecksToast(t: TFunction, name: string, checks: string | 
 
 /**
  * **A repository's sessions' checks** (FABRIC-PIPELINE1b, the pipeline design §3.1, §3.2): a row of its Setup's *Heavy gates*, the same
- * `sessionChecks` `daoris-driver checks` edits (D50). It says what the choice standing means; under light, its light gates and its heavy
+ * `sessionChecks` `daoris place checks` edits (D50). It says what the choice standing means; under light, its light gates and its heavy
  * gates by name as the driver read them, that an agent which takes no rules from Daoris is told them and refused `run-heavy` rather than
  * refused in its shell, and that nothing runs the heavy gates after a landing yet; and a repository that marks no heavy gate gives its
  * sessions every gate. A press goes out at once and the driver judges it; its refusal is said in its words. The person's choice alone:

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1b (D192 point 4, D50): <c>daoris-driver checks</c>, the terminal's door to which checks a repository's sessions run
+/// FABRIC-PIPELINE1b (D192 point 4, D50): <c>daoris place checks</c>, the terminal's door to which checks a repository's sessions run
 /// under Current. It reads and writes the driver's file alone, through <see cref="SessionChecks.Apply"/>, so it refuses what Setup's door
 /// does, in the same words, with nothing written.
 /// </summary>
@@ -120,7 +120,7 @@ public sealed class SessionChecksCommandTests : IDisposable
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
         Assert.Contains("\n  place checks [<repository> [light | heavy-at-end | --clear]]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver checks [<repository> [light | heavy-at-end | --clear]]", SessionChecksCommand.Usage);
+        Assert.Equal("usage: daoris place checks [<repository> [light | heavy-at-end | --clear]]", SessionChecksCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"checks\", .. var checksArgs])", program);

@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSUX1g (D126 §7.1): <c>daoris-driver sessions</c>, the terminal's door to Sessions. It lists this machine's sessions by
+/// SESSUX1g (D126 §7.1): <c>daoris session list</c>, the terminal's door to Sessions. It lists this machine's sessions by
 /// what they need, from the one reader the screen reads; stops, finishes and declines a session another process runs
 /// through the request its loop honours, and one nothing here runs through the ledger; and archives, unarchives and deletes
 /// through the owners the screen's routes call. Exit codes are the family's: 0 done, 1 refused, 2 could not.
@@ -143,7 +143,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(("start-from", "c0ffee11"), (ask!.Verb, ask.Ids[0]));
         Assert.Null(SessionsCommand.Read(["start-from"], out problem));
         Assert.Equal("`start-from` takes one session's id.", problem);
-        Assert.Contains("daoris-driver sessions start-from <id>", SessionsCommand.Usage);
+        Assert.Contains("daoris session start-from <id>", SessionsCommand.Usage);
         Assert.Contains("\n  session start-from <id>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
     }
 
@@ -171,7 +171,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal((0, "c0ffee11"), (exit, opened));
         Assert.Equal(2, none);
-        Assert.Equal("sessions: no conversation can be opened from here; run `daoris-driver sessions start-from c0ffee11` at a terminal.\n", said);
+        Assert.Equal("sessions: no conversation can be opened from here; run `daoris session start-from c0ffee11` at a terminal.\n", said);
     }
 
     /// <summary>
@@ -337,7 +337,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("Resumes later (1)\n  c00l1ng0  waiting for a limit to reset  engine — Trim the readme", said);
         Assert.DoesNotContain("completed", said);
         Assert.Contains("held: it waits: the `claude` account `work` is cooling until", said);
-        Assert.Contains("`daoris-driver sessions go-on-new c00l1ng0`.", said);
+        Assert.Contains("`daoris session go-on-new c00l1ng0`.", said);
         Assert.DoesNotContain("going on", said);
     }
 
@@ -376,7 +376,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("held: it waits: Every account it may run on is at its limit", said);
         Assert.Contains("Every account it may run on is at its limit: it goes on by itself once the `claude` account `home` is ready again", said);
         Assert.DoesNotContain("so your words wait to go on in it then", said);
-        Assert.Contains("`daoris-driver sessions start-from r3base00`.", said);
+        Assert.Contains("`daoris session start-from r3base00`.", said);
 
         var (_, ready) = await RunAsync(ledger, [], world: Cooling((adapter, profile) => adapter == "claude-code" && profile == "work" ? own : null));
         Assert.DoesNotContain("Resumes later", ready);
@@ -488,11 +488,11 @@ public sealed class SessionsCommandTests : IDisposable
 
         var record = new SessionRecord("f41led00", "engine", "failed") { Quest = "q1" };
         Assert.Contains(
-            "1 commit on daoris/s-4e6837ed in its tree s-4e6837ed, not landed: daoris-driver trees land f41led00",
+            "1 commit on daoris/s-4e6837ed in its tree s-4e6837ed, not landed: daoris tree land f41led00",
             SessionsCommand.Facts(failed, record));
         Assert.Contains("2 commits to review", SessionsCommand.Facts(finished, record with { Id = "f1n1sh00", State = "completed" }));
         Assert.Contains(
-            "2 commits on daoris/s-56cb4d29 in its tree s-56cb4d29, not landed: daoris-driver trees land f1n1sh00",
+            "2 commits on daoris/s-56cb4d29 in its tree s-56cb4d29, not landed: daoris tree land f1n1sh00",
             SessionsCommand.Facts(finished, record with { Id = "f1n1sh00", State = "completed" }));
         Assert.DoesNotContain(SessionsCommand.Facts(bare, record with { Id = "n0th1ng0" }), fact => fact.Contains("land", StringComparison.Ordinal));
     }
@@ -572,7 +572,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         var record = new SessionRecord("f1n1sh00", "engine", "completed") { Quest = "q1" };
         Assert.Contains(
-            "its work is on `main` by content (a squash merge), in its tree s-56cb4d29: daoris-driver trees remove f1n1sh00 discards it, "
+            "its work is on `main` by content (a squash merge), in its tree s-56cb4d29: daoris tree remove f1n1sh00 discards it, "
             + $"keeping its commits at `{kept}`",
             SessionsCommand.Facts(squashed, record));
         Assert.Contains(
@@ -611,7 +611,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Contains("stopped w0rk1ng0", said);
-        Assert.Contains("daoris driver retry q2 --session w0rk1ng0", said);
+        Assert.Contains("daoris quest retry q2 --session w0rk1ng0", said);
         Assert.Equal("stopped", ledger.State("w0rk1ng0"));
         Assert.Empty(new SessionRequests(_home).Pending(DateTimeOffset.UtcNow));
     }
@@ -626,7 +626,7 @@ public sealed class SessionsCommandTests : IDisposable
     [InlineData(KeepingStops.Stopped, 0, "sessions: stopping w0rk1ng0's turn: what waits goes next, and what it has done stays.\n")]
     [InlineData(KeepingStops.Nothing, 1, "sessions: w0rk1ng0 has no turn running with words waiting for its end, so nothing was stopped.\n")]
     [InlineData(KeepingStops.NoInterrupt, 1,
-        "sessions: w0rk1ng0's door cannot stop a turn and keep the session, so nothing was stopped: what waits goes when its turn ends, and `daoris-driver sessions stop w0rk1ng0` ends the session.\n")]
+        "sessions: w0rk1ng0's door cannot stop a turn and keep the session, so nothing was stopped: what waits goes when its turn ends, and `daoris session stop w0rk1ng0` ends the session.\n")]
     [InlineData(KeepingStops.NotHere, 1, "sessions: nothing here runs w0rk1ng0, so it has no turn to stop.\n")]
     public async Task Stop_turn_is_the_keeping_stop_and_says_what_it_came_to(string came, int code, string line)
     {
@@ -698,7 +698,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Equal(("stopped", "The person stopped this at a checkpoint."), (ledger.State("p4rk3d00"), ledger.Note("p4rk3d00")));
-        Assert.Contains("daoris driver retry q1 --session p4rk3d00", said);
+        Assert.Contains("daoris quest retry q1 --session p4rk3d00", said);
     }
 
     [Theory]
@@ -743,7 +743,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.Equal(("completed", "The person finished this at a checkpoint."), (ledger.State("p4rk3d00"), ledger.Note("p4rk3d00")));
         Assert.Equal("Taken", ledger.QuestStatus("q1"));
-        Assert.Contains("  its quest #q1 is still taken: daoris-driver quest done q1 [--note \"…\"] marks it done as yours.\n", said);
+        Assert.Contains("  its quest #q1 is still taken: daoris quest done q1 [--note \"…\"] marks it done as yours.\n", said);
 
         using var service = ledger.Client();
         var output = new StringWriter();
@@ -1059,7 +1059,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Null(SessionsCommand.Read(["handback"], out problem));
         Assert.Equal("`handback` takes one session's or quest's id, and `--json` for the service's answer as it gave it.", problem);
         Assert.Null(SessionsCommand.Read(["handback", "s1", "s2"], out _));
-        Assert.Contains("daoris-driver sessions handback <session|quest> [--json]", SessionsCommand.Usage);
+        Assert.Contains("daoris session handback <session|quest> [--json]", SessionsCommand.Usage);
         Assert.Contains("\n  session handback <session|quest> [--json]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
     }
 

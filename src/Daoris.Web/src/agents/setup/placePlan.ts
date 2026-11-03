@@ -74,7 +74,7 @@ export type PlacePlanned = {
   /** Each change once, with every repository it is made at. */
   changes: { change: PlaceChange; repositories: string[] }[];
   refusals: PlaceRefusal[];
-  /** `daoris-driver place … --plan`. */
+  /** `daoris place … --plan`. */
   terminal: string;
   applies: boolean;
   digest: string;

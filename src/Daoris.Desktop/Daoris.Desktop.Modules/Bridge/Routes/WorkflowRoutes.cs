@@ -9,7 +9,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// How work moves in a repository or a workspace, the page's `bridge/workflow.ts` (WORKFLOW1b; D157 point 7, the workflow
 /// design §2.7, §6.1): its Current workflow, which <see cref="WorkflowCurrent.Derive"/> draws from this machine's driver file,
-/// its plugins and its registry exactly as `daoris driver workflow show` reads them; and where a piece of work stands in it
+/// its plugins and its registry exactly as `daoris workflow show` reads them; and where a piece of work stands in it
 /// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but three: <c>WORKFLOW_LANDED</c>, the person's press that sets
 /// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a); <c>INTEGRATION_GATES</c>, their acceptance of a
 /// repository's integration declaration by its blob (INTEGRATE1d); <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
@@ -156,7 +156,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The page's <i>Verify…</i> (FABRIC-PIPELINE1d part 5), <c>daoris-driver verify</c>'s twin: <c>{repository}</c> and one of <c>branch</c> or
+    /// The page's <i>Verify…</i> (FABRIC-PIPELINE1d part 5), <c>daoris gate verify</c>'s twin: <c>{repository}</c> and one of <c>branch</c> or
     /// <c>commit</c>, or neither for its checkout's HEAD. It binds the person's run through <see cref="VerifyCommand.BindAsync"/> in the first
     /// checkout of the repository on this disk, so the library's refusals are the page's: answers <c>{ repository, done, refused, message }</c>,
     /// <c>refused</c> being <c>no-checkout</c>, <c>refused</c> (no pipeline, gates not accepted, no version that reads) or <c>unread</c> (the commit).
@@ -193,7 +193,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// The person's press on the landed route (FABRIC-PIPELINE1a, D192 point 2; Setup's route row and the Workflow tab's <i>Accept the
     /// gates</i>, D156's door): <c>{repository}</c> or <c>{workspace}</c>, and <c>workflow</c>, a verification pipeline's id, <c>current</c>
     /// for no verification, or null to clear. For a repository naming a verification pipeline it reads the <c>daoris.gates.json</c> at its
-    /// line's tip and accepts it by its blob, as <c>daoris driver workflow use … --landed</c> does; where the tip cannot be read it keeps
+    /// line's tip and accepts it by its blob, as <c>daoris workflow use … --landed</c> does; where the tip cannot be read it keeps
     /// what was accepted for the same pipeline. Judged by the twins' edit first (<see cref="WorkflowSelection.Apply"/>), so a development
     /// pipeline is refused in its words before anything is written. Answers the start node as it now stands, and what the change lowers
     /// (<see cref="InvolvementRoutes.LowersRoute"/>), said: the person's press applies it (D157 point 10). An optional <c>gates</c> names the
@@ -224,7 +224,7 @@ public sealed class WorkflowRoutes(DriverContext context)
 
         var named = workflow is { } id && id != WorkflowSelection.Current ? id : null;
         var found = named is not null && WorkflowNamed.IsId(named) ? WorkflowStore.Load(_loop.Home, named) : null;
-        if (named is not null && found is null) throw new DriverException($"no workflow `{named}` is saved here — `daoris driver workflow list` names them.");
+        if (named is not null && found is null) throw new DriverException($"no workflow `{named}` is saved here — `daoris workflow list` names them.");
 
         string? gates = null;
         if (repository is not null && found?.Read.Verifies == true)
@@ -354,7 +354,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             : null;
 
     /// <summary>
-    /// A version saved (AGENTSPLACE1c; <c>daoris-driver workflow new|edit|apply</c>'s twin): <c>{id}</c> and one of <c>from</c> (a preset, a saved
+    /// A version saved (AGENTSPLACE1c; <c>daoris workflow new|edit|apply</c>'s twin): <c>{id}</c> and one of <c>from</c> (a preset, a saved
     /// workflow or <c>current:&lt;repository&gt;</c>, for an id not held, with <c>withOpinion</c>, <c>withLook</c> and <c>name</c>), <c>steps</c> or
     /// <c>graph</c>. Under a fresh id it makes v1. Onto a saved one it appends, against <c>base</c>, the version the caller read: a newer one is
     /// refused <c>stale</c>; and since a new start binds the newest version, it first answers every place that chooses the workflow, and writes
@@ -393,7 +393,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The person's choice of a workflow for a place (AGENTSPLACE1c; <c>daoris-driver workflow use</c>'s twin, the landed route apart, which is
+    /// The person's choice of a workflow for a place (AGENTSPLACE1c; <c>daoris workflow use</c>'s twin, the landed route apart, which is
     /// <c>WORKFLOW_LANDED</c>): <c>{repository}</c> or <c>{workspace}</c>, <c>workflow</c> (a saved id, <c>current</c>, or absent to clear), and
     /// <c>kind</c> for a kind of task instead of the default; <c>version</c>, the newest the caller read, is refused <c>stale</c> when it moved.
     /// One change, judged first as the terminal judges it: a graph whose reach cannot start somewhere is refused <c>reach</c>, nothing written.
@@ -480,7 +480,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     };
 
     /// <summary>
-    /// The person's declaration of a kind of task for a workspace (AGENTSPLACE1c; <c>daoris-driver workflow kind</c>'s twin): <c>{workspace, kind,
+    /// The person's declaration of a kind of task for a workspace (AGENTSPLACE1c; <c>daoris workflow kind</c>'s twin): <c>{workspace, kind,
     /// label, paths}</c>, or <c>drop: true</c> with no label. Declared again, the label and the paths are replaced; the workflow a kind maps to is
     /// <c>WORKFLOW_USE</c>'s. Answers <c>{ done, refused, message, changed, reach, start }</c>, the reach being what the workspace's repositories
     /// now run (§17.7).
@@ -626,7 +626,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     // The person's skip or stop of a run's node (FABRIC-CUTOVER1f; D190 points 3 and 6, the cutover design §3, §5.2): the page's half of
-    // `daoris-driver workflow skip|stop`. Both doors end in RunNodeWords.Word, which keeps the word on the run's record under its lock with the
+    // `daoris workflow skip|stop`. Both doors end in RunNodeWords.Word, which keeps the word on the run's record under its lock with the
     // lease asked inside it; the loop's runtime applies it at its next pass, which the nudge wakes.
     /// <summary>
     /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given; a review's `changes`, with their words, DECIDE1c) on

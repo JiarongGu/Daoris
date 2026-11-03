@@ -10,7 +10,7 @@ public sealed class HelpHandTool(IntakeScope? intake = null, HelpProposalBox? he
     [McpServerTool(Name = "hand_propose")]
     [Description(
         "Ask Daoris only: propose handing a branch a landing made to a landing plugin, for the person to apply — the "
-        + "review's *hand it to* and `daoris-driver trees hand`. The plugin pushes the branch and opens the pull request, "
+        + "review's *hand it to* and `daoris tree hand`. The plugin pushes the branch and opens the pull request, "
         + "signed in as the person: for a ticket landed before its workspace named a plugin, or one whose plugin failed. "
         + "Only a branch a landing made and recorded on this machine, as the room lists them; nothing is pushed until the "
         + "person presses Apply.")]

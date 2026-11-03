@@ -487,7 +487,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// <c>WORKFLOW_VERIFY</c>, the page's half of <c>daoris-driver verify</c> (FABRIC-PIPELINE1d part 5): a repository with no checkout here is
+    /// <c>WORKFLOW_VERIFY</c>, the page's half of <c>daoris gate verify</c> (FABRIC-PIPELINE1d part 5): a repository with no checkout here is
     /// refused <c>no-checkout</c> in a sentence and binds nothing, and the press names a repository and no more than one of a branch or a commit.
     /// </summary>
     [Fact]

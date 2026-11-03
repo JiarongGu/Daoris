@@ -126,7 +126,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The tools' presses <c>daoris-driver tool</c> sends (PUSH1f2c, D194 point 5): each a route of the driver's module the census classes
+    /// The tools' presses <c>daoris tool</c> sends (PUSH1f2c, D194 point 5): each a route of the driver's module the census classes
     /// as the verb reads it, the person's changes the person's and the look open, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]
@@ -154,7 +154,7 @@ public sealed class PipeCensusTests
         Assert.Equal(Daoris.Driver.RouteClass.Open, Daoris.Driver.ToolRoutes.Look.Class);
     }
 
-    /// <summary>The route <c>daoris-driver integrate</c>'s acts press (INTEGRATE1h) is a driver route the census classes as the person's.</summary>
+    /// <summary>The route <c>daoris integrate</c>'s acts press (INTEGRATE1h) is a driver route the census classes as the person's.</summary>
     [Fact]
     public void The_integrate_verbs_route_is_the_persons_in_the_census()
     {

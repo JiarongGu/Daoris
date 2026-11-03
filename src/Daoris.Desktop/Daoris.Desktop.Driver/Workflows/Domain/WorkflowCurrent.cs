@@ -143,7 +143,7 @@ public sealed record CurrentWorkflow(IReadOnlyList<string> StartHolds, IReadOnly
 /// <remarks>
 /// <para>One table, this suite's tests' <c>fixtures/workflow-current.json</c>, cell for cell, the version included
 /// (<c>WorkflowCurrentTests</c>), which the page's fixtures copy; the CLI's twin, <c>workflows.ts</c>, left with the driver family's
-/// TypeScript (PUSH1f2b), and <c>daoris driver workflow show</c> says it in <see cref="WorkflowWords.CurrentSaid"/>.</para>
+/// TypeScript (PUSH1f2b), and <c>daoris workflow show</c> says it in <see cref="WorkflowWords.CurrentSaid"/>.</para>
 ///
 /// <para>It reads through the resolvers every gate reads: <see cref="LandingRules.Choose"/> (the repository's name as given,
 /// untrimmed), <see cref="ReviewRules.Resolve"/>, <see cref="OpinionRules.Resolve"/> and <see cref="DriverConfig.StandingFor"/>

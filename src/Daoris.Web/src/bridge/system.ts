@@ -8,7 +8,7 @@ import { call, refusedNoRoute } from './call';
 import { pollUnlessTold } from './state/published';
 
 // How this Daoris is wired (WIRING1b, the this-Daoris design §6, D50): Settings → This Daoris's read, the screen's door to
-// `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
+// `daoris wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
 // The shape is a wire shape (`data/wiring.ts`, where the cards that draw it can name it): a field is added, never renamed.
 export type {
   DownloadCleared, DownloadedVersion, DownloadsListing, SpaceKind, SpacePlan, SpaceRun, SpaceStarted, SpaceUnit, SystemSpace, SystemWiring,

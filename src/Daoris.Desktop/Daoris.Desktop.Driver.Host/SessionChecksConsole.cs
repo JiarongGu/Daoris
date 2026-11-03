@@ -2,7 +2,7 @@ namespace Daoris.Driver.Host;
 
 /// <summary>
 /// Which checks a repository's sessions run under Current, from a terminal (FABRIC-PIPELINE1b, D192 point 4, D50):
-/// <c>daoris-driver checks</c>. The words and the edit are the library's (<see cref="SessionChecksCommand"/>), on the driver's file alone.
+/// <c>daoris place checks</c>. The words and the edit are the library's (<see cref="SessionChecksCommand"/>), on the driver's file alone.
 /// </summary>
 internal static class SessionChecksConsole
 {

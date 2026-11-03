@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1d (the pipeline design §4.3): <c>daoris-driver verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c>, a person's
+/// FABRIC-PIPELINE1d (the pipeline design §4.3): <c>daoris gate verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c>, a person's
 /// verification of a branch or a commit, binds a run of its own under the repository's landed route and its accepted gates, which the running
 /// driver verifies; a repository whose route names no verification pipeline, or whose gates are not accepted, binds nothing.
 /// </summary>

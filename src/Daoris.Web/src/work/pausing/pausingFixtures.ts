@@ -221,7 +221,7 @@ export const LISTED_CONSIDERED: Consideration[] = [
   { quest: '2d3e4f', repository: 'game', verdict: 'Held', reason: '`game` is held by the person.' },
   {
     quest: '3c2b1a', repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'quest', id: '3c2b1a' },
-    reason: 'you paused `#3c2b1a`; Resume carries it on — `daoris-driver quest resume 3c2b1a`.',
+    reason: 'you paused `#3c2b1a`; Resume carries it on — `daoris quest resume 3c2b1a`.',
   },
 ];
 
@@ -237,7 +237,7 @@ export const PAUSED_LISTED_ASK: WorkPlan = {
 export const PAUSED_LISTED_CONSIDERED: Consideration[] = [
   ...['9a8b7c', '5e4f3d', '2d3e4f'].map((quest) => ({
     quest, repository: quest === '9a8b7c' ? 'engine' : 'game', verdict: 'Paused', pausedBy: { scope: 'ask' as const, id: 'a1b2c3' },
-    reason: `paused with ask \`#a1b2c3\`; Resume ${quest === '2d3e4f' ? 'starts' : 'carries'} it on — \`daoris-driver ask --resume a1b2c3\`.`,
+    reason: `paused with ask \`#a1b2c3\`; Resume ${quest === '2d3e4f' ? 'starts' : 'carries'} it on — \`daoris ask resume a1b2c3\`.`,
   })),
   LISTED_CONSIDERED[2],
 ];
