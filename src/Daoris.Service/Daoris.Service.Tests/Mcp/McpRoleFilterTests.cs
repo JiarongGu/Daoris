@@ -54,6 +54,10 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         [McpServerTool(Name = "brainstorm_synthesize")]
         [Description("Stands in for a synthesis.")]
         public static string Synthesize() => "synthesized";
+
+        [McpServerTool(Name = "opinion_give")]
+        [Description("Stands in for a reviewer's opinion.")]
+        public static string Opinion() => "given";
     }
 
     private static readonly SessionWork Partner = new(ParticipantWork.Partner);
@@ -324,6 +328,66 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         var program = File.ReadAllText(Path.Combine(at!.FullName, "src", "Daoris.Service", "Daoris.Service.Mcp", "Program.cs"));
 
         Assert.Contains(".RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)", program);
+    }
+
+    /// <summary>
+    /// 🔴 CONTEXTONE1d2: a session's <c>tools/list</c> names exactly what its row of the table serves it, so a harness that loads its tools
+    /// at the start loads only those; a connector naming no session lists every tool, and one whose record cannot be read the reads.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_tool_list_is_what_its_work_is_served()
+    {
+        async Task<string[]> Listed(Func<CancellationToken, Task<SessionWork>> role) => [.. (await ListAsync(role)).Order(StringComparer.Ordinal)];
+
+        Assert.Equal(["helper_ask", "knowledge_search", "quest_list"], await Listed(_ => Task.FromResult(new SessionWork(ParticipantWork.Build))));
+        Assert.Equal(["knowledge_search", "opinion_give", "quest_list"], await Listed(_ => Task.FromResult(new SessionWork(ParticipantWork.Review))));
+        Assert.Equal(["knowledge_search"], await Listed(_ => Task.FromResult(Partner)));
+        Assert.Equal(["brainstorm_give"], await Listed(_ => Task.FromResult(SessionWork.Generating)));
+        Assert.Equal(["knowledge_search", "quest_list"], await Listed(_ => throw new InvalidOperationException("the store is gone")));
+        Assert.Equal(
+            ["brainstorm_give", "brainstorm_synthesize", "helper_ask", "knowledge_search", "opinion_give", "quest_list"],
+            await Listed(_ => Task.FromResult(SessionWork.Unnamed)));
+    }
+
+    /// <summary>The names a session's <c>tools/list</c> answers through the server.</summary>
+    private static async Task<List<string>> ListAsync(Func<CancellationToken, Task<SessionWork>> role)
+    {
+        var toServer = new Pipe();
+        var fromServer = new Pipe();
+        var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
+        builder.Services
+            .AddMcpServer(options => options.ServerInfo = new() { Name = "example-knowledge", Version = "0.0.1" })
+            .WithStreamServerTransport(toServer.Reader.AsStream(), fromServer.Writer.AsStream())
+            .WithTools(toolTypes: [typeof(StandInTools)])
+            .RefuseOutsideRole(role);
+
+        using var host = builder.Build();
+        await host.StartAsync();
+        using var reader = new StreamReader(fromServer.Reader.AsStream());
+
+        async Task<JsonNode> Send(JsonObject message)
+        {
+            await toServer.Writer.WriteAsync(Encoding.UTF8.GetBytes(message.ToJsonString() + "\n"));
+            var line = await reader.ReadLineAsync().WaitAsync(Poll.Patience);
+            return JsonNode.Parse(line!)!;
+        }
+
+        await Send(new JsonObject
+        {
+            ["jsonrpc"] = "2.0", ["id"] = 0, ["method"] = "initialize",
+            ["params"] = new JsonObject
+            {
+                ["protocolVersion"] = "2025-06-18", ["capabilities"] = new JsonObject(),
+                ["clientInfo"] = new JsonObject { ["name"] = "test", ["version"] = "0" },
+            },
+        });
+        await toServer.Writer.WriteAsync(Encoding.UTF8.GetBytes("""{"jsonrpc":"2.0","method":"notifications/initialized"}""" + "\n"));
+        var answer = await Send(new JsonObject { ["jsonrpc"] = "2.0", ["id"] = 1, ["method"] = "tools/list" });
+        var names = answer["result"]!["tools"]!.AsArray().Select(tool => (string)tool!["name"]!).ToList();
+
+        await toServer.Writer.CompleteAsync();
+        await host.StopAsync();
+        return names;
     }
 
     /// <summary>Each tool called through the server in turn: what it answered, and the refusal's code where it was refused.</summary>

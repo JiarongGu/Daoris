@@ -243,6 +243,14 @@ two `golden/brainstorm-rules` files (a pass is denied every tool but its own), a
 (`Permissions.cs` with the CLI's twin `permissions.ts`, each held by the other's test) and a reviewer's and a helper's
 (`OpinionPermissions`). The call layer's table (`CallTable`, FOUNDATION1r) places it for every work in
 `fixtures/call-table.json` and classes it in `ToolClasses`: until then every session the driver names is refused it.
+**A session is listed only what its work is served** (CONTEXTONE1d2, D230 point 3): its `tools/list` names its row of the table,
+since a Claude door loads every listed tool at its start. A session working in a repository (a quest's, a design's, a conversation's,
+an intake's, a helper's) is served `CallTable.CoreServed` (the knowledge and memory tools, the quests, `line_read`, `registry`,
+`helper_ask`, the channel and `handback_read`: 18 tools, 28,341 characters of definitions) and its own work's: a quest's session its
+go-ahead, question, hand-over, rule proposal, answer to an opinion and a set-up step's two (25 tools, 39,229 characters), a
+conversation the first four of those (22, 34,469), a helper its answer (12, 11,364), an intake none (16, 25,894), each less what its
+work is refused. Ask Daoris is served every tool but the turns and the memory changes (54, 94,680); all 58 are 102,191.
+`CoreSetTests` measures each row, and a new tool is placed in a row before any of these sessions is listed it.
 `McpToolDescriptionTests` refuses a name that says `history`, `clear` (bar Ask Daoris's `clear_propose`)
 or `forget`, since no tool clears a record, and one that says `evidence` or `verdict`.
 
@@ -543,9 +551,9 @@ never proposed), and since HIST1f-a `clear_propose` (one quest's, ask's or works
 one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before
-the person sees a card, and settles it when they press Apply or Not now. Every connector carries the
-tools, but only the helper's room allows them, and a proposal is shown only in the conversation that
-made it.
+the person sees a card, and settles it when they press Apply or Not now. Of the sessions Daoris runs,
+only Ask Daoris is listed the tools (CONTEXTONE1d2), only the helper's room allows them, and a proposal is shown only in the
+conversation that made it.
 
 **The semantic pass has been proven on a real pair.** Two repositories derived the same principle
 independently and wrote it in different vocabulary; word overlap scores them at **25%**, below the
