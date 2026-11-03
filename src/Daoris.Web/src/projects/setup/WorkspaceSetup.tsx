@@ -22,6 +22,8 @@ import type { WorkspaceSection } from '../tabs';
 import { hostOf } from '../workspace/workspace';
 import type { GitIdentityShown } from '../../settings/git/Git';
 import { GitHosts, type GitHostActs, type GitHostShown } from '../../settings/git/GitRemotes';
+import { GitAccessRows, gitAccessSummary } from '../../settings/repository/GitAccess';
+import type { GitAccessSetup } from './RepositorySetup';
 
 /**
  * A workspace's defaults on this machine (§4.3), each what the workspace sets, absent where it sets none, and the press
@@ -87,7 +89,8 @@ export type WorkspaceSetupProps = {
    * The hosts its repositories' git remotes reach and the identity this workspace chooses for each (GITAUTH1e, the git-auth design §7.3);
    * absent on a shell older than it, and the section is not drawn.
    */
-  git?: { hosts: GitHostShown[]; identities: GitIdentityShown[]; acts: GitHostActs } | null;
+  /** Its git identities by host (GITAUTH1e) and its git access (GITAUTH1f, §7.3). */
+  git?: { hosts: GitHostShown[]; identities: GitIdentityShown[]; acts: GitHostActs; access?: GitAccessSetup | null } | null;
   /**
    * The supervisor's appointment for every repository of the workspace (SUPERVISOR1e, D208 §5), a repository's own winning over it;
    * absent where the shell says no standing confirmation.
@@ -203,8 +206,9 @@ export function WorkspaceSetup({
       || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     reach: ruleCount > 0 || undeclared > 0,
-    // A host its repositories reach and no identity serves opens it (GITAUTH1e).
-    git: Boolean(gitShown?.hosts.some((each) => !each.chosen && !gitShown.identities.some((identity) => identity.host === each.host && identity.way === each.way))),
+    // A host its repositories reach and no identity serves opens it (GITAUTH1e); so does git access set here (GITAUTH1f).
+    git: Boolean(gitShown?.hosts.some((each) => !each.chosen && !gitShown.identities.some((identity) => identity.host === each.host && identity.way === each.way))
+      || gitShown?.access?.classes.some((each) => each.source === 'workspace')),
     // An appointment the person made opens it, as a value they set does.
     supervisor: Boolean(supervisor?.appointment),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
@@ -391,12 +395,23 @@ export function WorkspaceSetup({
       ),
     });
   }
-  if (gitShown && gitShown.hosts.length > 0) {
+  if (gitShown && (gitShown.hosts.length > 0 || gitShown.access)) {
+    const access = gitShown.access;
     sections.push({
       id: 'git',
-      summary: gitShown.hosts.map((each) => `${each.host}: ${each.chosen === 'own' ? t('settings.git.own')
-        : gitShown.identities.find((identity) => identity.id === each.chosen)?.label ?? t('settings.git.workspace.default')}`).join(JOIN),
-      body: <GitHosts hosts={gitShown.hosts} identities={gitShown.identities} acts={gitShown.acts} />,
+      summary: [
+        ...gitShown.hosts.map((each) => `${each.host}: ${each.chosen === 'own' ? t('settings.git.own')
+          : gitShown.identities.find((identity) => identity.id === each.chosen)?.label ?? t('settings.git.workspace.default')}`),
+        ...(access ? [gitAccessSummary(t, access.classes)] : []),
+      ].join(JOIN),
+      body: (
+        <>
+          {gitShown.hosts.length > 0 && <GitHosts hosts={gitShown.hosts} identities={gitShown.identities} acts={gitShown.acts} />}
+          {access && (
+            <GitAccessRows owner="workspace" name={workspace} classes={access.classes} above={access.above} busy={busy} onChange={access.onChange} />
+          )}
+        </>
+      ),
     });
   }
   if (reachParts.length > 0) {

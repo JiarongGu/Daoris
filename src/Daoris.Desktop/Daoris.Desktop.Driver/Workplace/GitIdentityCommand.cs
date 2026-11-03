@@ -1,17 +1,25 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
+/// <summary>
+/// A widening's or an answer's press (the git-auth design §8, D194 point 5): sent to the running Daoris, whose window confirms it and
+/// runs <paramref name="route"/> as the page presses it, its answer said by <paramref name="words"/>; where no window runs,
+/// <paramref name="alone"/> does it here. The exit code is the verb's. The host's is <see cref="InstanceDoor.PressAsync"/>.
+/// </summary>
+public delegate Task<int> GitPress(InstanceRoute route, object payload, Func<Task<int>> alone, Func<JsonElement, int> words);
+
 /// <summary>What <see cref="GitIdentityCommand"/> is handed from the world: the home, the registry's checkouts, and the running window.</summary>
 /// <param name="Home">The home the verbs act on.</param>
 /// <param name="Checkouts">The registry's checkouts (root, repository, workspace), asked only by <c>git use</c> of a repository.</param>
-/// <param name="WindowRuns">Whether a Daoris with a window runs on this home, asked only before a widening.</param>
+/// <param name="Press">A widening's press, through the running window where one runs.</param>
 /// <param name="Environment">The variables, read for a session's marker.</param>
 /// <param name="Token">Reads a pasted token from the terminal's standard input, asked only by <c>add-https --token-stdin</c>; never an argument.</param>
 public sealed record GitIdentityWorld(
     string Home,
     Func<Task<IReadOnlyList<(string Root, string Repository, string Workspace)>>> Checkouts,
-    Func<Task<bool>> WindowRuns,
+    GitPress Press,
     Func<string, string?> Environment,
     Func<Task<string?>>? Token = null);
 
@@ -24,10 +32,10 @@ public sealed record GitIdentityWorld(
 /// <remarks>
 /// <para><b>A person's own acts.</b> From a session's environment (<c>DAORIS_SESSION_ID</c>) every change is refused, as D194 point 5
 /// refuses a person's press there: an agent cannot set up, point or trust anything here.</para>
-/// <para><b>The widenings wait for the window</b> (§8, D194 point 5): an import (it reads a file of the person's), trusting a host's key,
-/// choosing <c>own</c>, turning <c>read-only</c> off and removing an identity are confirmed in the window first while one runs. The
-/// window's confirmation for git identities arrives with Settings → Git (GITAUTH1e); until then such an act is refused while the window
-/// runs, saying so, and runs from the terminal where none does. Nothing a widening touches is done before it.</para>
+/// <para><b>The widenings are confirmed in the window first</b> (§8, D194 point 5): an import (it reads a file of the person's), trusting
+/// a host's key, choosing <c>own</c>, turning <c>read-only</c> off and removing an identity are pressed through the running Daoris as
+/// Settings → Git presses them (<c>GIT_IDENTITY</c>, <c>GIT_USE</c>), so its window confirms each before it runs there; where no window
+/// runs, the verb does it here. Nothing a widening touches is done in this process while a window runs.</para>
 /// </remarks>
 public static class GitIdentityCommand
 {
@@ -55,10 +63,8 @@ public static class GitIdentityCommand
     public static bool Changes(IReadOnlyList<string> args) =>
         Answers(args) && !(args[0] == "identity" && args.Count > 1 && args[1] is "list" or "public-key") && !args.Any(arg => arg is "--help" or "-h");
 
-    /// <summary>The line a widening is refused with while the window runs.</summary>
-    public const string WindowFirst =
-        "this change widens what Daoris's git may use, so it is confirmed in Daoris's window first, and the window's confirmation for "
-        + "git identities arrives with Settings → Git: close Daoris and run it again here, and nothing was done (window-first)";
+    /// <summary>The line a press the window confirmed and ran is said with.</summary>
+    public const string Confirmed = "git: confirmed in Daoris's window and done there.";
 
     /// <summary>Run the words; the exit code is the family's.</summary>
     public static async Task<int> RunAsync(IReadOnlyList<string> args, GitIdentityWorld world, TextWriter output, TextWriter error, CancellationToken ct = default)
@@ -75,15 +81,88 @@ public static class GitIdentityCommand
             return 1;
         }
 
+        IReadOnlyDictionary<string, string?> flags;
+        IReadOnlyList<string> words;
         try
         {
-            var flags = Flags(args, out var words);
-            if (Widens(words, flags) && await world.WindowRuns().ConfigureAwait(false))
+            flags = Flags(args, out words);
+        }
+        catch (DriverException refused)
+        {
+            await error.WriteLineAsync(Line(refused)).ConfigureAwait(false);
+            return 1;
+        }
+
+        Task<int> Alone() => ActAsync(words, flags, world, output, error, ct);
+        if (!Widens(words, flags)) return await Alone().ConfigureAwait(false);
+        if (Pressed(words, flags) is not { } press) return await Alone().ConfigureAwait(false);
+        return await world.Press(press.Route, press.Payload, Alone, _ =>
+        {
+            output.WriteLine(Confirmed);
+            return 0;
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>A refusal in its one line, prefixed once.</summary>
+    private static string Line(DriverException refused) => refused.Message.StartsWith("git: ", StringComparison.Ordinal) ? refused.Message : $"git: {refused.Message}";
+
+    /// <summary>
+    /// The route and payload a widening is pressed with, as Settings → Git presses it (<c>GIT_IDENTITY</c>, <c>GIT_USE</c>); null for words
+    /// that name none, which are done here and refused there as they always were. An imported key's file is named by its full path.
+    /// </summary>
+    public static (InstanceRoute Route, object Payload)? Pressed(IReadOnlyList<string> words, IReadOnlyDictionary<string, string?> flags)
+    {
+        static void Put(Dictionary<string, object?> payload, string key, string? value)
+        {
+            if (value is not null) payload[key] = value;
+        }
+
+        switch (words)
+        {
+            case ["identity", "add-ssh", var host] when Flag(flags, "--import") is { } file && Flag(flags, "--label") is { } label:
             {
-                await error.WriteLineAsync($"git: {WindowFirst}").ConfigureAwait(false);
-                return 1;
+                var payload = new Dictionary<string, object?> { ["action"] = "add-ssh", ["host"] = host, ["label"] = label };
+                Put(payload, "name", Flag(flags, "--name"));
+                Put(payload, "email", Flag(flags, "--email"));
+                payload["import"] = Path.GetFullPath(file);
+                if (flags.ContainsKey("--rsa")) payload["rsa"] = true;
+                return (PersonPresses.GitIdentity, payload);
             }
 
+            case ["identity", "test", var name] when Flag(flags, "--trust-host") is { } fingerprint:
+                return (PersonPresses.GitIdentity, new Dictionary<string, object?> { ["action"] = "test", ["identity"] = name, ["trust"] = fingerprint });
+            case ["identity", "read-only", var name, "off"]:
+                return (PersonPresses.GitIdentity, new Dictionary<string, object?> { ["action"] = "read-only", ["identity"] = name, ["on"] = false });
+            case ["identity", "remove", var name]:
+                return (PersonPresses.GitIdentity, new Dictionary<string, object?> { ["action"] = "remove", ["identity"] = name });
+            case ["use", ..] when words[^1] == GitIdentityUse.Own:
+            {
+                var payload = new Dictionary<string, object?>();
+                if (flags.ContainsKey("--machine")) payload["scope"] = "machine";
+                else if (Flag(flags, "--workspace") is { } workspace) (payload["scope"], payload["workspace"]) = ("workspace", workspace);
+                else if (words.Count == 3) (payload["scope"], payload["repository"], payload["remote"]) = ("repository", words[1], Flag(flags, "--remote") ?? "origin");
+                else return null;
+                if (payload["scope"] is "machine" or "workspace")
+                {
+                    if (Flag(flags, "--host") is not { } host) return null;
+                    payload["host"] = host;
+                }
+
+                payload["value"] = GitIdentityUse.Own;
+                return (PersonPresses.GitUse, payload);
+            }
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>The words done in this process: a read, a change that is no widening, or a widening where no window runs.</summary>
+    private static async Task<int> ActAsync(
+        IReadOnlyList<string> words, IReadOnlyDictionary<string, string?> flags, GitIdentityWorld world, TextWriter output, TextWriter error, CancellationToken ct)
+    {
+        try
+        {
             return await (words switch
             {
                 ["identity", "list"] => List(world.Home, flags.ContainsKey("--json"), output),
@@ -105,7 +184,7 @@ public static class GitIdentityCommand
         }
         catch (DriverException refused)
         {
-            await error.WriteLineAsync(refused.Message.StartsWith("git: ", StringComparison.Ordinal) ? refused.Message : $"git: {refused.Message}").ConfigureAwait(false);
+            await error.WriteLineAsync(Line(refused)).ConfigureAwait(false);
             return refused.Message.Contains("(identities-unread)", StringComparison.Ordinal) || refused.Message.Contains("(config-unread)", StringComparison.Ordinal) ? 2 : 1;
         }
     }

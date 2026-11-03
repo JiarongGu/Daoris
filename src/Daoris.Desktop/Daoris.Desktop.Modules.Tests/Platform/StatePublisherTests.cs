@@ -659,6 +659,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TOOLS_GIT_SET", "tools", null)]
     [InlineData("GIT_IDENTITY", "tools", null)]
     [InlineData("GIT_USE", "driver,tools", null)]
+    [InlineData("GIT_ANSWER", "tools", null)]
     [InlineData("TOOLS_STOP", "", null)]
     [InlineData("TOOLS_LIST", "", null)]
     [InlineData("TOOLS_GIT", "", null)]

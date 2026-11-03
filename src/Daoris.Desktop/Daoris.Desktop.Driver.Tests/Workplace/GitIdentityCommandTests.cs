@@ -24,10 +24,18 @@ public sealed class GitIdentityCommandTests : IDisposable
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
+    /// <summary>The presses sent to the running Daoris's window, each its route and payload as JSON.</summary>
+    private readonly List<(string Route, string Payload)> _pressed = [];
+
     private GitIdentityWorld World(bool window = false, string? session = null) => new(
         Home,
         () => Task.FromResult<IReadOnlyList<(string, string, string)>>([]),
-        () => Task.FromResult(window),
+        (route, payload, alone, words) =>
+        {
+            if (!window) return alone();
+            _pressed.Add((route.Route, System.Text.Json.JsonSerializer.Serialize(payload)));
+            return Task.FromResult(words(System.Text.Json.JsonDocument.Parse("""{"label":"Work"}""").RootElement));
+        },
         name => name == DriverChoicesCommand.SessionVariable ? session : null);
 
     private async Task<(int Code, string Out, string Error)> Run(GitIdentityWorld world, params string[] args)
@@ -105,14 +113,37 @@ public sealed class GitIdentityCommandTests : IDisposable
         Assert.Empty(GitIdentities.Read(Home));
     }
 
+    /// <summary>
+    /// GITAUTH1e (§8, D194 point 5): while the window runs, a widening is pressed there as the page presses it, the window's
+    /// confirmation before it, and nothing is done here; a change that is no widening runs here as before.
+    /// </summary>
     [Fact]
-    public async Task A_widening_while_the_window_runs_waits_for_it_and_does_nothing_here()
+    public async Task A_widening_while_the_window_runs_is_pressed_there_and_does_nothing_here()
     {
-        var (code, _, error) = await Run(World(window: true), "identity", "add-ssh", "github.com", "--label", "Work", "--import", KeyFile());
+        var key = KeyFile();
+        var (code, output, error) = await Run(World(window: true), "identity", "add-ssh", "github.com", "--label", "Work", "--import", key);
 
-        Assert.Equal(1, code);
-        Assert.Contains("(window-first)", error);
+        Assert.True(code == 0, error);
+        Assert.Contains("confirmed in Daoris's window", output);
         Assert.Empty(GitIdentities.Read(Home));
+        var (route, payload) = Assert.Single(_pressed);
+        Assert.Equal("GIT_IDENTITY", route);
+        Assert.Contains("\"action\":\"add-ssh\"", payload);
+        Assert.Contains("\"host\":\"github.com\"", payload);
+        Assert.Contains("\"import\":", payload);
+
+        Assert.Equal(0, (await Run(World(window: true), "identity", "remove", "Work")).Code);
+        Assert.Contains("\"action\":\"remove\",\"identity\":\"Work\"", _pressed[1].Payload);
+        Assert.Equal(0, (await Run(World(window: true), "identity", "read-only", "Work", "off")).Code);
+        Assert.Contains("\"on\":false", _pressed[2].Payload);
+        Assert.Equal(0, (await Run(World(window: true), "use", "--machine", "--host", "github.com", "own")).Code);
+        Assert.Equal(("GIT_USE", """{"scope":"machine","host":"github.com","value":"own"}"""), _pressed[3]);
+        Assert.Equal(0, (await Run(World(window: true), "use", "engine", "--remote", "upstream", "own")).Code);
+        Assert.Equal("""{"scope":"repository","repository":"engine","remote":"upstream","value":"own"}""", _pressed[4].Payload);
+
+        // A new identity is no widening: it runs here, the window running or not.
+        Assert.Equal(0, (await Run(World(window: true), "default", "github.com", "--clear")).Code);
+        Assert.Equal(5, _pressed.Count);
     }
 
     [Fact]

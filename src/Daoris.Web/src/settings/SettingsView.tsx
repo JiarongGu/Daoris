@@ -34,7 +34,7 @@ export type { SettingsSection } from './domains';
  * doors name its tab and section instead. KEEP1f: This Daoris's *Disk space* card, which a volume below its floor opens. TERMTRUST1a:
  * its *Terminal* card, which Notifications' standing confirmation line opens.
  */
-export type SettingsAnchor = 'usage' | 'proposals' | 'update' | 'daoris-space' | 'daoris-terminal' | `step-${SetupStepId}`;
+export type SettingsAnchor = 'usage' | 'proposals' | 'update' | 'daoris-space' | 'daoris-terminal' | 'git-add' | `step-${SetupStepId}`;
 
 /** Settings' domains in the order its list shows them — what Ask Daoris's places are held to (HELP6). */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = SETTINGS_DOMAINS.map(({ id }) => id);
@@ -59,6 +59,9 @@ export type SettingsProps = {
   anchor?: SettingsAnchor | null;
   /** Told once the part is in view, so a later visit opens at the domain's top again. */
   onAnchored?: () => void;
+  /** The host a door named, which Settings → Git opens its add form on (GITAUTH1e), and its close, which lets it go. */
+  gitHost?: string | null;
+  onGitHostClosed?: () => void;
 };
 
 /**
@@ -75,7 +78,10 @@ export type SettingsProps = {
  * Every way in names its domain (D75), through the application's one opener (D118 §3i), so the domain
  * chosen is the caller's to hold, kept as it always was under `daoris.settings` (`listPanes.ts`).
  */
-export function useSettingsLayout({ notify, section = 'appearance', onSection, onGo = () => {}, onAskSetup, browserDrivers = [], onAttend, anchor = null, onAnchored }: SettingsProps): ViewLayout {
+export function useSettingsLayout({
+  notify, section = 'appearance', onSection, onGo = () => {}, onAskSetup, browserDrivers = [], onAttend, anchor = null, onAnchored, gitHost = null,
+  onGitHostClosed,
+}: SettingsProps): ViewLayout {
   const { t } = useTranslation();
   // The same "is a shell here" answer every control uses — one detection path, not two that drift. A shell whose driver has not
   // answered yet keeps its machine's domains (PUSHUX2).
@@ -107,11 +113,13 @@ export function useSettingsLayout({ notify, section = 'appearance', onSection, o
       // Keyed by the domain, so choosing another draws its cards anew, their state with them, and opens it
       // at its top rather than at the scroll the last domain was left at.
       <SettingsMain
-        key={shown}
+        // A door naming another host draws Settings → Git anew, its add form open on that host.
+        key={shown === 'git' && gitHost ? `git:${gitHost}` : shown}
         title={t(named.label)}
         Domain={named.component}
         domain={{
           notify, attached, onGo, onAsk: onAskSetup, drivers: browserDrivers, onAttend,
+          ...(shown === 'git' && gitHost ? { host: gitHost, onClosed: onGitHostClosed } : {}),
         }}
         anchor={anchor}
         onAnchored={onAnchored}

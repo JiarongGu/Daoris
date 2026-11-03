@@ -434,7 +434,8 @@ public sealed class PipeCensus
             "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX",
             "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_GIT_SET", "TOOLS_LOCATION", "TOOLS_STOP", "TOOLS_USE",
             // GITAUTH1e: a git identity added, tested, changed or removed, and a remote, workspace or host pointed at one: Settings → Git.
-            "GIT_IDENTITY", "GIT_USE",
+            // GITAUTH1f: a git go-ahead's Allow or Refuse, the person's yes or no to one act on a remote (§6.6).
+            "GIT_IDENTITY", "GIT_USE", "GIT_ANSWER",
             // Made by the driver, and still the person's (a second agent's review): bringing Daoris's branches up to date
             // fast-forwards the lines and replays and deletes branches, every repository's at once; a second opinion starts a
             // review on one of their accounts; Read again lets a refused account through and ends the tool's own cool-off.
@@ -569,7 +570,9 @@ public sealed class PipeCensus
             // A plugin made in a folder, which installs nothing, and a tool's files and location.
             "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT", "TOOLS_GIT_SET",
             // GITAUTH1e: a git identity's files and pointers; nothing a session runs reads them before its next act, which judges anew.
-            "GIT_IDENTITY", "GIT_USE");
+            "GIT_IDENTITY", "GIT_USE",
+            // GITAUTH1f: a git go-ahead answered, a file its door reads; the act it lets on was started by its own session.
+            "GIT_ANSWER");
         return table;
 
         void Add(PipeDrain drain, params string[] routes)

@@ -89,6 +89,8 @@ internal static class PipeTargetRows
             (a, p) => Each(At(a, "streams")).Any(each => Text(At(each, "key")) == Text(p, "key") && True(At(each, "live")) && True(At(each, "canStop")))
                 ? "open" : ""));
         Row("SESSION_GO_AHEAD", LoopGround.Wait("go-ahead", "ask", "number"));
+        // GITAUTH1f: a git go-ahead, so one answered or gone between the ask and the Confirm is never answered again unseen.
+        Row("GIT_ANSWER", LoopGround.Wait("git-ask", "ask"));
         // KNOWCENTRAL2e: the session whose memory is decided; the service refuses an end no longer awaiting or a session running again.
         Row("SESSION_MEMORY_DECIDE", new SessionGround("session"));
         // LINESTOGETHER1d: the head the sessions are brought into; the press judges every member again under its locks.

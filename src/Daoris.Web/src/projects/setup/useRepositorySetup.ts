@@ -3,8 +3,10 @@ import {
   useAcceptIntegration, useAcross, useDriver, useHarnesses, useHeavyMarks, useLines, useRuleAction, useRules, useSetAccess, useSetCheckoutWrites,
   useSetCommits, useSetDrivable, useSetHandOver, useSetHeavyGates, useSetHelpers, useSetHold, useSetLanded, useSetLanguage, useSetLine,
   useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetWriteAcross, useWorkflowCurrent, standingOf,
-  useGitRemotes, useSetGitUse, useTools,
+  useGitRemotes, useSetGitAccess, useSetGitUse, useTools,
 } from '../../bridge/shell';
+import { type GitAccessEdit, type RepositoryGitAccess, resolveGitAccess } from '../../settings/repository/GitAccess';
+import type { Answered } from '../../work/InlineConfirm';
 import { canBeAsked, type Registration, SESSION_ACTIVE } from '../../data/api';
 import { useSessions } from '../../data/queries';
 import { workspaceOf } from '../../data/workspaces';
@@ -75,6 +77,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
   const lines = useLines();
   const rules = useRules();
   const setGitUse = useSetGitUse();
+  const setGitAccess = useSetGitAccess();
 
   const target = registration?.repository ?? null;
   const shown = enabled && driver.data !== undefined && target !== null;
@@ -389,16 +392,32 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
     }),
   } : null;
 
+  // GITAUTH1f (§7.3): its git access as `LINES` resolves it, the level above as STATE sets its workspace's and this machine's; absent on a
+  // shell older than it.
+  const gitResolved = resolved<RepositoryGitAccess>(lines.data?.gitAccess);
+  const gitAccess = gitResolved ? {
+    workspace: gitResolved.workspace,
+    classes: gitResolved.classes,
+    above: resolveGitAccess([
+      { classes: ofWorkspace(state.workspaceGitAccess, gitResolved.workspace)?.classes, source: 'workspace' },
+      { classes: state.machineGitAccess, source: 'machine' },
+    ]),
+    onChange: (edit: GitAccessEdit, answered?: Answered) => setGitAccess.mutate({ repository, ...edit }, {
+      onSuccess: () => answered?.done(),
+      onError: (error) => (answered ? answered.refused(sentence(error)) : onDriverError(error)),
+    }),
+  } : null;
   const gitRows = remotes.data?.find((each) => each.repository === registration.repository)?.remotes;
-  const git: RepositorySetupProps['git'] = identities && gitRows ? {
-    remotes: gitRows,
-    identities,
+  const git: RepositorySetupProps['git'] = (identities && gitRows) || gitAccess ? {
+    remotes: gitRows ?? [],
+    identities: identities ?? [],
     acts: {
       use: (remote, value) => setGitUse.mutateAsync({
         scope: 'repository', repository, remote: remote.name, ...(value ? { value } : {}),
       }),
       ...(onOpenGit ? { onSetUp: onOpenGit } : {}),
     },
+    access: gitAccess,
   } : null;
 
   return {
@@ -414,6 +433,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
     onOpenPlugin,
     busy: setLine.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
-      || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending,
+      || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending
+      || setGitAccess.isPending,
   };
 }

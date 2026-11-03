@@ -369,6 +369,20 @@ public sealed class ToolsRoutes(DriverContext context)
         GitHolds.LiftAll(home, "pointer");
     }
 
+    // A git go-ahead answered (GITAUTH1f, the git-auth design §6.6): its row's Allow or Refuse in What needs you and on its session's head,
+    // and `daoris git answer` through the window. A door that waits takes the answer; for one that has gone an Allow is kept as a grant for
+    // the identical retry. `{ ask, answer, waiting }`, waiting whether the door was still there. The row goes as the slice hears the file.
+    [DriverRoute("GIT_ANSWER")]
+    [Publishes("GIT_ANSWER", StateScopes.Tools)]
+    private Task<object?> GitAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var ask = Needed(request, "ask");
+        var answer = Needed(request, "answer");
+        if (answer is not ("allow" or "refuse")) throw new DriverException("a git go-ahead is answered allow or refuse.");
+        var waiting = GitAsks.Answer(_loop.Home, ask, answer == "allow", DateTimeOffset.UtcNow);
+        return Task.FromResult<object?>(new { Ask = ask, Answer = answer, Waiting = waiting });
+    }
+
     private static string Needed(IpcRequest request, string name) =>
         Optional(request, name) ?? throw new DriverException($"`{name}` is needed.");
 

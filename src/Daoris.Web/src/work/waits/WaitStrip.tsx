@@ -16,6 +16,7 @@ import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPla
 import type { EntryPress } from '../review/EntryAccept';
 import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
+import { GitAsk, gitAsksFor, type GitAskWaits } from './GitAsk';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
 import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
@@ -62,6 +63,11 @@ export type WaitProps = {
    * shell read, its own drawn, the agents' names, the answer's one door and its pending. Absent where nothing reads them (a browser).
    */
   answers?: AnswerWaits | null;
+  /**
+   * The git go-aheads its git door holds (GITAUTH1f, D198 point 12): every one the shell pushed, its own drawn, the answer's one door
+   * and its pending. Absent where nothing reads them (a browser).
+   */
+  gitAsks?: GitAskWaits | null;
   /**
    * The rules it proposed that the person still answers (PROPOSEHERE1b, D74): the machine's proposals as the shell read them,
    * the answer's door, its pending, and whether the session takes words now. Absent where nothing reads the rules (a browser).
@@ -171,6 +177,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   const open = new Set(waits.filter((wait) => wait.kind === 'goAhead').map((wait) => (wait as { number: number }).number));
   const asking = new Set(waits.filter((wait) => wait.kind === 'permission').map((wait) => (wait as { request: string }).request));
   const alone = waits.some((wait) => wait.kind === 'answerAlone') && props.answers ? answerFor(props.answers.waits, session.id) : null;
+  const gitAsking = new Set(waits.filter((wait) => wait.kind === 'gitAsk').map((wait) => (wait as { id: string }).id));
   const ruled = new Set(waits.filter((wait) => wait.kind === 'rule').map((wait) => (wait as { id: string }).id));
   const helping = new Set(waits.filter((wait) => wait.kind === 'helper').map((wait) => (wait as { id: string }).id));
   // Its agent's ask to hand it over (MIXAGENT1c) is the strip's own: the head draws no line of it, so the strip never stands aside for it.
@@ -259,6 +266,9 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                 />
               </div>
             )}
+            {gitAsking.size > 0 && props.gitAsks && gitAsksFor(props.gitAsks.waits, session.id).filter((ask) => gitAsking.has(ask.id)).map((ask) => (
+              <GitAsk key={ask.id} ask={ask} onAnswer={props.gitAsks!.onAnswer} busy={props.gitAsks!.busy} marked={sought === `gitAsk:${ask.id}`} />
+            ))}
             {alone && props.answers && (
               <AnswerAlone
                 wait={alone}

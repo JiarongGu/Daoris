@@ -68,6 +68,8 @@ export type OpenPart = {
   placeRow?: string;
   /** A place's Workflow with its editor opened on a draft (FLOWCHART2g): a conversation's draft card's door. */
   placeEdit?: PlaceEdit;
+  /** The host Settings → Git's add form opens filled with (GITAUTH1e): a held remote's door, Ask Daoris's screen door. */
+  gitHost?: string;
 };
 
 /** What opening a view does, as a value. */
@@ -80,6 +82,11 @@ export type Opening = {
   chosen?: { view: ListView; item: string };
   /** The part of Settings' domain to bring into view, or null for its top, where the door named a domain. */
   anchor?: SettingsAnchor | null;
+  /**
+   * The host Settings → Git opens its add form on (GITAUTH1e, the git-auth design §7.4), or null for none, where the door named the Git
+   * domain: a door into it never inherits a host another door left.
+   */
+  gitHost?: string | null;
   /** One of Repositories' forms, which stay drawers (§3d). */
   drawer?: 'add' | 'import';
   /**
@@ -169,6 +176,10 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   } else if (named && listed(view)) plan.chosen = { view, item: named };
   // A door naming a domain opens it at the part it names, or at its top: never at a part another door left.
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
+  if (view === 'settings' && item === 'git') {
+    plan.gitHost = part.gitHost ?? null;
+    if (part.gitHost && !part.anchor) plan.anchor = 'git-add';
+  }
   if (view === 'projects' && part.drawer) {
     plan.drawer = part.drawer;
     if (part.drawerWorkspace) plan.drawerWorkspace = part.drawerWorkspace;

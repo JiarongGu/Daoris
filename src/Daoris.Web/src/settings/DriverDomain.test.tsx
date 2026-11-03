@@ -114,6 +114,20 @@ describe('the driver domain', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  // GITAUTH1f (the git-auth design §7.3): the access card carries this machine's git access beside its pauses, each class's change this
+  // machine's, as `daoris git access --machine` sets it.
+  it("sets this machine's git access in its access card", async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
+      ? { ...DRIVER_STATE, machineAccess: { full: false, pauses: [] }, machineGitAccess: [{ class: 'write', value: 'ask' }] }
+      : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const access = within(await screen.findByRole('region', { name: "Sessions' access" }));
+
+    expect(access.getByText('Write', { selector: 'span' })).toBeTruthy();
+    await userEvent.click(within(access.getByRole('radiogroup', { name: 'Write for this machine' })).getByRole('radio', { name: 'deny' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_GIT_ACCESS', { payload: { machine: true, access: { write: 'deny' } } });
+  });
+
   it("offers no sessions' access on a shell older than it", async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, home: 'D:/somewhere/Daoris/data' } : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);

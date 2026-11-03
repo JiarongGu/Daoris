@@ -118,6 +118,28 @@ describe("a workspace's Setup", () => {
     }
   });
 
+  // GITAUTH1f (the git-auth design §7.3): its Git section carries its git access, a value set here opening it; a loosening is asked
+  // first, and only its press sends it.
+  it('carries its git access in its Git section, a loosening confirmed before it is sent', async () => {
+    const onChange = vi.fn();
+    at({
+      git: {
+        hosts: [], identities: [], acts: { use: vi.fn() },
+        access: {
+          classes: [{ class: 'read', value: 'allow', source: 'default' }, { class: 'write', value: 'deny', source: 'workspace' }],
+          above: [{ class: 'read', value: 'allow', source: 'default' }, { class: 'write', value: 'as-today', source: 'default' }],
+          onChange,
+        },
+      },
+    });
+
+    expect(section('Git')).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Write for aurora' })).getByRole('radio', { name: 'allow' }));
+    expect(onChange).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Loosen git access' }));
+    expect(onChange).toHaveBeenCalledWith({ access: { write: 'allow' } }, expect.anything());
+  });
+
   it('has no Reach where it holds no rule answer and no machine', () => {
     at({ rows: 'sessions', remote: {} });
     expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();

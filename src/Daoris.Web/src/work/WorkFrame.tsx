@@ -17,11 +17,12 @@ import {
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
   useAnswerWaits, useAnswerAlone, useRunNodeWord, useResolveHeld, useSessionQuestion, useStopWaiting,
-  useBringTogether, useTogether, useTogetherAct, useConsidered,
+  useBringTogether, useTogether, useTogetherAct, useConsidered, useAttention, useGitAnswer,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
 import { answerAloneSaid, type AnswerWaits } from './waits/AnswerAlone';
+import type { GitAskWaits } from './waits/GitAsk';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { AtWorkView } from './atWork/AtWorkView';
@@ -1747,6 +1748,21 @@ export function WorkFrame({
     }),
     busy: answerAlone.isPending,
   } : null;
+  // The git go-aheads its git door holds (GITAUTH1f, D198 point 12): the rows What needs you was pushed, so the head, the foot and the
+  // band read one judgement and press one door; its answer said where it was pressed, a refusal in the driver's words.
+  const attention = useAttention();
+  const gitAnswer = useGitAnswer();
+  const heldGitAsks: GitAskWaits | null = attended && here && attention.state === 'known' ? {
+    waits: attention.rows.flatMap((row) => (row.kind === 'git-ask' && row.gitAsk ? [{ id: row.id, since: row.since, gitAsk: row.gitAsk }] : [])),
+    onAnswer: (ask, allow, answered) => gitAnswer.mutate({ ask: ask.id, answer: allow ? 'allow' : 'refuse' }, {
+      onSuccess: (answer) => {
+        notify(t(!allow ? 'work.wait.gitAsk.refused' : answer.waiting ? 'work.wait.gitAsk.allowed' : 'work.wait.gitAsk.kept'));
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    busy: gitAnswer.isPending,
+  } : null;
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
   // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
@@ -1954,6 +1970,8 @@ export function WorkFrame({
     permissions: heldPermissions,
     // A third answer alone the bound holds for the person (COWORK1e): one of its waits, at the head and at the foot alike.
     answers: heldAnswers,
+    // A git go-ahead its git door holds (GITAUTH1f): one of its waits, at the head and at the foot alike.
+    gitAsks: heldGitAsks,
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
     onReview: () => openView('review'),
     // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
