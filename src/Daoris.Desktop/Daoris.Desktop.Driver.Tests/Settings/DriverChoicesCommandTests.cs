@@ -206,8 +206,8 @@ public sealed class DriverChoicesCommandTests : IDisposable
     public void The_family_is_this_programs_whole_and_its_usage_names_each_verb()
     {
         Assert.Equal(
-            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
-                "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
+            // ONEWAY1a: `adapter`, `helper` and `intake` left the family, a role's agents the role door's.
+            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
                 "brainstorms", "workflow", "keep", "actor",
                 // FOUNDATION1y-i: the role catalogue's door.
                 "role"],

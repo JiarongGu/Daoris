@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs` | 59 | 819 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs` | 44 | 828 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 157 | 2369 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 157 | 2372 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 56 | 825 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs` | 41 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
@@ -122,11 +122,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Instance/InstanceDoorTests.cs` | 40 | 911 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs` | 64 | 1217 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/TraceTests.cs` | 56 | 926 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/empty.md` | 55 | 395 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full-access.md` | 61 | 450 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full.md` | 63 | 478 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/scoped.md` | 59 | 454 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/sparse.md` | 55 | 394 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/empty.md` | 55 | 391 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full-access.md` | 61 | 446 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full.md` | 63 | 474 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/scoped.md` | 59 | 450 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/sparse.md` | 55 | 390 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AccountRotationTickTests.cs` | 68 | 1116 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AnswerContinuesTickTests.cs` | 43 | 755 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatGoesOnProcessTests.cs` | 52 | 893 |

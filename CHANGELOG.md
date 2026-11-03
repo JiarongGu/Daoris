@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A role's agents are set one way: Agents → Roles' editor, `daoris role set <role> "<agent> [<model>|-] [<effort>|-]" …` (or `off` for Intake and Ask Daoris), or Ask Daoris's role proposal. `daoris settings adapter`, `intake` and `helper` are refused, naming `daoris role set build`, `intake` and `ask-daoris`; `daoris settings actor <role>` names the role door too, and Ask Daoris no longer proposes them as settings. A role's *Clear order* is *Use the default*, which gives the role back its name, work, place and agents as Daoris ships them.
 - `DAORIS_DRIVER_CONFIG` is no longer read: Daoris's standing choices are always the home's own `driver.json`, so a second set of choices is a second home (`DAORIS_HOME`). This Daoris's list of variables no longer shows it.
 - Fixed: a copy of one of Daoris's own plugins that was older than the one the install ships, and whose files you had edited, was offered an update that replaced your edits. Installing or updating one of Daoris's own plugins now records the files it copied, so an older copy edited since is shown as *changed here*, with both versions, and neither the window nor `daoris plugin update` replaces it. A copy installed before this has no such record: its page says Daoris cannot tell whether it was changed and that an update replaces every file.
 - **One command, `daoris`.** Everything is `daoris …` now, in one tree of groups: `daoris help` names them, and `daoris help <group>`

@@ -878,8 +878,11 @@ public sealed partial class HelpCoverageTests
         ("workflow use", new Door("workflow", "use")),
         ("workflow kind", WorkflowOwed),
         ("notify", new Door("setting", "notify")),
-        // ONEWAY1a (the oneway design §2 S1): `intake`, `helper`, `adapter` and `actor` are gone from the family, a role's agents the role
-        // door's alone, `role` below.
+        // ONEWAY1a (the oneway design §2 S1): `intake`, `helper` and `adapter` are gone from the family, a role's agents the role door's
+        // alone, `role` below.
+        ("actor", new Exempt(
+            "it is retired and changes nothing: a role's agents are the role door's, `daoris role set`, which Ask Daoris proposes through "
+            + "`role_propose`; its `export`, `import` and `found` are the staffing copy's, the person's own, which ONEWAY1c-ii retires.")),
         ("strikes", new Door("setting", "strikes")),
         ("retry", new Door("setting", "retry")),
         // SESSWATCH1a (D200, the session-watch design §3): retired; the door is kept only to refuse a helper reading an older room.
