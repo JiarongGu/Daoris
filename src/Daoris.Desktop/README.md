@@ -406,7 +406,20 @@ then the tree's and the per-session plugin copy's (`SpawnSkills`), its connector
 Daoris's (D220); the file is written for every such session, rules or none. Claude Code 2.1.314's own schema says that tier stops the
 account's synced skills and plugins for that invocation alone and moves nothing, so the account's home is never written
 (`HarnessSettings.ProfileHome`). Its bundled skills stay, the same for every account. Codex takes no settings and is unchanged: it reads
-the tree's skills by path.
+the tree's skills by path, which its standing block names.
+Since CONTEXTONE1c every session's first prompt ends with its standing block (`StandingBlock`, composed from the plain `StandingFacts`
+every start sets: `SessionTarget.Block` for a quest's session, an intake, a helper, a partner, a reviewer and a brainstorm's pass;
+`ChatPlace.Block` for a conversation and Ask Daoris). It says where things are (the repository's documents, code and history, the
+knowledge and memory tools, the checkouts it may read, its indexes and code map; on a harness that loads none itself, its skills' folders,
+`ISessionAdapter.LoadsTreeSkills`; past a cut `AGENTS.md`, `ISessionAdapter.InstructionFileLimit`, its rules by their knowledge ids),
+the routing for a build, design or chat (`RoutingStanding` judges, the block words it), the person's choices on this machine (the
+standing answer), the repository's and workspace's facts, and at a move the memory the line read, which the brief hands on
+(`ComposedBrief.Memory`). A kind with no repository (Ask Daoris, an intake, a brainstorm's pass) gets the workspace's part alone. The
+block replaced the routing line, the standing answer's preface and the instruction's map, look and indexes. It is handed at a start and a
+move, never at a go-on, which resumes the same conversation. It is the account's `block` section (source `machine`), and a conversation's
+record keeps it as a `chat.told-block` note. A first prompt that would pass `StandingBlock.Budget` (30,000 characters, under the
+32,767 of the native door's single argument) hands the block through `spawn/<session>.standing/block.md` instead, named in one line,
+which the session's rules read and its record's delete takes.
 
 A conversation's turn (Ask Daoris and a repository's chat, on the protocol door) is tried again the same way since AGENTERRORS1b, inside
 the turn, on the conversation's own process: `ProtocolChat` hands its session the same `TransientRetry` once it is open (`ChatRetry`, the
