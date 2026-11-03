@@ -466,3 +466,27 @@ test('sync writes the roster into the region and the index beside the tiers, so 
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
+
+/**
+ * A canon knowledge document marked `rule: true` is a rule read on demand (CONSOLIDATE1): a file like any knowledge,
+ * locked as one, and a row in the region's table linked to it. A repository's own document so marked is not the canon's
+ * and gets no row; the `change` line comes with the canon's skill.
+ */
+test('a rule read on demand lands as a knowledge file with a linked row in the region, and only the canon gets a row', () => {
+  const fx = seed();
+  fx.canonFx.write('core/knowledge/no-tmp.md', doc('no-tmp').replace('enforces: e\n', 'enforces: e\nrule: true\n'));
+  fx.canonFx.write('core/skills/change/SKILL.md', '---\nname: change\ndescription: Make a change.\n---\n\nSteps.\n');
+  fx.repoFx.write('.claude/knowledge/ours.md', doc('ours').replace('enforces: e\n', 'enforces: e\nrule: true\n'));
+  run(fx);
+
+  const region = fx.repoFx.region()!;
+  assert.match(region, /^\| \[`no-tmp`\]\(\.claude\/knowledge\/no-tmp\.md\) \| w \| e \|$/m);
+  assert.doesNotMatch(region, /Body of no-tmp/);
+  assert.doesNotMatch(region, /`ours`/);
+  assert.match(region, /^Make every change through the `change` skill\.$/m);
+  assert.match(fx.repoFx.read('.claude/knowledge/no-tmp.md'), /Body of no-tmp/);
+  const entry = readLock(fx.repoFx.root)!.entries.find((e) => e.target === 'knowledge/no-tmp.md')!;
+  assert.equal(entry.in, undefined);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
