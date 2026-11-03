@@ -2529,7 +2529,7 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Nineteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Twenty commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
@@ -2553,7 +2553,8 @@ The first version: doctrine that installs, is checked, and flows back.
   favorites, which it shows in a Daoris folder on its bookmarks bar, and its settings, among them
   whether it is Daoris's own or the person's Edge and whether the page's links open there; and `tool`
   says which file each program Daoris runs beside its agents is — Git, Node.js, PowerShell, GitHub CLI
-  and Azure CLI — the system's from `PATH` unless the person names a file (D121). `agent`
+  and Azure CLI — the system's from `PATH` unless the person names a file (D121); and `convert` converts
+  this home's old records through the running Daoris, on the person's press (D228). `agent`
   **spawns**; `connect`, `retire`, `wire` and `import` talk to a service, and `brainstorm` to this machine's own only; `remote`, `driver`, `plugin`,
   `browser` and `tool` only edit files under the Daoris home.
 - **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
