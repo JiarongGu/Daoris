@@ -604,7 +604,7 @@
   "agents.convert.part.notes": "备注",
   "agents.convert.unread": "未能读取{{part}}：",
   "agents.convert.removed": "永久移除",
-  "agents.convert.removedLead": "已结束的历史，由其所在存储自己的清理器清除。撤销不会把它恢复。",
+  "agents.convert.removedLead": "已完成的历史，由其所在存储自己的移除程序清除。撤销不会把它恢复。",
   "agents.convert.clearCount": "{{count}} 条记录",
   "agents.convert.clearCount_other": "{{count}} 条记录",
   "agents.convert.clearSpan": "从 {{from}} 到 {{to}}",
