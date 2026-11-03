@@ -42,7 +42,9 @@ and door, each one a provider cannot pass yet held in its own `pending.json` (a 
 handed at the open, the carriers, the end, the go-on and the restart. `Agents/TransportRun.cs` implements it over today's two transports, a
 protocol door's `AcpSession` and the native capture, as one unit of a start (process, tracking, reaper, capture, wait, bounded capture), admitting
 each operation by its door's evidence and refusing the words until m-ii; what it asks of the loop is `ITransportHost`, answered by
-`Loop/DriverTransportHost.cs` from the driver. `DriverWatch` takes an optional adapter
+`Loop/DriverTransportHost.cs` from the driver and by `Loop/Chat/ChatTransportHost.cs` from the conversation's runner. Every executor holds it,
+the conversation's runner too (ONEWAY1h-iii): its start, end, stop and close are the run's, its session held open through
+`TransportRun.Session` for the words beside it until m-ii. `DriverWatch` takes an optional adapter
 set for its roster and each look's driver, `AdapterSet.Built()` when none is given.
 A stand-in's program is one Node module in its folder's `Program/`, both doors chosen by the arguments its `provider.json` states, and the
 project's one glob (`Agents/Providers/*/Program/**`) carries it beside the driver, so the suite's live cases run it from their build output

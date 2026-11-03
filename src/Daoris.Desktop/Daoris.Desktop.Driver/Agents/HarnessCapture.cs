@@ -44,23 +44,14 @@ internal static class HarnessCapture
     ];
 
     /// <summary>
-    /// The driven session's capture, and the same for a session the loop did not spawn — a chat (D49 §3), whose process
-    /// belongs to <see cref="ChatRunner"/>. Shared rather than copied: one pump, one tee, one set of
-    /// rules about which destination is the durable one.
+    /// The pipe door's capture over the two streams, the one every run's plain text is read by, a conversation's among them
+    /// (<see cref="TransportRun"/>): what a harness says on either reaches the transcript and the console. Shared rather than copied:
+    /// one pump, one tee, one set of rules about which destination is the durable one.
     /// </summary>
     /// <param name="preamble">
     /// A fact about how this run was set up, written ahead of anything the process says — the pipe
     /// door's form of the protocol door's first transcript lines.
     /// </param>
-    internal static Task CaptureAsync(
-        Process process, string transcript, string sessionId, ISessionOutput? output, CancellationToken ct,
-        string? preamble = null) =>
-        CaptureAsync(process.StandardOutput, process.StandardError, transcript, sessionId, output, ct, preamble);
-
-    /// <summary>
-    /// The pipe door's capture over the two streams themselves, so it is testable without a process: what a harness says
-    /// on either reaches the transcript and the console.
-    /// </summary>
     internal static async Task CaptureAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, ISessionOutput? output,
         CancellationToken ct, string? preamble = null)

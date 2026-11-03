@@ -5,6 +5,6 @@ internal interface ITurnedChat
 {
     IChatTurns Turns { get; }
 
-    /// <summary>Let the turns already asked for run, then end the input.</summary>
-    Task FinishAsync(Action endInput);
+    /// <summary>Let the turns already asked for run, then close the conversation's run (<paramref name="close"/>).</summary>
+    Task FinishAsync(Func<Task> close);
 }

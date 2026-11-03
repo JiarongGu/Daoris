@@ -4603,14 +4603,15 @@ public sealed class Driver(
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
                 typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
         });
+        // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first line and
+        // the answer (ANSWER1a), the target already in the conversation above.
+        IReadOnlyList<SessionEvent> opening = resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed);
         run.HandRecords(new RunRecords(
             sessionId, transcript, output, Context.Events, LineageHome: home, KeepAs: keepAs, Own: own, Said: said,
-            // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first line and
-            // the answer (ANSWER1a), the target already in the conversation above.
-            Opening: resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed),
-            // The protocol door's transcript opens with what its harness is doing that Daoris could not govern (ACP3); the native door's with
-            // how its run was set up.
-            Preamble: protocol ? harnessNotice : preamble));
+            // The protocol door's opening goes on with what its harness is doing that Daoris could not govern, said as a note (ACP3); the native
+            // door's transcript opens with how its run was set up.
+            Opening: protocol && harnessNotice is { Length: > 0 } notice ? [.. opening, new SessionEvent { Kind = SessionEventKind.Note, Text = notice }] : opening,
+            Preamble: protocol ? null : preamble));
         // MSG1b: the rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));
         await (resume is null ? run.OpenAsync(ct) : run.ResumeAsync(resume.Conversation, ct)).ConfigureAwait(false);
