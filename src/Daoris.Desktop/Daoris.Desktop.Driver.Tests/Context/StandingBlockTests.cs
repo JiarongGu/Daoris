@@ -183,7 +183,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
     [Fact]
     public void A_block_past_the_budget_goes_through_its_file_and_the_prompt_names_it()
     {
-        var facts = new StandingFacts { Repository = "engine", File = "C:/home/run/spawn/s1.standing/block.md" };
+        var facts = new StandingFacts { Repository = "engine", File = "C:/daoris/run/spawn/s1.standing/block.md" };
         var block = StandingBlock.Compose(facts);
 
         var fits = StandingBlock.Fitted(facts, StandingBlock.Budget - block.Text.Length - StandingBlock.Joint.Length);
@@ -193,7 +193,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         Assert.False(fits.Filed);
         Assert.Equal(block.Text, fits.Text);
         Assert.True(over.Filed);
-        Assert.Contains("is in `C:/home/run/spawn/s1.standing/block.md`", over.Text, StringComparison.Ordinal);
+        Assert.Contains("is in `C:/daoris/run/spawn/s1.standing/block.md`", over.Text, StringComparison.Ordinal);
         Assert.Contains("read that file before anything else", over.Text, StringComparison.Ordinal);
         Assert.Equal(over.Text.Length, over.Account.Chars);
         Assert.Equal(StandingBlock.Budget, Assert.Single(over.Account.Cuts!, cut => cut.Code == HandedCuts.BlockFiled).Limit);
