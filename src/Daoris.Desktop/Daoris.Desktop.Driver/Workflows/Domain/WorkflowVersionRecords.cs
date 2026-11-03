@@ -25,4 +25,6 @@ public sealed record WorkflowFileFound(string Id, JsonNode? File, NamedWorkflowR
     string? IKnowledgeWorkflowFile.Problem => Read.Problem;
     string? IKnowledgeWorkflowFile.Name => Read.Name;
     int IKnowledgeWorkflowFile.NewestVersion => Read.Versions[^1].Version;
+    string? IKnowledgeWorkflowFile.LandMethod => LandNodes.WrittenLanding(Read.Versions[^1].Graph).Method;
+    string? IKnowledgeWorkflowFile.LandPattern => LandNodes.WrittenLanding(Read.Versions[^1].Graph).Pattern;
 }

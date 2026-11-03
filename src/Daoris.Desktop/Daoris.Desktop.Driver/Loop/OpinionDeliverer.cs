@@ -91,7 +91,8 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 
         var kept = Deliveries.Read(view.Id);
         if (kept.Person is { } toPerson) return ToPerson(view, named, toPerson);
-        if (view.HandedTo is null) return await HandAsync(view, named, asked, ct).ConfigureAwait(false);
+        // The opinion's `handed` is its once-guard here: an unkeyed findings word, handed before the one door, has no key to answer a retry.
+        if (view.HandedTo is null) return await HandAsync(view, named, asked, ct).ConfigureAwait(false); // transitional: opinion-handed-guard
         if (kept.Answered is { } answered) return await AnsweredAsync(view, named, answered, kept, asked, ct).ConfigureAwait(false);
 
         // Handed: its record has the words, or its turn on them runs, until the turn ends and its answers are read.
@@ -143,17 +144,22 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     /// <summary>
     /// Hand a first pass's findings to the working session (design §6.3): once, through the local host's door, and only to an
     /// ended record of this machine's that takes words. A running or parked one takes them at its turn's end, so they wait; a
-    /// record that never goes on sends them to the person (design §6.7).
+    /// record that never goes on sends them to the person (design §6.7). COMMS1b (the comms design §4.2, §13 point 1): against a host with the
+    /// one door for solicited answers, the record read is the head of the working session's line, as that door walks it, and a park the person
+    /// answered takes them beside their answer; the hand asks a settled answer under the opinion's key, and a settled or waiting one is handed.
     /// </summary>
     private async Task<OpinionDelivery> HandAsync(OpinionView view, string named, OpinionPassAsk asked, CancellationToken ct)
     {
-        var record = await Service.RecordAsync(view.Working, ct).ConfigureAwait(false);
+        var working = await Service.RecordAsync(view.Working, ct).ConfigureAwait(false);
         // CHATFLOW1e (the chat-flow design §6.2): a chat run's findings go back into its own conversation, only between turns. A chat with no chat
         // run, one in the checkout or whose tree is gone, sends them to the person below, as before.
-        if (record is not null && ChatRunOf(record, asked) && await LineOfAsync(view.Working, ct).ConfigureAwait(false) is { Count: > 0 } chatLine)
+        if (working is not null && ChatRunOf(working, asked) && await LineOfAsync(view.Working, ct).ConfigureAwait(false) is { Count: > 0 } chatLine)
         {
             return await SendBackAsync(view, named, asked, chatLine, ct).ConfigureAwait(false);
         }
+
+        var answers = working is not null && await Service.Opens.AnswersAsync(ct).ConfigureAwait(false);
+        var record = answers ? SolicitedHand.Walk(await Service.RecordsAsync(ct).ConfigureAwait(false), view.Working).Head ?? working : working;
 
         // FOUNDATION1i path 5: what never takes findings is the course's answer for a solicited answer; a conversation is the chat runner's,
         // which the line above sent it to where it has a run, and nothing else is the course's to say.
@@ -171,29 +177,33 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         };
         if (never is not null) return ToPersonKept(view, named, never);
 
-        if (record!.Running || record.Parked)
-        {
-            // 🔴 Never into a step in flight (D136): a running turn takes another agent's claims at its end, and a park after the
-            // person's answer. The next look hands them, once the record has ended.
-            return Waiting(view, named, record);
-        }
+        // 🔴 Never into a step in flight (D136): a running turn takes another agent's claims at its end, and a park after the person's answer,
+        // which through the one door is beside it (§13 point 1). The next look hands them, once the record has ended.
+        // transitional: solicited-older-host
+        if (answers ? !SolicitedHand.TakesNow(record!) : record!.Running || record.Parked) return Waiting(view, named, record);
 
-        var (handed, message, _) = await Service.Opinions.HandAsync(view.Id, ct).ConfigureAwait(false);
-        if (!handed)
+        // A settled answer (row p) is handed: the findings' word was kept and taken before, so nothing is said for it again.
+        var hand = await Service.Opinions.HandWordAsync(view.Id, ct).ConfigureAwait(false);
+        if (!hand.Handed)
         {
             // The record moved between the read and the hand, or the host said why not: tried again at the next look.
-            return new OpinionDelivery(view.Id, OpinionDeliveryStates.Waiting, $"waiting  {named}: {message}") { Session = view.Working };
+            return new OpinionDelivery(view.Id, OpinionDeliveryStates.Waiting, $"waiting  {named}: {hand.Message}") { Session = record.Session };
         }
 
-        var line = $"— {view.Who}'s {Plural(view.Findings!.Count, "finding")} on this work are its next turn, as another agent's claims "
-                   + "to check, at the driver's next look.";
-        _context.Output?.Append(view.Working, line);
+        // Where the door kept them, or found them waiting: the head of the line, never a record the line has left.
+        var to = hand.Answer.Holder?.Session ?? hand.Opinion?.HandedTo ?? record.Session;
+        if (hand.Answer.Fate != SolicitedFate.Settled)
+        {
+            _context.Output?.Append(to, $"— {view.Who}'s {Plural(view.Findings!.Count, "finding")} on this work are its next turn, as another agent's claims "
+                                        + "to check, at the driver's next look.");
+        }
+
         return new OpinionDelivery(
             view.Id, OpinionDeliveryStates.Handed,
-            $"handed  {named}: its {Plural(view.Findings.Count, "finding")} went to session {view.Working} as another agent's claims, "
+            $"handed  {named}: its {Plural(view.Findings!.Count, "finding")} went to session {to} as another agent's claims, "
             + "its next turn at the driver's next look.")
         {
-            Session = view.Working,
+            Session = to,
         };
     }
 
@@ -233,8 +243,8 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         {
             Hand = async (to, token) =>
             {
-                var (handed, _, _, word) = await Service.Opinions.HandWordAsync(view.Id, token, to).ConfigureAwait(false);
-                return handed ? word : null;
+                var hand = await Service.Opinions.HandWordAsync(view.Id, token, to).ConfigureAwait(false);
+                return hand.Handed ? hand.Word : null;
             },
             Answered = steered => FrozenAsync(view, newest.Id, newest.Tree, steered),
         };

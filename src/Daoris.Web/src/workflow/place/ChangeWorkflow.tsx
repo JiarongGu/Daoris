@@ -37,11 +37,10 @@ export function copyIdFor(name: string, from: string, taken: readonly string[]):
   return id;
 }
 
-/** The key of what is selected: a preset, a saved workflow, Current, or the clearing of the place's own choice. */
+/** The key of what is selected: a preset, a saved workflow, or the clearing of the place's own choice. */
 const keyOf = {
   preset: (id: string) => `preset:${id}`,
   saved: (id: string) => `saved:${id}`,
-  current: CURRENT,
   clear: 'clear',
 } as const;
 
@@ -115,7 +114,7 @@ const small = 'min-h-0 border border-line px-2 py-0.5 text-small';
 
 /**
  * **Change…** (AGENTSPLACE1h, SETUPUX1p; the Setup design's §2.3): what one route of a place follows, chosen from three tabs: the presets
- * the driver ships, the workflows saved here, and *Current*, live and derived. Selecting a candidate draws it through the place's own chart
+ * the driver ships, the workflows saved here, and *Current*, which is only the conversion's door (WORKFLOWCLEAN1h-b). Selecting a candidate draws it through the place's own chart
  * and writes nothing; where `WORKFLOW_LIST` announces `use: ['plan']`, it also reads the plan of choosing it, and *Use here* carries the
  * plan's `expected` token, so a choice whose plan moved is refused `moved` in the driver's words. Unannounced, *Use here* is today's press.
  * A preset is stored by *Save a copy…* (a name alone) before it is used. *Use the workspace's* clears the place's own choice for the route,
@@ -128,7 +127,7 @@ const small = 'min-h-0 border border-line px-2 py-0.5 text-small';
  * A molecule: the lists arrive as props, and the plan, the save and the choice go out.
  */
 export function ChangeWorkflow({
-  list, error, current, place, route, effective, shown, onShow, using = false, saving = false, onUse, onPlan, onSave, onStartFrom, onClose,
+  list, error, current, place, route, effective, shown, onShow, using = false, saving = false, onUse, onPlan, onSave, onStartFrom, onConvert, onClose,
 }: {
   /** The saved workflows and the presets; null while read. */
   list: WorkflowListAnswer | null;
@@ -140,7 +139,7 @@ export function ChangeWorkflow({
   place: { repository: string } | { workspace: string };
   /** The route the choice is for. */
   route: ChangeRoute;
-  /** What the route follows now, once answered: Current's drawing is only this one's. */
+  /** What the route follows now, once answered: it names the tab the panel opens on and gives a saved workflow's place. */
   effective: WorkflowEffective | null;
   /** The saved version last asked for by `onShow`, once it is answered. */
   shown: WorkflowShownAnswer | null;
@@ -152,6 +151,8 @@ export function ChangeWorkflow({
   onSave: (ask: WorkflowSaveAsk) => Promise<WorkflowSaveAnswer>;
   /** Open the step editor from a preset's steps. */
   onStartFrom: (start: PresetStart) => void;
+  /** Opens the conversion, the one way out of Current; none, and the Current tab offers no door. */
+  onConvert?: () => void;
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -193,10 +194,9 @@ export function ChangeWorkflow({
   // The version chosen is the one the preview draws, so the press cannot choose another than the person read.
   const previewed = selectedSaved && shown?.id === selectedSaved.id ? shown.version : undefined;
   const ask: WorkflowUseAsk | null =
-    selected === keyOf.current ? { ...at, workflow: CURRENT }
-      : selected === keyOf.clear ? at
-        : selectedSaved && previewed !== undefined && selectedSaved.problem === null ? { ...at, workflow: selectedSaved.id, version: previewed }
-          : null;
+    selected === keyOf.clear ? at
+      : selectedSaved && previewed !== undefined && selectedSaved.problem === null ? { ...at, workflow: selectedSaved.id, version: previewed }
+        : null;
   const askKey = ask === null ? '' : JSON.stringify(ask);
   const announced = list?.use?.includes('plan') === true && onPlan !== undefined;
 
@@ -259,7 +259,7 @@ export function ChangeWorkflow({
     }
   };
 
-  // What the preview draws: a preset's steps, a saved version once it is read, or Current where the route follows it.
+  // What the preview draws: a preset's steps, or a saved version once it is read.
   const drawn = (workflow: string, name: string | null, version: number | null, digest: string | null, graph: unknown): WorkflowEffective => ({
     route: route.key, workflow, name, version, digest, schema: 2,
     source: effective?.source ?? { level: level === 'repository' ? 'repository' : 'workspace', kind: route.kind, label: route.label, paths: [] },
@@ -295,11 +295,6 @@ export function ChangeWorkflow({
         drawn(read.id, nameOf(selectedSaved), read.version, read.digest, read.body),
         t('workflow.place.change.previewSaved', { name: nameOf(selectedSaved), version: read.version }),
       );
-    }
-    if (selected === keyOf.current) {
-      return effective && effective.workflow === CURRENT && effective.graph
-        ? chart(effective, t('workflow.place.change.previewCurrent'))
-        : <p className="m-0 text-small text-ink-soft">{t('workflow.place.change.currentNotDrawn')}</p>;
     }
     return null;
   };
@@ -378,26 +373,20 @@ export function ChangeWorkflow({
         </ul>
       );
     }
+    // Current is no candidate (D228): the rule it reads is converted to a saved workflow, which is the one way out of it.
     return (
-      <ul className="m-0 grid list-none gap-1.5 p-0">
-        <li className="grid min-w-0 gap-0.5">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <button
-              type="button"
-              aria-pressed={selected === keyOf.current}
-              onClick={() => select(keyOf.current)}
-              className={cn(
-                'min-w-0 border-l-2 py-0.5 pl-2.5 text-left text-body hover:bg-raised',
-                selected === keyOf.current ? 'border-accent font-semibold text-ink' : 'border-transparent text-ink',
-              )}
-            >
-              {t('workflow.place.change.current')}
-            </button>
-            <Pill tone="neutral">{t('workflow.place.change.version', { version: current.version })}</Pill>
+      <div className="grid min-w-0 gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-body text-ink">{t('workflow.place.change.current')}</span>
+          <Pill tone="neutral">{t('workflow.place.change.version', { version: current.version })}</Pill>
+        </div>
+        <span className="block text-small text-ink-soft">{t('workflow.place.change.currentLive')}</span>
+        {onConvert && (
+          <div className="flex flex-wrap gap-1.5">
+            <Button variant="ghost" className={small} onClick={onConvert}>{t('agents.convert.open')}</Button>
           </div>
-          <span className="block pl-3 text-small text-ink-soft">{t('workflow.place.change.currentLive')}</span>
-        </li>
-      </ul>
+        )}
+      </div>
     );
   };
 
@@ -425,8 +414,7 @@ export function ChangeWorkflow({
     }
     if (selected === null) return <p className="m-0 text-small text-ink-soft">{t('workflow.place.change.pick')}</p>;
 
-    const name = selectedPreset ? presetName(t, i18n, selectedPreset)
-      : selectedSaved ? nameOf(selectedSaved) : t('workflow.place.change.current');
+    const name = selectedPreset ? presetName(t, i18n, selectedPreset) : selectedSaved ? nameOf(selectedSaved) : '';
     return (
       <div className="grid min-w-0 gap-2">
         <h4 className="m-0 text-body font-semibold text-ink [overflow-wrap:anywhere]">{name}</h4>
@@ -448,7 +436,6 @@ export function ChangeWorkflow({
             </>
           )}
           {selectedSaved && selectedSaved.problem === null && !chosenOnRoute(selectedSaved) && useHere(name, ask)}
-          {selected === keyOf.current && ask && useHere(name, ask)}
         </div>
         {selectedPreset && copying && (
           <CopyForm key={selectedPreset.id} initial={name} busy={saving} onSave={(copied) => copy(selectedPreset, copied)} onCancel={() => setCopying(false)} />

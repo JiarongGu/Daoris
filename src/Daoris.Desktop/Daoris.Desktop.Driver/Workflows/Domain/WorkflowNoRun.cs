@@ -25,9 +25,6 @@ public static class WorkflowNoRun
     /// <summary>A chat in a tree of its own, before a conversation's work has a run of its own (CHATFLOW1c).</summary>
     public const string ChatOwnTree = "chat-own-tree";
 
-    /// <summary>A chat in a tree of its own whose repository's workflow is a graph version, before CHATFLOW1f.</summary>
-    public const string ChatGraphLater = "chat-graph-later";
-
     /// <summary>A chat whose tree is gone and was never bound.</summary>
     public const string ChatTreeGone = "chat-tree-gone";
 
@@ -52,7 +49,7 @@ public static class WorkflowNoRun
     /// <summary>Every code, in the design's order.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
-        NoSession, NoQuest, AskNoQuest, ChatCheckout, ChatOwnTree, ChatGraphLater, ChatTreeGone, AskDaoris, Reviewer, Helper, Partner,
+        NoSession, NoQuest, AskNoQuest, ChatCheckout, ChatOwnTree, ChatTreeGone, AskDaoris, Reviewer, Helper, Partner,
         Teammate, Unanswered,
     ];
 
@@ -69,9 +66,6 @@ public static class WorkflowNoRun
             "This chat works in your checkout, not in a tree of its own, so its work runs no workflow: what it changes is yours to commit. "
             + "To give work a workflow, start a conversation with a tree of its own.",
         ChatOwnTree => "This chat works in a tree of its own, but this build reads no workflow for a conversation's work yet.",
-        ChatGraphLater =>
-            $"This chat's repository follows the workflow `{workflow}`, which this build does not run for a conversation's work yet, "
-            + "so its work is landed as before.",
         ChatTreeGone => "This chat's tree is gone, and its work was never bound to a workflow, so there is no run to show.",
         AskDaoris =>
             "Ask Daoris works in its workspace's room, not in a repository's tree, and a repository's work is asked for through a quest, "

@@ -195,8 +195,10 @@ public sealed class SessionStoreTests : IAsyncLifetime
         var answered = await _sessions.KeepSaidAsync(
             parked.Id, new SaidWord("w1", "8080.", Now.AddMinutes(1), []), note: "which port?\n\nAnswered: 8080.");
 
-        Assert.Equal((SessionState.AwaitingPerson, "8080.", "which port?\n\nAnswered: 8080.", Now.AddMinutes(1)),
-            (answered!.State, answered.Answer, answered.Note, answered.Updated));
+        Assert.Equal((SessionState.AwaitingPerson, "which port?\n\nAnswered: 8080.", Now.AddMinutes(1)),
+            (answered!.State, answered.Note, answered.Updated));
+        Assert.Equal(["8080."], answered.Said.Select(word => word.Text));
+        Assert.True(answered.PersonSaid);
         var after = (await _sessions.OwnChangedSinceAsync(before, Workspaces.Default)).Single().Revision;
         Assert.True(after > before);
 
@@ -207,7 +209,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Equal((false, true), (both.Said[0].Reopens, both.Said[1].Reopens));
         Assert.Equal(["notes.md"], both.Said[1].Files);
         Assert.Equal(Now.AddMinutes(2), both.Said[1].At);
-        Assert.Equal("8080.\n\n9090.", both.Answer);
+        Assert.Equal(["8080.", "9090."], both.Said.Select(word => word.Text));
         Assert.Equal(("which port?\n\nAnswered: 8080.", Now.AddMinutes(1)), (both.Note, both.Updated));
 
         await _sessions.SetStateAsync(parked.Id, SessionState.Working, null, null, null, Now.AddMinutes(3));
@@ -215,7 +217,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         await _sessions.SetStateAsync(parked.Id, SessionState.AwaitingPerson, "and which host?", null, null, Now.AddMinutes(4), clearSaid: true);
         var cleared = (await _sessions.FindAsync(parked.Id))!;
         Assert.Empty(cleared.Said);
-        Assert.Null(cleared.Answer);
+        Assert.False(cleared.PersonSaid);
 
         var fed = new Session(
             "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code", SessionState.AwaitingPerson, "which port?", null, null, Now, Now);
@@ -279,7 +281,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         var first = Assert.Single(before.Said);
         Assert.Equal(("answer", "8080.", DateTimeOffset.Parse("2026-10-02T10:05:00Z"), false), (first.Id, first.Text, first.At, first.Reopens));
         Assert.Empty(first.Files);
-        Assert.Equal("8080.", before.Answer);
+        Assert.True(before.PersonSaid);
         // XAGENT1c: a record from before reads as before: its answer is the person's, and it names no opinion.
         Assert.Null(first.By);
         Assert.Null(before.Opinion);
@@ -288,7 +290,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
 
         var joined = (await store.FindAsync("abcd1234"))!;
         Assert.Equal(["answer", "w2"], joined.Said.Select(word => word.Id));
-        Assert.Equal("8080.\n\n9090, not 8080.", joined.Answer);
+        Assert.Equal(["8080.", "9090, not 8080."], joined.Said.Select(word => word.Text));
         await using var column = old.CreateCommand();
         column.CommandText = "SELECT answer FROM sessions WHERE id = 'abcd1234'";
         Assert.Equal(DBNull.Value, await column.ExecuteScalarAsync());
@@ -631,12 +633,12 @@ public sealed class SessionStoreTests : IAsyncLifetime
         var words = (await _sessions.FindAsync(working.Id))!;
         Assert.Equal(new string?[] { null, "abcd1234" }, words.Said.Select(word => word.By));
         Assert.Equal([true, false], words.Said.Select(word => word.Persons));
-        Assert.Equal("Also add the changelog line.", words.Answer);
+        Assert.True(words.PersonSaid);
 
         await _sessions.TakeSaidAsync(working.Id, ["w1"]);
         var theirs = (await _sessions.FindAsync(working.Id))!;
         Assert.Equal("abcd1234", Assert.Single(theirs.Said).By);
-        Assert.Null(theirs.Answer);
+        Assert.False(theirs.PersonSaid);
 
         await _sessions.MirrorAsync(reviewer with { Id = "alice-laptop/" + reviewer.Id, Origin = "alice-laptop" });
         Assert.Null((await _sessions.FindAsync("alice-laptop/" + reviewer.Id))!.Opinion);
@@ -660,7 +662,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
 
         Assert.Equal(new (string?, string?, bool)[] { (null, null, true), ("daoris", "reopen/q1/desk/44", false) },
             words.Said.Select(word => (word.From, word.Key, word.Persons)));
-        Assert.Equal("Also add the changelog line.", words.Answer);
+        Assert.Equal(["Also add the changelog line."], words.Said.Where(word => word.Persons).Select(word => word.Text));
         await _sessions.TakeSaidAsync(ended.Id, ["w1"]);
         var left = Assert.Single((await _sessions.FindAsync(ended.Id))!.Said);
         Assert.Equal(("daoris", "reopen/q1/desk/44"), (left.From, left.Key));

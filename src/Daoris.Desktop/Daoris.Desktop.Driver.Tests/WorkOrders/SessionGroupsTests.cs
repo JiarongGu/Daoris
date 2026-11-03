@@ -35,10 +35,16 @@ public sealed class SessionGroupsTests
             ["from"] = from,
             ["fromWhy"] = fromWhy,
             // The person's words waiting on it (MSG1a), each by its id, as the service answers this machine.
-            ["said"] = new JsonArray([.. (said ?? []).Select(word => (JsonNode)new JsonObject
-            {
-                ["id"] = word, ["text"] = $"the words {word}", ["at"] = T0.AddMinutes(at + 2).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
-            })]),
+            ["said"] = new JsonArray([
+                .. (said ?? []).Select(word => (JsonNode)new JsonObject
+                {
+                    ["id"] = word, ["text"] = $"the words {word}", ["at"] = T0.AddMinutes(at + 2).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+                }),
+                .. string.IsNullOrEmpty(answer) ? [] : new[] { (JsonNode)new JsonObject
+                {
+                    ["id"] = "answer", ["text"] = answer, ["at"] = T0.AddMinutes(at + 2).ToString("O"), ["files"] = new JsonArray(),
+                } },
+            ]),
             ["deletable"] = deletable,
             ["id"] = id,
             ["repository"] = repository,
@@ -51,7 +57,6 @@ public sealed class SessionGroupsTests
             ["created"] = T0.AddMinutes(at).ToString("O"),
             ["updated"] = T0.AddMinutes(updated ?? at + 1).ToString("O"),
             ["interrupted"] = interrupted,
-            ["answer"] = answer,
         };
 
     private static QuestView Quest(string id, string status, string to = "engine", string? awaits = null) =>
@@ -1010,17 +1015,13 @@ public sealed class SessionGroupsTests
             Record("s1", "awaiting-person", "q1", answer: "Use the second."),
             Record("s2", "awaiting-person", "q2"),
             Record("s3", "awaiting-person", "q3", answer: ""),
-            new JsonObject { ["id"] = "s4", ["state"] = "awaiting-person", ["answer"] = 7 }).ToJsonString();
+            new JsonObject { ["id"] = "s4", ["state"] = "awaiting-person", ["answer"] = "wire only" }).ToJsonString();
 
         var records = SessionRecords.Parse(json);
 
-        Assert.Equal("Use the second.", records[0].Answer);
+        Assert.Equal("Use the second.", Assert.Single(records[0].Said!).Text);
         Assert.True(records[0].Answered);
-        Assert.All(records.Skip(1), record =>
-        {
-            Assert.Null(record.Answer);
-            Assert.False(record.Answered);
-        });
+        Assert.All(records.Skip(1), record => Assert.False(record.Answered));
     }
 
     /// <summary>

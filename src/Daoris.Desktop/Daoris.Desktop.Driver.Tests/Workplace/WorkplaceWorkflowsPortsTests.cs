@@ -26,7 +26,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
     private void Choose()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(
+        StoredSteps.Add(_home, new WorkflowVersionAdded(
             "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(Steps)), kept: []);
         WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "engine", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }
@@ -255,7 +255,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             WorkplaceWorkflows.Current = operations;
 
             // A bind the home could not keep refuses the press, before the record is read.
-            var code = await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null, null);
+            var code = await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null);
             Assert.NotEqual(0, code);
             Assert.Equal([$"bind:chat-s1:{Tree}"], operations.Calls);
             Assert.IsAssignableFrom<IWorkplacePluginCatalog>(operations.Catalog);
@@ -263,7 +263,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             // One bound goes on to the press's view of the record: a live one is held by the running Daoris, and none is reached here.
             operations.Failed = null;
             operations.Calls.Clear();
-            await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null, null);
+            await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null);
             Assert.Equal([$"bind:chat-s1:{Tree}", "press:s1"], operations.Calls);
         }
         finally { WorkplaceWorkflows.Current = actual; }
@@ -364,6 +364,8 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
         public IWorkplacePluginCatalog? Catalog { get; private set; }
 
+        public string? SkippedLook(string home, string run, string? node) => null;
+
         public string? AcceptedGates(DriverConfig config, string repository, string? workspace)
         {
             Calls.Add($"accepted:{repository}:{workspace}");
@@ -380,6 +382,12 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             string home, DriverConfig config, Func<CancellationToken, Task<IReadOnlyList<QuestView>>> quests, string quest, string repository,
             string? workspace, CancellationToken ct) =>
             throw new NotSupportedException();
+
+        public string? TakenOf(string session, string recordsJson) => null;
+
+        public void SubmitChatCandidate(string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed)
+        {
+        }
 
         public string? BindChatFirst(DriverConfig config, string home, string run, string tree, IWorkplacePluginCatalog plugins, DateTimeOffset at)
         {
@@ -399,5 +407,19 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             Calls.Add($"land:{rule.Form}");
             return (rule.Form, "gph-0");
         }
+
+        public bool FollowsSaved(DriverConfig config, string repository, string? workspace) => false;
+
+        public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null) => new(false, false, null, null, null);
+
+        public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at)
+        {
+        }
+
+        public void TakeRepair(string home, Func<bool>? holdsLease, string unit, string review)
+        {
+        }
+
+        public int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review) => 0;
     }
 }

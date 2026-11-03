@@ -56,8 +56,8 @@ public sealed class McpOpinionChatHandTests : McpToolsFixture
 
     /// <summary>
     /// 🔴 (a): a chat run's live record between turns takes the findings as an ordinary word carrying <c>by</c>, the hand records it as the
-    /// record handed to, and only it answers. Without <c>to</c> a live conversation is refused as before, and so is every other active record
-    /// named: a driven session at work, a conversation waiting on the person, another tree's conversation.
+    /// record handed to, and only it answers. Every other active record named is refused: a driven session at work, a conversation waiting on
+    /// the person, another tree's conversation.
     /// </summary>
     [Fact]
     public async Task The_hand_admits_a_chat_runs_working_record_and_refuses_every_other_active_one()
@@ -69,11 +69,10 @@ public sealed class McpOpinionChatHandTests : McpToolsFixture
             tree: Path.Combine(_root, "trees", "s-other"), ownEntry: true);
         await sessions.SetStateAsync(elsewhere.Id, SessionState.Working, null, null, null, DateTimeOffset.UtcNow);
 
-        Assert.Equal(OpinionRefusal.CannotTake, (await desk.HandAsync(opinion, DateTimeOffset.UtcNow)).Refusal);
         Assert.Equal(OpinionRefusal.CannotTake, (await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: driven.Id)).Refusal);
         Assert.Equal(OpinionRefusal.CannotTake, (await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: elsewhere.Id)).Refusal);
         await sessions.SetStateAsync(chat.Id, SessionState.AwaitingPerson, "asked.", null, null, DateTimeOffset.UtcNow);
-        Assert.Contains("only between its turns", (await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: chat.Id)).Message);
+        Assert.Contains("waits on the person's answer", (await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: chat.Id)).Message);
         await sessions.SetStateAsync(chat.Id, SessionState.Working, null, null, null, DateTimeOffset.UtcNow);
         Assert.Null((await desk.ReadAsync(opinion, DateTimeOffset.UtcNow))!.Opinion.Handed);
 
@@ -85,26 +84,25 @@ public sealed class McpOpinionChatHandTests : McpToolsFixture
         Assert.Contains(handed.Word.Id, (await sessions.FindAsync(chat.Id))!.Said.Select(word => word.Id));
         Assert.Contains("No second opinion was handed", await Connector(driven.Id, desk).AnswerOpinionAsync([new OpinionAnswerInput(1, "unresolved", Why: "x")]));
         Assert.Contains("Kept 1 answer", await Connector(chat.Id, desk).AnswerOpinionAsync([new OpinionAnswerInput(1, "unresolved", Why: "cannot reproduce")]));
-        Assert.Contains("they go once", (await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: chat.Id)).Message);
+        var waiting = await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: chat.Id);
+        Assert.True(waiting.Waiting);
+        Assert.Equal(handed.Word.Id, waiting.Word!.Id);
     }
 
     /// <summary>
-    /// 🔴 (a), the Opus check's finding 7: an ended conversation is admitted only as the newest record of the working session's line in its
-    /// tree, which after a hand-over is not the working session itself; the record the line went on from is refused, and so is a stand-down.
+    /// 🔴 (a), the Opus check's finding 7, as COMMS1b's door reads it: a hand to a record the line went on from goes to the line's head, the
+    /// newest record, never to the one left; so after a hand-over the head holds the findings and only it answers.
     /// </summary>
     [Fact]
-    public async Task The_hand_admits_the_ended_newest_record_of_the_line_after_a_hand_over_and_refuses_one_that_is_not()
+    public async Task The_hand_follows_the_line_to_its_newest_record_after_a_hand_over()
     {
         var (sessions, desk, chat, opinion) = await GivenAsync();
         var next = await HandedOverAsync(sessions, chat, SessionState.Completed);
 
-        var older = await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: chat.Id);
-        Assert.Equal(OpinionRefusal.CannotTake, older.Refusal);
-        Assert.Contains($"its line went on in session `{next.Id}`", older.Message);
-
-        var handed = await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: next.Id);
+        var handed = await desk.HandAsync(opinion, DateTimeOffset.UtcNow, to: chat.Id);
 
         Assert.Equal(OpinionRefusal.None, handed.Refusal);
+        Assert.Equal(next.Id, handed.Session!.Id);
         Assert.Equal(next.Id, (await desk.ReadAsync(opinion, DateTimeOffset.UtcNow))!.Opinion.Handed!.Session);
         Assert.Contains("No second opinion was handed", await Connector(chat.Id, desk).AnswerOpinionAsync([new OpinionAnswerInput(1, "unresolved", Why: "x")]));
         Assert.Contains("Kept 1 answer", await Connector(next.Id, desk).AnswerOpinionAsync([new OpinionAnswerInput(1, "unresolved", Why: "x")]));

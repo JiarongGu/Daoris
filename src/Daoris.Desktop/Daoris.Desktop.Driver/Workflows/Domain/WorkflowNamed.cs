@@ -249,7 +249,8 @@ public static class WorkflowNamed
     /// pipeline's versions are graphs holding its checks.
     /// </param>
     /// <param name="onSave">True where the version is being added to a file (INTEGRATE1n's F47 is the save's alone: a stored version that read before still reads).</param>
-    public static NamedVersion ReadVersion(JsonElement version, int number, IReadOnlyList<NamedVersion> prior, string pipeline = WorkflowPipelines.Development, bool onSave = false)
+    /// <param name="id">The workflow a version is being saved to, said in the refusal of a list of steps.</param>
+    public static NamedVersion ReadVersion(JsonElement version, int number, IReadOnlyList<NamedVersion> prior, string pipeline = WorkflowPipelines.Development, bool onSave = false, string? id = null)
     {
         var at = Json.Text(version, "at");
         var door = Json.Text(version, "door");
@@ -293,9 +294,21 @@ public static class WorkflowNamed
             return Unread($"v{number}: a verification pipeline's versions are graphs (schema {GraphSchema}) holding its checks, never steps.");
         }
 
+        // WORKFLOWCLEAN1 1b: a list of steps is no longer saved; a stored one reads as before.
+        if (onSave && hasSteps) return Unread(StepsRefused(id));
+
         var (steps, problem) = ReadSteps(hasSteps ? raw : null, number, prior);
         return steps is null ? Unread(problem!) : new NamedVersion(number, at, door, steps, null, Digest(steps)) { From = FromOf(version) };
     }
+
+    /// <summary>The code a save of steps is refused by (WORKFLOWCLEAN1 1b), which the page keys its words on.</summary>
+    public const string StepsRefusedCode = "steps-refused";
+
+    /// <summary>What every door says to a list of steps (schema 1) being saved.</summary>
+    public static string StepsRefused(string? id) =>
+        $"`{id ?? "the workflow"}` is not saved: a workflow is saved as a graph of steps now, and a list of steps (schema 1) is no longer saved. "
+        + $"Compose it in the workflow editor, or save a graph with `daoris driver workflow apply {id ?? "<id>"} <file>`. "
+        + "A workflow saved as steps before is converted by the conversion plan: `daoris driver workflow convert --plan`.";
 
     /// <summary>A version's <c>from</c>, or null where it names none or names one in another shape: where it came from never makes it unreadable.</summary>
     private static WorkflowFrom? FromOf(JsonElement version) =>
@@ -504,14 +517,15 @@ public static class WorkflowNamed
                 NodeKinds.Claimed => WorkflowKinds.Work,
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
-                NodeKinds.Handed or NodeKinds.Land => WorkflowKinds.Landing,
+                // WORKFLOWCLEAN1 1c: a `land` is no step here; the process carries its bound intent (LandNodes.RuleOf), not a rule read back.
+                NodeKinds.Handed => WorkflowKinds.Landing,
                 _ => null,
             };
             if (kind is null) continue;
 
             var p = $"v{number}, node `{node.Id}`: ";
             var fields = new List<WorkflowSetting>();
-            var options = node.Kind == NodeKinds.Land ? LandNodes.AsLanding(node, bound, LandNodes.Reviewed(graph)) : node.Options;
+            var options = node.Options;
             foreach (var field in WorkflowKindTable.Of(kind)!.Fields)
             {
                 var text = options.TryGetValue(field.Name, out var written) ? written
@@ -554,7 +568,7 @@ public static class WorkflowNamed
     }
 
     /// <summary>A field's value read, or why not: a sentence after the step's prefix. Absent and JSON null are both absence.</summary>
-    private static (object? Value, string? Problem) ReadField(WorkflowKindField field, JsonElement? raw)
+    internal static (object? Value, string? Problem) ReadField(WorkflowKindField field, JsonElement? raw)
     {
         (object?, string?) wrong = (null, $"its `{field.Name}` is {What(field)}.");
         if (raw is not { } value || value.ValueKind == JsonValueKind.Null) return field.Required ? wrong : (field.Default, null);
@@ -814,7 +828,7 @@ public static class WorkflowNamed
             version["version"] = 1;
             // The mark is written at creation (FABRIC-PIPELINE1a): a verification pipeline's, after the name; a development one's absent.
             var verification = add.Pipeline == WorkflowPipelines.Verification;
-            var first = ReadVersion(ElementOf(version), 1, [], verification ? WorkflowPipelines.Verification : WorkflowPipelines.Development, onSave: true);
+            var first = ReadVersion(ElementOf(version), 1, [], verification ? WorkflowPipelines.Verification : WorkflowPipelines.Development, onSave: true, id: add.Id);
             if (first.Problem is not null) return Refused(first.Problem);
             var made = new JsonObject { ["id"] = add.Id, ["name"] = add.Name };
             if (verification) made["pipeline"] = WorkflowPipelines.Verification;
@@ -833,7 +847,7 @@ public static class WorkflowNamed
 
         var number = read.Versions[^1].Version + 1;
         version["version"] = number;
-        var candidate = ReadVersion(ElementOf(version), number, [.. read.Versions.Where(each => each.Steps is not null)], read.Pipeline!, onSave: true);
+        var candidate = ReadVersion(ElementOf(version), number, [.. read.Versions.Where(each => each.Steps is not null)], read.Pipeline!, onSave: true, id: add.Id);
         if (candidate.Problem is not null) return Refused(candidate.Problem);
 
         var result = file.DeepClone().AsObject();

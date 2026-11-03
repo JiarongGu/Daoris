@@ -379,7 +379,7 @@ CHATFLOW1f's, and FABRIC-PIPELINE1d's executor moves them.
   before this build binds at its first turn's end, read by the same code.
 - **What chooses.** `WorkflowRunBindings.Plan` with no ask and no task choice. No kind is set, since a chat has no ask to carry one, so the
   workflow design §4.1's rows from *the repository's default* down choose. No agent sets a chat's workflow (D157 point 10).
-- **Never a graph version before CHATFLOW1f.** The node runtime arms every binding to a graph version under `workflows/runs/`
+- **A graph version binds (CHATFLOW1f built; §4.5's amendment).** What follows describes the build before it. The node runtime arms every binding to a graph version under `workflows/runs/`
   (`Trees/Nodes/GraphRuns.cs:59-110`), and the gate's graph part judges by it (`TreeGates.cs:64-77`). Until CHATFLOW1f builds what
   §4.5 says a chat's `claimed`, `handed` and `quest.close` subjects and its next candidate are, a choice that gives a graph version binds nothing. The view answers
   `chat-graph-later`, and the gate reads as today: its process is Current's, and its look and opinion parts answer `None` until rows d and
@@ -433,6 +433,12 @@ shows `light` as a limit the tree holds. Row h takes the mark off.
 the chat run's bound process, so a chat under a steps version is told the landing its press makes.
 
 ### 4.5 A graph-bound chat run's subject and lifecycle (CHATFLOW1f)
+
+*Amended 2026-11-02 (WORKFLOWCLEAN1 row 1d, the cleanup design §13 point 7; D227's 1d note):* a chat in a tree of its own binds a graph version, and
+its `land` is the runtime's: the chat press is word-and-wait, its Accept the review's word and the landing the pass's, never a press that lands in place.
+`chat-graph-later` is gone, and the bind of §4.3 no longer waits for this section. A graph holding a `quest.close` is bound with that as its problem
+(held, not a no-run code). The candidate is kept in `workflows/candidates/chat-<first>.json` and stands for the quest in the run's `claimed`; the
+check's send-back and the supersede rule below are as written.
 
 Codex's finding 8. Today `claimed` and `quest.close` observe a quest (`RunSubject.Quest`, `Trees/Nodes/GraphRuns.cs:226-230`), the
 runtime picks a run's branch through its chain's newest quest (`Trees/Nodes/NodeRuntime.cs:487-501`), and an ended run is judged again

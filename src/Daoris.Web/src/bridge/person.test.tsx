@@ -89,7 +89,7 @@ describe("the person's door over the bridge", () => {
       .mockResolvedValueOnce({ answered: false, why: 'unread', message: 'It still waits.' })
       .mockResolvedValueOnce({ answered: true, confirmed: true });
     const { result } = renderHook(() => useAnswerConfirmation(), { wrapper: wrapper() });
-    const setup = { source: 'pipe' as const, id: 'c1', route: 'SETUP_PRESS', fields: [], expires: null, checkWithin: 125_000 };
+    const setup = { source: 'pipe' as const, id: 'c1', route: 'PLACE_APPLY', fields: [], expires: null, checkWithin: 125_000 };
 
     expect(await result.current.mutateAsync({ waiting: setup, confirm: true }))
       .toEqual({ answered: false, why: 'changed', message: 'Not done.', reason: 'plan', values: { then: 'x' } });

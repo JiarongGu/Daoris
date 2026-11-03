@@ -18,8 +18,8 @@ public sealed class KnowledgeWorkOrderPortsTests
         Assert.Same(look.Records, changed.Records);
         Assert.Empty(look.Trees);
         Assert.Equal(SessionGroups.TreesToJudge(look, _ => true), KnowledgeWorkOrders.Current.TreesToJudge(read, _ => true));
-        Assert.Equal(SessionGroups.WaitsOnYou("s1234567", "awaiting-person", null),
-            KnowledgeWorkOrders.Current.WaitsOnYou("s1234567", "awaiting-person", null));
+        Assert.Equal(SessionGroups.WaitsOnYou("s1234567", "awaiting-person", false),
+            KnowledgeWorkOrders.Current.WaitsOnYou("s1234567", "awaiting-person", false));
         Assert.Equal("app/tree", KnowledgeWorkOrders.Current.Normal("app\\tree/"));
         var placed = KnowledgeWorkOrders.Current.Placed(look);
         Assert.Equal((0, 0, 0, 0, 0), (placed.You, placed.Review, placed.Working, placed.Later, placed.Ended));

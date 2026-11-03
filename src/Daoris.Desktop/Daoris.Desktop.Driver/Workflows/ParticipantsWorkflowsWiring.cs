@@ -19,6 +19,9 @@ internal sealed class ParticipantsWorkflowsOperations : IParticipantsWorkflows
     public IWorkplaceProcess ReadProcess(string home, DriverConfig config, string repository, string? workspace, string? run) =>
         WorkflowProcesses.Read(home, config, repository, workspace, run);
 
+    public (string Checks, int? Minutes)? ChecksOf(DriverConfig config, string repository, IWorkplaceProcess process) =>
+        SessionChecks.Of(config, repository, process as ICheckedProcess) is { } checks ? (checks, LongCalls.MinutesOf(process as ICheckedProcess)) : null;
+
     private sealed class ChatBound(ChatRunBound bound) : IParticipantsChatBound
     {
         public string? Failed => bound.Failed;

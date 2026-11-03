@@ -82,7 +82,7 @@ public sealed class AttentionWatch
     /// said though no look saw it working between (AUTONOMY1e, D184 point 4).
     /// </summary>
     private static string Seen(SessionView session) =>
-        SessionStates.IsParked(session.State) && session.Answer is not null ? AnsweredPark : session.State;
+        SessionStates.IsParked(session.State) && session.Answered ? AnsweredPark : session.State;
 
     /// <summary>
     /// What this tick is worth saying, in the order it was found.

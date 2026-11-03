@@ -15,8 +15,8 @@ public sealed class HelpWorkflowTool(IntakeScope? intake = null, HelpProposalBox
         "Ask Daoris only: propose a whole version of a workflow (how work in a repository or workspace goes from its start to "
         + "its landing) for the person to apply, new or an edit of an existing one, and optionally that the scope use it. "
         + "Nothing changes until the person presses Apply, and the driver refuses a version it cannot take. Send the whole "
-        + "steps, never a change to them. A verification pipeline, which verifies the work that lands, takes its whole graph "
-        + "instead of steps. A route with no steps and no graph chooses a workflow saved here for that route, saving nothing. "
+        + "graph, never a change to it: a workflow is saved as a graph, and a list of steps is refused. A verification pipeline, "
+        + "which verifies the work that lands, takes its whole graph too. A route with no graph chooses a workflow saved here for that route, saving nothing. "
         + "A new workflow is named by the person's words in `name`, at most 60 characters; left out, its id names it. An edit "
         + "keeps its name, so send none with a base. Where the message says a workflow draft is open in the person's editor, "
         + "propose changes to that draft with `draft` and the whole changed `graph` instead.")]
@@ -28,7 +28,7 @@ public sealed class HelpWorkflowTool(IntakeScope? intake = null, HelpProposalBox
         string workflow,
         [Description("Why: what the person asked. The person decides on this.")]
         string why,
-        [Description("The whole steps, a JSON list of step objects as the workflow editor's file holds them. Leave out with a graph, or for a route alone.")]
+        [Description("No longer proposed: a list of steps is refused. Send the whole `graph` instead.")]
         string? steps = null,
         [Description("The version an edit is made on. Leave out for a new workflow, and for a route alone.")]
         int? @base = null,
@@ -42,11 +42,12 @@ public sealed class HelpWorkflowTool(IntakeScope? intake = null, HelpProposalBox
         string? import = null,
         [Description("A new workflow's name, the person's words: a short line, at most 60 characters. Leave out to name it by its id, and for an edit.")]
         string? name = null,
-        [Description("A verification pipeline's whole graph, its JSON object (schemaVersion 2, nodes and wires), holding at least one `check` and "
-            + "landing nothing. A new workflow sent as a graph is made a verification pipeline. Leave out with steps.")]
+        [Description("The workflow's whole graph, its JSON object (schemaVersion 2, nodes and wires). A development pipeline's graph lands its work "
+            + "once, by a `land` whose `method` it chooses; a verification pipeline's holds at least one `check` and lands nothing. A new "
+            + "workflow whose graph lands is a development pipeline, and one that lands nothing a verification pipeline.")]
         string? graph = null,
         [Description("The route the scope chooses this workflow for: `default`, `landed` (the work that lands, a verification pipeline only), "
-            + "or `kind:<id>` for one of its kinds. With no steps and no graph, it chooses a workflow saved here and saves nothing.")]
+            + "or `kind:<id>` for one of its kinds. With no graph, it chooses a workflow saved here and saves nothing.")]
         string? route = null,
         [Description("The fingerprint of the workflow draft open in the person's editor, as the message told it. With it, `graph` is the "
             + "whole changed draft, of either pipeline, and nothing is saved or chosen: the person takes the changes into the draft and saves "

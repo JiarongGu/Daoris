@@ -105,6 +105,14 @@ public sealed class WorkflowGraphVersionsTests
         };
         var plan = WorkflowNamed.PlanAdd(file, add, []);
 
+        // WORKFLOWCLEAN1 1b: the one judge refuses a `handed` first, whatever else the row (written before it) says of the graph.
+        if (add.Graph!.ToJsonString().Contains("\"kind\":\"handed\"", StringComparison.Ordinal))
+        {
+            Assert.Null(plan.Result);
+            Assert.Contains("is a `handed`, which only watches a landing some door made", plan.Problem);
+            return;
+        }
+
         Assert.Equal((string?)row["problem"], plan.Problem);
         if (row["result"] is { } result)
         {
@@ -133,13 +141,17 @@ public sealed class WorkflowGraphVersionsTests
     }
 
     [Fact]
-    public void A_schema_1_version_is_added_as_it_was_with_no_schema_key()
+    public void A_schema_1_version_is_refused_when_added_by_every_door_and_read_as_before_when_stored()
     {
         var steps = JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")!;
         var plan = WorkflowNamed.PlanAdd(null, new WorkflowVersionAdded("docs-to-pr", "Docs", "terminal", "2026-10-18T09:00:00Z", steps), []);
 
-        Assert.Null(plan.Problem);
-        Assert.Equal(["version", "at", "door", "steps"], plan.Result!["versions"]![0]!.AsObject().Select(pair => pair.Key));
+        Assert.Null(plan.Result);
+        Assert.Equal(WorkflowNamed.StepsRefused("docs-to-pr"), plan.Problem);
+
+        var stored = new JsonObject { ["version"] = 1, ["at"] = "2026-10-18T09:00:00Z", ["door"] = "terminal", ["steps"] = steps.DeepClone() };
+        Assert.Null(WorkflowNamed.ReadVersion(WorkflowNamed.ElementOf(stored), 1, []).Problem);
+        Assert.NotNull(WorkflowNamed.ReadVersion(WorkflowNamed.ElementOf(stored), 1, []).Steps);
     }
 
     [Fact]
@@ -162,8 +174,8 @@ public sealed class WorkflowGraphVersionsTests
         try
         {
             var steps = JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")!;
-            WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", "Docs", "terminal", "2026-10-18T09:00:00Z", steps), kept: []);
-            WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-18T09:05:00Z", null, Graph()), kept: []);
+            StoredSteps.Add(WorkflowPorts.Store(home), "docs-to-pr", "Docs", "2026-10-18T09:00:00Z", steps);
+            StoredSteps.AddGraph(WorkflowPorts.Store(home), "docs-to-pr", null, "2026-10-18T09:05:00Z", Graph());
             var config = DriverConfig.Load(DaorisHome.Entry(home, HomeEntry.DriverConfig));
             var binding = WorkflowRunBindings.Plan(config, home, "q1", "engine", "aurora", null, new WorkflowTaskChoice(null, "docs-to-pr"), [], DateTimeOffset.UtcNow);
 

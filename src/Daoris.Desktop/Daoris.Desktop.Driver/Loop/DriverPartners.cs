@@ -447,67 +447,94 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     /// then marked attempted before the door, then taken naming the record the door kept it on, and the state <c>handed</c>. A running
     /// or parked lead takes it at its turn's end, so nothing is tried or said while it runs; a door that refuses puts the receipt back to
     /// waiting. A receipt found attempted was cut by a restart: it is uncertain and waits for the person, never handed again by itself.
-    /// Null where nothing moved worth saying.
+    /// COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): against a host with the one door for solicited answers, the look reads the line's
+    /// head as that door walks it and whether its park was answered, an attempt it made under the piece's key is asked again inside the
+    /// settlement's horizon, and a word already waiting is dispatched on the record that holds it. Null where nothing moved worth saying.
     /// </summary>
     private async Task<LookLine?> HandAsync(PartnerAsk ask, PartnerFiles files, CancellationToken ct)
     {
         var state = files.ReadState(ask.Id);
         if (state is not { State: PartnerStates.Answered, Partner: { } partner }) return null;
+        var answers = await _context.Service.Opens.AnswersAsync(ct).ConfigureAwait(false);
+        var now = DateTimeOffset.UtcNow;
         var receipt = files.ReadReceipt(ask.Id);
+        var retry = answers && receipt is { Outcome: PartnerDelivery.Attempted, Keyed: true } && SolicitedHand.Before(receipt.At, now) == SolicitedStep.Retry;
         switch (receipt?.Outcome)
         {
-            case PartnerDelivery.Attempted:
-                files.WriteReceipt(PartnerDelivery.Found(receipt, DateTimeOffset.UtcNow));
+            // transitional: solicited-old-files
+            case PartnerDelivery.Attempted when !retry:
+                files.WriteReceipt(PartnerDelivery.Found(receipt, now));
                 Note(ask.Asker, PartnerNotes.Uncertain(PartnerWhy.HandCut));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}`'s answer may have reached its lead before Daoris stopped: it waits for the person, and is never handed again by itself.");
             case PartnerDelivery.Uncertain:
                 return null;
             case PartnerDelivery.Taken:
-                files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
+                files.WriteState(state with { State = PartnerStates.Handed, At = now });
                 return null;
         }
 
-        // Never into a step in flight (D136): a running or parked lead takes it at its turn's end. Said nowhere, as a helper's.
-        var lead = await _context.Service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
-        if (lead is { Running: true } or { Parked: true }) return null;
+        // Never into a step in flight (D136): a running lead takes it at its turn's end, and a park once the person answered it, beside their
+        // answer (§13 point 1). Said nowhere, as a helper's.
+        if (answers)
+        {
+            if (SolicitedHand.Walk(await _context.Service.RecordsAsync(ct).ConfigureAwait(false), ask.Asker).Head is { } head && !SolicitedHand.TakesNow(head)) return null;
+        }
+        else if (await _context.Service.RecordAsync(ask.Asker, ct).ConfigureAwait(false) is { Running: true } or { Parked: true })
+        {
+            // transitional: solicited-older-host
+            return null;
+        }
 
-        var now = DateTimeOffset.UtcNow;
         receipt = PartnerDelivery.Claim(receipt, ask.Id, ask.Asker, now);
         files.WriteReceipt(receipt);
         var facts = files.ReadFacts(ask.Id) ?? new PartnerFacts(ask.Id, state.Commit ?? "", [], [], [], now);
         var text = PartnerWords.Compose(ask, state, facts, files.ReadAnswer(ask.Id), PieceRefs.Of(ask.Id));
 
-        // 🔴 Attempted before the door: a restart between the two finds it so, and never hands it twice.
-        files.WriteReceipt(PartnerDelivery.Attempt(receipt, now));
-        var (handed, message, word, to, settled) = await _context.Service.Partners.HandAsync(partner, text, ct).ConfigureAwait(false);
-        if (!handed)
+        // 🔴 Attempted before the door: a restart between the two finds it so, and never hands it twice. A retry keeps its first attempt's
+        // moment, which the horizon counts from. Still written through the door, so a driver rolled back, or a host that drops its mark, hands
+        // nothing twice (§13 point 3).
+        if (!retry) files.WriteReceipt(PartnerDelivery.Attempt(receipt, now) with { Keyed = answers }); // transitional: solicited-old-guards
+        var answer = await _context.Service.Partners.HandAsync(partner, text, ct).ConfigureAwait(false);
+        // An uncertain hand through the one door keeps its attempt, which the next look asks again; an older host's goes back to waiting, as before.
+        if (answer.Fate == SolicitedFate.Uncertain && answers)
+        {
+            return Line(LookClass.Retry, $"partner  piece `{ask.Id}`'s hand to session {ask.Asker}'s line is uncertain: {answer.Message}. The next look asks again under its key, which answers it once.");
+        }
+
+        if (!answer.Handed)
         {
             files.WriteReceipt(PartnerDelivery.Refused(files.ReadReceipt(ask.Id) ?? receipt, DateTimeOffset.UtcNow));
-            return Line(LookClass.Retry, $"partner  piece `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}'s line: {message}");
+            return Line(LookClass.Retry, $"partner  piece `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}'s line: {answer.Message}");
         }
 
         // FOUNDATION1 row p (the design §3.4 rule 5): the host answered the hand settled, the piece's word left a record of the lead's line and
         // was kept by an earlier hand whose answer was lost. It is marked handed and never handed again, with no event recorded, no note
         // written and nothing for the lead's conversation to hear.
-        if (settled is not null)
+        if (answer.SettledOn is { } settled)
         {
             files.WriteReceipt(PartnerDelivery.Took(receipt, settled, DateTimeOffset.UtcNow));
             files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
             return Line(LookClass.Progress, $"partner  piece `{ask.Id}`'s answer was handed to session {settled}'s line already: its word is settled, and it is not handed again.");
         }
 
-        var destination = to ?? ask.Asker;
+        // Kept now, or waiting already (§13 point 4): the dispatch goes on the record that holds the word, once.
+        var destination = answer.Holder?.Session ?? ask.Asker;
         files.WriteReceipt(PartnerDelivery.Took(receipt, destination, DateTimeOffset.UtcNow));
         files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
         Note(destination, PartnerNotes.Answered(state.Agent ?? "a partner", partner));
         if (facts.Beyond.Count > 0) Note(destination, PartnerNotes.Beyond(facts.Beyond.Count));
 
-        // A conversation hears it as its next turn, as a helper's answer: the shell's chat runner hears this event (D137 §3.1).
-        if (word is not null && await _context.Service.RecordAsync(destination, ct).ConfigureAwait(false) is { Kind: "chat" })
+        // A conversation hears it as its next turn, as a helper's answer: the shell's chat runner hears this event (D137 §3.1), once by the word's id.
+        if (answer.Word is { } word && await _context.Service.RecordAsync(destination, ct).ConfigureAwait(false) is { Kind: "chat" }
+            && !_context.Events.After(destination, 0).Events.Any(each => each.Kind == SessionEventKind.User && each.Reaches == "resume" && each.Id == word))
         {
             _context.Events.Keep(
                 destination,
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = partner, Id = word, Text = text, Reaches = "resume" },
+                new SessionEvent
+                {
+                    Kind = SessionEventKind.User, Origin = "target", Helper = partner, Id = word,
+                    Text = answer.Fate == SolicitedFate.Waiting ? answer.Text ?? text : text, Reaches = "resume",
+                },
                 say: null);
         }
 

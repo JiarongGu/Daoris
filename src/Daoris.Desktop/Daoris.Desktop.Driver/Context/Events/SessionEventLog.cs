@@ -384,6 +384,13 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     public DateTimeOffset? LastAt(string sessionId) => Newest<DateTimeOffset>(sessionId, e => e.At);
 
     /// <summary>
+    /// When the person last spoke to a session (TREEGONE2): its newest <c>user</c> event of origin <c>person</c>, read from the file's end.
+    /// Never Daoris's, a helper's or the supervisor's word. Null for none, no record, an unreadable one, or an id that is not one.
+    /// </summary>
+    public DateTimeOffset? LastPersonAt(string sessionId) =>
+        Newest<DateTimeOffset>(sessionId, e => e is { Kind: SessionEventKind.User, Origin: "person" } ? e.At : null);
+
+    /// <summary>
     /// When its record last shows words handed to its agent (PARKVIEW1, the park's ask design §2): the newest prompt Daoris composed (a
     /// <c>user</c> event of origin <c>target</c>), word kept under an id (a <c>user</c> event with one), or word written to its harness (a
     /// <c>sent</c> receipt), read from the file's end. Never the protocol door's echo of the prompt it was handed, which carries no id

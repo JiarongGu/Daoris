@@ -191,4 +191,25 @@ public sealed class GoOnBriefedTests : IDisposable
             decided.Select(each => (each.Session, Said(each.Answer))));
     }
 
+    /// <summary>
+    /// 🔴 TREEGONE2 (ONEWAY1's design §3 C5): a closed quest's session whose tree is gone is moved, not refused, as a conversation's is: the
+    /// person's words alone, its new part asked for a fresh tree. This checkout is no repository to grow one in, so nothing opens, and the
+    /// words stay where they were (<c>BriefedMoveTests</c> runs the part that opens).
+    /// </summary>
+    [Fact]
+    public async Task A_closed_quests_session_whose_tree_is_gone_is_moved_to_a_fresh_tree()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Quest("q1", "Done");
+        ledger.Chat("s1", "completed", "talk", Path.Combine(_home, "gone"), kind: "driven", quest: "q1").Say("w1", "Also log the port.");
+        using var runner = Runner(ledger);
+        var decided = Deciding(runner);
+
+        var answer = await runner.GoOnBriefedAsync("s1", DriverConfig.Empty);
+
+        Assert.Equal(("s1", "move:Resume:Person:w1"), Assert.Single(decided.Select(each => (each.Session, Said(each.Answer)))));
+        Assert.Equal((null, false, (string?)null), (answer.SessionId, answer.Sent, answer.Why));
+        Assert.Equal(1, ledger.Count);
+        Assert.Equal(["w1"], ledger.Said("s1"));
+    }
 }

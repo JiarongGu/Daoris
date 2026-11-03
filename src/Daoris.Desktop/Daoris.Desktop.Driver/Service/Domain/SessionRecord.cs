@@ -43,16 +43,16 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public DateTimeOffset Updated { get; init; }
 
     /// <summary>
-    /// The person's answer to a park (STANDDOWN2), or null. The service answers it to this machine only, so a teammate's
+    /// The words waiting on the record (MSG1a), or null. The service answers them to this machine only, so a teammate's
     /// record carries none.
     /// </summary>
-    public string? Answer { get; init; }
+    public IReadOnlyList<SaidWordView>? Said { get; init; }
 
     /// <summary>
-    /// A park the person answered (ANSWER1b keeps it parked with the answer set): the same session goes on at the driver's
+    /// A park the person answered (ANSWER1b keeps it parked with their word kept): the same session goes on at the driver's
     /// next look (D131), so nothing about it waits on the person any more.
     /// </summary>
-    public bool Answered => State == "awaiting-person" && Answer is not null;
+    public bool Answered => State == "awaiting-person" && SaidWordView.AnyPerson(Said);
 
     /// <summary>
     /// Whether the ledger would delete this record (SESSUX1f, D126 §5.4): the record's half, as the service answers it per

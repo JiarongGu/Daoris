@@ -100,7 +100,8 @@ public sealed class NodeGraphsTests
     public void Each_refusal_is_named_alone_with_its_code_and_words(string name)
     {
         var row = GraphProblemsTable.Row("graphs", name);
-        Assert.Equal(GraphProblemsTable.Expected(row), GraphProblemsTable.Said(NodeGraphs.Problems(GraphProblemsTable.Graph(row))));
+        // The table is the graph rules'; the save's own two refusals (a `handed`, a `land` with no method) are proved by their tests below.
+        Assert.Equal(GraphProblemsTable.Expected(row), GraphProblemsTable.Said(NodeGraphs.Problems(GraphProblemsTable.Graph(row)).Where(GraphProblemsTable.IsRule)));
     }
 
     /// <summary>
@@ -113,13 +114,13 @@ public sealed class NodeGraphsTests
         var graph = EarlyFailure();
         // FABRIC-GRAPH1i: the look is wired straight into the landing too, since a skip of the join's other member would pass its wire.
         var wired = After("x", "look", "landing");
-        Assert.Empty(NodeGraphs.Problems(graph with { Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), wired] }));
+        Assert.Empty(NodeGraphs.Problems(graph with { Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), wired] }).Where(GraphProblemsTable.IsRule));
         var retry = graph with
         {
             Nodes = [.. graph.Nodes, Node("fix", NodeKinds.Human)],
             Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), new Wire("d", WireKinds.Failed, new("checks"), new("fix")), wired],
         };
-        Assert.Empty(NodeGraphs.Problems(retry));
+        Assert.Empty(NodeGraphs.Problems(retry).Where(GraphProblemsTable.IsRule));
     }
 
     /// <summary>
@@ -137,9 +138,9 @@ public sealed class NodeGraphsTests
             Nodes = [.. graph.Nodes.Select(node => node.Id == "check" ? Node("check", NodeKinds.Human) : node)],
         };
         // The order holds by reach here; FABRIC-GRAPH1i asks only the look's wire into the landing besides.
-        IEnumerable<string> Codes(NodeGraph each) => NodeGraphs.Problems(each).Select(problem => problem.Code);
+        IEnumerable<string> Codes(NodeGraph each) => NodeGraphs.Problems(each).Where(GraphProblemsTable.IsRule).Select(problem => problem.Code);
         Assert.Equal([GraphRefusal.ProtectedWire], Codes(pressed));
-        Assert.Empty(NodeGraphs.Problems(pressed with { Wires = [.. pressed.Wires, After("x", "look", "landing")] }));
+        Assert.Empty(NodeGraphs.Problems(pressed with { Wires = [.. pressed.Wires, After("x", "look", "landing")] }).Where(GraphProblemsTable.IsRule));
 
         NodeGraph Nested(NodeDeclaration inner) => pressed with
         {
@@ -149,7 +150,7 @@ public sealed class NodeGraphsTests
         };
         Assert.Equal([GraphRefusal.ProtectedWire], Codes(Nested(Node("sign", NodeKinds.GoAhead))));
         Assert.Equal(new (string, string?)[] { (GraphRefusal.ProtectedOrder, "look") },
-            NodeGraphs.Problems(Nested(Node("scan", "acme/scan"))).Select(problem => (problem.Code, problem.Node)));
+            NodeGraphs.Problems(Nested(Node("scan", "acme/scan"))).Where(GraphProblemsTable.IsRule).Select(problem => (problem.Code, problem.Node)));
     }
 
     /// <summary>
@@ -183,12 +184,12 @@ public sealed class NodeGraphsTests
     {
         var json = GraphProblemsTable.Json(GraphProblemsTable.Row("graphs", "a line beside the landing, a way to which passes no landing (INTEGRATE1n, F47)")).ToJsonString();
 
-        Assert.Equal([GraphRefusal.BeforeLanding], NodeGraphs.Read(json, onSave: true).Problems.Select(problem => problem.Code));
+        Assert.Equal([GraphRefusal.BeforeLanding], NodeGraphs.Read(json, onSave: true).Problems.Where(GraphProblemsTable.IsRule).Select(problem => problem.Code));
         var (graph, problems) = NodeGraphs.Read(json);
         Assert.Empty(problems);
         Assert.NotNull(graph);
         Assert.Empty(NodeGraphs.Problems(graph, onSave: false));
-        Assert.Equal([GraphRefusal.BeforeLanding], NodeGraphs.Problems(graph).Select(problem => problem.Code));
+        Assert.Equal([GraphRefusal.BeforeLanding], NodeGraphs.Problems(graph).Where(GraphProblemsTable.IsRule).Select(problem => problem.Code));
     }
 
     /// <summary>Every code of the graph's own is held by a row of the shared table: one added without a row fails here.</summary>
@@ -198,7 +199,8 @@ public sealed class NodeGraphsTests
         var codes = typeof(GraphRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!).ToList();
         Assert.Equal(codes.Count, codes.Distinct().Count());
         Assert.Empty(codes.Intersect(typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!)));
-        Assert.Empty(codes.Except(GraphProblemsTable.Codes()));
+        // The save's own refusals (WORKFLOWCLEAN1 1b) are proved apart from the rows, by SavesRefusedTests.
+        Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except([GraphRefusal.HandedRefused, GraphRefusal.LandMethod]));
     }
 
     /// <summary>
@@ -231,8 +233,8 @@ public sealed class NodeGraphsTests
         Wire[] wires = [After("a", "work", "opinion"), After("b", "opinion", "look"), After("c", "look", "press"), After("d", "press", "landing"),
             After("e", "opinion", "landing"), After("f", "look", "landing")];
         var graph = new NodeGraph(gates, wires, ["work"], "landing");
-        Assert.Empty(NodeGraphs.Problems(graph));
-        Assert.Empty(NodeGraphs.Problems(graph with { Nodes = [gates[0], gates[2], gates[4]], Wires = [After("a", "work", "look"), After("b", "look", "landing")] }));
+        Assert.Empty(NodeGraphs.Problems(graph).Where(GraphProblemsTable.IsRule));
+        Assert.Empty(NodeGraphs.Problems(graph with { Nodes = [gates[0], gates[2], gates[4]], Wires = [After("a", "work", "look"), After("b", "look", "landing")] }).Where(GraphProblemsTable.IsRule));
 
         NodeDeclaration Watch(string id, string kind) => Node(id, kind) with { Reach = NodeReach.Observed };
         Assert.Empty(NodeGraphs.Problems(new NodeGraph([Watch("one", "acme/watch"), Watch("two", "acme/scan")], [], ["one", "two"], "two")));

@@ -171,7 +171,7 @@ describe("the workspace place's Workflow, the line's defaults", () => {
     const defaults = await screen.findByRole('button', { name: 'Defaults' });
     expect(defaults).toHaveAttribute('aria-expanded', 'true');
     expect(defaults).toHaveAttribute('data-place-row', 'defaults');
-    for (const label of ['Line', 'How work lands', 'Commits', 'Review before landing', 'Second opinion before landing']) expect(screen.getAllByText(label, { selector: 'span' }).length).toBeGreaterThan(0);
+    for (const label of ['Line', 'Commits', 'Review before landing', 'Second opinion before landing']) expect(screen.getAllByText(label, { selector: 'span' }).length).toBeGreaterThan(0);
     // The session rows are Sessions', not Workflow's.
     expect(screen.queryByText('Session language')).toBeNull();
   });

@@ -71,7 +71,7 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.OK, """{"kept":false,"message":"Session `s1` works quest `#q1`, which `engine` asked rather than an ask."}""")]
+    [InlineData(HttpStatusCode.OK, """{"kept":false,"message":"Session `s1` works quest `#q1`, which `engine` asked and whose line is on no ask."}""")]
     [InlineData(HttpStatusCode.NotFound, """{"error":"No session `s1` of this machine's."}""")]
     [InlineData(HttpStatusCode.InternalServerError, "")]
     public async Task Whatever_the_service_answers_the_message_still_reached_its_session(HttpStatusCode status, string body)
@@ -143,7 +143,8 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
-            lock (_heard) _heard.Add((request.RequestUri!.AbsolutePath, body));
+            // The registry is the come-up's own read (the conversion's census), not the route's.
+            if (request.RequestUri!.AbsolutePath != "/api/registry") lock (_heard) _heard.Add((request.RequestUri.AbsolutePath, body));
             var (status, said) = answer(request);
             return new HttpResponseMessage(status) { Content = new StringContent(said, Encoding.UTF8, "application/json") };
         }

@@ -16,7 +16,7 @@ const GROUPS: readonly { key: string; kinds: readonly string[] }[] = [
   { key: 'work', kinds: ['claimed'] },
   { key: 'you', kinds: ['review', 'look', 'go-ahead', 'human'] },
   { key: 'checks', kinds: ['check', 'opinion', 'work.requests', 'quest.holds', 'content.holds'] },
-  { key: 'landing', kinds: ['land', 'line', 'pushed', 'pull-request', 'handed', 'integrate'] },
+  { key: 'landing', kinds: ['land', 'line'] },
   { key: 'others', kinds: ['request', 'wait.unit'] },
 ];
 
@@ -36,7 +36,8 @@ export function StepPicker({ open, palette, place, onPick, onClose }: {
   const [active, setActive] = useState(0);
 
   const offered = useMemo((): Offered[] => {
-    const all = stepChoices(palette).map((choice) => {
+    // The palette says how each kind is offered: a landing's tail comes with its method and a retired kind is no longer added.
+    const all = stepChoices(palette).filter((choice) => choice.offered === 'alone').map((choice) => {
       const known = GROUPS.find((group) => group.kinds.includes(choice.kind));
       const group = choice.plugin ? t('workflow.edit.add.plugin', { plugin: choice.plugin })
         : t(`workflow.edit.picker.group.${known?.key ?? 'other'}`);

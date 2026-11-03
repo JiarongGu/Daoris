@@ -28,7 +28,7 @@ const REGISTRY = [
 /** The workspace's rules as the driver's state answers them, so its Setup opens its defaults where a rule is set there. */
 const STATE = {
   ...DRIVER_STATE,
-  workspaceLandings: [{ workspace: 'aurora', form: 'branch', pattern: 'work/{quest}' }],
+  workspaceLines: [{ workspace: 'aurora', branch: 'develop' }],
   workspaceReviews: [],
   workspaceOpinions: [],
 };

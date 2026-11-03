@@ -54,35 +54,39 @@ public sealed class OpinionDoors
 
     /// <summary>
     /// Hand a first pass's findings to its working session (XAGENT1c's <c>POST /api/opinions/{id}/hand</c>; design §6.3): the
-    /// host keeps them on its record as a word whose <c>by</c> names the opinion, in its fixed words, once. A refusal is an
-    /// answer, the host's sentence, not an exception, and so is a host older than the door.
+    /// host keeps them on its record as a word whose <c>by</c> names the opinion, in its fixed words, once, and answers the word (CHATFLOW1e): a
+    /// chat run's runner takes it as its reserved turn's message, under the record's id, so it leaves the record once that turn is on the wire. A
+    /// refusal is an answer, the host's sentence, not an exception, and so is a host older than the door. COMMS1b: the hand to the working session's
+    /// line asks for a settled answer under the opinion's key, and its answer is read as the helper's and the partner's are
+    /// (<see cref="SolicitedHand.Read"/>); a chat run's hand to the record it names asks none, as before.
     /// </summary>
     /// <param name="to">
     /// A chat run's record of the line to hand them to (CHATFLOW1e, the chat-flow design §6.1 (a)), live between turns or ended and newest;
     /// null for the working session itself.
     /// </param>
-    public async Task<(bool Handed, string Message, OpinionView? Opinion)> HandAsync(string id, CancellationToken ct = default, string? to = null)
-    {
-        var (handed, message, opinion, _) = await HandWordAsync(id, ct, to).ConfigureAwait(false);
-        return (handed, message, opinion);
-    }
-
-    /// <summary>
-    /// <see cref="HandAsync"/>, with the word the host kept the findings in (CHATFLOW1e): a chat run's runner takes it as its reserved turn's
-    /// message, under the record's id, so it leaves the record once that turn is on the wire.
-    /// </summary>
-    public async Task<(bool Handed, string Message, OpinionView? Opinion, SaidWordView? Word)> HandWordAsync(
-        string id, CancellationToken ct = default, string? to = null)
+    public async Task<OpinionHand> HandWordAsync(string id, CancellationToken ct = default, string? to = null)
     {
         var door = $"/api/opinions/{Uri.EscapeDataString(id)}/hand";
-        var body = to is null ? "{}" : JsonSerializer.Serialize(new { to });
+        var body = to is null ? """{"settled":true}""" : JsonSerializer.Serialize(new { to });
         var (ok, status, payload, root) = await _service.PostJsonAsync(door, body, ct).ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null, null);
-        if (!ok) return (false, Text(answer, "error") ?? payload, null, null);
-        var opinion = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("opinion", out var kept) ? OpinionViews.Read(kept) : null;
-        var word = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("said", out var said) ? ServiceClient.ReadWord(said) : null;
-        return (true, Text(answer, "message") ?? "", opinion, word);
+        var answer = SolicitedHand.Read(ok, status, root, payload, door, _service.BaseUrl);
+        if (!answer.Handed || root is not { ValueKind: JsonValueKind.Object } read) return new(answer, null, null);
+        var opinion = read.TryGetProperty("opinion", out var kept) ? OpinionViews.Read(kept) : null;
+        var word = read.TryGetProperty("said", out var said) ? ServiceClient.ReadWord(said) : null;
+        return new(answer, opinion, word);
     }
+}
+
+/// <summary>
+/// What a hand of an opinion's findings came to: the door's answer as every solicited hand reads it, the opinion as it now stands and the word the
+/// findings wait in, where the host answered them.
+/// </summary>
+public sealed record OpinionHand(SolicitedAnswer Answer, OpinionView? Opinion, SaidWordView? Word)
+{
+    /// <summary>Whether the findings are on the line or went there before: kept, waiting or settled.</summary>
+    public bool Handed => Answer.Handed;
+
+    public string Message => Answer.Message;
 }
 
 /// <summary>

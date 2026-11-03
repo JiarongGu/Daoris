@@ -8,7 +8,7 @@ import type { CommitChange, RepositoryCommits } from '../../settings/repository/
 import type { HelperChange, RepositoryHelpers } from '../../settings/repository/Helpers';
 import type { HandOverChange, RepositoryHandOver } from '../../settings/repository/HandOver';
 import type { LineChange, RepositoryLine } from '../../settings/repository/Lines';
-import type { LandingChange, RepositoryLanding } from '../../settings/repository/Landings';
+import type { RepositoryLanding } from '../../settings/repository/Landings';
 import type { LanguageChange, RepositoryLanguage } from '../../settings/repository/Languages';
 import type { OpinionChange, RepositoryOpinion } from '../../settings/repository/Opinions';
 import type { RepositoryReview, ReviewChange } from '../../settings/repository/Reviews';
@@ -16,7 +16,7 @@ import type { BranchDiscard, LandedBranch, LandedWithdrawal, SweepBranch } from 
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../../settings/Sync';
 import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../../work/head/milestone';
 import { call, lookBound, pressBound } from '../call';
-import { type DriverState, readSlice, useDriverChange, writeAnswered } from '../driver';
+import { readSlice, useDriverChange } from '../driver';
 import { pushedOf, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
@@ -120,19 +120,6 @@ export const useLines = () => {
     queryFn: () => readPushed(client, linesSlice.name, () => call<LinesAnswer>('LINES')),
     enabled: isAvailable,
     ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
-  });
-};
-
-/**
- * Set how work lands in a repository or a workspace, or clear it with no form — the file `daoris driver
- * landing` edits (D50). Its answer is the driver's state, written where it is read; every repository's rules and every plan
- * move with it, which the state hub asks again, as the route declares them (STATEHUB1b, D169).
- */
-export const useSetLanding = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: LandingChange) => call<DriverState>('SET_LANDING', change),
-    onSuccess: (state) => writeAnswered(client, state),
   });
 };
 

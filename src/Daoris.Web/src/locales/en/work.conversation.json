@@ -11,6 +11,8 @@
   "work.conversation.daoris": "Daoris’s words",
   "work.conversation.supervisor": "From the supervisor, on your behalf",
   "work.conversation.unattributed": "Not attributed",
+  "work.conversation.helper": "A helper’s answer, in Daoris’s words",
+  "work.conversation.partner": "A partner’s answer, in Daoris’s words",
   "work.conversation.show": "Show all",
   "work.conversation.hide": "Fold",
   "work.conversation.thought": "thought",

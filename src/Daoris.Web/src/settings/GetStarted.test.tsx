@@ -13,7 +13,7 @@ import { GetStarted } from './GetStarted';
 // screens that do it and the command that does the same, shown and copyable (D50).
 
 const FRESH = setupSteps(readMachine({
-  attached: true, registry: [], driver: { drivable: [], helperAdapter: '' }, harnesses: [], lines: [], landings: [],
+  attached: true, registry: [], driver: { drivable: [], helperAdapter: '' }, harnesses: [], lines: [],
 }));
 
 const HALFWAY = setupSteps(readMachine({
@@ -22,7 +22,6 @@ const HALFWAY = setupSteps(readMachine({
   driver: { drivable: [], helperAdapter: 'claude-code-acp' },
   harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
   lines: [],
-  landings: [],
 }));
 
 const BROWSER = setupSteps(readMachine({ attached: false, registry: [] }));
@@ -44,22 +43,21 @@ const step = (name: RegExp) => screen.getByRole('listitem', { name });
 describe('Get started', () => {
   afterEach(() => { void i18n.changeLanguage('en'); });
 
-  it('lists the six steps in the order a setup goes, each with its state', () => {
+  it('lists the five steps in the order a setup goes, each with its state', () => {
     draw({ steps: HALFWAY, helper: 'claude-code-acp' });
 
     const names = within(screen.getByRole('list', { name: 'setup steps' })).getAllByRole('listitem')
       .map((item) => item.getAttribute('aria-label'));
     expect(names).toEqual([
       '1. An agent', "2. Ask Daoris's agent", '3. A workspace and its repositories',
-      '4. What is driven', '5. How work lands', '6. What agents may do',
+      '4. Set a place up', '5. What agents may do',
     ]);
     expect(within(step(/An agent/)).getByText('done')).toBeInTheDocument();
     expect(within(step(/Ask Daoris's agent/)).getByText('done')).toBeInTheDocument();
     expect(within(step(/repositories/)).getByText('done')).toBeInTheDocument();
-    expect(within(step(/driven/)).getByText('to do')).toBeInTheDocument();
-    expect(within(step(/work lands/)).getByText('to do')).toBeInTheDocument();
+    expect(within(step(/Set a place up/)).getByText('to do')).toBeInTheDocument();
     expect(within(step(/agents may do/)).getByText('optional')).toBeInTheDocument();
-    expect(screen.getByText('3 of 5 required steps done')).toBeInTheDocument();
+    expect(screen.getByText('3 of 4 required steps done')).toBeInTheDocument();
   });
 
   it('opens the screen each step is done on', async () => {
@@ -68,20 +66,17 @@ describe('Get started', () => {
     // UX6e: an agent's install and its accounts are on its page in the Agents place.
     await userEvent.click(within(step(/An agent/)).getByRole('button', { name: 'Open Agents' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'accounts' });
-    await userEvent.click(within(step(/Ask Daoris's agent/)).getByRole('button', { name: "Open AI features" }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'ai' });
-    // COMPANYVIEW1g: and which role takes which work is Agents → Roles.
+    // Ask Daoris and the intake are roles: Agents → Roles, the one door (COMPANYVIEW1g).
+    expect(within(step(/Ask Daoris's agent/)).queryByRole('button', { name: 'Open AI features' })).toBeNull();
     await userEvent.click(within(step(/Ask Daoris's agent/)).getByRole('button', { name: 'Open Roles' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'setup' });
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'setup', roleSection: 'working' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Add repository…' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', drawer: 'add' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Import a folder…' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', drawer: 'import' });
-    await userEvent.click(within(step(/driven/)).getByRole('button', { name: 'Open Repositories' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'projects' });
-    // UX6g: how work lands for each repository that sets none is the workspace's default, on its page's Setup.
-    await userEvent.click(within(step(/work lands/)).getByRole('button', { name: "Open the workspace's setup" }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', workspaceSection: 'defaults' });
+    // A place's Set up… is on the Agents place's Setup.
+    await userEvent.click(within(step(/Set a place up/)).getByRole('button', { name: 'Open Setup' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'setup' });
     // And what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
     await userEvent.click(within(step(/agents may do/)).getByRole('button', { name: 'Open what agents may do' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'rules' });
@@ -112,7 +107,7 @@ describe('Get started', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Set up with Ask Daoris' }));
     expect(onAsk).toHaveBeenCalledWith(
       'Walk me through setting up Daoris on this machine, one step at a time. Not done yet: '
-      + '4. What is driven; 5. How work lands; 6. What agents may do (optional).');
+      + '4. Set a place up; 5. What agents may do (optional).');
   });
 
   it('says Ask Daoris needs an agent first, and offers no hand-off that could not run', () => {
@@ -161,7 +156,7 @@ describe('Get started', () => {
     draw({ steps: HALFWAY, helper: 'claude-code-acp' });
 
     expect(screen.getByRole('listitem', { name: '1. 智能体' })).toBeInTheDocument();
-    expect(screen.getByText('5 个必需步骤已完成 3 个')).toBeInTheDocument();
+    expect(screen.getByText('4 个必需步骤已完成 3 个')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '和问道衍一起配置' })).toBeInTheDocument();
   });
 });

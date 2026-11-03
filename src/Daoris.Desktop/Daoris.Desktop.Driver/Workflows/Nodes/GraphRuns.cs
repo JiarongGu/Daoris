@@ -24,6 +24,9 @@ public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version
     /// <summary>Whether the run has a node record here: a run governed before, whose record a version that stops reading holds whole.</summary>
     public bool Recorded { get; init; }
 
+    /// <summary>A conversation's run (CHATFLOW1f, the chat-flow design §4.5): the candidates its presses submitted, its subject in place of a quest; null for any other run.</summary>
+    public ChatCandidateFile? Candidate { get; init; }
+
     /// <summary>A verification run's own binding (FABRIC-PIPELINE1d), bound under <c>lines/</c>; null for a chain's run.</summary>
     public VerifyRun? Line { get; init; }
 
@@ -111,7 +114,10 @@ public sealed class GraphRuns(NodeRecordFiles records)
 
                 if (kept.Binding is not { } bound || !GraphRun.Names(bound)) continue;
                 var (ended, recorded) = EndOf(bound.Run);
-                runs.Add(new GraphRun(bound, VersionOf(bound), ended) { Recorded = recorded });
+                runs.Add(new GraphRun(bound, VersionOf(bound), ended)
+                {
+                    Recorded = recorded, Candidate = ChatRuns.IsChatRun(bound.Run) ? ChatCandidates.Read(records.Home, bound.Run) : null,
+                });
             }
 
             foreach (var gone in _bindings.Keys.Where(path => !seen.Contains(path)).ToList()) _bindings.Remove(gone);
@@ -292,6 +298,10 @@ public sealed class RunOwners
 
     private readonly Dictionary<string, string> _runOf = new(StringComparer.Ordinal);
 
+    private readonly Dictionary<string, string> _chatBranches = new(StringComparer.Ordinal);
+
+    private static string ChatKey(string? repository, string? branch) => $"{repository?.ToLowerInvariant()}\n{branch}";
+
     private readonly IReadOnlyList<QuestView> _all;
 
     private readonly HashSet<string> _unreadIn = new(StringComparer.OrdinalIgnoreCase);
@@ -301,6 +311,7 @@ public sealed class RunOwners
         _quests = new(quests, StringComparer.Ordinal);
         _all = [.. quests.Values];
         _runs = runs.GroupBy(run => run.Run, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
+        foreach (var chat in runs.Where(run => run.Candidate is not null)) _chatBranches[ChatKey(chat.Candidate!.Repository, chat.Candidate.Branch)] = chat.Run;
         if (!attributionRead)
         {
             foreach (var run in runs.Where(run => run.Ended is null)) _unreadIn.Add(run.Binding.Repository);
@@ -323,6 +334,8 @@ public sealed class RunOwners
     /// <summary>The runs whose quests produced a branch unit, each once, by its links; a quest not read is a run of its own.</summary>
     public IReadOnlyList<string> RunsOf(WorkUnit branch) =>
     [
+        // CHATFLOW1f: a conversation's branch is its chat run's, named by the candidates its presses submitted, not by a quest.
+        .. _chatBranches.TryGetValue(ChatKey(branch.Owner.Repository, branch.Subject.Artifact), out var chat) ? [chat] : (IEnumerable<string>)[],
         .. branch.Links.Where(link => link.Relation == WorkRelation.ProducedBy && link.Unit.StartsWith("quest:", StringComparison.Ordinal))
             .Select(link => link.Unit["quest:".Length..])
             .Select(id => _quests.TryGetValue(id, out var quest) ? RunOf(quest) : id)

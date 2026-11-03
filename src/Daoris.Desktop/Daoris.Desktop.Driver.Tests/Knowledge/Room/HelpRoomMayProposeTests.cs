@@ -36,11 +36,14 @@ public sealed class HelpRoomMayProposeTests
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`", proposes);
-        Assert.Contains("one quest to that repository's own session", proposes);
+        Assert.Contains("- `setup_propose`: set one or several repositories registered here up", proposes);
+        Assert.Contains("as `daoris-driver place <repository>…", proposes);
+        Assert.Contains("--preset keep --adoption` does", proposes);
+        Assert.Contains("asks each repository's own session for one", proposes);
         Assert.Contains("a rule letting its sessions run the doctrine tool", proposes);
-        Assert.Contains("Its card shows what was read on its line and the quest's whole text", proposes);
-        Assert.Contains("Daoris never writes into the repository", proposes);
+        Assert.Contains("the only door is\n  `place`", proposes);
+        Assert.DoesNotContain("daoris-driver setup", proposes);
+        Assert.Contains("Daoris never writes into a repository", proposes);
         Assert.Contains("never run it yourself", proposes);
     }
 

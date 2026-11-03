@@ -33,8 +33,8 @@ public sealed class HelpRoomDoorsTests
             "daoris driver adapter <agent>",
             // LEFT3's default and its clear left with POOL1b (D197 point 6).
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
-            // LAYOUT7: the set-up press, Ask Daoris's `setup` kind since LAYOUT8, its screen the repository page's Set up for agents.
-            "daoris-driver setup <repository> [--plan]",
+            // WORKFLOWCLEAN1 1f: the one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
+            "daoris-driver place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
             "daoris agent profile order <agent> <profile>…|--clear",
             "daoris agent profile ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
@@ -46,7 +46,7 @@ public sealed class HelpRoomDoorsTests
             "daoris-driver ask … --short \"…\"", "daoris-driver ask … --review rule|on|<environment>|off","daoris-driver ask --set-review <id> on|<environment>|off",
             "daoris-driver quest review <quest> off [\"…\"]", "daoris-driver quest review <quest> on|<environment>",
             // WORKFLOW1e (D157 point 10): which workflow work follows and a workspace's kinds, and an ask's kind and workflow.
-            "daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]",
+            "daoris driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
             "daoris driver workflow kind <workspace> <kind>", "daoris-driver ask … --kind <kind> [--workflow <id>|current]",
             "daoris-driver ask --set-workflow <id>",
             // XAGENT1f4 (D155 point 10, design §9): the person's presses at the second opinion's gate, which Ask Daoris names and
@@ -146,6 +146,36 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
+    /// WORKFLOWCLEAN1 1i (D227): the room teaches one way. The conversion has its door, which opens the page and never proposes the
+    /// apply; the old landing rule is a place still on Current's, which converting retires; a workflow is made from a default or
+    /// another saved one, never edited, and `current` is chosen for no development route.
+    /// </summary>
+    [Fact]
+    public void The_room_teaches_the_converted_way_and_names_the_conversion()
+    {
+        var convert = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("workflow convert --plan", StringComparison.Ordinal));
+        Assert.Contains("Convert…", convert.Screen);
+        Assert.Contains("Review conversion…", convert.Screen);
+        Assert.Contains("Ask Daoris opens the page and never proposes the apply", convert.To);
+
+        var landing = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("set how accepted work lands", StringComparison.Ordinal));
+        Assert.Contains("only a place still on Current", landing.To);
+        Assert.Contains("converting retires", landing.To);
+
+        var show = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow show --repository", StringComparison.Ordinal));
+        Assert.DoesNotContain("read from its rules", show.To);
+
+        var created = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow new <id>", StringComparison.Ordinal));
+        Assert.Contains("--from <default>|<id>[@<version>]", created.Terminal);
+        Assert.DoesNotContain("current:", created.Terminal);
+        Assert.DoesNotContain("workflow edit", created.Terminal);
+
+        var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow use <id>", StringComparison.Ordinal));
+        Assert.DoesNotContain("|current|", chosen.Terminal);
+        Assert.Contains("no development route's choice", chosen.To);
+    }
+
+    /// <summary>
     /// WORKFLOW1c4 (D157 point 12; the workflow design §6.1, §7): the room named none of the places how work moves is drawn, so
     /// asked how a repository's work lands, or where a quest's work stands, the helper could not send the person there. Current
     /// is a repository's and a workspace's *Workflow* tab, with `daoris driver workflow show` its twin (WORKFLOW1a, WORKFLOW1b);
@@ -163,7 +193,7 @@ public sealed class HelpRoomDoorsTests
         foreach (var said in new[]
         {
             "who takes part (agent alone, agent + you, you, automatic)", "where each was set", "what Daoris cannot do of it yet",
-            "a step opens the Setup row that sets it", "Ask Daoris never proposes it",
+            "or for Current the Setup row that sets it", "Ask Daoris never proposes it",
         })
         {
             Assert.Contains(said, current.To);

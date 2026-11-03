@@ -141,7 +141,7 @@ public static class RegistrationFollow
                 $"`{name}` is not set up on its line `{files.Line}`: no {LineRegistration.ManifestFile} there"
                 + (waiting is not null
                     ? $". Its set-up waits for your review on `{waiting}`; once it is merged, *Bring up to date* registers it."
-                    : $". `daoris-driver setup {name}` asks its own session to set it up."),
+                    : $". `daoris-driver place {name} --preset keep --adoption` asks its own session to set it up."),
                 files.Line, files.Commit);
         }
 
@@ -187,7 +187,7 @@ public static class RegistrationFollow
 
     private static string DeclaresNothingSaid(string name, string at) =>
         $"adopted, declares nothing: its line {at} holds a {LineRegistration.ManifestFile} whose `domain` says nothing, so its "
-        + $"adoption is recorded and the declaration is as the row held it. `daoris-driver setup {name}` asks its own session to "
+        + $"adoption is recorded and the declaration is as the row held it. `daoris-driver place {name} --preset keep --adoption` asks its own session to "
         + "declare what it owns.";
 
     /// <summary>The body with the declaration the row holds in place of the line's empty one; none where it held none.</summary>

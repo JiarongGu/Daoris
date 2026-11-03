@@ -116,6 +116,9 @@ public sealed record AttentionFacts
     /// workspace, remote, host, class, what it holds, what the transport said and since when.
     /// </summary>
     public IReadOnlyList<JsonObject> Git { get; init; } = [];
+
+    /// <summary>The conversion's wait (WORKFLOWCLEAN1g-ii), <c>{places, since}</c> while the kept census has not ended; null otherwise.</summary>
+    public JsonObject? Conversion { get; init; }
 }
 
 /// <summary>
@@ -596,7 +599,16 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // A git remote that cannot authenticate, held (GITAUTH1a, the git-auth design §5.2 and §7.4): one row per held group, its host,
+        // Places still follow old workflow shapes (WORKFLOWCLEAN1g-ii, the cleanup design §4.3): one row for the home while its census has
+        // not ended; its door opens the home-wide review.
+        if (facts.Conversion is { } conversion)
+        {
+            var row = Row("workflow-convert", "home", Text(conversion, "since"));
+            row["convert"] = new JsonObject { ["places"] = conversion["places"]?.DeepClone() };
+            rows.Add(row);
+        }
+
+        // A git remote that cannot authenticate, held (GITAUTH1a,the git-auth design §5.2 and §7.4): one row per held group, its host,
         // class and what it holds in a workspace, the repositories in it named on the row. Said once here; a session's and a press's
         // words name this row rather than repeat it. Its one act, Try again, is on the row. It holds no work yet: a session goes on
         // from the line it has, and the landing's push is its plugin's.

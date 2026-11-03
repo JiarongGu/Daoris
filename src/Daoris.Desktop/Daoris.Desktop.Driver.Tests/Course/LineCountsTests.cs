@@ -37,8 +37,51 @@ public sealed class LineCountsTests : IDisposable
             ? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["q1"] = mark.GetInt32() }
             : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        var evidence = LineCountsRead.Gather(session, LineCountsFixture.Json(row), id => events.GetValueOrDefault(id), _ => moves, forgiven);
+        // COMMS1g: a row with its admission kept answers alone from it, read on over the events as the store's reader reads it.
+        Func<LineHistory, AloneCount?>? alone = row.TryGetProperty("admission", out _)
+            ? history => ContinuationAdmissions.CountOf(ContinuationAdmissions.ReadOn(LineCountsFixture.Admission(row, history.Line), history, LineCountsFixture.Seeded))
+            : null;
+        var evidence = LineCountsRead.Gather(session, LineCountsFixture.Json(row), id => events.GetValueOrDefault(id), _ => moves, forgiven, alone);
         return LineCounts.Of(session, evidence);
+    }
+
+    /// <summary>COMMS1g: a line whose admission is kept counts answers alone from it, and every other from the events, as until it.</summary>
+    [Fact]
+    public void A_kept_admission_is_the_answers_alone_source()
+    {
+        foreach (var row in LineCountsFixture.Read().GetProperty("counts").EnumerateArray())
+        {
+            var named = row.GetProperty("named")[0].GetString()!;
+            var source = Counts(row, named).SingleOrDefault(count => count.Count == LineCounts.AnswersAlone)?.From;
+            if (source is null) continue;
+            Assert.Equal(row.TryGetProperty("admission", out _) ? ContinuationAdmissions.Admission : "events", source);
+        }
+    }
+
+    /// <summary>
+    /// COMMS1g: the store's reader hands the admission's count only where one is kept, so a line not yet seeded counts from its events, and
+    /// one seeded and read on in the store counts as the fixture's pure read does.
+    /// </summary>
+    [Fact]
+    public void The_store_hands_the_admission_only_where_one_is_kept()
+    {
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var admissions = new ContinuationAdmissions(_home, () => StoreSettled.Yes);
+        var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)
+        {
+            ["s1"] = new("s1", null, "completed") { Quest = "q1" },
+            ["s9"] = new("s9", null, "completed") { Quest = "q9" },
+        };
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = "h1", Id = "w1", Text = "Answered." });
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "Went on." });
+        var history = ContinuationAdmissions.History("s1", records, id => LineCountsRead.EventsOf(events, id));
+        Assert.Null(admissions.Count(history));
+
+        Assert.True(admissions.Admit(history, "answers:w2", ["w2"], "s1", 2)!.Admitted);
+
+        var count = admissions.Count(history)!;
+        Assert.Equal(("q1", 2, ContinuationAdmissions.Admission), (count.Line, count.N, count.From));
+        Assert.Equal(ContinuationAdmissions.Seed, admissions.Count(ContinuationAdmissions.History("s9", records, id => LineCountsRead.EventsOf(events, id)))!.From);
     }
 
     [Theory]

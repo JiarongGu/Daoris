@@ -167,9 +167,6 @@ export const NoRunChatCheckout: Story = noRun('chat-checkout');
 /** A chat in a tree of its own, before a conversation's work has a run. */
 export const NoRunChatOwnTree: Story = noRun('chat-own-tree');
 
-/** A chat whose repository follows a graph version, before CHATFLOW1f. */
-export const NoRunChatGraphLater: Story = noRun('chat-graph-later', { workflow: 'reviewed' });
-
 /** A chat whose tree is gone, never bound. */
 export const NoRunChatTreeGone: Story = noRun('chat-tree-gone');
 

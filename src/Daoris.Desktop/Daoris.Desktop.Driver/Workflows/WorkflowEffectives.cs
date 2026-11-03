@@ -6,6 +6,9 @@ namespace Daoris.Driver;
 /// <param name="Level">One of <see cref="WorkflowLevels"/>.</param>
 public sealed record EffectiveSource(string Level, string? Kind, string? Label, IReadOnlyList<string> Paths);
 
+/// <summary>A shipped default a saved copy is behind (WORKFLOWCLEAN1h): its id, its English name, and the graph the copy's next version would be.</summary>
+public sealed record ShippedNewer(string Default, string Name, JsonNode Graph);
+
 /// <summary>One node of an effective graph and the cell a run answers for it (<see cref="WorkflowGraphRuns.Cell"/>).</summary>
 public sealed record EffectiveCell(string Node, WorkflowStep Step);
 
@@ -22,9 +25,10 @@ public sealed record EffectiveCell(string Node, WorkflowStep Step);
 /// <param name="Verifies">The landed route follows a verification pipeline; false under Current, which is no verification.</param>
 /// <param name="Graph">The graph to draw; null where none is: the landed route under Current, or a workflow that does not read (<paramref name="Problem"/>).</param>
 /// <param name="Problem">Why a saved workflow cannot be drawn, in the driver's words.</param>
+/// <param name="Newer">The shipped default a copy was made from, where this build ships it changed since (<see cref="ShippedNewer"/>); else null.</param>
 public sealed record WorkflowEffective(
     string Route, string Workflow, string? Name, int? Version, string? Digest, int? Schema, EffectiveSource Source, bool Verifies,
-    JsonNode? Graph, IReadOnlyList<EffectiveCell> Cells, string? Problem)
+    JsonNode? Graph, IReadOnlyList<EffectiveCell> Cells, string? Problem, ShippedNewer? Newer = null)
 {
     /// <summary>The limit codes the cells carry, each once, in node order.</summary>
     public IReadOnlyList<string> Limits => [.. Cells.Select(cell => cell.Step.Limit).OfType<string>().Distinct(StringComparer.Ordinal)];
@@ -109,6 +113,7 @@ public static class WorkflowEffectives
             ? (found.File!["versions"]![found.Read.Versions.ToList().IndexOf(newest)]!["graph"]!.DeepClone(), held.Nodes)
             : ((JsonNode)WorkflowGraphs.Saved(newest.Steps!), WorkflowGraphs.Graph(newest.Steps!).Nodes);
         var cells = nodes.Select(node => new EffectiveCell(node.Id, WorkflowGraphRuns.Cell(node, process, source.Level))).ToList();
-        return new(route, id, found.Read.Name, newest.Version, newest.Digest, newest.Graph is not null ? WorkflowNamed.GraphSchema : 1, source, verifies, graph, cells, null);
+        return new(route, id, found.Read.Name, newest.Version, newest.Digest, newest.Graph is not null ? WorkflowNamed.GraphSchema : 1, source, verifies, graph, cells, null,
+            WorkflowDefaults.NewerThan(newest.From, newest.Graph));
     }
 }

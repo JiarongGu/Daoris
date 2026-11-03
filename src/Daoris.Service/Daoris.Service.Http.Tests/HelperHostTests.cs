@@ -31,7 +31,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         await sessions.KeepSaidAsync(asker.Id, new Daoris.Knowledge.SaidWord("h1", "It stops at five.", DateTimeOffset.UtcNow, [], Reopens: true, Helper: helper.Id));
         var kept = (await sessions.FindAsync(asker.Id))!;
         Assert.Equal((helper.Id, null, false), (kept.Said[0].Helper, kept.Said[0].By, kept.Said[0].Persons));
-        Assert.Null(kept.Answer);
+        Assert.False(kept.PersonSaid);
 
         var word = (await ListedAsync(asker.Id))!.Value.GetProperty("said")[0];
         Assert.Equal(helper.Id, word.GetProperty("helper").GetString());
@@ -100,8 +100,12 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         var kept = (await sessions.FindAsync(asker.Id))!;
         Assert.Equal((helper.Id, false), (kept.Said[0].Helper, kept.Said[0].Persons));
 
+        // COMMS1b: a word already waiting is answered with its holder and word, never refused; nothing is kept twice.
         var twice = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
-        Assert.Equal(409, twice.Status);
+        Assert.Equal(200, twice.Status);
+        Assert.True(twice.Json.GetProperty("waiting").GetBoolean());
+        Assert.Equal(kept.Said[0].Id, twice.Json.GetProperty("said").GetProperty("id").GetString());
+        Assert.Single((await sessions.FindAsync(asker.Id))!.Said);
 
         Assert.Equal(404, (await host.PostAsync($"/api/helpers/{asker.Id}/hand", new { text = "x" })).Status);
     }
@@ -131,14 +135,13 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): the door follows the line sixteen links at most, and a line longer than that is
-    /// refused with its reason, nothing kept on any part, rather than handed to the part where the bound stopped, which the line has left.
-    /// A line of exactly sixteen links reaches its newest part.
+    /// COMMS1b: the door walks the line as the say door does, to the store's one bound (<see cref="Daoris.Knowledge.Lines.Bound"/>), so a line
+    /// past the helper's old sixteen links reaches its newest part too, and the parts it left keep nothing.
     /// </summary>
     [Theory]
     [InlineData(16)]
     [InlineData(17)]
-    public async Task The_hand_door_refuses_a_line_past_its_bound_and_keeps_nothing_on_a_part_it_left(int links)
+    public async Task The_hand_door_follows_a_long_line_to_its_newest_part_and_keeps_nothing_on_a_part_it_left(int links)
     {
         var sessions = host.Composed.Sessions;
         var now = DateTimeOffset.UtcNow;
@@ -158,16 +161,9 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         var handed = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
 
-        if (links == 16)
-        {
-            Assert.Equal(200, handed.Status);
-            Assert.Single((await sessions.FindAsync(parts[^1]))!.Said);
-            return;
-        }
-
-        Assert.Equal(409, handed.Status);
-        Assert.Contains("sixteen", handed.Json.GetProperty("error").GetString());
-        foreach (var part in parts) Assert.Empty((await sessions.FindAsync(part))!.Said);
+        Assert.Equal(200, handed.Status);
+        Assert.Single((await sessions.FindAsync(parts[^1]))!.Said);
+        foreach (var part in parts.Take(links)) Assert.Empty((await sessions.FindAsync(part))!.Said);
     }
 
     /// <summary>
@@ -191,7 +187,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         var record = (await sessions.FindAsync(asker.Id))!;
         Assert.Equal(Daoris.Knowledge.SessionState.AwaitingPerson, record.State);
         Assert.Equal(["person01", null], record.Said.Select(word => word.Helper is null ? word.Id : null));
-        Assert.Equal("Port 8080.", record.Answer);
+        Assert.Equal("Port 8080.", record.Said.Single(word => word.Persons).Text);
     }
 
     /// <summary>
@@ -217,7 +213,8 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal((helper.Id, false, true), (kept.Said[0].Helper, kept.Said[0].Persons, kept.Said[0].Reopens));
 
         var twice = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
-        Assert.Equal(409, twice.Status);
+        Assert.Equal(200, twice.Status);
+        Assert.True(twice.Json.GetProperty("waiting").GetBoolean());
 
         var driven = await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Keeper/s-abababab");
         var drivenHelper = await sessions.CreateAsync(null, "Keeper", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: driven.Id);
@@ -244,7 +241,9 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, handed.Status);
         var kept = (await sessions.FindAsync(asker.Id))!;
         Assert.Equal((helper.Id, "urgent", false), (kept.Said[0].Helper, kept.Said[0].Level, kept.Said[0].Persons));
-        Assert.Equal(409, (await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five.", running = true })).Status);
+        var again = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five.", running = true });
+        Assert.Equal(200, again.Status);
+        Assert.True(again.Json.GetProperty("waiting").GetBoolean());
     }
 
     /// <summary>🔴 A helper takes no words and is never resumed: the say door refuses it by its own word, `helper`.</summary>

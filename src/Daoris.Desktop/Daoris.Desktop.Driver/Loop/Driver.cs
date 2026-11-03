@@ -735,6 +735,15 @@ public sealed class Driver(
         public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
         public void Chosen(LandingLine line) => service.LandingSaid(line);
+
+        public async Task<string?> RemoteHostAsync(string repository, CancellationToken ct)
+        {
+            var row = (await service.RegistryAsync(ct).ConfigureAwait(false))
+                .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
+            return row?.Root is { Length: > 0 } root && Directory.Exists(root)
+                ? GitWords.HostOf(await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false))
+                : null;
+        }
     }
 
     /// <summary>
@@ -1142,7 +1151,7 @@ public sealed class Driver(
             (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
         var undecided = snapshot;
         // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
-        var alone = new AnswersAloneHold(Context.Events, Context.Marks);
+        var alone = new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home));
         IReadOnlyDictionary<string, PriorSession>? lines = null;
         SupervisorBound bound = async (session, token) =>
             alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
@@ -2588,6 +2597,14 @@ public sealed class Driver(
             ? await GoOns.ResumeWordsAsync(start.Resumes!, ct).ConfigureAwait(false)
             : null;
 
+        // COMMS1g (the comms design §11): the waited quest's result counts on the line this resume carries on, reserved before the run is
+        // handed it and once however often the start is tried. Nothing here holds it.
+        if (answered is not null)
+        {
+            new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home)).Waited(
+                start.Resumes!, answered.Id, handsOn?.Waiting ?? [], await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
+        }
+
         // LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in a tree that stands — a resume, words going on, a
         // carry-on, a further part gone into its session's tree — starts from the line where the line came to hold some of its commits,
         // and is told what was done. Asked before this start's own hold below, since bringing a tree up to date holds the repository's
@@ -2777,7 +2794,7 @@ public sealed class Driver(
         // Whether the roster's switch moved the words off a cooling own account to a new part (LIMITSWITCH1, LIMITSWITCH2, LIMITSWITCH3).
         var switched = false;
         if (start.Resumes is { } park
-            && (start.GoesOn || park is { State: "completed", Answer: not null, Said: null })
+            && start.GoesOn
             && !resuming)
         {
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
@@ -3166,7 +3183,7 @@ public sealed class Driver(
             var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
             var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
-            var asking = await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false);
+            var asking = await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
             // FOUNDATION1f-iv part b: a carry-on's moved words are taken once its first prompt is written, and the take is what keeps the
             // person's among them on the ask this instruction reads, so the instruction is handed them here, as the take will have kept them.
             if (delivering is not null && movedBy is not null && movedOn is { Count: > 0 } && asking.Words is AskWords askRead)
@@ -3255,7 +3272,7 @@ public sealed class Driver(
                 // the person's checkout is told nothing. Under a named workflow the rule applies as everywhere.
                 Commits = Context.Trees.Holds(workTree) ? CommitRules.Resolve(config, quest.To, start.Workspace) : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
-                PersonSaid = carryingOn ? start.Resumes!.Answer : null,
+                PersonSaid = carryingOn ? SaidWordView.PersonsJoined(start.Resumes!.Waiting) : null,
                 // SAYHELD1 (A): a resume's, the words said to the session that asked while it waited, each under its id.
                 // LIMITSWITCH3: and a carry-on a cooling account's switch made, Daoris's own words it carries (the person's come by the ask).
                 // FOUNDATION1d-ii part 5: the words the open moved here, where it moved them, as this record holds them.
@@ -3294,7 +3311,7 @@ public sealed class Driver(
             // the person's words in its own record, where they read the question. A resume that was tried already put
             // them there (ANSWER1a).
             // Words to a session that had ended are in its conversation already, where the person wrote them (MSG1b).
-            if (carryingOn && !answerKept && start.Resumes!.Answer is { Length: > 0 } answeredWith && written is { Parked: true } or { Said: null })
+            if (carryingOn && !answerKept && SaidWordView.PersonsJoined(start.Resumes!.Waiting) is { Length: > 0 } answeredWith && written is { Parked: true })
             {
                 Context.Events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
             }
@@ -4185,7 +4202,7 @@ public sealed class Driver(
 
         var session = resumes!.Session;
         (string Name, object? Value)[] facts = [("quest", quest.Id), ("session", session)];
-        var carried = resumes.Answer is not null
+        var carried = resumes.PersonSaid
             ? (written is { Parked: false, Said: not null }
                 // Words to a session that had ended (MSG1b): no answer, and an open quest is started.
                 ? quest.Status == "Open"
@@ -5283,13 +5300,13 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// A quest's target with the person's words on the ask it was asked by (DRIFT1b, D133 §2), read from the ask for this
-    /// start: every start on the ask is handed them, a first start, a resume and a carry-on on any account alike, since a
-    /// carry-on's own record holds only the session before it. A quest no ask asked is handed none, and words the service
+    /// A quest's target with the person's words on the ask its session's line is on (DRIFT1b, D133 §2; COMMS1c), read from the
+    /// ask for this start: every start on the ask is handed them, a first start, a resume and a carry-on on any account alike,
+    /// since a carry-on's own record holds only the session before it. A line on no ask is handed none, and words the service
     /// did not answer leave today's instruction, saying so (<see cref="AskWords.ReadAsync"/>).
     /// </summary>
-    internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, ServiceClient service, CancellationToken ct) =>
-        target with { Words = await AskWords.ReadAsync(service, target.Asker, ct).ConfigureAwait(false) };
+    internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, string session, ServiceClient service, CancellationToken ct) =>
+        target with { Words = await AskWords.ReadOfSessionAsync(service, session, ct).ConfigureAwait(false) };
 
     /// <summary>
     /// The person's standing answer for the quest's repository on this machine (KNOWUSE1b, D135 §3), read from the config this

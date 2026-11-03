@@ -65,6 +65,32 @@ public sealed class SessionWordsKeptIdentityTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// COMMS1e: a press held across a restart keeps the question it answered in the held file, and the record path says it to a host that
+    /// checks presses, so a press held across a hand-over is judged against the question then on file.
+    /// </summary>
+    [Fact]
+    public async Task A_held_press_keeps_its_question_across_a_restart_and_says_it_to_the_record()
+    {
+        var winding = true;
+        var service = new KeyedSayService { Records = Records(Chat("c1", "working")), Winding = _ => winding, PressMark = true };
+        var before = await UpAsync(service);
+        await before.Words.SayAsync("c1", Words, [], preface: null, "screen", CancellationToken.None, key: Key, question: "q-7");
+
+        using (var held = JsonDocument.Parse(File.ReadAllText(SessionWords.HeldPath(Home))))
+            Assert.Equal("q-7", Assert.Single(held.RootElement.GetProperty("held").EnumerateArray()).GetProperty("question").GetString());
+
+        before.Stop();
+        winding = false;
+        service.Records = Records(Chat("c1", "completed"));
+        var after = await UpAsync(service);
+        await after.Service!.AdvanceAsync("c1", "completed", note: "the conversation ended.");
+        await UntilAsync(() => after.Events.Page("c1").Events.Count == 1);
+
+        using var kept = JsonDocument.Parse(service.Said("c1").Last().Body);
+        Assert.Equal("q-7", kept.RootElement.GetProperty("question").GetString());
+    }
+
+    /// <summary>
     /// A producer's retry after a shell restart keeps one word where it kept two: the word held across the restart is kept under the
     /// key it was said with, so the producer's own retry under that key is answered with it. (D137, D188: the guarantee, kept.)
     /// </summary>

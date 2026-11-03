@@ -25,7 +25,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var config = DriverConfig.Parse("""
             {"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}
             """);
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
             System.Text.Json.Nodes.JsonNode.Parse("""
                 [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"branch","accept":"automatic"}]
                 """)), kept: []);
@@ -101,7 +101,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             {"reviews":{"engine":{"required":false,"environments":[
               {"name":"local","kind":"local","procedure":"README.md","address":"http://localhost:4200"}]}}}
             """);
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.ToString("O"),
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.ToString("O"),
             System.Text.Json.Nodes.JsonNode.Parse("""
                 [{"id":"write","kind":"work"},{"id":"inspect","kind":"look","environment":"local"},
                  {"id":"publish","kind":"landing","form":"merge","accept":"you"}]
@@ -109,7 +109,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var binding = WorkflowRunBindings.Plan(config, Home, "q1", "engine", "aurora", "a1",
             new WorkflowTaskChoice(null, "release"), [], T);
         Assert.True(WorkflowRunBindings.Bind(Home, binding));
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.AddMinutes(1).ToString("O"),
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.AddMinutes(1).ToString("O"),
             System.Text.Json.Nodes.JsonNode.Parse("""
                 [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]
                 """)), kept: [1]);
@@ -140,7 +140,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     [InlineData("binding")]
     public async Task An_unreadable_bound_workflow_is_not_drawn_as_Current_or_done(string broken)
     {
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
             System.Text.Json.Nodes.JsonNode.Parse("""
                 [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]
                 """)), kept: []);
@@ -162,7 +162,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     [InlineData(true, "not-known")]
     public async Task A_bound_look_with_no_declaration_is_never_skipped_even_when_the_ask_is_unreadable(bool askUnread, string state)
     {
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
             System.Text.Json.Nodes.JsonNode.Parse("""
                 [{"id":"write","kind":"work"},{"id":"inspect","kind":"look"},
                  {"id":"publish","kind":"landing","form":"merge","accept":"you"}]
@@ -187,7 +187,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     [Fact]
     public async Task A_run_bound_to_a_graph_version_is_answered_from_its_record_with_its_wires()
     {
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
+        StoredSteps.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"build","kind":"acme.ci/built","version":1,"reach":"observed"},{"id":"lint","kind":"acme.ci/linted","version":1,"reach":"observed"},
@@ -246,7 +246,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var steps = kind == "opinion"
             ? """[{"id":"write","kind":"work"},{"id":"inspect","kind":"opinion"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]"""
             : """[{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"branch","accept":"you"}]""";
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
             System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
         Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
             new WorkflowTaskChoice(null, "release"), [], T)));
@@ -394,7 +394,8 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var run = Assert.Single(chat.GetProperty("runs").EnumerateArray());
         Assert.Equal(("c2", 0), (run.GetProperty("session").GetString(), run.GetProperty("quests").GetArrayLength()));
         var mark = run.GetProperty("chat");
-        Assert.Equal(("chat-c2", "light", false),
+        // A chat's run binds its graph now (WORKFLOWCLEAN1 1d), so its checks are the graph's and enforced.
+        Assert.Equal(("chat-c2", "light", true),
             (mark.GetProperty("run").GetString(), mark.GetProperty("checks").GetString(), mark.GetProperty("enforced").GetBoolean()));
         var work = run.GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("kind").GetString() == "work");
         Assert.Equal(("working", "agent"), (work.GetProperty("state").GetString(), work.GetProperty("detail").GetString()));
@@ -403,7 +404,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>
     private NodeRecordFiles BoundWithAGoAhead()
     {
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
+        StoredSteps.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"go","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"deploy the release"}},
@@ -493,7 +494,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     [Fact]
     public async Task A_graph_run_says_its_routes_not_taken_and_a_reviews_changes_are_kept_with_words()
     {
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
+        StoredSteps.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
             {"schemaVersion":2,"entries":["work"],"end":"release",
              "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"find","kind":"local-release/find","version":1,"reach":"performed","outcomes":["release","none"]},

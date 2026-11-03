@@ -180,6 +180,7 @@ public static class DriverChoicesCommand
                daoris-driver driver retry <quest> [--at <n> | --session <id>]
                daoris-driver driver line <repository>|--workspace <name> <branch>|--clear
                daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear
+                      (serves only a place that follows Current; converting retires the old landing rule)
                       [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]
                       [--cycle <file>|--no-cycle]
                daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear
@@ -199,11 +200,12 @@ public static class DriverChoicesCommand
                       [--synthesis-minutes <n>] [--challenge-minutes <n>] [--request-minutes <n>] | --clear
                daoris-driver driver workflow list · show <id>[@<version>] · show --repository <name>|--workspace <name> [--kind <kind>]
                daoris-driver driver workflow defaults [<default> [--to <file>]]
-               daoris-driver driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]
+               daoris-driver driver workflow new <id> --from <default>|<id>[@<version>]
                       [--with-opinion] [--with-look] [--name "…"]
-               daoris-driver driver workflow edit <id> [--base <version>] <change>… · apply <id> <file>|--as-graph [--base <version>]
+               daoris-driver driver workflow apply <id> <file> [--base <version>]
                daoris-driver driver workflow export <id> [--to <file>] · import <file>
-               daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
+               daoris-driver driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
+                      (current only with --landed: no verification)
                daoris-driver driver workflow kind <workspace> <kind> --label "…" [--paths <path,…>] | --drop
                       (a workflow's writes say their change, and with --plan save nothing)
                daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default

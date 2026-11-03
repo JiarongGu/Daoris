@@ -24,7 +24,7 @@ internal sealed class KnowledgeWorkOrderReads : IKnowledgeWorkOrders
         return new HelpWork(units, unread, recovery);
     }
 
-    public bool WaitsOnYou(string id, string state, string? answer) => SessionGroups.WaitsOnYou(id, state, answer);
+    public bool WaitsOnYou(string id, string state, bool answered) => SessionGroups.WaitsOnYou(id, state, answered);
 
     public IEnumerable<string> Milestone(IKnowledgeMilestone unit) => WorkWords.Milestone(unit);
 

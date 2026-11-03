@@ -461,11 +461,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The shell keeps the words on a record that winds up or moves (FOUNDATION1o, the foundation design §3.4 rule 4), for its next part to go on
     /// with; a host before the row ignores it and refuses them as <c>running</c>, which the shell then holds as before.
     /// </param>
+    /// <param name="question">The question id a person's press answers (COMMS1e), kept on the word; sent only to a host with the <c>presses</c> mark.</param>
     public async Task<SayAnswer> SayAsync(
         string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
-        (string Decision, string Question, string Choice)? supervised = null, bool ending = false)
+        (string Decision, string Question, string Choice)? supervised = null, bool ending = false, string? question = null)
     {
+        // COMMS1e: the person's press names its question only to a host that checks it (the `presses` mark); an older host refuses the field.
+        var presses = question is { Length: > 0 } && supervised is null && await Opens.PressesAsync(ct).ConfigureAwait(false);
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
@@ -490,6 +493,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (level is { Length: > 0 }) writer.WriteString("level", level);
             if (running) writer.WriteBoolean("running", true);
             if (ending) writer.WriteBoolean("ending", true);
+            if (presses) writer.WriteString("question", question!);
             if (files is { Count: > 0 })
             {
                 writer.WriteStartArray("files");
@@ -2374,8 +2378,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Its note's lines by code (LANG1a), handed on wherever the note is; null for a record from before parts.
                 NoteParts = NotePart.Read(session),
-                // The person's answer to its park (ENTRY1f2), read as SessionRecords reads it: a blank one is none.
-                Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
+                // Its words (ENTRY1f2), read as SessionRecords reads them: the person's make an answered park.
+                Said = ReadSaid(session),
                 // Its workspace (ASKSCOPE1a), as SessionRecords reads it: none from a host from before is `default`.
                 Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
                 // What the cap counts by (CAPCOUNT1): its kind, and the mark of each conversation the driver opens for itself, an
@@ -2752,7 +2756,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     private static PriorSession Prior(JsonElement session) =>
         new(
             Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
-            Text(session, "repository"), Text(session, "answer"), Interrupted(session))
+            Text(session, "repository"), Interrupted(session))
         {
             // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
             Profile = Text(session, "profile"),
@@ -2849,7 +2853,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// its words or a moment is skipped, a file's name that is not text is none. Null where the record answers no list, a
     /// host from before MSG1a, which is not the same as nothing waiting.
     /// </summary>
-    private static IReadOnlyList<SaidWordView>? ReadSaid(JsonElement session)
+    internal static IReadOnlyList<SaidWordView>? ReadSaid(JsonElement session)
     {
         if (!session.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array) return null;
         return [.. said.EnumerateArray().Select(ReadWord).OfType<SaidWordView>()];

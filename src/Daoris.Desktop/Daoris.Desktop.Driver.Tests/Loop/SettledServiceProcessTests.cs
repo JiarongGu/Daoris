@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// word whose id the test sets to K's, and K's retry kept through a fresh <see cref="ChatTurns"/> and, in another run, a fresh
 /// <see cref="DrivenInbox"/> of B answered settled: nothing queued, steered, attempted or taken, B's word waiting unattempted, and K's text never
 /// reaching the stand-in door's agent; the same retry from an older client keeping a second word under a new id, B's word untouched; a helper's and
-/// a partner's hand retried after its take, nothing kept.
+/// a partner's hand retried after its take, nothing kept; and (COMMS1b) the helper's look through the one door, across a hand-over and a restart.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class SettledServiceProcessTests : IAsyncLifetime
@@ -202,13 +202,13 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
         var (helper, helperMessage) = await _client!.Helpers.OpenAsync(asker, "stub", Path.Combine(_scratch, "helper-clone"), null, null, null);
         Assert.True(helper is not null, helperMessage);
         var handed = await _client.Helpers.HandAsync(helper!, "the helper's answer");
-        Assert.Equal(HelperHanded.Kept, handed.Outcome);
+        Assert.Equal(SolicitedFate.Kept, handed.Fate);
         Assert.True((await _client.TakenAsync(asker, [handed.Word!])).Ok);
         var successor = await EndedAsync(from: asker);
 
         var retry = await _client.Helpers.HandAsync(helper!, "the helper's answer");
 
-        Assert.Equal(HelperHanded.Settled, retry.Outcome);
+        Assert.Equal(SolicitedFate.Settled, retry.Fate);
         Assert.Null(retry.Word);
         Assert.Empty(await WaitingAsync(asker));
         Assert.Empty(await WaitingAsync(successor));
@@ -218,15 +218,74 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
             "INSERT INTO sessions (id, repository, adapter, state, created, updated, kind, serves, piece) VALUES ('pt000001', 'engine', 'stub', 'Completed', $at, $at, 'Chat', $lead, 'piece1')",
             ("$at", DateTimeOffset.UtcNow.ToString("O")), ("$lead", lead));
         var piece = await _client.Partners.HandAsync("pt000001", "the piece");
-        Assert.True(piece.Handed);
+        Assert.Equal(SolicitedFate.Kept, piece.Fate);
         Assert.NotNull(piece.Word);
         Assert.True((await _client.TakenAsync(lead, [piece.Word])).Ok);
 
         var again = await _client.Partners.HandAsync("pt000001", "the piece");
 
-        Assert.True(again.Handed);
-        Assert.Equal(lead, again.Settled);
+        Assert.Equal(SolicitedFate.Settled, again.Fate);
+        Assert.Equal(lead, again.SettledOn);
         Assert.Null(again.Word);
+        Assert.Empty(await WaitingAsync(lead));
+    }
+
+    /// <summary>
+    /// COMMS1b (the comms design §4.2, §10 row b): the helper's look against the real host's one door. A lead asks a helper and, between the ask
+    /// and the answer, is handed over to another agent's part; the look hands the answer through the door, which keeps it on the new part under
+    /// the helper's key, and tells that part's runner once. A restart that cut the next hand between its attempt and the take asks the door again,
+    /// which answers the word waiting on the new part, and once the new part took it, settled: nothing is kept twice, and nothing on the part left.
+    /// </summary>
+    [Fact]
+    public async Task A_helpers_answer_after_a_hand_over_reaches_the_new_part_once_through_the_one_door()
+    {
+        await ServiceAsync();
+        Assert.True(await _client!.Opens.AnswersAsync());
+        var lead = await EndedAsync();
+        var (helper, opened) = await _client.Helpers.OpenAsync(lead, "stub", Path.Combine(_scratch, "helper-clone"), null, null, null);
+        Assert.True(helper is not null, opened);
+        var home = Path.Combine(_scratch, "home");
+        var files = new HelperFiles(home);
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Helpers));
+        File.WriteAllText(files.PathOf("a1", "ask"), new JsonObject
+        {
+            ["id"] = "a1", ["asker"] = lead, ["question"] = "Why does the report drop its last day?", ["agent"] = null, ["askedBy"] = "agent",
+            ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+        }.ToJsonString());
+        // The hand-over, between the ask and the answer: another agent's part continues the lead.
+        var part = await EndedAsync(from: lead);
+        File.WriteAllText(files.PathOf("a1", "answer"), new JsonObject
+        {
+            ["id"] = "a1", ["helper"] = helper, ["answer"] = "The window is exclusive at report.md:1.", ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+        }.ToJsonString());
+        files.WriteState(new HelperState("a1", HelperStates.Answered, null, helper, DateTimeOffset.UtcNow) { Agent = "stub" });
+        var driver = new Daoris.Driver.Driver(_client, DriverConfig.Empty with { Adapter = "stub" }, AdapterSet.Built(), home);
+        async Task LookAsync()
+        {
+            await driver.HelpersAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+            await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+        }
+
+        await LookAsync();
+
+        var word = Assert.Single(await WaitingAsync(part));
+        Assert.Equal(($"helper:{helper}", word.Id), (word.Key, files.ReadState("a1")!.Handed));
+        Assert.Empty(await WaitingAsync(lead));
+        Assert.Equal(word.Id, Assert.Single(driver.Context.Events.After(part, 0).Events, e => e.Kind == SessionEventKind.User).Id);
+
+        // A restart cut the next hand between its attempt and the take: the door answers it waiting on the new part, and nothing is kept again.
+        files.WriteState(files.ReadState("a1")! with { Handed = null, Attempted = DateTimeOffset.UtcNow, Keyed = true });
+        await LookAsync();
+        Assert.Equal(word.Id, files.ReadState("a1")!.Handed);
+        Assert.Single(await WaitingAsync(part));
+        Assert.Single(driver.Context.Events.After(part, 0).Events, e => e.Kind == SessionEventKind.User);
+
+        // The new part takes it once; a retry after the take is settled, nothing kept on either part.
+        Assert.True((await _client.TakenAsync(part, [word.Id])).Ok);
+        files.WriteState(files.ReadState("a1")! with { Handed = null, Attempted = DateTimeOffset.UtcNow, Keyed = true });
+        await LookAsync();
+        Assert.Equal("settled", files.ReadState("a1")!.Handed);
+        Assert.Empty(await WaitingAsync(part));
         Assert.Empty(await WaitingAsync(lead));
     }
 }

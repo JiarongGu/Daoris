@@ -76,10 +76,11 @@ export const isIntake = (session: Session): boolean => Boolean(session.ask);
 export const isOpinion = (session: Session): boolean => Boolean(session.opinion);
 
 /**
- * Whether a session is a helper (MIXAGENT2a, D163): the one kind of record that names a session it serves. Like a reviewer, it
+ * Whether a session is a helper (MIXAGENT2a, D163): a record that names a session it serves. Like a reviewer, it
  * is a chat only by the way it was opened, one turn and no words: `sessionTitle` names it and the frame's `oneTurn` offers no box.
+ * A reviewer serves the work it reads too (COMMS1b), so the opinion mark is read first: a reviewer is never a helper.
  */
-export const isHelper = (session: Session): boolean => Boolean(session.serves);
+export const isHelper = (session: Session): boolean => !session.opinion && Boolean(session.serves);
 
 /**
  * Whether the host that answered a record says its work is a partner's (FOUNDATION1c, D212; D203 point 1): a naming only, read from the
@@ -100,7 +101,7 @@ export function linkedSessions(
 ): { continues: Session | null; helps: Session | null } {
   return {
     continues: session.from ? byId.get(session.from) ?? null : null,
-    helps: session.serves ? byId.get(session.serves) ?? null : null,
+    helps: isHelper(session) && session.serves ? byId.get(session.serves) ?? null : null,
   };
 }
 

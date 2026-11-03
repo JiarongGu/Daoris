@@ -137,7 +137,14 @@ public static class PlaceApplies
         if (refusal is not null) return new Begun(null, null, refusal);
 
         var operations = new List<PlaceOperation>();
-        var configured = plan.Changes.Where(each => each.Change.Key != PlacePlans.SetupPressKey).Select(each => each.Change.Said).Distinct().ToList();
+        // The copies the home saves come first (WORKFLOW_SAVE), each once, before the one edit of driver.json that chooses them.
+        operations.AddRange(plan.Saves.Select(save => new PlaceOperation(
+            PlaceOperations.WorkflowSaveOf(save.Id), PlaceOperations.WorkflowSave, null, $"a saved copy of `{save.Default}` as `{save.Id}`", PlaceOutcomes.Pending)
+        {
+            Workflow = save.Id, Default = save.Default, Opinion = save.Opinion, Look = save.Look,
+        }));
+        var configured = plan.Changes
+            .Where(each => each.Change.Key is not (PlacePlans.SetupPressKey or PlacePlans.WorkflowSaveKey)).Select(each => each.Change.Said).Distinct().ToList();
         if (configured.Count > 0 || chosen.Count > 0)
         {
             var said = string.Join("; ", configured.Concat(chosen.Select(each => $"accepts `{each.Repository}`'s declaration for {each.Purpose}")));
@@ -203,12 +210,32 @@ public static class PlaceApplies
         PlaceApplyDoors doors, PlaceReceipts receipts, PlaceReceipt receipt, PlacePlanned? planned, CancellationToken ct)
     {
         string? refused = null;
-        if (receipt.Of(PlaceOperations.Configuration) is { Outcome: PlaceOutcomes.Pending })
+        foreach (var save in receipt.Operations.Where(each => each.Kind == PlaceOperations.WorkflowSave && each.Outcome == PlaceOutcomes.Pending).ToList())
+        {
+            receipt = await SaveWorkflowAsync(doors, receipts, receipt, save, ct).ConfigureAwait(false);
+        }
+
+        var saving = receipt.Operations.Where(each => each.Kind == PlaceOperations.WorkflowSave).ToList();
+        if (saving.Any(each => each.Outcome == PlaceOutcomes.Failed) && receipt.Of(PlaceOperations.Configuration) is { Outcome: PlaceOutcomes.Pending })
+        {
+            // A choice naming a copy that is not saved is never written.
+            receipt = Write(receipts, receipt.With(PlaceOperations.Configuration, each => each with
+            {
+                Outcome = PlaceOutcomes.Failed, Note = "the workflow it chooses was not saved, so the configuration was not applied.",
+            }));
+        }
+        else if (saving.All(each => each.Outcome == PlaceOutcomes.Done) && receipt.Of(PlaceOperations.Configuration) is { Outcome: PlaceOutcomes.Pending })
         {
             (receipt, refused) = await ConfigureAsync(doors, receipts, receipt, planned, ct).ConfigureAwait(false);
         }
 
         var configuration = receipt.Of(PlaceOperations.Configuration)?.Outcome ?? PlaceOutcomes.Done;
+        if (configuration == PlaceOutcomes.Done)
+        {
+            // Under oldest-first and a small cap, many set-ups asked together would hold every slot for hours (D117 §9): one at a time unless said.
+            receipt = await PaceAsync(doors, receipts, receipt, receipt.Ask.AtOnce ?? WorkspaceSetupRules.DefaultAtOnce, ct).ConfigureAwait(false);
+        }
+
         foreach (var operation in receipt.Operations.Where(each => each.Kind == PlaceOperations.Adoption && each.Outcome == PlaceOutcomes.Pending).ToList())
         {
             if (configuration == PlaceOutcomes.Failed)
@@ -229,6 +256,49 @@ public static class PlaceApplies
     {
         receipts.Write(receipt);
         return receipt;
+    }
+
+    /// <summary>
+    /// Whether the home holds the copy a <c>WORKFLOW_SAVE</c> operation names: its newest version copies the same default with the same
+    /// gates. The operation is idempotent, so a newest version with the planned digest already there reads as done.
+    /// </summary>
+    private static bool CopySaved(string home, PlaceOperation save) =>
+        WorkflowDefaults.Of(save.Default) is { } shipped
+        && WorkflowPorts.Store(home).Load(save.Workflow!) is { Read: { Problem: null, Versions: [.., { From: { } from, Digest: { } digest }] } }
+        && from.Default == save.Default
+        && digest == NodeGraphs.Digest(NodeGraphs.Read(WorkflowPresets.WithGraphGates(shipped.Graph(), save.Opinion, save.Look).ToJsonString()).Graph!);
+
+    /// <summary>
+    /// The first operation of an apply, one copy of a shipped default saved (<c>WORKFLOW_SAVE</c>) through the window's own save. <c>uncertain</c>
+    /// in the receipt from before the write until its answer; a copy already there reads as done.
+    /// </summary>
+    private static async Task<PlaceReceipt> SaveWorkflowAsync(
+        PlaceApplyDoors doors, PlaceReceipts receipts, PlaceReceipt receipt, PlaceOperation save, CancellationToken ct)
+    {
+        if (CopySaved(doors.Home, save)) return Write(receipts, receipt.With(save.Id, each => each with { Outcome = PlaceOutcomes.Done, Note = null }));
+        if (WorkflowPorts.Store(doors.Home).Load(save.Workflow!) is not null)
+        {
+            return Write(receipts, receipt.With(save.Id, each => each with
+            {
+                Outcome = PlaceOutcomes.Failed, Note = $"`{save.Workflow}` is a workflow here already that is not this copy: plan it again.",
+            }));
+        }
+
+        receipt = Write(receipts, receipt.With(save.Id, each => each with { Outcome = PlaceOutcomes.Uncertain, Note = null }));
+        try
+        {
+            var saved = await WorkflowOperations.SaveAsync(
+                doors.Config(), doors.Home, _ => Task.FromResult(new ChoicesRegistry([], null)), save.Workflow!, save.Default, null, null, save.Opinion, save.Look,
+                null, null, null, plan: false, PlannedWorkflows.At, ct).ConfigureAwait(false);
+            return Write(receipts, receipt.With(save.Id, each => saved.Done
+                ? each with { Outcome = PlaceOutcomes.Done, Note = null }
+                : each with { Outcome = PlaceOutcomes.Failed, Note = saved.Message }));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The write's answer is lost: it may have landed, and the copy found says.
+            return Write(receipts, receipt.With(save.Id, each => each with { Note = error.Message }));
+        }
     }
 
     /// <summary>
@@ -277,8 +347,10 @@ public static class PlaceApplies
     {
         foreach (var row in plan.Repositories)
         {
-            var applied = PlacePlans.Apply(config, rows[row.Repository], receipt.Ask, tips[row.Repository], doors.Plugins, doors.Door, quests);
-            if (applied.Refusals.Any(each => each.Part != PlacePlans.Adoption) || !applied.Changes.SequenceEqual(row.Changes))
+            var applied = PlacePlans.Apply(config, rows[row.Repository], receipt.Ask, tips[row.Repository], doors.Plugins, doors.Door, quests, doors.Home);
+            // The copies were saved first (their own operations), so only the choices that follow them are held to the plan's.
+            if (applied.Refusals.Any(each => each.Part != PlacePlans.Adoption)
+                || !applied.Changes.Where(Written).SequenceEqual(row.Changes.Where(Written)))
             {
                 throw new PlaceMovedException($"`{row.Repository}`'s configuration is no longer what the plan read, so nothing was written: plan it again.");
             }
@@ -293,6 +365,9 @@ public static class PlaceApplies
 
         return config;
     }
+
+    /// <summary>A change the configuration's edit makes: not the copy saved before it, nor the set-up press.</summary>
+    private static bool Written(PlaceChange change) => change.Key is not (PlacePlans.SetupPressKey or PlacePlans.WorkflowSaveKey);
 
     /// <summary>The acceptance made through its own door's edit: the landed route's, with the gates it verifies by, or the integration's blob.</summary>
     private static DriverConfig Accepted(string home, DriverConfig config, PlaceAccept accept, string workspace)
@@ -345,6 +420,49 @@ public static class PlaceApplies
             : each with { Outcome = PlaceOutcomes.Failed, Note = outcome.Message }));
     }
 
+    /// <summary>
+    /// An adoption covering more of a workspace's repositories than <paramref name="atOnce"/> (the ask's, else the plan's default of one) is paced (WORKFLOWCLEAN1 1f): the apply writes that
+    /// workspace's plan, which the driver's tick works as it always has, and the operations are done once the plan is written. A workspace with
+    /// no more than <c>atOnce</c> of them is asked now, as a single adoption is. A plan already working for those repositories is the same write.
+    /// </summary>
+    private static async Task<PlaceReceipt> PaceAsync(
+        PlaceApplyDoors doors, PlaceReceipts receipts, PlaceReceipt receipt, int atOnce, CancellationToken ct)
+    {
+        var pending = receipt.Operations.Where(each => each.Kind == PlaceOperations.Adoption && each.Outcome == PlaceOutcomes.Pending).ToList();
+        if (pending.Count <= atOnce) return receipt;
+
+        var registry = await doors.Place.RegistryAsync(ct).ConfigureAwait(false);
+        var groups = pending
+            .Select(operation => (Operation: operation, Row: registry.FirstOrDefault(row => string.Equals(row.Repository, operation.Repository, StringComparison.OrdinalIgnoreCase))))
+            .Where(each => each.Row is not null)
+            .GroupBy(each => RemoteTarget.Workspace(each.Row!.Workspace), StringComparer.OrdinalIgnoreCase);
+        foreach (var group in groups.Where(each => each.Count() > atOnce))
+        {
+            var order = group.Select(each => each.Row!.Repository).ToList();
+            var existing = WorkspaceSetupFile.Load(doors.Home, group.Key).Plan;
+            var outcome = existing is { Live: true } && order.All(name => existing.Order.Contains(name, StringComparer.OrdinalIgnoreCase))
+                ? new WorkspaceSetupOutcome(true, "", existing, [])
+                : WorkspaceSetup.Write(doors.Home, group.Key, order, atOnce, receipt.Ask.Pilot ?? WorkspaceSetupRules.DefaultPilot, DateTimeOffset.UtcNow);
+            foreach (var (operation, _) in group)
+            {
+                receipt = Write(receipts, receipt.With(operation.Id, each => outcome.Written
+                    ? each with
+                    {
+                        Outcome = PlaceOutcomes.Done,
+                        Note = $"paced: workspace `{group.Key}`'s plan asks it with {order.Count - 1} other{(order.Count == 2 ? "" : "s")}, {atOnce} at a time.",
+                    }
+                    : each with { Outcome = PlaceOutcomes.Failed, Note = outcome.Message }));
+            }
+
+            if (outcome.Written && outcome.Plan is { } plan && doors.Setup is IWorkspaceSetupWorld world)
+            {
+                world.Said(SetupLine.Planned(plan.Workspace, plan.Order.Count, plan.AtOnce, plan.Pilot));
+            }
+        }
+
+        return receipt;
+    }
+
     /// <summary>The quest to <paramref name="repository"/> whose body carries the plan's key, or null where none does.</summary>
     private static async Task<string?> KeyedAsync(PlaceApplyDoors doors, string digest, string repository, CancellationToken ct)
     {
@@ -362,7 +480,13 @@ public static class PlaceApplies
         foreach (var operation in receipt.Operations.Where(each => each.Outcome == PlaceOutcomes.Uncertain).ToList())
         {
             PlaceOperation settled;
-            if (operation.Kind == PlaceOperations.Configuration)
+            if (operation.Kind == PlaceOperations.WorkflowSave)
+            {
+                settled = CopySaved(doors.Home, operation)
+                    ? operation with { Outcome = PlaceOutcomes.Done, Note = null }
+                    : operation with { Outcome = PlaceOutcomes.Pending, Note = "its copy was not saved." };
+            }
+            else if (operation.Kind == PlaceOperations.Configuration)
             {
                 var holds = await ConfigurationHoldsAsync(doors, receipt, ct).ConfigureAwait(false);
                 settled = holds
@@ -394,8 +518,8 @@ public static class PlaceApplies
         {
             if (registry.FirstOrDefault(row => string.Equals(row.Repository, name, StringComparison.OrdinalIgnoreCase)) is not { } row) return false;
             var tip = await doors.Place.TipAsync(row, config, ct).ConfigureAwait(false);
-            var applied = PlacePlans.Apply(config, row, receipt.Ask, tip, doors.Plugins, doors.Door, quests);
-            if (applied.Changes.Any(each => each.Key != PlacePlans.SetupPressKey)) return false;
+            var applied = PlacePlans.Apply(config, row, receipt.Ask, tip, doors.Plugins, doors.Door, quests, doors.Home);
+            if (applied.Changes.Any(Written)) return false;
         }
 
         foreach (var accept in receipt.Accepted)
@@ -421,9 +545,12 @@ public static class PlaceApplies
         };
 
         var adoptions = receipt.Operations.Count(each => each.Kind == PlaceOperations.Adoption);
-        var parts = receipt.Operations.Select(each => each.Kind == PlaceOperations.Configuration
-            ? $"configuration {Word(each, "applied", "not applied")}"
-            : $"adoption{(adoptions > 1 ? $" of `{each.Repository}`" : "")} {Word(each, "asked", "refused")}").ToList();
+        var parts = receipt.Operations.Select(each => each.Kind switch
+        {
+            PlaceOperations.Configuration => $"configuration {Word(each, "applied", "not applied")}",
+            PlaceOperations.WorkflowSave => $"workflow `{each.Workflow}` {Word(each, "saved", "not saved")}",
+            _ => $"adoption{(adoptions > 1 ? $" of `{each.Repository}`" : "")} {Word(each, "asked", "refused")}",
+        }).ToList();
         var notes = receipt.Operations.Where(each => (each.Outcome is PlaceOutcomes.Failed or PlaceOutcomes.Uncertain) && each.Note is { Length: > 0 }).Select(each => each.Note!);
         return string.Join("; ", parts) + (notes.Any() ? $" — {string.Join(" ", notes)}" : parts.Count == 0 ? "nothing to apply." : ".");
     }

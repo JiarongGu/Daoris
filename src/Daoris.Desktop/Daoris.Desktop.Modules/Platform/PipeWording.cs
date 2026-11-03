@@ -133,7 +133,6 @@ public static class PipeWording
         Row("END_CHAT", W("id", PipeRole.Session));
         Row("RESOLVE_SESSION", W("id", PipeRole.Session), W("note", PipeRole.Words));
         Row("LAND_SESSION_TREE", W("id", PipeRole.Session));
-        Row("LAND_WITHOUT_LOOK", W("id", PipeRole.Session), W("words", PipeRole.Words));
         Row("DISCARD_SESSION_TREE", W("id", PipeRole.Session));
         Row("SESSION_GO_ON_NEW", W("id", PipeRole.Session));
         Row("SESSION_START_FROM", W("id", PipeRole.Session));
@@ -182,9 +181,11 @@ public static class PipeWording
         Row("GIT_REF_FINISH", W("repository", PipeRole.Repository));
         Row("GIT_FETCH", W("repository", PipeRole.Repository));
         Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
-        Row("SETUP_PRESS", W("repository", PipeRole.Repository));
         // AGENTSPLACE1b2: a place's apply names the repositories, the delivery and what it builds; the digest and the chosen acceptances are listed under it.
         Row("PLACE_APPLY", W("repositories", PipeRole.Repository), W("preset", PipeRole.Form), W("builds", PipeRole.Form));
+        // WORKFLOWCLEAN1 1e: the conversion's presses; the apply names the two choices of its plan, the undo names nothing.
+        Row("CONVERT_APPLY", W("composed", PipeRole.Form), W("landAutomatic", PipeRole.Form));
+        Row("CONVERT_UNDO");
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
         Row("WORKFLOW_USE", W("repository", PipeRole.Repository), W("workflow", PipeRole.Form), W("kind", PipeRole.Form));
         Row("WORKFLOW_KIND", W("kind", PipeRole.Form), W("label", PipeRole.Words));

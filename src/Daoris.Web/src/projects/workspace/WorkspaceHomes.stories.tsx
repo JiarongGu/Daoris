@@ -60,7 +60,6 @@ function Page({ home, remote = 'local', empty = false, focus = false }: Args) {
         open: 'defaults',
         defaults: {
           line: { set: 'develop', onSet: nothing },
-          landing: { set: { form: 'branch', pattern: 'feature/{slug}-{quest}', tidy: true }, landers: [], onSet: nothing },
           language: { table: LANGUAGES, onSet: nothing },
           commits: { onChange: nothing },
           review: { onChange: nothing },

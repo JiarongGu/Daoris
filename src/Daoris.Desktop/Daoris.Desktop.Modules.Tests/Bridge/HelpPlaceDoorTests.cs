@@ -19,14 +19,12 @@ public sealed class HelpPlaceDoorTests : DriverModuleBridge
     private readonly Registry _service = new();
 
     [Fact]
-    public void A_place_is_judged_by_its_own_plan_and_not_the_press_for_its_target()
+    public void A_place_is_judged_by_its_own_plan_and_nothing_else_is()
     {
         var place = new HelpProposal("p1", "setup", "place", "atlas", null, null, null, "why", "h1", "proposed") { Place = new PlaceAsk(["atlas"], SetupPresets.Merge) };
         var press = place with { Door = "setup", Place = null };
 
         Assert.True(HelpRoutes.JudgedAgainstPlaces([place]));
-        Assert.False(HelpRoutes.JudgedAgainstSetups([place]));
-        Assert.True(HelpRoutes.JudgedAgainstSetups([press]));
         Assert.False(HelpRoutes.JudgedAgainstPlaces([press, place with { Place = null }]));
     }
 
@@ -41,13 +39,13 @@ public sealed class HelpPlaceDoorTests : DriverModuleBridge
         var drawn = await AnswerAsync(module, "HELP_PROPOSALS", new { session = "h1" });
 
         var card = Assert.Single(drawn.GetProperty("proposals").EnumerateArray());
-        Assert.Equal("daoris-driver place atlas tools --preset merge-after-accept --with adoption --what-it-builds library --plan", card.GetProperty("terminal").GetString());
+        Assert.Equal("daoris-driver place atlas tools --preset merge-after-accept --adoption --what-it-builds library --plan", card.GetProperty("terminal").GetString());
         var place = card.GetProperty("place");
         Assert.Equal("aurora", place.GetProperty("workspace").GetString());
         Assert.Equal(["atlas", "tools"], place.GetProperty("asked").GetProperty("repositories").EnumerateArray().Select(each => each.GetString()));
         Assert.NotEmpty(place.GetProperty("changes").EnumerateArray());
         Assert.NotEmpty(place.GetProperty("digest").GetString()!);
-        Assert.Equal(System.Text.Json.JsonValueKind.Null, card.GetProperty("setup").ValueKind);
+        Assert.False(card.TryGetProperty("setup", out _));
 
         var applied = await AnswerAsync(module, "HELP_APPLY", new { id = "p1a2b3c4", revision = card.GetProperty("revision").GetString() });
 

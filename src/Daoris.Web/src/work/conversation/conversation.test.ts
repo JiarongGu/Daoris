@@ -166,6 +166,22 @@ describe('toTurns', () => {
     expect(held).toMatchObject({ from: 'daoris', reaches: 'turn-end', settled: true });
   });
 
+  /** COMMS1a: a helper's or a partner's answer is theirs by its mark, told apart by the work of the record it names, and no composed target. */
+  it('reads a helper’s answer and a partner’s as theirs, and neither as the target Daoris composed', () => {
+    const events = [
+      e(1, { kind: 'user', origin: 'target', helper: 'h1', id: 'w1', text: 'The helper says: yes.' }),
+      e(2, { kind: 'user', origin: 'target', helper: 'p1', id: 'w2', text: 'The partner says: done.' }),
+    ];
+    const works: Record<string, string> = { p1: 'partner' };
+    const { turns } = toTurns(events, { workOf: (id) => works[id] });
+
+    expect(turns[0]!.ask).toMatchObject({ origin: 'target', from: 'helper' });
+    expect(turns[0]!.ask).not.toHaveProperty('account');
+    expect(turns[1]!.ask).toMatchObject({ from: 'partner' });
+    // Where the page holds no record for the word, it is a helper's.
+    expect(toTurns(events).turns[1]!.ask).toMatchObject({ from: 'helper' });
+  });
+
   /**
    * STEER1 (D136): what the person tells a working session shows the moment it is said, in the turn it was said in, as
    * waiting — without opening a turn, since the agent is still on the one before. Where the session took the words, the

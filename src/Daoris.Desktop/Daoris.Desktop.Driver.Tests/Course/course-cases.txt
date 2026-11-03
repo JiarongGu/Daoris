@@ -98,6 +98,8 @@ J-06 BriefedMoveTests.A_picked_conversations_new_part_keeps_the_pick_and_its_nex
 J-07 BriefedMoveTests.An_unpicked_conversations_new_part_keeps_no_pick_and_its_next_go_on_walks => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Resume by=Person words=w1
 J-08 BriefedMoveTests.A_lost_conversation_goes_on_by_the_walk_with_its_own_account_first_where_ready:False,account-2 => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
 J-09 BriefedMoveTests.A_lost_conversation_goes_on_by_the_walk_with_its_own_account_first_where_ready:True,account-2 => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Resume by=Daoris words=w1
+J-10 BriefedMoveTests.A_closed_quests_session_whose_tree_is_gone_goes_on_in_a_fresh_tree_handed_the_brief => Move when=Now where=Own:account-1(build/1) how=Brief why=Resume by=Person words=w1
+J-11 code:Course/Domain/LineCourse.Decide.cs:289 => Hold why=Refused doors=- repair=None code=tree-gone
 
 ## D the limit move of a live conversation
 D-01 LimitGoesOnProcessTests.A_chat_whose_account_answers_a_limit_goes_on_on_the_next_account_with_the_held_words => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Limit by=Daoris words=w1
@@ -137,6 +139,7 @@ A-23 SessionMessagesTickTests.Words_said_while_a_native_session_works_go_on_in_i
 A-24 SessionMessagesTickTests.A_taken_quests_record_whose_conversation_another_client_holds_waits_for_the_person => Hold why=CannotGoOn doors=- repair=None code=elsewhere
 A-25 PlannerTests.A_parked_session_the_person_answered_is_carried_on_from_it => Resume words=w1
 A-26 code:Loop/Driver.cs:2501 => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=w1
+A-27 code:Course/Domain/LineCourse.Decide.cs:625 => Hold why=CannotGoOn doors=GoOnBrief,StartFrom repair=None code=tree
 
 ## F the driven limit resume, decided in the carry-on's own start
 F-01 LimitResumeTickTests.An_update_closed_take_resumes_in_its_own_conversation_without_a_strike => Resume words=-+Restart:restart/s1/b7
@@ -496,6 +499,14 @@ out StartWithTests.A_refused_start_is_not_remembered E
 out StartWithTests.A_malformed_id_is_refused_in_a_sentence V
 out StartWithTests.A_sixty_five_character_id_is_refused_and_sixty_four_taken V
 out AnswersAloneHoldTests.An_answer_the_bound_does_not_hold_is_answered_with_its_code_and_nothing_written V
+out AnswersAloneHoldTests.A_mixed_helper_opinion_and_supervisor_sequence_holds_the_third R Alone
+out AnswersAloneHoldTests.Two_answers_queued_together_are_admitted_once R Alone
+out AnswersAloneHoldTests.A_hand_over_and_a_restart_keep_the_count_and_a_lost_log_resets_nothing R Alone
+out AnswersAloneHoldTests.The_persons_and_Daoriss_fact_words_reset_and_no_wrapper_brief_retry_or_hand_over_does R Alone
+out AnswersAloneHoldTests.D79s_resume_is_on_its_quests_line_and_keeps_the_count R Alone
+out AnswersAloneHoldTests.A_waited_quests_result_counts_once R Alone
+out AnswersAloneHoldTests.A_conversation_is_never_counted_a_quests_result R Alone
+out AnswersAloneHoldTests.The_supervisors_bound_reads_the_admission R Alone
 out AnswersAloneTests.Each_turn_prompted_by_answers_alone_counts_one_in_a_row R Alone
 out AnswersAloneTests.A_pieces_answer_counts_and_its_notes_reset_nothing R Alone
 out AnswersAloneTests.A_word_of_the_persons_or_of_Daoriss_on_the_line_resets_the_count R Alone

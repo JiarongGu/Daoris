@@ -55,6 +55,8 @@ export type OptionField = { name: string; type: 'choice' | 'text' | 'switch' | '
 export type PaletteKind = {
   kind: string; reach: string; reachBy: string; failureBy: string | null; personJudges: boolean; personSkips: boolean; mayEnd: boolean;
   evidenced: boolean; skipBy: string | null; options: OptionField[]; leaves: string[]; roleTakes: string[];
+  /** How the editor offers the kind (WORKFLOWCLEAN1 1b): `alone`, `tail:<method>` for a step a landing's method brings, or `retired`. Absent: `alone`. */
+  offered?: string;
 };
 
 /** A wire kind: whether it makes its target eligible, and the kinds that may leave it (null: any node). */
@@ -88,7 +90,11 @@ export type WorkflowScopeRow = WorkflowChosen & { key: string };
  * A version saved, or planned (`plan: true` writes nothing): under a fresh `id`, or appended to a saved one against `base`, the version the
  * person read, with `authorize` naming every place that chooses it.
  */
-export type WorkflowSaveAsk = { id: string; graph: unknown; base?: number; name?: string; authorize?: string[]; plan?: boolean };
+export type WorkflowSaveAsk = {
+  id: string; graph: unknown; base?: number; name?: string; authorize?: string[]; plan?: boolean;
+  /** The shipped default an appended version updates its copy to (WORKFLOWCLEAN1h-b): the version keeps it as where it came from. */
+  updates?: string;
+};
 
 /**
  * What `WORKFLOW_SAVE` answers: whether it was (or would be) written, the version, the places an append reaches, and a refused graph's

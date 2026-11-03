@@ -152,7 +152,12 @@ public sealed class WireEvaluationTests
     [Fact]
     public void A_skip_of_the_look_passes_the_landing_only_where_the_opinion_is_wired_into_it()
     {
-        NodeDeclaration[] nodes = [Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("landing", NodeKinds.Handed)];
+        // A `land` with its method chosen: a `handed` is no longer saved (WORKFLOWCLEAN1 1b), so it would add its own refusal.
+        NodeDeclaration[] nodes =
+        [
+            Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look),
+            Node("landing", NodeKinds.Land) with { Options = new Dictionary<string, string> { ["method"] = "\"merge\"" } },
+        ];
         Wire[] chain = [After("a", "opinion", "look"), After("b", "look", "landing")];
         Wire[] wired = [.. chain, After("c", "opinion", "landing")];
         Assert.Equal([GraphRefusal.ProtectedWire], NodeGraphs.Problems(new NodeGraph(nodes, chain, ["opinion"], "landing")).Select(problem => problem.Code));
