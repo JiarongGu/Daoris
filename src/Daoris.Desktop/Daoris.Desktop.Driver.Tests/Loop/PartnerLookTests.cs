@@ -261,6 +261,100 @@ public sealed class PartnerLookTests : IDisposable
         Assert.Equal(PartnerStates.Answered, Files.ReadState("p1")!.State);
     }
 
+    // ——— COMMS1b (the comms design §4.2, §13 points 1 and 3): against a host with the one door for solicited answers.
+
+    /// <summary>An answered piece on file, its partner's record serving <c>s1</c>, and the host with the one door.</summary>
+    private OpinionStandIn Door(string lead = "completed")
+    {
+        Ask("p1");
+        Files.WriteState(new PartnerState("p1", PartnerStates.Answered, null, At) { Partner = Partner, Commit = "c0ffee", Agent = "codex-acp", CopyRemoved = true });
+        var host = new OpinionStandIn().Session("s1", lead, tree: "trees/default/reports/s-1").Session(Partner, "completed", kind: "chat");
+        host.Set(Partner, "serves", "s1");
+        host.Set(Partner, "piece", "p1");
+        host.Answers = true;
+        return host;
+    }
+
+    /// <summary>
+    /// 🔴 §13 point 1 (B1): the look reads the line's head and whether its park was answered, as the helper's does. A park still waiting on the
+    /// person is asked nothing; once the person answered it, the piece's answer is handed beside theirs, so its go-on takes both in one prompt.
+    /// </summary>
+    [Fact]
+    public async Task Against_the_one_door_a_lead_parked_on_the_persons_answer_takes_the_piece_beside_it()
+    {
+        var host = Door(lead: "awaiting-person");
+        var driver = Driver(host, pass: null);
+
+        await Look(driver);
+        Assert.Equal(0, host.PartnerHandsAsked);
+
+        host.Set("s1", "answer", "Yes, go on.");
+        var (_, events) = await Look(driver);
+
+        var (partner, to, _) = Assert.Single(host.PartnerHands);
+        Assert.Equal((Partner, "s1"), (partner, to));
+        Assert.Equal(PartnerStates.Handed, Files.ReadState("p1")!.State);
+        Assert.Contains(events, line => line.Contains("is handed to session s1"));
+    }
+
+    /// <summary>
+    /// 🔴 A hand-over between the ask and its answer: the head is the part that continues the lead, so a running head is asked nothing, and once
+    /// its turn ended the piece's answer is kept there, the receipt taken naming it, never on the record the line left.
+    /// </summary>
+    [Fact]
+    public async Task Against_the_one_door_a_hand_over_moves_the_piece_to_the_new_head_once_its_turn_ended()
+    {
+        var host = Door(lead: "stopped");
+        host.Session("s2", "working", tree: "trees/default/reports/s-1");
+        host.Set("s2", "from", "s1");
+        host.Set("s2", "created", At.AddMinutes(30).ToString("O"));
+        var driver = Driver(host, pass: null);
+
+        await Look(driver);
+        Assert.Equal(0, host.PartnerHandsAsked);
+
+        host.Move("s2", "completed");
+        var (_, events) = await Look(driver);
+
+        var (_, to, _) = Assert.Single(host.PartnerHands);
+        Assert.Equal("s2", to);
+        Assert.Empty(host.Said("s1"));
+        var receipt = Files.ReadReceipt("p1")!;
+        Assert.Equal(("s2", PartnerDelivery.Taken), (receipt.To, receipt.Outcome));
+        Assert.Contains(events, line => line.Contains("is handed to session s2"));
+    }
+
+    /// <summary>
+    /// 🔴 §13 point 3: a hand a restart cut, its receipt attempted under the piece's key inside the settlement's horizon, is asked again: the door
+    /// answers the word waiting, or settled where the lead took it, and the piece is handed with nothing kept twice; a later look asks nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("waiting")]
+    [InlineData("taken")]
+    public async Task Against_the_one_door_a_keyed_attempt_a_restart_cut_is_asked_again_and_never_handed_twice(string where)
+    {
+        var host = Door();
+        Files.WriteReceipt(new PartnerReceipt("p1", "s1", PartnerDelivery.KeyOf("p1"), PartnerDelivery.Attempted, DateTimeOffset.UtcNow.AddMinutes(-1)) { Keyed = true });
+        host.Set("s1", "said", new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
+        {
+            ["id"] = "pt-w9", ["text"] = "A partner's piece.", ["at"] = At.ToString("O"), ["files"] = new System.Text.Json.Nodes.JsonArray(), ["reopens"] = true,
+            ["helper"] = Partner, ["key"] = PartnerDelivery.KeyOf("p1"),
+        }));
+        if (where == "taken") host.Take("s1");
+        var driver = Driver(host, pass: null);
+
+        await Look(driver);
+
+        Assert.Equal(1, host.PartnerHandsAsked);
+        Assert.Empty(host.PartnerHands);
+        Assert.Equal(("s1", PartnerDelivery.Taken), (Files.ReadReceipt("p1")!.To, Files.ReadReceipt("p1")!.Outcome));
+        Assert.Equal(PartnerStates.Handed, Files.ReadState("p1")!.State);
+        Assert.Equal(where == "waiting" ? 1 : 0, host.Said("s1").Count);
+
+        await Look(driver);
+        Assert.Equal(1, host.PartnerHandsAsked);
+    }
+
     /// <summary>A lead the host does not know, and one that serves another itself, are refused by their codes and nothing starts.</summary>
     [Fact]
     public async Task A_gone_or_unfit_lead_is_refused_and_nothing_starts()
