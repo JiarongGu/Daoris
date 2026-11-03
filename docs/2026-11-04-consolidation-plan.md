@@ -11,6 +11,29 @@ fixtures, a note per row, catalogue rows and goldens. The cost is the reading an
 contradict each other steer builders by whichever one they read. Daoris hands the same machinery (the canon's rules and skills, the
 standing block) to every session it runs, so the fix belongs in the canon as well as here.
 
+## The baseline it is measured against
+
+Measured over the 29 builders dispatched from 2026-11-03 12:00 to 2026-11-04. The tokens come from `tools/subagent-usage.mjs`, the
+clock from `tools/subagent-time.mjs`, and the output from main's first-parent merges.
+
+| Measure | Baseline |
+|---|---|
+| Agent-hours | 47.1, for 25 merges onto main: about 1.9 h per merge |
+| Where the clock went | the model 25%; tests 12%, verification 5%, builds 4%, waits 4%; editing records 7%, tests 4%; search 5%; between calls (stalls, limits, API errors) the rest, about 30% |
+| Turns per Opus builder | median 215 (largest 548), 66 of them before the first edit |
+| Context per Opus builder | 36K at the start, 252K at the first edit, 448K at the end (largest 803K) |
+| Where the tokens went | re-reading context about 90% (orientation carried 34%, the work's reading 33%, startup and orienting 15%), output 9% |
+| What a merge added | 790 lines of code, 540 of tests, 480 of the generated index, 50 of fixtures and 40 of records, across 75 files |
+
+What these say:
+- **The context is the cost.** Every turn re-reads it. It passes 250K before the first edit because builders read hub files of 60 to
+  360 KB whole, and the records around them.
+- **Verification and stalls took more of the clock than the model did.**
+- **A quarter of what lands is the generated index.**
+
+**Targets:** the first edit under 30 turns and 100K context; the context under 200K at the end of a row; an hour or less per
+merge; the generated index out of the merges. Each target is measured again after each step of the order below.
+
 ## What it produces
 
 1. **The current truth, per area.** One document per area under `docs/areas/`, written from the code as it stands: what the area does,
