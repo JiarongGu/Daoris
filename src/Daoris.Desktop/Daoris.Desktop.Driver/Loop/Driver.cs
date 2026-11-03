@@ -3669,16 +3669,7 @@ public sealed class Driver(
     {
         target = TargetPrompt.ForStart(target, adapter);
         var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(Variable) }, config.Commands.GetValueOrDefault(adapter.Name));
-
-        // The environment seam every harness already carries for exactly this (D49 §4). Applied
-        // by the driver rather than inside the adapter's Prepare, so one line governs both doors
-        // and no adapter can forget it.
-        if (adapter.Toolchain is { } toolchain)
-        {
-            HarnessProbe.Apply(
-                info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
-                selection.Environment);
-        }
+        Equip(adapter, info, selection);
 
         // What daoris writes into a dsh home it owns (ACP3): the two rows that send session
         // material off this machine, off — and its own skills reachable. Only where daoris made
@@ -3698,6 +3689,25 @@ public sealed class Driver(
         }
 
         return (info, harnessNotice);
+    }
+
+    /// <summary>
+    /// What every session's process carries on its environment, a driven one's and a conversation's alike: its toolchain's account,
+    /// binary and pin (D49 §4), then its tools at the start by the adapter's own switch (HELP5; CONTEXTONE1d, D230 point 3), so its
+    /// connector's tools come with its first request rather than behind a search step. Applied by the driver rather than inside each
+    /// adapter's spawn, so one line governs every door and kind and no adapter can forget it; the switch is set last, so an account's
+    /// own variables cannot defer the tools again.
+    /// </summary>
+    internal static void Equip(ISessionAdapter adapter, ProcessStartInfo info, HarnessSelection selection)
+    {
+        if (adapter.Toolchain is { } toolchain)
+        {
+            HarnessProbe.Apply(
+                info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
+                selection.Environment);
+        }
+
+        foreach (var (name, value) in adapter.ToolsUpFront) info.Environment[name] = value;
     }
 
     /// <inheritdoc cref="DownloadKeeping.KeepHandedAsync"/>

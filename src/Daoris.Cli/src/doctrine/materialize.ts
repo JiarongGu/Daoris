@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { readText, sha256, writeBytesAtomic, writeTextAtomic } from '../platform/fsx.ts';
 import { parseFrontmatter, renderCanonFile, stripFrontmatter, stripHeader } from './document.ts';
 import { significantTokens, containment } from './twins.ts';
-import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
+import { canonDigest, isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
 import { refuseNewerLock } from './lockversion.ts';
 import { indexInput, rosterExtras } from './indexgen.ts';
@@ -543,8 +543,8 @@ function refuseWhatForceCannot(plan: SyncPlan): void {
 }
 
 export function applySync(
-  { root, manifest, plan, canonVersion, force }:
-  { root: string; manifest: Manifest; plan: SyncPlan; canonVersion: string; force?: boolean },
+  { root, manifest, plan, canonVersion, canonDigest, force }:
+  { root: string; manifest: Manifest; plan: SyncPlan; canonVersion: string; canonDigest?: string; force?: boolean },
 ): Lock {
   refuseWhatForceCannot(plan);
 
@@ -693,6 +693,8 @@ export function applySync(
   const layout = layoutFields(manifest.harnessDescriptor ?? resolveHarness(manifest.harness), to);
   const lock: Lock = {
     canonVersion,
+    // Which canon of that version: `status` tells two apart by it, and never orders them by it.
+    ...(canonDigest !== undefined ? { canonDigest } : {}),
     source: manifest.source,
     entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within }) => ({
       pack,
@@ -915,7 +917,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const path of plan.mirrors.editedGone) write(`  discarded ${path} (a mirror of a skill that went, edited here)`);
   }
 
-  applySync({ root, manifest, plan, canonVersion: canon.version, force });
+  applySync({ root, manifest, plan, canonVersion: canon.version, canonDigest: canonDigest(canon), force });
   for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
   sayTheLayout(false);
   sayWhatIsOff();
