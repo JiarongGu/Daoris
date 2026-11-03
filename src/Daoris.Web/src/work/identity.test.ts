@@ -142,6 +142,14 @@ describe('a session title', () => {
     await i18n.changeLanguage('en');
   });
 
+  /** COMMS1b (B5): a reviewer now serves the work it reads, and is read by its opinion mark first, never as a helper. */
+  it('reads a reviewer that serves the work it reads as a reviewer, never a helper', () => {
+    const reviewer = session({ kind: 'chat', serves: 's1a2b3c4', opinion: 'o1a2b3c4' });
+    expect(isHelper(reviewer)).toBe(false);
+    expect(linkedSessions(reviewer, new Map([['s1a2b3c4', session({ id: 's1a2b3c4' })]])).helps).toBeNull();
+    expect(sessionTitle(reviewer)).not.toBe('Helper');
+  });
+
   it('prefers the quest over the kind — a chat that took one is still about that quest', () => {
     expect(sessionTitle(session({ kind: 'chat', quest: '7a82cc' }), quest()))
       .toBe('Expose a streaming budget on the chunk API');

@@ -11,9 +11,9 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
     /// joined to the go-ahead already asked for that act, where the ask holds one, and asked anew where it holds none.
     /// </summary>
     /// <remarks>
-    /// <para><b>The ask is derived, never passed</b>, as a word's is (DRIFT1a): an intake names its ask, and a driven
-    /// session's quest was asked by one when its sender is <c>ask #id</c>, a chain step included. A quest one repository
-    /// asked of another, and a conversation, are on no ask, and the answer says what to do instead.</para>
+    /// <para><b>The ask is derived, never passed</b>: it is the session's entry origin (COMMS1c, D225), the one the channel's
+    /// speaker reads, so a quest a sibling of the ask published is on the ask too. A line whose origin is no ask (a quest one
+    /// repository asked of another, a conversation), is on none, and the answer says what to do instead.</para>
     ///
     /// <para><b>One go-ahead per act</b> (<see cref="GoAheadAct"/>): the same kind, the same place, and every word of what
     /// the earlier act touches. Where the words share some but cannot tell, the request is asked once more as its own,
@@ -72,14 +72,15 @@ public sealed class SessionGoAheads(QuestStore quests, SessionStore sessions, As
                 + "Nothing was asked.");
         }
 
-        var askId = session.Ask ?? AskDesk.AskOf(quest?.From);
+        var origin = await SessionEntries.OriginOfAsync(session, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false);
+        var askId = origin.StartsWith("ask:", StringComparison.Ordinal) ? origin["ask:".Length..] : null;
         if (askId is null || asks is null)
         {
             return new(GoAheadRefusal.NoAsk, (session.Quest, quest) switch
             {
                 (null, _) => $"Session `{session.Id}` is a conversation on no ask, {Instead}",
                 (_, null) => $"Session `{session.Id}` works quest `#{session.Quest}`, which is not held here, {Instead}",
-                _ when askId is null => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked rather than an ask, {Instead}",
+                _ when askId is null => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked and whose line is on no ask, {Instead}",
                 _ => $"Session `{session.Id}` is on ask `#{askId}`, which is not held here, {Instead}",
             });
         }

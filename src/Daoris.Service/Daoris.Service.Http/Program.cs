@@ -488,9 +488,12 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
 // is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`), `opens` 2 row d-ii part 3's
 // keyed open, which moves the words its `moves` names in its own step (an `opens` 1 host, row d-i's, moves none), and `head` 1 row d-ii's say door,
 // which refuses a record its line left `continued` naming the head, and `journal` 1 row k's event journal, whose family and place the change stream
-// answers to a reader that asks with `journal=1` (a reader that does not is answered as before). A host before this answers none, and a client keeps
-// no mark for it.
-app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1, ["journal"] = 1 }));
+// answers to a reader that asks with `journal=1` (a reader that does not is answered as before), and `answers` 1 COMMS1b's one door for solicited
+// answers: the head walk to the store's bound, answered parks, *already waiting* (`waiting` with its holder and word), the opinion key and
+// `serves`; a driver that sees it hands a solicited answer through the door alone. A host before this answers none, and a client keeps no mark for it.
+// `presses` 1 is COMMS1e: a say naming `question` is a person's press, checked inside the door's step against the question on file (`question-changed`);
+// a host before it refuses a person's say that names one, so a client sends it only to a host with the mark.
+app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1, ["journal"] = 1, ["answers"] = 1, ["presses"] = 1 }));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -1877,7 +1880,7 @@ if (mode == ServiceMode.Local)
     // the record of its line the driver names, `to`, between turns (CHATFLOW1e).
     app.MapPost("/api/opinions/{id}/hand", async (ComposedService s, HttpContext http, string id, OpinionHandRequest? body, CancellationToken ct) =>
         MachineLocal(http)
-            ? await OpinionReply(await s.Opinions.HandAsync(id, DateTimeOffset.UtcNow, ct, body?.To), s, http, ct)
+            ? await OpinionReply(await s.Opinions.HandAsync(id, DateTimeOffset.UtcNow, ct, body?.To, settled: body?.Settled == true), s, http, ct)
             : OffMachineOpinion());
 
     // A helper's record, and its answer's return (MIXAGENT2a-ii, D163 point 2): the driver's helper session opens the record
@@ -2025,7 +2028,8 @@ async Task<IResult> HelperReply(HelperOutcome outcome, ComposedService s, HttpCo
             outcome.Message,
             outcome.Session is { } session ? await ToSessionAsync(s, session, MachineLocal(http)) : null,
             outcome.Word is { } word ? ToSaid(word) : null,
-            outcome.SettledOn)),
+            outcome.SettledOn,
+            outcome.Waiting ? true : null)),
         HelperRefusal.NotFound or HelperRefusal.Shared => Results.NotFound(new ErrorResponse(outcome.Message)),
         HelperRefusal.BadShape => Results.BadRequest(new ErrorResponse(outcome.Message)),
         _ => Results.Conflict(new ErrorResponse(outcome.Message)),
@@ -2049,7 +2053,8 @@ async Task<IResult> OpinionReply(OpinionOutcome outcome, ComposedService s, Http
     return Results.Ok(new OpinionActionResponse(
         ToOpinion(standing), outcome.Message,
         outcome.Session is { } session ? await ToSessionAsync(s, session, MachineLocal(http)) : null,
-        outcome.Word is { } word ? ToSaid(word) : null));
+        outcome.Word is { } word ? ToSaid(word) : null,
+        outcome.SettledOn, outcome.Waiting ? true : null));
 }
 
 // Clearing finished history from this machine (HIST1b, D153; the history-clearing design §6.3), listed first and then

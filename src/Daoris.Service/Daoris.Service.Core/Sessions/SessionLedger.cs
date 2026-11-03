@@ -389,8 +389,12 @@ public sealed record SessionDeleteOutcome(SessionDeleteRefusal Refusal, string M
 /// This machine's home, where a park's question is filed (<see cref="QuestionBox"/>), or null on a host with none: a supervisor's word is
 /// then refused <see cref="SessionSayRefusal.NoHome"/>, since its question cannot be checked (SUPERVISOR1a-i).
 /// </param>
+/// <param name="opinions">
+/// The second opinions, where findings an open moved to a new part are followed (COMMS1b): the part that holds them answers them.
+/// </param>
 public sealed class SessionLedger(
-    QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null, string? home = null)
+    QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null, string? home = null,
+    OpinionStore? opinions = null)
 {
     /// <summary>The go-ahead family over the ledger's stores (PART6).</summary>
     private readonly SessionGoAheads goAheads = new(quests, sessions, asks);
@@ -836,6 +840,15 @@ public sealed class SessionLedger(
                 var moved = await sessions.MoveSaidAsync(before.Id, opened.Id,
                     word => named.Contains(word.Id) || (word.Persons && word.Attempt is null && !read.Contains(word.Id)), inside).ConfigureAwait(false);
                 transfer = [.. moved.Select((word, order) => new OpenTransfer(word.Id, word.Key, $"{key}/{word.Id}", order, word.Id))];
+                // The part that now holds a waiting findings word answers its opinion (COMMS1b, an authority change): handed_to follows the word.
+                if (opinions is not null)
+                {
+                    foreach (var word in moved.Where(each => each.By is not null))
+                    {
+                        await opinions.KeepFollowedAsync(word.By!, word.Id, before.Id, opened.Id, inside).ConfigureAwait(false);
+                    }
+                }
+
                 if (moved.Count > 0) opened = await sessions.FindAsync(opened.Id, inside).ConfigureAwait(false) ?? opened;
                 message += moved.Count switch
                 {
@@ -1057,11 +1070,21 @@ public sealed class SessionLedger(
             return await SuperviseAsync(id, text, files, now, channel, key, level, decision, question, choice, ct).ConfigureAwait(false);
         }
 
-        if (decision is not null || question is not null || choice is not null)
+        // COMMS1e: the person's press names its question alone; a decision and a choice stay the supervisor's, and no other author presses.
+        if (decision is not null || choice is not null || (question is not null && from is not null))
         {
             return new(
                 SessionSayRefusal.From,
-                "A decision, a question and a choice are the supervisor's alone: words from any other author name none, so nothing was kept.",
+                "A decision and a choice are the supervisor's alone, and a question is named by the person's press alone: "
+                + "words from any other author name none, so nothing was kept.",
+                Session: null);
+        }
+
+        if (question is not null && home is null)
+        {
+            return new(
+                SessionSayRefusal.NoHome,
+                "This host keeps no home, so no park's question to check a press against: nothing was kept.",
                 Session: null);
         }
 
@@ -1148,9 +1171,21 @@ public sealed class SessionLedger(
                     session, waiting) { Again = true };
             }
 
+            // COMMS1e: after the retry, so a double press is answered with its word whatever the question did since; before the keep, in this step.
+            if (question is not null && QuestionBox.Read(home!, id) is var onFile
+                && (onFile is null || !string.Equals(onFile.Id, question, StringComparison.Ordinal)))
+            {
+                var current = onFile is null ? "No question is on file now" : $"The question now on file is `{onFile.Id}`: \"{onFile.Question}\"";
+                return new SessionSayOutcome(
+                    SessionSayRefusal.QuestionChanged,
+                    $"The question on file for session `{id}` is not `{question}`: nothing was kept. {current}.",
+                    Session: null);
+            }
+
             // A word for a running record's run reopens nothing and answers no park, so no note is written and nothing travels.
             var word = new SaidWord(
-                NewWordId(), words, now, Names(files), Reopens: !parked && !forRun, Channel: channel, From: from, Key: key, Level: level);
+                NewWordId(), words, now, Names(files), Reopens: !parked && !forRun, Channel: channel, From: from, Key: key, Level: level,
+                Question: question);
             var (note, parts) = parked ? AnsweredNote(session, words, from) : (null, null);
             var kept = await KeepOwnersWordAsync(session, word, note, parts, inside).ConfigureAwait(false);
             var message = forRun ? ForRunMessage(id, from) : forNext ? ForNextMessage(id, from) : KeptMessage(session, from);
@@ -1375,8 +1410,7 @@ public sealed class SessionLedger(
             return Refused(SessionSayRefusal.NotOfferedChoice, $"\"{choice}\" is not one of the answers session `{id}` offered, exactly.");
         }
 
-        var quest = await quests.FindAsync(session.Quest, inside).ConfigureAwait(false);
-        if (AskDesk.AskOf(quest?.From) is not { } askId)
+        if (await AskOfLineAsync(session, inside).ConfigureAwait(false) is not { } askId)
         {
             return Refused(SessionSayRefusal.NoQuest, $"Session `{id}`'s quest is on no ask, so no go-aheads the supervisor could leave to the owner.");
         }
@@ -1389,6 +1423,13 @@ public sealed class SessionLedger(
         return ask.GoAheads.Any(held => held.Answer is null)
             ? Refused(SessionSayRefusal.GoAheadOpen, $"A go-ahead on ask `#{askId}` is open: go-aheads are the owner's alone, so nothing was kept.")
             : null;
+    }
+
+    /// <summary>The ask a session's line is on: its entry's origin where that is <c>ask:&lt;id&gt;</c>, else none (COMMS1c).</summary>
+    private async Task<string?> AskOfLineAsync(Session session, CancellationToken ct)
+    {
+        var origin = await SessionEntries.OriginOfAsync(session, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false);
+        return origin.StartsWith("ask:", StringComparison.Ordinal) ? origin["ask:".Length..] : null;
     }
 
     /// <summary>
@@ -1852,14 +1893,14 @@ public sealed class SessionLedger(
 
         const string Own = "so nothing was kept on one; its own record holds what was said.";
         var quest = session.Quest is { } questId ? await quests.FindAsync(questId, ct).ConfigureAwait(false) : null;
-        var askId = session.Ask ?? AskDesk.AskOf(quest?.From);
+        var askId = await AskOfLineAsync(session, ct).ConfigureAwait(false);
         if (askId is null)
         {
             return new(AskWordRefusal.NoAsk, (session.Quest, quest) switch
             {
                 (null, _) => $"Session `{session.Id}` is a conversation on no ask, {Own}",
                 (_, null) => $"Session `{session.Id}` works quest `#{session.Quest}`, which is not held here, {Own}",
-                _ => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked rather than an ask, {Own}",
+                _ => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked and whose line is on no ask, {Own}",
             });
         }
 

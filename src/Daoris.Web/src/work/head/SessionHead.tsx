@@ -530,7 +530,7 @@ export function SessionHead({
           requestRow(t, quest, session.kind === 'chat' ? opening : null, session.quest ?? session.ask, onOpenQuest),
           // Whom it continues and whom it helps (MIXAGENT3a-i), the record's own links, each a door where the frame holds it.
           linkRow(t, t('work.head.continues'), session.from, continues, onOpenSession),
-          linkRow(t, t('work.head.helping'), session.serves, helps, onOpenSession),
+          linkRow(t, t('work.head.helping'), session.opinion ? null : session.serves, helps, onOpenSession),
           // Its heavy run (HEAVYSLOT1): the head's line opens to its gates here, or its wait with the holder a door.
           ...(heavy ? [heavy] : []),
           // The process its own tree runs under and where each rule was set (PROCESS1e, D164's amendment point 3), in Setup's words.

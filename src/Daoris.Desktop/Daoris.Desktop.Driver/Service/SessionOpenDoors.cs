@@ -64,6 +64,7 @@ public sealed class SessionOpenDoors
     private int _opens;
     // FOUNDATION1d-ii (§19.12): the say door's `continued`, naming the line's head; kept beside `opens` by the same run.
     private int _head;
+    private int _presses;
     private readonly object _marks = new();
     private readonly HashSet<string> _lost = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _step = new(1, 1);
@@ -82,7 +83,7 @@ public sealed class SessionOpenDoors
     {
         var reply = await _service.SendAsync(ServiceVerb.Get, "/api/protocol", null, ct).ConfigureAwait(false);
         string? run = null;
-        int opens = 0, head = 0;
+        int opens = 0, head = 0, presses = 0;
         if (reply.Ok)
         {
             using var json = JsonDocument.Parse(reply.Payload);
@@ -91,12 +92,13 @@ public sealed class SessionOpenDoors
             {
                 opens = Mark(marks, "opens");
                 head = Mark(marks, "head");
+                presses = Mark(marks, "presses");
             }
         }
 
         lock (_marks)
         {
-            (_run, _opens, _head, _known) = (run, opens, head, true);
+            (_run, _opens, _head, _presses, _known) = (run, opens, head, presses, true);
         }
     }
 
@@ -128,6 +130,17 @@ public sealed class SessionOpenDoors
         }
 
         lock (_marks) return _head;
+    }
+
+    /// <summary>
+    /// Whether the host checks a person's press inside its say door (COMMS1e, the <c>presses</c> mark): a say naming the question it answers
+    /// is kept with it and refused <c>question-changed</c> where the question moved. False for a host without the mark, which refuses such a say
+    /// whole, so the caller sends no question there and the modules' own check stands alone. Never throws.
+    /// </summary>
+    public async Task<bool> PressesAsync(CancellationToken ct = default)
+    {
+        await HeadAsync(ct).ConfigureAwait(false);
+        lock (_marks) return _presses >= 1;
     }
 
     /// <summary>

@@ -319,8 +319,8 @@ finds no reader of `ISessionAdapter`.
 
 **C3. Seven executors**: `ONEWAY1h-i` to `h-iii`. The half-moved seam is a register entry that ends at part 4, which deletes it.
 
-**C4. A conversation's course beside a driven line's**: STAFFPOLICY1e3, as filed (`ONEWAY1i`), with SESSWATCH1a and 1b. Its interim
-refusal of a conversation's moves is a register entry, which e3 ends.
+**C4. A conversation's course beside a driven line's**: STAFFPOLICY1e3 (`ONEWAY1i`), with SESSWATCH1a and 1b, taken up by
+CONTEXTDRIVE1n (D229). Its interim refusal of a conversation's moves is a register entry, which that row ends.
 
 **C5. Four presses to go on** (`ONEWAY1j`, after the wave)
 - *One way:* hand over (`SESSION_HAND_OVER`: D212's move, D189's brief). A line goes on in a new part. Where the press names no agent,
@@ -406,7 +406,7 @@ rows: COMMS1 was accepted before D228 and carries none. `k` needs COMMS1e (a pre
 | The legacy reader COMMS1g keeps to seed admissions (COMMS1 §13 point 8; COMMS1g builds it, so its file is named there: `AnswersAlone.Solicited` is not it) | a line with no admission yet, or after a rollback | every line with a count has its admission, and the floor passes COMMS1g's build | `ONEWAY1af` |
 | `opinion.Handed` guarding an unkeyed opinion word; a question word with no `question` id; old `answered` receipts | older records | none waiting (census); finished ones cleared by the `notes` part | `ONEWAY1af` |
 | D226: a seeded role's staffing copied onto `driver.json` | §2, S2 | §2's condition | `ONEWAY1af` |
-| D226: the doors refusing a conversation's moves for now | STAFFPOLICY1e3 not yet built | e3 built | `ONEWAY1i` |
+| D226: the doors refusing a conversation's moves for now | STAFFPOLICY1e3 not yet built | e3's conversation half built | `CONTEXTDRIVE1n` (D229, which took e3 up) |
 
 ## 5. Git (G1 to G3, K3)
 
@@ -656,7 +656,7 @@ Each row is sized for one builder's sitting.
 | **The sessions track** | | | |
 | **ONEWAY1h** D213's host rows, d to u (driver, and service, web and tools where named) | §3, step 2 | each row's own proof in D213 §11 | serial; D213 i, j, l, m, s-v spend (the owner's yes) |
 | **ONEWAY1g** the parity rows (driver; their host rows) | §3 C1 | each difference's old and new cases paired on both doors | per the table; the measures are the owner's |
-| **ONEWAY1i** STAFFPOLICY1e3 | §3 C4 | as filed | as filed |
+| **ONEWAY1i** STAFFPOLICY1e3, taken up by CONTEXTDRIVE1n (D229) | §3 C4 | CONTEXTDRIVE1's design §9 | after ONEWAY1h-iii |
 | **ONEWAY1ah** the adapter classes' end (driver; the host rows) | §3, step 4 | D213 row t's proof on today's transports; the oracle's look over a provider set, old path on `TransportRun`; the census's exceptions only the permanent ones | after ONEWAY1h; the installed proof spends |
 | **Wave 6** (the deletions) | | | |
 | **ONEWAY1af** the transitional reads deleted, part by part (driver, modules, service, web; each part's census ended on the owner's install, in a dated note) | §1.3's entries | the build with that code gone; an old-shape fixture held, with the conversion as its door; `FloorNeeded` raised where a floor-ended read goes | after each census ends |

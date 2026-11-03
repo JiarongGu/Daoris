@@ -238,6 +238,28 @@ public sealed class GoAheadTests : GoAheadFixture
         Assert.Equal(GoAheadRefusal.NotFound, nobody.Refusal);
     }
 
+    /// <summary>
+    /// A quest a session on the ask published to a sibling is on the ask's line (COMMS1c, D225): the sibling's session asks its
+    /// go-ahead on the ask, joined to the same act the ask's own session asked, and a quest published by a session on no ask stays on none.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_a_sibling_of_the_ask_published_is_on_the_asks_line()
+    {
+        var (ask, quest) = await Asked();
+        var build = await Working(quest, "build");
+        var own = await _ledger.AskGoAheadAsync(build.Id, "write", "production", "dashboard configuration", "The target.", Now.AddMinutes(1));
+        var sibling = (await _exchange.PublishAsync(
+            new QuestAsk("dashboards", "checker", "verify the figure", "Look at it.") { PublishedBy = build.Id }, Now.AddMinutes(2))).Quest!;
+        var verify = await Working(sibling, "verify");
+
+        var joined = await _ledger.AskGoAheadAsync(verify.Id, "write", "production", "dashboard configuration", "Check it.", Now.AddMinutes(3));
+
+        Assert.Equal(GoAheadRefusal.None, joined.Refusal);
+        Assert.Equal(ask.Id, joined.Ask);
+        Assert.Equal(own.GoAhead!.Number, joined.GoAhead!.Number);
+        Assert.Equal(GoAheadJoin.Joined, joined.Join);
+    }
+
     /// <summary>A chain step is asked by the ask too (D65 §4): its sessions' go-aheads are held on the same ask.</summary>
     [Fact]
     public async Task A_follow_up_steps_session_asks_on_the_same_ask()

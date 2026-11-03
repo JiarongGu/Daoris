@@ -409,7 +409,7 @@ public static class ServiceFactory
         // quest is asked by, which a requirement must quote (DRIFT1c).
         var exchange = new QuestExchange(service, quests, remotes, files, sessions, asks);
         // SUPERVISOR1a-i: the home a park's question is filed under (the proposals' box names it on a local host; a shared host has none).
-        var ledger = new SessionLedger(quests, sessions, service, asks, proposals?.Home);
+        var ledger = new SessionLedger(quests, sessions, service, asks, proposals?.Home, opinions);
         var askDesk = new AskDesk(service, asks, exchange, files);
         return new ComposedService(
             service, quests, exchange,

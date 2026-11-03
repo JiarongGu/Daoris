@@ -63,8 +63,8 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
             }
 
             string? wrong =
-                lead.Serves is { } serves ? $"Session `{lead.Id}` serves session `{serves}` itself, and cannot lead a piece"
-                : lead.Opinion is { } reads ? $"Session `{lead.Id}` reads another session's work for second opinion `{reads}`, and cannot lead a piece"
+                lead.Opinion is { } reads ? $"Session `{lead.Id}` reads another session's work for second opinion `{reads}`, and cannot lead a piece"
+                : lead.Serves is { } serves ? $"Session `{lead.Id}` serves session `{serves}` itself, and cannot lead a piece"
                 : lead.Ask is { } intake ? $"Session `{lead.Id}` is the intake for ask `#{intake}`, and cannot lead a piece"
                 : string.Equals(Trees.Normalize(lead.Tree), tree, StringComparison.Ordinal)
                     ? $"`{tree}` is session `{lead.Id}`'s own tree: a partner writes a clone of its own"
@@ -106,89 +106,21 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
         return await sessions.ExclusiveAsync(async inside =>
         {
             var partner = await sessions.FindAsync(partnerId.Trim(), inside).ConfigureAwait(false);
-            if (partner is not { Origin: null, Serves: { } lead, Piece: { } piece })
+            // B5: a reviewer carries `serves` too, so a partner is read by its piece and never as a reviewer.
+            if (partner is not { Origin: null, Opinion: null, Serves: { } lead, Piece: { } piece })
             {
                 return Refused(HelperRefusal.NotFound, $"There is no partner session `{partnerId.Trim()}` on this machine");
             }
 
-            // The newest live record of the lead's line: a hand-over, a move or a carry-on takes the lead's pieces with it. FOUNDATION1 row
-            // d-ii (D212, the design §3.4 rule 2): the line's head the say door reads, across kinds and to a driven lead's quest's last run here,
-            // within the walk's one bound; a line that loops or goes on past it is refused below, never handed where the walk stopped.
-            var named = await sessions.FindAsync(lead, inside).ConfigureAwait(false);
-            var line = named is { Origin: null } ? await Lines.WalkAsync(sessions, named, inside).ConfigureAwait(false) : null;
-            var to = line is null ? named : line.Head ?? line.Records[^1];
-
-            // Row p (the design §3.4 rule 5): asked before any refusal but the record's absence, over the lead's line back along `from` and
-            // forward over the head walk's records, so a retry after the take is answered as kept whatever the lead is doing now. A word still
-            // waiting on the record the hand reaches is answered as it is below.
-            var pieceKey = KeyOf(piece);
-            if (settled && named is { Origin: null } && line is not null
-                && !to!.Said.Any(word => string.Equals(word.Key, pieceKey, StringComparison.Ordinal))
-                && await SaidKeys.SettledOnLineAsync(sessions, named, line, pieceKey, now, inside).ConfigureAwait(false) is (var held, var whole))
-            {
-                if (!whole)
+            var outcome = await SolicitedAnswers.KeepAsync(
+                sessions,
+                new SolicitedAsk(lead, await sessions.FindAsync(lead, inside).ConfigureAwait(false), KeyOf(piece), text, $"piece `{piece}`'s answer", "a partner's answer")
                 {
-                    return Refused(HelperRefusal.CannotTake,
-                        $"Session `{lead}`'s line runs past {Lines.Bound} parts, so whether piece `{piece}`'s answer was taken already is not read and no part takes it");
-                }
-
-                if (held is not null)
-                {
-                    return new HelperOutcome(
-                        HelperRefusal.None,
-                        $"Piece `{piece}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
-                    {
-                        SettledOn = held.Record,
-                    };
-                }
-            }
-
-            if (line is { End: LineEnd.Cycle })
-            {
-                return Refused(HelperRefusal.CannotTake,
-                    $"Session `{lead}`'s line loops back on a part it already passed, so it has no newest part to hand piece `{piece}`'s answer to");
-            }
-
-            if (line is { End: LineEnd.Bound })
-            {
-                return Refused(HelperRefusal.CannotTake,
-                    $"Session `{lead}`'s line goes on past {Lines.Bound} parts, so its newest part is not read and no part it left takes piece `{piece}`'s answer");
-            }
-
-            string? cannot = to switch
-            {
-                null or { Origin: not null } => $"There is no session `{lead}` of this machine's to hand piece `{piece}`'s answer to",
-                { Serves: not null } or { Opinion: not null } or { Ask: not null } => $"Session `{to.Id}` cannot lead a piece: it takes no partner's answer",
-                { State: SessionState.StoodDown } => $"Session `{to.Id}` stood down, so piece `{piece}`'s answer waits for the next part of its line",
-                { State: SessionState.AwaitingPerson } =>
-                    $"Session `{to.Id}` waits on the person's answer: a partner's answer reaches it at a turn's end, once it is answered",
-                { Kind: SessionKind.Chat, State: SessionState.Working } => null,
-                { Active: true } =>
-                    $"Session `{to.Id}` is {Session.Spell(to.State)}: a partner's answer reaches a running session at its turn's end, never into a step in flight",
-                _ => null,
-            };
-            if (cannot is not null) return Refused(HelperRefusal.CannotTake, cannot);
-
-            var key = KeyOf(piece);
-            if (to!.Said.FirstOrDefault(word => string.Equals(word.Key, key, StringComparison.Ordinal)) is { } waiting)
-            {
-                return new HelperOutcome(HelperRefusal.None, $"Piece `{piece}`'s answer waits on session `{to.Id}` already, under its key.")
-                {
-                    Session = to,
-                    Word = waiting,
-                };
-            }
-
-            var word = new SaidWord(Guid.NewGuid().ToString("N")[..8], text.Trim(), now, [], Reopens: true, Helper: partner.Id, Key: key);
-            var kept = await sessions.KeepSaidAsync(to.Id, word, ct: inside).ConfigureAwait(false);
-            return new HelperOutcome(
-                HelperRefusal.None,
-                $"Handed piece `{piece}`'s answer to session `{to.Id}`: it waits on its record as partner `{partner.Id}`'s claim, never the person's words, "
-                + "and it goes on with it at the driver's next look.")
-            {
-                Session = kept,
-                Word = word,
-            };
+                    Helper = partner.Id, Settled = settled,
+                },
+                now, inside).ConfigureAwait(false);
+            return HelperDesk.Handed(
+                outcome, $"piece `{piece}`'s answer", $"it waits on its record as partner `{partner.Id}`'s claim, never the person's words");
         }, ct).ConfigureAwait(false);
     }
 

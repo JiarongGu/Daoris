@@ -117,18 +117,14 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// </summary>
     public string? Key { get; init; }
 
-    /// <summary>A say's *Send now* (STEER2c): what <c>SESSION_INPUT</c> sends as <c>now: true</c>. An older request has none, and is read as not now.</summary>
-    public bool Now { get; init; }
-
     /// <summary>
-    /// A say's urgency (COWORK1a, D188 point 1): <c>ordinary</c>, <c>urgent</c> or <c>now</c>, as <c>SESSION_INPUT</c> sends it
-    /// as <c>level</c>. A field beside <see cref="Now"/>, which a say at <c>now</c> still writes for an older loop; a request
-    /// with none reads as before, <c>now</c> by <see cref="Now"/> and urgent otherwise (<see cref="MessageLevels.Asked"/>).
+    /// A say's urgency (COWORK1a, D188 point 1; ONEWAY1l): <c>ordinary</c>, <c>urgent</c> or <c>now</c>, as <c>SESSION_INPUT</c> sends it
+    /// as <c>level</c>, the one spelling. A request file waiting from an older build with <c>now: true</c> and no level is read as <c>now</c>.
     /// </summary>
     public string? Level { get; init; }
 
-    /// <summary>The level the say asked for, read as <see cref="Level"/> says; a request from before by its <see cref="Now"/>.</summary>
-    public MessageLevel Asked => MessageLevels.Asked(Level, Now);
+    /// <summary>The level the say asked for, read as <see cref="Level"/> says; urgent where it names none.</summary>
+    public MessageLevel Asked => MessageLevels.Asked(Level);
 
     /// <summary>A take-back's word: the id it waits under on the record (SAIDBACK1c); null for any other move.</summary>
     public string? Word { get; init; }
@@ -627,8 +623,8 @@ public sealed partial class SessionRequests(string home)
                     ? [.. files.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                     : [],
                 Key = Text("key"),
-                Now = root.TryGetProperty("now", out var now) && now.ValueKind == JsonValueKind.True,
-                Level = Text("level"),
+                // transitional: say-now-field
+                Level = Text("level") ?? (root.TryGetProperty("now", out var now) && now.ValueKind == JsonValueKind.True ? MessageLevels.Now : null),
                 Word = Text("takeBackWord"),
                 Operation = Text("operation"),
                 Repository = Text("repository"),
@@ -697,7 +693,6 @@ public sealed partial class SessionRequests(string home)
         }
 
         if (request.Key is not null) writer.WriteString("key", request.Key);
-        if (request.Now) writer.WriteBoolean("now", true);
         if (request.Level is not null) writer.WriteString("level", request.Level);
         if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
         if (request.Operation is not null && request.Move == SessionMove.Set)

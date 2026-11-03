@@ -535,12 +535,8 @@ export const useSendMessage = () =>
     },
   });
 
-/**
- * A level as `SESSION_INPUT` takes it (COWORK1a): `level`, and beside *now* the older `now: true` (STEER2b), which a shell
- * from before reads as *Send now*. None sends neither: the person's default.
- */
-const levelPayload = (level: Level | undefined) =>
-  (level ? { level, ...(level === 'now' ? { now: true } : {}) } : {});
+/** A level as `SESSION_INPUT` takes it (COWORK1a, ONEWAY1l): `level` alone. None sends nothing: the person's default. */
+const levelPayload = (level: Level | undefined) => (level ? { level } : {});
 
 /**
  * The person's words to a session that is not a live chat (MSG1f, D137 §5.1): a working driven session's running door, a
