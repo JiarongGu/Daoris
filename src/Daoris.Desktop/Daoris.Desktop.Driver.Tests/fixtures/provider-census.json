@@ -195,7 +195,6 @@
     ["Daoris.Desktop.Driver/Plugins/PluginKit.cs", "\"claude-code\"", "-", "measurement", "a sample session the kit's trial hands a hook"],
     ["Daoris.Desktop.Driver/Plugins/PluginPage.cs", "\"protocol\"", "q", "behaviour", "the page shows a plugin's harness as a protocol door"],
     ["Daoris.Desktop.Driver/Review/OpinionVerb.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],
-    ["Daoris.Desktop.Driver/Roles/ActorVerbs.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],
     ["Daoris.Desktop.Driver/Roles/Domain/ActorRun.cs", "ANTHROPIC_MODEL", "n", "behaviour", "the asked model sent as Claude Code's variable"],
     ["Daoris.Desktop.Driver/Roles/Domain/ActorRun.cs", "CLAUDE_CODE_EFFORT_LEVEL", "n", "behaviour", "the asked effort sent as Claude Code's variable"],
     ["Daoris.Desktop.Driver/Roles/RoleSuggestion.cs", "\"claude-code\"", "-", "permanent", "the Designer suggestion's supported first agent, as docs/model-roles.md's build-judgement row names it"],

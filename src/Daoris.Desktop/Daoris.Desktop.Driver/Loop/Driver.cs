@@ -3194,8 +3194,17 @@ public sealed class Driver(
                 asking = asking with { Words = askRead.WithMoved(movedOn, sessionId, quest.Id) };
             }
 
-            var target = WithAccess(WithLanguage(WithStanding(asking, config), config, start.Workspace), access) with
+            var target = WithAccess(WithLanguage(asking, config, start.Workspace), access) with
             {
+                // CONTEXTONE1c (D230 point 3): its standing block, its tree's facts with its repository's routing and the person's choices
+                // on this machine, the memory a carry-on's line read, and the file it goes through where the whole first prompt cannot
+                // carry it.
+                Block = StandingBlocks.OnMachine(asking.Block ?? new StandingFacts { Repository = quest.To }, ParticipantWork.Build, config, registry, start.Workspace) with
+                {
+                    Checkouts = across.Reads.Count > 0,
+                    Memory = brief?.Memory ?? [],
+                    File = StandingBlocks.FileOf(home, sessionId),
+                },
                 // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
                 Access = permissions,
                 // MODELROLE1c (D205 §3.2): what the entry the walk took names, carried on every run; a continuation keeps its record's,
@@ -3203,10 +3212,6 @@ public sealed class Driver(
                 Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
                 Choice = chosen?.From ?? start.Resumes?.Choice,
                 Browser = InAppBrowserServers.Told(browserDrivers),
-                // Its repository's routing standing (COWORKVIEW1e-i), told to a quest's session at each start that composes an instruction.
-                Routing = RoutingStanding.Told(
-                    ParticipantWork.Build, config,
-                    registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase)))?.Words,
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did (SESS1).
@@ -3334,9 +3339,11 @@ public sealed class Driver(
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
             // SESSCTX1b: a carry-on reads the kept folders of its line's parts, whose files its brief names (the design §3.1 item 5).
+            // CONTEXTONE1c: and the folder its standing block went through, where it went through one.
+            var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(target, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
             var rules = HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
-                continued: brief?.Kept, heavy: heavy);
+                continued: blockFolder is null ? brief?.Kept : [.. brief?.Kept ?? [], blockFolder], heavy: heavy);
 
             Context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
@@ -3672,6 +3679,8 @@ public sealed class Driver(
         ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
     {
         target = TargetPrompt.ForStart(target, adapter);
+        // CONTEXTONE1c: a standing block past what the first prompt carries goes through its file, written before the spawn reads it.
+        if (prepared is null) StandingBlocks.Hand(target);
         var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(Variable) }, config.Commands.GetValueOrDefault(adapter.Name));
         Equip(adapter, info, selection);
 
@@ -4594,14 +4603,15 @@ public sealed class Driver(
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
                 typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
         });
+        // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first line and
+        // the answer (ANSWER1a), the target already in the conversation above.
+        IReadOnlyList<SessionEvent> opening = resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed);
         run.HandRecords(new RunRecords(
             sessionId, transcript, output, Context.Events, LineageHome: home, KeepAs: keepAs, Own: own, Said: said,
-            // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first line and
-            // the answer (ANSWER1a), the target already in the conversation above.
-            Opening: resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed),
-            // The protocol door's transcript opens with what its harness is doing that Daoris could not govern (ACP3); the native door's with
-            // how its run was set up.
-            Preamble: protocol ? harnessNotice : preamble));
+            // The protocol door's opening goes on with what its harness is doing that Daoris could not govern, said as a note (ACP3); the native
+            // door's transcript opens with how its run was set up.
+            Opening: protocol && harnessNotice is { Length: > 0 } notice ? [.. opening, new SessionEvent { Kind = SessionEventKind.Note, Text = notice }] : opening,
+            Preamble: protocol ? null : preamble));
         // MSG1b: the rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));
         await (resume is null ? run.OpenAsync(ct) : run.ResumeAsync(resume.Conversation, ct)).ConfigureAwait(false);
@@ -5319,13 +5329,6 @@ public sealed class Driver(
     /// </summary>
     internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, string session, ServiceClient service, CancellationToken ct) =>
         target with { Words = await AskWords.ReadOfSessionAsync(service, session, ct).ConfigureAwait(false) };
-
-    /// <summary>
-    /// The person's standing answer for the quest's repository on this machine (KNOWUSE1b, D135 §3), read from the config this
-    /// tick holds for every start, whatever kind: a follow-up step in another repository is handed that repository's.
-    /// </summary>
-    internal static SessionTarget WithStanding(SessionTarget target, DriverConfig config) =>
-        target with { Standing = config.StandingFor(target.Repository) };
 
     /// <summary>
     /// The work's session language for the quest's repository (LANG1c, D142 point 7), read from the config this tick holds

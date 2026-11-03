@@ -125,7 +125,6 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_COOLOFF: { scopes: ['driver'] },
   SET_CAP: { scopes: ['driver'] },
   SET_KEEP: { scopes: ['driver', 'wiring'] },
-  SET_ACTOR: { scopes: ['driver', 'harnesses'] },
   STAFFING_FOUND_ANSWER: { scopes: ['driver', 'harnesses'] },
   SET_ROLE: { scopes: ['driver', 'harnesses'] },
   SET_ROLES: { scopes: ['driver', 'harnesses'] },

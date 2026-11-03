@@ -131,7 +131,7 @@ internal static class ConformanceLiveCases
         // nothing, so its quest's take is said and never thrown.
         using var process = Process.Start(run.Adapter.Prepare(run.Target(), Program(run)))!;
         var transcript = Path.Combine(run.Scratch, "transcript.txt");
-        await HarnessCapture.CaptureAsync(process, transcript, "s-1", null, CancellationToken.None).WaitAsync(Bound);
+        await HarnessCapture.CaptureAsync(process.StandardOutput, process.StandardError, transcript, "s-1", null, CancellationToken.None).WaitAsync(Bound);
         await process.WaitForExitAsync().WaitAsync(Bound);
 
         Assert.Equal(0, process.ExitCode);

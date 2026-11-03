@@ -139,7 +139,6 @@
   "person.route.CONVERT_UNDO": "undo the conversion of the old workflow records",
   "person.route.SET_ACCESS": "change what agents may reach",
   "person.route.SET_GIT_ACCESS": "change what git may do on a git remote",
-  "person.route.SET_ACTOR": "change the agents and models an actor runs on",
   "person.route.STAFFING_FOUND_ANSWER": "take or dismiss a change of the actors another program made",
   "person.route.SET_ROLE": "add, change or remove a role that takes Daoris's work",
   "person.route.SET_ROLES": "change several roles that take Daoris's work, all or none",

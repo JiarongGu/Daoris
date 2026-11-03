@@ -139,7 +139,6 @@
   "person.route.CONVERT_UNDO": "撤销旧工作流记录的转换",
   "person.route.SET_ACCESS": "更改智能体可以触及的范围",
   "person.route.SET_GIT_ACCESS": "更改 Git 在远程仓库上可以做什么",
-  "person.route.SET_ACTOR": "更改角色运行所用的智能体和模型",
   "person.route.STAFFING_FOUND_ANSWER": "采纳或忽略另一个程序对角色所做的更改",
   "person.route.SET_ROLE": "添加、更改或移除承担道衍工作的角色",
   "person.route.SET_ROLES": "一并更改承担道衍工作的多个角色，要么全部生效，要么都不改",

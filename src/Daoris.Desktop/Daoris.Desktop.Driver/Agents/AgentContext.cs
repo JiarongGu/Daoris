@@ -4,9 +4,15 @@ namespace Daoris.Driver;
 internal interface IAgentContext
 {
     TextWriter OpenTranscript(string path, bool append);
-    ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces);
-    ComposedInstruction Intake(SessionTarget target, string prompt);
+    ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces, StandingBlockTold? block);
+    ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block);
     string Parts(SessionTarget target);
+
+    /// <summary>The standing block of <paramref name="facts"/> after <paramref name="before"/> characters (CONTEXTONE1c): inline, or filed.</summary>
+    StandingBlockTold Block(StandingFacts facts, int before);
+
+    /// <summary><paramref name="facts"/> bound to the harness that runs them, in <paramref name="tree"/>.</summary>
+    StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree);
 }
 
 internal static class AgentContext

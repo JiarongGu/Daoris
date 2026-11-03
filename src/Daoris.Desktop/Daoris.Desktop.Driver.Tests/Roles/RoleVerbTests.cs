@@ -87,6 +87,42 @@ public sealed class RoleVerbTests : IDisposable
         Assert.All(Catalogue().Slots, slot => Assert.Equal(RoleState.Seed, slot.State));
     }
 
+    /// <summary>
+    /// ONEWAY1a (the oneway design §2 S1): the role door is a seeded role's one door at the terminal too. `set` writes Build's and Intake's
+    /// orders, `off` turns Intake off where the retired `driver intake off` did, and Build is refused off by the same judge.
+    /// </summary>
+    [Fact]
+    public async Task ONEWAY1a_set_staffs_a_seeded_role_and_off_turns_intake_off_through_the_role_door()
+    {
+        Assert.Equal(0, await Run("set", "build", "claude-code opus high"));
+        Assert.Equal([new ActorChoice("claude-code", "opus", "high")], DriverConfig.Load(File_).Actors["build"]);
+
+        Assert.Equal(0, await Run("set", "intake", "off"));
+        Assert.Empty(DriverConfig.Load(File_).Actors["intake"]);
+        Assert.Null(ActorChoices.FirstAgent("intake", DriverConfig.Load(File_)));
+
+        Assert.Equal(2, await Run("set", "build", "off"));
+        Assert.Contains("build cannot be off", _error.ToString());
+        Assert.Equal(2, await Run("set", "intake", "off", "claude-code"));
+        Assert.Contains("`off` is a role's whole staffing", _error.ToString());
+    }
+
+    /// <summary>
+    /// ONEWAY1a: `default` gives a seeded role its default staffing too, what the window's *Clear order* became (*Use the default*):
+    /// a stored order goes back to the role's default, which until ONEWAY1b is its key's as before.
+    /// </summary>
+    [Fact]
+    public async Task ONEWAY1a_default_gives_a_seeded_role_its_default_staffing_back()
+    {
+        Assert.Equal(0, await Run("set", "build", "claude-code opus high"));
+        Assert.True(DriverConfig.Load(File_).Actors.ContainsKey("build"));
+
+        Assert.Equal(0, await Run("default", "build"));
+
+        Assert.False(DriverConfig.Load(File_).Actors.ContainsKey("build"));
+        Assert.Equal(DriverConfig.Load(File_).Adapter, ActorChoices.FirstAgent("build", DriverConfig.Load(File_)));
+    }
+
     /// <summary>STAFFPOLICY1b (the staff policy design §6.4): the terminal's twin of the editor, under the same judge and the same door.</summary>
     [Fact]
     public async Task Policy_sets_a_spread_reads_it_back_with_the_next_start_and_a_preset_or_a_clear_returns_the_order()

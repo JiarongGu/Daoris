@@ -14,7 +14,7 @@ import type { WorkflowEditorBridge } from '../../workflow/edit/WorkflowEditor';
 import { useHarnesses } from '../agents/agents';
 import { useDraftProposals, useSettleHelp } from '../help';
 import type { WorkflowPlanBridge } from '../../workflow/place/ChangeWorkflow';
-import { useActors, useRoles, useRoleStructureChain, useSetActor, useSetRole } from '../driver';
+import { useActors, useRoles, useRoleStructureChain, useSetRole } from '../driver';
 import { askHeld, isPending } from '../state/held';
 import { askWorkflowSave, askWorkflowUse } from './workflow';
 
@@ -112,13 +112,12 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
       id: role.id, name: role.name ?? null, takes: role.takes, scope: { kind: role.scopeKind ?? 'machine', id: role.scopeId ?? null }, revision: role.revision,
       covers: covers(role.scopeKind, role.scopeId),
     }));
-  // The one role editor beside a step (SETUPUX1t): its reads are asked only while the editor shows, its presses are `SET_ROLE` and `SET_ACTOR`.
+  // The one role editor beside a step (SETUPUX1t): its reads are asked only while the editor shows, its press is `SET_ROLE`.
   const { t } = useTranslation();
   const roster = useHarnesses({ enabled: live });
   const catalogue = useRoles({ enabled: live });
   const actors = useActors({ enabled: live });
   const setRole = useSetRole();
-  const setActor = useSetActor();
   // A role changed changes what the roles' structure, the catalogue and the orders say, and what a step may name.
   const rolesAgain = () => {
     void client.invalidateQueries({ queryKey: [...keys.driver, 'roles'] });
@@ -133,12 +132,8 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     // An agent a person can name is one this machine has: a choice on one not installed would only hold the start.
     agents: harnesses.filter((door) => door.present).map((door) => ({ value: door.harness, label: doorLabel(t, door) })),
     offers: Object.fromEntries(harnesses.map((door) => [door.harness, door.settingsChoices ?? null])),
-    busy: setRole.isPending || setActor.isPending,
+    busy: setRole.isPending,
     onSet: (press, answered) => setRole.mutate(press, {
-      onSuccess: () => { rolesAgain(); answered.done(); },
-      onError: (error) => answered.refused(sentence(error)),
-    }),
-    onSetActor: (actor, choices, answered) => setActor.mutate({ actor, choices }, {
       onSuccess: () => { rolesAgain(); answered.done(); },
       onError: (error) => answered.refused(sentence(error)),
     }),

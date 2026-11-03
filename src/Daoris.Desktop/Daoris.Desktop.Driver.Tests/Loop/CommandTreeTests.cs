@@ -99,6 +99,23 @@ public sealed class CommandTreeTests
         Assert.Contains(said, route.Said);
     }
 
+    /// <summary>ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so each old staffing verb names `role set` and its role.</summary>
+    [Theory]
+    [InlineData("driver adapter claude-code", "`daoris driver adapter` is `daoris role set build` now")]
+    [InlineData("settings adapter claude-code", "`daoris settings adapter` is `daoris role set build` now")]
+    [InlineData("driver intake off", "`daoris driver intake` is `daoris role set intake` now")]
+    [InlineData("settings intake off", "`daoris settings intake` is `daoris role set intake` now")]
+    [InlineData("driver helper codex", "`daoris driver helper` is `daoris role set ask-daoris` now")]
+    [InlineData("settings helper codex", "`daoris settings helper` is `daoris role set ask-daoris` now")]
+    public void ONEWAY1a_an_old_staffing_verb_names_the_role_door(string typed, string said)
+    {
+        var route = CommandTree.Route(typed.Split(' '));
+
+        Assert.Equal(TreeRouteKind.Refused, route.Kind);
+        Assert.Contains(said, route.Said);
+        Assert.DoesNotContain(CommandWords.Groups.Single(group => group.Name == "settings").Verbs, verb => verb is "adapter" or "intake" or "helper");
+    }
+
     [Fact]
     public void ONEWAY1ai_i_doctrine_is_the_clis_and_is_never_handed_back()
     {

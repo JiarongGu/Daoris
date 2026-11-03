@@ -6,9 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// COWORKVIEW1a rule 4 over real stand-in processes: no <c>end</c> is written before its process's exit is read. A refused run's is
-/// written once its kill's exit is read and before its capture's wait returns; a chat's, once its exit is read within its bound and
-/// its capture waited for; and a chat process whose exit is not read within the bound gets none, its token leaving at the exit the
-/// set sees.
+/// written once its kill's exit is read and before its capture's wait returns, a conversation's among them since its run is every
+/// start's (ONEWAY1h-iii).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class LineageExitProcessTests : IDisposable
@@ -64,42 +63,6 @@ public sealed class LineageExitProcessTests : IDisposable
         Assert.Equal(TokenReading.Gone, _tokens.Reading(proc));
         capture.SetResult();
         await abandoned.WaitAsync(Poll.Patience);
-    }
-
-    [Fact]
-    public async Task A_chats_end_after_its_catchs_kill_waits_for_the_exit_then_its_capture_and_is_written_after_both()
-    {
-        var process = StandIn();
-        var proc = ChildLineage.Opened(_home, "c1");
-        _tokens.Hand(proc, process);
-        var capture = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        SessionProcesses.EndIfRunning(process);
-
-        var ending = ChatRunner.EndedAsync(_home, "c1", process, capture.Task, proc, stopped: () => false, within: Poll.Patience);
-
-        await Poll.Until(() => _tokens.Reading(proc) == TokenReading.Gone, () => $"the token {proc} is still held", Poll.Patience);
-        Assert.Single(Lines("c1"));
-        Assert.False(ending.IsCompleted);
-        capture.SetResult();
-        await ending.WaitAsync(Poll.Patience);
-        var end = Lines("c1")[^1];
-        Assert.Equal(("end", proc, false), (end.GetProperty("by").GetString(), end.GetProperty("proc").GetString(), end.GetProperty("clean").GetBoolean()));
-    }
-
-    [Fact]
-    public async Task A_chat_process_whose_exit_is_not_read_within_its_bound_gets_no_end_and_its_token_leaves_at_its_exit()
-    {
-        var process = StandIn();
-        var proc = ChildLineage.Opened(_home, "c1");
-        _tokens.Hand(proc, process);
-
-        await ChatRunner.EndedAsync(_home, "c1", process, drain: null, proc, stopped: () => false, within: TimeSpan.Zero).WaitAsync(Poll.Patience);
-
-        Assert.Single(Lines("c1"));
-        Assert.Equal(TokenReading.Watched, _tokens.Reading(proc));
-        SessionProcesses.EndIfRunning(process);
-        await Poll.Until(() => _tokens.Reading(proc) == TokenReading.Gone, () => $"the token {proc} is still held", Poll.Patience);
-        Assert.Single(Lines("c1"));
     }
 
     /// <summary>A stand-in agent that runs until it is ended.</summary>

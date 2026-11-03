@@ -886,8 +886,11 @@ public sealed partial class HelpCoverageTests
         ("workflow use", new Door("workflow", "use")),
         ("workflow kind", WorkflowOwed),
         ("notify", new Door("setting", "notify")),
-        ("intake", new Door("setting", "intake")),
-        ("helper", new Door("setting", "helper")),
+        // ONEWAY1a (the oneway design §2 S1): `intake`, `helper` and `adapter` are gone from the family, a role's agents the role door's
+        // alone, `role` below.
+        ("actor", new Exempt(
+            "it is retired and changes nothing: a role's agents are the role door's, `daoris role set`, which Ask Daoris proposes through "
+            + "`role_propose`; its `export`, `import` and `found` are the staffing copy's, the person's own, which ONEWAY1c-ii retires.")),
         ("strikes", new Door("setting", "strikes")),
         ("retry", new Door("setting", "retry")),
         // SESSWATCH1a (D200, the session-watch design §3): retired; the door is kept only to refuse a helper reading an older room.
@@ -899,9 +902,6 @@ public sealed partial class HelpCoverageTests
         // KEEP1d (D195 point 2): each kind's keep rule, the Disk space card's Change… and Ask Daoris's `keep` door.
         ("keep", new Door("setting", "keep")),
         ("cap", new Door("setting", "cap")),
-        ("adapter", new Door("setting", "adapter")),
-        // MODELROLE1c (D205 §9.4): an actor's order, owed to MODELROLE1h's `actor_propose`.
-        ("actor", new Owed(HelpRoomOwed.Actor)),
         // FOUNDATION1y-i (the foundation design §2.7): the role catalogue's change, Ask Daoris's `role_propose`.
         ("role", new Door("role", "set")),
     ];
@@ -912,10 +912,10 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly (string Domain, string Hook, string? Action, Answer Answer)[] Controls =
     [
-        // COMPANYVIEW1b: the working roles moved from AI features to the Agents place's Roles mode, so these three are the Agents place's
+        // COMPANYVIEW1b: the working roles moved from AI features to the Agents place's Roles mode, so these are the Agents place's
         // (`agents/roles/RolesView.tsx`, imported by its view) and are listed with its controls below.
-        ("agents", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
-        // FOUNDATION1y-i: the role catalogue's Add, Edit, Remove, Back to the default and the suggested Designer's Add, over SET_ROLE.
+        // FOUNDATION1y-i, ONEWAY1a: the role catalogue's Add, Edit, Off, Use the default, Remove, Back to the default and the suggested
+        // Designer's Add, every one over SET_ROLE.
         ("agents", "useSetRole", null, new Door("role", "set")),
         // AGENTSPLACE1g2: the Roles mode's suggested choices, several of those sets made as one over SET_ROLES.
         ("agents", "useSetRoles", null, new Door("role", "set")),

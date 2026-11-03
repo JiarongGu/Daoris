@@ -18,7 +18,7 @@ public sealed class RoleVerb : ChoiceVerb
 
     private const string Grammar =
         "`driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
-        + "[\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
+        + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
 
     /// <summary><c>role suggested [--use]</c> (MODELROLE1g): the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
@@ -237,6 +237,7 @@ public sealed class RoleVerb : ChoiceVerb
         var takes = current?.Takes ?? [];
         var scope = current?.Scope ?? RoleScope.Everywhere;
         var entries = new List<ActorChoice>();
+        var off = false;
         for (var at = 0; at < rest.Count; at++)
         {
             string Value() => at + 1 < rest.Count ? rest[++at] : throw new ChoiceWords($"`{rest[at]}` needs its value: {Grammar}.");
@@ -248,13 +249,16 @@ public sealed class RoleVerb : ChoiceVerb
                 case "--takes": takes = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]; break;
                 case "--scope": scope = Scope(Value()); break;
                 case var flag when flag.StartsWith("--", StringComparison.Ordinal): throw new ChoiceWords($"`{flag}` is not a flag of `driver role set`: {Grammar}.");
+                // ONEWAY1a: a role whose work may be off (Intake, Ask Daoris) is set off here, as the retired `driver intake|helper off` did.
+                case "off": off = true; break;
                 default: entries.Add(Entry(rest[at])); break;
             }
         }
 
+        if (off && entries.Count > 0) throw new ChoiceWords($"`off` is a role's whole staffing, never beside its choices: {Grammar}.");
         if (takes.Count == 0) throw new ChoiceWords($"a new role names the work it takes (`--takes`): {Grammar}.");
         if (name is null) throw new ChoiceWords($"a new role names itself (`--name`): {Grammar}.");
-        return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Always, takes, scope)), entries.Count > 0 ? entries : null);
+        return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Always, takes, scope)), off ? [] : entries.Count > 0 ? entries : null);
     }
 
     /// <summary><c>--name</c>: the one text as written, which replaces a map's <c>en</c> (its first entry where it has none) and keeps its other languages.</summary>

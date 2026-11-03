@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { execGit } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -282,16 +283,17 @@ export function openProof(name, { label, port }) {
   };
 
   /**
-   * Write `config` as the driver's `driver.json` in the scratch folder — its home, so the proposals,
-   * the rules and the transcripts land there too — and run it until idle. This is the step that
-   * spends the login, and it says so before it starts.
+   * Write `config` as the driver's `driver.json` in the scratch folder, the run's own home (ONEWAY1c-i), so the proposals, the rules
+   * and the transcripts land there too, and run it until idle. This is the step that spends the login, and it says so before it
+   * starts.
    */
   const runDriver = (env, config, saying) => {
-    const configPath = join(scratch, 'driver.json');
+    const configPath = homeEntry(scratch, 'driver');
+    mkdirSync(dirname(configPath), { recursive: true });
     writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
     console.log(`  ..    ${saying} — this is the step that spends the login`);
     const run = capture(`dotnet "${driverDll}" drive --until-idle`, scratch, {
-      env: { ...env, DAORIS_DRIVER_CONFIG: configPath },
+      env: { ...env, DAORIS_HOME: scratch },
       timeout: 15 * 60_000,
     });
     console.log(run.out.split('\n').map((line) => `        ${line}`).join('\n'));

@@ -90,7 +90,6 @@ export const REDIRECTED = [
   'DAORIS_HOME',
   'DAORIS_KNOWLEDGE_DB',
   'DAORIS_KNOWLEDGE_ROOT',
-  'DAORIS_DRIVER_CONFIG',
   'DAORIS_REMOTE_CONFIG',
   'DAORIS_HARNESS_CONFIG',
 ];
@@ -198,7 +197,6 @@ export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost
     DAORIS_HOME: home,
     DAORIS_KNOWLEDGE_DB: homeEntry(home, 'knowledge'),
     DAORIS_KNOWLEDGE_ROOT: family,
-    DAORIS_DRIVER_CONFIG: homeEntry(home, 'driver'),
     DAORIS_REMOTE_CONFIG: homeEntry(home, 'remotes'),
     DAORIS_HARNESS_CONFIG: homeEntry(home, 'harnesses'),
     DAORIS_HTTP_HOST: httpHost,

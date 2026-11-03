@@ -18,8 +18,9 @@ public sealed class HelpRoomDoorsTests
         {
             "daoris driver drive|undrive <repository>", "daoris driver hold|resume <repository>",
             "daoris driver trees <repository> on|off", "daoris driver line <repository> <branch>|--clear",
-            "daoris driver landing <repository> merge|branch <pattern>|--clear", "daoris driver intake <agent>|off",
-            "daoris driver helper <agent>|off", "daoris driver strikes <n>",
+            "daoris driver landing <repository> merge|branch <pattern>|--clear",
+            // ONEWAY1a: a role's agents through the role door alone, Build's, Intake's and Ask Daoris's among them.
+            "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off", "daoris driver strikes <n>",
             "daoris driver notify on|off", "daoris agent rules", "daoris-driver ask --workspace <name>",
             // BRSCOPE1a: the clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
             "daoris-driver trees clean [--workspace <name>]",
@@ -30,7 +31,6 @@ public sealed class HelpRoomDoorsTests
             // HELP9: every `daoris driver` verb that changes something, and the doors Ask Daoris owes, named where they are.
             // SESSUX1b: and a stop's release, which names the session stopped.
             "daoris driver retry <quest>", "daoris driver retry <quest> --session <id>", "daoris driver cap <n>",
-            "daoris driver adapter <agent>",
             // LEFT3's default and its clear left with POOL1b (D197 point 6).
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // WORKFLOWCLEAN1 1f: the one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….

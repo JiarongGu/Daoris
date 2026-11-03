@@ -117,6 +117,9 @@ public static class RoleDoor
             {
                 if (policy is not null) throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code, $"a policy goes with a role's set: `{change.Id}` is removed or given its seed."));
                 if (!isSeeded && change is not RoleChange.DefaultAllRoles) rows.Add((change.Id, null));
+                // ONEWAY1a: a seeded role given its seed is given its default staffing too, the one door the window's *Use the default* presses.
+                if (change is RoleChange.DefaultRole && isSeeded) seeded.Add((change.Id, null));
+                if (change is RoleChange.DefaultAllRoles) seeded.AddRange(ActorChoices.Ids.Select(id => (id, (IReadOnlyList<ActorChoice>?)null)));
                 cleared.AddRange(change is RoleChange.DefaultAllRoles ? ActorChoices.Ids : [change.Id]);
             }
         }
@@ -170,7 +173,7 @@ public static class RoleDoor
     /// <summary>
     /// A press's change as <c>SET_ROLE</c>, the verb and a proposal carry it: <c>change</c> (<c>set</c>, <c>remove</c>, <c>default</c> or <c>default-all</c>, which names no id),
     /// <c>id</c>, for a set its <c>role</c> (<c>name.en</c>, <c>name.zh</c>, <c>takes</c>, <c>scope.kind</c>, <c>scope.id</c>) and its
-    /// <c>choices</c> as <c>SET_ACTOR</c> takes them, and the <c>revision</c> it was made against, if any.
+    /// <c>choices</c> (absent or null leaves them, an empty list is off), and the <c>revision</c> it was made against, if any.
     /// </summary>
     /// <exception cref="DriverException">The press does not read as a change; said.</exception>
     public static (RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read) Read(System.Text.Json.JsonElement? payload)
