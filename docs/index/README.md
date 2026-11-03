@@ -43,7 +43,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/bridge/driver.ts` | 44 | 801 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
 | `src/Daoris.Web/src/data/api.ts` | 57 | 927 |
-| `src/Daoris.Web/src/data/queries.ts` | 52 | 987 |
+| `src/Daoris.Web/src/data/queries.ts` | 52 | 988 |
 | `src/Daoris.Web/src/design/RankedFlow.tsx` | 61 | 1156 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 50 | 882 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
