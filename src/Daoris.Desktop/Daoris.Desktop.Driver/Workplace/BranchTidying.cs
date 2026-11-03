@@ -29,6 +29,13 @@ public sealed class BranchTidying(string home)
     /// <summary>How often a pass looks, at most.</summary>
     public static readonly TimeSpan DefaultPace = TimeSpan.FromMinutes(5);
 
+    /// <summary>
+    /// How long after the person's last word to a session the look's tidy leaves its tree (TREEGONE1). No window of a session's fits: the
+    /// watch's quiet is a running turn's silence, and a stray folder's quiet is writes. The pause seen was four minutes, under one pace;
+    /// an hour covers a person stepping away, and past it the tree may go, since the next word goes on with Daoris's brief in a fresh one.
+    /// </summary>
+    public static readonly TimeSpan SpokenWithin = TimeSpan.FromHours(1);
+
     private readonly object _gate = new();
 
     // What was said and is still so, by repository, branch and code: said again only after a pass where it was not.
@@ -129,20 +136,37 @@ public sealed class BranchTidying(string home)
             }
         }
 
-        Task<IReadOnlySet<string>> InUseAsync(CancellationToken token) => BranchTidying.InUseAsync(home, service, reviewing, token);
+        Task<IReadOnlySet<string>> InUseAsync(CancellationToken token) => BranchTidying.InUseAsync(home, service, reviewing, token, Clock());
     }
 
     /// <summary>
     /// The trees the look's tidy keeps whatever they hold: a session running or waiting holds its tree; so does one that ended with the
-    /// person's words waiting on its record, which the next loop goes on with there (AUTOTIDY2d, D137 §2.2); and a review step in
-    /// progress, by the folder it shows from. The pass's and link 2's (FABRIC-END4a) alike.
+    /// person's words waiting on its record, which the next loop goes on with there (AUTOTIDY2d, D137 §2.2); one the person spoke to
+    /// within <see cref="SpokenWithin"/>, whose next word goes on there (TREEGONE1); and a review step in progress, by the folder it shows
+    /// from. The pass's and link 2's (FABRIC-END4a) alike.
     /// </summary>
+    /// <param name="now">What time it is, for <see cref="SpokenWithin"/>; the system's where none is said.</param>
     public static async Task<IReadOnlySet<string>> InUseAsync(
-        string home, ServiceClient service, Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing, CancellationToken ct)
+        string home, ServiceClient service, Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing, CancellationToken ct,
+        DateTimeOffset? now = null)
     {
-        var held = await HeldTreesAsync(service, ct).ConfigureAwait(false);
+        var held = (await ReadHoldersAsync(service, writing: false, ct, (home, now ?? DateTimeOffset.UtcNow)).ConfigureAwait(false))
+            .Select(each => each.Tree).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(ct).ConfigureAwait(false)));
         return held;
+    }
+
+    /// <summary>
+    /// The sessions of this machine the person spoke to within <see cref="SpokenWithin"/> of <paramref name="now"/>, with their trees. A record
+    /// whose last move is older is passed without reading its events, since a word said to it moved it.
+    /// </summary>
+    private static IEnumerable<TreeHolder> SpokenTo(string home, IEnumerable<PriorSession> records, DateTimeOffset now)
+    {
+        var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
+        return records
+            .Where(record => !record.Teammate && record.Tree is { Length: > 0 } && record.Updated is { } moved && now - moved < SpokenWithin)
+            .Where(record => events.LastPersonAt(record.Session) is { } said && now - said < SpokenWithin)
+            .Select(record => new TreeHolder(record.Tree!, record.Session));
     }
 
     /// <summary>
@@ -167,13 +191,16 @@ public sealed class BranchTidying(string home)
     /// </summary>
     public static Task<IReadOnlyList<TreeHolder>> BesideAsync(ServiceClient service, CancellationToken ct) => ReadHoldersAsync(service, writing: true, ct);
 
-    private static async Task<IReadOnlyList<TreeHolder>> ReadHoldersAsync(ServiceClient service, bool writing, CancellationToken ct)
+    /// <param name="spoken">The home and the time the look's tidy keeps the sessions the person spoke to by; null for every other door.</param>
+    private static async Task<IReadOnlyList<TreeHolder>> ReadHoldersAsync(
+        ServiceClient service, bool writing, CancellationToken ct, (string Home, DateTimeOffset Now)? spoken = null)
     {
         var held = (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
             .Where(session => session.Tree is { Length: > 0 }).Select(session => new TreeHolder(session.Tree!, session.Id)).ToList();
         var records = await service.RecordsAsync(ct).ConfigureAwait(false);
         held.AddRange(records.Where(record => !record.Teammate && record.WordsWaiting && record.Tree is { Length: > 0 })
             .Select(record => new TreeHolder(record.Tree!, record.Session)));
+        if (spoken is { } asked) held.AddRange(SpokenTo(asked.Home, records, asked.Now));
         var waiting = records.Where(record => HelperWaitTrees.HoldsTree(record) && record.Tree is { Length: > 0 } && record.Quest is { Length: > 0 }).ToList();
         var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
         var taken = quests.Where(quest => quest.Status == "Taken").Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
