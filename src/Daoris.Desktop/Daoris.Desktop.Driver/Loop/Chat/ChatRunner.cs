@@ -1510,14 +1510,19 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // session (CONV3b).
             RuleLists? composed = null;
             var guarded = false;
+            // CHATFLOW1h (the chat-flow design §4.4): a conversation in a tree of its own is held to its run's checks at every execution, its open, a
+            // hand-over's next record and a go-on alike: the tree locked in its id for `run-heavy` to find, the checks kept by it, each heavy gate's
+            // command denied under `light`, and the conversation told only then.
+            var heavy = await HeldChecksAsync(sessionId, workTree, place, config, resolved, ct).ConfigureAwait(false);
             if (resolved.TakesSettings)
             {
                 var file = PermissionRules.Load(_home);
                 composed = place.Rules(file, sessionId);
+                if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
                 var guard = PermissionRules.GuardsTree(file) && place.Guarded ? TreeGuard.For(_home, workTree, place.Also) : null;
                 guarded = guard is not null;
                 rules = SpawnSettings.Write(
-                    _home, sessionId, composed, PermissionRules.HardDeny(file), guard,
+                    _home, sessionId, composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
                     // Which agent made each call, and each subagent's start and stop (FABRIC-C1a).
                     ChildLineage.HookFor(_home, sessionId));
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
@@ -1610,6 +1615,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
             SpawnSkills.Remove(skills);
+            LetGoChecks(sessionId);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await Conclude(
                 sessionId, "failed",
@@ -2752,6 +2758,39 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         return new(words, commits.Rule.Mode, commits.Source);
     }
 
+    // The checks each live execution keeps by its id for `run-heavy` (CHATFLOW1h), let go as it ends.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _checksKept = new(StringComparer.Ordinal);
+
+    private void LetGoChecks(string sessionId)
+    {
+        if (_checksKept.TryRemove(sessionId, out var kept)) SessionChecks.LetGo(kept);
+    }
+
+    /// <summary>
+    /// What a conversation in a tree of its own is handed of its run's checks at one execution (CHATFLOW1h, the chat-flow design §4.4): its tree
+    /// locked in its id, its checks kept by it for the execution's life, and the deny rules and words they compose; none for a place that is no
+    /// repository's tree. The words join what the process told it, once, so the conversation hears the checks only as they are enforced.
+    /// </summary>
+    private async Task<HeavyHanded> HeldChecksAsync(
+        string sessionId, string workTree, ChatPlace place, DriverConfig config, ISessionAdapter resolved, CancellationToken ct)
+    {
+        if (!place.Keeps || !new SessionTrees(_home).Holds(workTree)) return HeavyHanded.None;
+        if (await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
+        {
+            _output?.Append(sessionId, $"— its tree could not be locked in its name: {unlocked}");
+        }
+
+        if (await _chatRuns.ChecksAsync(sessionId, workTree, config).ConfigureAwait(false) is not { } checks) return HeavyHanded.None;
+        if (SessionChecks.Hold(_home, sessionId, checks.Checks, checks.Minutes) is { } kept) _checksKept[sessionId] = kept;
+        var heavy = HeavyTold.Hand(workTree, _home, checks.Repository, checks.Checks, resolved.TakesSettings);
+        if (heavy.Words is { } words && _toldProcess.TryGetValue(sessionId, out var told))
+        {
+            _toldProcess[sessionId] = told with { Words = $"{told.Words}\n\n{words}" };
+        }
+
+        return heavy;
+    }
+
     /// <summary>
     /// <see cref="ProcessTold"/> for the tree a new conversation just grew: its landing read as Review's press would read it. A
     /// landing that cannot be read leaves its lead unsaid, never the start: the record is open, so the run that follows concludes
@@ -2905,6 +2944,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             _context.Drafts.TryRemove(sessionId, out _);
             _context.Palettes.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
+            LetGoChecks(sessionId);
             _toldRouting.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
             // it to go on, unless the person stopped it, which ends them with it.

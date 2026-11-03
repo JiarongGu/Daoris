@@ -18,7 +18,7 @@ public static class WorkflowLevels
     /// <summary>Row 2: the repository's choice for the task's kind.</summary>
     public const string RepositoryKind = "repository-kind";
 
-    /// <summary>Row 3: the repository's default, Current where a repository that chooses names none.</summary>
+    /// <summary>Row 3: the repository's default; where a repository that chooses names none, row 6's.</summary>
     public const string Repository = "repository";
 
     /// <summary>Row 4: the workspace's choice for the task's kind.</summary>
@@ -27,7 +27,10 @@ public static class WorkflowLevels
     /// <summary>Row 5: the workspace's default.</summary>
     public const string Workspace = "workspace";
 
-    /// <summary>Row 6: nothing names a workflow, so Current.</summary>
+    /// <summary>Row 6: nothing above names a workflow, so the home's default (<c>defaultWorkflow</c>), a saved copy of a shipped default.</summary>
+    public const string Home = "home";
+
+    /// <summary>Row 6 on a home that names no default: Current, the transitional path (WORKFLOWCLEAN1 design §4.7).</summary>
     public const string Current = "current";
 
     /// <summary>The repository's landed route (FABRIC-PIPELINE1a), its <c>current</c> keeping its workspace's away.</summary>

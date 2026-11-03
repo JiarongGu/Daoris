@@ -56,6 +56,10 @@ A take-bind's contract was fixed twice before it held against the builds already
   never `WriterStamp`, which moves with the build and would turn every earlier step into a raise. A test
   that fakes a newer build stamps it `WriterStamp + 1`; a fake at a fixed number becomes this build once
   the stamp reaches it.
+- **A `driver.json` key is kept by older writers and read by no older reader** (`defaultWorkflow` and `linePolicies`,
+  WORKFLOWCLEAN1 1a, D227's note). An older build's save keeps them as unknown keys and reads none, so a fresh home falls to
+  Current there, and a converted home would be drawn as the default merge: only the update's `workflows` rollback refusal
+  (`InstallRollback`) guards that, and a mark binds only the builds that read it.
 - **Say what is left.** An older build still acts on its own rows as it always did: CLOSE1w's note keeps
   that its take of a quest this build named takes it unbound and closes by its done. Write the remainder
   into the decision's note, so nobody reads the boundary as wider than it is.

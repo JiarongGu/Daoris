@@ -2,7 +2,7 @@ import type { Machine } from './machine';
 import type { StarterDoor } from './starters';
 
 /** The setup guide's steps (D97), in the order a setup goes. */
-export type SetupStepId = 'agent' | 'helper' | 'repositories' | 'driven' | 'landing' | 'rules';
+export type SetupStepId = 'agent' | 'helper' | 'repositories' | 'setUp' | 'rules';
 
 /**
  * Where a step stands: done, to do, optional (it never blocks and has no done), or the desktop's — a
@@ -14,7 +14,7 @@ export type SetupState = 'done' | 'todo' | 'optional' | 'desktop';
 export type SetupStep = { id: SetupStepId; state: SetupState; doors: StarterDoor[]; commands: string[] };
 
 /** How many steps are required: all but the last, which is optional. */
-const REQUIRED = 5;
+const REQUIRED = 4;
 
 /** The steps a machine missing any of opens on the guide at start (D97 §2): an agent, Daoris's own, a repository. */
 const FIRST: readonly SetupStepId[] = ['agent', 'helper', 'repositories'];
@@ -36,8 +36,8 @@ const signedIn = (machine: Machine) => machine.tools.some((tool) =>
  * repository registered is both step 3 and a starter, no agent named for Ask Daoris is both step 2 and
  * a starter. The guide adds the order, the done state and the optional last step.
  *
- * **How work lands is done only once something is driven** and every driven repository has a line and
- * a landing rule of its own or its workspace's: with nothing driven there is nothing for it to say yet.
+ * **Setting a place up is done once something is driven**: the place's *Set up…* chooses how its work
+ * lands and drives it, so with nothing driven there is nothing to say yet.
  * **What agents may do is optional and never done**: nothing on the machine records the rules being
  * looked at, and the step never blocks.
  *
@@ -49,7 +49,6 @@ export function setupSteps(machine: Machine): SetupStep[] {
   const known = machine.attached;
   const machineState = (done: boolean): SetupState => (!known ? 'desktop' : done ? 'done' : 'todo');
   const doors = (...list: StarterDoor[]) => (known ? list : []);
-  const unnamedDriven = machine.drivable.filter((repository) => machine.unnamedLines.includes(repository));
 
   return [
     {
@@ -62,9 +61,9 @@ export function setupSteps(machine: Machine): SetupStep[] {
     {
       id: 'helper',
       state: machineState(machine.helper !== null),
-      // And Agents → Roles, where each work's role and its choices are set (COMPANYVIEW1g).
-      doors: doors({ view: 'settings', section: 'ai' }, { view: 'agents', agentsMode: 'setup' }),
-      commands: ['daoris driver helper <agent>', 'daoris driver intake <agent>'],
+      // Ask Daoris and the intake are roles: Agents → Roles, where each work's role and its choices are set (COMPANYVIEW1g).
+      doors: doors({ view: 'agents', agentsMode: 'setup', roleSection: 'working' }),
+      commands: ['daoris driver role'],
     },
     {
       id: 'repositories',
@@ -75,20 +74,11 @@ export function setupSteps(machine: Machine): SetupStep[] {
       commands: ['daoris connect', 'daoris import <folder>'],
     },
     {
-      id: 'driven',
+      id: 'setUp',
       state: machineState(machine.drivable.length > 0),
-      doors: doors({ view: 'projects' }),
-      commands: ['daoris driver drive <repository>'],
-    },
-    {
-      id: 'landing',
-      state: machineState(machine.drivable.length > 0 && unnamedDriven.length === 0 && machine.unlanded.length === 0),
-      // A missing line is the first thing to set, on the first such repository's Setup (UX6f); else the workspace's
-      // defaults, which set how work lands for each repository there that sets none (UX6g, D150 §4.3).
-      doors: doors(unnamedDriven.length > 0
-        ? { view: 'projects', item: unnamedDriven[0]!, tab: 'setup' }
-        : { view: 'projects', workspaceSection: 'defaults' }),
-      commands: ['daoris driver line <repository> <branch>', 'daoris driver landing <repository> merge|branch <pattern>'],
+      // A place's *Set up…* chooses its delivery and drives it: the Agents place's Setup, one page per place.
+      doors: doors({ view: 'agents', agentsMode: 'setup' }),
+      commands: ['daoris-driver place <repository> --plan'],
     },
     {
       id: 'rules',

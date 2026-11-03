@@ -649,6 +649,49 @@ public sealed class DesktopStore : IDisposable
               PRIMARY KEY (place, revision)
             );
             """)),
+
+        // COMMS1g (the comms design §5.3, §13 point 8): the answers-alone count, one admission per line keyed by its one key, Course's. A line's
+        // reading of its events (what it read of each part, and the prompt it read last), its epochs (the seed, then each reset), each go-on
+        // with its disposition, and when the admissions began, which ends the seed's kept read. No raise: an older build reads no table it does
+        // not know and counts from the events, and a line it went on meanwhile is read on from its events at the next read.
+        new(20, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE continuation_lines (
+              line  TEXT PRIMARY KEY,
+              read  TEXT NOT NULL,
+              carry TEXT NOT NULL
+            );
+            CREATE TABLE continuation_epochs (
+              line   TEXT NOT NULL,
+              epoch  INTEGER NOT NULL,
+              cause  TEXT NOT NULL,
+              source TEXT,
+              n      INTEGER NOT NULL,
+              known  TEXT NOT NULL,
+              why    TEXT,
+              since  TEXT NOT NULL,
+              PRIMARY KEY (line, epoch)
+            );
+            CREATE TABLE continuation_admissions (
+              id        INTEGER PRIMARY KEY AUTOINCREMENT,
+              line      TEXT NOT NULL,
+              epoch     INTEGER NOT NULL,
+              source    TEXT NOT NULL,
+              words     TEXT NOT NULL,
+              session   TEXT,
+              reserved  TEXT NOT NULL,
+              attempted TEXT,
+              taken     TEXT,
+              cancelled TEXT,
+              uncertain TEXT
+            );
+            CREATE INDEX continuation_admissions_line ON continuation_admissions (line, epoch);
+            CREATE TABLE continuation_made (
+              one INTEGER PRIMARY KEY CHECK (one = 1),
+              at  TEXT NOT NULL
+            );
+            INSERT INTO continuation_made (one, at) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+            """)),
     ];
 
     /// <summary>

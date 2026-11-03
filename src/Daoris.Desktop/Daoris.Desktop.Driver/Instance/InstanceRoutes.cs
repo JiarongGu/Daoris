@@ -58,11 +58,11 @@ public static class OpenRoutes
     /// <summary><c>opinion show &lt;session|opinion&gt;</c> (RPC1e): where a work's second opinion stands, its findings and their answers.</summary>
     public static InstanceRoute OpinionGate { get; } = Open("OPINION_GATE");
 
-    /// <summary><c>setup &lt;repository&gt; --plan</c> (RPC1e): what a set-up's press would do today, read and never written.</summary>
-    public static InstanceRoute SetupPlan { get; } = Open("SETUP_PLAN");
-
     /// <summary><c>place &lt;repository&gt;… --plan</c> (AGENTSPLACE1a2): a quick set-up's plan, read and never written.</summary>
     public static InstanceRoute PlacePlan { get; } = Open("PLACE_PLAN");
+
+    /// <summary><c>workflow convert --plan</c> and <c>--undo</c> (WORKFLOWCLEAN1 1e): the conversion plan, or the undo's, read and never written.</summary>
+    public static InstanceRoute ConvertPlan { get; } = Open("CONVERT_PLAN");
 
     /// <summary>
     /// Each verb of RPCOPEN1's and RPC1e's scope, the host's verbs with a window twin (the terminal RPC design §1.2), in the verb's words:
@@ -94,9 +94,9 @@ public static class OpenRoutes
         ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
         ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
-        ("setup <repository> --plan", SetupPlan, "the plan; without `--plan` the person's press (SETUP_PRESS)"),
-        ("setup --workspace <name>", null, "alone: no route sets a workspace up; each repository's press is SETUP_PRESS's"),
+        ("place --workspace <name> --adoption", null, "alone: no route writes a workspace's paced plan; PLACE_APPLY writes one when an adoption covers more repositories than it asks at once"),
         ("place <repository>… --plan", PlacePlan, "the plan; with `--apply` the person's press (PLACE_APPLY)"),
+        ("workflow convert --plan", ConvertPlan, "the plan, or with `--undo` the undo's; `--apply <digest>` and `--undo <digest>` are the person's presses (CONVERT_APPLY, CONVERT_UNDO)"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
@@ -249,14 +249,17 @@ public static class PersonPresses
     /// <summary><c>ask channel &lt;id&gt; "…"</c> (RPC1e): the person's words on an ask's channel, which every session on the ask reads.</summary>
     public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
 
-    /// <summary><c>setup &lt;repository&gt;</c> (RPC1e): the rule its session needs added, and one ask published to it as the person's.</summary>
-    public static InstanceRoute SetupPress { get; } = Person("SETUP_PRESS");
-
     /// <summary>
     /// <c>place &lt;repository&gt;… --preset &lt;id&gt; … --apply [--accept …]</c> (AGENTSPLACE1b3): a place's plan applied, the configuration's changes and the
     /// acceptances chosen, and each adoption quest. The plan is the same ask's <c>PLACE_PLAN</c>, open, which the verb reads alone.
     /// </summary>
     public static InstanceRoute PlaceApply { get; } = Person("PLACE_APPLY");
+
+    /// <summary><c>workflow convert --apply &lt;digest&gt;</c> (WORKFLOWCLEAN1 1e): the conversion plan applied, on the person's Confirm in the window.</summary>
+    public static InstanceRoute ConvertApply { get; } = Person("CONVERT_APPLY");
+
+    /// <summary><c>workflow convert --undo &lt;digest&gt;</c> (WORKFLOWCLEAN1 1e): the latest conversion taken back, on the person's Confirm in the window.</summary>
+    public static InstanceRoute ConvertUndo { get; } = Person("CONVERT_UNDO");
 
     /// <summary>
     /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c> (RPC1e): the tools a plugin's server offers Ask Daoris approved,
@@ -302,8 +305,9 @@ public static class PersonPresses
         ("opinion anyway <session>", OpinionAnyway),
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
-        ("setup <repository>", SetupPress),
         ("place <repository>… --preset <id> … --apply [--accept <repository>:<purpose>,…]", PlaceApply),
+        ("workflow convert --apply <digest> [--composed none|review] [--land-automatic review|none]", ConvertApply),
+        ("workflow convert --undo <digest>", ConvertUndo),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),
         ("workflow skip <run> <node> \"…\"", WorkflowNode),
@@ -342,9 +346,6 @@ public static class TreesMarks
 {
     /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
     public const string Land = "LAND_SESSION_TREE";
-
-    /// <summary><c>trees land &lt;session&gt; --without-look "…"</c> (CHATFLOW1d2): a chat run's <i>Accept without the look…</i>.</summary>
-    public const string LandWithoutLook = "LAND_WITHOUT_LOOK";
 
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree by its path.</summary>
     public const string DiscardTree = "DISCARD_SESSION_TREE";
@@ -392,9 +393,6 @@ public static class TreesRoutes
     /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
     public static InstanceRoute Land { get; } = new(DriverModule, TreesMarks.Land, RouteClass.Person);
 
-    /// <summary><c>trees land &lt;session&gt; --without-look "…"</c> (CHATFLOW1d2): a chat run's <i>Accept without the look…</i>, the person's press.</summary>
-    public static InstanceRoute LandWithoutLook { get; } = new(DriverModule, TreesMarks.LandWithoutLook, RouteClass.Person);
-
     /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept.</summary>
     public static InstanceRoute LandEntry { get; } = new(DriverModule, TreesMarks.LandEntry, RouteClass.Person);
 
@@ -423,7 +421,6 @@ public static class TreesRoutes
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
         ("trees land <session>", Land),
-        ("trees land <session> --without-look \"…\"", LandWithoutLook),
         ("trees land --entry <id>", LandEntry),
         ("trees land --ask <id>", LandAsk),
         ("trees remove <path>", DiscardTree),

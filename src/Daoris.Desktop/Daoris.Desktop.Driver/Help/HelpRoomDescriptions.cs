@@ -69,7 +69,7 @@ internal static class HelpRoomDescriptions
             // ENTRY1f2 (D161's ENTRY1f note): by the Sessions list's own rule, so the count and the list name the same sessions,
             // less Ask Daoris's own conversation, which opens here; a teammate's never reached the snapshot.
             Waiting = [.. sources.Snapshot.Active
-                .Where(session => KnowledgeWorkOrders.Current.WaitsOnYou(session.Id, session.State, session.Answer) && session.Repository != HelpRoom.Repository)
+                .Where(session => KnowledgeWorkOrders.Current.WaitsOnYou(session.Id, session.State, session.Answered) && session.Repository != HelpRoom.Repository)
                 .Select(session => new HelpWaitingSession(session.Id, session.Repository) { Ask = session.Ask })],
             Sessions = sources.Sessions is { } look ? Placed(look) : null,
             Asks = sources.Asks,
@@ -272,7 +272,7 @@ internal static class HelpRoomDescriptions
             {
                 null => followed with { Problem = "not saved here" },
                 { Problem: not null } => followed with { Problem = "which cannot be read here" },
-                _ => followed with { Name = found.Name, Version = found.NewestVersion },
+                _ => followed with { Name = found.Name, Version = found.NewestVersion, LandMethod = found.LandMethod, LandPattern = found.LandPattern },
             };
         }
     }

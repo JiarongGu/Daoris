@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -27,7 +28,7 @@ public sealed class HelpRoomWorkspacesTests
         var home = Path.Combine(Path.GetTempPath(), "daoris-help-room-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z",
+            StoredSteps.Add(home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z",
                 JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")), kept: []);
             var config = WorkflowSelection.Apply(DriverConfig.Empty, new WorkflowDeclare("docs", "work", "Documentation", ["docs/**", "**/*.md"]));
             config = WorkflowSelection.Apply(config, new WorkflowDeclare("feature", "work", "Feature", []));

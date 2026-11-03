@@ -70,7 +70,8 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // WSR5b: the review's own hand-off, for a ticket landed before its workspace named a plugin, or whose plugin failed.
         text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
         text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
-        text.Append("  a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded\n");
+        text.Append("  a plugin only where the workflow it followed (or, for a place still on Current, its old landing rule) names none.\n");
+        text.Append("  Only a branch a landing made and recorded\n");
         text.Append("  here can be handed on; the person's own branches are theirs to push.\n");
         // HELP10: the browser's settings, which HELP9 left owed, each as `daoris browser` spells it.
         text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
@@ -136,8 +137,9 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // WORKFLOW1h2's, and a merge with nobody is a decision of its own (§8.3, §12.1).
         text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");
         text.Append("  workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as\n");
-        text.Append("  `daoris driver workflow show <id>` says it), every step in `steps` as the workflow's own list, and\n");
-        text.Append("  `choose` to make it the scope's workflow too. Its card says the person's part first, then each step by id,\n");
+        text.Append("  `daoris driver workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`\n");
+        text.Append("  step landing the work by its method), and `choose` to make it the scope's workflow too. A list of `steps` is\n");
+        text.Append("  refused: it is no longer saved, and one saved before is the conversion's. Its card says the person's part first, then each step by id,\n");
         text.Append("  what leaves this machine with no press of theirs, what is needed first, and that it applies to new work only.\n");
         text.Append("  A base that is not the newest is refused as stale. A declaration a step needs that is missing where it\n");
         text.Append("  applies, a landing plugin that cannot land here, or a kind this build does not run\n");
@@ -146,7 +148,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // FABRIC-PIPELINE1i (D192 point 2, the pipeline design §1.3): a route with no version, and a verification pipeline's graph.
         text.Append("  `route` chooses it for `default`, `landed` (the work that lands) or `kind:<id>`; with no `steps` and no\n");
         text.Append("  `graph`, it chooses a workflow saved here and saves nothing. A verification pipeline, which only `landed`\n");
-        text.Append("  names, takes its whole `graph` in place of `steps`: at least one `check`, and nothing that lands. Its gates\n");
+        text.Append("  names, takes a whole `graph` of its own: at least one `check`, and nothing that lands. Its gates\n");
         text.Append("  are the person's to accept on the Workflow tab, and what a change asks less of them is said on its card.\n");
         text.Append("  Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which\n");
         text.Append("  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.\n");
@@ -161,23 +163,19 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  with it. Its card says each change to a step or a way and what each needs taken with it, and what a save would\n");
         text.Append("  refuse, for the person to put right; they take the changes into the draft and save it themselves. A fingerprint\n");
         text.Append("  this conversation was not told is refused: ask the person to ask again from the editor.\n");
-        // LAYOUT8 (D170 point 1): the set-up press as a card, where the owner's helper could only name the terminal command. The
-        // room has no shell, by design (D89): the door is the press, judged by `--plan`'s refusals.
-        text.Append("- `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`\n");
-        text.Append("  and its page's Set up for agents do: one quest to that repository's own session, which takes up the shared\n");
-        text.Append("  doctrine and writes down what the repository owns and its instructions on a branch of its own, landed by its\n");
-        text.Append("  workspace's rule, and a rule letting its sessions run the doctrine tool. Name it as `registry` lists it.\n");
-        // AGENTSPLACE1b: driving is no refusal; a set-up where the repository is not driven starts alone.
-        text.Append("  Its card shows what was read on its line and the quest's whole text; what the press refuses (no tree of its\n");
-        text.Append("  own, no doctrine tool, already set up, a set-up already open) comes back to you in its words, each with the\n");
-        text.Append("  door that answers it. Where the repository is not driven here, its quest starts alone and nothing else of it\n");
-        text.Append("  does. Daoris never writes into the repository, and you never run it yourself: the person's Apply is the press.\n");
-        // AGENTSPLACE1k: the place door proposes a quick set-up of a workspace's repositories; its Apply opens the page, never presses.
-        text.Append("  Asked to set one or several repositories up (their delivery, a second opinion and the person's look, the adoption\n");
-        text.Append("  quest and what it builds, general driving), give the preset and the repositories to `setup_propose`'s place ask. The\n");
-        text.Append("  card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in its words; its\n");
-        text.Append("  Apply opens the Agents place's Setup with *Set up…* open on your ask, where the person reads the plan and presses\n");
-        text.Append("  Apply themselves. Nothing is written by your card; the repositories must be in one workspace.\n\n");
+        // WORKFLOWCLEAN1 1f: one door adopts a repository, a place's adoption. The room has no shell, by design (D89): the door is a
+        // card whose Apply opens the page, judged by the plan's refusals.
+        text.Append("- `setup_propose`: set one or several repositories registered here up (their delivery, a second opinion and the\n");
+        text.Append("  person's look, the adoption quest and what it builds, general driving), as `daoris-driver place <repository>…\n");
+        text.Append("  --preset keep --adoption` does and its page's *Set up…* does. Adoption asks each repository's own session for one\n");
+        text.Append("  quest, which takes up the shared doctrine and writes down what the repository owns and its instructions on a\n");
+        text.Append("  branch of its own, landed by its workspace's rule, with a rule letting its sessions run the doctrine tool. Give\n");
+        text.Append("  the preset and the repositories, named as `registry` lists them, to `setup_propose`'s place ask; the only door is\n");
+        text.Append("  `place`. The card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in\n");
+        text.Append("  its words (no tree of its own, no doctrine tool, a set-up already open); where a repository is not driven here, its\n");
+        text.Append("  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on\n");
+        text.Append("  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the\n");
+        text.Append("  repositories must be in one workspace. Daoris never writes into a repository, and you never run it yourself.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look. ASKDISMISS1: a go card's second
         // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.

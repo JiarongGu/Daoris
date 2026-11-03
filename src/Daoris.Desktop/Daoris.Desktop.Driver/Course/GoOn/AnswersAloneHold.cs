@@ -2,25 +2,29 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The answers-alone bound held where a line would go on (COWORK1e, D188 point 4; the message-urgency design §2.3, §8.3, trap 11): the
-/// line's events read back from this machine's records, its parts followed by each record's <c>from</c>, the count judged
-/// (<see cref="AnswersAlone"/>), and where the answers waiting would take it on a third time in a row with nobody between, each marked
+/// go-on judged inside its line's admission (COMMS1g, <see cref="ContinuationAdmissions"/>), keyed by the line's one key over this
+/// machine's records, and where the answers waiting would take it on a third time in a row with nobody between, each marked
 /// <see cref="GoOnMarks.AnswersAlone"/> with the agent that answered and the hold said once in its conversation. Every look then leaves
 /// them waiting (<see cref="GoOnMarks.Judged"/>), and the person's wait is listed from the mark.
 /// </summary>
 /// <remarks>
 /// <para><b>Judged where each path goes on</b>, by the session's one dispatcher there: the driver's look before it plans
 /// (<see cref="LookAsync"/>), an ended conversation's go-on before its mark is cleared (<see cref="ChatGoOn"/>), and an open
-/// conversation's turns as a helper's answer's turn comes (<see cref="ChatTurns"/>), so two answers handed under separate asks never
-/// both pass as the second. The continuation's own files stay as they were (SESSCTX1c): the hold is a mark beside them.</para>
+/// conversation's turns as a helper's answer's turn comes (<see cref="ChatTurns"/>). Each reserves the go-on it admits in the line's
+/// admission, so two answers queued together, on one path or two, never both pass as the second. The continuation's own files stay as
+/// they were (SESSCTX1c): the hold is a mark beside them.</para>
 ///
-/// <para><b>A line whose events are missing here counts nothing</b> (the steward's choice 2): a teammate's record, a part this machine
-/// keeps no events of, or a file that does not read ends the line before it, and a record's own missing events never hold.</para>
+/// <para><b>A line whose events are missing here counts nothing</b> (the steward's choice 2) at its seed: a teammate's record, a part
+/// this machine keeps no events of, or a file that does not read ends the line before it. Once seeded, the count is the store's, and an
+/// event trimmed or lost afterwards takes nothing from it. Where the service's records did not read, or the store holds no admissions
+/// (a start before its confirmation settled), the record's line is counted from its events as it was before.</para>
 /// </remarks>
-public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks)
+public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions)
 {
     /// <summary>
     /// Whether going on with <paramref name="words"/> on <paramref name="record"/> now would take its line on by answers alone past the
-    /// bound; where it would, every answer waiting on it is marked (once, with its note), and true.
+    /// bound; where it would, every answer waiting on it is marked (once, with its note), and true. Where it would not, the go-on is
+    /// reserved in the line's admission.
     /// </summary>
     /// <param name="records">The service's records by id, for the line's parts and the agent that answered; none read, the record alone.</param>
     /// <param name="words">The words going on now: the record's waiting words where null, or the one answer an open conversation's turn takes.</param>
@@ -29,7 +33,7 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks)
     {
         words ??= record.Waiting;
         if (record.Teammate || !SessionEventText.IsLocalId(record.Session) || words.Count == 0 || !words.All(AnswersAlone.Solicited)) return false;
-        if (!AnswersAlone.Holds(words, Line(record.Session, records))) return false;
+        if (Admits(record, records, words)) return false;
 
         // Every answer waiting on it, those handed under another ask included: going on with any of them alone would be the same third.
         var answers = record.Waiting.Concat(words).Where(AnswersAlone.Solicited).Select(word => word.Id).OfType<string>()
@@ -83,18 +87,60 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks)
 
     /// <summary>
     /// Whether <paramref name="session"/>'s line is at the bound now (SUPERVISOR1b, the supervisor design §4.3): the supervisor's route
-    /// asks it at the keeping and its release asks it again, so a supervisor's word is never kept only to be held behind the bound. A
-    /// record not this machine's counts nothing, as the hold's own judgement does.
+    /// asks it at the keeping and its release asks it again, so a supervisor's word is never kept only to be held behind the bound. It
+    /// reads the count the hold judges, its admission's; a record not this machine's counts nothing.
     /// </summary>
-    public bool AtBound(string session, IReadOnlyDictionary<string, PriorSession> records) =>
-        SessionEventText.IsLocalId(session) && AnswersAlone.AtBound(Line(session, records));
+    public bool AtBound(string session, IReadOnlyDictionary<string, PriorSession> records)
+    {
+        if (!SessionEventText.IsLocalId(session)) return false;
+        if (records.ContainsKey(session) && admissions.Count(History(session, records)) is { } count) return count.N >= AnswersAlone.Bound;
+        // transitional: answers-alone-events
+        return AnswersAlone.AtBound(Line(session, records));
+    }
+
+    /// <summary>
+    /// A waited quest's result counts (the comms design §11): D79's resume of <paramref name="prior"/>'s quest on <paramref name="quest"/>'s
+    /// answer is reserved on its line once, beside the words it hands, and held by nothing here. A conversation never waits on a quest
+    /// (COWORKVIEW1 R11.2 point 5), so nothing counts on its line, nor does a go-on beside a word of the person's, which resets it.
+    /// </summary>
+    /// <returns>The line's count with it; null where nothing was reserved or the store holds no admissions.</returns>
+    public AloneCount? Waited(PriorSession prior, string quest, IReadOnlyList<SaidWordView> handed, IReadOnlyDictionary<string, PriorSession> records)
+    {
+        if (prior.Kind != "driven" || prior.Teammate || !SessionEventText.IsLocalId(prior.Session) || !handed.All(AnswersAlone.Solicited)) return null;
+        return admissions.Admit(History(prior.Session, records), $"quest:{quest}", Keys(prior, handed), prior.Session, at: null)?.Count;
+    }
+
+    /// <summary>The history of the line <paramref name="session"/> is on, its parts' events as this machine keeps them.</summary>
+    public LineHistory History(string session, IReadOnlyDictionary<string, PriorSession> records) =>
+        ContinuationAdmissions.History(session, records, part => LineCountsRead.EventsOf(events, part));
+
+    /// <summary>
+    /// Whether the line admits the go-on now: judged and reserved inside its admission at <see cref="AnswersAlone.Bound"/>, the line read
+    /// by its one key. Without the service's records, or without the admissions, the record's line is counted from its events as before.
+    /// </summary>
+    private bool Admits(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<SaidWordView> words)
+    {
+        var ids = Keys(record, words);
+        if (records.ContainsKey(record.Session)
+            && admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, AnswersAlone.Bound) is { } admission)
+        {
+            return admission.Admitted;
+        }
+
+        // transitional: answers-alone-events
+        return !AnswersAlone.Holds(words, Line(record.Session, records));
+    }
+
+    /// <summary>Each word's id, and for a word from before ids its record and when it was said.</summary>
+    private static IReadOnlyList<string> Keys(PriorSession record, IReadOnlyList<SaidWordView> words) =>
+        [.. words.Select(word => word.Id ?? $"{record.Session}@{word.At.ToUniversalTime():O}").Distinct(StringComparer.Ordinal)];
 
     /// <summary>
     /// The line <paramref name="session"/> ends, oldest part first, as this machine keeps its events: it, then by each record's <c>from</c>
     /// the parts it continued (<see cref="ContextBriefs.LineOf"/>'s walk). A part that is not this machine's, or whose events do not read,
-    /// ends the line before it.
+    /// ends the line before it. What the count was read from before its admission, and still where none is kept.
     /// </summary>
-    public IReadOnlyList<SessionEvent> Line(string session, IReadOnlyDictionary<string, PriorSession> records)
+    private IReadOnlyList<SessionEvent> Line(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
         var parts = new List<string>();
         var seen = new HashSet<string>(StringComparer.Ordinal);

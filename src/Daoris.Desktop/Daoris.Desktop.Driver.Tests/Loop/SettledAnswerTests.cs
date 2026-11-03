@@ -74,22 +74,48 @@ public sealed class SettledAnswerTests
         Assert.Equal("w1", said.Word!.Id);
     }
 
-    /// <summary>The helper's and the partner's doors ask settled too, and read a success naming the record as their own kind, with no word.</summary>
+    /// <summary>
+    /// The helper's, the partner's and (COMMS1b) the opinion's doors ask settled too, and read a success naming the record as
+    /// <see cref="SolicitedFate.Settled"/>, with no word.
+    /// </summary>
     [Fact]
-    public async Task The_helper_and_partner_doors_ask_settled_and_read_it_with_no_word()
+    public async Task The_helper_partner_and_opinion_doors_ask_settled_and_read_it_with_no_word()
     {
         var handler = new Canned("""{"message":"Settled.","settled":"s1"}""");
         var client = new ServiceClient("http://stand-in", null, new HttpClient(handler));
 
         var helper = await client.Helpers.HandAsync("h1", "the answer");
         var partner = await client.Partners.HandAsync("pt1", "the piece");
+        var opinion = await client.Opinions.HandWordAsync("o1");
 
-        Assert.Equal(HelperHanded.Settled, helper.Outcome);
-        Assert.Null(helper.Word);
-        Assert.True(partner.Handed);
-        Assert.Equal("s1", partner.Settled);
-        Assert.Null(partner.Word);
+        Assert.Equal((SolicitedFate.Settled, "s1", null), (helper.Fate, helper.SettledOn, helper.Word));
+        Assert.Equal((SolicitedFate.Settled, "s1", null), (partner.Fate, partner.SettledOn, partner.Word));
+        Assert.Equal((SolicitedFate.Settled, "s1", null), (opinion.Answer.Fate, opinion.Answer.SettledOn, opinion.Word));
+        Assert.True(opinion.Handed);
         Assert.All(handler.Heard, body => Assert.True(JsonDocument.Parse(body).RootElement.GetProperty("settled").GetBoolean()));
+    }
+
+    /// <summary>
+    /// COMMS1b (the comms design §13 point 4): a word already waiting is answered with its holder and the word, flagged <c>waiting</c>, which each door
+    /// reads as <see cref="SolicitedFate.Waiting"/> so its look finishes the dispatch there; the same answer from a host before the flag is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_word_already_waiting_is_read_with_its_holder_and_its_word_by_every_door()
+    {
+        const string Waiting = """{"message":"Waits already.","waiting":true,"session":{"id":"s2","state":"completed","kind":"chat"},"said":{"id":"w0","text":"the answer","at":"2026-11-03T10:00:00+00:00","files":[],"reopens":true}}""";
+        var client = new ServiceClient("http://stand-in", null, new HttpClient(new Canned(Waiting)));
+
+        var helper = await client.Helpers.HandAsync("h1", "the answer");
+        var partner = await client.Partners.HandAsync("pt1", "the piece");
+        var opinion = await client.Opinions.HandWordAsync("o1");
+
+        Assert.Equal((SolicitedFate.Waiting, "w0", "s2", "chat"), (helper.Fate, helper.Word, helper.Holder!.Session, helper.Holder.Kind));
+        Assert.Equal((SolicitedFate.Waiting, "w0", "s2"), (partner.Fate, partner.Word, partner.Holder!.Session));
+        Assert.Equal((SolicitedFate.Waiting, "w0"), (opinion.Answer.Fate, opinion.Word!.Id));
+        Assert.True(opinion.Handed);
+
+        var older = new ServiceClient("http://stand-in", null, new HttpClient(new Canned(Waiting.Replace("\"waiting\":true,", ""))));
+        Assert.Equal(SolicitedFate.Kept, (await older.Helpers.HandAsync("h1", "the answer")).Fate);
     }
 
     // ---- the dispatchers ----

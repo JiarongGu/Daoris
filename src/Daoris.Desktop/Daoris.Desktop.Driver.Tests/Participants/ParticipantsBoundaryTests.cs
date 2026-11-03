@@ -107,7 +107,7 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     [Fact]
     public void A_conversation_s_chat_run_binds_under_the_named_workflow_and_says_so_once()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
+        StoredSteps.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
             System.Text.Json.Nodes.JsonNode.Parse("""
                 [{"id":"work","kind":"work","checks":"light"},
                  {"id":"landing","kind":"landing","form":"branch","accept":"you","pattern":"chat/{session}-{slug}","plugin":"none"}]

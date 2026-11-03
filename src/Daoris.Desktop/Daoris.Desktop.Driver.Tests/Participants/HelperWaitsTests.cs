@@ -37,6 +37,21 @@ public sealed class HelperWaitsTests
         Assert.Empty(HelperWaits.Open("s9", asks, states));
     }
 
+    /// <summary>
+    /// COMMS1b (the comms design §13 point 3): a hand in flight, its attempt on file under the helper's key or an older build's, keeps the ask
+    /// open, its answer on its way; only its answer handed, kept, waiting or settled, or a refusal settles it.
+    /// </summary>
+    [Fact]
+    public void An_ask_whose_hand_is_in_flight_is_open_until_its_answer_is_handed()
+    {
+        var asks = new[] { Ask("a1"), Ask("a2"), Ask("a3") };
+        var states = States(
+            State("a1", HelperStates.Answered) with { Attempted = At, Keyed = true }, State("a2", HelperStates.Answered) with { Attempted = At },
+            State("a3", HelperStates.Answered, handed: "settled"));
+
+        Assert.Equal(["a1", "a2"], HelperWaits.Open("s1", asks, states).Select(ask => ask.Id));
+    }
+
     [Fact]
     public void A_session_waits_on_its_helper_while_it_ended_so_and_nothing_waits_on_it()
     {

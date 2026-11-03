@@ -38,6 +38,27 @@ internal static class LineCountsFixture
         return events;
     }
 
+    /// <summary>When a row's admission was seeded: a part it has not read is fed only what it kept after.</summary>
+    public static readonly DateTimeOffset Seeded = DateTimeOffset.Parse("2026-11-03T09:00:00Z");
+
+    /// <summary>
+    /// A row's admission as the store would keep it (COMMS1g): its epochs in order, its go-ons not yet shown by the events, and the last event
+    /// it read of each part; null where the row has none kept, so the events count it.
+    /// </summary>
+    public static AloneRows? Admission(JsonElement row, string line)
+    {
+        if (!row.TryGetProperty("admission", out var kept)) return null;
+        var epochs = kept.GetProperty("epochs").EnumerateArray().Select((epoch, index) => new AloneEpoch(
+            index, epoch.GetProperty("cause").GetString()!, null, epoch.GetProperty("n").GetInt32(), epoch.GetProperty("known").GetString()!,
+            epoch.TryGetProperty("why", out var why) ? why.GetString() : null, Seeded));
+        var admitted = kept.TryGetProperty("admitted", out var each)
+            ? each.EnumerateArray().Select((go, index) => new AloneAdmitted(
+                index + 1, 0, go.GetProperty("source").GetString()!, [.. go.GetProperty("words").EnumerateArray().Select(word => word.GetString()!)], null, Seeded))
+            : [];
+        var read = kept.GetProperty("read").EnumerateObject().ToDictionary(part => part.Name, part => part.Value.GetInt64(), StringComparer.Ordinal);
+        return new AloneRows(line, [.. epochs], [.. admitted], read, AloneScan.Start);
+    }
+
     private static SessionEvent Event(string token, long seq) => token switch
     {
         "started" => new() { Seq = seq, Kind = SessionEventKind.User, Origin = "target", Text = "The quest's instruction." },

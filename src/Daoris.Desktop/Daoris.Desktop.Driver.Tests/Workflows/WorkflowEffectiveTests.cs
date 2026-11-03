@@ -25,7 +25,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     private IWorkflowStore Store => WorkflowPorts.Store(_home);
 
     private int Save(string id, string name, JsonNode? steps, JsonNode? graph, string? pipeline = null) =>
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(id, name, "terminal", "2026-11-01T09:00:00Z", steps, graph) { Pipeline = pipeline }, kept: []);
+        steps is not null ? StoredSteps.Add(Store, id, name, "2026-11-01T09:00:00Z", steps) : WorkflowStore.Add(_home, new WorkflowVersionAdded(id, name, "terminal", "2026-11-01T09:00:00Z", steps, graph) { Pipeline = pipeline }, kept: []);
 
     private static JsonObject Release() => WorkflowPresets.GraphTable.First(preset => preset.Id == SetupPresets.Merge).Graph();
 
@@ -37,6 +37,10 @@ public sealed class WorkflowEffectiveTests : IDisposable
     private WorkflowEffective Read(DriverConfig config, string route, string? repository = Repo, string? workspace = Space) =>
         WorkflowEffectives.Read(config, Store, repository, workspace, route, Plugins);
 
+    /// <summary>A file that still holds <c>current</c> for the repository: read as before, though no door writes it as a development choice any more.</summary>
+    private static DriverConfig StoredCurrent(DriverConfig config) =>
+        config with { Workflows = new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase) { [Repo] = new WorkflowChoice("current", []) } };
+
     /// <summary>A saved default, an inherited kind, an explicit Current and a cleared choice each carry the identity <c>Resolve</c> gives.</summary>
     [Fact]
     public void Its_identity_is_the_selections_for_a_default_a_kind_Current_and_a_cleared_choice()
@@ -47,7 +51,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
         {
             ("a saved default", Edit(DriverConfig.Empty, new WorkflowUse("release", Repo, null, null)), "default", null),
             ("an inherited kind", Edit(Declared(DriverConfig.Empty), new WorkflowUse("docs-flow", null, Space, "docs")), "kind:docs", "docs"),
-            ("explicit Current", Edit(DriverConfig.Empty, new WorkflowUse("release", null, Space, null), new WorkflowUse("current", Repo, null, null)), "default", null),
+            ("explicit Current", StoredCurrent(Edit(DriverConfig.Empty, new WorkflowUse("release", null, Space, null))), "default", null),
             ("a cleared choice", Edit(DriverConfig.Empty, new WorkflowUse("release", Repo, null, null), new WorkflowUse(null, Repo, null, null)), "default", null),
             ("the workspace's default", Edit(DriverConfig.Empty, new WorkflowUse("release", null, Space, null)), "default", null),
         };
@@ -79,7 +83,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     public void A_kind_its_workspace_does_not_declare_is_no_route_and_a_workspace_resolves_for_itself()
     {
         Save("release", "Release", null, Release());
-        var config = Edit(Declared(DriverConfig.Empty), new WorkflowUse("release", null, Space, "docs"), new WorkflowUse("current", Repo, null, null));
+        var config = StoredCurrent(Edit(Declared(DriverConfig.Empty), new WorkflowUse("release", null, Space, "docs")));
 
         Assert.Throws<DriverException>(() => Read(config, "kind:missing"));
         Assert.Throws<DriverException>(() => Read(config, "nonsense"));
@@ -102,7 +106,10 @@ public sealed class WorkflowEffectiveTests : IDisposable
             """));
         WorkflowOperations.RegistryRead registry = _ => Task.FromResult(new ChoicesRegistry([(Repo, (string?)Space, (string?)null)], null));
 
-        var written = await WorkflowOperations.SourceAsync(config, _home, registry, "current:" + Repo, opinion: false, look: false, CancellationToken.None);
+        // `new --from current:` is retired (WORKFLOWCLEAN1 1a); the handler the chart draws from is the conversion's to read.
+        await Assert.ThrowsAsync<ChoiceWords>(() => WorkflowOperations.SourceAsync(config, _home, registry, "current:" + Repo, opinion: false, look: false, CancellationToken.None));
+        var written = WorkflowOperations.CurrentSource(
+            await WorkflowOperations.CurrentOfAsync(config, _home, registry, Repo, CancellationToken.None), Repo, opinion: false, look: false);
         var repository = Read(config, "default");
         Assert.Equal(written.Graph!.ToJsonString(), repository.Graph!.ToJsonString());
         Assert.Contains(repository.Graph!["nodes"]!.AsArray(), node => (string?)node!["kind"] == NodeKinds.Look);
@@ -143,7 +150,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     {
         Save("release", "Release", null, Release());
         Save("release", "Release", null, Release());
-        Save("legacy", "Legacy", WorkflowPresets.Table[0].Steps(), null);
+        Save("legacy", "Legacy", JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]"""), null);
         var config = Edit(DriverConfig.Empty, new WorkflowUse("release", Repo, null, null));
 
         var graph = Read(config, "default");
@@ -210,6 +217,46 @@ public sealed class WorkflowEffectiveTests : IDisposable
         Assert.Null(effective.Graph);
         Assert.Null(effective.Version);
         Assert.Contains("v2 cannot be read here", effective.Problem);
+    }
+
+    private void SaveCopy(string id, string digest, bool opinion = false)
+    {
+        var shipped = WorkflowDefaults.Of("integrated")!;
+        var planned = WorkflowOperations.PlanGraph(_home, null, id, null, shipped.Name, "terminal", "2026-11-01T09:00:00Z",
+            WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look: false), new WorkflowFrom(shipped.Id, digest));
+        Store.Write(id, planned.Plan.Result!);
+    }
+
+    /// <summary>WORKFLOWCLEAN1h: a copy stamped with an older shipped digest is offered the shipped graph, with the gates the copy has.</summary>
+    [Fact]
+    public void A_copy_of_a_default_Daoris_ships_changed_since_offers_the_shipped_graph_with_its_gates()
+    {
+        var shipped = WorkflowDefaults.Of("integrated")!;
+        SaveCopy("old", "0000", opinion: true);
+        SaveCopy("uptodate", shipped.Digest);
+        DriverConfig Choosing(string id) => Edit(DriverConfig.Empty, new WorkflowUse(id, Repo, null, null));
+
+        var newer = Read(Choosing("old"), "default").Newer;
+
+        Assert.Equal("integrated", newer?.Default);
+        Assert.Equal(NodeGraphs.Digest(NodeGraphs.Read(WorkflowPresets.WithGraphGates(shipped.Graph(), opinion: true, look: false).ToJsonString()).Graph!),
+            NodeGraphs.Digest(NodeGraphs.Read(newer!.Graph.ToJsonString()).Graph!));
+        Assert.Null(Read(Choosing("uptodate"), "default").Newer);
+    }
+
+    /// <summary>WORKFLOWCLEAN1h: the update is saved as the copy's next version and keeps where it came from, so it is the shipped digest the copy follows after.</summary>
+    [Fact]
+    public async Task Saving_the_update_stamps_the_next_version_with_the_shipped_digest()
+    {
+        var shipped = WorkflowDefaults.Of("integrated")!;
+        SaveCopy("old", "0000", opinion: true);
+
+        var saved = await WorkflowOperations.SaveAsync(DriverConfig.Empty, _home, _ => Task.FromResult(new ChoicesRegistry(null, "unread")), "old", null, null,
+            shipped.Graph(), false, false, null, "1", null, false, "2026-11-02T09:00:00Z", CancellationToken.None, updates: "integrated");
+
+        Assert.True(saved.Done, saved.Message);
+        Assert.Equal(new WorkflowFrom(shipped.Id, shipped.Digest), Store.Load("old")!.Read.Versions[^1].From);
+        Assert.Null(Read(Edit(DriverConfig.Empty, new WorkflowUse("old", Repo, null, null)), "default").Newer);
     }
 
     [Fact]

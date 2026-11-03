@@ -61,9 +61,9 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     /// One whole pass of the runtime over the run's quest, done (held for the person's yes where <paramref name="held"/>), and its session's branch,
     /// whose tip is read from git; what the line holds of it (LANDNODE1k) read in <paramref name="tree"/>, where given.
     /// </summary>
-    private async Task PassAsync(string root, GrownBranch branch, string? tree = null, bool held = false)
+    private async Task PassAsync(string root, GrownBranch branch, string? tree = null, bool held = false, LandingDoor? door = null)
     {
-        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true);
+        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Landing = door };
         var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
         {
             Units = _ => Task.FromResult(new NodeUnitsRead(
@@ -74,6 +74,10 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         }, CancellationToken.None);
         Assert.True(pass.Armed);
     }
+
+    /// <summary>The runtime's door, landing as the performer does: over the fixture's world, trees and faked plugin.</summary>
+    private LandingDoor Door() => new(() => new AutoLander(
+        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { Performs = true, HoldsLease = () => true });
 
     private NodeStatus Handed() => Status("handed");
 
@@ -92,7 +96,8 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
 
     /// <summary>
     /// LANDNODE1k: the quest's own holds are a step of the default, which the run's pass keeps active while the done is held for the person's yes;
-    /// the look's automatic landing judges nothing of the quest itself and holds at the graph, in the step's words, landing nothing.
+    /// the landing waits behind it and lands nothing. WORKFLOWCLEAN1 1c: the look chooses nothing for the run, and closes the entry it holds from
+    /// before the update as the run's own to land.
     /// </summary>
     [Fact]
     public async Task A_held_done_holds_a_defaults_run_at_its_quest_holds_step_and_the_look_says_it()
@@ -107,7 +112,8 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         Assert.Equal((NodeStates.Active, NodeStates.Blocked), (Status("holds").State, Status("landing").State));
 
         var said = await LookAsync();
-        Assert.Contains(said, each => each.Contains("waits on `holds` (quest.holds)", StringComparison.Ordinal));
+        Assert.Contains(said, each => each.Contains("its run's `land` performs it now", StringComparison.Ordinal));
+        Assert.Equal(AutoLandingCode.Performed, Assert.Single(new AutoLandings(_home).All()).Last!.Code);
         Assert.Equal(line, await HeadAsync(root));
     }
 
@@ -124,11 +130,11 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
              "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"}]}
             """), DateTimeOffset.UtcNow);
 
-        await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree, held: true);
+        var door = Door();
+        await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree, held: true, door: door);
         var commit = await HeadAsync(tree);
-        Assert.Equal(NodeStates.Active, Status("landing").State);
+        await door.IdleAsync();
 
-        await LookAsync();
         Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
     }
 
@@ -194,13 +200,16 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         Rule(LandingRule.Merge);
         await CopyAsync("merge-automatic");
         var tree = await NamedDoneAsync(root, "s1", "q1");
-        await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree);
+        // WORKFLOWCLEAN1 1c: the conclusion wrote no due entry, and the look chooses nothing; the runtime's pass starts the `land`.
+        Assert.Empty(new AutoLandings(_home).All());
+        var door = Door();
+        await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree, door: door);
         var commit = await HeadAsync(tree);
-        Assert.Equal(NodeStates.Active, Status("landing").State);
-
+        await door.IdleAsync();
         await LookAsync();
 
         Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+        Assert.True(LandOutcomes.Of(RunUnits.IdOf("q1"), commit)?.Landed);
         var delivery = Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
         Assert.Equal((DeliveryMethods.Merge, commit, "main", DeliverySettlements.Delivered),
             (delivery.Intent.Method, delivery.Intent.Tip, delivery.Intent.Line, delivery.Settled));
@@ -225,10 +234,14 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         await CopyAsync("merge-automatic");
         await NamedDoneAsync(root, "s1", "q1");
         await InventoryPassAsync(root);
-        Assert.Equal(NodeStates.Active, Status("landing").State);
+        Assert.True(Status("landing").State == NodeStates.Active,
+            string.Join(", ", new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1"))!.Statuses.Select(each => $"{each.Key} {each.Value.State}")));
         if (lineMoved) await CommitAsync(root, "other.txt", "another session's work", "another session's work");
 
-        await LookAsync();
+        // The next pass starts the `land` on the door, which lands what the first judged.
+        var door = Door();
+        await InventoryPassAsync(root, door);
+        await door.IdleAsync();
         // A pass may come before the ref watch keeps what the line holds, and the one after reads it.
         await InventoryPassAsync(root);
         await new SessionTrees(_home).KeepEndsAsync(root, "engine", "aurora");
@@ -239,16 +252,185 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
             string.Join(", ", steps.Select(node => $"{node} {Status(node).State}")));
     }
 
+    /// <summary>A graph holding the person's review before a <c>land</c> by <paramref name="options"/>.</summary>
+    private static string ReviewedLand(string options) => $$"""
+        {"schemaVersion":2,"entries":["claimed"],"end":"landing",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"review","kind":"review","version":1,"reach":"pressed"},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{{options}}}],
+         "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"review"},{"id":"r>l","kind":"after","from":"review","to":"landing"}]}
+        """;
+
+    /// <summary>The same, with the tail a pull request brings (<c>pushed</c> then <c>pull-request</c>, which wait on the platform).</summary>
+    private static string ReviewedPullRequest(string options) => $$"""
+        {"schemaVersion":2,"entries":["claimed"],"end":"pr",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"review","kind":"review","version":1,"reach":"pressed"},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{{options}}},
+                  {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pr","kind":"pull-request","version":1,"reach":"observed"}],
+         "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"review"},{"id":"r>l","kind":"after","from":"review","to":"landing"},
+                  {"id":"l>p","kind":"after","from":"landing","to":"pushed"},{"id":"p>pr","kind":"after","from":"pushed","to":"pr"}]}
+        """;
+
+    /// <summary>A run bound to <paramref name="graph"/>, its session s1's tree done with one commit; the pass that holds the review begun.</summary>
+    private async Task<(string Root, string Tree, GrownBranch Branch, LandingDoor Door)> ReviewedRunAsync(string graph)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(LandingRule.Merge);
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, graph), DateTimeOffset.UtcNow);
+        var branch = Assert.Single(new SessionBranches(_home).All());
+        var door = Door();
+        await PassAsync(root, branch, tree, door: door);
+        return (root, tree, branch, door);
+    }
+
+    /// <summary>
+    /// WORKFLOWCLEAN1 1c: a merge behind a review lands only once the person's Accept is the review's word; the pass that applies the word readies the
+    /// <c>land</c> and the runtime starts it on its door, authorized by that Accept, through a delivery. Nothing lands before the word.
+    /// </summary>
+    [Fact]
+    public async Task A_merge_after_a_review_lands_at_the_pass_that_applies_the_accept_and_not_before()
+    {
+        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedLand("""{"method":"merge"}"""));
+        var commit = await HeadAsync(tree);
+        await door.IdleAsync();
+        Assert.Equal((NodeStates.Active, NodeStates.Blocked), (Status("review").State, Status("landing").State));
+        Assert.Empty(new DeliveryStore(_home).OfUnit("s1"));
+
+        Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+        var delivery = Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        Assert.Equal((DeliveryMethods.Merge, DeliveryAuthorities.Person, DeliverySettlements.Delivered),
+            (delivery.Intent.Method, delivery.Authorization.Authority, delivery.Settled));
+        Assert.True(LandOutcomes.Of(RunUnits.IdOf("q1"), commit)?.Landed);
+    }
+
+    /// <summary>
+    /// A press and a pass at once land once: the door started twice for one node and tip makes one landing, and a pass after the node is reached
+    /// starts nothing, so a restart's fresh door finds one delivery and no second.
+    /// </summary>
+    [Fact]
+    public async Task A_pass_and_a_second_start_at_once_land_one_delivery()
+    {
+        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedLand("""{"method":"merge"}"""));
+        Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
+        var other = Door();
+        await Task.WhenAll(PassAsync(root, branch, tree, door: door), PassAsync(root, branch, tree, door: other));
+        await Task.WhenAll(door.IdleAsync(), other.IdleAsync());
+
+        Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        // A restart: a fresh door at the next pass lands nothing again.
+        await PassAsync(root, branch, tree, door: Door());
+        Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+    }
+
+    /// <summary>
+    /// A restart at each phase of the performer: the Accept kept and applied but the process gone before the node started (a fresh door starts it
+    /// once); the landing made and the process gone before the pass reached the node (a fresh door finds the delivery and lands nothing again).
+    /// </summary>
+    [Fact]
+    public async Task A_restart_before_the_start_and_after_the_landing_lands_once()
+    {
+        var (root, tree, branch, _) = await ReviewedRunAsync(ReviewedLand("""{"method":"merge"}"""));
+        var commit = await HeadAsync(tree);
+        Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
+
+        // The pass that applies the word readies the `land`, and the process ends before any door starts it.
+        await PassAsync(root, branch, tree, door: null);
+        Assert.Equal(NodeStates.Active, Status("landing").State);
+        Assert.Empty(new DeliveryStore(_home).OfUnit("s1"));
+
+        // A fresh process at its next pass starts it, once.
+        var restarted = Door();
+        await PassAsync(root, branch, tree, door: restarted);
+        await restarted.IdleAsync();
+        Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+
+        // And again after the landing, whatever the node's status says: no second delivery, no second landing.
+        var after = Door();
+        await PassAsync(root, branch, tree, door: after);
+        await PassAsync(root, branch, tree, door: after);
+        await after.IdleAsync();
+        var delivery = Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        Assert.Equal(DeliverySettlements.Delivered, delivery.Settled);
+    }
+
+    /// <summary>A branch method makes its branch from the intent alone, with no plugin asked, and the landing record names it.</summary>
+    [Fact]
+    public async Task A_branch_land_makes_its_branch_through_the_performer()
+    {
+        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedLand("""{"method":"branch","plugin":"none","pattern":"feature/{quest}-{slug}"}"""));
+        Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+
+        Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+        Assert.Empty(_frames);
+    }
+
+    /// <summary>A pull request land pushes through the platform's plugin, told the delivery's key.</summary>
+    [Fact]
+    public async Task A_pull_request_land_tells_its_plugin_through_the_performer()
+    {
+        InstallManifest();
+        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedPullRequest($$"""{"method":"pull-request","plugin":"{{Plugin}}","pattern":"feature/{quest}-{slug}"}"""));
+        Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+
+        // The fixture's plugin declares no key, so the frame carries none (the frame's key is sent to a plugin that declares it).
+        Assert.Single(_frames);
+        var delivery = Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        Assert.Equal((DeliveryMethods.PullRequest, Plugin), (delivery.Intent.Method, delivery.Intent.Plugin));
+    }
+
+    /// <summary>
+    /// LANDBACK1 across the update: a tree holding uncommitted work is not landed past the person's Accept. The session is carried on, the Accept
+    /// kept as the review's repair on the run's record (no CarriedAccepts file), and once the tip moves only by its own commits the next pass accepts
+    /// the review again and the runtime lands it.
+    /// </summary>
+    [Fact]
+    public async Task A_dirty_tree_carries_the_accept_as_the_reviews_repair_and_lands_once_the_session_commits()
+    {
+        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedLand("""{"method":"merge"}"""));
+        await File.WriteAllTextAsync(Path.Combine(tree, "wip.txt"), "unfinished\n");
+        var files = new NodeRecordFiles(_home, () => true);
+        Assert.True(RunNodeWords.Word(files, "q1", "review", NodeWordActs.Accept, null).Done);
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+
+        var repair = Assert.Single(files.Read(RunUnits.IdOf("q1"))!.Repairs);
+        Assert.Equal("review", repair.Node);
+        Assert.Single(_world.Said);
+        Assert.Empty(new CarriedAccepts(_home).All());
+
+        // The session commits what it left, and the tip moves by its own commit only.
+        await CommitAsync(tree, "wip.txt", "finished", "finish wip");
+        var commit = await HeadAsync(tree);
+        await PassAsync(root, branch, tree, door: door);
+        await PassAsync(root, branch, tree, door: door);
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+
+        Assert.Empty(files.Read(RunUnits.IdOf("q1"))!.Repairs);
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+    }
+
     /// <summary>
     /// One whole pass of the runtime over the units the home's records and the stand-in service name, linked as the loop's pass reads them
     /// (<see cref="WorkUnits.Linked"/>), and what the line holds read in a unit's newest session's tree, as the loop's gates read it.
     /// </summary>
-    private async Task InventoryPassAsync(string root)
+    private async Task InventoryPassAsync(string root, LandingDoor? door = null)
     {
         var sessions = _world.Records;
-        var branches = WorkInventory.Units(await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>()));
+        // The sessions' trees are joined to their units as the loop's gather joins them (OVERVIEWNOISE1b): no due entry stands in for it.
+        var branches = WorkInventory.Units(await WorkInventories.GatherAsync(
+            _home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), recorded: WorkInventories.RecordedOf(sessions)));
         var units = WorkUnits.Linked(branches, QuestUnits.Read([.. _world.Quests.Values], sessions), [], sessions);
-        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true);
+        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true) { Landing = door };
         var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
         {
             Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),

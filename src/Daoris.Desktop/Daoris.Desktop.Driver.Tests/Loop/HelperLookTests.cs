@@ -106,6 +106,8 @@ public sealed class HelperLookTests : IDisposable
         var host = new OpinionStandIn().Session("s1", state, tree: "trees/default/reports/s-1", kind: kind)
             .Session(Helper, "completed", adapter: "codex-acp", kind: "chat");
         host.Set(Helper, "serves", "s1");
+        // The ask a session's line is on is its entry's origin (COMMS1c), whoever asked its quest.
+        host.Set("s1", "entry", "ask:a1/reports");
         return host;
     }
 
@@ -846,6 +848,7 @@ public sealed class HelperLookTests : IDisposable
         host.Set("s1", "note", "It stopped with its quest still taken, to ask you:\n\nI asked a helper.");
         host.Set("s1", "updated", At.AddMinutes(minute).ToString("O"));
         host.Set("s1", "answer", answer);
+        host.Set("s1", "said", PersonWords.Wire(answer));
         return host;
     }
 
@@ -875,13 +878,14 @@ public sealed class HelperLookTests : IDisposable
         Assert.Empty(host.HelperHands);
 
         host.Set("s1", "answer", "Port 8080.");
-        var events = await Look(driver, active: [Active("awaiting-person") with { Answer = "Port 8080." }]);
+        host.Set("s1", "said", PersonWords.Wire("Port 8080."));
+        var events = await Look(driver, active: [Active("awaiting-person") with { Said = PersonWords.Of("Port 8080.") }]);
 
         Assert.Empty(host.Moves);
         var (to, text) = Assert.Single(host.HelperHands);
         Assert.Equal(Helper, to);
         Assert.StartsWith("Another agent, `codex-acp` (helper session `h1000001`), answered the question you asked it", text);
-        Assert.Equal(Helper, Assert.Single(host.Said("s1"))!["helper"]!.GetValue<string>());
+        Assert.Equal(Helper, Assert.Single(host.Said("s1"), each => each!["helper"] is not null)!["helper"]!.GetValue<string>());
         Assert.NotNull(Files.ReadState("a1")!.Handed);
         Assert.Contains(events, line => line.Contains("answered by codex-acp", StringComparison.Ordinal));
     }
@@ -1169,6 +1173,25 @@ public sealed class HelperLookTests : IDisposable
 
         host.AskFailure = failure;
         Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, At, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// COMMS1c: the ask is read from the session's entry, not its quest's sender. A line on no ask holds no go-ahead to read, so the ask's
+    /// failing read is never reached and the turn waits on its helper; a quest a sibling published, its line on the ask, reads it.
+    /// </summary>
+    [Fact]
+    public async Task The_go_ahead_is_read_on_the_ask_the_sessions_entry_names_not_the_quests_sender()
+    {
+        var host = Host(state: "working").Quest("q1", "Taken");
+        var driver = Driver(host, pass: null);
+        Ask("a4");
+        host.AskFailure = "refused";
+
+        host.Set("s1", "entry", "session:s1/reports");
+        Assert.True(await driver.WaitsOnOwnHelperAsync("s1", new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken"), At, CancellationToken.None));
+
+        host.Set("s1", "entry", "ask:a1/reports");
+        Assert.False(await driver.WaitsOnOwnHelperAsync("s1", new QuestView("q1", "reports", "reports", "The work", "", "Taken"), At, CancellationToken.None));
     }
 
     /// <summary>
@@ -1487,6 +1510,169 @@ public sealed class HelperLookTests : IDisposable
         var state = Files.ReadState("a1")!;
         Assert.Equal((HelperStates.Refused, HelperWhy.CannotTake), (state.State, state.Code));
         Assert.Contains("sixteen", Assert.Single(events));
+    }
+
+    // ——— COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): against a host with the one door for solicited answers.
+
+    /// <summary>The host with the one door, the asker's helper answered on file.</summary>
+    private OpinionStandIn Door(string state = "completed", string kind = "drive")
+    {
+        Ask("a1");
+        Answered();
+        var host = Host(state, kind);
+        host.Answers = true;
+        return host;
+    }
+
+    /// <summary>A part that continues <paramref name="from"/> (a hand-over), made after it: a conversation unless <paramref name="kind"/> says.</summary>
+    private static void Successor(OpinionStandIn host, string id, string state = "completed", string from = "s1", string kind = "chat")
+    {
+        host.Session(id, state, tree: "trees/default/reports/s-1", kind: kind);
+        host.Set(id, "from", from);
+        host.Set(id, "created", At.AddMinutes(30).ToString("O"));
+    }
+
+    /// <summary>A word kept under the helper's key on <paramref name="record"/>, as an earlier hand through the one door kept it.</summary>
+    private static void Kept(OpinionStandIn host, string record, string word = "hp-w9") =>
+        host.Set(record, "said", new JsonArray(new JsonObject
+        {
+            ["id"] = word, ["text"] = "Another agent answered.", ["at"] = At.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+            ["helper"] = Helper, ["key"] = $"helper:{Helper}",
+        }));
+
+    /// <summary>
+    /// 🔴 A hand-over between the ask and its answer: the line's head is a conversation that continues the asker, so the door keeps the answer
+    /// there and the look tells that conversation's runner, never the record the line left; the attempt went under the helper's key.
+    /// </summary>
+    [Fact]
+    public async Task Against_the_one_door_a_hand_over_between_ask_and_answer_hands_it_to_the_new_head()
+    {
+        var host = Door(state: "stopped");
+        Successor(host, "s2");
+        var driver = Driver(host, pass: null);
+
+        await Look(driver);
+
+        var word = Assert.Single(host.Said("s2"));
+        Assert.Equal($"helper:{Helper}", word!["key"]!.GetValue<string>());
+        Assert.Empty(host.Said("s1"));
+        var state = Files.ReadState("a1")!;
+        Assert.Equal((word["id"]!.GetValue<string>(), (DateTimeOffset?)null), (state.Handed, state.Attempted));
+        var told = Assert.Single(driver.Context.Events.After("s2", 0).Events, e => e.Kind == SessionEventKind.User);
+        Assert.Equal(("resume", word["id"]!.GetValue<string>()), (told.Reaches, told.Id));
+        Assert.DoesNotContain(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.User);
+    }
+
+    /// <summary>
+    /// 🔴 §13 point 3: an attempt a restart cut, made through the door under its key, is asked again inside the settlement's horizon, and the
+    /// door answers it once: a word kept and taken before the restart is settled and nothing is kept; one never kept is kept now, once. Either
+    /// way the ask is handed and a later look asks nothing again.
+    /// </summary>
+    [Theory]
+    [InlineData("taken")]
+    [InlineData("never")]
+    public async Task Against_the_one_door_a_keyed_attempt_a_restart_cut_is_asked_again_and_never_handed_twice(string where)
+    {
+        var host = Door();
+        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow.AddMinutes(-1), Keyed = true });
+        if (where == "taken")
+        {
+            Kept(host, "s1");
+            host.Take("s1");
+        }
+
+        await Look(Driver(host, pass: null));
+
+        Assert.Equal(1, host.HelperHandsAsked);
+        var state = Files.ReadState("a1")!;
+        Assert.Null(state.Attempted);
+        if (where == "taken")
+        {
+            Assert.Equal("settled", state.Handed);
+            Assert.Empty(host.HelperHands);
+            Assert.Empty(host.Said("s1"));
+        }
+        else
+        {
+            Assert.Single(host.HelperHands);
+            Assert.Equal(Assert.Single(host.Said("s1"))!["id"]!.GetValue<string>(), state.Handed);
+        }
+
+        await Look(Driver(host, pass: null));
+        Assert.Equal(1, host.HelperHandsAsked);
+    }
+
+    /// <summary>
+    /// 🔴 §13 point 4: a hand whose answer was lost after its keep marks its attempt as made under the key; a hand-over then moves the waiting
+    /// word to the new head, and the next look asks the door again, which answers it already waiting there, naming the record that holds it.
+    /// The look finishes the dispatch on that record, once, and marks the ask handed: nothing is kept twice, and the left record is told nothing.
+    /// </summary>
+    [Fact]
+    public async Task Against_the_one_door_an_answer_lost_after_its_keep_is_answered_waiting_on_the_new_head_and_dispatched_there_once()
+    {
+        var host = Door();
+        host.HelperHandLost = "500";
+        var driver = Driver(host, pass: null);
+
+        Assert.Contains("uncertain", Assert.Single(await Look(driver)));
+        var held = Files.ReadState("a1")!;
+        Assert.True(held is { Attempted: not null, Keyed: true, Handed: null });
+        var word = host.Said("s1")[0]!["id"]!.GetValue<string>();
+
+        host.HelperHandLost = null;
+        Successor(host, "s2");
+        host.Move("s1", "stopped");
+        host.MoveWords("s1", "s2");
+        await Look(driver);
+        await Look(driver);
+
+        Assert.Equal(2, host.HelperHandsAsked);
+        Assert.Single(host.HelperHands);
+        Assert.Equal(word, Files.ReadState("a1")!.Handed);
+        var told = Assert.Single(driver.Context.Events.After("s2", 0).Events, e => e.Kind == SessionEventKind.User);
+        Assert.Equal(("resume", word, Helper), (told.Reaches, told.Id, told.Helper));
+        Assert.DoesNotContain(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.User);
+    }
+
+    /// <summary>
+    /// §13 point 3: a keyed attempt past the settlement's horizon is never asked again, since the host no longer answers a take that old: it goes
+    /// to the person, uncertain.
+    /// </summary>
+    [Fact]
+    public async Task Against_the_one_door_a_keyed_attempt_past_the_horizon_goes_to_the_person_unasked()
+    {
+        var host = Door();
+        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow - SolicitedHand.Horizon - TimeSpan.FromMinutes(1), Keyed = true });
+
+        await Look(Driver(host, pass: null));
+
+        Assert.Equal(0, host.HelperHandsAsked);
+        Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
+    }
+
+    /// <summary>
+    /// The older file (the register's <c>solicited-old-files</c>): an attempt an older build made, with no key on file, is read as before
+    /// against the one door too: the word taken along the line marks it handed, and nothing found settles it uncertain, the door never asked.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Against_the_one_door_an_attempt_an_older_build_made_is_read_as_before(bool taken)
+    {
+        var host = Door();
+        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow.AddMinutes(-1) });
+        if (taken)
+        {
+            new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
+                "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = Helper, Id = "hp-w9", Text = "Another agent answered." });
+        }
+
+        await Look(Driver(host, pass: null));
+
+        Assert.Equal(0, host.HelperHandsAsked);
+        var state = Files.ReadState("a1")!;
+        if (taken) Assert.Equal("hp-w9", state.Handed);
+        else Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain), (state.State, state.Code));
     }
 
     /// <summary>

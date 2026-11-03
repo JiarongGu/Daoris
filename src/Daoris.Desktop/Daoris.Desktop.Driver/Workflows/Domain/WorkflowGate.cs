@@ -71,6 +71,10 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     public bool JudgesHolds => Graph is not { } graph || !graph.Nodes.Any(node => node.Kind == NodeKinds.Land);
 
     /// <inheritdoc/>
+    public bool LandsByRuntime => Graph?.Nodes.Any(node => node.Kind == NodeKinds.Land) == true
+                                  && Binding is { IsCurrent: false, Digest: not null } && Problem is null && Unread is null;
+
+    /// <inheritdoc/>
     public BoundLand? Land(LandingSubject subject)
     {
         if (Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } land
@@ -159,16 +163,26 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// the rule's otherwise, with the rule's <c>tidy</c>. A step that needs what is not declared cannot start, and sits saying so
     /// (§3.7).</para>
     /// </remarks>
-    public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, IReadOnlyList<NamedStep> steps)
+    /// <param name="bound">
+    /// The landing rule a graph version holding a <c>land</c> carries (<see cref="LandNodes.RuleOf"/>; WORKFLOWCLEAN1 1c), in place of one read from a
+    /// landing step and the live rule. Null reads the landing step as before: a steps version and a <c>handed</c> graph.
+    /// </param>
+    public static WorkflowProcess Of(
+        DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, IReadOnlyList<NamedStep> steps, LandingRule? bound = null)
     {
         var declared = Current(config, repository, workspace);
 
         // The landing: its form and its press the step's; a pattern and a plugin its own where it names them, the rule's otherwise.
-        var land = steps.First(step => step.Kind == WorkflowKinds.Landing);
+        var land = bound is null ? steps.First(step => step.Kind == WorkflowKinds.Landing) : null!;
         var rule = declared.Landing.Rule;
         string? landingCannot = null;
         LandingRule landing;
-        if ((string?)land.Field("form") == LandingForm.Merge)
+        if (bound is not null)
+        {
+            landing = bound;
+            landingCannot = BoundCannot(bound);
+        }
+        else if ((string?)land.Field("form") == LandingForm.Merge)
         {
             // LANDNODE1k: a graph's merge with no review before its `land` lands with no press (D145's note of 2026-11-01), so the look lands it as
             // the graph says; a steps version's merge is refused `automatic` where its steps are read, and never reaches here with it.
@@ -192,68 +206,20 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
             // The rule's ticket key rides with it where the pattern, the step's or the rule's, says `{ticket}` (PROCESS1b-i).
             // A land version's key was resolved at the bind, and no later rule edit reaches it (LANDNODE1h).
-            var key = binding.Land.TryGetValue(LandNodes.KeyOption, out var bound) ? bound
+            var key = binding.Land.TryGetValue(LandNodes.KeyOption, out var resolvedKey) ? resolvedKey
                 : branch && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? rule.Key : null;
             // The rule's squash rides with it too (PROCESS1b-ii): it is how the repository wants its pull request's branch made.
             landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic", key,
                 branch && rule.Squash);
         }
 
-        // The look (D154 rows 5 and 6): its presence is `required`, in an environment the review rule declares.
-        WorkflowLook look;
-        if (steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Look) is not { } seen)
-        {
-            look = new WorkflowLook(null, null);
-        }
-        else if (declared.Review is not { Rule.IsNone: false } reviews)
-        {
-            var asked = (string?)seen.Field("environment");
-            look = new WorkflowLook(asked, $"its look `{seen.Id}` reads the work in {(asked is null ? "an environment" : $"`{asked}`")}, and "
-                + $"`{repository}` declares no review environment: `daoris driver review {repository} {asked ?? "<environment>"} --kind "
-                + "local|deployed --procedure <path>` declares one.");
-        }
-        else
-        {
-            var environment = (string?)seen.Field("environment") ?? reviews.Rule.Environments[0].Name;
-            look = reviews.Rule.Environments.Any(each => each.Name == environment)
-                ? new WorkflowLook(environment, null)
-                : new WorkflowLook(environment, $"its look `{seen.Id}` reads the work in `{environment}`, which `{repository}` does not declare (it declares "
-                    + $"{And(reviews.Rule.Environments.Select(each => each.Name))}): `daoris driver review {repository} {environment} --kind "
-                    + "local|deployed --procedure <path>` declares it.");
-        }
-
-        // The second opinion: when it reads, whether it is required and read again the step's; which reviewers among those declared.
-        ResolvedOpinion? opinion = null;
-        string? opinionCannot = null;
-        if (steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Opinion) is { } reads)
-        {
-            var named = reads.Field("reviewers") as IReadOnlyList<string>;
-            IReadOnlyList<string> on = (bool?)reads.Field("steps") == true ? [OpinionRules.Landing, OpinionRules.Steps] : [OpinionRules.Landing];
-            var required = (bool?)reads.Field("required") == true;
-            var recheck = (bool?)reads.Field("recheck") != false;
-            if (declared.Opinion is not { Rule.IsNone: false } listed)
-            {
-                opinionCannot = $"its second opinion `{reads.Id}` reads with reviewers `{repository}` declares, and it declares none: "
-                    + $"`daoris driver opinion {repository} --reviewers <adapter,adapter>` declares them.";
-                opinion = new ResolvedOpinion(new OpinionRule(named ?? [], on, required, Recheck: recheck), declared.Opinion?.Source ?? OpinionSource.Repository);
-            }
-            else
-            {
-                var beyond = (named ?? []).Where(each => !listed.Rule.Reviewers.Contains(each, StringComparer.OrdinalIgnoreCase)).ToList();
-                if (beyond.Count > 0)
-                {
-                    opinionCannot = $"its second opinion `{reads.Id}` names {And(beyond)}, which `{repository}` does not declare among its reviewers "
-                        + $"({And(listed.Rule.Reviewers)}): a step chooses among them, and `daoris driver opinion {repository} --reviewers "
-                        + "<adapter,adapter>` declares more.";
-                }
-
-                // Named reviewers in the step's order, spelled as the rule declares them, since the walk finds them by that name.
-                var chosen = named is null
-                    ? listed.Rule.Reviewers
-                    : [.. named.Select(each => listed.Rule.Reviewers.FirstOrDefault(name => string.Equals(name, each, StringComparison.OrdinalIgnoreCase)) ?? each)];
-                opinion = new ResolvedOpinion(listed.Rule with { Reviewers = chosen, On = on, Required = required, Recheck = recheck }, listed.Source);
-            }
-        }
+        var lookStep = steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Look);
+        var look = ReadLook(declared, repository, lookStep?.Id, (string?)lookStep?.Field("environment"));
+        var reads = steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Opinion);
+        var (opinion, opinionCannot) = reads is null
+            ? (null, null)
+            : ReadOpinion(declared, repository, reads.Id, reads.Field("reviewers") as IReadOnlyList<string>, (bool?)reads.Field("steps") == true,
+                (bool?)reads.Field("required") == true, (bool?)reads.Field("recheck") != false);
 
         return declared with
         {
@@ -265,6 +231,76 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
             OpinionCannot = opinionCannot,
             LandingCannot = landingCannot,
         };
+    }
+
+    /// <summary>
+    /// A graph version holding a <c>land</c> as a process (WORKFLOWCLEAN1 1c, design §2.6): the landing is the intent it binds
+    /// (<see cref="LandNodes.RuleOf"/>) and the gates are read from the node options by <see cref="GraphGates.Of"/>, no step between.
+    /// </summary>
+    public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, GraphGateReading gates, LandingRule bound)
+    {
+        var declared = Current(config, repository, workspace);
+        return declared with
+        {
+            Landing = new Landing(bound, declared.Landing.Source),
+            Opinion = gates.Opinion,
+            Binding = binding,
+            Look = gates.Look,
+            OpinionCannot = gates.OpinionCannot,
+            LandingCannot = BoundCannot(bound),
+        };
+    }
+
+    private static string? BoundCannot(LandingRule bound) =>
+        bound.Form == LandingForm.Branch && bound.Pattern is null
+            ? "its `land` puts the work on a branch, and neither the node nor the bind names a pattern for it."
+            : null;
+
+    /// <summary>The look (D154 rows 5 and 6): its presence is <c>required</c>, in an environment the review rule declares.</summary>
+    internal static WorkflowLook ReadLook(WorkflowProcess declared, string repository, string? id, string? asked)
+    {
+        if (id is null) return new WorkflowLook(null, null);
+        if (declared.Review is not { Rule.IsNone: false } reviews)
+        {
+            return new WorkflowLook(asked, $"its look `{id}` reads the work in {(asked is null ? "an environment" : $"`{asked}`")}, and "
+                + $"`{repository}` declares no review environment: `daoris driver review {repository} {asked ?? "<environment>"} --kind "
+                + "local|deployed --procedure <path>` declares one.");
+        }
+
+        var environment = asked ?? reviews.Rule.Environments[0].Name;
+        return reviews.Rule.Environments.Any(each => each.Name == environment)
+            ? new WorkflowLook(environment, null)
+            : new WorkflowLook(environment, $"its look `{id}` reads the work in `{environment}`, which `{repository}` does not declare (it declares "
+                + $"{And(reviews.Rule.Environments.Select(each => each.Name))}): `daoris driver review {repository} {environment} --kind "
+                + "local|deployed --procedure <path>` declares it.");
+    }
+
+    /// <summary>The second opinion: when it reads, whether it is required and read again the node's; which reviewers among those declared.</summary>
+    internal static (ResolvedOpinion? Opinion, string? Cannot) ReadOpinion(
+        WorkflowProcess declared, string repository, string id, IReadOnlyList<string>? named, bool onSteps, bool required, bool recheck)
+    {
+        IReadOnlyList<string> on = onSteps ? [OpinionRules.Landing, OpinionRules.Steps] : [OpinionRules.Landing];
+        if (declared.Opinion is not { Rule.IsNone: false } listed)
+        {
+            return (new ResolvedOpinion(new OpinionRule(named ?? [], on, required, Recheck: recheck), declared.Opinion?.Source ?? OpinionSource.Repository),
+                $"its second opinion `{id}` reads with reviewers `{repository}` declares, and it declares none: "
+                + $"`daoris driver opinion {repository} --reviewers <adapter,adapter>` declares them.");
+        }
+
+        string? cannot = null;
+        var beyond = (named ?? []).Where(each => !listed.Rule.Reviewers.Contains(each, StringComparer.OrdinalIgnoreCase)).ToList();
+        if (beyond.Count > 0)
+        {
+            cannot = $"its second opinion `{id}` names {And(beyond)}, which `{repository}` does not declare among its reviewers "
+                + $"({And(listed.Rule.Reviewers)}): a step chooses among them, and `daoris driver opinion {repository} --reviewers "
+                + "<adapter,adapter>` declares more.";
+        }
+
+        // Named reviewers in the step's order, spelled as the rule declares them, since the walk finds them by that name.
+        var chosen = named is null
+            ? listed.Rule.Reviewers
+            : [.. named.Select(each => listed.Rule.Reviewers.FirstOrDefault(name => string.Equals(name, each, StringComparison.OrdinalIgnoreCase)) ?? each)];
+        return (new ResolvedOpinion(listed.Rule with { Reviewers = chosen, On = on, Required = required, Recheck = recheck }, listed.Source), cannot);
     }
 
     /// <summary>Names in backticks, the last after <c>and</c>.</summary>

@@ -852,7 +852,7 @@ public static class Planner
                     || run.AnsweredPark
                     || string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(run.State, "stopped", StringComparison.OrdinalIgnoreCase)
-                    || run is { State: "completed", Answer: not null }
+                    || run is { State: "completed", PersonSaid: true }
                     || StoppedByReopen(run)))
             // A stand-down the person's bring-forward carries on (SYNCMERGE1b), whatever ran here before it.
             || (quest.Status == "Taken" && BroughtForwardFrom(quest) is not null);
@@ -1003,7 +1003,7 @@ public static class Planner
             var said = waiting.Count == 1 ? waiting[0].Text : $"{waiting[0].Text} (and {waiting.Count - 1} more)";
             // SUPERVISOR1a-i (the supervisor design §6.1): the sentence follows who answered; with none of the owner's words it never says
             // "you", and names the authors that are there, the supervisor's choice by its label.
-            var others = waiting.Any(word => word.Persons) || written.Answer is not null ? [] : Continuations.AuthorsOf(waiting);
+            var others = waiting.Any(word => word.Persons) ? [] : Continuations.AuthorsOf(waiting);
             var chose = snapshot.SupervisorChose.GetValueOrDefault(written.Session);
             var besides = Continuations.AuthorsSaid([.. others.Where(code => code != "supervisor")]);
             var supervised = others.Contains("supervisor")
@@ -1017,7 +1017,7 @@ public static class Planner
                         ? $"carrying on in `{quest.To}` — {supervised ?? $"session `{written.Session}` goes on with {besides}"}"
                         : $"going on in `{quest.To}` with {Continuations.AuthorsSaid(others)}"
                     : written.Parked
-                    ? $"carrying on in `{quest.To}` — you answered session `{written.Session}`: {written.Answer ?? said}"
+                    ? $"carrying on in `{quest.To}` — you answered session `{written.Session}`: {SaidWordView.PersonsJoined(waiting) ?? said}"
                     : $"going on in `{quest.To}` — you wrote to session `{written.Session}`: {said}",
                 Resumes = written,
                 GoesOn = true,
@@ -1078,7 +1078,7 @@ public static class Planner
                           + (forward.Standing == "held"
                               ? ", and the remote confirmed the fresh take."
                               : "; the fresh take is unconfirmed until a sync reaches the remote, and may still lose there.")
-                        : cutOff.Answer is { } answer
+                        : SaidWordView.PersonsJoined(cutOff.Waiting) is { } answer
                         ? $"carrying on in `{quest.To}` — you answered session `{cutOff.Session}`: {answer}"
                         : StoppedByReopen(cutOff)
                             ? $"carrying on in `{quest.To}` — you went on with it on the new work of `#{quest.Parent}`, after session "
@@ -1543,7 +1543,7 @@ public static class Planner
         // The person's own stop, once they released it (SESSUX1b): a held one never reaches the planner's carry-on.
         || last.PersonStopped
         // The person answered a session that parked to ask them (STANDDOWN2).
-        || last is { State: "completed", Answer: not null }
+        || last is { State: "completed", PersonSaid: true }
         // The person's reopen of the work it grew from stopped it (FABRIC-CLOSE1c2): carried on once they go on, held until then.
         || StoppedByReopen(last);
 
@@ -1590,7 +1590,7 @@ public static class Planner
     /// </remarks>
     internal static bool GoneOnSince(QuestView step, PriorSession last) =>
         step is { Status: "Taken", Awaits: null or "", HeldByReopen: false, Submission: null, Reopened: null, GrewFrom: not null, Parent: { Length: > 0 } }
-        && !last.Teammate && !last.Running && !last.WordsWaiting && last.Answer is null
+        && !last.Teammate && !last.Running && !last.WordsWaiting && !last.PersonSaid
         && (last.Parked || (string.Equals(last.State, "completed", StringComparison.OrdinalIgnoreCase) && !StoppedByReopen(last)))
         && last.Updated is { } ended && step.Updated is { } moved && moved > ended;
 

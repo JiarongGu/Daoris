@@ -7,16 +7,17 @@ import type { NotePart } from '../../data/api';
 import { turnEnd } from '../waits/anchors';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
 import {
-  type Ask, type Author, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
+  type Ask, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
   type Turn,
 } from './conversation';
+import type { Author } from './sender';
 import { useNow } from '../useNow';
 import type { AccountNames } from '../accountNames';
 import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
 import { Note } from '../Note';
 import { noteText } from '../noteLines';
-import { BRIEF_WAITS, type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from '../say';
+import { briefOffered, type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from '../say';
 import { ToolCard } from './ToolCard';
 import { WaitMark } from '../waits/WaitAnchor';
 import type { Wait } from '../waits/waits';
@@ -399,6 +400,8 @@ const AUTHOR_KEYS = {
   daoris: 'work.conversation.daoris',
   supervisor: 'work.conversation.supervisor',
   unattributed: 'work.conversation.unattributed',
+  helper: 'work.conversation.helper',
+  partner: 'work.conversation.partner',
 } as const satisfies Record<Author, string>;
 
 function AskView({ ask }: { ask: Ask }) {
@@ -616,16 +619,16 @@ function HandedLine({ block, to }: { block: Block; to: string }) {
  * The person's words cannot go on in this session (MSG1f, D137 §2.2): why, in the page's words, and one press that starts
  * a conversation with them — the person's, since a new conversation has none of this one's context. The press only where
  * the page holds every word the note names, so what it starts with is what they said. Where the words wait for the person on a
- * reason that leaves a tree to go on in (SESSCTX1c part B), *Go on with Daoris's brief* goes first beside it: a new part of the same
- * session, handed Daoris's brief, so it keeps the context the fresh start does not.
+ * reason that leaves a tree to go on in (SESSCTX1c part B), or a driven session's tree is gone (TREEGONE2), *Go on with Daoris's brief*
+ * goes first beside it: a new part of the same session, handed Daoris's brief, so it keeps the context the fresh start does not.
  */
 function CannotLine({ block }: { block: Block }) {
   const { t } = useTranslation();
-  const { onStartFrom, onGoOnBrief, reasons } = useContext(SaidDoors);
+  const { chat, onStartFrom, onGoOnBrief, reasons } = useContext(SaidDoors);
   const why = block.why ? reasonOf(t, block.why, reasons) : null;
   if (!why) return <NoteLine text={block.text ?? ''} parts={block.parts} />;
   const said = block.said;
-  const brief = onGoOnBrief && BRIEF_WAITS.has(block.why ?? '') && said && said.length > 0;
+  const brief = onGoOnBrief && briefOffered(block.why ?? '', chat) && said && said.length > 0;
 
   return (
     <div className="grid justify-items-start gap-1.5">

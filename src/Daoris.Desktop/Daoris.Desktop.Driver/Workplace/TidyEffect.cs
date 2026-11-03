@@ -146,7 +146,7 @@ public sealed class TidyEffect : IChainEffect
         var held = units.Where(each => each.Tree is { } tree && Holds(busy, tree)).ToList();
         if (held.Count == units.Count)
         {
-            Block(held, SweepKind.InUse, "a session running or waiting holds its tree");
+            Block(held, SweepKind.InUse, "a session running or waiting holds its tree, or one the person spoke to within the hour");
             Settled(unit, busy, began);
             return ChainTry.Refused;
         }

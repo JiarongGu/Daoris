@@ -266,7 +266,7 @@ public sealed class ContextBriefTests
         var line = Line(Part("c0nv0001", Asked("Add a dark mode."), Said("One."), Ended(), Asked("Go on.", id: "w1"), plan, Said("Two."), Ended())) with
         {
             State = new BriefTree("abc1234 Add the theme", [" M src/theme.ts"], ["abc1234 Add the theme"]),
-            Open = ["the go-ahead to change the public API"],
+            Open = [new BriefWait("go-ahead:k1/2", "c0nv0001", "the person", Exchanges.Kept, "asked", "to change the public API")],
         };
 
         var text = Folded(ContextBrief.Compose(line));
@@ -276,7 +276,8 @@ public sealed class ContextBriefTests
         Assert.Contains("Commits on this line since it began: - abc1234 Add the theme", text);
         Assert.Contains("The plan, as last kept, written in turn 2 of session `c0nv0001`:", text);
         Assert.Contains("[pending] Add the toggle", text);
-        Assert.Contains("Asked and not answered yet: the go-ahead to change the public API", text);
+        Assert.Contains("What this line waits on: `go-ahead:k1/2`, asked by session `c0nv0001` of the person", text);
+        Assert.Contains("to change the public API", text);
     }
 
     [Fact]

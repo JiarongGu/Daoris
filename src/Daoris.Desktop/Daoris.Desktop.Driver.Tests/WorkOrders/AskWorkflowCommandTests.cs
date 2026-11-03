@@ -21,8 +21,8 @@ public sealed class AskWorkflowCommandTests : IDisposable
     public AskWorkflowCommandTests()
     {
         Directory.CreateDirectory(_home);
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z",
-            JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")), kept: []);
+        StoredSteps.Add(_home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z",
+            JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")));
     }
 
     public void Dispose()

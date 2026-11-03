@@ -28,7 +28,6 @@ export function useMachine(): { machine: Machine; settled: boolean } {
     harnesses: Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [],
     sessions: sessions.data,
     lines: Array.isArray(lines.data?.lines) ? lines.data.lines : [],
-    landings: Array.isArray(lines.data?.landings) ? lines.data.landings : [],
   });
 
   // A shell's driver still answering is not a browser: until it has, nothing is known of the machine.

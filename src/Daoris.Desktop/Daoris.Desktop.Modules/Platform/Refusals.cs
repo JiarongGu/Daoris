@@ -179,6 +179,12 @@ public static class Refusals
     public const string KeepOutOfRange = Daoris.Driver.ChoiceCodes.KeepOutOfRange;
 
     /// <summary>
+    /// A second opinion switched off, or a look required, for a place whose saved workflow's node decides it (WORKFLOWCLEAN1 1h): the node
+    /// is where it is changed. Its <c>repository</c> and <c>node</c> name them.
+    /// </summary>
+    public const string GraphDecides = Daoris.Driver.ChoiceCodes.GraphDecides;
+
+    /// <summary>
     /// A work asked of an ask this machine has no record of, or a quest not here (PAUSE1b, D132 §7.3): nothing to plan, pause
     /// or resume. Its <c>id</c> names it; a quest's travels as the catalogue's <c>context</c> <c>quest</c>.
     /// </summary>

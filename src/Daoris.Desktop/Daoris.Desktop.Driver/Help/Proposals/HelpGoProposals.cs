@@ -235,7 +235,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         // Where it ran, an intake by its ask (D65 §1b); and whether it waits on the person by the list's own rule, or ended, a failure
         // an account's limit made said limited (LIMITRESUME1d2, D206 §3.1).
         var where = record.Ask is { } ask ? $" answering ask `#{ask}`" : $" in `{record.Repository}`";
-        var stands = SessionGroups.WaitsOnYou(record.Id, record.State, record.Answer) ? ", waiting on you"
+        var stands = SessionGroups.WaitsOnYou(record.Id, record.State, record.Answered) ? ", waiting on you"
             : record.Live ? ""
             : $", {ShownState.Of(record)}";
         return ((record.Id, $" → session `{record.Id}`{where}{stands}"), null);
@@ -367,8 +367,8 @@ public static class HelpPlaces
         // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
         ("knowledge", "search", "Search"), ("knowledge", "convergence", "Convergence"),
         ("start", "agent", "step 1, an agent"), ("start", "helper", "step 2, Ask Daoris's agent"),
-        ("start", "repositories", "step 3, a workspace and its repositories"), ("start", "driven", "step 4, what is driven"),
-        ("start", "landing", "step 5, how work lands"), ("start", "rules", "step 6, what agents may do"),
+        ("start", "repositories", "step 3, a workspace and its repositories"), ("start", "setUp", "step 4, setting a place up"),
+        ("start", "rules", "step 5, what agents may do"),
         // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
         ("agents", "accounts", "Accounts"), ("agents", "rules", "What it may do"), ("agents", "usage", "Usage"),
         // COMPANYVIEW1b: the Agents place's Roles mode (the company-view design §1), where the working roles are set.

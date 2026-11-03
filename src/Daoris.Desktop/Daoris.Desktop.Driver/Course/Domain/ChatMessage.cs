@@ -134,9 +134,15 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
 
     /// <summary>
     /// Whether these are the person's own words: not Daoris's, not another session's claim on the ask's channel, not a helper's answer
-    /// (SESSWATCH1a: a quiet row says their words wait, which ending it hands on).
+    /// (SESSWATCH1a: a quiet row says their words wait, which ending it hands on), nor the supervisor's.
     /// </summary>
-    public bool Persons => Daoris is null && Channel is not { Person: false } && Helped is null;
+    public bool Persons => Sender == Senders.Person;
+
+    /// <summary>Who said these words (COMMS1a), by the marks <see cref="Words"/> records them with.</summary>
+    internal string Sender => Senders.Of(
+        Daoris is not null || Supervised is not null || Helped is not null || Channel is { Person: false } ? Senders.Target : null,
+        Daoris is not null ? DaorisWords.From : Supervised is not null ? SupervisorHanded.From : null,
+        null, Helped?.Helper, null, Channel is { Person: false } ? "channel" : null);
 
     /// <summary>Told once this message's turn is on the wire: a helper's answer comes off the record then (MIXAGENT2a-iii).</summary>
     internal Action? Delivered { get; init; }
@@ -232,9 +238,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     {
         Kind = SessionEventKind.User,
         // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
-        Origin = message.Channel is { Person: false } || message.Daoris is not null || message.Helped is not null || message.Supervised is not null
-            ? "target"
-            : "person",
+        Origin = message.Persons ? "person" : Senders.Target,
         // SUPERVISOR1a-i: the supervisor's, on the owner's behalf, never the person's.
         From = message.Daoris is not null ? DaorisWords.From : message.Supervised is not null ? SupervisorHanded.From : null,
         // COWORK1e: a helper's answer by its mark (AnswersAlone): taken at a step, it is no go-on and counts nothing.

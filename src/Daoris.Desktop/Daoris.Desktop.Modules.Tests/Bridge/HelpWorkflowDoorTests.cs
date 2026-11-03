@@ -12,7 +12,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class HelpWorkflowDoorTests : DriverModuleBridge
 {
-    private const string Merge = """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""";
+    // A list of steps is refused at the save (WORKFLOWCLEAN1 1b), so the proposal carries the shipped graph that merges after the person's accept.
+    private static readonly string Merge = WorkflowDefaults.Of("merge-after-accept")!.GraphJson;
 
     [Theory]
     [InlineData("workflow", "new", true)]
@@ -95,7 +96,7 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
         Assert.Equal("ask-daoris:p1a2b3c4", version.Door);
     }
 
-    private void Propose(string steps, bool choose = false, string scope = "engine")
+    private void Propose(string graph, bool choose = false, string scope = "engine")
     {
         var folder = HelpProposals.FolderOf(Home);
         Directory.CreateDirectory(folder);
@@ -103,7 +104,7 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
         {
             ["id"] = "p1a2b3c4", ["proposed"] = "2026-10-11T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
             ["kind"] = "workflow", ["scope"] = scope, ["workflow"] = "docs-to-pr", ["base"] = null, ["choose"] = choose,
-            ["steps"] = JsonNode.Parse(steps), ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
+            ["graph"] = JsonNode.Parse(graph), ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
         };
         File.WriteAllText(Path.Combine(folder, "p1a2b3c4.json"), node.ToJsonString());
     }

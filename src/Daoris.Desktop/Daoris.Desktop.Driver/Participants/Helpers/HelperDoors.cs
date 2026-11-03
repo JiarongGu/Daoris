@@ -71,11 +71,11 @@ public sealed class HelperDoors
     /// <param name="level">The ask's level, kept beside the word: <c>urgent</c> where the ask was, else none.</param>
     /// <remarks>
     /// 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): the desk keeps the word before its answer is made, so only a refusal it gave says
-    /// nothing was kept: its own sentence on a bad request, a not-found or a conflict (<c>HelperReply</c>), or a host older than the door
-    /// answering a bare 404. Anything else, a status no refusal has, a success that does not read, or no answer at all (a timeout, a
-    /// broken connection), is <see cref="HelperHanded.Uncertain"/>: the word may wait on the line, and only a read of it says.
+    /// nothing was kept (<see cref="SolicitedHand.Read"/>). No answer at all (a timeout, a broken connection) is
+    /// <see cref="SolicitedFate.Uncertain"/>: the word may wait on the line. COMMS1b: a word already waiting is answered with the record that
+    /// holds it, <see cref="SolicitedFate.Waiting"/>.
     /// </remarks>
-    public async Task<(HelperHanded Outcome, string Message, string? Word)> HandAsync(
+    public async Task<SolicitedAnswer> HandAsync(
         string helper, string text, CancellationToken ct = default, bool running = false, string? level = null)
     {
         var door = $"/api/helpers/{Uri.EscapeDataString(helper)}/hand";
@@ -101,44 +101,12 @@ public sealed class HelperDoors
         }
         catch (Exception lost) when (lost is HttpRequestException || (lost is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            return (HelperHanded.Uncertain, $"the service at {_service.BaseUrl} gave no answer to `{door}` ({lost.Message})", null);
-        }
-
-        if (root is not { ValueKind: JsonValueKind.Object } answer)
-        {
-            return ok || status != 404
-                ? (HelperHanded.Uncertain, $"the service at {_service.BaseUrl} answered `{door}` with {status} that does not read", null)
-                : (HelperHanded.Refused, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null);
-        }
-
-        if (!ok)
-        {
-            var refused = status is 400 or 404 or 409 && Text(answer, "error") is not null;
-            return (refused ? HelperHanded.Refused : HelperHanded.Uncertain, Text(answer, "error") ?? payload, null);
+            return SolicitedHand.Lost(door, _service.BaseUrl, lost.Message);
         }
 
         // Settled before a word (row p): the key's word left a record of the asker's line, so nothing was kept and there is no word.
-        if (Text(answer, "settled") is { Length: > 0 }) return (HelperHanded.Settled, Text(answer, "message") ?? "", null);
-
-        var word = answer.TryGetProperty("said", out var said) ? Text(said, "id") : null;
-        return (HelperHanded.Kept, Text(answer, "message") ?? "", word);
+        return SolicitedHand.Read(ok, status, root, payload, door, _service.BaseUrl);
     }
-}
-
-/// <summary>What a helper's hand came to (HELPERWAIT1b): its word kept, refused with nothing kept, or not known.</summary>
-public enum HelperHanded
-{
-    Kept,
-    Refused,
-
-    /// <summary>
-    /// The host answered the hand settled (row p): its key's word left a record of the asker's line and is not kept or dispatched again. The ask is
-    /// handed, with no word to dispatch and nothing to record.
-    /// </summary>
-    Settled,
-
-    /// <summary>No answer that says either way: the word may wait on the asker's line, which the next look reads back.</summary>
-    Uncertain,
 }
 
 /// <summary>

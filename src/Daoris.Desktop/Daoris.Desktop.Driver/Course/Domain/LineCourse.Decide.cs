@@ -270,7 +270,8 @@ public static class CourseDecision
 
     // D189 (BriefedMove.MovingAsync): a new part of the line, why `resume`, Daoris's brief and the person's words alone, on the walk with
     // its own account first where ready (FOUNDATION1a-iii, §3.2 step 6), an account the person picked the one account. The person's press
-    // is refused where it does not apply; Daoris's on a lost conversation that nothing opens for cannot go on.
+    // is refused where it does not apply; Daoris's on a lost conversation that nothing opens for cannot go on. A closed quest's session whose
+    // tree is gone goes on by the person's press in a fresh tree (TREEGONE2, ONEWAY1's design §3 C5); a conversation's has nothing to go on in.
     private static LineCourse Briefed(CourseFacts facts, CourseFromBy by)
     {
         var head = facts.Head;
@@ -285,7 +286,7 @@ public static class CourseDecision
         var persons = head.Words.Where(word => word.Persons).ToList();
         LineCourse Nothing(string code) => person ? Refused(facts, code) : CannotGoOn(facts, head.Judged ?? ContinueWhy.Gone);
         if (persons.Count == 0) return Nothing(StartFrom.NoWords);
-        if (!head.AskDaoris && head.Tree is null) return Nothing(HandOver.TreeGone);
+        if (!head.AskDaoris && head.Tree is null && (head.Conversation || !person)) return Nothing(HandOver.TreeGone);
         if (head.AgentGone) return Nothing(GoOnBrief.AgentGone);
 
         var picked = facts.Account?.Picked == true;
@@ -614,12 +615,14 @@ public static class CourseDecision
 
     // A conversation's words that nothing carries on by itself (ChatGoOn.CannotGoOn), or a driven record's held for the person: its doors
     // the presses that apply, *Start a conversation with these words* and *Go on with Daoris's brief*, each only with the person's words.
+    // A closed quest's session whose tree is gone is offered the brief too, its new part in a fresh tree (TREEGONE2).
     private static Hold CannotGoOn(CourseFacts facts, string code, LineRepair repair = LineRepair.None)
     {
         var head = facts.Head;
         var persons = head.Words.Any(word => word.Persons);
         List<CourseDoor> doors = [];
-        if (persons && head.Conversation && code != ContinueWhy.Account && code != ContinueWhy.Tree && !head.AgentGone) doors.Add(CourseDoor.GoOnBrief);
+        var briefed = head.Conversation ? code != ContinueWhy.Account && code != ContinueWhy.Tree : !head.Carried && code == ContinueWhy.Tree;
+        if (persons && briefed && !head.AgentGone) doors.Add(CourseDoor.GoOnBrief);
         if (persons && (head.Conversation || !head.Carried)) doors.Add(CourseDoor.StartFrom);
         return Held(facts, CourseHoldWhy.CannotGoOn, doors, repair, code);
     }

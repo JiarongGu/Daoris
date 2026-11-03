@@ -11,7 +11,7 @@ import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
 
 /**
  * The family rehearsal's set-up phase, held where it can be without a host or a driver (LAYOUT7a): the reading
- * of what `daoris-driver setup` prints, the launcher a child finds `daoris` by, and the protocol stub's set-up
+ * of what `daoris-driver place --adoption` prints, the launcher a child finds `daoris` by, and the protocol stub's set-up
  * branch, run for real in a scratch repository against a stand-in for the service's quest door. Every turn over
  * the stub also holds how it ends, with exit 0 once its input closes (STUB1).
  *
@@ -20,19 +20,18 @@ import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
  * not by `npm run verify`: only the parent runs the kit (GATESLIM1, reversing TEST3).
  */
 
-/** What `readSetup` reads back. Declared here because the tool itself is untyped. */
-type SetupRead = {
-  repository: string | null; workspace: string | null; line: string | null; commit: string | null;
-  layout: string | null; agent: string | null; lands: string | null; node: string | null; daoris: string | null;
-  title: string | null; body: string | null; rules: string[]; refusals: string[];
-  ask: string | null; quest: string | null; nothingPublished: boolean;
+/** What `readPlace` reads back. Declared here because the tool itself is untyped. */
+type PlaceRead = {
+  repositories: string[]; adoption: boolean; rows: { repository: string; now: string; after: string; suggested: string }[];
+  changes: string[]; refusals: string[]; nothingWritten: boolean; message: string | null;
+  quests: { quest: string; repository: string }[];
 };
 type Env = Record<string, string | undefined>;
 
 // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 const { ACP_STUB_AGENT } = await import('../../../tools/rehearsal-kit.mjs') as { ACP_STUB_AGENT: string };
 const {
-  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup,
+  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readEvents, readFollowed, readPlace, readRegister, readWorkspaceSetup,
   withFirstOnPath, writeDoctrineLauncher,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } = await import('../../../tools/setup-kit.mjs') as {
@@ -46,7 +45,7 @@ const {
   readRegister: (out: string) => any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- read back field by field below
   readWorkspaceSetup: (out: string) => any;
-  readSetup: (out: string) => SetupRead;
+  readPlace: (out: string) => PlaceRead;
   withFirstOnPath: (folder: string, env?: Env) => Env;
   writeDoctrineLauncher: (folder: string, cliBin: string, platform?: string) => string;
 };
@@ -54,109 +53,90 @@ const {
 const cliBin = join(dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'daoris.mjs');
 const version = execFileSync(process.execPath, [cliBin, '--version'], { encoding: 'utf8', windowsHide: true }).trim();
 
-// What `SetupCommand` writes, spelled as it writes it: its own lines end as the console's do (CRLF on Windows,
-// so both are held here), while the ask's words keep the `\n` they were composed with.
-const head = [
-  'setup: `atlas`, in workspace `default`',
-  '  line     `main` at `0123456789ab`',
-  '  layout   none · adopted no · declares no · the whole set-up',
-  '  agent    acp-stub',
-  '  lands    merged into its line, where the landed history is the review',
-  '  tools    node v24.19.0 · daoris 0.0.1',
-];
-const BODY = [
-  '**What is asked, and whose it is.** Take up the shared doctrine in the layout every agent reads.',
-  '',
-  '**The steps**, in order.',
-  '',
-  '1. **The tool.** Run `daoris --version`. It prints `0.0.1`. If it prints anything else, stop and decline.',
-  '',
-].join('\n');
-const SENTENCE = `Set up this repository for every agent (2026-10-01)\n\n${BODY}`;
-const rules = SETUP_RULES.map((rule) => `  ${rule}`);
-const PLAN = [
-  ...head,
-  'a press publishes this to `atlas`, as your ask, in `default`:',
-  '',
-  SENTENCE,
-  'and adds to `atlas`\'s rules, so its session may run the doctrine tool:',
-  ...rules,
-  '--plan: nothing was published, and no rule was added.',
-  '',
-];
+// What `PlaceCommand` writes, spelled as it writes it: its own lines end as the console's do (CRLF on Windows, so both are held here).
+const head = 'place: `atlas` — Keep how it lands; adoption';
+const ROW = '  `atlas`: now Keep how it lands · after Keep how it lands · suggested Keep how it lands, with adoption';
+const CHANGE = '  `atlas`: a set-up asked of its own session, not asked → asked';
+const PLAN = [head, ROW, 'changes, each said once:', CHANGE, '--plan: nothing was written, and nothing was asked.', ''];
 const REFUSED = [
-  ...head,
+  head,
+  ROW,
+  'changes, each said once:',
+  CHANGE,
   'refused:',
-  '  - `atlas` is not driven here: it is not opted into driving on this machine, and only a driven session carries '
-    + 'a set-up. Drive it under Repositories → the repository\'s page → Setup → Driving, or with `daoris driver drive atlas`.',
   '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Give it trees under Repositories → the '
     + 'repository\'s page → Setup → Driving, or with `daoris driver trees atlas on`.',
-  '--plan: nothing was published, and no rule was added.',
+  '--plan: nothing was written, and nothing was asked.',
   '',
 ];
 const PRESSED = [
-  ...head,
-  'Asked as `#a1b2c3`, published to `atlas` as `#0123456789ab`.',
-  '  ask    #a1b2c3',
-  '  quest  #0123456789ab',
-  'added to `atlas`\'s rules, so its session may run the doctrine tool:',
-  ...rules,
-  '  taken back in Repositories → the repository\'s page → Setup → Reach, or `daoris agent rules remove <rule> --repository atlas`.',
+  head,
+  ROW,
+  'changes, each said once:',
+  CHANGE,
+  'place: adoption asked.',
+  '  quest  #0123456789ab for `atlas`',
+  '',
+];
+const DECLINED = [
+  head,
+  ROW,
+  'changes: none, each repository already reads as asked.',
+  'place: adoption refused — `atlas` is set up and names no index of where things are, and the press cannot name its generator: x.',
   '',
 ];
 
 for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']] as const) {
-  test(`a plan is read back whole: the facts, the quest's words and the rule, and that it published nothing (${ending})`, () => {
-    const plan = readSetup(PLAN.join(eol));
-    assert.equal(plan.repository, 'atlas');
-    assert.equal(plan.workspace, 'default');
-    assert.equal(plan.line, 'main');
-    assert.equal(plan.commit, '0123456789ab');
-    assert.equal(plan.layout, 'none · adopted no · declares no · the whole set-up');
-    assert.equal(plan.agent, 'acp-stub');
-    assert.equal(plan.lands, 'merged into its line, where the landed history is the review');
-    assert.equal(plan.node, 'v24.19.0');
-    assert.equal(plan.daoris, '0.0.1');
-    assert.equal(plan.title, 'Set up this repository for every agent (2026-10-01)');
-    assert.match(plan.title ?? '', SETUP_TITLE);
-    assert.equal(plan.body, BODY.trim());
-    assert.deepEqual(plan.rules, SETUP_RULES);
+  test(`a plan is read back whole: the head, the row, the change, and that it wrote and asked nothing (${ending})`, () => {
+    const plan = readPlace(PLAN.join(eol));
+    assert.deepEqual(plan.repositories, ['atlas']);
+    assert.equal(plan.adoption, true);
+    assert.deepEqual(plan.rows, [{
+      repository: 'atlas', now: 'Keep how it lands', after: 'Keep how it lands', suggested: 'Keep how it lands, with adoption',
+    }]);
+    assert.deepEqual(plan.changes, ['`atlas`: a set-up asked of its own session, not asked → asked']);
     assert.deepEqual(plan.refusals, []);
-    assert.equal(plan.ask, null);
-    assert.equal(plan.quest, null);
-    assert.equal(plan.nothingPublished, true);
+    assert.equal(plan.message, null);
+    assert.deepEqual(plan.quests, []);
+    assert.equal(plan.nothingWritten, true);
   });
 }
 
-test('a refused plan is read as its refusals, each whole, with no words and no rule', () => {
-  const plan = readSetup(REFUSED.join('\r\n'));
-  assert.equal(plan.refusals.length, 2);
-  assert.match(plan.refusals[0] ?? '', /^`atlas` is not driven here: .*`daoris driver drive atlas`\.$/);
-  assert.match(plan.refusals[1] ?? '', /`daoris driver trees atlas on`\.$/);
-  assert.equal(plan.title, null);
-  assert.equal(plan.body, null);
-  assert.deepEqual(plan.rules, []);
-  assert.equal(plan.nothingPublished, true);
+test('a refused plan is read as its refusals, each whole', () => {
+  const plan = readPlace(REFUSED.join('\r\n'));
+  assert.equal(plan.refusals.length, 1);
+  assert.match(plan.refusals[0] ?? '', /`daoris driver trees atlas on`\.$/);
+  assert.equal(plan.nothingWritten, true);
+  assert.deepEqual(plan.quests, []);
 });
 
-test('a press is read as what it published and the rules it added, and never as a plan', () => {
-  const pressed = readSetup(PRESSED.join('\r\n'));
-  assert.equal(pressed.ask, 'a1b2c3');
-  assert.equal(pressed.quest, '0123456789ab');
-  // The line saying where the rules are taken back is no rule.
-  assert.deepEqual(pressed.rules, SETUP_RULES);
-  assert.equal(pressed.title, null);
-  assert.equal(pressed.nothingPublished, false);
+test('an apply is read as its sentence and the quest it asked, and never as a plan', () => {
+  const pressed = readPlace(PRESSED.join('\r\n'));
+  assert.equal(pressed.message, 'adoption asked.');
+  assert.deepEqual(pressed.quests, [{ quest: '0123456789ab', repository: 'atlas' }]);
+  assert.equal(pressed.nothingWritten, false);
+  assert.deepEqual(pressed.repositories, ['atlas']);
+});
+
+test('an apply that was refused says why in its sentence, and asked no quest', () => {
+  const declined = readPlace(DECLINED.join('\n'));
+  assert.deepEqual(declined.changes, []);
+  assert.match(declined.message ?? '', /^adoption refused — `atlas` is set up and names no index of where things are/);
+  assert.deepEqual(declined.quests, []);
+});
+
+test('a set-up quest\'s title keeps its day, and the title is what the press composes', () => {
+  assert.match('Set up this repository for every agent (2026-10-01)', SETUP_TITLE);
 });
 
 test('what is not the command\'s output reads as nothing at all', () => {
-  const nothing = readSetup('setup: name the repository to set up.\nusage: daoris-driver setup <repository> [--plan]\n');
-  assert.equal(nothing.repository, null);
-  assert.equal(nothing.commit, null);
-  assert.equal(nothing.title, null);
-  assert.deepEqual(nothing.rules, []);
+  const nothing = readPlace('place: name the delivery with `--preset`: `keep`.\nusage: daoris-driver place <repository> --preset <name> [--plan]\n');
+  assert.deepEqual(nothing.repositories, []);
+  assert.deepEqual(nothing.rows, []);
+  assert.deepEqual(nothing.changes, []);
   assert.deepEqual(nothing.refusals, []);
-  assert.equal(nothing.nothingPublished, false);
+  assert.deepEqual(nothing.quests, []);
+  assert.equal(nothing.nothingWritten, false);
 });
 
 // What `RegisterCommand` writes (WSSETUP5), spelled as it writes it: a line per repository, two spaces, the outcome
@@ -247,7 +227,7 @@ test('the machine log\'s lines of one event are read as the data each carried, i
 // padded as C# pads it, then the pacing, the agent and the rule; a press's message and the rules it added; a steer's
 // message and where the plan stands.
 const WORKSPACE_LIST = [
-  'setup: workspace `meridian`, 2 repositories with a checkout here, the ones other work touches first',
+  'place: workspace `meridian`, 2 repositories with a checkout here, the ones other work touches first',
   `${''.padStart(3)}  ${'repository'.padEnd(10)} ${'asked'.padStart(5)}  ${'read'.padStart(4)}  ${'sessions'.padStart(8)}  now`,
   `${'1'.padStart(3)}  ${'beacon'.padEnd(10)} ${'0'.padStart(5)}  ${'0'.padStart(4)}  ${'0'.padStart(8)}  to go`,
   `${'2'.padStart(3)}  ${'quarry'.padEnd(10)} ${'3'.padStart(5)}  ${'12'.padStart(4)}  ${'1'.padStart(8)}  to go`,
@@ -265,7 +245,7 @@ const WORKSPACE_PLAN = [
 ];
 const WORKSPACE_PRESSED = [
   ...WORKSPACE_LIST,
-  'setup: the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
+  'place: the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
     + 'The driver\'s loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.',
   'added to workspace `meridian`\'s rules, so each set-up\'s session may run the doctrine tool:',
   ...SETUP_RULES.map((rule) => `  ${rule}`),
@@ -273,8 +253,8 @@ const WORKSPACE_PRESSED = [
   '',
 ];
 const WORKSPACE_RESUMED = [
-  'setup: the plan for workspace `meridian` carries on past its pilot.',
-  'setup: workspace `meridian`, a plan made 2026-10-02: one at a time, a pilot of 1',
+  'place: the plan for workspace `meridian` carries on past its pilot.',
+  'place: workspace `meridian`, a plan made 2026-10-02: one at a time, a pilot of 1',
   `${'1'.padStart(3)}  ${'beacon'.padEnd(6)}  waiting for your review — its set-up #q1 is done and waits for your review; once it is merged, *Bring up to date* registers it.`,
   `${'2'.padStart(3)}  ${'quarry'.padEnd(6)}  to go`,
   'Setting up — 1 waiting for your review · 1 to go',
@@ -332,7 +312,7 @@ test('a steer is read as its message, where each repository stands, and the head
 });
 
 test('what is not a workspace plan\'s output reads as nothing at all', () => {
-  const nothing = readWorkspaceSetup('setup: name the workspace: `--workspace <name>`.\nusage: daoris-driver setup --workspace <name> [--plan]\n');
+  const nothing = readWorkspaceSetup('place: name the workspace: `--workspace <name>`.\nusage: daoris-driver place --workspace <name> --adoption [--plan]\n');
   assert.equal(nothing.workspace, null);
   assert.deepEqual(nothing.rows, []);
   assert.deepEqual(nothing.standing, []);

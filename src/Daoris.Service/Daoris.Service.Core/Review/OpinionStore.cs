@@ -161,6 +161,21 @@ public sealed class OpinionStore
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
+    /// <summary>
+    /// Move where the findings stand with their word (COMMS1b): an open moved the word <paramref name="word"/> from <paramref name="from"/> to
+    /// <paramref name="to"/>, so the part that holds it answers them. False where they stand elsewhere or under another word.
+    /// </summary>
+    public Task<bool> KeepFollowedAsync(string id, string word, string from, string to, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE opinions SET handed_to = $to WHERE id = $id AND handed_to = $from AND handed_word = $word";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$to", to);
+        command.Parameters.AddWithValue("$from", from);
+        command.Parameters.AddWithValue("$word", word);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
     /// <summary>Write the answers whole: a read, then the write it decides, inside the desk's lock.</summary>
     public Task<bool> KeepAnswersAsync(string id, IReadOnlyList<OpinionAnswer> answers, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {

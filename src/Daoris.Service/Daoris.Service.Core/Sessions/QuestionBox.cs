@@ -170,10 +170,10 @@ public sealed class QuestionBox(string? home)
     /// may ask. Judged here whole: the hand-over ask's <c>Unfit</c> lets a conversation and a record on no quest through.
     /// </summary>
     private static string? Unfit(Session asker) =>
-        asker.Serves is { } serves
-            ? $"Session `{asker.Id}` is a helper for session `{serves}`: a helper answers one question and asks the person nothing."
-        : asker.Opinion is { } opinion
+        asker.Opinion is { } opinion
             ? $"Session `{asker.Id}` reads another session's work for second opinion `{opinion}`: a reviewer asks the person nothing."
+        : asker.Serves is { } serves
+            ? $"Session `{asker.Id}` is a helper for session `{serves}`: a helper answers one question and asks the person nothing."
         : asker.Ask is { } ask
             ? $"Session `{asker.Id}` is the intake for ask `#{ask}`: an intake asks the person through its ask."
         : asker.HelpMode is not null || string.Equals(asker.Repository, SessionLedger.HelpRepository, StringComparison.Ordinal)

@@ -582,7 +582,7 @@ describe('the real glossary and catalogues', () => {
         'agents.setup.page.hold': '搁置',
         'agents.setup.roles.appointed': '委任',
         'workflow.place.gates.title': '关卡',
-        'workflow.place.chart.current': '当前，按现有规则推导',
+        'workflow.head.title': '当前工作流',
         'agents.roles.door.setup': '打开设置',
         'workflow.edit.how.back': '回到前面的步骤',
       };

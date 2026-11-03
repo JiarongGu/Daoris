@@ -41,7 +41,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             foreach (var repository in circle.OrderBy(repository => repository.Name, StringComparer.Ordinal))
             {
                 var line = repository.LineNotReadYet ? "not read yet" : LineOf(repository.Line);
-                text.Append($"| `{repository.Name}` | {Driven(repository)} | {line} | {Lands(repository.Landing)} | "
+                text.Append($"| `{repository.Name}` | {Driven(repository)} | {line} | {Lands(repository.Landing, repository.Workflow)} | "
                     + $"{KnowledgeReviews.Current.ReviewCell(repository.Review)} | {KnowledgeReviews.Current.OpinionCell(repository.Opinion)} | {Follows(repository.Workflow)} |\n");
             }
 
@@ -83,6 +83,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
         {
             WorkflowLevels.Repository => "set for it",
             WorkflowLevels.Workspace => "its workspace's",
+            WorkflowLevels.Home => "this machine's default",
             _ => "the default",
         };
         var what = followed.Workflow == WorkflowLevels.Current ? "Current"
@@ -120,8 +121,25 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             _ => $"`{branch}` (the checkout's own)",
         };
 
-    private static string Lands(Landing landing)
+    /// <summary>Where a saved workflow is followed, its newest version's <c>land</c> step says how work lands; the landing rule only under Current (D227).</summary>
+    private static string Lands(Landing landing, HelpWorkflowFollowed? followed)
     {
+        if (followed is not null && followed.Workflow != WorkflowLevels.Current)
+        {
+            // The land step's methods and the pattern it leaves open (the cleanup design §1.4), as the room names them.
+            var pattern = followed.LandPattern ?? "feature/{quest}-{slug}";
+            var how = followed.LandMethod switch
+            {
+                "merge" => "merged into the line",
+                "branch" => $"on a branch `{pattern}`",
+                "push" => $"pushed to a branch `{pattern}`",
+                "pull-request" => $"as a pull request from a branch `{pattern}`",
+                "integrate" => "integrated into the line",
+                _ => "as its `land` step says",
+            };
+            return $"{how} (the `land` step of `{followed.Workflow}`)";
+        }
+
         var rule = landing.Rule.Form == "branch"
             ? $"on a branch `{landing.Rule.Pattern}`"
             : "merged into the line";
@@ -135,7 +153,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             LandingSource.Workspace => "its workspace's rule",
             _ => "the default",
         };
-        return $"{rule} ({source})";
+        return $"{rule} (the old landing rule, {source})";
     }
 }
 
@@ -183,6 +201,11 @@ public sealed record HelpWorkflowFollowed(string Workflow, string Level)
     public string? Name { get; init; }
 
     public int? Version { get; init; }
+
+    /// <summary>The newest version's <c>land</c> method (<see cref="LandNodes.Methods"/>) and its pattern, null where it names none or the version was not read.</summary>
+    public string? LandMethod { get; init; }
+
+    public string? LandPattern { get; init; }
 
     /// <summary>Why the chosen workflow's version is not named: not saved here, or unreadable; null where it is, or none was read.</summary>
     public string? Problem { get; init; }

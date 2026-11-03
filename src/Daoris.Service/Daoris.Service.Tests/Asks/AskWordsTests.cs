@@ -223,6 +223,22 @@ public sealed class AskWordsTests : IAsyncLifetime
         Assert.Single((await _desk.FindAsync(ask.Id))!.Words);
     }
 
+    /// <summary>Words given to the session of a quest a sibling of the ask published are kept on the ask, its entry's origin (COMMS1c).</summary>
+    [Fact]
+    public async Task Words_given_to_a_session_on_a_quest_a_sibling_published_are_kept_on_the_ask()
+    {
+        var (ask, quest) = await Asked();
+        var build = await Running(quest, "build");
+        var sibling = (await _exchange.PublishAsync(
+            new QuestAsk("reports", "checker", "Verify it", "Look.") { PublishedBy = build.Id }, Now)).Quest!;
+        var verify = await Running(sibling, "verify");
+
+        var kept = await _ledger.KeepOnAskAsync(verify.Id, AskWordKind.Added, "check the weekly one too", Now);
+
+        Assert.Equal(AskWordRefusal.None, kept.Refusal);
+        Assert.Equal(ask.Id, kept.Ask);
+    }
+
     /// <summary>Nothing is kept for a session that is not this machine's, nor for words that are not there.</summary>
     [Fact]
     public async Task An_unknown_or_another_machines_session_and_empty_words_are_refused()

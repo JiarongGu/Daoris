@@ -843,17 +843,39 @@ public sealed class ChatTurnsTests
     /// 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3, trap 11), a conversation's turn pump: the turns judge each helper's
     /// answer as its turn comes, once every turn before it was recorded, so two answers queued at once under separate asks never both
     /// pass as the second. The one the bound holds never reaches the door and leaves the queue; the person's word after it still goes.
+    /// Each is judged inside the line's admission (COMMS1g), as the conversation's helper words judge it.
     /// </summary>
     [Fact]
     public async Task Two_answers_queued_at_once_never_both_pass_as_the_second()
     {
+        var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "chat-turns-alone", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            await QueuedAnswersAsync(home);
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            GitSeed.Discard(home);
+        }
+    }
+
+    private static async Task QueuedAnswersAsync(string home)
+    {
         var door = new Door();
         var turns = door.Turns();
-        var line = new List<SessionEvent>();
+        var line = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
+        var hold = new AnswersAloneHold(line, new GoOnMarks(home), new ContinuationAdmissions(home, () => StoreSettled.Yes));
+        var record = new PriorSession("c1", null, "working") { Kind = "chat" };
+        var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal) { ["c1"] = record };
         // The record as the door keeps it: each turn's prompt as it reaches the door, the agent acting on it, and its end where the test ends it.
         door.OnTake = message =>
         {
-            lock (line) line.AddRange([.. ChatRunner.Recorded(message), new SessionEvent { Kind = SessionEventKind.Message, Text = "On it." }]);
+            lock (line)
+            {
+                foreach (var e in ChatRunner.Recorded(message)) line.Append("c1", e);
+                line.Append("c1", new SessionEvent { Kind = SessionEventKind.Message, Text = "On it." });
+            }
         };
         var judged = new List<string>();
         turns.Bounds(message =>
@@ -861,12 +883,12 @@ public sealed class ChatTurnsTests
             lock (line)
             {
                 judged.Add(message.Id!);
-                return Task.FromResult(AnswersAlone.Holds([message.Helped!], [.. line]));
+                return Task.FromResult(hold.Holds(record, records, DateTimeOffset.UtcNow, [message.Helped!]));
             }
         });
         void Ends(int turn)
         {
-            lock (line) line.Add(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+            lock (line) line.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
             door.EndTurn(turn);
         }
 

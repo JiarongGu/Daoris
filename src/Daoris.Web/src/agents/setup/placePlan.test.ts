@@ -30,6 +30,12 @@ describe('the suggestion a plan makes', () => {
     expect(suggestionsOf(plan(['engine'], 'not-driven', {}, saved))).toMatchObject({ preset: 'keep', why: { code: 'saved' } });
   });
 
+  it('is the driver\'s delivery where the workflow followed is the machine\'s default, which is no choice of the place\'s', () => {
+    const machine = { engine: { ...KEPT_ROW, before: { ...KEPT_ROW.before!, values: { workflow: { value: 'merge-after-accept', source: 'machine' } } },
+      suggested: { preset: 'merge-after-accept', adoption: false, why: { code: 'default' as const, said: 'x' } } } };
+    expect(suggestionsOf(plan(['engine'], 'not-driven', {}, machine))).toMatchObject({ preset: 'merge-after-accept', why: { code: 'default' }, following: null });
+  });
+
   it('preselects nothing where the repositories differ, and names the ones each choice suits', () => {
     const mixed = suggestionsOf(plan(['engine', 'site']));
     expect(mixed).toMatchObject({ preset: null, mixed: true, adoption: false });
@@ -65,9 +71,13 @@ describe('a plan\'s refusals', () => {
     expect(doorOf('no-landing-plugin')).toBeNull();
   });
 
-  it('sends a Keep ask with its ticks and driving, as a delivery does', () => {
+  it('sends a Keep ask with driving and no ticks, since the driver refuses them under Keep', () => {
     const draft = { ...freshDraft(['engine']), preset: 'keep', opinion: true, look: true, adoption: false, drive: true };
-    expect(askOf(draft)).toEqual({ repositories: ['engine'], preset: 'keep', opinion: true, look: true, adoption: false, drive: true });
+    expect(askOf(draft)).toEqual({ repositories: ['engine'], preset: 'keep', opinion: false, look: false, adoption: false, drive: true });
+  });
+
+  it('gives a workflow kept by a tick the door Edit steps', () => {
+    expect(doorOf('keeps-workflow')).toBe('steps');
   });
 });
 

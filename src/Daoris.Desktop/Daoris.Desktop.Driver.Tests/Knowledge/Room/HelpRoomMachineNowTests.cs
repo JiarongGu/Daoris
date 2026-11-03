@@ -183,13 +183,15 @@ public sealed class HelpRoomMachineNowTests
         var active = ServiceClient.ReadSessions("""
             [{ "id": "s1", "repository": "console-ui", "state": "awaiting-person", "quest": "q1" },
              { "id": "s2", "repository": "reports-db", "state": "working", "quest": "q2" },
-             { "id": "s3", "repository": "engine", "state": "awaiting-person", "quest": "q3", "answer": "Port 8080." },
-             { "id": "s4", "repository": "engine", "state": "awaiting-person", "quest": "q4", "answer": "" },
+             { "id": "s3", "repository": "engine", "state": "awaiting-person", "quest": "q3",
+               "said": [{ "id": "answer", "text": "Port 8080.", "at": "2026-10-02T10:05:00Z", "files": [] }] },
+             { "id": "s4", "repository": "engine", "state": "awaiting-person", "quest": "q4", "said": [] },
              { "id": "s5", "repository": "daoris:help", "state": "awaiting-person" },
              { "id": "s6", "repository": "ask #a1", "state": "awaiting-person", "ask": "a1" },
              { "id": "laptop/s7", "repository": "engine", "state": "awaiting-person" }]
             """);
-        Assert.Equal("Port 8080.", active.Single(session => session.Id == "s3").Answer);
+        Assert.True(active.Single(session => session.Id == "s3").Answered);
+        Assert.False(active.Single(session => session.Id == "s4").Answered);
 
         var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], active), [], [], _ => null, asks: 0);
 

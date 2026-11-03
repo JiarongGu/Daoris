@@ -87,6 +87,73 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Equal(["op1"], host.Hands);
     }
 
+    // ——— COMMS1b (the comms design §4.2, §13 points 1 and 2): against a host with the one door for solicited answers.
+
+    /// <summary>
+    /// 🔴 §13 point 1 (B1): the deliverer reads whether the park was answered, as the helper's look does. A park still waiting on the person
+    /// waits; once the person answered it, the findings are handed beside their answer, under the opinion's key.
+    /// </summary>
+    [Fact]
+    public async Task Against_the_one_door_a_park_the_person_answered_takes_the_findings_beside_their_answer()
+    {
+        var host = new OpinionStandIn().Session("s1", "awaiting-person").Opinion("op1", "s1", weights: ["must"]);
+        host.Answers = true;
+
+        Assert.Equal(OpinionDeliveryStates.Waiting, (await Deliver(host)).State);
+        Assert.Empty(host.Hands);
+
+        host.Set("s1", "answer", "Yes, go on.");
+        host.Set("s1", "said", PersonWords.Wire("Yes, go on."));
+        var handed = await Deliver(host);
+
+        Assert.Equal((OpinionDeliveryStates.Handed, "s1"), (handed.State, handed.Session));
+        // Beside the person's own word, which stays.
+        var word = Assert.Single(host.Said("s1"), each => each!["by"] is not null);
+        Assert.Equal(("op1", "opinion:op1"), (word!["by"]!.GetValue<string>(), word["key"]!.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// 🔴 A hand-over between the pass and its findings: they go to the head of the working session's line, never the record it left. A running
+    /// head is asked nothing and waits; once its turn ended they are handed there, and the look after reads them with that part.
+    /// </summary>
+    [Fact]
+    public async Task Against_the_one_door_the_findings_go_to_the_head_of_the_working_sessions_line()
+    {
+        var host = new OpinionStandIn().Session("s1", "completed").Session("s2", "working").Opinion("op1", "s1", weights: ["must", "should"]);
+        host.Set("s2", "from", "s1");
+        host.Set("s2", "created", "2026-10-09T09:30:00Z");
+        host.Answers = true;
+
+        var waiting = await Deliver(host);
+        Assert.Equal((OpinionDeliveryStates.Waiting, "s2"), (waiting.State, waiting.Session));
+        Assert.Empty(host.Hands);
+
+        host.Move("s2", "completed");
+        var handed = await Deliver(host);
+        var again = await Deliver(host);
+
+        Assert.Equal((OpinionDeliveryStates.Handed, "s2"), (handed.State, handed.Session));
+        Assert.Contains("session s2", handed.Line);
+        Assert.Single(host.Said("s2"));
+        Assert.Empty(host.Said("s1"));
+        Assert.Equal((OpinionDeliveryStates.WithSession, "s2"), (again.State, again.Session));
+    }
+
+    /// <summary>A head that stood down never takes them (the design's table): they go to the person, its code kept, and nothing is handed.</summary>
+    [Fact]
+    public async Task Against_the_one_door_a_head_that_stood_down_sends_them_to_the_person()
+    {
+        var host = new OpinionStandIn().Session("s1", "completed").Session("s2", "stood-down").Opinion("op1", "s1", weights: ["must"]);
+        host.Set("s2", "from", "s1");
+        host.Set("s2", "created", "2026-10-09T09:30:00Z");
+        host.Answers = true;
+
+        var delivered = await Deliver(host);
+
+        Assert.Equal((OpinionDeliveryStates.ToPerson, ContinueWhy.StoodDown), (delivered.State, delivered.Why));
+        Assert.Empty(host.Hands);
+    }
+
     /// <summary>
     /// 🔴 Where the working session cannot take them (design §6.7), the findings go to the person instead: unanswered, each
     /// <c>must</c> disputed, the reason kept beside the opinion so a later look says the same without asking again. Nothing

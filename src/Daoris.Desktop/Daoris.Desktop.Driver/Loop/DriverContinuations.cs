@@ -388,7 +388,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
             // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
-            var after = await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false);
+            var after = await ResumedAfterAsync(service, sessionId, target.Language, ct).ConfigureAwait(false);
             resume = new ResumeAsk(
                 kept.Conversation, words,
                 // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
@@ -595,9 +595,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// that, then this: each go-ahead it asked, which, approved or refused, and the person's words, quoted as theirs.
     /// </remarks>
     internal static async Task<string> ResumedAfterAsync(
-        ServiceClient service, QuestView quest, string session, SessionLanguage? language, CancellationToken ct)
+        ServiceClient service, string session, SessionLanguage? language, CancellationToken ct)
     {
-        var asked = await AskWords.ReadAsync(service, quest.From, ct).ConfigureAwait(false);
+        var asked = await AskWords.ReadOfSessionAsync(service, session, ct).ConfigureAwait(false);
         return SessionLanguageText.Resumed(GoAheadsText.Resumed("", asked, session).TrimStart(), language);
     }
 

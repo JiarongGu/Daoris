@@ -169,16 +169,14 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
         Assert.Equal(["hold:s1", "release:s1"], holder.Calls);
     }
 
-    [Theory]
-    [InlineData(false, "LAND_SESSION_TREE")]
-    [InlineData(true, "LAND_WITHOUT_LOOK")]
-    public async Task The_land_press_tells_its_note_once_with_the_route_session_and_folder_even_where_it_was_refused(bool withoutLook, string route)
+    [Fact]
+    public async Task The_land_press_tells_its_note_once_with_the_route_session_and_folder_even_where_it_was_refused()
     {
+        const string route = "LAND_SESSION_TREE";
         using var client = Client();
         var before = DateTimeOffset.UtcNow;
 
-        var code = await ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null,
-            withoutLook ? new ChatLookPress("why", "terminal") : null);
+        var code = await ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null);
         var after = DateTimeOffset.UtcNow;
 
         Assert.Equal(1, code);
@@ -198,7 +196,7 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
         using var client = Client();
         var world = World(client);
 
-        Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null, null));
+        Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null));
 
         Assert.True(File.Exists(Requests));
         Assert.NotEqual("", ((StringWriter)world.Error).ToString() + ((StringWriter)world.Output).ToString());

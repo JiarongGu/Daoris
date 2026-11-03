@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -64,24 +65,59 @@ public sealed class SetupPresetsTests
         Assert.Equal(new SetupMatch(null, ["method `push`"]), SetupPresets.Match(driven: true, new SetupLand("push", "you")));
     }
 
-    [Fact]
-    public void A_preset_s_rule_keeps_what_the_preset_does_not_say()
+    /// <summary>WORKFLOWCLEAN1 1a: a delivery is what the graph says, and a preset is a saved copy's, never a rule written beside it.</summary>
+    [Theory]
+    [InlineData("merge-after-accept", "merge", "you", null, null)]
+    [InlineData("merge-automatic", "merge", "automatic", null, null)]
+    [InlineData("documents", "merge", "automatic", null, null)]
+    [InlineData("release", "merge", "you", null, null)]
+    [InlineData("branch-to-push", "branch", "you", "none", null)]
+    [InlineData("pull-request", "pull-request", "you", null, null)]
+    [InlineData("integrated", "integrate", "you", "none", "owner")]
+    [InlineData("integrated-no-press", "integrate", "automatic", "none", "done")]
+    public void A_shipped_default_s_delivery_is_derived_from_its_graph(string id, string method, string accept, string? plugin, string? request)
     {
-        var standing = new LandingRule(LandingForm.Branch, "work/{ticket}", Tidy: true, Key: "[A-Z]+-\\d+") { Cycle = "{\"nodes\":[]}" };
+        var shipped = WorkflowDefaults.Of(id)!;
 
-        var pullRequest = SetupPresets.RuleOf(new SetupLand("pull-request", "you", Plugin), standing, policy: null);
-        var merged = SetupPresets.RuleOf(new SetupLand("merge", "you"), standing, policy: null);
-        var branch = SetupPresets.RuleOf(new SetupLand("branch", "you", "none"), LandingRule.Merge, policy: null);
-        var integrated = SetupPresets.RuleOf(new SetupLand("integrate", "you", "none", "owner"), standing, new LandingIntegrate(Batch: 4));
-        var asked = SetupPresets.RuleOf(new SetupLand("integrate", "you", "none", "owner"), standing, new LandingIntegrate(Request: "steward", Gates: "declared"));
+        Assert.Equal(new SetupLand(method, accept, plugin, request), shipped.Delivery);
+        // A file that restates no delivery is worded by the default that owns its shape.
+        Assert.Equal(WorkflowDefaults.All.First(each => each.Delivery == shipped.Delivery).Id, shipped.DeliveryWords.Id);
+    }
 
-        Assert.Equal(standing with { Plugin = Plugin }, pullRequest);
-        Assert.Equal(LandingRule.Merge with { Tidy = true, Cycle = standing.Cycle }, merged);
-        Assert.Equal(new LandingRule(LandingForm.Branch, SetupPresets.Pattern), branch);
-        // The line's policy is kept, and an absent request is already the owner's, so nothing is written for it.
-        Assert.Equal(standing with { Integrate = new LandingIntegrate(Batch: 4) }, integrated);
-        Assert.Equal(standing with { Integrate = new LandingIntegrate(Request: "owner", Gates: "declared") }, asked);
-        Assert.All(new[] { pullRequest, merged, branch, integrated, asked }, rule => Assert.Null(LandingKey.Problem(rule)));
+    [Fact]
+    public void A_copy_of_a_default_is_numbered_around_a_person_s_own_workflow_and_stamped_with_where_it_came_from()
+    {
+        var shipped = WorkflowDefaults.Of("merge-after-accept")!;
+
+        var plain = WorkflowDefaults.Copy(shipped, opinion: false, look: false);
+        var gated = WorkflowDefaults.Copy(shipped, opinion: true, look: true, taken: id => id is "merge-after-accept-opinion-look");
+
+        Assert.Equal("merge-after-accept", plain.Id);
+        Assert.Equal(shipped.From, plain.From);
+        Assert.Equal(shipped.Digest, NodeGraphs.Digest(NodeGraphs.Read(plain.Graph.ToJsonString()).Graph!));
+        Assert.Equal("merge-after-accept-opinion-look-2", gated.Id);
+        Assert.Contains(NodeKinds.Opinion, gated.Graph["nodes"]!.AsArray().Select(node => (string?)node!["kind"]));
+        Assert.Contains(NodeKinds.Look, gated.Graph["nodes"]!.AsArray().Select(node => (string?)node!["kind"]));
+    }
+
+    [Fact]
+    public void A_land_left_open_resolves_from_derived_defaults_and_never_from_a_rule()
+    {
+        var land = NodeGraphs.Read(WorkflowDefaults.Of("pull-request")!.GraphJson).Graph!.Nodes.First(node => node.Kind == NodeKinds.Land);
+        var written = land with { Options = new Dictionary<string, string>(land.Options) { ["pattern"] = "\"work/{ticket}\"" } };
+
+        var open = LandNodes.Resolve(land, Plugin);
+        var named = LandNodes.Resolve(written, Plugin);
+
+        Assert.Equal(LandNodes.DefaultPattern, open["pattern"]);
+        Assert.Equal(Plugin, open["plugin"]);
+        Assert.False(open.ContainsKey("key"));
+        // A written pattern stands, and one that says {ticket} resolves the default key.
+        Assert.False(named.ContainsKey("pattern"));
+        Assert.Equal(LandingKey.DefaultKey, named["key"]);
+        Assert.Empty(LandNodes.Resolve(NodeGraphs.Read(WorkflowDefaults.Of("merge-after-accept")!.GraphJson).Graph!.Nodes.First(node => node.Kind == NodeKinds.Land), Plugin));
+        // No plugin serves the remote: none is resolved, and the bind holds the run.
+        Assert.False(LandNodes.Resolve(land, platformPlugin: null).ContainsKey("plugin"));
     }
 
     [Theory]

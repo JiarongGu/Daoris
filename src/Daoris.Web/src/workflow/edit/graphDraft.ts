@@ -15,6 +15,8 @@ export type StepChoice = {
   kind: string; version: number; reach: string; plugin: string | null; outcomes: string[]; outputsOn: Record<string, string[]>;
   inputs: Record<string, string>; outputs: Record<string, string>; evidence: string | null; rejectable: boolean; skippable: boolean; leaves: string[];
   options: OptionField[]; roleTakes: string[]; mayEnd: boolean;
+  /** How the picker offers it, as the palette says: `alone`, `tail:<method>` or `retired`. */
+  offered: string;
 };
 
 /** A step of the draft: its id and kind, and its node's JSON as the graph will hold it. */
@@ -59,12 +61,13 @@ export function stepChoices(palette: WorkflowPaletteAnswer): StepChoice[] {
     ...palette.kinds.map((kind): StepChoice => ({
       kind: kind.kind, version: 1, reach: kind.reach, plugin: null, outcomes: [], outputsOn: {}, inputs: {}, outputs: {}, evidence: null, rejectable: false,
       skippable: true, leaves: kind.leaves ?? [], options: kind.options, roleTakes: kind.roleTakes ?? [], mayEnd: kind.mayEnd,
+      offered: kind.offered ?? 'alone',
     })),
     ...palette.plugins.flatMap(({ plugin, steps }) => steps.map((step): StepChoice => ({
       kind: step.kind, version: step.version ?? 1, reach: step.reach, plugin, outcomes: step.outcomes ?? [], outputsOn: step.outputsOn ?? {},
       inputs: step.inputs, outputs: step.outputs,
       evidence: step.evidence ?? null, rejectable: step.rejectable, skippable: step.skippable, leaves: step.leaves ?? [], options: [], roleTakes: [],
-      mayEnd: true,
+      mayEnd: true, offered: 'alone',
     }))),
   ];
 }

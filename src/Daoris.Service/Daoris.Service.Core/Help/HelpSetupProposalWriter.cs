@@ -11,9 +11,8 @@ public sealed record HelpSetupPlace(
     bool Drive = false);
 
 /// <summary>
-/// The <c>setup</c> kind's writer (LAYOUT8, D170 point 1, D117 §6.1): a registered repository set up for every agent, by the
-/// registry's name, its door <c>setup</c>; or, with a place ask, a place's quick set-up of several repositories, its door <c>place</c>
-/// (AGENTSPLACE1k).
+/// The <c>setup</c> kind's writer (LAYOUT8, D170 point 1): a place's quick set-up of one or several registered repositories, its one door
+/// <c>place</c> (AGENTSPLACE1k; WORKFLOWCLEAN1 1f took the repository-alone <c>setup</c> door away, adoption being the place's part).
 /// </summary>
 /// <remarks>
 /// The file keeps its <c>door</c> and its common <c>workspace</c>, written null, so the doors WSSETUP7 adds to this kind
@@ -22,24 +21,24 @@ public sealed record HelpSetupPlace(
 internal sealed class HelpSetupProposalWriter(HelpProposalFile file)
 {
     /// <summary>
-    /// Write one proposal to set a repository up (LAYOUT8): the repository as the registry names it, its <c>target</c>, for the
-    /// person to apply — what <c>daoris-driver setup &lt;repository&gt;</c> and the repository page's *Set up for agents* do: one
-    /// quest to its own session, and the rule its session needs to run the doctrine tool. A set-up needs no path, so none is
-    /// written. Whether the press would publish (registered here, driven, a tree of its own, the doctrine tool found, not set up
-    /// already, none open) is the driver's to judge, by the press's own refusals. With <paramref name="place"/> it is a place's set-up
-    /// instead: the repository and the place's others make the ask, which the person's page plans and applies.
+    /// Write one proposal to set repositories up: the repository as the registry names it, its <c>target</c>, and the place's others
+    /// make the ask, which the person's page plans and applies (<c>daoris-driver place … --adoption</c>'s twin: one quest to each
+    /// session, and the rule it needs to run the doctrine tool). A set-up needs no path, so none is written. Whether the apply would
+    /// publish (registered here, a tree of its own, the doctrine tool found, none open) is the driver's to judge, by the plan's refusals.
     /// </summary>
     public (string? Id, string Message) Propose(string repository, string why, string? session, DateTimeOffset at, HelpSetupPlace? place = null)
     {
+        // The repository-alone `setup` door is gone (WORKFLOWCLEAN1 1f): a set-up is always a place's, whose delivery is named.
+        place ??= new HelpSetupPlace("");
         var named = Blank(repository);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var repositories = new[] { named }.Concat(place?.Repositories ?? []).Select(Blank).OfType<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var preset = Blank(place?.Preset);
         var refused = named is null ? "a set-up names the repository to set up, as Repositories lists it."
-            : place is not null && preset is null ? "a place's set-up names its delivery, the `preset`."
-            : place is not null && Word(preset!, "a delivery") is { } delivery ? delivery
-            : place is not null && Blank(place.Builds) is { } builds && Word(builds, "what it builds") is { } shape ? shape
+            : preset is null ? "a set-up names its delivery, the `preset` (`keep` leaves how its work lands as it is)."
+            : Word(preset, "a delivery") is { } delivery ? delivery
+            : Blank(place.Builds) is { } builds && Word(builds, "what it builds") is { } shape ? shape
             : repositories.Any(each => each.IndexOfAny(['/', '\\']) >= 0 || Path.IsPathRooted(each))
                 ? "a repository is named as Repositories lists it, never by its folder: a set-up needs no path."
             : repositories.Select(each => Word(each, "a repository")).FirstOrDefault(problem => problem is not null);
@@ -48,12 +47,11 @@ internal sealed class HelpSetupProposalWriter(HelpProposalFile file)
         return file.Write(writer =>
         {
             writer.WriteString("kind", "setup");
-            writer.WriteString("door", place is null ? "setup" : "place");
+            writer.WriteString("door", "place");
             writer.WriteString("target", named);
             writer.WriteNull("workspace");
             writer.WriteNull("value");
             writer.WriteNull("sentence");
-            if (place is null) return;
             writer.WriteStartObject("place");
             writer.WriteString("preset", preset);
             writer.WriteStartArray("repositories");

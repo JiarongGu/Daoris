@@ -27,6 +27,13 @@ internal interface IContextWorkOrders
 
     /// <summary>The channel's messages shown by the bound, and those left out: the newest that fit, oldest first.</summary>
     (IReadOnlyList<ChannelItemView> Shown, IReadOnlyList<ChannelItemView> Left) ChannelBounded(IReadOnlyList<ChannelItemView> messages);
+
+    /// <summary>
+    /// What the line <paramref name="session"/> ends waits on (COMMS1f): the exchanges its parts hold, read as the work orders read them,
+    /// oldest first. A source that could not be read adds nothing; none read at all is none.
+    /// </summary>
+    Task<IReadOnlyList<BriefWait>> WaitsAsync(
+        ServiceClient service, string home, IReadOnlyDictionary<string, PriorSession> records, string session, CancellationToken ct);
 }
 
 /// <summary>The required work-order operations, resolved only where an instruction's account counts the sections they bound.</summary>

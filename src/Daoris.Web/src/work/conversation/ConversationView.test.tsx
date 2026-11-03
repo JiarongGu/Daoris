@@ -304,6 +304,30 @@ describe('ConversationView', () => {
     await i18n.changeLanguage('en');
   });
 
+  /** COMMS1a: a helper's answer and a partner's are drawn under their senders, in both languages, never as the target Daoris composed. */
+  it('draws a helper’s answer and a partner’s under their senders, never as the composed target', async () => {
+    const asked = (from: 'helper' | 'partner') => render(
+      <Tooltip.Provider>
+        <ConversationView turns={toTurns([ev({ kind: 'user', origin: 'target', helper: 'h1', id: from, text: 'It is done.' })], { workOf: () => from }).turns} />
+      </Tooltip.Provider>,
+    );
+    const { unmount } = asked('helper');
+    expect(screen.getByText('A helper’s answer, in Daoris’s words')).toBeTruthy();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    unmount();
+    const { unmount: again } = asked('partner');
+    expect(screen.getByText('A partner’s answer, in Daoris’s words')).toBeTruthy();
+    again();
+
+    await i18n.changeLanguage('zh');
+    const { unmount: last } = asked('helper');
+    expect(screen.getByText('助手的回答，附 Daoris 的说明')).toBeTruthy();
+    last();
+    asked('partner');
+    expect(screen.getByText('搭档的回答，附 Daoris 的说明')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
   /**
    * SUPERVISOR1a-i (D208; the supervisor design §6.1, §6.2): the supervisor's answer is drawn under its own mark, *From the supervisor,
    * on your behalf*, taken or held, never the person's bubble nor a composed target; an author the page does not know is *Not
@@ -326,7 +350,7 @@ describe('ConversationView', () => {
     await i18n.changeLanguage('zh');
     view([
       ev({ kind: 'user', origin: 'target', from: 'supervisor', id: 'w1', text }),
-      ev({ kind: 'user', origin: 'person', from: 'agent', id: 'w2', text: 'x' }),
+      ev({ kind: 'user', origin: 'person', from: 'someone', id: 'w2', text: 'x' }),
     ]);
     expect(screen.getByText('主管代你答复')).toBeTruthy();
     expect(screen.getByText('来源不明')).toBeTruthy();
@@ -847,9 +871,9 @@ describe('ConversationView', () => {
   /**
    * SESSCTX1c part B (D189 point 3): where the words wait for the person, their session's resume refused without its conversation
    * proven lost, *Go on with Daoris's brief* goes beside *Start a conversation with these words*: a new part of the same session, handed
-   * Daoris's brief. Where its tree is gone there is nothing to go on in, so only the fresh start is offered.
+   * Daoris's brief. Where a conversation's tree is gone there is nothing to go on in, so only the fresh start is offered.
    */
-  it('offers Go on with Daoris’s brief beside the fresh start where the words wait for the person, and none where the tree is gone', async () => {
+  it('offers Go on with Daoris’s brief beside the fresh start where the words wait for the person, and none where a chat’s tree is gone', async () => {
     const onGoOnBrief = vi.fn();
     const words = [
       ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
@@ -867,9 +891,37 @@ describe('ConversationView', () => {
     view([
       ...words,
       ev({ kind: 'note', text: '— It cannot go on in this session, because its tree is gone.', words: ['w1'], why: 'tree' }),
-    ], { onStartFrom: vi.fn(), onGoOnBrief });
+    ], { onStartFrom: vi.fn(), onGoOnBrief, chat: true });
     expect(screen.getByRole('button', { name: 'Start a conversation with these words' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: "Go on with Daoris's brief" })).toBeNull();
+  });
+
+  /**
+   * TREEGONE2 (the owner's report, 2026-11-03; ONEWAY1's design §3 C5): a driven session whose tree the tidy took offers *Go on with
+   * Daoris's brief* first, a new part in a fresh tree handed the brief, beside the fresh start that hands none; in 中文 too.
+   */
+  it.each([
+    ['en', 'It cannot go on in this session, because its tree is gone.', "Go on with Daoris's brief", 'Start a conversation with these words'],
+    ['zh', '它无法在这个会话里继续，因为它的工作树已不在。', '带着 Daoris 的简报继续', '用这些话开始对话'],
+  ])('offers Go on with Daoris’s brief where a driven session’s tree is gone (%s)', async (lng, cannot, brief, fresh) => {
+    const onGoOnBrief = vi.fn();
+    await i18n.changeLanguage(lng);
+    try {
+      view([
+        ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'and the port?' }),
+        ev({ kind: 'note', text: '— It cannot go on in this session, because its tree is gone.', words: ['w1'], why: 'tree' }),
+      ], { onStartFrom: vi.fn(), onGoOnBrief });
+
+      expect(screen.getByText(cannot)).toBeTruthy();
+      const presses = screen.getAllByRole('button').map((button) => button.textContent);
+      expect(presses).toContain(brief);
+      expect(presses).toContain(fresh);
+      expect(presses.indexOf(brief)).toBeLessThan(presses.indexOf(fresh));
+      await userEvent.click(screen.getByRole('button', { name: brief }));
+      expect(onGoOnBrief).toHaveBeenCalledTimes(1);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('words a reason that names an agent from what it is handed', () => {

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 public static class ChannelFrom
 {
-    public const string Agent = "agent";
+    public const string Agent = SaidFrom.Agent;
 }
 
 /// <summary>

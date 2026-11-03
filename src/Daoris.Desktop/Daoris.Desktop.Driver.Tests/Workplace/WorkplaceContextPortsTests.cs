@@ -283,12 +283,12 @@ public sealed class WorkplaceContextPortsTests : IDisposable
         try
         {
             WorkplaceEventRecords.Current = null!;
-            Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", "[]", null, null));
+            Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", "[]", null));
             var failed = WorkflowRunBindings.PathOf(_home, "chat-s2");
             Directory.CreateDirectory(Path.GetDirectoryName(failed)!);
             File.WriteAllText(failed, "{broken");
-            Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s2", ChatTree, "chat-s2", Ended("s2"), null, null));
-            await Assert.ThrowsAsync<InvalidOperationException>(() => ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null, null));
+            Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s2", ChatTree, "chat-s2", Ended("s2"), null));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null));
         }
         finally { WorkplaceEventRecords.Current = actual; }
     }
@@ -311,7 +311,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
                     throw failure;
                 });
                 Assert.Same(failure, await Assert.ThrowsAsync(failure.GetType(), () =>
-                    ChatLandCommand.RunAsync(ChatWorld(service), "s1", ChatTree, "chat-s1", Ended("s1"), null, null)));
+                    ChatLandCommand.RunAsync(ChatWorld(service), "s1", ChatTree, "chat-s1", Ended("s1"), null)));
             }
             Assert.False(Directory.Exists(Sessions));
         }
@@ -340,7 +340,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
                 return Task.FromCanceled<ChildRun>(ct);
             };
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                ChatLandCommand.RunAsync(ChatWorld(service), "s1", ChatTree, "chat-s1", Ended("s1"), null, null, closing.Token));
+                ChatLandCommand.RunAsync(ChatWorld(service), "s1", ChatTree, "chat-s1", Ended("s1"), null, closing.Token));
             Assert.Equal(["open", "git"], calls);
             Assert.Empty(history.Calls);
         }
@@ -366,6 +366,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
         public IReadOnlyList<SessionEvent> ReadAll(string id) { Calls.Add("read:" + id); return Rows[id]; }
         public bool Forget(string id) { Calls.Add("forget:" + id); return Remove(id); }
         public IReadOnlyDictionary<string, string> Openings(IEnumerable<string> ids) { Calls.Add("openings:" + string.Join(',', ids)); return new Dictionary<string, string>(); }
+        public DateTimeOffset? LastPersonAt(string id) { Calls.Add("last-person:" + id); return null; }
         public void Keep(string id, SessionEvent e, Action<string>? say) { Calls.Add("keep:" + id); Evented?.Invoke(id, e); }
     }
 

@@ -790,6 +790,35 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Empty(await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None));
     }
 
+    /// <summary>
+    /// 🔴 TREEGONE2 (the owner's report, 2026-11-03): the tidy took a finished session's empty tree four minutes after the person's last word
+    /// to it, and their next word could not go on there. A session the person spoke to within <see cref="BranchTidying.SpokenWithin"/> keeps
+    /// its tree from the look's tidy, though its quest closed and nothing waits on it; past that, or where only Daoris's words were said to
+    /// it, it holds nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_session_the_person_spoke_to_within_the_quiet_window_keeps_its_tree()
+    {
+        using var ledger = new StandInLedger();
+        var spoken = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s-1a2b3c4d");
+        var told = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s-5e6f7a8b");
+        ledger.Publish("q1", "engine");
+        ledger.Publish("q2", "engine");
+        ledger.Driven("s-spoken", "q1", spoken, state: "completed");
+        ledger.Driven("s-told", "q2", told, state: "completed");
+        ledger.Move("q1", "Done");
+        ledger.Move("q2", "Done");
+        using var client = ledger.Client();
+        var records = await client.RecordsAsync(CancellationToken.None);
+        var ended = records.Max(record => record.Updated!.Value);
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        events.Append("s-spoken", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "And the port?", At = ended });
+        events.Append("s-told", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "Carry on.", At = ended });
+
+        Assert.Equal([spoken], await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None, now: ended.AddMinutes(4)));
+        Assert.Empty(await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None, now: ended + BranchTidying.SpokenWithin));
+    }
+
     /// <summary>With no set-up waiting and no desk, nothing is reviewed here.</summary>
     [Fact]
     public async Task With_no_set_up_waiting_and_no_desk_nothing_is_reviewed()

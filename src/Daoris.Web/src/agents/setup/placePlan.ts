@@ -138,8 +138,8 @@ export function askOf(draft: SetUpDraft): PlaceAsk {
   return {
     repositories: draft.repositories,
     preset,
-    opinion: delivers && draft.opinion,
-    look: delivers && draft.look,
+    opinion: delivers && preset !== KEEP && draft.opinion,
+    look: delivers && preset !== KEEP && draft.look,
     adoption,
     ...(adoption && draft.builds ? { builds: draft.builds } : {}),
     drive: delivers && draft.drive,
@@ -162,14 +162,15 @@ export type Suggestions = {
   following: string | null;
 };
 
+/** The saved workflow a place follows by a choice made for it or its workspace; the machine's default workflow is no choice of the place's. */
 const savedWorkflow = (row: PlaceRepositoryPlan): string | null => {
-  const value = row.before.values?.workflow?.value;
-  return value && value !== 'current' ? value : null;
+  const workflow = row.before.values?.workflow;
+  return workflow?.value && workflow.value !== 'current' && workflow.source !== 'machine' && workflow.source !== 'default' ? workflow.value : null;
 };
 
 /**
- * What one repository suggests: {@link KEEP} where its landing was chosen (`why.code` `kept`) or its work follows a saved workflow, which a
- * delivery would set back to Current; else the driver's delivery with its why.
+ * What one repository suggests: {@link KEEP} where its landing was chosen (`why.code` `kept`) or its work follows a saved workflow chosen for it,
+ * which a delivery would replace with a copy of Daoris's; else the driver's delivery with its why.
  */
 function suggestionOf(row: PlaceRepositoryPlan): { preset: string; why: SuggestionWhy | null } {
   const why = row.suggested.why ?? null;
@@ -222,9 +223,12 @@ const partOf = (refusal: PlaceRefusal): PlacePart => PARTS.find((part) => part =
 export const refusalsOf = (plan: PlacePlanned | null, part: PlacePart): PlaceRefusal[] =>
   (plan?.refusals ?? []).filter((each) => partOf(each) === part);
 
-/** Where a refusal's cause is put right, by its code: the line's landing rows (a second opinion's reviewers, a review environment, the line). */
-export const doorOf = (code: string): 'landing' | null =>
-  code === 'no-reviewers' || code === 'no-review-environment' || code === 'no-line' ? 'landing' : null;
+/**
+ * Where a refusal's cause is put right, by its code: the line's landing rows (a second opinion's reviewers, a review environment, the line), or
+ * the workflow's own steps, where a tick would add one to the workflow the place keeps.
+ */
+export const doorOf = (code: string): 'landing' | 'steps' | null =>
+  code === 'no-reviewers' || code === 'no-review-environment' || code === 'no-line' ? 'landing' : code === 'keeps-workflow' ? 'steps' : null;
 
 /** The acceptances the plan offers, each repository's declaration standing for a purpose that has not been accepted at its blob, with the line and blob read. */
 export const offered = (plan: PlacePlanned | null): PlaceTick[] =>

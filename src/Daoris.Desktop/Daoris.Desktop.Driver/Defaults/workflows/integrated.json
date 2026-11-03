@@ -4,7 +4,6 @@
   "name": "Integration workflow",
   "for": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line.",
   "delivery": {
-    "id": "integrated", "method": "integrate", "accept": "you", "plugin": "none", "request": "owner",
     "name": "Integrated into the line",
     "for": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line."
   },

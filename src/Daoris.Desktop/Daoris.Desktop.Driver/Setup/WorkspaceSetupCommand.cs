@@ -3,9 +3,9 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver setup --workspace &lt;name&gt; …</c> (WSSETUP6, D124 §4.5): the terminal's door to a workspace plan, beside
-/// LAYOUT7's <c>setup &lt;repository&gt;</c> on the same binary, since the plan's press reads each line with git as that press
-/// does. In the library rather than the host, so its words are held by a test, as the single press's are.
+/// <c>daoris-driver place --workspace &lt;name&gt; --adoption …</c> (WSSETUP6, D124 §4.5; WORKFLOWCLEAN1 1f): the terminal's door to a
+/// workspace's paced adoption, in <see cref="PlaceCommand"/>'s verb, since the plan's press reads each line with git as that press
+/// does. In the library rather than the host, so its words are held by a test.
 /// </summary>
 /// <remarks>
 /// <para><c>--plan</c> prints the list: each repository with a checkout here, in the order the plan would work them, with what
@@ -19,9 +19,12 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class WorkspaceSetupCommand
 {
-    public const string Usage =
-        "usage: daoris-driver setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]\n"
-        + "       daoris-driver setup --workspace <name> --pause | --resume | --stop";
+    /// <summary>The forms the words take, one to a line.</summary>
+    public const string Forms =
+        "daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]\n"
+        + "       daoris-driver place --workspace <name> --pause | --resume | --stop";
+
+    public const string Usage = "usage: " + Forms;
 
     /// <summary>The words read: the workspace, the ask, and the person's choices.</summary>
     private sealed record Words(string Workspace, string? Mode, WorkspaceSetupOptions Options);
@@ -38,7 +41,7 @@ public static class WorkspaceSetupCommand
     {
         if (Read(args, out var words) is { } problem)
         {
-            output.WriteLine($"setup: {problem}");
+            output.WriteLine($"place: {problem}");
             output.WriteLine(Usage);
             return 2;
         }
@@ -66,9 +69,9 @@ public static class WorkspaceSetupCommand
         Describe(preview, output);
         if (!preview.Pressable)
         {
-            output.WriteLine(preview.Refusals.Count == 0 ? "setup: there is no repository to set up." : "refused:");
+            output.WriteLine(preview.Refusals.Count == 0 ? "place: there is no repository to set up." : "refused:");
             foreach (var refusal in preview.Refusals) output.WriteLine($"  - {refusal.Sentence}");
-            output.WriteLine(plan ? "--plan: nothing was written, published or added." : "setup: nothing was written, and no rule was added.");
+            output.WriteLine(plan ? "--plan: nothing was written, published or added." : "place: nothing was written, and no rule was added.");
             return 1;
         }
 
@@ -81,7 +84,7 @@ public static class WorkspaceSetupCommand
         }
 
         var outcome = await WorkspaceSetup.PressAsync(preview, world, home, now, ct).ConfigureAwait(false);
-        output.WriteLine($"setup: {outcome.Message}");
+        output.WriteLine($"place: {outcome.Message}");
         if (!outcome.Written) return 2;
 
         if (outcome.Added.Count == 0)
@@ -99,7 +102,7 @@ public static class WorkspaceSetupCommand
 
         async Task<int> SteeredAsync(WorkspaceSetupSteer steer, bool stopped = false)
         {
-            output.WriteLine($"setup: {steer.Message}");
+            output.WriteLine($"place: {steer.Message}");
             if (steer.Plan is not { } steered) return steer.Ok ? 0 : 1;
 
             if (stopped)
@@ -122,7 +125,7 @@ public static class WorkspaceSetupCommand
         async Task StandingAsync(WorkspaceSetupPlan standing)
         {
             var standings = await WorkspaceSetup.StandAsync(world, config, standing, ct).ConfigureAwait(false);
-            output.WriteLine($"setup: workspace `{standing.Workspace}`, a plan made {Day(standing.Created)}: {AtOnceWords(standing.AtOnce)}, "
+            output.WriteLine($"place: workspace `{standing.Workspace}`, a plan made {Day(standing.Created)}: {AtOnceWords(standing.AtOnce)}, "
                 + (standing.Pilot > 0 ? $"a pilot of {standing.Pilot}" : "with no pilot"));
             var width = standings.Select(each => each.Repository.Length).DefaultIfEmpty(0).Max();
             var number = 0;
@@ -141,7 +144,7 @@ public static class WorkspaceSetupCommand
     {
         if (preview.Rows.Count == 0) return;
 
-        output.WriteLine($"setup: workspace `{preview.Workspace}`, {preview.Rows.Count} repositories with a checkout here, the ones other work touches first");
+        output.WriteLine($"place: workspace `{preview.Workspace}`, {preview.Rows.Count} repositories with a checkout here, the ones other work touches first");
         var width = Math.Max("repository".Length, preview.Rows.Max(row => row.Repository.Length));
         output.WriteLine($"{"",3}  {"repository".PadRight(width)} {"asked",5}  {"read",4}  {"sessions",8}  now");
         var number = 0;
@@ -175,6 +178,7 @@ public static class WorkspaceSetupCommand
         words = null;
         string? workspace = null, mode = null;
         int? atOnce = null, pilot = null;
+        var adoption = false;
         var first = new List<string>();
         var skip = new List<string>();
         List<string>? naming = null;
@@ -189,6 +193,11 @@ public static class WorkspaceSetupCommand
                     if (Next(at) is not { } named) return "`--workspace` takes a workspace's name.";
                     workspace = named.Trim();
                     at++;
+                    naming = null;
+                    break;
+
+                case "--adoption":
+                    adoption = true;
                     naming = null;
                     break;
 
@@ -217,11 +226,11 @@ public static class WorkspaceSetupCommand
                     break;
 
                 default:
-                    if (word.StartsWith('-')) return $"`{word}` is not a word `setup --workspace` takes.";
+                    if (word.StartsWith('-')) return $"`{word}` is not a word `place --workspace` takes.";
                     if (naming is null)
                     {
                         return $"`{word}`: a workspace plan names repositories only after `--first` or `--skip`; "
-                            + "`daoris-driver setup <repository>` sets one up alone.";
+                            + "`daoris-driver place <repository> --preset keep --adoption` sets some up by name.";
                     }
 
                     naming.Add(word.Trim());
@@ -230,9 +239,16 @@ public static class WorkspaceSetupCommand
         }
 
         if (workspace is null) return "name the workspace: `--workspace <name>`.";
-        if (mode is "--pause" or "--resume" or "--stop" && (atOnce is not null || pilot is not null || first.Count > 0 || skip.Count > 0))
+        if (mode is "--pause" or "--resume" or "--stop")
         {
-            return $"`{mode}` steers a plan already made, and takes no other choice.";
+            if (adoption || atOnce is not null || pilot is not null || first.Count > 0 || skip.Count > 0)
+            {
+                return $"`{mode}` steers a plan already made, and takes no other choice.";
+            }
+        }
+        else if (!adoption)
+        {
+            return "a workspace's place is its adoption: name `--adoption`, or steer a plan already made with `--pause`, `--resume` or `--stop`.";
         }
 
         words = new Words(workspace, mode, new WorkspaceSetupOptions(atOnce, pilot, first, skip));

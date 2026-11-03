@@ -282,9 +282,9 @@
     },
     {
       "name": "a repository's access setup names one more pause (AUTONOMY1a): it goes in the pauses' order, the rest as written",
-      "edit": { "op": "access", "repository": "engine", "setting": { "permissions": "asking", "landing": "rule", "goAheads": "never" } },
+      "edit": { "op": "access", "repository": "engine", "setting": { "permissions": "asking", "routing": "intake", "goAheads": "never" } },
       "changes": [
-        { "from": ["      \"permissions\": \"asking\",", "      \"goAheads\": \"never\""], "to": ["      \"permissions\": \"asking\",", "      \"landing\": \"rule\",", "      \"goAheads\": \"never\""] }
+        { "from": ["      \"permissions\": \"asking\",", "      \"goAheads\": \"never\""], "to": ["      \"permissions\": \"asking\",", "      \"routing\": \"intake\",", "      \"goAheads\": \"never\""] }
       ]
     },
     {

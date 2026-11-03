@@ -11,7 +11,6 @@
  */
 export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; session?: string; subject?: string }>> = {
   LAND_SESSION_TREE: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], session: 'id' },
-  LAND_WITHOUT_LOOK: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], session: 'id' },
   // A line of work's one Accept and its ask's (ACCEPTALL1): every part's landing, so no one session's; under way for its entry or
   // its ask (ACCEPTALL1e).
   LAND_ENTRY: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], subject: 'entry' },
@@ -176,9 +175,11 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // COWORK1d: the person's *Send to its session*, whose receipts the ask's channel shows.
   CHANNEL_FORWARD: { scopes: ['asks'] },
   REGISTRY_REFRESH: { scopes: ['registry'] },
-  // A set-up's press (LAYOUT8): one ask and its quest, and the repository's rule.
+  // A place's apply: the configuration, an adoption's asks and quests, and the rules.
   PLACE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
-  SETUP_PRESS: { scopes: ['quests', 'asks', 'rules'] },
+  // The conversion of the old records, and its undo: the configuration, the rules and each place's lines.
+  CONVERT_APPLY: { scopes: ['lines', 'driver', 'rules'] },
+  CONVERT_UNDO: { scopes: ['lines', 'driver', 'rules'] },
   TOOLS_USE: { scopes: ['tools'] },
   TOOLS_DOWNLOAD: { scopes: ['tools'] },
   TOOLS_DELETE: { scopes: ['tools'] },

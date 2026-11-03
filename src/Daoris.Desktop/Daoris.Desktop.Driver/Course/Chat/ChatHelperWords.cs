@@ -96,7 +96,7 @@ internal sealed class ChatHelperWords(ChatContext context)
         if (answer.Helped is not { } word) return false;
         var json = await context.Service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false);
         if (ServiceClient.ReadRecord(json, sessionId) is not { } record) return false;
-        if (!new AnswersAloneHold(context.Events, context.Marks).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow, [word]))
+        if (!new AnswersAloneHold(context.Events, context.Marks, new ContinuationAdmissions(context.Home)).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow, [word]))
         {
             return false;
         }

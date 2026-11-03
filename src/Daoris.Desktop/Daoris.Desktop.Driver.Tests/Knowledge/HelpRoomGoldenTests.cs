@@ -58,6 +58,8 @@ public sealed class HelpRoomGoldenTests
                 Workflow = new HelpWorkflowFollowed("docs-to-pr", WorkflowLevels.Repository)
                 {
                     Name = "Documentation to a pull request", Version = 2, Kinds = [("feature", "current")],
+                    // WORKFLOWCLEAN1 1i: it lands as its version's `land` step says, not by a landing rule.
+                    LandMethod = "pull-request", LandPattern = "docs/{slug}",
                 },
             },
             new("reports-db", "work")

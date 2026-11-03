@@ -8,14 +8,13 @@ namespace Daoris.Driver;
 /// <param name="State">How its record ended — `failed` is a cut-off, which a later session carries on (D80).</param>
 /// <param name="Note">What its record said about that ending — the words a session carrying on is told.</param>
 /// <param name="Repository">Where it ran — whether a chain's next step can build on its tree (CHAIN2).</param>
-/// <param name="Answer">The person's answer when it parked to ask them (STANDDOWN2) — what a carry-on is handed.</param>
 /// <param name="Interrupted">
 /// A `stopped` ending that was not the person's (D104): the orphan sweep's, or the driver's shutdown — a
 /// cut-off, carried on like a `failed` one.
 /// </param>
 public sealed record PriorSession(
     string Session, string? Tree, string State = "", string? Note = null, string? Repository = null,
-    string? Answer = null, bool Interrupted = false)
+    bool Interrupted = false)
 {
     public string? Actor { get; init; }
     public string? Choice { get; init; }
@@ -82,13 +81,16 @@ public sealed record PriorSession(
     /// A park the person answered, still parked (D131 §1): its own record goes on, and its harness conversation resumes
     /// where it can. An answer a service from before ANSWER1b took has already ended the record, and is a carry-on.
     /// </summary>
-    public bool AnsweredPark => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase) && Answer is not null;
+    public bool AnsweredPark => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase) && SaidWordView.AnyPerson(Said);
 
     /// <summary>
     /// The person's words waiting on its record for it to go on with (MSG1a, D137 §2.4), in the order said; null where the
     /// host answers no <c>said</c>, one from before MSG1a, and empty where nothing waits.
     /// </summary>
     public IReadOnlyList<SaidWordView>? Said { get; init; }
+
+    /// <summary>Whether any of its waiting words is the person's: what an answer to a park, or words to an ended session, are.</summary>
+    public bool PersonSaid => SaidWordView.AnyPerson(Said);
 
     /// <summary>The ask an intake answers (D65 §1b), or null for every other record: an intake never goes on (D137 §2.2).</summary>
     public string? Ask { get; init; }
@@ -143,7 +145,7 @@ public sealed record PriorSession(
     /// it concludes, so for the whole run they are still on it. Read as waiting, a look took the record up a second time,
     /// whose move to working the ledger refused (working → working), and the driver failed the session it was resuming.
     /// </remarks>
-    public bool WordsWaiting => !Running && (Said is { } said ? said.Count > 0 : AnsweredPark);
+    public bool WordsWaiting => !Running && Said is { Count: > 0 };
 
     /// <summary>
     /// Queued, starting or working: a run has the record (D46 §4), so the words on it are on their way to the session, and
@@ -152,14 +154,11 @@ public sealed record PriorSession(
     public bool Running => State.ToLowerInvariant() is "queued" or "starting" or "working";
 
     /// <summary>
-    /// The words it goes on with, in order: each of <see cref="Said"/>, or a host's answer from before <c>said</c>. A word a shell before
+    /// The words it goes on with, in order: each of <see cref="Said"/>. A word a shell before
     /// this one attempted is settled as this one comes up, before any go-on (COWORK1c, <see cref="UncertainWords"/>); one this shell
     /// attempted and kept waiting after a failed turn goes again (TURNFAIL1).
     /// </summary>
-    public IReadOnlyList<SaidWordView> Waiting =>
-        Said is { } said ? said
-        : Answer is { } answer ? [new SaidWordView(null, answer, DateTimeOffset.MinValue, [], false)]
-        : [];
+    public IReadOnlyList<SaidWordView> Waiting => Said ?? [];
 
     /// <summary>
     /// The second opinions whose findings wait among its words (XAGENT1e, D155 point 7), each once, in the order handed: another
@@ -276,8 +275,15 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// <summary>Whether these words claim the supervisor (SUPERVISOR1a-i): a claim only, which the look attributes or quarantines.</summary>
     public bool Supervisors => From == SaidFrom.Supervisor;
 
-    /// <summary>Whether these are the person's words: no second opinion's, no helper's and not Daoris's.</summary>
-    public bool Persons => By is null && Helper is null && From is null;
+    /// <summary>Whether these are the person's words: no second opinion's, no helper's or partner's, and not Daoris's or the supervisor's.</summary>
+    public bool Persons => Senders.Of(this) == Senders.Person;
+
+    /// <summary>Whether any of <paramref name="said"/> is the person's: what an answered park is, and what an ended session's carry-on is handed.</summary>
+    public static bool AnyPerson(IReadOnlyList<SaidWordView>? said) => said is not null && said.Any(word => word.Persons);
+
+    /// <summary>The person's words among <paramref name="said"/> joined by a blank line, or null where none: for a sentence that quotes them.</summary>
+    public static string? PersonsJoined(IEnumerable<SaidWordView>? said) =>
+        said?.Where(word => word.Persons).Select(word => word.Text).ToList() is { Count: > 0 } persons ? string.Join("\n\n", persons) : null;
 }
 
 /// <summary>An ACTIVE session as the service answered it — closed ones never reach the planner.</summary>
@@ -318,10 +324,14 @@ public sealed record SessionView(
     public IReadOnlyList<NotePart>? NoteParts { get; init; }
 
     /// <summary>
-    /// The person's answer to its park (STANDDOWN2), or null: an answered park goes on at the driver's next look, so it waits
-    /// on nobody (ANSWER1c), which Ask Daoris's room reads as the Sessions list does (ENTRY1f2). Answered on loopback alone.
+    /// The words waiting on its record (MSG1a), answered on loopback alone; null from a host before <c>said</c> and for a teammate's.
+    /// A person's among them make an answered park, which goes on at the driver's next look and so waits on nobody (ANSWER1c),
+    /// which Ask Daoris's room reads as the Sessions list does (ENTRY1f2).
     /// </summary>
-    public string? Answer { get; init; }
+    public IReadOnlyList<SaidWordView>? Said { get; init; }
+
+    /// <summary>Whether the person has said a word on it: the answer of a park.</summary>
+    public bool Answered => SaidWordView.AnyPerson(Said);
 
     /// <summary>
     /// The workspace its record is filed under (D48), <c>default</c> where a host from before answers none: what Ask Daoris's
