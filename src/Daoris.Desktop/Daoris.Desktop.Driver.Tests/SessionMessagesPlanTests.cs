@@ -19,8 +19,7 @@ public sealed class SessionMessagesPlanTests
 
     /// <summary>An ended record of this machine's that the person wrote to.</summary>
     private static PriorSession Written(string state, string session = "s1", params SaidWordView[] said) =>
-        new(session, "D:/trees/s-1", state, "the quest reached done.", "Game",
-            Answer: string.Join("\n\n", (said.Length == 0 ? [Word] : said).Select(word => word.Text)))
+        new(session, "D:/trees/s-1", state, "the quest reached done.", "Game")
         {
             Said = said.Length == 0 ? [Word] : said,
             Adapter = "claude-code-acp",
@@ -130,7 +129,7 @@ public sealed class SessionMessagesPlanTests
     {
         var snapshot = new Snapshot([Quest("q1", "Taken")], [Repo], [])
         {
-            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("failed") with { Said = [], Answer = null } },
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("failed") with { Said = [] } },
         };
 
         var only = Assert.Single(Planner.Plan(snapshot, Config()));
@@ -169,7 +168,7 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
         Assert.Equal(
             StartVerdict.Stopped,
-            Assert.Single(Planner.Plan(snapshot with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = stopped with { Said = [], Answer = null } } }, Config())).Verdict);
+            Assert.Single(Planner.Plan(snapshot with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = stopped with { Said = [] } } }, Config())).Verdict);
     }
 
     /// <summary>The person's words are their *Try again*: the strikes that parked a quest never hold words to its last session.</summary>
@@ -312,7 +311,7 @@ public sealed class SessionMessagesPlanTests
     [Fact]
     public void An_answered_park_still_goes_on_saying_the_answer()
     {
-        var park = new PriorSession("s1", "D:/trees/s-1", "awaiting-person", "Which port?", "Game", Answer: "Port 8080.")
+        var park = new PriorSession("s1", "D:/trees/s-1", "awaiting-person", "Which port?", "Game")
         {
             Said = [Word with { Text = "Port 8080.", Reopens = false }],
         };
@@ -337,7 +336,7 @@ public sealed class SessionMessagesPlanTests
     [Fact]
     public void An_answered_park_whose_quest_still_names_its_answered_question_goes_on()
     {
-        var park = new PriorSession("s2", "D:/trees/s-1", "awaiting-person", "May I write to production?", "Game", Answer: "Use staging.")
+        var park = new PriorSession("s2", "D:/trees/s-1", "awaiting-person", "May I write to production?", "Game")
         {
             Said = [Word with { Id = "w2", Text = "Use staging.", Reopens = false }],
         };
@@ -396,7 +395,7 @@ public sealed class SessionMessagesPlanTests
     [InlineData("Done")]
     public void A_record_already_going_on_with_the_words_is_not_planned_to_go_on_again(string status)
     {
-        var going = new PriorSession("s1", "D:/trees/s-1", "working", Continuations.Working, "Game", Answer: "Port 8080.")
+        var going = new PriorSession("s1", "D:/trees/s-1", "working", Continuations.Working, "Game")
         {
             Said = [Word with { Text = "Port 8080.", Reopens = false }],
             Adapter = "claude-code-acp",
@@ -449,7 +448,7 @@ public sealed class SessionMessagesPlanTests
     {
         const string Quests = """[{ "id": "q1", "from": "Asker", "to": "Game", "title": "One", "body": "", "status": "Done" }]""";
         var waiting = ServiceClient.ReadLastRun("""
-            [{ "id": "s1", "quest": "q1", "state": "completed", "answer": "Use the blue one.\n\nAnd the old port.",
+            [{ "id": "s1", "quest": "q1", "state": "completed",
                "said": [{ "id": "w1", "text": "Use the blue one.", "at": "2026-10-15T01:00:00Z", "files": [], "reopens": true },
                         { "id": "w2", "text": "And the old port.", "at": "2026-10-15T01:01:00Z", "files": [], "reopens": true }],
                "created": "2026-10-14T18:00:00Z" }]
@@ -478,11 +477,13 @@ public sealed class SessionMessagesPlanTests
     public void The_last_run_reads_the_words_waiting_on_each_record()
     {
         var last = ServiceClient.ReadLastRun("""
-            [{ "id": "s1", "quest": "q1", "state": "completed", "answer": "Also log the port.",
+            [{ "id": "s1", "quest": "q1", "state": "completed",
                "said": [{ "id": "w1", "text": "Also log the port.", "at": "2026-10-03T09:00:00Z", "files": ["log.txt"], "reopens": true }],
                "created": "2026-10-03T08:00:00Z" },
              { "id": "s2", "quest": "q2", "state": "completed", "said": [], "created": "2026-10-03T08:00:00Z" },
-             { "id": "s3", "quest": "q3", "state": "awaiting-person", "answer": "Port 8080.", "created": "2026-10-03T08:00:00Z" }]
+             { "id": "s3", "quest": "q3", "state": "awaiting-person", "created": "2026-10-03T08:00:00Z",
+               "said": [{ "id": "answer", "text": "Port 8080.", "at": "2026-10-03T08:05:00Z", "files": [] }] },
+             { "id": "s4", "quest": "q4", "state": "awaiting-person", "answer": "Port 9090.", "created": "2026-10-03T08:00:00Z" }]
             """);
 
         var said = Assert.Single(last["q1"].Said!);
@@ -491,8 +492,13 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal(DateTimeOffset.Parse("2026-10-03T09:00:00Z"), said.At);
         Assert.True(last["q1"].WordsWaiting);
         Assert.Equal((false, 0), (last["q2"].WordsWaiting, last["q2"].Said!.Count));
-        Assert.Null(last["q3"].Said);
+        // A record from before the list reaches the driver as the one word the service reads its old column as.
+        Assert.Equal("Port 8080.", Assert.Single(last["q3"].Said!).Text);
         Assert.True(last["q3"].WordsWaiting);
+        Assert.True(last["q3"].AnsweredPark);
+        // The wire's `answer` is read by no one here: a host answering no `said` has nothing waiting.
+        Assert.Null(last["q4"].Said);
+        Assert.False(last["q4"].WordsWaiting);
     }
 
     /// <summary>
@@ -505,7 +511,7 @@ public sealed class SessionMessagesPlanTests
         var last = new Dictionary<string, PriorSession>
         {
             ["q1"] = Written("completed"),
-            ["q2"] = Written("completed", "s2") with { Said = [], Answer = null },
+            ["q2"] = Written("completed", "s2") with { Said = [] },
             ["q3"] = Written("failed", "s3"),
         };
 
@@ -526,7 +532,7 @@ public sealed class SessionMessagesPlanTests
         {
             LastRun = new Dictionary<string, PriorSession>
             {
-                ["q1"] = last ?? Written("completed", "s2") with { Said = [], Answer = null, Tree = "D:/trees/s-2" },
+                ["q1"] = last ?? Written("completed", "s2") with { Said = [], Tree = "D:/trees/s-2" },
             },
             NamedByReopen = new Dictionary<string, PriorSession> { ["q1"] = named ?? Written("completed") },
         };
@@ -562,7 +568,7 @@ public sealed class SessionMessagesPlanTests
     [Fact]
     public void The_persons_stop_of_the_last_session_holds_the_named_sessions_words()
     {
-        var stopped = NamedByReopen(last: Written("stopped", "s2") with { Said = [], Answer = null, Note = "the person stopped it." });
+        var stopped = NamedByReopen(last: Written("stopped", "s2") with { Said = [], Note = "the person stopped it." });
 
         var only = Assert.Single(Planner.Plan(stopped, Config()));
 
@@ -588,6 +594,6 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal("s1", Assert.Single(Planner.Plan(both, Config())).Resumes?.Session);
         Assert.Equal(
             "s2",
-            Assert.Single(Planner.Plan(both with { NamedByReopen = new Dictionary<string, PriorSession> { ["q1"] = Written("completed") with { Said = [], Answer = null } } }, Config())).Resumes?.Session);
+            Assert.Single(Planner.Plan(both with { NamedByReopen = new Dictionary<string, PriorSession> { ["q1"] = Written("completed") with { Said = [] } } }, Config())).Resumes?.Session);
     }
 }

@@ -397,7 +397,7 @@ public sealed class NoteSitesTests
             "carries `#q1` on: session `s0` was handed over from claude-code, the account it named could not run it, so another of its agent's did, in the tree it worked in.",
             "started.handed-over", "started.handed-walked", "started.same-tree");
 
-        var answered = new PriorSession("s0", "/t", "completed", Answer: "use main") { Adapter = "claude-code" };
+        var answered = new PriorSession("s0", "/t", "completed") { Adapter = "claude-code", Said = PersonWords.Of("use main") };
         var fellBack = Daoris.Driver.Driver.StartingNote(
             null, Quest(), null, "/t", true, answered, answered with { State = "awaiting-person" }, false, ContinueWhy.Of(ContinueWhy.Elsewhere))!;
         Line(fellBack,

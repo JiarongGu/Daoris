@@ -248,7 +248,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// </summary>
     private static string? Seen(Snapshot snapshot, string asker) =>
         snapshot.Active.FirstOrDefault(view => string.Equals(view.Id, asker, StringComparison.OrdinalIgnoreCase)) is { } view
-            ? $"{view.State}|{(view.Answer is null ? "" : "answered")}"
+            ? $"{view.State}|{(view.Answered ? "answered" : "")}"
             : snapshot.LastRun.Values.FirstOrDefault(last => string.Equals(last.Session, asker, StringComparison.OrdinalIgnoreCase)) is { } ended
             ? $"{ended.State}|{ended.Updated?.ToUnixTimeMilliseconds()}|{ended.Said?.Count}"
             : null;

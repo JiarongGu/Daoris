@@ -75,7 +75,7 @@ public sealed class SolicitedHandTests
     [InlineData("awaiting-person", "driven", "Yes, go on.", true)]
     public void A_head_takes_the_answer_between_turns_and_an_answered_park_takes_it_beside_the_persons(string state, string kind, string? answer, bool takes)
     {
-        Assert.Equal(takes, SolicitedHand.TakesNow(new PriorSession("s1", "trees/s", state, Answer: answer) { Kind = kind }));
+        Assert.Equal(takes, SolicitedHand.TakesNow(new PriorSession("s1", "trees/s", state) { Kind = kind, Said = answer is null ? null : PersonWords.Of(answer) }));
     }
 
     private static SolicitedAnswer Read(int status, string? payload) =>

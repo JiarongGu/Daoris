@@ -3129,7 +3129,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Ask: s.Ask,
     Took: s.Took,
     // The person's own words, which may name anything on this machine: answered to it only, like a transcript.
-    Answer: loopback ? s.Answer : null,
+    // The wire's `answer` is derived from the keyed words at this door alone, for the modules and the page that still read it
+    // (ONEWAY1m part ii removes it); no reader in the service or the driver reads it.
+    Answer: loopback ? PersonsJoined(s.Said) : null,
     Interrupted: s.Interrupted,
     // A limit names no account (TOOL4c), so it is answered to every caller, as the state beside it is.
     Limit: s.Limit,
@@ -3163,6 +3165,10 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null, Chosen: loopback ? s.Chosen : null,
     // The work its marks read as (FOUNDATION1c): this machine's, like the opinion, so answered to it only; a mirror reads none.
     Work: loopback ? ParticipantWork.Of(s) : null);
+
+// The person's words joined by a blank line, or null when none wait; never another agent's or Daoris's own.
+static string? PersonsJoined(IReadOnlyList<SaidWord> said) =>
+    said.Where(word => word.Persons).Select(word => word.Text).ToList() is { Count: > 0 } persons ? string.Join("\n\n", persons) : null;
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>

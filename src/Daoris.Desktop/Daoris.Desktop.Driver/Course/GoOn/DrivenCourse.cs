@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>The facts a driven line's paths hand the course, and the answers it gives them.</summary>
 internal static class DrivenCourse
 {
-    /// <summary>A record's waiting words by their authors, an answered park's answer standing as the person's word it is.</summary>
+    /// <summary>A record's waiting words by their authors.</summary>
     internal static IReadOnlyList<CourseWord> WordsOf(PriorSession record)
     {
         var words = record.Waiting;
@@ -24,7 +24,6 @@ internal static class DrivenCourse
                 word.Key,
                 ended is { } end && word.At > end)),
         ];
-        if (said.Count == 0 && record.Answer is not null) said.Add(new CourseWord("", CourseAuthor.Person));
         return said;
     }
 

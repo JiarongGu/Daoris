@@ -848,6 +848,7 @@ public sealed class HelperLookTests : IDisposable
         host.Set("s1", "note", "It stopped with its quest still taken, to ask you:\n\nI asked a helper.");
         host.Set("s1", "updated", At.AddMinutes(minute).ToString("O"));
         host.Set("s1", "answer", answer);
+        host.Set("s1", "said", PersonWords.Wire(answer));
         return host;
     }
 
@@ -877,13 +878,14 @@ public sealed class HelperLookTests : IDisposable
         Assert.Empty(host.HelperHands);
 
         host.Set("s1", "answer", "Port 8080.");
-        var events = await Look(driver, active: [Active("awaiting-person") with { Answer = "Port 8080." }]);
+        host.Set("s1", "said", PersonWords.Wire("Port 8080."));
+        var events = await Look(driver, active: [Active("awaiting-person") with { Said = PersonWords.Of("Port 8080.") }]);
 
         Assert.Empty(host.Moves);
         var (to, text) = Assert.Single(host.HelperHands);
         Assert.Equal(Helper, to);
         Assert.StartsWith("Another agent, `codex-acp` (helper session `h1000001`), answered the question you asked it", text);
-        Assert.Equal(Helper, Assert.Single(host.Said("s1"))!["helper"]!.GetValue<string>());
+        Assert.Equal(Helper, Assert.Single(host.Said("s1"), each => each!["helper"] is not null)!["helper"]!.GetValue<string>());
         Assert.NotNull(Files.ReadState("a1")!.Handed);
         Assert.Contains(events, line => line.Contains("answered by codex-acp", StringComparison.Ordinal));
     }

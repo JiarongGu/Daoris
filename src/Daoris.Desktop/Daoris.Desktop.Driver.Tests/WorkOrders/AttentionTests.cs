@@ -35,7 +35,7 @@ public sealed class AttentionTests
         watch.Observe(Tick([Session("s1", "working")]));
 
         Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person")])));
-        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Answer = "Port 8080." }])));
+        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Said = PersonWords.Of("Port 8080.") }])));
         Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Note = "Which host should it bind?" }])));
     }
 

@@ -142,7 +142,7 @@ internal static class SolicitedAnswers
             { Opinion: { } reads } => $"Session `{head.Id}` read the work for second opinion `{reads}`: a pass takes no words",
             { Serves: not null } => $"Session `{head.Id}` is a helper itself: it takes no words",
             { State: SessionState.StoodDown } => $"Session `{head.Id}` stood down, so it has nothing to go on with",
-            { State: SessionState.AwaitingPerson, Answer: null } =>
+            { State: SessionState.AwaitingPerson, PersonSaid: false } =>
                 $"Session `{head.Id}` waits on the person's answer: {ask.Reaches} reaches it at a turn's end, once it is answered",
             // A park the person answered takes the word beside their answer, so its go-on hands both in one prompt.
             { State: SessionState.AwaitingPerson } => null,

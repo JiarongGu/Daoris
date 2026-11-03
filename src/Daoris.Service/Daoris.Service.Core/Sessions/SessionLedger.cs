@@ -1993,7 +1993,7 @@ public sealed class SessionLedger(
         // And a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c26, D173's CLOSE1c2 note): it ended
         // completed with its quest still taken, said by the driver's code alone, and their go-on carries it on in its tree.
         var carriesOn = last is { State: SessionState.Failed }
-                or { State: SessionState.Completed, Answer: not null }
+                or { State: SessionState.Completed, PersonSaid: true }
                 or { State: SessionState.Stopped, Interrupted: true }
             || (last is { State: SessionState.Stopped } && tookHere)
             || (last is { State: SessionState.Completed } && NoteParts.Carries(last.NoteParts, EndedSourceReopened))
