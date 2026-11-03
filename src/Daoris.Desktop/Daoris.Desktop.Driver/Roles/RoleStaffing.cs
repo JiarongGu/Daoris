@@ -240,8 +240,11 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         }
     }
 
-    /// <summary>Whether a write is still copied onto the file and the file checked against it: the register's <c>staffing-copy</c>, not ended.</summary>
-    internal bool Copies => !TransitionalRegister.StaffingCopyEnded(home);
+    /// <summary>Whether a home's copy onto the file has ended (the register's <c>staffing-copy</c>), installed by the register as the driver loads.</summary>
+    internal static Func<string, bool> CopyEnded { get; set; } = _ => false;
+
+    /// <summary>Whether a write is still copied onto the file and the file checked against it.</summary>
+    internal bool Copies => !CopyEnded(home);
 
     /// <summary>
     /// The staffing part's write (ONEWAY1b): each named role's row replaced by its own, none where it is null, in one transaction, nothing

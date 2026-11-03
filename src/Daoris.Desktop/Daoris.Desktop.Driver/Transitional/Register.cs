@@ -38,6 +38,13 @@ public sealed record TransitionalEntry
     public string? Part { get; init; }
 }
 
+/// <summary>The copy's end handed to the staffing below, which names nothing of the register's, as the driver loads.</summary>
+internal static class StaffingCopyWiring
+{
+    [System.Runtime.CompilerServices.ModuleInitializer]
+    internal static void Install() => RoleStaffing.CopyEnded = TransitionalRegister.StaffingCopyEnded;
+}
+
 /// <summary>Every transitional read the driver keeps, in one plain list (oneway design §1.3), and This machine's list of them.</summary>
 public static class TransitionalRegister
 {
@@ -232,7 +239,7 @@ public static class TransitionalRegister
         new()
         {
             Id = "staffing-copy",
-            Kept = "Roles/RoleStaffing.cs:722, Roles/StaffingVerbs.cs:12, ../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:356",
+            Kept = "Roles/RoleStaffing.cs:664, Roles/StaffingVerbs.cs:14, ../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:357",
             Reaches = "A home an older build may still open (D226): each staffing write is copied onto driver.json's staffing keys, the found check compares the file with what the store wrote, and a found change waits for Take it or Dismiss.",
             Ends = "The floor passes the w-s build on the home, which the conversion's first Apply makes so, or the home was seeded fresh: the writer and the check skip such a home (ONEWAY1c-ii), and the staffing part clears its found changes.",
             Row = "ONEWAY1af",
