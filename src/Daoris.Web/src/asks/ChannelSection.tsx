@@ -196,6 +196,16 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
           </ol>
         )}
 
+      {/* COMMS1k: the messages to one part each, apart from the channel, read-only, each with what it reached in that part's line. */}
+      {(channel.addressed ?? []).length > 0 && (
+        <section aria-label={t('asks.channel.addressed.title')} className="grid gap-1.5">
+          <h4 className="m-0 text-small font-semibold text-ink-soft">{t('asks.channel.addressed.title')}</h4>
+          <ol aria-label={t('asks.channel.addressed.title')} className="m-0 grid list-none gap-2 p-0">
+            {(channel.addressed ?? []).map((item, index) => <AddressedRow key={item.id ?? `addressed-${index}`} item={item} />)}
+          </ol>
+        </section>
+      )}
+
       {readOnly ? <p className="m-0 text-small text-ink-faint">{t('asks.elsewhere.readOnly')}</p> : <div className="grid gap-2">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <label className="flex items-center gap-2 text-small text-ink-soft">
@@ -240,6 +250,34 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
         {refusalWords && <Refused sentence={refusalWords} />}
       </div>}
     </div>
+  );
+}
+
+/** The receipts a message to one part has words for (COMMS1k); another is said as the shell wrote it. */
+const PART_RECEIPTS = new Set(['waiting', 'held', 'sent', 'taken', 'read']);
+
+/**
+ * One message to one part alone (COMMS1k, the comms design §4.4, §7): who wrote it, to which part, when, its words as written, and what
+ * it reached in that part's line, never more than Daoris observed. It offers no press: a part's message is the part's to read.
+ */
+function AddressedRow({ item }: { item: ChannelItem }) {
+  const { t } = useTranslation();
+  const state = item.receipt ?? null;
+  return (
+    <li data-addressed={item.id ?? ''} className={cn('grid gap-1 rounded-control border border-line px-3 py-2', item.person ? 'border-l-[3px] border-l-accent bg-raised' : 'bg-page')}>
+      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-meta text-ink-faint">
+        <span className="text-small font-semibold text-ink">{whoOf(t, item)}</span>
+        <span>{t('asks.channel.toPart', { part: item.part ?? '' })}</span>
+        <span>{ago(item.at)}</span>
+        {item.urgent === true && <Pill tone="neutral">{t('work.level.urgent')}</Pill>}
+      </p>
+      <p className="m-0 whitespace-pre-wrap wrap-anywhere text-body text-ink">{item.text}</p>
+      {state && (
+        <p className="m-0 text-small text-ink-soft">
+          {PART_RECEIPTS.has(state) ? t(`asks.channel.addressed.receipt.${state}`) : t('asks.channel.addressed.receipt.other', { state })}
+        </p>
+      )}
+    </li>
   );
 }
 

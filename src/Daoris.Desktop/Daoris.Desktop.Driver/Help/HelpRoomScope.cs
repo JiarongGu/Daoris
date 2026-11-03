@@ -58,6 +58,8 @@ internal static class HelpRoomScope
             // whatever the clause's words name; one no workspace registers stays in every room, as before.
             WorkUnread = [.. whole.WorkUnread.Where(unread => !others.Contains(unread.Repository))],
             WorkRecovery = [.. whole.WorkRecovery.Where(recovery => recovery.Repository is { } repository && own.Contains(repository))],
+            // A line's waits by its record's workspace, as the Sessions list keeps its records.
+            Waits = whole.Waits is { } waits ? waits with { Waits = [.. waits.Waits.Where(wait => Ours(wait.Workspace))] } : null,
             NotReadYet = whole.NotReadYet with { Repositories = [.. whole.NotReadYet.Repositories.Where(own.Contains)] },
         };
     }

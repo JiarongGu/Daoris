@@ -862,14 +862,11 @@ public sealed class SessionLedger(
             return result with { Opens = key, Transfer = transfer, Session = opened, Message = message };
         }, ct);
 
-    /// <summary>The refusal of moves asked of an open with no key: nothing would answer them again, so a lost answer could move twice.</summary>
+    /// <summary>Moves asked of an open with no key: nothing would answer them again, so a lost answer could move twice.</summary>
     private static ArgumentException Unkeyed() => new(
         "Words move only under an open's key (`opens`), whose receipt answers a retry with what moved, so nothing was opened.");
 
-    /// <summary>
-    /// The record with the entry's key it answers (SESSONE1a, D167 point 3): the one stored, else the rule's over the facts held now.
-    /// Never written back, so a record from before groups the day a reader asks, and the rule stays in <see cref="SessionEntries"/>.
-    /// </summary>
+    /// <summary>The record with the entry's key it answers: the one stored, else the rule's (<see cref="SessionEntries"/>), never written back.</summary>
     public async Task<Session> WithEntryAsync(Session session, CancellationToken ct = default) =>
         session.Entry is not null
             ? session
@@ -883,8 +880,11 @@ public sealed class SessionLedger(
         return answered;
     }
 
-    /// <summary>The record of one session, as the store holds it: what a connector's tool judges the session it speaks for by.</summary>
+    /// <summary>The record of one session, as the store holds it.</summary>
     public Task<Session?> FindAsync(string sessionId, CancellationToken ct = default) => sessions.FindAsync(sessionId, ct);
+
+    /// <summary>The line <paramref name="named"/> is on, walked to its head.</summary>
+    public Task<LineWalk> WalkLineAsync(Session named, CancellationToken ct = default) => Lines.WalkAsync(sessions, named, ct);
 
     /// <summary>
     /// The records as the store lists them, live work first (<see cref="SessionStore.ListAsync"/>): what the channel reads to judge

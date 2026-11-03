@@ -54,6 +54,8 @@ public static class SessionRecords
                 // COAGENT1b: a helper's or a partner's lead, and a partner's piece, kept only beside it, as the service keeps them.
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
                 Piece = Text(session, "serves") is { Length: > 0 } && Text(session, "piece") is { Length: > 0 } piece ? piece : null,
+                // COMMS1i: a reviewer's opinion, which At work lists by the line it serves.
+                Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
                 // HELPERWAIT1: a completed record's note read for its code alone, and only a completed one's.
                 AwaitsHelper = Text(session, "state") == "completed" && Carries(session, RecordNotes.EndedAwaitsHelper),
                 // LIMITRESUME1d (D206 §3.1): an account's limit made its failure; absent from a host before the flag.

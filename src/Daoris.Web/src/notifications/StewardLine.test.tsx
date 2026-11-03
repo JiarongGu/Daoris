@@ -170,6 +170,26 @@ describe("Notifications' steward line", () => {
     }
   });
 
+  // COMMS1l: the desk kept across a restart, a request left open when Daoris stopped said as interrupted, never as waiting.
+  it('COMMS1l says a request left open when Daoris stopped as interrupted, in English and Chinese, and counts it as no wait', async () => {
+    const interrupted: DeskRequestNow = {
+      id: 'r0', act: 'drive', target: 'engine', why: 'engine is next', filed: '2026-10-24T09:00:00Z', state: 'interrupted',
+      closed: '2026-10-25T08:00:00Z', answeredBy: null, reason: null,
+    };
+    const { unmount } = render(<StewardLine standing={{ ...STANDING, stewardDesk: [...DESK, interrupted] }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    expect(line().getByText("The steward's desk · 1 waiting")).toBeInTheDocument();
+    await userEvent.click(line().getByRole('button', { name: "Show the steward's desk" }));
+    expect(within(desk()[3]!).getByText('Interrupted when Daoris stopped')).toBeInTheDocument();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<StewardLine standing={{ ...STANDING, stewardDesk: [interrupted] }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    const region = within(screen.getByRole('region', { name: '管家' }));
+    expect(region.getByText('管家的待办 · 0 项等管家处理')).toBeInTheDocument();
+    await userEvent.click(region.getByRole('button', { name: '显示管家的待办' }));
+    expect(region.getByText('Daoris 停止时中断')).toBeInTheDocument();
+  });
+
   it('draws the line for the desk alone, where none is appointed and the steward made no act', () => {
     render(<StewardLine standing={{ ...STANDING, appointments: [], stewardActs: [], stewardDesk: DESK }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
     expect(line().getByText("The steward's desk · 1 waiting")).toBeInTheDocument();

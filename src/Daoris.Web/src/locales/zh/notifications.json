@@ -141,6 +141,7 @@
   "notifications.steward.desk.state.open": "等管家处理",
   "notifications.steward.desk.state.answered": "管家已办",
   "notifications.steward.desk.state.declined": "管家已谢绝",
+  "notifications.steward.desk.state.interrupted": "Daoris 停止时中断",
   "notifications.steward.desk.act.drive": "驱动",
   "notifications.steward.desk.act.undrive": "停止驱动",
   "notifications.steward.desk.act.trees": "启用工作树",

@@ -115,7 +115,7 @@ public static class ChannelCommand
             return 1;
         }
 
-        if (channel.Items.Count == 0)
+        if (channel.Items.Count == 0 && channel.Addressed.Count == 0)
         {
             output.WriteLine($"There is nothing on ask #{ask.Ask}'s channel yet.");
             return 0;
@@ -126,6 +126,17 @@ public static class ChannelCommand
         {
             output.WriteLine($"  {Line(item)}");
             if (Reached(item) is { } reached) output.WriteLine($"      {reached}");
+        }
+
+        // COMMS1k: the messages to one part each, kept apart from the channel, with what each reached in that part's line.
+        if (channel.Addressed.Count > 0)
+        {
+            output.WriteLine("To one part alone:");
+            foreach (var item in channel.Addressed)
+            {
+                output.WriteLine($"  {Line(item)}");
+                if (item.Receipt is { } receipt) output.WriteLine($"      What it reached: {PartReceipt(receipt, item.Part!)}.");
+            }
         }
 
         // The person read it here, so their mark moves as the page's does; a late arrival after it stays unread.
@@ -175,12 +186,26 @@ public static class ChannelCommand
         _ => $"{receipt.Repository}: {receipt.State}",
     };
 
+    /// <summary>What a message to one part reached in that part's line (COMMS1k), as the service spells it.</summary>
+    private static string PartReceipt(string state, string part) => state switch
+    {
+        "waiting" => $"waiting for session {part}'s line",
+        "held" => $"held for session {part}'s line",
+        "sent" => $"sent to session {part}'s line",
+        "taken" => $"taken by session {part}'s line",
+        "read" => $"read by session {part}'s line",
+        _ => $"session {part}'s line: {state}",
+    };
+
     /// <summary>A refusal's code in a sentence; a code this build does not know is said as the service gave it.</summary>
     public static string Refusal(string code, ChannelAsk ask) => code switch
     {
         "empty" => "Nothing was posted: the words are empty.",
         "too-long" => "Nothing was posted: a message is at most 4,000 characters.",
         "bad-to" => $"Nothing was posted: `{ask.To}` is not one of the ask's repositories.",
+        // COMMS1k: a part named in `to` must be one of a line of work on the ask, on this machine.
+        "bad-part" => $"Nothing was posted: session `{ask.To}` is no part of a line of work on ask #{ask.Ask}.",
+        "part-elsewhere" => $"Nothing was posted: session `{ask.To}` runs on another machine, and a message to one part never travels.",
         "bad-re" => $"Nothing was posted: the channel holds no message to answer `{ask.Re}`.",
         "not-found" => $"No ask #{ask.Ask} here.",
         _ => $"The service refused it: {code}.",
@@ -202,7 +227,8 @@ public static class ChannelCommand
         else if (item.Question) marks.Add("question");
         if (item.Re is not null) marks.Add($"re {item.Re}");
         var tail = marks.Count == 0 ? "" : $" ({string.Join(", ", marks)})";
-        return $"{at}  {(who.Length == 0 ? "A session" : who)} → {item.To ?? "everyone"}{tail}: {item.Text}";
+        var to = item.Part is { } part ? $"session {part} alone" : item.To ?? "everyone";
+        return $"{at}  {(who.Length == 0 ? "A session" : who)} → {to}{tail}: {item.Text}";
     }
 
     private static string Coded(ChannelItemView line)

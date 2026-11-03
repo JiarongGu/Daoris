@@ -37,6 +37,12 @@ export type ChannelItem = {
   urgent?: boolean | null;
   /** What it reached in each repository it addresses, as the person reads it (COWORK1d, the design §8.4); absent from a host from before. */
   receipts?: ChannelReceipt[] | null;
+  /** The part a message is to alone (COMMS1k, the comms design §4.4): a session, whose line's head takes it. */
+  part?: string | null;
+  /** The origin a message to one part, or on a line's own channel, is kept on (COMMS1k): `ask:<id>`, `session:<id>` or `quest:<id>`. */
+  channel?: string | null;
+  /** What a message to one part reached in that part's line, as the person reads it (COMMS1k): a receipt's state. */
+  receipt?: string | null;
 };
 
 /**
@@ -75,8 +81,11 @@ export function forwardedOf(raw: unknown): ChannelForwarded {
  */
 export const CHANNEL_CLAIM_OPENING = "Another session says, on the ask's channel";
 
-/** An ask's channel as the person reads it: their own mark, and how many items are past it, lines included. */
-export type Channel = { ask: string; entry: string; items: ChannelItem[]; unread: number; mark?: string | null };
+/**
+ * An ask's channel as the person reads it: their own mark, and how many items are past it, lines included; and since COMMS1k the
+ * messages to one part each, kept apart from the items and never among them (empty from a host before them).
+ */
+export type Channel = { ask: string; entry: string; items: ChannelItem[]; unread: number; mark?: string | null; addressed?: ChannelItem[] };
 
 /** The person's post as the shell answers it: the message kept, or the service's code where it refused. */
 export type ChannelPosted = { posted: boolean; code?: string | null; message?: ChannelItem | null };
@@ -95,7 +104,7 @@ const isItem = (value: unknown): value is ChannelItem =>
  */
 export function channelOf(raw: unknown): Channel | null {
   if (typeof raw !== 'object' || raw === null) return null;
-  const { ask, entry, items, unread, mark } = raw as Record<string, unknown>;
+  const { ask, entry, items, unread, mark, addressed } = raw as Record<string, unknown>;
   if (typeof ask !== 'string' || !Array.isArray(items)) return null;
   return {
     ask,
@@ -103,6 +112,7 @@ export function channelOf(raw: unknown): Channel | null {
     items: items.filter(isItem),
     unread: typeof unread === 'number' ? unread : 0,
     mark: typeof mark === 'string' ? mark : null,
+    addressed: Array.isArray(addressed) ? addressed.filter(isItem) : [],
   };
 }
 

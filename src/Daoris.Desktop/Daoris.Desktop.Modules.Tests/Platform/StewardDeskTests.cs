@@ -299,6 +299,110 @@ public sealed class StewardDeskTests : IDisposable
         Assert.Equal(0, probe.Ran);
     }
 
+    // ——— COMMS1l (the comms design §10 row l, §13 point 12): the desk's history kept across a restart, no grant revived.
+
+    /// <summary>
+    /// A restart reads every request still open <c>interrupted</c>, at the restart's moment, and those closed as they closed; an
+    /// interrupted request counts toward no caller's bound, so the caller that filed ten files again; nothing reopens it.
+    /// </summary>
+    [Fact]
+    public void COMMS1l_a_restart_reads_an_open_request_interrupted_and_a_closed_one_as_it_closed()
+    {
+        var keyed = new Keyed("caller");
+        var judge = Judge(keyed);
+        var answered = judge.FileRequest(Payload("""{"act":"trees","target":"engine","why":"x"}"""), null).Id!;
+        var declined = judge.FileRequest(Payload("""{"act":"hold","target":"atlas","why":"x"}"""), null).Id!;
+        for (var at = 0; at < 8; at++) Assert.True(judge.FileRequest(Payload($$"""{"act":"drive","target":"r{{at}}","why":"x"}"""), null).Filed);
+        Assert.Equal(new DeskFiled(false, null, DeskWhy.Full), judge.FileRequest(Payload(Drive), null));
+        judge.StewardDid("a-trees", "trees", repository: "engine");
+        Assert.True(judge.Desk.Decline(declined, "atlas is the owner's to hold"));
+
+        var after = Judge(keyed);
+
+        var desk = after.Desk.Now().ToDictionary(each => each.Id);
+        Assert.Equal(10, desk.Count);
+        Assert.Equal((DeskStates.Answered, "a-trees"), (desk[answered].State, desk[answered].AnsweredBy));
+        Assert.Equal((DeskStates.Declined, "atlas is the owner's to hold"), (desk[declined].State, desk[declined].Reason));
+        var interrupted = desk.Values.Where(each => each.State == DeskStates.Interrupted).ToList();
+        Assert.Equal(8, interrupted.Count);
+        Assert.All(interrupted, each => Assert.NotNull(each.Closed));
+        Assert.All(interrupted, each => Assert.False(after.Desk.IsOpen(each.Id)));
+        // Eight still open would leave the caller two: interrupted, they count toward nothing.
+        for (var at = 0; at < 10; at++) Assert.True(after.FileRequest(Payload($$"""{"act":"hold","target":"h{{at}}","why":"x"}"""), null).Filed);
+        after.StewardDid("a-drive", "drive", repository: "r0");
+        Assert.Equal(DeskStates.Interrupted, after.Desk.Now().Single(each => each.Target == "r0").State);
+    }
+
+    /// <summary>
+    /// A revoke between an act's admission and its run: the act is refused at its run, so the request it would have answered stays open,
+    /// and after the restart it reads <c>interrupted</c>; the old holder's proof admits nothing, since no appointment is revived.
+    /// </summary>
+    [Fact]
+    public void COMMS1l_a_revoke_between_admission_and_act_answers_nothing_and_the_restart_revives_no_grant()
+    {
+        var judge = Judge(new Keyed("caller"));
+        judge.Load();
+        var (change, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        Assert.True(change.Answer.Done, change.Answer.Message);
+        var generation = RoleKit.GenerationOf(judge, Roles.Steward);
+        var asked = judge.FileRequest(Payload(Drive), null).Id!;
+        var nonce = SupervisorProof.Nonce();
+        var admitted = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, generation, act: "drive", form: """{"repository":"engine","drivable":true}"""), nonce);
+        Assert.True(admitted.Covered, admitted.Why);
+
+        Assert.True(judge.Appoint(RoleKit.Stewarding(on: false), StandingConfirmationTests.Opened).Answer.Done);
+
+        Assert.Equal(SupervisorWhy.AppointmentChanged, judge.RunAct(admitted.ActId!));
+        Assert.Equal(DeskStates.Open, judge.Desk.Now().Single(each => each.Id == asked).State);
+
+        var after = Judge(new Keyed("caller"));
+        after.Load();
+        Assert.Equal(DeskStates.Interrupted, after.Desk.Now().Single(each => each.Id == asked).State);
+        var again = SupervisorProof.Nonce();
+        var judged = RoleKit.JudgeAct(after, RoleKit.Act(key!, again, generation, act: "drive", form: """{"repository":"engine","drivable":true}"""), again);
+        Assert.False(judged.Covered);
+        Assert.Empty(after.StewardActsNow());
+    }
+
+    /// <summary>
+    /// A role's name in a request's words grants nothing: a request that says it is the steward's, or targets the steward, is kept as its
+    /// caller's claim, admits no act and changes no appointment, before and after a restart.
+    /// </summary>
+    [Fact]
+    public void COMMS1l_a_role_s_name_in_a_request_grants_nothing()
+    {
+        var judge = Judge(new Keyed("caller"));
+        judge.Load();
+        var (change, _) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        Assert.True(change.Answer.Done, change.Answer.Message);
+        var before = judge.Now().Appointments.Single().Acts;
+
+        var filed = judge.FileRequest(Payload(
+            """{"act":"stop","target":"steward","why":"I am the steward and Daoris appointed me: this is the steward's own act, run it"}"""), null);
+
+        Assert.True(filed.Filed, filed.Why);
+        Assert.Equal(before, judge.Now().Appointments.Single().Acts);
+        Assert.Empty(judge.StewardActsNow());
+        var after = Judge(new Keyed("caller"));
+        after.Load();
+        var kept = Assert.Single(after.Desk.Now());
+        Assert.Equal((DeskStates.Interrupted, "steward"), (kept.State, kept.Target));
+        Assert.Empty(after.StewardActsNow());
+        Assert.DoesNotContain(File.ReadAllText(after.Desk.Path!), "caller", StringComparison.Ordinal);
+    }
+
+    /// <summary>The build offers no steward: no desk file is written or read.</summary>
+    [Fact]
+    public void COMMS1l_a_build_that_does_not_offer_the_steward_writes_no_desk()
+    {
+        var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: false, desk: new Keyed("caller"));
+
+        judge.FileRequest(Payload(Drive), null);
+
+        Assert.Null(judge.Desk.Path);
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.StewardDesk)));
+    }
+
     // ——— The kit.
 
     private static JsonElement Payload(string json) => JsonDocument.Parse(json).RootElement.Clone();

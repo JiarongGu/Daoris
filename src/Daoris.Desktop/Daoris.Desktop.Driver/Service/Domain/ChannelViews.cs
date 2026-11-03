@@ -88,6 +88,21 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// </summary>
     public IReadOnlyList<ChannelReceiptView>? Receipts { get; init; }
 
+    /// <summary>
+    /// The part a message is to alone (COMMS1k, the comms design §4.4), a session whose line's head takes it; null for a message to a
+    /// repository or to everyone.
+    /// </summary>
+    public string? Part { get; init; }
+
+    /// <summary>
+    /// The origin whose channel a message is kept on where it is kept apart from an ask's channel (COMMS1k): <c>ask:&lt;id&gt;</c> for one
+    /// to a part, <c>session:&lt;id&gt;</c> or <c>quest:&lt;id&gt;</c> for a line's own; null for an ask's message.
+    /// </summary>
+    public string? Channel { get; init; }
+
+    /// <summary>For the person's read (COMMS1k): what a message to one part reached in that part's line, as the service spells it.</summary>
+    public string? Receipt { get; init; }
+
     /// <summary>A message with words: what reaches a session. A line, or a message the wire answered without words, is not.</summary>
     public bool IsMessage => Kind == Message && Id is { Length: > 0 } && Text is { Length: > 0 };
 }
@@ -106,6 +121,12 @@ public sealed record ChannelReceiptView(string Repository, string State);
 /// <param name="Mark">The moment the entry has read up to; null when it never has.</param>
 public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<ChannelItemView> Items, int Unread, DateTimeOffset? Mark)
 {
+    /// <summary>
+    /// For the person's read (COMMS1k): the messages to one part each, oldest first, with their receipts; never among
+    /// <see cref="Items"/>. Empty for an entry's read and from a host before them.
+    /// </summary>
+    public IReadOnlyList<ChannelItemView> Addressed { get; init; } = [];
+
     /// <summary>The newest moment the read holds, of a message or a line; null for an empty channel.</summary>
     public DateTimeOffset? Newest => Items.Count == 0 ? null : Items.Max(item => item.At);
 
@@ -126,7 +147,12 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
         }
 
         var unread = root.TryGetProperty("unread", out var count) && count.ValueKind == JsonValueKind.Number ? count.GetInt32() : 0;
-        return new ChannelView(ask, Json.Text(root, "entry") ?? "", items, unread, Moments.Read(root, "mark"));
+        return new ChannelView(ask, Json.Text(root, "entry") ?? "", items, unread, Moments.Read(root, "mark"))
+        {
+            Addressed = root.TryGetProperty("addressed", out var addressed) && addressed.ValueKind == JsonValueKind.Array
+                ? [.. addressed.EnumerateArray().Select(ReadItem).OfType<ChannelItemView>()]
+                : [],
+        };
     }
 
     /// <summary>One item as the service answers it; null for one without its kind or a moment that reads (passed over).</summary>
@@ -162,6 +188,9 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
                         .Where(receipt => receipt.Repository is { Length: > 0 } && receipt.State is { Length: > 0 })
                         .Select(receipt => new ChannelReceiptView(receipt.Repository!, receipt.State!))]
                     : null,
+                Part = Json.Text(item, "part"),
+                Channel = Json.Text(item, "channel"),
+                Receipt = Json.Text(item, "receipt"),
             };
 
     private static bool Flag(JsonElement element, string name) =>

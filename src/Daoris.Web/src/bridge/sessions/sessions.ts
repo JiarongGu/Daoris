@@ -241,18 +241,18 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
 };
 
 /**
- * What each of a line of work's parts spent (SESSCTX1d; the session-context design §7), from this machine's own record as the
- * openings are: the *Parts* strip says it on each part's own row, so a moved session reads as one. Asked again when one of them
- * ends a turn. Nothing in a browser, which holds no record.
+ * What each part spent, from this machine's own record as the openings are: the *Parts* strip says it on each part's own row, and
+ * the rail on a helper's and a continuing part's. Asked again when one of them ends a turn, and only for `least` ids or more.
+ * Nothing in a browser, which holds no record.
  */
-export const useSessionSpent = (ids: readonly string[] | undefined): Record<string, PartSpent> => {
+export const useSessionSpent = (ids: readonly string[] | undefined, least = 2): Record<string, PartSpent> => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const asked = [...new Set(ids ?? [])].sort();
   const answer = useQuery({
     queryKey: keys.spent(asked),
     queryFn: () => call<{ spent?: Record<string, PartSpent> }>('SESSION_SPENT', { ids: asked }),
-    enabled: isAvailable && asked.length > 1,
+    enabled: isAvailable && asked.length >= least,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -267,7 +267,7 @@ export const useSessionSpent = (ids: readonly string[] | undefined): Record<stri
 };
 
 /**
- * Where each of these sessions' work is now (LOOK2b): whether the tree it opened is still here, and its landing (D113),
+ * Where each of these sessions' work is now: whether the tree it opened is still here, and its landing (D113),
  * from this machine's own files, in one ask for the rows a list shows.
  *
  * @remarks

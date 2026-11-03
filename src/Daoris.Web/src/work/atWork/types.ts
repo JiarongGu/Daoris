@@ -120,11 +120,11 @@ export type AtWorkAsker = {
  * partner, a quest waited on, a successor asked for. What Daoris saw of its delivery and the protocol's own outcome are apart.
  */
 export type AtWorkExchange = {
-  /** `helper:<ask>`, `piece:<ask>`, `quest:<id>` or `hand-over:<id>`. */
+  /** `helper:<ask>`, `piece:<ask>`, `quest:<id>`, `hand-over:<id>` or `opinion:<id>`, a reviewer of the line (COMMS1i). */
   id: string;
   /** The part of the line that asked it: after a hand-over, a predecessor's. */
   part: string;
-  expects: 'answer' | 'piece' | 'work' | 'successor' | string;
+  expects: 'answer' | 'piece' | 'work' | 'successor' | 'opinion' | string;
   /** The agent asked, the repository a quest went to, or the request's own word where none is known yet. */
   to: string;
   delivery: string;

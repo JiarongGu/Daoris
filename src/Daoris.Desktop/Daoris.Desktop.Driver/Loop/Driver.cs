@@ -1192,7 +1192,7 @@ public sealed class Driver(
         // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
         var looked = snapshot;
         events.AddRange(await Stages.TimeAsync("channel", () => Context.Channel
-            .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(looked, Context.Processes), ct, Lines))
+            .LookAsync(new ServiceChannelDoors(service), looked, Context.Processes, ct, Lines))
             .ConfigureAwait(false));
 
         // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,

@@ -169,6 +169,11 @@ public sealed record HelpMachine
     /// <summary>Daoris's own recoveries no unit names (RECOVERYASK1, <see cref="WorkInventory.Recoveries"/>): a folder moved aside, a recovery ref.</summary>
     public IReadOnlyList<InventoryEntry> WorkRecovery { get; init; } = [];
 
+    // The exchanges' section's.
+
+    /// <summary>What each line waits on, as the exchanges' one read found it; null where it was not read.</summary>
+    public HelpWaits? Waits { get; init; }
+
     // The own-plugins section's.
 
     /// <summary>The install's own plugins not installed here and sound, which an add may name by id (PLUG9 d).</summary>

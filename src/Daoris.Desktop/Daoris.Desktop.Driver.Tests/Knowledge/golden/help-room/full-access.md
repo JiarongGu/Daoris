@@ -399,6 +399,20 @@ u-held  console-ui  daoris/s1c2d3e4
 
 - not read: `reports-db` has no checkout here, so its recovery refs were not read
 
+## What waits on what
+
+Each line below waits on a request it made of another session, agent or repository, read from this machine's records and
+never judged again here: whom it asked, where the request stands, and what Daoris saw of its delivery. Say it as listed; the
+terminal's `daoris session at-work <session>` says the same for one session. None of it waits on the person: what does is in
+*What needs you*, and an answer to another agent is that agent's to give, so propose no act for one.
+
+```text
+s1c2d3e4 (console-ui): helper h7 · codex-acp · asked 16:29 · asked · delivery kept
+s5f6a7b8 (engine): #q9 of core · asked · delivery kept
+```
+
+- not read: piece, so what a line waits on may be more.
+
 ### Workspace `default`
 
 | Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |

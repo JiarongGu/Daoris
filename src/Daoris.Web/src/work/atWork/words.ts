@@ -25,11 +25,11 @@ export function waitWhat(t: TFunction, wait: AtWorkWait): string {
   return wait.of ? t('work.atWork.what.questOf', values) : t('work.atWork.what.quest', values);
 }
 
-/** The kind of request an exchange is, by its id's prefix (COMMS1i): `helper`, `piece`, `quest` or `hand-over`. */
+/** The kind of request an exchange is, by its id's prefix (COMMS1i): `helper`, `piece`, `quest`, `hand-over` or `opinion`. */
 export const exchangeSource = (exchange: AtWorkExchange): string => exchange.id.slice(0, Math.max(0, exchange.id.indexOf(':')));
 
 /** The words a request names before anyone took it up: no agent's name. */
-const UNNAMED = new Set(['helper', 'partner', 'successor']);
+const UNNAMED = new Set(['helper', 'partner', 'successor', 'reviewer']);
 
 /**
  * Whom or what a request asked (COMMS1i, the comms design §7), the *Waiting on* line's and the co-workers' one wording: a quest as the
@@ -42,10 +42,11 @@ export function exchangeWhat(t: TFunction, exchange: AtWorkExchange, nameOf: (ag
   const agent = named ? nameOf(named) : undefined;
   if (source === 'piece') return agent ? t('work.atWork.coworker.partner', { agent }) : t('work.atWork.coworker.anyPartner');
   if (source === 'hand-over') return agent ? t('work.atWork.coworker.successor', { agent }) : t('work.atWork.coworker.anySuccessor');
+  if (source === 'opinion') return agent ? t('work.atWork.coworker.reviewer', { agent }) : t('work.atWork.coworker.anyReviewer');
   return agent ? t('work.atWork.coworker.helper', { agent }) : t('work.atWork.coworker.anyHelper');
 }
 
-const OUTCOMES = ['asked', 'approved', 'answered', 'taken-in', 'refused', 'done', 'declined'] as const;
+const OUTCOMES = ['asked', 'approved', 'answered', 'taken-in', 'refused', 'done', 'declined', 'ended'] as const;
 
 /**
  * Where a request stands (COMMS1i): its protocol's own word, and what Daoris saw of its delivery where that says more; never a
