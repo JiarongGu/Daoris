@@ -1436,13 +1436,13 @@ const runs = (paths: string[], full = false): string[] => selected(paths, full).
 const reaches = (paths: string[]): string[] => selected(paths).filter((entry) => entry.reached).map((entry) => entry.gate.name);
 /** The gates whose verdicts a change to these paths makes stale (GATE6), in the plan's order. */
 const stalens = (paths: string[]): string[] => ALL.filter((gate) => tool.pathsReaching(gate, paths, { lanes: repoLanes }).length > 0);
-const BASE = ['universal', 'code-map', 'orient-index', 'test-map', 'cli'];
+const BASE = ['universal', 'code-map', 'test-map', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
 // GATE5: the real-process halves and the deployment rehearsal, 30 to 70 minutes a merge, run only in the full set.
 // GATESLIM1: and the release and family rehearsals, 11 minutes of light gates plus 27 of the family rehearsal on one service merge.
 const LONG = ['driver-process', 'driver-process-git', 'modules-process', 'deployment'];
 /** GATESLIM1: what a merge runs by default, the blocking checks; every other gate it reaches is "in the CI beside". */
-const BLOCKING = ['universal', 'code-map', 'orient-index', 'test-map'];
+const BLOCKING = ['universal', 'code-map', 'test-map'];
 /** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
 /** The backlog merges' table (LANDBACKLOG1): among the driver's tests, and the merge tool's twin reads it too. */
@@ -1606,8 +1606,6 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // PROC1c: the second file runs only the driver's git-only classes, four at once.
     ["the git-only classes' settings", ['src/Daoris.Desktop/git.process.runsettings'], [...BASE, 'driver-process-git']],
     ['the declared gates', ['daoris.gates.json'], ALL],
-    // Written into every merge and held by its own check, which is in the baseline (ORIENT1a).
-    ['the orientation index', ['docs/index/routes.md', 'docs/index/outlines/tools/merge-branch.mjs.md'], BASE],
     ['nothing at all', [], BASE],
   ];
   for (const [what, paths, listed] of cases) {
@@ -1643,7 +1641,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   // GATE5's proof: a driver change runs eight gates (the censuses among them, REVIEW2 T6), and says the long four are in the full set before staging.
   const driver = selected(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs']);
   assert.deepEqual(driver.filter((entry) => entry.run).map((entry) => entry.gate.name),
-    ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family']);
+    ['universal', 'code-map', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family']);
   for (const name of LONG) {
     const entry = driver.find((candidate) => candidate.gate.name === name)!;
     assert.equal(entry.run, false, name);
@@ -1758,19 +1756,9 @@ test("the driver's sources the page's twins parse reach the web gate by their na
   }
 });
 
-test('what a merge writes rather than merges is the orientation index, by its folder, as daoris.gates.json declares it (GENREGEN1)', () => {
-  const declared = tool.readGenerated(repoRoot);
-  assert.deepEqual(declared, [{ folder: 'docs/index', run: 'node tools/orient-index.mjs' }]);
-  assert.equal(tool.isGenerated('docs/index/routes.md', declared), true);
-  assert.equal(tool.isGenerated('docs/index/outlines/src/Daoris.Web/src/App.tsx.md', declared), true);
-  assert.equal(tool.isGenerated('docs/index.md', declared), false);
-  assert.equal(tool.isGenerated('docs/decisions/D1.md', declared), false);
-  assert.ok(existsSync(join(repoRoot, 'tools/orient-index.mjs')), 'the command that writes docs/index/ runs a tool that is not here');
-  for (const { folder } of declared) {
-    // A hand merge meets no textual merge of it either: the attribute keeps one side whole, and the tool writes it again. It is
-    // marked generated too (LANDREBASE1), so a landing's replay takes the line's copy of it.
-    assert.match(readFileSync(join(repoRoot, '.gitattributes'), 'utf8'), new RegExp(`^${folder.replace(/\//g, '\\/')}/\\*\\* -merge linguist-generated$`, 'm'));
-  }
+test('this repository commits no generated folder: its orientation index is ignored, written in each checkout', () => {
+  assert.deepEqual(tool.readGenerated(repoRoot), []);
+  assert.match(readFileSync(join(repoRoot, '.gitignore'), 'utf8'), /^docs\/index\/$/m);
 });
 
 test('a repository declaring no generated folder writes none, and an entry without its command is refused (GENREGEN1)', () => {
@@ -2826,8 +2814,8 @@ test("every file outside the page a page's vitest reads is one whose change reac
   assert.equal(without.length, tool.REACH.length - 1, "MOD9e's rule names each source by its name under the driver's folder");
   for (const path of PAGE_PARSED) {
     const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach, gated: true }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
-    assert.deepEqual(reached(without), ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family'], path);
-    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family', 'web-unit'], path);
+    assert.deepEqual(reached(without), ['universal', 'code-map', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family'], path);
+    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family', 'web-unit'], path);
   }
 });
 
@@ -3287,7 +3275,7 @@ test("this repository's Process lane is the real-process halves and the rehearsa
   assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name),
     ['driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
   assert.deepEqual(repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
+    ['universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'npm run rehearse:anything' }), true);
@@ -3338,7 +3326,7 @@ test("what a light gate's script builds behind its name is never a component the
 test("this repository's light lane runs the desktop suites' fast halves first, and the Process lane waits for what it shares", () => {
   const schedule = tool.laneSchedule(repoPlan);
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // REHLANE1, REHLANE2, REHLANE2b: the release, family and deployment rehearsals right after the git half, which they run
   // beside, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
@@ -3567,14 +3555,13 @@ test("this repository's light gates run three at once, never two that build one 
   // The CLI's verify ends in the devkit's universal gates, and the web gate builds the HTTP host its own build writes into.
   assert.deepEqual(building('src/Daoris.Devkit'), ['universal', 'code-map', 'cli', 'devkit']);
   assert.deepEqual(building('src/Daoris.Service'), ['service', 'web']);
-  assert.deepEqual(schedule.components['orient-index'], []);
   // WEBSPLIT1: the web gate's unit run builds none, so it runs beside any.
   assert.deepEqual(schedule.components['web-unit'], []);
   // FLOWCHART1e: nor does the measured-box check, which serves the page's source with Vite.
   assert.deepEqual(schedule.components['web-measured'], []);
   // GATELANES1's light order and GATEORDER1's waits hold.
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'censuses', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // GATEBUILD1: each Process half reuses the build of its own test project's fast half.
   assert.deepEqual(schedule.reuses, { 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
@@ -4150,7 +4137,7 @@ test('MEMGATE1: the memory a gate needs is its class\'s, or what daoris.gates.js
   const needs = Object.fromEntries(repoPlan.map((gate) => [gate.name, tool.memoryNeed(gate)]));
   const { suite, process: half, rehearsal } = tool.MEMORY_NEEDS;
   assert.deepEqual(needs, {
-    universal: 0, 'code-map': 0, 'orient-index': 0, 'test-map': 0, 'web-types': 0, 'web-rules': 0, 'tool-tests': 0,
+    universal: 0, 'code-map': 0, 'test-map': 0, 'web-types': 0, 'web-rules': 0, 'tool-tests': 0,
     cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, censuses: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
     'driver-process': half, 'driver-process-git': half, 'modules-process': half,
     rehearse: rehearsal, 'rehearse-family': rehearsal, deployment: rehearsal,

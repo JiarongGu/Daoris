@@ -185,11 +185,16 @@ function spansOf(text) {
   return out;
 }
 
-/** The routes of `docs/index/routes.md`, as segment lists: a `{x}` segment is any. */
-function routesOf(files, read) {
-  if (!files.includes('docs/index/routes.md')) return [];
+/** The routes of `docs/index/routes.md`, as segment lists: a `{x}` segment is any. Read from the disk: git ignores the index. */
+function routesOf(read) {
+  let text;
+  try {
+    text = read('docs/index/routes.md');
+  } catch {
+    return [];
+  }
   const routes = [];
-  for (const match of read('docs/index/routes.md').matchAll(new RegExp(`^\\|\\s*${VERBS}\\s+(/\\S+)\\s*\\|`, 'gm'))) {
+  for (const match of text.matchAll(new RegExp(`^\\|\\s*${VERBS}\\s+(/\\S+)\\s*\\|`, 'gm'))) {
     routes.push(match[1].replace(/[?#].*$/, '').replace(/\/$/, '').split('/'));
   }
   return routes;
@@ -226,7 +231,7 @@ export function auditCurrent({ manifest, files, read, ignored, diff = null }) {
     stems.add(posix.basename(file).replace(/\.[^.]+$/, ''));
     identifiersOf(stripComments(read(file), extOf(file)), kind === 'product' ? product : tests);
   }
-  const routes = routesOf(files, read);
+  const routes = routesOf(read);
 
   // The diff's deleted and renamed things, read once: the paths, the file stems, and the names no product source has left.
   const gone = new Map();

@@ -581,9 +581,17 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// What git ignores in the checkout is never entered or opened (KNOWWALK1): a docs site's <c>node_modules/</c>
     /// under a documents folder is thousands of folders and READMEs that are not this repository's, and a person's
     /// ignored scratch is not its record. Git is asked once per read, at the first record found
-    /// (<see cref="IgnoredPaths"/>); the folder the walk starts at is the one declared, and is read as it is.
+    /// (<see cref="IgnoredPaths"/>); the folder the walk starts at is the one declared, and is read as it is, a declared
+    /// folder git ignores whole included: a generated index each checkout writes for itself is ignored, and git names
+    /// nothing inside a folder it ignores.
     /// </remarks>
     private static IEnumerable<string> Records(string root, string folder, Lazy<IgnoredPaths> ignored)
+    {
+        var within = ignored.Value.Covers($"{folder}/") ? new Lazy<IgnoredPaths>(IgnoredPaths.None) : ignored;
+        foreach (var file in Walk(root, folder, within)) yield return file;
+    }
+
+    private static IEnumerable<string> Walk(string root, string folder, Lazy<IgnoredPaths> ignored)
     {
         if (RepositoryLinks.Crosses(root, folder)) yield break;
 
@@ -597,7 +605,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         {
             var relative = $"{folder}/{Path.GetFileName(below)}";
             if (ignored.Value.Covers($"{relative}/")) continue;
-            foreach (var file in Records(root, relative, ignored)) yield return file;
+            foreach (var file in Walk(root, relative, ignored)) yield return file;
         }
     }
 

@@ -405,7 +405,7 @@ export function settleContained(candidate, at) {
 
 /**
  * Whether a direct commit's paths move main by records only (§4.1 point 3): every path's own rule, the first that places it
- * (`ruleOf(path)`), is the records lane, `docs/**` and its neighbours, or `docs/index/**`. A path no rule places, or an earlier
+ * (`ruleOf(path)`), is the records lane, or `docs/**` and its neighbours. A path no rule places, or an earlier
  * rule naming more (`.claude/knowledge/adoption.md`, `daoris.lanes.json`), or a rule that names no gate (`src/Daoris.Cli/test/**`,
  * the tools lane), is not.
  */
@@ -415,7 +415,7 @@ export function recordsOnly(paths, ruleOf) {
     const rule = ruleOf(path);
     if (!rule) return false;
     if (rule.lane === 'records') return true;
-    return Array.isArray(rule.paths) && (rule.paths.includes('docs/**') || rule.paths.includes('docs/index/**'));
+    return Array.isArray(rule.paths) && rule.paths.includes('docs/**');
   });
 }
 

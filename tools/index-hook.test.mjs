@@ -1,10 +1,11 @@
 /**
- * INDEXAUTO1: the pre-commit hook regenerates `docs/index/` in the commit that stales it.
+ * The checkout hooks write the ignored `docs/index/` where a branch's work tree moves, and the notes driver merges the
+ * decisions (NOTEBREAK1).
  *
  *   node --test tools/index-hook.test.mjs
  *
- * Run by `npm run verify`. Each case commits in a scratch repository under `_fixtures/` with the hook installed by
- * `--install` and pointed at this checkout's tool.
+ * Run by `npm run verify`. Each case works in a scratch repository under `_fixtures/` with the hooks installed by
+ * `--install` and pointed at this checkout's tools.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -29,28 +30,40 @@ const clean = () => {
 const git = (cwd, ...args) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'core.autocrlf=false', ...args],
   { cwd, encoding: 'utf8', env: { ...clean(), ...(git.env ?? {}) }, windowsHide: true });
 const show = (cwd, spec) => git(cwd, 'show', spec).stdout;
+const indexOf = (dir) => join(dir, 'docs', 'index', 'README.md');
+const drop = (dir) => rmSync(join(dir, 'docs', 'index'), { recursive: true, force: true });
 
 let serial = 0;
 function repository(hook = true) {
   const dir = join(scratch, `r${serial += 1}`);
   mkdirSync(join(dir, 'src'), { recursive: true });
   writeFileSync(join(dir, 'daoris.json'), '{}\n');
+  writeFileSync(join(dir, '.gitignore'), 'docs/index/\n');
   writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\n');
   git(dir, 'init', '-q');
   if (hook) assert.equal(install({ out() {}, err() {}, cwd: dir, env: clean(), script }), 0);
   return dir;
 }
-
-test('install writes the hook, and leaves a hook that is not its own', () => {
+const committed = () => {
   const dir = repository();
-  const hook = join(dir, '.git', 'hooks', 'pre-commit');
-  assert.match(readFileSync(hook, 'utf8'), /index-hook/);
+  git(dir, 'add', '-A');
+  assert.equal(git(dir, 'commit', '-q', '-m', 'first').status, 0);
+  git(dir, 'branch', '-M', 'main');
+  return dir;
+};
+
+test('install writes the checkout hooks, removes its own pre-commit, and leaves a hook that is not its own', () => {
+  const dir = repository(false);
+  const hooks = join(dir, '.git', 'hooks');
+  mkdirSync(hooks, { recursive: true });
+  writeFileSync(join(hooks, 'pre-commit'), '#!/bin/sh\n# daoris index-hook\nexec node tools/index-hook.mjs\n');
+  writeFileSync(join(hooks, 'post-merge'), '#!/bin/sh\necho mine\n');
   const lines = [];
   assert.equal(install({ out: (line) => lines.push(line), err() {}, cwd: dir, env: clean(), script }), 0);
-  writeFileSync(hook, '#!/bin/sh\necho mine\n');
-  install({ out: (line) => lines.push(line), err() {}, cwd: dir, env: clean(), script });
-  assert.equal(readFileSync(hook, 'utf8'), '#!/bin/sh\necho mine\n');
-  assert.match(lines.at(-1), /not its own/);
+  assert.match(readFileSync(join(hooks, 'post-checkout'), 'utf8'), /index-fresh\.mjs" --root "\$root"/);
+  assert.equal(existsSync(join(hooks, 'pre-commit')), false);
+  assert.equal(readFileSync(join(hooks, 'post-merge'), 'utf8'), '#!/bin/sh\necho mine\n');
+  assert.ok(lines.some((line) => /post-merge is not its own/.test(line)), lines.join('\n'));
 });
 
 test('install outside a work tree exits 0 and writes nothing', () => {
@@ -59,66 +72,50 @@ test('install outside a work tree exits 0 and writes nothing', () => {
   assert.match(lines[0], /not a git work tree/);
 });
 
-test('a source commit carries its regenerated outline', () => {
-  const dir = repository();
-  git(dir, 'add', '-A');
-  const made = git(dir, 'commit', '-q', '-m', 'first');
-  assert.equal(made.status, 0, made.stderr);
-  assert.match(show(dir, 'HEAD:docs/index/README.md'), /index/i);
+test('install writes the index where none stands, and git ignores it', () => {
+  const dir = committed();
+  assert.match(readFileSync(indexOf(dir), 'utf8'), /index/i);
   assert.equal(git(dir, 'status', '--porcelain').stdout.trim(), '');
-  writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\nexport function b() {}\n');
-  git(dir, 'add', 'src/a.ts');
-  assert.equal(git(dir, 'commit', '-q', '-m', 'second').status, 0);
-  const check = spawnSync('node', [join(here, 'orient-index.mjs'), '--check', '--root', dir], { encoding: 'utf8', env: clean(), windowsHide: true });
-  assert.equal(check.status, 0, check.stderr);
-  assert.equal(git(dir, 'status', '--porcelain').stdout.trim(), '');
+  assert.equal(git(dir, 'ls-files', 'docs').stdout.trim(), '');
 });
 
-test('a docs-only commit does no work', () => {
-  const dir = repository();
-  git(dir, 'add', '-A');
-  git(dir, 'commit', '-q', '-m', 'first');
-  const before = show(dir, 'HEAD:docs/index/README.md');
-  writeFileSync(join(dir, 'docs', 'index', 'README.md'), `${before}\nhand note\n`);
-  git(dir, 'add', 'docs/index/README.md');
-  assert.equal(git(dir, 'commit', '-q', '-m', 'docs').status, 0);
-  assert.match(show(dir, 'HEAD:docs/index/README.md'), /hand note/);
-});
+test("a branch's checkout and a new worktree write the index; a detached or a file checkout, and the opt-out, write none", () => {
+  const dir = committed();
+  drop(dir);
+  assert.equal(git(dir, 'checkout', '-q', '-b', 'side').status, 0);
+  assert.ok(existsSync(indexOf(dir)), "a branch's checkout writes it");
 
-test('a partially staged file skips with a note, and the opt-out skips silently', () => {
-  const dir = repository();
-  git(dir, 'add', '-A');
-  git(dir, 'commit', '-q', '-m', 'first');
-  writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\nexport function b() {}\n');
-  git(dir, 'add', 'src/a.ts');
-  writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\nexport function b() {}\nexport function c() {}\n');
-  const made = git(dir, 'commit', '-m', 'partial');
-  assert.equal(made.status, 0);
-  assert.match(made.stdout + made.stderr, /partially staged/);
+  drop(dir);
+  assert.equal(git(dir, 'checkout', '-q', '--', 'src/a.ts').status, 0);
+  assert.ok(!existsSync(indexOf(dir)), 'a file checkout writes none');
+  assert.equal(git(dir, 'checkout', '-q', '--detach').status, 0);
+  assert.ok(!existsSync(indexOf(dir)), "a detached checkout is a tool's tree, and writes none");
+
+  const tree = join(scratch, `w${serial}`);
+  const added = git(dir, 'worktree', 'add', '-q', '-b', 'tree', tree);
+  assert.equal(added.status, 0, added.stderr);
+  assert.ok(existsSync(indexOf(tree)), 'a new worktree starts with its index');
+  git(dir, 'worktree', 'remove', '--force', tree);
+
   git.env = { DAORIS_INDEX_HOOK: '0' };
   try {
-    git(dir, 'add', '-A');
-    const off = git(dir, 'commit', '-m', 'off');
-    assert.equal(off.status, 0);
-    assert.doesNotMatch(off.stdout + off.stderr, /partially staged|orient-index/);
+    assert.equal(git(dir, 'checkout', '-q', 'main').status, 0);
+    assert.ok(!existsSync(indexOf(dir)), 'the opt-out writes none');
   } finally {
     git.env = undefined;
   }
 });
 
-test('a tool failure aborts the commit with its message', () => {
-  const dir = repository();
+test('a merge into a branch writes the index', () => {
+  const dir = committed();
+  git(dir, 'checkout', '-q', '-b', 'side');
+  writeFileSync(join(dir, 'src', 'b.ts'), 'export function b() {}\n');
   git(dir, 'add', '-A');
-  git(dir, 'commit', '-q', '-m', 'first');
-  writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\nexport function b() {}\n');
-  git(dir, 'add', 'src/a.ts');
-  // A file where the index folder's subfolder must go makes the write fail.
-  rmSync(join(dir, 'docs', 'index'), { recursive: true, force: true });
-  writeFileSync(join(dir, 'docs', 'index'), 'not a folder\n');
-  const made = git(dir, 'commit', '-q', '-m', 'second');
-  assert.notEqual(made.status, 0);
-  assert.match(made.stderr, /index-hook|orient-index/);
-  assert.equal(existsSync(join(dir, 'docs', 'index')), true);
+  git(dir, 'commit', '-q', '-m', 'b');
+  git(dir, 'checkout', '-q', 'main');
+  drop(dir);
+  assert.equal(git(dir, 'merge', '-q', '--ff-only', 'side').status, 0);
+  assert.ok(existsSync(indexOf(dir)));
 });
 
 // NOTEBREAK1: a union merge coalesces the blank line two branches each add before their note.
@@ -155,7 +152,7 @@ test('a clean union merge commits the blank line before each note', () => {
   assert.equal(git(dir, 'status', '--porcelain').stdout.trim(), '');
 });
 
-test('a conflicted merge finished by git commit gets the blank line too', () => {
+test('a conflicted merge finished by git commit keeps the blank line the driver set', () => {
   const dir = noteRepository();
   addNote(dir, 'a', 'a');
   writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() { return 1; }\n');
@@ -170,28 +167,6 @@ test('a conflicted merge finished by git commit gets the blank line too', () => 
   const made = git(dir, 'commit', '-q', '--no-edit');
   assert.equal(made.status, 0, made.stderr);
   assert.doesNotMatch(show(dir, 'HEAD:docs/decisions/D1.md'), glued);
-});
-
-test('a glued note in a staged decision is separated, and one without is untouched', () => {
-  const dir = noteRepository();
-  writeFileSync(join(dir, 'docs', 'decisions', 'D1.md'), '# D1\n\nBody.\n**Note, x**\nText.\n');
-  writeFileSync(join(dir, 'docs', 'decisions', 'D2.md'), '# D2\n\nBody.\n\n**Note, y**\nText.\n');
-  git(dir, 'add', '-A');
-  assert.equal(git(dir, 'commit', '-q', '-m', 'notes').status, 0);
-  assert.equal(show(dir, 'HEAD:docs/decisions/D1.md'), '# D1\n\nBody.\n\n**Note, x**\nText.\n');
-  assert.equal(show(dir, 'HEAD:docs/decisions/D2.md'), '# D2\n\nBody.\n\n**Note, y**\nText.\n');
-});
-
-test('a decision staged in part is left alone with a note', () => {
-  const dir = noteRepository();
-  const file = join(dir, 'docs', 'decisions', 'D1.md');
-  writeFileSync(file, '# D1\n\nBody.\n**Note, x**\nText.\n');
-  git(dir, 'add', '-A');
-  writeFileSync(file, '# D1\n\nBody.\n**Note, x**\nText.\nMore.\n');
-  const made = git(dir, 'commit', '-m', 'partial');
-  assert.equal(made.status, 0, made.stderr);
-  assert.match(made.stdout + made.stderr, /D1\.md/);
-  assert.match(show(dir, 'HEAD:docs/decisions/D1.md'), /Body\.\n\*\*Note, x/);
 });
 
 test('install configures the notes driver, and the merge commit is the one git made', () => {

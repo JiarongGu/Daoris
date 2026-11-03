@@ -96,7 +96,7 @@ a record from before read as it was (the brief's rule on stored shapes).
    `ChatGoOnTests`, `AskAndWaitTickTests`, `CurveMoveTests`).
 4. `npm --prefix src/Daoris.Web run test` when row 12 reads the field on a page, and `i18n:check` and `names:check -- --strict`
    when it shows a word.
-5. `npm run -s verify`, with the index regenerated (`node tools/orient-index.mjs`).
+5. `npm run -s verify`.
 
 A branch in one lane cannot run the others; the hand-back then names the rows left for the parent.
 

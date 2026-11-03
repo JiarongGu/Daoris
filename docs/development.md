@@ -1,7 +1,7 @@
 # Developing Daoris
 
 Read [AGENTS.md](../AGENTS.md), the [document router](README.md), the
-[orientation index](index/README.md) and the relevant contract before exploring code. The
+orientation index (`docs/index/README.md`, written in each checkout) and the relevant contract before exploring code. The
 discovery skills in `.claude/INDEX.md` route the on-demand knowledge. [TASKS.md](../TASKS.md)
 holds acceptance criteria and dependencies; [ROADMAP.md](../ROADMAP.md) gives the sequence.
 
@@ -572,14 +572,14 @@ node tools/partials.mjs --write
 dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 ```
 
-`npm ci` installs a pre-commit hook (`tools/index-hook.mjs`) that runs the `orient-index` write and stages `docs/index/` in any commit that stages other paths; `DAORIS_INDEX_HOOK=0` skips it, and it skips a commit with a file staged in part. The same tool puts a blank line before a `**Note, ` line glued to the line above in a staged decision file, and its `notes` merge driver (set by `npm ci`, named in `.gitattributes`) does the same inside the merge of two branches' notes; a clone without the driver conflicts there rather than gluing.
+`docs/index/` is ignored and never committed. `npm ci` installs `post-checkout` and `post-merge` hooks (`tools/index-hook.mjs`) that write it after git moves a branch's work tree, a new worktree included, and writes it where none stands; `DAORIS_INDEX_HOOK=0` skips them, and a detached checkout is skipped. The knowledge server writes the served checkout's again before a tool call once its `HEAD` has moved (`tools/index-fresh.mjs`). The same `npm ci` sets the `notes` merge driver (named in `.gitattributes`), which puts a blank line before a `**Note, ` line glued to the line above inside the merge of two branches' notes; a clone without the driver conflicts there rather than gluing.
 
 Moving files: `node tools/move-files.mjs [--plan] from=to ... --expect-moved N --expect-rewritten N` (or `--moves file.json`)
 runs `git mv`, respells every relative import of the moved files and in them, and checks that each still resolves.
 
 Only run `map` when project metadata changed; `map --check` verifies freshness. `sync` preserves the
 local brief outside the doctrine region. Canon edits also require syncing both example adopters.
-`docs/index/` is checked with `--check`; a conflict in generated output is resolved by regeneration.
+A conflict in generated output is resolved by regeneration.
 
 ## Packaging, service and desktop loops
 

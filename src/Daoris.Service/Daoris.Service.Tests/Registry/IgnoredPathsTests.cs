@@ -106,6 +106,23 @@ public sealed class IgnoredPathsTests : IDisposable
     }
 
     [Fact]
+    public void A_declared_index_git_ignores_whole_is_read_as_it_stands()
+    {
+        // A generated index each checkout writes for itself, never committed.
+        Write(".gitignore", "docs/index/\n");
+        Write("docs/design.md", "# Design\n\n## Why\n\nBecause.\n");
+        Write("docs/index/README.md", "# Where things are\n\n| Route | File |\n|---|---|\n| `ZEPPELIN` | `Z.cs:1` |\n");
+        Write("docs/index/outlines/Z.cs.md", "# Z.cs\n\n- `class Z` 1-9\n");
+        GitCheckouts.Init(_root);
+
+        var entries = new RepositoryScanner(documents: "docs", index: "docs/index").Scan(_root);
+
+        Assert.Contains(entries, entry => entry.RelativePath == "docs/index/README.md" && entry.Kind == EntryKind.Index);
+        Assert.Contains(entries, entry => entry.RelativePath == "docs/index/outlines/Z.cs.md" && entry.Kind == EntryKind.Index);
+        Assert.Contains(entries, entry => entry.RelativePath == "docs/design.md");
+    }
+
+    [Fact]
     public void The_start_names_the_real_git_behind_the_launcher_with_its_variables()
     {
         if (!OperatingSystem.IsWindows()) return;
