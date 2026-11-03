@@ -247,6 +247,25 @@ describe('a session row', () => {
     }
   });
 
+  /**
+   * MIXAGENT3a-iii (the mixed-agents design §4, *Cost*): a helper's and a continuing part's row says what it spent, its tokens over
+   * its turns, or that its door said none; never zero, and nothing on any other row or where nothing answered.
+   */
+  it('MIXAGENT3a-iii says what a helper and a continuing part spent, never zero, and nothing on another row', () => {
+    const helper = session({ kind: 'chat', repository: 'engine', serves: 's9f8e7d6' });
+    const { rerender } = render(<SessionRow session={helper} helps="Expose" spent={{ turns: 2, reported: 2, input: 1200, output: 300 }} />);
+    expect(screen.getByText(/helps Expose · 1\.5K tokens over 2 turns · /i)).toBeInTheDocument();
+
+    const continued = session({ kind: 'chat', repository: 'engine', from: 'a1b2c3d4' });
+    rerender(<SessionRow session={continued} opening="Go on" continues="Why" spent={{ turns: 1, reported: 0 }} />);
+    expect(screen.getByText(/1 turn, its tokens not said/)).toBeInTheDocument();
+
+    rerender(<SessionRow session={continued} opening="Go on" continues="Why" spent={null} />);
+    expect(screen.queryByText(/tokens/)).toBeNull();
+    rerender(<SessionRow session={session({ kind: 'chat' })} opening="Go on" spent={{ turns: 3, reported: 3, input: 10 }} />);
+    expect(screen.queryByText(/tokens/)).toBeNull();
+  });
+
   it('names a session with no quest by its derived identity rather than by nothing', () => {
     render(<SessionRow session={session({ kind: 'chat', quest: null })} />);
     expect(screen.getByText('Chat')).toBeInTheDocument();

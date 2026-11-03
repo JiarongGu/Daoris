@@ -243,16 +243,17 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
 /**
  * What each of a line of work's parts spent (SESSCTX1d; the session-context design §7), from this machine's own record as the
  * openings are: the *Parts* strip says it on each part's own row, so a moved session reads as one. Asked again when one of them
- * ends a turn. Nothing in a browser, which holds no record.
+ * ends a turn. Nothing in a browser, which holds no record. `least` is how many ids are worth asking for: a line's strip asks only
+ * for two parts or more, and the rail's rows (MIXAGENT3a-iii) for any helper or continuing part it draws.
  */
-export const useSessionSpent = (ids: readonly string[] | undefined): Record<string, PartSpent> => {
+export const useSessionSpent = (ids: readonly string[] | undefined, least = 2): Record<string, PartSpent> => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const asked = [...new Set(ids ?? [])].sort();
   const answer = useQuery({
     queryKey: keys.spent(asked),
     queryFn: () => call<{ spent?: Record<string, PartSpent> }>('SESSION_SPENT', { ids: asked }),
-    enabled: isAvailable && asked.length > 1,
+    enabled: isAvailable && asked.length >= least,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });

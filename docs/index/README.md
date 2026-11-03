@@ -41,7 +41,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/app/App.tsx` | 100 | 1696 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 69 | 1463 |
 | `src/Daoris.Web/src/bridge/driver.ts` | 43 | 791 |
-| `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
+| `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 55 | 1051 |
 | `src/Daoris.Web/src/data/api.ts` | 57 | 931 |
 | `src/Daoris.Web/src/data/queries.ts` | 51 | 970 |
 | `src/Daoris.Web/src/design/RankedFlow.tsx` | 61 | 1156 |
@@ -80,7 +80,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 107 | 1530 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 60 | 1012 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
-| `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
+| `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 48 | 878 |
 | `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 61 | 1003 |
 | `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx` | 48 | 935 |
 | `src/Daoris.Web/src/workflow/edit/graphDraft.ts` | 43 | 776 |

@@ -7,7 +7,7 @@ import {
   cutEnded, ENDED_SHOWN, type NestedRow, nestServing, type SessionArrangement, type SessionGrouping, sessionsByRepository,
   sessionsByState, stripSessions,
 } from '../groups';
-import { type EntryFacts, entryOfSession, opensOf, type SessionEntry, sessionsByAsk } from '../entries';
+import { type EntryFacts, entryOfSession, opensOf, type PartSpent, type SessionEntry, sessionsByAsk } from '../entries';
 import type { HeavyPart } from '../heavySlot';
 import { isHelp, isIntake, sessionTitle } from '../identity';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -36,6 +36,8 @@ export type SessionRowFacts = {
   continues?: string | null;
   /** The session a helper helps, by that session's title, where the rail joined them (MIXAGENT3a-i). */
   helps?: string | null;
+  /** What a helper or a part that continues another spent (MIXAGENT3a-iii), from this machine's record; absent where none answered. */
+  spent?: PartSpent | null;
   /** The entry's name where it is not the record's own: the ask's (SESSONE1c, D167). Not drawn by ask, whose heading says it. */
   name?: string | null;
   /** The entry this row stands for (SESSONE1c): how many parts it holds, and all their ids, so any part attended marks the row. */
