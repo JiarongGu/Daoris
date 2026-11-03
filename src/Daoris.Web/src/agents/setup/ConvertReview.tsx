@@ -1,8 +1,11 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, ChoiceRow, Inline, Pill, SkeletonRows } from '../../design/ui';
+import { dayOf, size } from '../../locales/format';
 import { Refused } from '../../work/InlineConfirm';
-import { type ConvertApplied, type ConvertChoices, type ConvertPlanned, type ConvertUndoPlan, savesByShape, terminalOf } from './convertPlan';
+import {
+  clearsOf, type ConvertApplied, type ConvertChoices, type ConvertPlanned, type ConvertUndoPlan, otherParts, savesByShape, terminalOf, workflowsOf,
+} from './convertPlan';
 import { Section } from './PlaceReview';
 
 export type ConvertReviewProps = {
@@ -14,7 +17,7 @@ export type ConvertReviewProps = {
   problem: string | null;
   applying: boolean;
   undoing: boolean;
-  /** What the last Apply came to. */
+  /** What the last Apply, press again or Leave it came to. */
   result: ConvertApplied | null;
   /** The undo's plan, where the driver offers it. */
   undo: ConvertUndoPlan | null;
@@ -22,18 +25,34 @@ export type ConvertReviewProps = {
   undone: ConvertApplied | null;
   onChoose: (patch: Partial<ConvertChoices>) => void;
   onApply: () => void;
+  /** The same receipt pressed again: each failed part retried. */
+  onAgain: () => void;
+  /** A failed part of the receipt left for a later plan. */
+  onLeave: (part: string) => void;
   onUndo: () => void;
   onClose: () => void;
 };
 
 const NEVER = ['runs', 'records', 'files', 'places'] as const;
 
-/** What a press came to: the driver's sentence, and each operation with its outcome. */
-function Outcome({ result }: { result: ConvertApplied }) {
+/** A part's name in the reader's words; one this page does not know reads as the driver names it. */
+const usePartName = () => {
   const { t } = useTranslation();
-  if (!result.done) return <Refused sentence={result.message} />;
+  return (part: string) => t(`agents.convert.part.${part}`, { defaultValue: part });
+};
+
+/**
+ * What a press came to: the driver's sentence, and each operation with its outcome. A receipt with a failed part says each part's outcome, offers
+ * the receipt pressed again, and *Leave it* on each failed part.
+ */
+function Outcome({ result, busy, onAgain, onLeave }: { result: ConvertApplied; busy: boolean; onAgain: () => void; onLeave: (part: string) => void }) {
+  const { t } = useTranslation();
+  const partName = usePartName();
+  const parts = result.parts ?? [];
+  const failed = parts.filter((each) => each.outcome === 'failed');
+  if (!result.done && (result.refused || parts.length === 0)) return <Refused sentence={result.message} />;
   return (
-    <div role="status" className="grid min-w-0 gap-1.5 border-l-[3px] border-accent pl-2.5 text-small text-ink">
+    <div role="status" className={`grid min-w-0 gap-1.5 border-l-[3px] ${result.done ? 'border-accent' : 'border-warn'} pl-2.5 text-small text-ink`}>
       <p className="m-0 [overflow-wrap:anywhere]"><Inline text={result.message} /></p>
       <ul aria-label={t('agents.convert.operations')} className="m-0 grid list-none gap-0.5 p-0 text-ink-soft">
         {result.operations.map((each) => (
@@ -42,25 +61,52 @@ function Outcome({ result }: { result: ConvertApplied }) {
           </li>
         ))}
       </ul>
+      {parts.length > 1 || failed.length > 0 ? (
+        <ul aria-label={t('agents.convert.parts')} className="m-0 grid list-none gap-1 p-0">
+          {parts.map((each) => (
+            <li key={each.part} className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="[overflow-wrap:anywhere]">
+                <Inline text={`${partName(each.part)} — ${t(`agents.convert.outcome.${each.outcome}`, { defaultValue: each.outcome })}${each.said ? `: ${each.said}` : ''}`} />
+              </span>
+              {each.outcome === 'failed' && (
+                <Button variant="ghost" className="min-h-0 px-2 py-0.5 text-small" disabled={busy} aria-label={t('agents.convert.leaveOf', { part: partName(each.part) })} onClick={() => onLeave(each.part)}>
+                  {t('agents.convert.leave')}
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {failed.length > 0 && (
+        <div>
+          <Button disabled={busy} onClick={onAgain}>{t('agents.convert.again')}</Button>
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * **Convert…**'s review (WORKFLOWCLEAN1g-i; the cleanup design §4.3): what converting changes, by shape, each operation once with its places; the
- * row's two choices; what lowers your part; what stays as it is; what it never touches; the terminal line; and one *Apply*. A done press says
- * each operation with its outcome, and *Undo the conversion* while the driver offers it.
+ * **Convert…**'s review (WORKFLOWCLEAN1g-i, ONEWAY1ae; the oneway design §1.1, the cleanup design §4.3): what converting changes, by shape for the
+ * workflow part and by part for every other, each operation once with its places, and the parts not read; the row's two choices; what lowers your
+ * part; what stays as it is; what it never touches; what is removed for good; the terminal line; and one *Apply*. A done press says each operation
+ * with its outcome; a receipt with a failed part offers it pressed again or left; *Undo the conversion* while the driver offers it.
  *
  * @remarks
  * The page judges nothing: every operation, lowering, refusal and `moved` is the driver's sentence. While a plan is read the last stays, marked
- * *updating*, and *Apply* waits. A molecule: the plan and the last results arrive as props, and every press goes out.
+ * *updating*, and *Apply* waits. At 64 rem of main the first five sections stand in two columns, and in one below. A molecule: the plan and the
+ * last results arrive as props, and every press goes out.
  */
-export function ConvertReview({ plan, choices, reading, stale, problem, applying, undoing, result, undo, undone, onChoose, onApply, onUndo, onClose }: ConvertReviewProps) {
-  const { t } = useTranslation();
+export function ConvertReview({ plan, choices, reading, stale, problem, applying, undoing, result, undo, undone, onChoose, onApply, onAgain, onLeave, onUndo, onClose }: ConvertReviewProps) {
+  const { t, i18n } = useTranslation();
+  const partName = usePartName();
   const own = useId();
   const updating = reading || stale;
   const busy = updating || applying || undoing;
   const canApply = plan !== null && !plan.empty && !busy;
+  const workflows = workflowsOf(plan);
+  const others = plan ? otherParts(plan) : [];
+  const clears = plan ? clearsOf(plan) : [];
   const pick = (name: keyof ConvertChoices, value: string, title: string, line: string) => (
     <ChoiceRow
       key={`${name}-${value}`}
@@ -113,35 +159,44 @@ export function ConvertReview({ plan, choices, reading, stale, problem, applying
                   ? <p className="m-0 text-small text-ink-soft">{t('agents.convert.nothing')}</p>
                   : (
                     <ul aria-label={t('agents.convert.changes')} className="m-0 grid list-none gap-2 p-0">
-                      {savesByShape(plan).map(({ shape, saves }) => group(`shape-${shape}`, t(`agents.convert.shape.${shape}`, { defaultValue: shape }), saves.map((each) => ({
+                      {workflows && savesByShape(workflows).map(({ shape, saves }) => group(`shape-${shape}`, t(`agents.convert.shape.${shape}`, { defaultValue: shape }), saves.map((each) => ({
                         key: each.id,
                         text: `${each.mode === 'append' ? t('agents.convert.save.append', { id: each.id, version: (each.base ?? 0) + 1 }) : t('agents.convert.save.new', { id: each.id })}: ${each.said}`,
                         places: each.places,
                       }))))}
-                      {group('uses', t('agents.convert.group.uses'), plan.uses.map((each) => ({ key: `${each.isWorkspace}${each.place}`, text: each.said })))}
-                      {plan.defaultWorkflow && group('default', t('agents.convert.group.default'), [{ key: 'default', text: t('agents.convert.default', { workflow: plan.defaultWorkflow }) }])}
-                      {group('policies', t('agents.convert.group.policies'), plan.policies.map((each) => ({ key: `${each.isWorkspace}${each.place}`, text: t('agents.convert.policy', { place: each.place }) })))}
-                      {group('removals', t('agents.convert.group.removals'), plan.removals.map((each) => ({ key: `${each.isWorkspace}${each.place}`, text: t('agents.convert.removal', { place: each.place, keys: each.keys.join(', ') }) })))}
+                      {workflows && group('uses', t('agents.convert.group.uses'), workflows.uses.map((each) => ({ key: `${each.isWorkspace}${each.place}`, text: each.said })))}
+                      {workflows?.defaultWorkflow && group('default', t('agents.convert.group.default'), [{ key: 'default', text: t('agents.convert.default', { workflow: workflows.defaultWorkflow }) }])}
+                      {workflows && group('policies', t('agents.convert.group.policies'), workflows.policies.map((each) => ({ key: `${each.isWorkspace}${each.place}`, text: t('agents.convert.policy', { place: each.place }) })))}
+                      {workflows && group('removals', t('agents.convert.group.removals'), workflows.removals.map((each) => ({ key: `${each.isWorkspace}${each.place}`, text: t('agents.convert.removal', { place: each.place, keys: each.keys.join(', ') }) })))}
+                      {/* The terminal's lines align their columns with runs of spaces, which the page reads as one. */}
+                      {others.map((part) => group(`part-${part.part}`, partName(part.part), part.lines.map((line, at) => ({ key: `${at}`, text: line.trim().replace(/ {2,}/g, ' ') }))))}
                     </ul>
                   )}
+                {plan.unread.map((each) => (
+                  <p key={each.part} className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink [overflow-wrap:anywhere]">
+                    {t('agents.convert.unread', { part: partName(each.part) })} <Inline text={each.said} />
+                  </p>
+                ))}
               </Section>
 
-              <Section id={`${own}-choices`} title={t('agents.convert.choices')}>
-                <div role="radiogroup" aria-label={t('agents.convert.composed')} className="grid min-w-0 gap-1.5">
-                  <p className="m-0 text-small text-ink-soft">{t('agents.convert.composed')}</p>
-                  {pick('composed', 'none', t('agents.convert.composed.none'), t('agents.convert.composed.noneLine'))}
-                  {pick('composed', 'review', t('agents.convert.composed.review'), t('agents.convert.composed.reviewLine'))}
-                </div>
-                <div role="radiogroup" aria-label={t('agents.convert.automatic')} className="grid min-w-0 gap-1.5">
-                  <p className="m-0 text-small text-ink-soft">{t('agents.convert.automatic')}</p>
-                  {pick('landAutomatic', 'review', t('agents.convert.automatic.review'), t('agents.convert.automatic.reviewLine'))}
-                  {pick('landAutomatic', 'none', t('agents.convert.automatic.none'), t('agents.convert.automatic.noneLine'))}
-                </div>
-              </Section>
+              {workflows && (
+                <Section id={`${own}-choices`} title={t('agents.convert.choices')}>
+                  <div role="radiogroup" aria-label={t('agents.convert.composed')} className="grid min-w-0 gap-1.5">
+                    <p className="m-0 text-small text-ink-soft">{t('agents.convert.composed')}</p>
+                    {pick('composed', 'none', t('agents.convert.composed.none'), t('agents.convert.composed.noneLine'))}
+                    {pick('composed', 'review', t('agents.convert.composed.review'), t('agents.convert.composed.reviewLine'))}
+                  </div>
+                  <div role="radiogroup" aria-label={t('agents.convert.automatic')} className="grid min-w-0 gap-1.5">
+                    <p className="m-0 text-small text-ink-soft">{t('agents.convert.automatic')}</p>
+                    {pick('landAutomatic', 'review', t('agents.convert.automatic.review'), t('agents.convert.automatic.reviewLine'))}
+                    {pick('landAutomatic', 'none', t('agents.convert.automatic.none'), t('agents.convert.automatic.noneLine'))}
+                  </div>
+                </Section>
+              )}
 
-              {plan.lowers.length > 0 && (
+              {workflows && workflows.lowers.length > 0 && (
                 <Section id={`${own}-yours`} title={t('agents.convert.yours')}>
-                  {plan.lowers.map((each) => (
+                  {workflows.lowers.map((each) => (
                     <p key={each} className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink [overflow-wrap:anywhere]"><Inline text={each} /></p>
                   ))}
                 </Section>
@@ -150,11 +205,11 @@ export function ConvertReview({ plan, choices, reading, stale, problem, applying
 
             <div className="grid min-w-0 content-start gap-4">
               <Section id={`${own}-stays`} title={t('agents.convert.stays')}>
-                {plan.census.runs.length > 0 && (
+                {workflows && workflows.census.runs.length > 0 && (
                   <>
-                    <p className="m-0 text-small text-ink [overflow-wrap:anywhere]">{t('agents.convert.runs', { count: plan.census.runs.length })}</p>
+                    <p className="m-0 text-small text-ink [overflow-wrap:anywhere]">{t('agents.convert.runs', { count: workflows.census.runs.length })}</p>
                     <ul aria-label={t('agents.convert.runsList')} className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft">
-                      {plan.census.runs.map((each) => (
+                      {workflows.census.runs.map((each) => (
                         <li key={each.run} className="m-0 [overflow-wrap:anywhere]">
                           <Inline text={t('agents.convert.run', { run: each.run, repository: each.repository, workflow: each.workflow, version: each.version ?? '' })} />
                           {` ${each.door}`}
@@ -163,15 +218,15 @@ export function ConvertReview({ plan, choices, reading, stale, problem, applying
                     </ul>
                   </>
                 )}
-                {plan.census.leftovers.map((each) => (
+                {workflows?.census.leftovers.map((each) => (
                   <p key={`${each.isWorkspace}${each.place}`} className="m-0 text-small text-ink [overflow-wrap:anywhere]">
                     <Inline text={t('agents.convert.leftover', { place: each.place, keys: each.keys.join(', ') })} /> <Inline text={each.why} />
                   </p>
                 ))}
-                {plan.kept.map((each) => (
+                {workflows?.kept.map((each) => (
                   <p key={`${each.code}${each.subject}`} className="m-0 text-small text-ink [overflow-wrap:anywhere]"><Inline text={each.said} /></p>
                 ))}
-                {plan.census.runs.length === 0 && plan.census.leftovers.length === 0 && plan.kept.length === 0 && (
+                {(workflows?.census.runs.length ?? 0) === 0 && (workflows?.census.leftovers.length ?? 0) === 0 && (workflows?.kept.length ?? 0) === 0 && (
                   <p className="m-0 text-small text-ink-soft">{t('agents.convert.staysNone')}</p>
                 )}
               </Section>
@@ -181,6 +236,24 @@ export function ConvertReview({ plan, choices, reading, stale, problem, applying
                   {NEVER.map((each) => <li key={each} className="m-0 [overflow-wrap:anywhere]">{t(`agents.convert.never.${each}`)}</li>)}
                 </ul>
               </Section>
+
+              {clears.length > 0 && (
+                <Section id={`${own}-removed`} title={t('agents.convert.removed')}>
+                  <p className="m-0 text-small text-ink-soft">{t('agents.convert.removedLead')}</p>
+                  <ul aria-label={t('agents.convert.removed')} className="m-0 grid list-none gap-0.5 p-0 text-small text-ink">
+                    {clears.map((each) => (
+                      <li key={`${each.part}${each.said}`} className="m-0 [overflow-wrap:anywhere]">
+                        <Inline text={each.said} />
+                        {` — ${[
+                          t('agents.convert.clearCount', { count: each.count }),
+                          ...(each.from && each.to ? [t('agents.convert.clearSpan', { from: dayOf(each.from, i18n.language), to: dayOf(each.to, i18n.language) })] : []),
+                          ...(each.bytes != null ? [size(each.bytes)] : []),
+                        ].join(', ')}`}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
             </div>
           </div>
         )}
@@ -192,8 +265,8 @@ export function ConvertReview({ plan, choices, reading, stale, problem, applying
         </details>
       )}
 
-      {result && <Outcome result={result} />}
-      {undone && <Outcome result={undone} />}
+      {result && <Outcome result={result} busy={applying || undoing} onAgain={onAgain} onLeave={onLeave} />}
+      {undone && <Outcome result={undone} busy={applying || undoing} onAgain={onAgain} onLeave={onLeave} />}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary" disabled={!canApply} onClick={onApply} data-review-apply="">

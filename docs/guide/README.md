@@ -45,6 +45,7 @@ below can contact services or download tools when invoked.
 | `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`. **Edits files under the home** |
 | `tool` | Which Git, Node.js, PowerShell, GitHub CLI and Azure CLI Daoris runs. **One file under the home** |
+| `convert` | This home's old records converted, every area's part in one plan, through the running Daoris: `--plan` writes nothing, `--apply <digest>` is your press, confirmed in its window (a failed part pressed again, or left with `--leave <part>`), `--undo` takes the latest back |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`; both pass over a file `daoris.json` keeps.

@@ -143,14 +143,15 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]`, "
             + "`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
             + "`daoris driver workflow show --repository <name>|--workspace <name> [--kind <kind>]`"),
-        // WORKFLOWCLEAN1 1i (the cleanup design §4.3): the conversion of the old workflow records, which is the person's press over
+        // ONEWAY1ae (the oneway design §1.1): the home's one conversion door over every area's part, which is the person's press over
         // the plan they read. Ask Daoris opens the page and names the plan, and never proposes the apply (HelpCoverageTests).
-        ("convert the old workflow records: a workflow saved as steps or holding a `handed` step, and a place still on Current, which "
-            + "follows its old landing rule, become saved graphs that each place follows, with a home default workflow for a place that "
-            + "chooses none (`--plan` shows every operation and writes nothing; the apply is your press over the plan you read, by its "
-            + "digest, and is undone; Ask Daoris opens the page and never proposes the apply)",
+        ("convert this home's old records, every area's part in one plan: in the workflow part, a workflow saved as steps or "
+            + "holding a `handed` step, and a place still on Current, which follows its old landing rule, become saved graphs that each "
+            + "place follows, with a home default workflow for a place that chooses none (`--plan` shows every operation and writes "
+            + "nothing; the apply is your press over the plan you read, by its digest; a part that failed is pressed again or left; the "
+            + "latest receipt is undone; Ask Daoris opens the page and never proposes the apply)",
             "Agents → Setup → the place's head *Convert…*, or *What needs you* → *Review conversion…*",
-            "`daoris-driver workflow convert --plan`, then `--apply <digest>` or `--undo`, through the running Daoris"),
+            "`daoris convert --plan`, then `--apply <digest>` (`--leave <part>` for a failed part) or `--undo`, through the running Daoris"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
         // alone with `--workspace`, as its Branches tab does (BRSCOPE1a).

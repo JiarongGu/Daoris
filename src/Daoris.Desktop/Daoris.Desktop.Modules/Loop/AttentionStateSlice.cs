@@ -118,8 +118,8 @@ public static class AttentionStateSlice
         ["asker"] = ["process", "pid"],
         // KEEP1f: a volume still below its free-space floor once the floor's acts ran.
         ["space"] = ["root", "free", "total", "floor", "freed", "could"],
-        // WORKFLOWCLEAN1g-ii: the places the kept census lists.
-        ["convert"] = ["places"],
+        // ONEWAY1ae: the old records every part's kept census holds, and their count by part.
+        ["convert"] = ["records", "parts"],
         // GITAUTH1a: a held group of git remotes that cannot authenticate.
         ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
         // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.

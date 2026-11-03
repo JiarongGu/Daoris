@@ -3,29 +3,44 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1g-ii: the census the loop keeps. The row's wait is the places it lists while it has not ended, told when that changes;
-/// none before the first reading, and none once it has ended.
+/// WORKFLOWCLEAN1g-ii, ONEWAY1ae: the census the loop keeps, every part's. The row's wait is the old records the parts hold while some part has not
+/// ended, counted by part and told when that changes; none before the first reading, and none once each has ended. A part that does not answer
+/// refuses the reading, and what was held is kept.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class ConversionCensusTests : Bridge
 {
-    private static LegacyCensus Holding(params string[] places) =>
-        new([], [.. places.Select(each => new LegacyPlaceRow(each, false, "default", ["steps"], false, false))], [], []);
+    private static IReadOnlyList<PartCensus> Holding(int workflows, int settings = 0) =>
+        [new("workflows", workflows, workflows == 0), new("settings", settings, settings == 0)];
 
     [Fact]
-    public void A_census_that_holds_places_is_a_wait_with_their_count_until_it_ends()
+    public void A_census_that_holds_old_records_is_a_wait_with_their_count_by_part_until_it_ends()
     {
         var census = new ConversionCensus(Bus);
         Assert.Null(census.Wait());
 
-        Assert.True(census.Tell(Holding("aurora", "borealis")));
-        Assert.Equal(2, census.Wait()!["places"]!.GetValue<int>());
-        Assert.False(census.Tell(Holding("aurora", "borealis")));
+        Assert.True(census.Tell(Holding(2, 1)));
+        Assert.Equal(3, census.Wait()!["records"]!.GetValue<int>());
+        Assert.Equal(1, census.Wait()!["parts"]!["settings"]!.GetValue<int>());
+        Assert.False(census.Tell(Holding(2, 1)));
+        Assert.True(census.Tell(Holding(2)));
 
         // An apply leaves nothing old: the wait is gone, and said.
-        Assert.True(census.Tell(new([], [], [], [])));
+        Assert.True(census.Tell(Holding(0)));
         Assert.Null(census.Wait());
-        Assert.Equal(2, Raised.Count(each => each.Type == ConversionCensus.Event));
+        Assert.Equal(3, Raised.Count(each => each.Type == ConversionCensus.Event));
+    }
+
+    [Fact]
+    public async Task ONEWAY1ae_a_part_that_does_not_answer_keeps_what_was_held()
+    {
+        var census = new ConversionCensus(Bus);
+        census.Tell(Holding(2));
+        var doors = new ConvertDoors(Path.Combine(AppContext.BaseDirectory, "never-read"), _ => throw new ConversionUnread("the service did not answer"), _ => { }, () => DriverConfig.Empty, () => new HashSet<string>());
+
+        await census.RefreshAsync(ConversionCensus.Reading(() => doors), default);
+
+        Assert.Equal(2, census.Wait()!["records"]!.GetValue<int>());
     }
 
     /// <summary>
@@ -38,10 +53,10 @@ public sealed class ConversionCensusTests : Bridge
         var census = new ConversionCensus(Bus);
         var first = new TaskCompletionSource();
         var readings = 0;
-        Task<LegacyCensus> Read(CancellationToken _)
+        Task<IReadOnlyList<PartCensus>> Read(CancellationToken _)
         {
             var reading = Interlocked.Increment(ref readings);
-            return reading == 1 ? first.Task.ContinueWith(_ => Holding("aurora"), TaskScheduler.Default) : Task.FromResult(Holding("aurora", "borealis"));
+            return reading == 1 ? first.Task.ContinueWith(_ => Holding(1), TaskScheduler.Default) : Task.FromResult(Holding(2));
         }
 
         var running = census.RefreshAsync(Read, default);
@@ -60,6 +75,6 @@ public sealed class ConversionCensusTests : Bridge
         await Task.WhenAll([running, .. asked]).WaitAsync(Poll.Patience);
 
         Assert.Equal(2, readings);
-        Assert.Equal(2, census.Wait()!["places"]!.GetValue<int>());
+        Assert.Equal(2, census.Wait()!["records"]!.GetValue<int>());
     }
 }

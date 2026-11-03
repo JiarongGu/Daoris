@@ -132,3 +132,36 @@ export const useSpaceFree = () => {
   });
   return { list, free };
 };
+
+/**
+ * One line of This machine's list of old records (ONEWAY1ad-ii, the oneway design §1.3): a conversion part's census (`part`, with the old records
+ * it holds), or a read Daoris keeps for an old record or an older build (`read`), with what reaches it, the condition that ends it in the
+ * driver's words, the row that deletes it and the build it waits out.
+ */
+export type KeptLine = {
+  kind: 'part' | 'read';
+  id: string;
+  ended: boolean;
+  count?: number | null;
+  reaches?: string | null;
+  ends?: string | null;
+  row?: string | null;
+  waits?: string | null;
+};
+
+/** The list, the home's floor (the oldest build that can still write it) and the build from which the conversion's Undo is refused. */
+export type KeptReads = { floor: { build?: string | null; storeWriter?: number | null }; floorNeeded?: string | null; lines: KeptLine[] };
+
+/**
+ * This machine's list of old records (`KEPT_READS`, ONEWAY1ad-ii), read where its section is open: the conversion's parts as the driver last
+ * counted them, then every read the driver's register keeps, each with its condition's state. It writes nothing. Shell-only (D47 §4).
+ */
+export const useKeptReads = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.keptReads,
+    queryFn: () => call<KeptReads>('KEPT_READS'),
+    enabled: isAvailable,
+    retry: (count, error) => !refusedNoRoute(error) && count < 2,
+  });
+};

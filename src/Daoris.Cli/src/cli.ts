@@ -23,6 +23,7 @@ import { command as driver } from './cli/driver.ts';
 import { command as plugin } from './cli/plugin.ts';
 import { command as browser } from './cli/browser.ts';
 import { command as tool } from './cli/tool.ts';
+import { command as convert } from './cli/convert.ts';
 import { runDriverProgram, type DriverProgramSeam } from './platform/driverprogram.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
@@ -58,6 +59,7 @@ export const COMMANDS: readonly CliCommand[] = [
   plugin,
   browser,
   tool,
+  convert,
 ];
 
 const USAGE = [
@@ -67,11 +69,11 @@ const USAGE = [
   '',
   '  connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a',
   '  service, and no gate ever runs them; brainstorm too, to this machine\'s own service',
-  '  only. remote, agent, driver, plugin, browser and',
-  '  tool are management too — they edit files under the Daoris home ($DAORIS_HOME,',
+  '  only. remote, agent, driver, plugin, browser, tool and',
+  '  convert are management too — they edit files under the Daoris home ($DAORIS_HOME,',
   "  the installed application's own data folder; nothing lives under your profile).",
-  "  Every agent, driver, plugin and tool verb is run by Daoris's own driver program,",
-  '  the one this install carries in app/daoris-driver/ (or the one',
+  "  Every agent, driver, plugin, tool and convert verb is run by Daoris's own",
+  '  driver program, the one this install carries in app/daoris-driver/ (or the one',
   "  DAORIS_DRIVER_PROGRAM names), which spawns each agent's own tooling, reaches a",
   "  maker's release channel for agent pin and update, and a tool's maker and a",
   '  resource location for tool download, use … managed, update and look; a daoris',

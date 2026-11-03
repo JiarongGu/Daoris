@@ -599,12 +599,12 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // Places still follow old workflow shapes (WORKFLOWCLEAN1g-ii, the cleanup design §4.3): one row for the home while its census has
-        // not ended; its door opens the home-wide review.
+        // Old records wait for the conversion (ONEWAY1ae; the oneway design §1.1): one row for the home while any part's census has not
+        // ended, its stored kind kept, the count by part in its detail; its door opens the home-wide review.
         if (facts.Conversion is { } conversion)
         {
             var row = Row("workflow-convert", "home", Text(conversion, "since"));
-            row["convert"] = new JsonObject { ["places"] = conversion["places"]?.DeepClone() };
+            row["convert"] = new JsonObject { ["records"] = conversion["records"]?.DeepClone(), ["parts"] = conversion["parts"]?.DeepClone() };
             rows.Add(row);
         }
 

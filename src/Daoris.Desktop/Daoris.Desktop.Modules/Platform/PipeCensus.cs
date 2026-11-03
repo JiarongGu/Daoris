@@ -332,6 +332,8 @@ public sealed class PipeCensus
             "PLACE_PLAN",
             // WORKFLOWCLEAN1 1e: the conversion's plan (or the undo's) read from the file, the saved workflows, the bound runs and the registry, written nowhere.
             "CONVERT_PLAN",
+            // ONEWAY1ad-ii: This machine's list of old records, read from the home's files and the census as last read, written nowhere.
+            "KEPT_READS",
             // WORKFLOWEDIT1a: the step editor's reads of the saved workflows and what a step graph may hold; they write nothing.
             "WORKFLOW_LIST", "WORKFLOW_SHOW", "WORKFLOW_PALETTE",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",

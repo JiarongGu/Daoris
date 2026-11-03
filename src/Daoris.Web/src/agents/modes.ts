@@ -28,6 +28,7 @@ export const isRoleSection = (value: string | null | undefined): value is RoleSe
 /** The mode the place last showed, or Agents, the first, where nothing readable is kept. A stored `roles` is Setup, which replaced it. */
 export function readAgentsMode(): AgentsMode {
   const kept = stored(KEY);
+  // transitional: roles-mode-setup
   if (kept === 'roles') return 'setup';
   return isAgentsMode(kept) ? kept : 'agents';
 }

@@ -248,7 +248,7 @@ export const rowOfFound = (found: Found | null, detail: PlaceRow | null): PlaceR
 
 const SECTION_TITLE: Record<PlaceSection, string> = {
   workflow: 'agents.setup.workflow.title', roles: 'agents.setup.roles.title', sessions: 'agents.setup.sessions.title',
-  allRoles: 'agents.setup.allRoles.title',
+  allRoles: 'agents.setup.allRoles.title', oldRecords: 'agents.setup.oldRecords.title',
 };
 
 /**
