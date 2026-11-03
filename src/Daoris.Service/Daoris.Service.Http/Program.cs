@@ -475,7 +475,7 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     // host it started proves it holds it, so a process that took the port first never learns it. None without a key.
     Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove),
     Home: homeId,
-    // What this host is (WIRING1b): This Daoris shows it beside the tier, and a terminal's `daoris wiring` reads it too.
+    // What this host is (WIRING1b): This Daoris shows it beside the tier, and `daoris wiring` reads it.
     Version: HostVersion.Stamped,
     // FABRIC-CLOSE1b's handshake: a driver binds a quest to a closure graph only against a host that says it knows one.
     Closure: true,

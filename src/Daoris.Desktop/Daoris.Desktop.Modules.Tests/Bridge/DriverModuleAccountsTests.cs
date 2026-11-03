@@ -1114,7 +1114,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
     // ---------------------------------------------------------------- the cool-off setting
 
-    /// <summary>D125 §2.2, §6: how long an account cools when its agent names no time, the file <c>daoris settings cooloff</c> edits.</summary>
+    /// <summary>D125 §2.2, §6: how long an account cools when its agent names no time, which <c>daoris settings cooloff</c> edits.</summary>
     [Fact]
     public async Task The_default_cool_off_is_answered_with_the_state_and_set_to_whole_minutes_of_at_least_one()
     {
@@ -1128,7 +1128,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(90, DriverConfig.Load(DriverConfigPath).CoolOffMinutes);
     }
 
-    /// <summary>CAPSET1: the cap of sessions Daoris starts at once, the file <c>daoris settings cap</c> edits.</summary>
+    /// <summary>CAPSET1: the cap of sessions Daoris starts at once, which <c>daoris settings cap</c> edits.</summary>
     [Fact]
     public async Task The_cap_is_answered_with_the_state_and_set_to_a_whole_number_of_at_least_one()
     {

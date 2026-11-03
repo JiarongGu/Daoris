@@ -208,7 +208,7 @@ describe("the session's Workflow view", () => {
     settled.unmount();
   });
 
-  it("opens the review where the gate holds the work on you, and says Go on anyway's twins where no control is handed", async () => {
+  it("opens the review where the gate holds the work on you, and says Go on anyway's twins where none is handed", async () => {
     const review = vi.fn();
     render(<WorkflowRunView answer={answerOf(OPINION_DISPUTED)} doors={{ review, session: vi.fn() }} />);
     const opinion = row('opinion');

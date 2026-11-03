@@ -286,7 +286,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         // repository by walking UP from wherever it is asked, so a root that is not one (a
         // mis-registered path, a folder inside some other checkout) would silently grow worktrees and
         // branches on whatever repository CONTAINS it. The first run of this class's own test suite
-        // did exactly that, to this repository — which is why this check exists and refuses loudly.
+        // did exactly that, to this repository: this check refuses loudly.
         // TREEOPENERR1: asked so that a git that fails and says nothing is reported by what it did (code, time, folder, arguments).
         var top = await AskAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
         if (top.Code != 0)

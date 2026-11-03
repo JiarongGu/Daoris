@@ -491,7 +491,7 @@ describe('the strip mark', () => {
 
 /**
  * The catalogues and the service mark a command or a name with backticks, and nothing rendered them:
- * the installed window printed `daoris settings notify on|off` with its backticks, in both languages.
+ * the installed window printed `daoris settings notify on|off` with backticks, in both languages.
  */
 describe('a code span in a sentence', () => {
   it('sets a backticked span as code and drops the backticks, the words unchanged', () => {
