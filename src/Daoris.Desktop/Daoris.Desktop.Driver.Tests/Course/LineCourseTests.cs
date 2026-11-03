@@ -240,6 +240,8 @@ public sealed class LineCourseTests
         ["J-07"] = new(T.BriefedPress, Ended(Chat(P()), Goes("account-2"))),
         ["J-08"] = new(T.ConversationLost, Ended(Chat(P()) with { Judged = ContinueWhy.Gone }, Resumes)),
         ["J-09"] = new(T.ConversationLost, Ended(Chat(P()) with { Judged = ContinueWhy.Gone }, Goes("account-2"))),
+        ["J-10"] = new(T.BriefedPress, Ended(Driven("Done", P()) with { Tree = null }, Resumes)),
+        ["J-11"] = new(T.BriefedPress, Ended(Chat(P()) with { Tree = null }, Resumes)),
 
         // ——— D: the limit move of a live conversation.
         ["D-01"] = new(T.LimitEnd, Live(Chat(P()) with { Limited = true }, Goes("account-2"))),
@@ -280,6 +282,7 @@ public sealed class LineCourseTests
         ["A-24"] = new(T.WordsKept, Ended(Driven("Taken", P()) with { Judged = ContinueWhy.Elsewhere }, Resumes)),
         ["A-25"] = new(T.WordsKept, Parked(Driven("Taken", P()), Resumes)),
         ["A-26"] = new(T.WordsKept, Ended(Driven("Taken", P(), Rebased()) with { Judged = ContinueWhy.Tree }, Resumes)),
+        ["A-27"] = new(T.WordsKept, Ended(Driven("Done", P()) with { Tree = null, Judged = ContinueWhy.Tree }, Resumes)),
 
         // ——— F: the driven limit resume, decided in the carry-on's own start.
         ["F-01"] = new(T.CarryOn, Carrying(Cut(Ended(Driven("Taken") with { State = "stopped" }, Resumes), until: null, build: "b7"), CourseCarryOn.CutOff)),

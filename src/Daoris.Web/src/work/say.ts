@@ -190,9 +190,15 @@ export const GO_ON_BRIEF: Record<string, string> = {
  * 3): every reason the driver writes on a line that cannot go on but what never goes on, a tree that is gone (nothing to go on in), a
  * record that had ended and the person's own start. A proven loss goes on by itself, so its line shows only where that move failed.
  */
-export const BRIEF_WAITS: ReadonlySet<string> = new Set([
+const BRIEF_WAITS: ReadonlySet<string> = new Set([
   'account', 'adapter', 'unkept', 'unable', 'offered', 'gone', 'refused', 'elsewhere', 'exited',
 ]);
+
+/**
+ * Whether *Go on with Daoris's brief* is offered under a line that cannot go on for `why`: {@link BRIEF_WAITS}, and a driven session's
+ * tree that is gone (TREEGONE1), whose new part grows a fresh tree from the line. A chat's gone tree leaves it nothing to go on in.
+ */
+export const briefOffered = (why: string, chat: boolean): boolean => BRIEF_WAITS.has(why) || (why === 'tree' && !chat);
 
 /** Why *Go on with Daoris's brief* opened nothing, in the page's own words (SESSCTX1c part B): its own codes, then those it shares. */
 export function goOnBriefRefusal(t: Translate, code: string, { quest }: { quest?: string | null }): string {

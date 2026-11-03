@@ -289,6 +289,41 @@ public sealed class BriefedMoveTests : IDisposable
         Assert.Equal(counted + 1, roster.Mark());
     }
 
+    /// <summary>
+    /// 🔴 TREEGONE1 (the owner's report, 2026-11-03; ONEWAY1's design §3 C5): a closed quest's session whose tree the look's tidy took, its
+    /// empty branch with it, goes on by the person's press as a new part in a fresh tree grown from the line, handed Daoris's brief and their
+    /// words, its record naming the one it continues. Nothing is made at the old tree's place.
+    /// </summary>
+    [Fact]
+    public async Task A_closed_quests_session_whose_tree_is_gone_goes_on_in_a_fresh_tree_handed_the_brief()
+    {
+        var config = Config();
+        var repository = Path.Combine(_home, "repository");
+        await GitSeed.PlainAsync(repository, "engine");
+        var ledger = new ChatLedger().Quest("q1", "Done").Register("engine", repository);
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var gone = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s-0a1b2c3d");
+        ledger.Chat("s1", "completed", "acp-stub", gone, kind: "driven", quest: "q1", profile: "account-1").Say("w1", "Also log the port.");
+
+        var answer = await runner.GoOnBriefedAsync("s1", config);
+
+        Assert.True(answer.Sent, answer.Message);
+        var next = (await client.RecordAsync(answer.SessionId!))!;
+        Assert.Equal(("s1", HandOverWhy.Resume, HandOverBy.Person, "chat"), (next.From, next.FromWhy, next.FromBy, next.Kind));
+        Assert.True(next.Tree is { } fresh && fresh != gone && Directory.Exists(fresh), $"the new part runs in {next.Tree}");
+        Assert.StartsWith(Path.GetFullPath(new SessionTrees(_home).TreesRoot), Path.GetFullPath(next.Tree!), StringComparison.OrdinalIgnoreCase);
+        Assert.False(Directory.Exists(gone));
+        await Poll.Until(() => Prompts.Count > 0, () => Seen(ledger, answer.SessionId!));
+        var handed = Assert.Single(Prompts);
+        Assert.Contains("You continue session `s1`", handed, StringComparison.Ordinal);
+        Assert.Contains("Also log the port.", handed, StringComparison.Ordinal);
+        Assert.Empty(ledger.Said("s1"));
+    }
+
     private static int Count(string text, string part)
     {
         var count = 0;
