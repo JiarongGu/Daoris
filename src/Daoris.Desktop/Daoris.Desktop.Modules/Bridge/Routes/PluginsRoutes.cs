@@ -495,7 +495,7 @@ public sealed class PluginsRoutes(DriverContext context)
         // A manifest that does not read has no version to be older with: its own sentence is already said.
         if (written.Version.Length == 0) return null;
         return PluginOffers.ShippedOf(plugin.Folder, written, offer) is { } shipped
-            ? new { shipped.State, shipped.Installed, shipped.Shipped, shipped.Changes }
+            ? new { shipped.State, shipped.Installed, shipped.Shipped, shipped.Changes, shipped.Unjudged }
             : null;
     }
 
