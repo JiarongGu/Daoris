@@ -1121,6 +1121,8 @@ export function App() {
         } else open('settings', 'git', held?.host ? { gitHost: held.host } : {});
       },
     } : {}),
+    // A git go-ahead (GITAUTH1f) opens its session, whose head draws it; one no session's marker named has its row alone.
+    ...(attached ? { 'git-ask': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
     // The home's conversion (WORKFLOWCLEAN1g-ii) opens the review the place head's Convert… opens. A shell's alone: the census is this machine's.
     ...(attached ? { 'workflow-convert': () => openConversion() } : {}),
     // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed (KNOWUSE1a).

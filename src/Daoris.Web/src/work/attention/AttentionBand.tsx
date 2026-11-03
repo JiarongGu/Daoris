@@ -5,7 +5,7 @@ import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, us
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
-  useDeclineHandOver, useGitIdentity, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
+  useDeclineHandOver, useGitAnswer, useGitIdentity, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -114,6 +114,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const openRecords = useOpenWorkRecords();
   const gitTryAgain = useGitTryAgain();
   const gitIdentity = useGitIdentity();
+  const gitAnswer = useGitAnswer();
   const quietCarryOn = useQuietCarryOn();
   const quietLeave = useQuietLeave();
   const stopSession = useStopSession();
@@ -326,6 +327,12 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     // the confirmation that names what they let Daoris's git use; a browser has no such door.
     gitSetUp: (item) => doors['git-held']?.(item),
     gitChoose: (item) => doors['git-held']?.(item),
+    // A git go-ahead allowed or refused (GITAUTH1f, §6.6), as its session's head answers it: said in the page's words, a door that had gone
+    // said with its Allow kept for the identical retry; a refusal in the driver's words.
+    gitAnswer: (item, allow) => {
+      run(item, () => gitAnswer.mutateAsync({ ask: item.id, answer: allow ? 'allow' : 'refuse' }),
+        (answer) => notify(t(!allow ? 'work.wait.gitAsk.refused' : answer.waiting ? 'work.wait.gitAsk.allowed' : 'work.wait.gitAsk.kept')));
+    },
     // The host's own page for SSH keys, in the system's browser, as Settings → Git's link opens it.
     gitKeyPage: (item) => { if (item.git?.keyPage) window.open(item.git.keyPage, '_blank', 'noreferrer'); },
     // The identity a push was refused with marked read only on its host (§7.4): the hard form of Write deny, a narrowing.

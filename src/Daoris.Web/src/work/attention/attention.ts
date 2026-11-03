@@ -92,6 +92,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A git remote held because it could not authenticate (GITAUTH1a, D198; the git auth design §5.2, §7.4): nothing connects for it
   // until the person's *Try again* or a change lifts it, and nothing already running is held by this row.
   'git-held': 'word',
+  // A git go-ahead (GITAUTH1f, D198 point 12; the git auth design §6.6): its door holds the act on the remote until the person allows or
+  // refuses it, or its bound passes, as a held call holds its session's turn.
+  'git-ask': 'holding',
   // A session the watcher brings to the person (SESSWATCH1a, D200, the session-watch design §5.2): it holds its slot and its tree, and
   // its work stands still until they press, or it is heard again.
   quiet: 'holding',
@@ -206,6 +209,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   // A held git remote (GITAUTH1a): *Try again* is on the row itself; the identity it waits for is set in Settings → Git (GITAUTH1e), so the
   // place counts it there, as it counts Disk space.
   'git-held': 'settings',
+  // A git go-ahead (GITAUTH1f): its session's page draws it in its head and foot, where it is answered too.
+  'git-ask': 'sessions',
 };
 
 /** The sessions a place is judged with: those the page holds, for the branch a unit of work was cut for (`workCutFor`). */
@@ -324,6 +329,8 @@ export type AttentionActId =
   // GITAUTH1e (§7.4): what mends a held remote by its class: Settings → Git on its host (the key to copy, a sign-in again, a host to
   // compare and trust, the person's own sign-ins), the host's key page, the repository's git remote row, and the identity marked read only.
   | 'git-copy-key' | 'git-key-page' | 'git-sign-in' | 'git-open' | 'git-compare' | 'git-choose' | 'git-use-own' | 'git-read-only'
+  // GITAUTH1f: a git go-ahead allowed or refused.
+  | 'git-allow' | 'git-refuse'
   // SESSWATCH1a: a quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
   | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave'
   // INTEGRATE1o part o3: the run's own skip of its `work.requests` node, with the person's words.
@@ -472,6 +479,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // there, confirmed in place; *Try again* would change nothing until one of them is done. Every other class offers what mends it
     // (§7.4), then *Try again*.
     case 'git-held': return item.git ? plain(...gitHeldOffers(item.git)) : [];
+    // GITAUTH1f (§6.6): a git go-ahead's two answers, as its session's head offers them.
+    case 'git-ask': return item.gitAsk ? plain('git-allow', 'git-refuse') : [];
     // SESSWATCH1a (the session-watch design §2.3, §5.2): *End and carry on* for a quiet quest session alone, never a busy one; *Hand
     // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
     case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];
@@ -605,6 +614,8 @@ export type PushedAttention = {
   convert?: { records: number; parts?: Record<string, number> };
   /** A git remote held because it could not authenticate (GITAUTH1a): one row per held group, as .NET groups them. */
   git?: GitHeld;
+  /** A git go-ahead a door holds while its act waits (GITAUTH1f): its repository, remote, host, class and session, and whether its door has gone. */
+  gitAsk?: GitAskWait;
   /** A session the watcher brings to the person (SESSWATCH1a): its watch, which its words and its presses read. */
   quiet?: QuietWait;
   /** A run held at a declined request (INTEGRATE1o part o3): its `work.requests` node, the quest declined and where it went. */
@@ -682,6 +693,20 @@ function gitHeldDetailKey(held: Pick<GitHeld, 'class' | 'words'>): string {
  */
 const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === 'own-input' && held.words?.startsWith('http.') ? held.words : null);
 
+/**
+ * A git go-ahead (GITAUTH1f, D198 point 12; the git auth design §6.6): the door holds one act on a remote whose class is ask, a push or a
+ * fetch, until the person allows or refuses it; where its door has gone (`gone`), an Allow is kept for the identical retry. The
+ * repository, remote and host are content.
+ */
+export type GitAskWait = {
+  repository?: string | null;
+  remote?: string | null;
+  host?: string | null;
+  class: 'read' | 'write' | (string & {});
+  session?: string | null;
+  gone: boolean;
+};
+
 /** What serves a held group's remote now, as the doors resolve it (GITAUTH1e, §7.4): an identity, the person's own sign-ins, or nothing. */
 export type GitServed = 'identity' | 'own' | 'none';
 
@@ -722,12 +747,12 @@ export type AttentionPushed = {
 
 /**
  * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks, a
- * move back to the person refused (HELPERWAIT1c), parked quests, go-aheads, held calls, held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1) and folders; then asks,
- * departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt, a volume below its
- * floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
+ * move back to the person refused (HELPERWAIT1c), parked quests, go-aheads, held calls, git go-aheads (GITAUTH1f), held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1)
+ * and folders; then asks, departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt,
+ * a volume below its floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'workflow-convert', 'unanswerable',
   'review',
 ];
@@ -1091,6 +1116,16 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.git ? { git: row.git } : {}),
         ...(row.workspace ? { workspace: row.workspace } : {}),
       };
+    // GITAUTH1f (§6.6, §7.4): who asks to push to or fetch from which remote, how long it has waited and the bound; a door that has gone
+    // is said so, its Allow kept for the identical retry.
+    case 'git-ask':
+      return {
+        ...base,
+        ...(row.gitAsk ? gitAskWorded(row.gitAsk, row.since) : { title: row.id, detail: null }),
+        ...(row.gitAsk ? { gitAsk: row.gitAsk } : {}),
+        ...(row.session ? { session: row.session } : {}),
+        ...(row.workspace ? { workspace: row.workspace } : {}),
+      };
     // ONEWAY1ae: the old records every part holds, said as a count, and the count by part in its detail.
     case 'workflow-convert':
       return {
@@ -1181,6 +1216,28 @@ export function gitHeldWorded(held: GitHeld, t: TFunction = i18n.t.bind(i18n)): 
     detail: t(gitHeldDetailKey(held), { repositories: repositories.join(', '), words: held.words ?? '', setting: setting ?? '', host: held.host }),
   };
 }
+
+/**
+ * A git go-ahead in the reader's language (GITAUTH1f, the git auth design §7.4): *{session} asks to push to {remote}*, or a fetch, of its
+ * repository; then how long it has waited of its bound, or that its command has stopped and an Allow is kept for its retry. Shared by
+ * its row and its session's head.
+ */
+export function gitAskWorded(ask: GitAskWait, since?: string | null, t: TFunction = i18n.t.bind(i18n)): Pick<Attention, 'title' | 'detail'> {
+  const remote = ask.remote ?? ask.host ?? '';
+  const act = ask.class === 'write' ? 'push' : 'fetch';
+  const title = ask.session
+    ? t(`work.attention.gitAsk.title.session.${act}`, { session: ask.session, remote, repository: ask.repository ?? '' })
+    : t(`work.attention.gitAsk.title.repository.${act}`, { remote, repository: ask.repository ?? ask.host ?? '' });
+  const waited = since ? elapsed(since) : null;
+  return {
+    title,
+    detail: ask.gone ? t('work.attention.gitAsk.gone')
+      : waited ? t('work.attention.gitAsk.waits', { waited, bound: GIT_ASK_BOUND_MINUTES }) : t('work.attention.gitAsk.waitsNow', { bound: GIT_ASK_BOUND_MINUTES }),
+  };
+}
+
+/** How long a door holds a git go-ahead, in minutes: a held call's bound (`GitAsks.Bound`). */
+export const GIT_ASK_BOUND_MINUTES = 15;
 
 /**
  * What mends a held group, by its class and what serves it (GITAUTH1e, the git auth design §7.4), then *Try again*: a refusal of an SSH

@@ -9,7 +9,8 @@ import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import {
-  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitHeld, type IntegrationWait, type MemoryWait, type QuietWait,
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
+  type QuietWait,
   type StaleSince,
 } from './attention';
 import { Note } from '../Note';
@@ -25,7 +26,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
+  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
   | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'workflow-convert';
 
 /**
@@ -169,6 +170,8 @@ export type Attention = {
   integration?: IntegrationWait;
   /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
   git?: GitHeld;
+  /** A `git-ask` row's go-ahead (GITAUTH1f): the act it holds, which its *Allow* and *Refuse* answer. */
+  gitAsk?: GitAskWait;
   /** A `workflow-convert` row's count (ONEWAY1ae): the old records every part holds, which its title says, and their count by part, its detail. */
   convert?: { records: number; parts?: Record<string, number> };
   /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
@@ -241,6 +244,8 @@ export type AttentionActs = {
   gitKeyPage?: (item: Attention) => void;
   /** The identity a push was refused with marked read only on its host (§7.4), so Daoris never tries a write with it. */
   gitReadOnly?: (item: Attention) => void;
+  /** A git go-ahead allowed (`allow`) or refused (GITAUTH1f, §6.6), as its session's head answers it. */
+  gitAnswer?: (item: Attention, allow: boolean) => void;
   /**
    * A quiet session's presses (SESSWATCH1a): *End and carry on*, *Hand over…* (its page's hand-over asked), *Stop…* and *Leave it
    * running*, each told how it ended where it asked once.
@@ -298,6 +303,8 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'git-choose': 'gitChoose',
   'git-use-own': 'gitChoose',
   'git-read-only': 'gitReadOnly',
+  'git-allow': 'gitAnswer',
+  'git-refuse': 'gitAnswer',
   'quiet-carry-on': 'quiet',
   'quiet-hand-over': 'quiet',
   'quiet-stop': 'quiet',
@@ -431,6 +438,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'git-choose' || act === 'git-use-own') acts.gitChoose?.(item);
     else if (act === 'git-key-page') acts.gitKeyPage?.(item);
     else if (act === 'git-read-only') acts.gitReadOnly?.(item);
+    else if (act === 'git-allow' || act === 'git-refuse') acts.gitAnswer?.(item, act === 'git-allow');
     else if (act === 'quiet-hand-over') acts.quiet?.(item, 'hand-over');
     else if (act === 'quiet-leave') acts.quiet?.(item, 'leave');
   };
@@ -499,6 +507,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'git-choose': return t('work.attention.git.choose');
       case 'git-use-own': return t('work.attention.git.useOwn');
       case 'git-read-only': return t('work.attention.git.readOnly');
+      // GITAUTH1f: a git go-ahead's answers, the head's own words.
+      case 'git-allow': return t('work.wait.gitAsk.allow');
+      case 'git-refuse': return t('work.wait.gitAsk.refuse');
       // SESSWATCH1a: the quiet row's own presses, and the session page's own *Hand over…* and *Stop…*.
       case 'quiet-carry-on': return t('work.attention.act.carryOn');
       case 'quiet-hand-over': return t('work.attention.act.handOver');

@@ -132,7 +132,9 @@ internal static class OwnerTargetRows
         // (whose press is marked as it runs), a rule.
         None(OwnerNone.ActsOnNothing,
             "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "NOTICES_READ", "NOTICE_DISMISS", "HELP_DISMISS", "CHANNEL_MARK",
-            "PERSON_CONFIRM", "PERSON_CONFIRM_SHOWN", "RULE_ACTION", "RULE_PROPOSAL");
+            "PERSON_CONFIRM", "PERSON_CONFIRM_SHOWN", "RULE_ACTION", "RULE_PROPOSAL",
+            // GITAUTH1f: a git go-ahead answered, a file its door reads; the act it lets on is its own session's, which goes on as it was.
+            "GIT_ANSWER");
 
         // The machine's own settings and programs: its plugins, its agents' accounts and its tools.
         None(OwnerNone.MachineSetting,

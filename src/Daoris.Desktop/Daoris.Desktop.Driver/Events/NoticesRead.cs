@@ -63,7 +63,7 @@ public static class NoticesRead
         ["answer"] = "holding", ["confirmation"] = "holding", ["trust"] = "holding", ["account-wait"] = "holding",
         ["signed-out"] = "holding", ["quiet"] = "holding", ["helper-ended"] = "holding", ["proposal"] = "word", ["intake"] = "word", ["departure"] = "word", ["set-up"] = "word",
         ["opinion"] = "word", ["rule"] = "word", ["helper"] = "word", ["hand-over"] = "word", ["work"] = "word", ["memory"] = "word",
-        ["integration"] = "word", ["space"] = "word", ["unanswerable"] = "word", ["git-held"] = "word", ["workflow-convert"] = "word", ["review"] = "ready",
+        ["integration"] = "word", ["space"] = "word", ["unanswerable"] = "word", ["git-held"] = "word", ["git-ask"] = "holding", ["workflow-convert"] = "word", ["review"] = "ready",
     };
 
     /// <summary>

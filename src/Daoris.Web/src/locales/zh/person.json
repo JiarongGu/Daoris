@@ -201,6 +201,7 @@
   "person.route.TOOLS_GIT_SET": "更改 Daoris 的 git 所用的 ssh 命令",
   "person.route.GIT_IDENTITY": "添加、测试、更改或移除一个 Git 身份",
   "person.route.GIT_USE": "选择仓库、工作区或主机所用的 Git 身份",
+  "person.route.GIT_ANSWER": "允许或拒绝一次正在等你放行的远程 Git 操作",
   "person.route.TOOLS_LOCATION": "更改工具的下载来源",
   "person.route.TOOLS_STOP": "停止一个工具的下载",
   "person.route.TOOLS_USE": "更改 Daoris 运行的工具版本",

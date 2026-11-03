@@ -192,6 +192,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // GITAUTH1e: Settings → Git's identities are the tools list's; a pointer is also read in the checkouts' remote rows.
   GIT_IDENTITY: { scopes: ['tools'] },
   GIT_USE: { scopes: ['driver', 'tools'] },
+  GIT_ANSWER: { scopes: ['tools'] },
   START_HELP: { scopes: ['sessions'] },
   HELP_RENAME: { scopes: ['sessions', 'help'], session: 'id' },
   HELP_PIN: { scopes: ['sessions', 'help'], session: 'id' },

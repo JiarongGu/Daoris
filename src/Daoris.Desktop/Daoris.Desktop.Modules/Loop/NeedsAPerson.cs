@@ -117,6 +117,12 @@ public sealed record AttentionFacts
     /// </summary>
     public IReadOnlyList<JsonObject> Git { get; init; } = [];
 
+    /// <summary>
+    /// Each git go-ahead a door holds while its act waits (GITAUTH1f, <see cref="AttentionStateSlice.GitAskWaits"/>): its id, repository,
+    /// workspace, remote, host, class, session, since when, and whether its door has gone.
+    /// </summary>
+    public IReadOnlyList<JsonObject> GitAsks { get; init; } = [];
+
     /// <summary>The conversion's wait (WORKFLOWCLEAN1g-ii), <c>{places, since}</c> while the kept census has not ended; null otherwise.</summary>
     public JsonObject? Conversion { get; init; }
 }
@@ -666,6 +672,26 @@ public static class NeedsAPerson
 
             row["git"] = git;
             if (GitWorkWaits(facts, key.Workspace, held)) row["stands"] = true;
+            rows.Add(row);
+        }
+
+        // A git go-ahead (GITAUTH1f, the git-auth design §6.6, §7.4): a door holds a remote act whose class is ask until the person allows
+        // or refuses it, or its bound passes; its session's where its marker named one, else its repository's. Scoped as its repository's
+        // workspace; one with no workspace known is the machine's, every window's.
+        foreach (var ask in facts.GitAsks)
+        {
+            var row = Row("git-ask", Text(ask, "id"), Text(ask, "at"), Text(ask, "workspace"));
+            row["where"] = Text(ask, "repository") ?? Text(ask, "host");
+            if (Text(ask, "session") is { } session) row["session"] = session;
+            row["gitAsk"] = new JsonObject
+            {
+                ["repository"] = Text(ask, "repository"),
+                ["remote"] = Text(ask, "remote"),
+                ["host"] = Text(ask, "host"),
+                ["class"] = Text(ask, "class"),
+                ["session"] = Text(ask, "session"),
+                ["gone"] = ask["gone"] is JsonValue gone && gone.TryGetValue<bool>(out var stopped) && stopped,
+            };
             rows.Add(row);
         }
 

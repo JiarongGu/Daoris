@@ -152,6 +152,16 @@ export const useSetGitUse = () =>
   useMutation({ mutationFn: (change: GitUseChange) => call<{ scope: string }>('GIT_USE', change) });
 
 /**
+ * A git go-ahead answered (GITAUTH1f, the git-auth design §6.6): the screen's half of `daoris git answer`. `waiting` is whether its door
+ * still held the act; where it had gone, an Allow is kept for the identical retry. Its row goes as the slice hears the answer.
+ */
+export const useGitAnswer = () =>
+  useMutation({
+    mutationFn: (answer: { ask: string; answer: 'allow' | 'refuse' }) =>
+      call<{ ask: string; answer: string; waiting: boolean }>('GIT_ANSWER', answer),
+  });
+
+/**
  * What a switch of git to `target` changes (§4.1), asked of both gits before the switch applies; null asks nothing.
  * Not retried: a refusal (a version not downloaded, a file not there) is the answer.
  */

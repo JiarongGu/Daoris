@@ -36,6 +36,7 @@ const ACTS: Required<AttentionActs> = {
   gitChoose: () => {},
   gitKeyPage: () => {},
   gitReadOnly: () => {},
+  gitAnswer: () => {},
   quiet: () => {},
   passOver: () => {},
 };

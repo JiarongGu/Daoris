@@ -32,6 +32,7 @@ public sealed class OwnerSetCensusTests
         ["PERSON_CONFIRM_SHOWN"] = OwnerNone.ActsOnNothing, // a card said shown, by its id
         ["RULE_ACTION"] = OwnerNone.ActsOnNothing, // a rule of what agents may do, by the rule's id
         ["RULE_PROPOSAL"] = OwnerNone.ActsOnNothing, // an agent's proposed rule answered, by its id
+        ["GIT_ANSWER"] = OwnerNone.ActsOnNothing, // a git go-ahead answered by its id, a file its door reads; its session goes on as it was
         ["PLUGIN_OPEN_FOLDER"] = OwnerNone.ActsOnNothing, // a plugin's folder opened in the file manager
         ["PLUGIN_ACTION"] = OwnerNone.MachineSetting, // a plugin turned on or off, by the plugin's id
         ["PLUGIN_UPDATE"] = OwnerNone.MachineSetting, // a plugin replaced, by its id

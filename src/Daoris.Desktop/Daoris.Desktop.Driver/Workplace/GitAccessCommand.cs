@@ -4,17 +4,17 @@ namespace Daoris.Driver;
 
 /// <summary>What <see cref="GitAccessCommand"/> is handed from the world.</summary>
 /// <param name="Home">The home the verbs act on.</param>
-/// <param name="WindowRuns">Whether a Daoris with a window runs on this home, asked only before a widening or an answer.</param>
+/// <param name="Press">A widening's or an answer's press, through the running window where one runs.</param>
 /// <param name="Environment">The variables, read for a session's marker.</param>
 /// <param name="Workspaces">The workspace a repository belongs to (the registry's), asked only to say a repository's resolved values.</param>
-public sealed record GitAccessWorld(string Home, Func<Task<bool>> WindowRuns, Func<string, string?> Environment, Func<string, Task<string?>> Workspaces);
+public sealed record GitAccessWorld(string Home, GitPress Press, Func<string, string?> Environment, Func<string, Task<string?>> Workspaces);
 
 /// <summary>
 /// The terminal's git access and git go-aheads (GITAUTH1f, D198 points 8, 10 and 12; the git-auth design §8): <c>git access</c>,
 /// <c>git asks</c> and <c>git answer</c>, each change one typed operation (<see cref="GitAccessActs"/>, <see cref="GitAsks"/>), one text
 /// per verb, a refusal one line. From a session's environment every change is refused (D194 point 5): an agent changes no access,
-/// its own included, and answers no go-ahead. While the window runs a widening, or an answer, is refused saying so, as
-/// <see cref="GitIdentityCommand"/>'s are: the window confirms them.
+/// its own included, and answers no go-ahead. While the window runs a widening and an answer are pressed through it
+/// (<c>SET_GIT_ACCESS</c>, <c>GIT_ANSWER</c>), as <see cref="GitIdentityCommand"/>'s are, so the window confirms each first.
 /// </summary>
 public static class GitAccessCommand
 {
@@ -33,9 +33,6 @@ public static class GitAccessCommand
     public static bool Changes(IReadOnlyList<string> args) =>
         Answers(args) && !args.Any(arg => arg is "--help" or "-h")
         && (args[0] == "answer" || (args[0] == "access" && args.Skip(1).Any(arg => arg.Contains('=') || arg is "--clear" or "--one-value")));
-
-    public const string WindowFirst =
-        "this change is confirmed in Daoris's window first while it runs: close Daoris and run it again here, or press it in Settings → Git, and nothing was done (window-first)";
 
     public static async Task<int> RunAsync(IReadOnlyList<string> args, GitAccessWorld world, TextWriter output, TextWriter error)
     {
@@ -101,14 +98,19 @@ public static class GitAccessCommand
         $"{(ask.Class == GitAccessKeys.Write ? "a push to" : "a fetch of")} {ask.Remote ?? ask.Host ?? "a remote"}"
         + (ask.Repository is null ? "" : $" in {ask.Repository}") + (ask.Session is null ? "" : $" by session {ask.Session}");
 
-    private static async Task<int> AnswerAsync(GitAccessWorld world, string id, bool allow, TextWriter output)
+    private static Task<int> AnswerAsync(GitAccessWorld world, string id, bool allow, TextWriter output)
     {
-        if (await world.WindowRuns().ConfigureAwait(false)) throw new DriverException(WindowFirst);
-        var waiting = GitAsks.Answer(world.Home, id, allow, DateTimeOffset.UtcNow);
-        await output.WriteLineAsync(allow
-            ? waiting ? "git: allowed; the act goes on." : "git: allowed; its command has stopped, so the allow is kept for its identical retry for 15 minutes."
-            : "git: refused.").ConfigureAwait(false);
-        return 0;
+        int Said(bool waiting)
+        {
+            output.WriteLine(allow
+                ? waiting ? "git: allowed; the act goes on." : "git: allowed; its command has stopped, so the allow is kept for its identical retry for 15 minutes."
+                : "git: refused.");
+            return 0;
+        }
+
+        return world.Press(PersonPresses.GitAnswer, new Dictionary<string, object?> { ["ask"] = id, ["answer"] = allow ? "allow" : "refuse" },
+            () => Task.FromResult(Said(GitAsks.Answer(world.Home, id, allow, DateTimeOffset.UtcNow))),
+            data => Said(data.ValueKind == JsonValueKind.Object && data.TryGetProperty("waiting", out var waiting) && waiting.ValueKind == JsonValueKind.True));
     }
 
     private static async Task<int> AccessAsync(GitAccessWorld world, IReadOnlyList<string> args, bool json, TextWriter output)
@@ -150,11 +152,32 @@ public static class GitAccessCommand
             return 0;
         }
 
-        var widened = GitAccessActs.Widened(levels, edit);
-        if (widened.Count > 0 && await world.WindowRuns().ConfigureAwait(false)) throw new DriverException(WindowFirst);
-        GitAccessActs.Apply(world.Home, edit);
-        await output.WriteLineAsync("git: git access changed.").ConfigureAwait(false);
-        return 0;
+        Task<int> Alone()
+        {
+            GitAccessActs.Apply(world.Home, edit);
+            output.WriteLine("git: git access changed.");
+            return Task.FromResult(0);
+        }
+
+        if (GitAccessActs.Widened(levels, edit).Count == 0) return await Alone().ConfigureAwait(false);
+        return await world.Press(PersonPresses.SetGitAccess, Payload(edit), Alone, _ =>
+        {
+            output.WriteLine(GitIdentityCommand.Confirmed);
+            return 0;
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>An edit as <c>SET_GIT_ACCESS</c> takes it from the page (<see cref="GitAccessActs.EditOf"/>): its level, then the classes, one value or a clear.</summary>
+    public static Dictionary<string, object?> Payload(GitAccessEdit edit)
+    {
+        var payload = new Dictionary<string, object?>();
+        if (edit.Repository is { } repository) payload["repository"] = repository;
+        else if (edit.Workspace is { } workspace) payload["workspace"] = workspace;
+        else payload["machine"] = true;
+        if (edit.OneValue is { } one) payload["oneValue"] = one;
+        else if (edit.Clear) payload["access"] = null;
+        else payload["access"] = (edit.Set ?? []).ToDictionary(each => each.Key, each => each.Value, StringComparer.Ordinal);
+        return payload;
     }
 
     /// <summary>A class in a phrase: its value, and where it came from.</summary>

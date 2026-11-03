@@ -335,6 +335,31 @@ describe('what needs a person, worded', () => {
     }
   });
 
+  /**
+   * GITAUTH1f (the git auth design §6.6, §7.4): a git go-ahead names the session that asks and the remote, offers Allow and Refuse, holds
+   * work, is counted at Sessions, and says a door that has gone with its Allow kept for the retry.
+   */
+  it('words a git go-ahead by who asks and the remote, offers its two answers and holds work', async () => {
+    const gitAsk: NonNullable<PushedAttention['gitAsk']> = {
+      repository: 'engine', remote: 'origin', host: 'github.com', class: 'write', session: 'fix-ranking', gone: false,
+    };
+    const item = words(row('git-ask', '0123456789abcdef0123456789abcdef', new Date(Date.now() - 3 * 60_000).toISOString(), { session: 'fix-ranking', gitAsk }));
+    expect(item.title).toBe('fix-ranking asks to push to origin');
+    expect(item.detail).toMatch(/has waited 3m of its 15 minutes/);
+    expect(attentionActs(item)).toEqual(['git-allow', 'git-refuse']);
+    expect(attentionGroup(item)).toBe('holding');
+    expect(placeOf(item, [])).toBe('sessions');
+    const gone = words(row('git-ask', 'g', null, { gitAsk: { ...gitAsk, session: null, class: 'read', gone: true } }));
+    expect(gone.title).toBe('A fetch from origin of engine waits for your go-ahead');
+    expect(gone.detail).toMatch(/^Its command has stopped waiting/);
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(row('git-ask', 'g', null, { gitAsk })).title).toBe('fix-ranking 请求推送到 origin');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('explains an unanswerable quest, in the active language', async () => {
     const pushed = row('unanswerable', '7a82cc', '2026-09-14T09:00:00Z', { where: 'retired' });
     expect(words(pushed).detail).toContain('retired');
@@ -826,7 +851,7 @@ describe('the groups', () => {
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word',
-      integration: 'word', 'workflow-convert': 'word',
+      integration: 'word', 'workflow-convert': 'word', 'git-ask': 'holding',
     });
   });
 
@@ -1241,6 +1266,7 @@ describe('the place each wait is counted at', () => {
       space: 'settings',
       confirmation: null,
       'git-held': 'settings',
+      'git-ask': 'sessions',
     });
   });
 

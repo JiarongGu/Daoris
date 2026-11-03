@@ -201,6 +201,7 @@
   "person.route.TOOLS_GIT_SET": "change the ssh command Daoris's git runs",
   "person.route.GIT_IDENTITY": "add, test, change or remove a git identity",
   "person.route.GIT_USE": "choose the git identity a repository, a workspace or a host uses",
+  "person.route.GIT_ANSWER": "allow or refuse one act of git on a remote that waits for your go-ahead",
   "person.route.TOOLS_LOCATION": "change where tools are downloaded from",
   "person.route.TOOLS_STOP": "stop a tool's download",
   "person.route.TOOLS_USE": "change which version of a tool Daoris runs",
