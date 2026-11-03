@@ -2248,7 +2248,7 @@ export function recordMatcher({ lanes = [], union = [] } = {}) {
   const steward = lanes.find((lane) => lane.steward);
   const stewardOwns = steward ? laneMatcher(steward.paths) : () => false;
   const unionPatterns = union.map((pattern) => globToRegExp(pattern.replace(/^\//, '')));
-  const known = new Set(['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/FIX-LOG.md', 'docs/README.md', '.claude/knowledge/twins.md']);
+  const known = new Set(['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/FIX-LOG.md', 'docs/README.md']);
   const safe = (path) => known.has(path) || /^docs\/decisions\/D\d+\.md$/.test(path);
   return (path) => safe(path) && (stewardOwns(path) || unionPatterns.some((pattern) => pattern.test(path)));
 }

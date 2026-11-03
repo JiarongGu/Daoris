@@ -44,7 +44,6 @@ const APPEND_ONLY = [
   { file: 'docs/task-archive.md', kind: 'heading' },
   { file: 'docs/FIX-LOG.md', kind: 'heading' },
   { file: 'docs/README.md', kind: 'row' },
-  { file: '.claude/knowledge/twins.md', kind: 'row' },
   { file: 'CHANGELOG.md', kind: 'line' },
 ];
 

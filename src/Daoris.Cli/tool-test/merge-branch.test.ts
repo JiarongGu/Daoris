@@ -4916,10 +4916,10 @@ test("a stage forgives only known records declared by the steward or union, neve
   const isRecord = tool.recordMatcher({
     lanes: repoLanes, union: tool.unionRecords(repoRoot),
   });
-  for (const path of ['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/decisions/D115.md', 'docs/FIX-LOG.md', 'docs/README.md', '.claude/knowledge/twins.md']) {
+  for (const path of ['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/decisions/D115.md', 'docs/FIX-LOG.md', 'docs/README.md']) {
     assert.ok(isRecord(path), path);
   }
-  for (const path of ['daoris.lanes.json', 'README.md', 'docs/2026-09-30-parallel-development-design.md', 'canon/CHANGELOG.md', 'src/Daoris.Cli/src/cli.ts', 'tools/merge-branch.mjs']) {
+  for (const path of ['daoris.lanes.json', 'README.md', '.claude/knowledge/twins.md', 'docs/2026-09-30-parallel-development-design.md', 'canon/CHANGELOG.md', 'src/Daoris.Cli/src/cli.ts', 'tools/merge-branch.mjs']) {
     assert.ok(!isRecord(path), path);
   }
   assert.equal(tool.VERDICTS_FILE, 'local/gate-verdicts.json', 'gitignored, under local/');
