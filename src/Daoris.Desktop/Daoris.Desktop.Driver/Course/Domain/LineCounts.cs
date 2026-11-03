@@ -202,9 +202,6 @@ public static class LineCounts
 
     private static IEnumerable<string> Answered(AloneStep step, IReadOnlyList<(string Part, SessionEvent Event)> line) =>
         line.Where(each => each.Event.Id is { } id && step.Words.Contains(id, StringComparer.Ordinal))
-            .Select(each => each.Event.Helper is not null ? GoOnBy.Helper
-                : each.Event.Opinion is not null ? GoOnBy.Opinion
-                : each.Event.From == SupervisorHanded.From ? GoOnBy.Supervisor
-                : null)
+            .Select(each => global::Daoris.Driver.AnswersAlone.AnsweredBy(each.Event))
             .OfType<string>().Distinct(StringComparer.Ordinal);
 }
