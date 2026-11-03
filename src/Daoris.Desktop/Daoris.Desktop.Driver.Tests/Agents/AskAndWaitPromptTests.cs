@@ -17,7 +17,10 @@ public sealed class AskAndWaitPromptTests
         Asker: "ask #9f45",
         Repository: "console-ui",
         Root: "C:/somewhere/console-ui",
-        ServiceUrl: "http://localhost:5177");
+        ServiceUrl: "http://localhost:5177")
+    {
+        Block = new StandingFacts { Repository = "console-ui" },
+    };
 
     private static QuestView Question(string status = "Done", string? note = "The endpoint is POST /notes; it takes { text }.") =>
         new("q2", "console-ui", "notes-api", "What does the notes endpoint take?", "We need the contract.", status)
@@ -79,12 +82,14 @@ public sealed class AskAndWaitPromptTests
         foreach (var (which, prompt) in EveryInstruction(Target()))
         {
             var flat = Flat(prompt);
-            Assert.True(flat.Contains("Look before you ask.", StringComparison.Ordinal), which);
-            Assert.True(flat.Contains("The quest, its links and its files;", StringComparison.Ordinal), which);
             Assert.True(flat.Contains(
-                "this repository's own documents, code and history (its log, and the commits that last changed what you are changing);",
+                "Look before you ask: the quest, its links and its files, and the places Daoris's standing block names under *Where things are*.",
                 StringComparison.Ordinal), which);
-            Assert.True(flat.Contains("the workspace's knowledge, through your connector's `knowledge_search`.", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Where things are. This repository's own documents, code and history: its log, and the commits that last changed what you are changing.",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "The workspace's knowledge and its memory, through your connector's `knowledge_search` and `memory_search`.", StringComparison.Ordinal), which);
             Assert.True(flat.Contains(
                 "A question one of these settles is not a question: decide it, and keep what settled it for your closing note.",
                 StringComparison.Ordinal), which);
@@ -238,7 +243,7 @@ public sealed class AskAndWaitPromptTests
         foreach (var (which, prompt) in EveryInstruction(TargetPromptGoldenTests.Full))
         {
             var words = prompt.IndexOf("The person's own words on ask `#a1b2c3`", StringComparison.Ordinal);
-            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
+            var look = prompt.IndexOf("Look before you ask:", StringComparison.Ordinal);
             var attributed = prompt.IndexOf("Only the words this instruction quotes", StringComparison.Ordinal);
             var neighbour = prompt.IndexOf("do not guess: ask it.", StringComparison.Ordinal);
             Assert.True(words >= 0 && words < look && look < attributed && attributed < neighbour, which);
@@ -259,16 +264,16 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// KNOWUSE1c (D135 §4): the look names the indexes the repository keeps for its own documents, where its tree keeps any,
-    /// so a session starts from them rather than from "this repository's own documents" alone. None, and the look reads as
-    /// it did.
+    /// KNOWUSE1c (D135 §4) as CONTEXTONE1c places it: the standing block names the indexes the repository keeps for its own documents,
+    /// where its tree keeps any, so a session starts its look from them, and the look points to the block. None, and the block says none.
     /// </summary>
     [Fact]
-    public void The_look_names_the_repositorys_own_indexes_where_its_tree_keeps_them()
+    public void The_standing_block_names_the_repositorys_own_indexes_where_its_tree_keeps_them()
     {
-        foreach (var (which, prompt) in EveryInstruction(Target()))
+        foreach (var (which, prompt) in EveryInstruction(Target() with { Block = new StandingFacts { Repository = "dashboards" } }))
         {
             Assert.False(prompt.Contains("indexes its own documents", StringComparison.Ordinal), which);
+            Assert.True(Flat(prompt).Contains("the places Daoris's standing block names under *Where things are*", StringComparison.Ordinal), which);
         }
 
         foreach (var (indexes, named) in new (string[], string)[]
@@ -279,26 +284,26 @@ public sealed class AskAndWaitPromptTests
                 "`docs/README.md`, `.claude/rules/RULES_INDEX.md` and `.claude/rules/RULES_INDEX_CROSS.md`"),
         })
         {
-            foreach (var (which, prompt) in EveryInstruction(Target() with { Indexes = indexes }))
+            foreach (var (which, prompt) in EveryInstruction(Target() with { Block = new StandingFacts { Repository = "dashboards", Indexes = indexes } }))
             {
                 Assert.True(Flat(prompt).Contains(
-                    $"through your connector's `knowledge_search`. This repository indexes its own documents in {named}: start the "
-                    + "look there, and read every document whose entry matches this work. A question one of these settles",
+                    $"through your connector's `knowledge_search` and `memory_search`. This repository indexes its own documents in {named}: "
+                    + "start a look there, and read every document whose entry matches the work.",
                     StringComparison.Ordinal), $"{which}, {indexes.Length}");
             }
         }
     }
 
-    /// <summary>A pointer, not a listing: past <see cref="TargetPrompt.IndexLimit"/> the rest are counted, not named.</summary>
+    /// <summary>A pointer, not a listing: past <see cref="StandingBlock.IndexLimit"/> the rest are counted, not named.</summary>
     [Fact]
-    public void The_look_names_a_bounded_number_of_indexes_and_counts_the_rest()
+    public void The_standing_block_names_a_bounded_number_of_indexes_and_counts_the_rest()
     {
-        var indexes = Enumerable.Range(1, TargetPrompt.IndexLimit + 2).Select(n => $"docs/INDEX_{n:00}.md").ToArray();
+        var indexes = Enumerable.Range(1, StandingBlock.IndexLimit + 2).Select(n => $"docs/INDEX_{n:00}.md").ToArray();
 
-        var flat = Flat(TargetPrompt.Compose(Target() with { Indexes = indexes }));
+        var flat = Flat(TargetPrompt.Compose(Target() with { Block = new StandingFacts { Repository = "dashboards", Indexes = indexes } }));
 
-        Assert.Contains($"`docs/INDEX_{TargetPrompt.IndexLimit:00}.md` and 2 more like them: start the look there", flat);
-        Assert.DoesNotContain($"docs/INDEX_{TargetPrompt.IndexLimit + 1:00}.md", flat);
+        Assert.Contains($"`docs/INDEX_{StandingBlock.IndexLimit:00}.md` and 2 more like them: start a look there", flat);
+        Assert.DoesNotContain($"docs/INDEX_{StandingBlock.IndexLimit + 1:00}.md", flat);
     }
 
     /// <summary>
@@ -310,7 +315,7 @@ public sealed class AskAndWaitPromptTests
     {
         foreach (var (which, prompt) in EveryInstruction(Target()))
         {
-            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
+            var look = prompt.IndexOf("Look before you ask:", StringComparison.Ordinal);
             var neighbour = prompt.IndexOf("do not read into it and do not guess: ask it.", StringComparison.Ordinal);
             var person = prompt.IndexOf("Ask the person only for what", StringComparison.Ordinal);
             Assert.True(look >= 0 && look < neighbour && neighbour < person, which);
@@ -318,34 +323,24 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// The other checkouts are a source only where the session may read them (D107), and are pointed to where
-    /// this instruction lists them: above, read only; below, in the boundary, where each is also a declared
-    /// target; or both. Where reading across is off, no checkout is named, as before.
+    /// The other checkouts are a source only where the session may read them (D107): the standing block, at the instruction's end, points
+    /// to them as listed above it, read only or in the boundary as a declared target. Where reading across is off, it names none, as before.
     /// </summary>
     [Fact]
     public void The_other_checkouts_are_a_source_only_where_the_session_may_read_across()
     {
-        var app = new AcrossCheckout("app", "C:/work/app");
-        var engine = new AcrossCheckout("engine", "C:/work/engine");
-
         foreach (var (which, prompt) in EveryInstruction(Target()))
         {
             Assert.False(Flat(prompt).Contains("other checkouts", StringComparison.Ordinal), which);
         }
 
-        foreach (var (target, where) in new[]
+        var reads = Target() with { ReadsAcross = [new AcrossCheckout("app", "C:/work/app")], Block = Target().Block! with { Checkouts = true } };
+        foreach (var (which, prompt) in EveryInstruction(reads))
         {
-            (Target() with { ReadsAcross = [app] }, "above"),
-            (Target() with { ReadsAcross = [engine], WritesAcross = [engine] }, "below"),
-            (Target() with { ReadsAcross = [app, engine], WritesAcross = [engine] }, "above and below"),
-        })
-        {
-            foreach (var (which, prompt) in EveryInstruction(target))
-            {
-                Assert.True(Flat(prompt).Contains(
-                    $"through your connector's `knowledge_search`; and the other checkouts listed {where}. A question",
-                    StringComparison.Ordinal), $"{which}, {where}");
-            }
+            var flat = Flat(prompt);
+            var listed = flat.IndexOf("`app` — `C:/work/app`", StringComparison.Ordinal);
+            var pointed = flat.IndexOf("`memory_search`. The other checkouts listed above, which you may read.", StringComparison.Ordinal);
+            Assert.True(listed >= 0 && listed < pointed, which);
         }
     }
 

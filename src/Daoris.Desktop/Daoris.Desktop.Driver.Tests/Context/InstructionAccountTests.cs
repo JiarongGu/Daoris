@@ -35,7 +35,7 @@ public sealed class InstructionAccountTests
             Attachments = [new QuestFileView("spec.pdf", "00", 10, "C:/daoris/files/spec.pdf"), new QuestFileView("shot.png", "01", 10, null)],
             Parent = "p1",
             Then = [new QuestStepView("bridge", "Verify the report", "Check it.")],
-            CodeMap = "docs/code-map.json",
+            Block = TargetPromptGoldenTests.Full.Block! with { CodeMap = "docs/code-map.json" },
             LandsOn = new LandingPlan(LandingForm.Branch, "feature/report", LandingSource.Repository),
             WritesAcross = [new AcrossCheckout("bridge", "C:/work/bridge")],
             PersonSaid = "also the changelog",
@@ -85,12 +85,10 @@ public sealed class InstructionAccountTests
         var account = TargetPrompt.Composed(TargetPromptGoldenTests.Bare).Account;
 
         Assert.Equal(
-            ["quest", "close", "look", "attributed", "asking", "closing", "proposing", "boundary",
-             "requirements", "words", "go-aheads", "standing", "language", "map", "indexes"],
+            ["quest", "close", "asking", "attributed", "closing", "proposing", "boundary", "requirements", "words", "go-aheads", "language"],
             account.Sections.Select(section => section.Name));
         Assert.Equal(
-            [("requirements", "empty"), ("words", "no-ask"), ("go-aheads", "no-ask"), ("standing", "not-set"),
-             ("language", "not-set"), ("map", "empty"), ("indexes", "empty")],
+            [("requirements", "empty"), ("words", "no-ask"), ("go-aheads", "no-ask"), ("language", "not-set")],
             account.Sections.Where(section => section.None is not null).Select(section => (section.Name, section.None!)));
         Assert.All(account.Sections.Where(section => section.None is not null), section => Assert.Equal(0, section.Chars));
 
@@ -99,7 +97,28 @@ public sealed class InstructionAccountTests
         Assert.StartsWith("the quest: ", quest.Said);
         Assert.Contains("quest #abc123 asked by `console-api`", quest.Said);
         Assert.Equal("driver", Section(account, "closing").Source);
-        Assert.Equal("the standing answer: none set for `console-ui` on this machine", Section(account, "standing").Said);
+
+        // CONTEXTONE1c: a start's standing block is the last section handed, after the boundary and before the ones not handed.
+        var blocked = TargetPrompt.Composed(TargetPromptGoldenTests.Bare with { Block = new StandingFacts { Repository = "console-ui" } }).Account;
+        Assert.Equal(["boundary", "block", "requirements"], blocked.Sections.Select(section => section.Name).Skip(6).Take(3));
+        Assert.Equal(("machine", "console-ui"), (Section(blocked, "block").Source, Section(blocked, "block").From));
+    }
+
+    /// <summary>
+    /// CONTEXTONE1c (D230 point 3): the census of what the standing block replaced. No instruction of any kind of start holds the map, the
+    /// look, the indexes or the standing answer as a section of its own, nor says either of their old leads; and none says them absent.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Every))]
+    public void The_pieces_the_standing_block_replaced_are_gone_from_every_instruction(string which)
+    {
+        var composed = TargetPrompt.Composed(Of(which));
+
+        Assert.DoesNotContain(composed.Account.Sections, section => section.Name is "map" or "look" or "indexes" or "standing");
+        Assert.DoesNotContain("What the person has told this machine holds for every quest", composed.Text);
+        Assert.DoesNotContain("Look before you ask. The quest", composed.Text);
+        Assert.DoesNotContain("This repository keeps a code map in", composed.Text);
+        Assert.Equal(composed.Text.IndexOf("Routing standing here: ", StringComparison.Ordinal), composed.Text.LastIndexOf("Routing standing here: ", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -109,11 +128,13 @@ public sealed class InstructionAccountTests
 
         Assert.Equal(("ask", "a1b2c3", 3, 3), (Section(account, "words").Source, Section(account, "words").From, Section(account, "words").Shown, Section(account, "words").Of));
         Assert.Equal(("ask", "a1b2c3", 2, 2), (Section(account, "go-aheads").Source, Section(account, "go-aheads").From, Section(account, "go-aheads").Shown, Section(account, "go-aheads").Of));
-        var standing = Section(account, "standing");
-        Assert.Equal(("repository", "reports", Asked.AddDays(-1)), (standing.Source, standing.From, standing.At));
+        // CONTEXTONE1c: the person's choices, the code map and the indexes are the standing block's, said in its one section.
+        var block = Section(account, "block");
+        Assert.Equal(("machine", "reports", Asked.AddDays(-1)), (block.Source, block.From, block.At));
+        Assert.Contains("the code map `docs/code-map.json`", block.Said);
+        Assert.Contains("3 indexes", block.Said);
+        Assert.Contains("the person's choices set", block.Said);
         Assert.Equal(("workspace", "zh"), (Section(account, "language").Source, Section(account, "language").From));
-        Assert.Equal(("tree", "docs/code-map.json"), (Section(account, "map").Source, Section(account, "map").From));
-        Assert.Equal(("tree", 3, 3), (Section(account, "indexes").Source, Section(account, "indexes").Shown, Section(account, "indexes").Of));
         Assert.Equal(("landing", "feature/report"), (Section(account, "landing").Source, Section(account, "landing").From));
         Assert.Equal(("checkouts", 1), (Section(account, "boundary").Source, Section(account, "boundary").Shown));
         Assert.Equal("written", Section(account, "written-to").Source);
@@ -229,23 +250,29 @@ public sealed class InstructionAccountTests
     [Fact]
     public void A_standing_answer_past_its_bound_says_how_much_was_cut()
     {
-        var target = TargetPromptGoldenTests.Bare with { Standing = new StandingAnswer(new string('s', StandingText.Limit + 345), Asked) };
+        var target = TargetPromptGoldenTests.Bare with
+        {
+            Block = new StandingFacts { Repository = "console-ui", Choices = new StandingAnswer(new string('s', StandingText.Limit + 345), Asked) },
+        };
 
-        var cut = Cut(Section(TargetPrompt.Composed(target).Account, "standing"), "standing-long");
+        var cut = Cut(Section(TargetPrompt.Composed(target).Account, "block"), "standing-long");
 
         Assert.Equal((345, StandingText.Limit), (cut.Count, cut.Limit));
-        Assert.Equal("345 characters of it left out past its bound of 2,000", cut.Said);
+        Assert.Equal("345 characters of the person's choices left out past their bound of 2,000", cut.Said);
     }
 
     [Fact]
-    public void Indexes_past_the_most_the_look_names_are_counted()
+    public void Indexes_past_the_most_the_block_names_are_counted()
     {
-        var target = TargetPromptGoldenTests.Bare with { Indexes = [.. Enumerable.Range(1, 11).Select(n => $"docs/INDEX{n}.md")] };
+        var target = TargetPromptGoldenTests.Bare with
+        {
+            Block = new StandingFacts { Repository = "console-ui", Indexes = [.. Enumerable.Range(1, 11).Select(n => $"docs/INDEX{n}.md")] },
+        };
 
-        var section = Section(TargetPrompt.Composed(target).Account, "indexes");
+        var section = Section(TargetPrompt.Composed(target).Account, "block");
 
-        Assert.Equal((TargetPrompt.IndexLimit, 11), (section.Shown, section.Of));
-        Assert.Equal((3, TargetPrompt.IndexLimit), (Cut(section, "indexes-bound").Count, Cut(section, "indexes-bound").Limit));
+        Assert.Contains("11 indexes", section.Said);
+        Assert.Equal((3, StandingBlock.IndexLimit), (Cut(section, "indexes-bound").Count, Cut(section, "indexes-bound").Limit));
     }
 
     /// <summary>

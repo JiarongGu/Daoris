@@ -1,5 +1,5 @@
 {
-  "chars": 8029,
+  "chars": 8400,
   "sections": [
     {
       "name": "quest",
@@ -43,14 +43,6 @@
       "of": 2
     },
     {
-      "name": "standing",
-      "source": "repository",
-      "said": "the standing answer: 347 characters, the person's for `reports` on this machine, set 2026-09-30 02:26 UTC",
-      "chars": 347,
-      "from": "reports",
-      "at": "2026-09-30T02:26:00+00:00"
-    },
-    {
       "name": "close",
       "source": "driver",
       "said": "how to take it and close it: 340 characters, the driver's own words",
@@ -64,30 +56,16 @@
       "shown": 1
     },
     {
-      "name": "look",
+      "name": "asking",
       "source": "driver",
-      "said": "where to look before asking: 623 characters, the driver's own words",
-      "chars": 623
-    },
-    {
-      "name": "indexes",
-      "source": "tree",
-      "said": "the repository's indexes: 213 characters, naming 3 of the 3 its tree keeps",
-      "chars": 213,
-      "shown": 3,
-      "of": 3
+      "said": "looking before asking, asking another repository, and stopping for the person, a go-ahead asked once on the ask: 1,839 characters, the driver's own words",
+      "chars": 1839
     },
     {
       "name": "attributed",
       "source": "driver",
       "said": "the person's words met second-hand: 481 characters, the driver's own words",
       "chars": 481
-    },
-    {
-      "name": "asking",
-      "source": "driver",
-      "said": "asking another repository, and stopping for the person, a go-ahead asked once on the ask: 1,373 characters, the driver's own words",
-      "chars": 1373
     },
     {
       "name": "closing",
@@ -108,18 +86,19 @@
       "chars": 302
     },
     {
+      "name": "block",
+      "source": "machine",
+      "said": "the standing block: 1,086 characters, for `reports` of `work`: where things are, 3 indexes and the person's choices set 2026-09-30 02:26 UTC",
+      "chars": 1088,
+      "from": "reports",
+      "at": "2026-09-30T02:26:00+00:00"
+    },
+    {
       "name": "language",
       "source": "repository",
       "said": "the session language: none set for its repository or its workspace on this machine",
       "chars": 0,
       "none": "not-set"
-    },
-    {
-      "name": "map",
-      "source": "tree",
-      "said": "the code map: none, since its tree keeps none",
-      "chars": 0,
-      "none": "empty"
     }
   ]
 }

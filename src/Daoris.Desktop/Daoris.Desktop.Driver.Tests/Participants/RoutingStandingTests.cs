@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// COWORKVIEW1e-i (the cowork view design §R11.2 point 4, §6.4): the routing standing is judged once, from the drive, the lanes the
 /// registry declares and the trees, in the order not-driven, no-lanes, one-at-a-time, open; and it is told only to the works that can
-/// publish to their own repository's lanes (build, design, chat).
+/// publish to their own repository's lanes (build, design, chat). Its words are the standing block's (<c>StandingBlockTests</c>).
 /// </summary>
 public sealed class RoutingStandingTests
 {
@@ -65,62 +65,10 @@ public sealed class RoutingStandingTests
     }
 
     [Fact]
-    public void The_words_name_the_lanes_by_their_addresses_where_there_are_some()
+    public void The_judge_keeps_the_lanes_the_registry_declares()
     {
-        var open = RoutingStanding.Of(Config(true, true), Repository(Lanes));
-        var oneAtATime = RoutingStanding.Of(Config(true, false), Repository(Lanes));
-        var undriven = RoutingStanding.Of(Config(false, true), Repository(Lanes));
-
-        foreach (var told in new[] { open, oneAtATime, undriven })
-        {
-            Assert.Contains("`engine:core`", told.Words, StringComparison.Ordinal);
-            Assert.Contains("`engine:web`", told.Words, StringComparison.Ordinal);
-        }
-
-        Assert.Contains("can start beside your work", open.Words, StringComparison.Ordinal);
-        Assert.Contains("only after your work ends", oneAtATime.Words, StringComparison.Ordinal);
-        Assert.Contains("not driven on this machine", undriven.Words, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void A_repository_without_lanes_names_none_and_says_to_work_its_rows_itself()
-    {
-        var none = RoutingStanding.Of(Config(true, true), Repository());
-        var undriven = RoutingStanding.Of(Config(false, true), Repository());
-
-        Assert.DoesNotContain("`engine:", none.Words, StringComparison.Ordinal);
-        Assert.Contains("declares no lanes", none.Words, StringComparison.Ordinal);
-        Assert.Contains("yourself", none.Words, StringComparison.Ordinal);
-        Assert.DoesNotContain("`engine:", undriven.Words, StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(false, true, true)]
-    [InlineData(true, false, true)]
-    [InlineData(true, true, false)]
-    [InlineData(true, true, true)]
-    public void Every_case_names_the_quest_route_to_another_repository_and_the_helper_for_a_question_about_this_one(bool driven, bool lanes, bool trees)
-    {
-        var words = RoutingStanding.Of(Config(driven, trees), Repository(lanes ? Lanes : [])).Words;
-
-        Assert.Contains("goes to that repository as a quest (`quest_publish`", words, StringComparison.Ordinal);
-        Assert.Contains("registry or this repository's `uses`", words, StringComparison.Ordinal);
-        Assert.Contains("`helper_ask`", words, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Yourself_is_kept_to_this_repository_s_own_rows_where_no_lane_can_start_a_quest()
-    {
-        foreach (var words in new[]
-                 {
-                     RoutingStanding.Of(Config(true, true), Repository()).Words,
-                     RoutingStanding.Of(Config(false, true), Repository(Lanes)).Words,
-                 })
-        {
-            Assert.Contains("Work this repository's own rows yourself.", words, StringComparison.Ordinal);
-            Assert.DoesNotContain("Work your rows yourself", words, StringComparison.Ordinal);
-        }
+        Assert.Equal(Lanes, RoutingStanding.Of(Config(true, true), Repository(Lanes)).Lanes);
+        Assert.Equal(Lanes, RoutingStanding.Of(Config(false, true), Repository(Lanes)).Lanes);
     }
 
     [Theory]

@@ -69,7 +69,7 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 
     /// <summary>
     /// The memory the line read, newest first, each entry in one line as the service rechecked it when the brief was composed, never as it
-    /// was read (KNOWCENTRAL2f).
+    /// was read (KNOWCENTRAL2f). The brief hands it on (<see cref="ComposedBrief.Memory"/>), and the standing block says it (CONTEXTONE1c).
     /// </summary>
     public IReadOnlyList<string> Memory { get; init; } = [];
 }
@@ -85,7 +85,7 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 /// the record marks it (the person's verbatim; another agent's findings and a channel's message as that agent's claim, told by their
 /// marks, a channel's from before its mark by the claim's opening); each turn's last message and one line of what it did; the work's
 /// state, the tree read now, the plan with the turn it was written in, the last check each part ran and the last failed one's kept
-/// output, what is still asked, the files attached and the memory the line read as rechecked now; the line's course as Daoris counts it
+/// output, what is still asked and the files attached; the line's course as Daoris counts it
 /// (CONTEXTDRIVE1b); the outgoing agent's note; the entry's other parts; what was left out.</para>
 ///
 /// <para><b>What it never carries</b> (§3.3): a thought, a tool's output but the last failed check's, Daoris's own composed words
@@ -141,14 +141,8 @@ public static class ContextBrief
     /// <summary>The most entries of a list named: plan steps, what is uncommitted, the commits.</summary>
     public const int ListLimit = 50;
 
-    /// <summary>The most memory entries the line read that the state names, the newest; each clipped at <see cref="MemoryItemLimit"/>.</summary>
-    public const int MemoryLimit = 5;
-
     /// <summary>The most things the line waits on that the state names, the oldest; the rest are counted.</summary>
     public const int WaitLimit = 8;
-
-    /// <summary>The most one memory entry's line weighs.</summary>
-    public const int MemoryItemLimit = 400;
 
     /// <summary>The most of the last failed check's output carried: the record's own bound on it.</summary>
     public const int OutputLimit = SessionEventText.RawLimit;
@@ -641,10 +635,6 @@ public static class ContextBrief
         fixedLines.AddRange(line.Open.Take(WaitLimit).Select(WaitText));
         var waitsLeft = Math.Max(0, line.Open.Count - WaitLimit);
         if (waitsLeft > 0) fixedLines.Add($"\n- … and {waitsLeft} more things this line waits on.");
-        fixedLines.AddRange(line.Memory.Take(MemoryLimit).Select(entry =>
-            $"\n- Memory this line read, as it stands now: {TextBounds.Clip(TextBounds.OneLine(entry), MemoryItemLimit)}"));
-        var memoryLeft = Math.Max(0, line.Memory.Count - MemoryLimit);
-        if (memoryLeft > 0) fixedLines.Add($"\n- … and {memoryLeft} more memory entries this line read, which memory_get reads as they stand.");
         var files = read.Turns.SelectMany(turn => turn.Words).Prepend(read.Request).OfType<Word>()
             .SelectMany(word => word.Files.Select(file => (Name: file, Kept: line.Parts[word.Part].Kept))).Distinct().ToList();
         if (files.Count > 0)
@@ -683,7 +673,7 @@ public static class ContextBrief
         }
 
         if (Weight(rendered) > StateCap) rendered = clipped.Head(rendered, StateCap);
-        var listsLeft = uncommitted.Count - shown[0] + commits.Count - shown[1] + memoryLeft;
+        var listsLeft = uncommitted.Count - shown[0] + commits.Count - shown[1];
         return (rendered.Length == 0 ? null : rendered, listsLeft, steps.Count - shown[2]);
     }
 
@@ -913,6 +903,7 @@ public static class ContextBrief
         {
             Continues = last?.Session,
             Kept = [.. line.Parts.Select(part => part.Kept).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase)],
+            Memory = line.Memory,
         };
     }
 

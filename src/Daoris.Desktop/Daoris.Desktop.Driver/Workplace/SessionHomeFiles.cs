@@ -167,6 +167,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
         new(Spawn, Place.Spawn, ChecksSuffix, false, Beside),
+        // CONTEXTONE1c: the folder a standing block past what its first prompt carries went through, which its session read.
+        new(Spawn, Place.Spawn, StandingFacts.FolderSuffix, true, Beside),
         new(Help, Place.Sessions, HelpConversationsSuffix, false, Beside),
         // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
         new(Help, Place.Sessions, HelpWiredSuffix, false, Beside),

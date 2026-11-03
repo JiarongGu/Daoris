@@ -190,6 +190,8 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 Opinion = opinion,
                 Session = sessionId,
                 Prompt = OpinionInstruction.Compose(packet),
+                // CONTEXTONE1c: its standing block, its copy's facts and the person's choices for its repository.
+                Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(ask.Repository, copy.Path), ParticipantWork.Review, _context.Config, [], null),
                 // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
                 Asked = choice.Effective?.Asked,
                 Choice = choice.Effective?.From,

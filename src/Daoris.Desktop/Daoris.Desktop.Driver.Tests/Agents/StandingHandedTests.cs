@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KNOWUSE1b (D135 §3): a standing answer the person keeps for a repository on this machine (<c>standing</c> in
-/// <c>driver.json</c>) is handed to every session there, beneath its quest: a claim, a resume, a carry-on on any account and
-/// a follow-up step alike, and none once it is cleared. The owner's development-first answer was given once, on one quest,
-/// and read by no later session (`docs/2026-10-03-knowledge-use-evidence.md` §5.1).
+/// KNOWUSE1b (D135 §3) as CONTEXTONE1c places it (D230 point 4): a standing answer the person keeps for a repository on this machine
+/// (<c>standing</c> in <c>driver.json</c>) is handed to every session there as the person's choices in its standing block: a claim, a
+/// resume, a carry-on on any account and a follow-up step alike, and none once it is cleared. The owner's development-first answer was
+/// given once, on one quest, and read by no later session (`docs/2026-10-03-knowledge-use-evidence.md` §5.1).
 /// </summary>
 public sealed class StandingHandedTests
 {
@@ -21,13 +21,16 @@ public sealed class StandingHandedTests
     private static QuestView Quest(string id = "q2", string to = "dashboards", string? parent = null) =>
         new(id, "ask #a1", to, "Verify the figure", "Look at the tile.", "Taken") { Parent = parent };
 
-    /// <summary>The target as the driver composes it for a start: the quest, then this machine's answer for its repository.</summary>
-    private static SessionTarget Target(DriverConfig config, QuestView? quest = null) =>
-        Daoris.Driver.Driver.WithStanding(SessionTarget.ForQuest(quest ?? Quest(), "C:/somewhere/dashboards", "http://stand-in"), config);
+    /// <summary>The target as the driver composes it for a start: the quest, then its standing block with this machine's facts for its repository.</summary>
+    private static SessionTarget Target(DriverConfig config, QuestView? quest = null)
+    {
+        var target = SessionTarget.ForQuest(quest ?? Quest(), "C:/somewhere/dashboards", "http://stand-in");
+        return target with { Block = StandingBlocks.OnMachine(target.Block!, ParticipantWork.Build, config, [], null) };
+    }
 
     /// <summary>
-    /// The proof: a claim, a resume, a carry-on on another account and a follow-up step are each handed the standing answer,
-    /// verbatim, beneath the quest and before the look.
+    /// The proof: a claim, a resume, a carry-on on another account and a follow-up step are each handed the person's choices,
+    /// verbatim, in the standing block after the look that points to it.
     /// </summary>
     [Fact]
     public void A_claim_a_resume_a_carry_on_and_a_follow_up_are_each_handed_the_standing_answer()
@@ -44,11 +47,12 @@ public sealed class StandingHandedTests
                  })
         {
             var body = prompt.IndexOf("Look at the tile.", StringComparison.Ordinal);
+            var look = prompt.IndexOf("Look before you ask", StringComparison.Ordinal);
             var standing = prompt.IndexOf("  > " + Says, StringComparison.Ordinal);
-            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
-            Assert.True(body >= 0 && body < standing && standing < look, $"{which}: {prompt}");
-            Assert.Contains("What the person has told this machine holds for every quest in `dashboards`", prompt);
+            Assert.True(body >= 0 && body < look && look < standing, $"{which}: {prompt}");
+            Assert.Contains("The person's choices on this machine for `dashboards`", prompt);
             Assert.Contains("set 2026-10-03 09:00 UTC", prompt);
+            Assert.DoesNotContain("What the person has told this machine", prompt);
         }
     }
 
@@ -69,18 +73,17 @@ public sealed class StandingHandedTests
         var cleared = TargetPrompt.Compose(Target(Config.WithStanding("dashboards", null, At)));
         var never = TargetPrompt.Compose(Target(DriverConfig.Empty));
 
-        Assert.DoesNotContain("holds for every quest in", cleared);
+        Assert.DoesNotContain("The person's choices on this machine", cleared);
         Assert.Equal(never, cleared);
-        Assert.Equal(TargetPrompt.Compose(SessionTarget.ForQuest(Quest(), "C:/somewhere/dashboards", "http://stand-in")), never);
     }
 
-    /// <summary>It answers what it covers, and the quest and the person's words on its ask are newer.</summary>
+    /// <summary>It answers what it covers, and the work's own words and the person's on its ask are newer.</summary>
     [Fact]
     public void It_says_it_answers_what_it_covers_and_that_newer_words_win()
     {
         var prompt = TargetPrompt.Compose(Target(Config)).ReplaceLineEndings(" ");
 
-        Assert.Contains("do not ask them for what it already says", prompt);
+        Assert.Contains("do not ask them for what they already say", prompt);
         Assert.Contains("newer and win where they differ", prompt);
     }
 
@@ -92,8 +95,7 @@ public sealed class StandingHandedTests
         var longer = new string('x', StandingText.Limit + 40);
         var cut = TargetPrompt.Compose(Target(DriverConfig.Parse("{\"standing\":{\"dashboards\":{\"says\":\"" + longer + "\"}}}")));
 
-        Assert.Contains("in their own words:", unknown.ReplaceLineEndings(" "));
-        Assert.DoesNotContain(" set ", unknown[unknown.IndexOf("What the person has told", StringComparison.Ordinal)..][..200]);
+        Assert.Contains("for `dashboards`, in their own words.", unknown.ReplaceLineEndings(" "));
         Assert.Contains("  > " + new string('x', StandingText.Limit) + "\n", cut);
         Assert.Contains("and 40 more characters", cut);
     }
