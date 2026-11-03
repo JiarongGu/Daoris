@@ -318,15 +318,6 @@ public static class TransitionalRegister
             Row = "CONTEXTDRIVE1l",
             Ended = SupervisorRuleCensus.Ended,
         },
-        new()
-        {
-            Id = "conversion-receipt-before-parts",
-            Kept = "Conversion/HomeReceipts.cs:89",
-            Reaches = "A conversion receipt the workflow wave wrote before the door had parts: read as one workflow part with no build, which gives the floor nothing.",
-            Ends = "No receipt in the home's receipts folder is in the shape before parts; a press on one writes it again in the new shape.",
-            Row = "ONEWAY1ag",
-            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !HomeReceipts.AnyBeforeParts(home),
-        },
         // WORKFLOWCLEAN1 §4.7's kept reads (ONEWAY1ad-ii): the old workflow engine's, each ending with the workflow part's census, which reads
         // the service's runs as well as the home's files.
         new()

@@ -103,9 +103,6 @@ public sealed class WorkflowPart(ConvertDoors doors) : IConversionPart
         Said = receipt.Held.Count == 0 ? null : $"{receipt.Held.Count} place{(receipt.Held.Count == 1 ? "" : "s")} keep their rules until their open unit ends.",
     }.Derived();
 
-    /// <summary>A receipt written before parts, read as a home's receipt of one workflow part with no build (a stored shape is never changed in place).</summary>
-    public static HomeReceipt Wrapped(ConversionReceipt old) => new(old.Digest, old.At, old.Choices, [Entry(old)]) { UndoneAt = old.UndoneAt };
-
     // ---- Applied (the cleanup design §4.4) ------------------------------------------------------------------------------------------------------------
 
     private static ConversionReceipt Begin(ConversionPlan plan, DriverConfig config)

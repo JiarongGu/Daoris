@@ -324,30 +324,6 @@ public sealed class ConversionPartsTests : IDisposable
     }
 
     [Fact]
-    public void ONEWAY1ae_a_receipt_written_before_parts_reads_as_one_workflow_part_with_no_build()
-    {
-        Directory.CreateDirectory(_home);
-        var digest = new string('a', 64);
-        var old = new ConversionReceipt(digest, DateTimeOffset.Parse("2026-11-02T10:00:00Z"), new ConversionChoices(), [], [], "merge-after-accept", [], [], [],
-            [new("configuration", "configuration", "the choices, in one change", ConversionOutcomes.Done)]) { Before = new(null, [], [], [], []) };
-        var path = new HomeReceipts(_home).PathOf(digest);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(old, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
-
-        var read = new HomeReceipts(_home).Read(digest)!;
-
-        Assert.Null(read.Build);
-        Assert.Equal([(ConversionParts.Workflows, ConversionOutcomes.Done)], read.Parts.Select(each => (each.Part, each.Outcome)));
-        Assert.Equal("merge-after-accept", new ConversionReceipts(_home).Read(digest)!.DefaultWorkflow);
-        Assert.True(ConversionReceipts.Stands(_home));
-        Assert.True(HomeReceipts.AnyBeforeParts(_home));
-        var entry = TransitionalRegister.Entries.Single(each => each.Id == "conversion-receipt-before-parts");
-        Assert.False(entry.Ended(_home));
-        new HomeReceipts(_home).Write(read);
-        Assert.True(entry.Ended(_home));
-    }
-
-    [Fact]
     public async Task ONEWAY1ae_a_part_that_is_not_the_workflows_alone_stands_and_holds_the_rollback()
     {
         Directory.CreateDirectory(_home);
