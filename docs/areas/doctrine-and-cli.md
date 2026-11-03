@@ -259,9 +259,6 @@ one `change` skill, and `co-working` as a pack.
     canon reads right.
 14. D194's ONEWAY1ai-i note (the CLI starts on the node `PATH` finds) vs `DoctrineConsole.cs:67-78` (the tools' resolved node
     where a home exists, `PATH` only without one): the code reads right.
-15. D194 point 7 (a family's TypeScript retires with its last reader) vs `layout/lanes.ts`, `platform/jsonkeep.ts` and
-    `platform/casefold.ts`, which no source imports (only their tests; `lanes.ts:2` says `connect` reads it): D194 reads
-    right, and the modules are dead.
 
 ## Open
 
