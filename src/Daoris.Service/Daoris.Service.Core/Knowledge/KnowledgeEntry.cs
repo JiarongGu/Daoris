@@ -18,7 +18,7 @@ public enum EntryKind
     /// <summary>One numbered decision and its reasoning.</summary>
     Decision,
 
-    /// <summary>One recorded fix: symptom, root cause, verification.</summary>
+    /// <summary>One recorded regression: its root cause, and the commit that introduced it.</summary>
     Fix,
 
 

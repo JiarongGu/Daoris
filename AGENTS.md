@@ -120,7 +120,7 @@ Declared in `daoris.json`; look here before searching.
 | decisions | `docs/decisions` | numbered decisions, with why and what each rejected |
 | backlog | `TASKS.md` | open work only |
 | archive | `docs/task-archive.md` | finished work, with its date and outcome |
-| fixes | `docs/FIX-LOG.md` | root cause, fix and verification per defect |
+| fixes | `docs/FIX-LOG.md` | regressions only: the root cause, and the commit that introduced it |
 | changelog | `CHANGELOG.md` | what a user of a release sees changed |
 | glossary | `src/Daoris.Web/src/locales/glossary.json` | the names people and code use for this repository's things |
 | gates | `daoris.gates.json` | the checks, their commands, and what may run unasked |
