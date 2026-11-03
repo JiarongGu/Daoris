@@ -4,11 +4,11 @@ using System.Text.Json;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The seam's words arrive whole (PUSH1f2a, D194 point 1, the alone-path design §1.1): <c>daoris driver …</c>, started by Node through
-/// the CLI's one spawn site, reaches a .NET program with the words it was typed with, read back by .NET's own reading, since a Node
-/// stand-in would read them with Node's parser. The program here is a small native fixture this test builds, named as the driver's
-/// apphost is; it prints what it read and exits as it is told. The terminal's environment arrives exactly, with no tools' <c>PATH</c>
-/// laid over it, and the program's exit is the run's.
+/// The seam's words arrive whole (D194 point 1, the alone-path design §1.1; ONEWAY1ai-i): <c>daoris place …</c>, a word outside the
+/// doctrine commands, started by Node through the CLI's one spawn site, reaches a .NET program with the words it was typed with, read
+/// back by .NET's own reading, since a Node stand-in would read them with Node's parser. The program here is a small native fixture this
+/// test builds, named as the desktop program's apphost is; it prints what it read and exits as it is told. The terminal's environment
+/// arrives with no tools' <c>PATH</c> laid over it and the handed mark added, and the program's exit is the run's.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTests.Echo echo) : IClassFixture<DriverProgramWordsProcessTests.Echo>
@@ -41,6 +41,7 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
             args,
             path = Environment.GetEnvironmentVariable("PATH"),
             session = Environment.GetEnvironmentVariable("DAORIS_SESSION_ID"),
+            handed = Environment.GetEnvironmentVariable("DAORIS_HANDED"),
         }));
         return exit;
         """;
@@ -130,14 +131,16 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
         ];
         var terminal = Terminal(program);
 
-        var (code, output, error) = Run("node", Typed(["driver", .. words]), terminal);
+        var (code, output, error) = Run("node", Typed(["place", .. words]), terminal);
 
         Assert.True(code == 0, $"{output}\n{error}");
         using var said = JsonDocument.Parse(output);
-        Assert.Equal(["driver", .. words], said.RootElement.GetProperty("args").EnumerateArray().Select(each => each.GetString()!));
-        // Exactly: the launchers' folder beside the home is not laid first, as every other child the CLI starts has it.
+        Assert.Equal(["place", .. words], said.RootElement.GetProperty("args").EnumerateArray().Select(each => each.GetString()!));
+        // The launchers' folder beside the home is not laid first, as every other child the CLI starts has it.
         Assert.Equal(terminal["PATH"], said.RootElement.GetProperty("path").GetString());
         Assert.Equal("s-words", said.RootElement.GetProperty("session").GetString());
+        // ONEWAY1ai-i: the program is told the CLI handed the words, so it never hands them back.
+        Assert.Equal("cli", said.RootElement.GetProperty("handed").GetString());
     }
 
     [Theory]
@@ -149,7 +152,7 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
     {
         var program = echo.Program;
 
-        var (code, output, error) = Run("node", Typed("driver", "list"), Terminal(program, exit));
+        var (code, output, error) = Run("node", Typed("place", "list"), Terminal(program, exit));
 
         Assert.True(code == expected, $"{output}\n{error}");
         if (exit == "7") Assert.Contains("ended with status 7", output + error, StringComparison.Ordinal);

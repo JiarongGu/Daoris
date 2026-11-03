@@ -11,7 +11,7 @@ public sealed record OpinionPressed(bool Done, string Message)
 /// The person's presses at the second opinion's gate, the driver's half (XAGENT1f, D155 point 10; the second-agent design §8.5,
 /// §9): <i>Ask now</i>, <i>Try again</i>, <i>Ask again</i> and <i>Ask the same agent, fresh</i> (a pass the next look starts),
 /// <i>Go on anyway…</i>, <i>I looked myself…</i>, <i>Stop</i>, and the answer an <i>Accept…</i> makes to what it showed. The
-/// terminal's <c>daoris-driver opinion</c> and the screen's bridge both press here, so each says the same and keeps the same.
+/// terminal's <c>daoris session opinion</c> and the screen's bridge both press here, so each says the same and keeps the same.
 /// </summary>
 /// <remarks>
 /// <para><b>Only the person's.</b> No connector tool and no Ask Daoris card reaches these (§9, D110): asking spends an account at
@@ -114,7 +114,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
             return new(false, $"no second opinion is asked for `{work.Repository}`: "
                 + (process.Named
                     ? $"its workflow {process.Name} has no second opinion."
-                    : $"no rule here names a reviewer. `daoris driver opinion {work.Repository} --reviewers <adapter>` names one."));
+                    : $"no rule here names a reviewer. `daoris place opinion {work.Repository} --agents <adapter>` names one."));
         }
 
         if (reviewer is not null && sameAgent)

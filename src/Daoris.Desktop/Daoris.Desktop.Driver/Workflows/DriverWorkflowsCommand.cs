@@ -189,7 +189,7 @@ public static class DriverWorkflowsCommand
                 var token = argv[at];
                 if (valued.Contains(token)) at++;
                 else if (switches.Contains(token)) continue;
-                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `driver workflow {name}` takes — {Usage}");
+                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `workflow{name}` takes — {Usage}");
                 else if (++seen > operands - 2) throw new ChoiceWords(Usage);
             }
 
@@ -341,7 +341,7 @@ public static class DriverWorkflowsCommand
             {
                 var token = argv[at];
                 if (valued.Contains(token)) at++;
-                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `driver workflow show` takes — {usage}");
+                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `workflowshow` takes — {usage}");
                 else throw new ChoiceWords(usage);
             }
 
@@ -476,7 +476,7 @@ public static class DriverWorkflowsCommand
                 var token = argv[at];
                 if (valued.Contains(token)) at++;
                 else if (token is "--clear" or "--plan" or "--landed") continue;
-                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `driver workflow use` takes — {usage}");
+                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `workflowuse` takes — {usage}");
                 else operands.Add(token);
             }
 
@@ -666,7 +666,7 @@ public static class DriverWorkflowsCommand
                 var token = argv[at];
                 if (valued.Contains(token)) at++;
                 else if (token is "--drop" or "--plan") continue;
-                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `driver workflow kind` takes — {usage}");
+                else if (token.StartsWith("--", StringComparison.Ordinal)) throw new ChoiceWords($"`{token}` is not a flag `workflowkind` takes — {usage}");
                 else operands.Add(token);
             }
 

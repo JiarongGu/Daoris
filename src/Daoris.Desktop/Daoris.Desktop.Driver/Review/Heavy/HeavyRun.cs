@@ -74,7 +74,7 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 public static class HeavyRun
 {
     /// <summary>The verb's usage, said with a word it does not take.</summary>
-    public const string Usage = "usage: daoris-driver run-heavy [--gate <name> | --look | -- <command>]";
+    public const string Usage = "usage: daoris gate run [--gate <name> | --look | -- <command>]";
 
     /// <summary>What a run hands its gates' environment: <see cref="Marker"/>, the slot it holds and the gates running.</summary>
     public const string Variable = "DAORIS_HEAVY_RUN";

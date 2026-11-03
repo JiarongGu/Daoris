@@ -16,7 +16,7 @@ internal static class AgentLoginCommand
     private const string Prefix = "daoris";
 
     /// <summary>
-    /// <c>login &lt;agent&gt; [--profile &lt;account&gt;] [--device-code]</c>, or <c>--new [--name &lt;name&gt;]</c> (D66 §3, ACCT1, ACCT2,
+    /// <c>login &lt;agent&gt; [--account &lt;account&gt;] [--device-code]</c>, or <c>--new [--name &lt;name&gt;]</c> (D66 §3, ACCT1, ACCT2,
     /// CODEXLOGIN1; <c>--join</c> and <c>--join-machine</c> refused since POOL1b, D197): every check that needs no flow is made first, the browser's ports tried once
     /// where the agent waits on them, then the binary a start runs signs in (CODEXACCT1b, D57 rule 4), its pin before <c>PATH</c>'s.
     /// </summary>
@@ -50,18 +50,18 @@ internal static class AgentLoginCommand
         // itself, so `--join` and `--join-machine` are refused before anything starts.
         if (args.Contains("--join") || args.Contains("--join-machine")) throw new AgentWords(OneSetWords.Join);
         var fresh = args.Contains("--new");
-        if (fresh && args.Contains("--profile"))
+        if (fresh && args.Contains("--account"))
         {
             throw new AgentWords(
-                $"`--new` signs in to a new account and `--profile` to one that is here — `daoris agent login {name} --new`, or "
-                + $"`daoris agent login {name} --profile {ShellWord.Of(AgentsCommand.FlagValue(args, "--profile") ?? "", ShellWord.Account)}`.");
+                $"`--new` signs in to a new account and `--account` to one that is here — `daoris agent login {name} --new`, or "
+                + $"`daoris agent login {name} --account {ShellWord.Of(AgentsCommand.FlagValue(args, "--account") ?? "", ShellWord.Account)}`.");
         }
 
         if (!fresh && args.Contains("--name"))
         {
             throw new AgentWords(
                 "`--name` names a new account as it is made (`--new`); an account that is here is named with `daoris agent "
-                + $"profile rename {name} <account> <name>`.");
+                + $"account rename {name} <account> <name>`.");
         }
 
         // CODEXACCT1b: the binary `agent list` asks, the pin before PATH's, refused before anything is made where the pin has nothing
@@ -107,7 +107,7 @@ internal static class AgentLoginCommand
         var signIn = new SignIn(world, name, toolchain, home, path, settings, binary, login, ct);
         var code = fresh
             ? await signIn.NewAsync(AgentsCommand.FlagValue(args, "--name")).ConfigureAwait(false)
-            : await signIn.ToAsync(AgentsCommand.FlagValue(args, "--profile")).ConfigureAwait(false);
+            : await signIn.ToAsync(AgentsCommand.FlagValue(args, "--account")).ConfigureAwait(false);
         if (code != 0 && otherWay is not null && !ct.IsCancellationRequested) world.Instance.Out.WriteLine($"{Prefix}: {otherWay}");
         return code;
     }
@@ -321,7 +321,7 @@ internal static class AgentLoginCommand
                 Told($"{Prefix}: stopped at your Ctrl+C — the account `{account}` was kept, signed in, and its end was not written"
                     + (wanted is null
                         ? "."
-                        : $": `daoris agent profile rename {agent} {ShellWord.Of(account, ShellWord.Account)} {ShellWord.Of(wanted, ShellWord.Name)}` finishes it."));
+                        : $": `daoris agent account rename {agent} {ShellWord.Of(account, ShellWord.Account)} {ShellWord.Of(wanted, ShellWord.Name)}` finishes it."));
                 return false;
             }
 
@@ -343,12 +343,12 @@ internal static class AgentLoginCommand
             var offered = called is null ? AccountNames.Offered(accounts, names, account, said.Account, said.Org, said.Plan) : null;
             if (called is null && offered is { Length: > 0 })
             {
-                Say($"  `daoris agent profile rename {agent} {ShellWord.Of(account, ShellWord.Account)} {ShellWord.Of(offered, ShellWord.Name)}` names it "
+                Say($"  `daoris agent account rename {agent} {ShellWord.Of(account, ShellWord.Account)} {ShellWord.Of(offered, ShellWord.Name)}` names it "
                     + $"{offered}; it reads as `{account}` until it has a name.");
             }
             else if (called is null)
             {
-                Say($"  `daoris agent profile rename {agent} {ShellWord.Of(account, ShellWord.Account)} <name>` gives it a name of yours.");
+                Say($"  `daoris agent account rename {agent} {ShellWord.Of(account, ShellWord.Account)} <name>` gives it a name of yours.");
             }
 
             // A new account's end says it joined, in the bridge's words for the page (POOL1a2, the account-pool design §4.4); a sign-back-in

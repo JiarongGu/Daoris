@@ -182,7 +182,7 @@ public sealed class AskReviewCommandTests
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  ask … --review rule|on|<environment>|off [--review-words \"…\"]\n", usage);
-        Assert.Contains("\n  ask --set-review <id> on|<environment>|off [\"…\"]\n", usage);
+        Assert.Contains("\n  ask review <id> on|<environment>|off [\"…\"]\n", usage);
     }
 
     /// <summary>

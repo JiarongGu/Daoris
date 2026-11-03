@@ -20,18 +20,18 @@ internal static class ActorPress
 }
 
 /// <summary>
-/// The verbs that set a role's agents before the role door was the one door (ONEWAY1a, the oneway design §2 S1): <c>adapter</c>,
-/// <c>intake</c>, <c>helper</c> and <c>actor</c>, each refused naming the role door that sets and says it now. <c>actor export|import|found</c>
-/// are the staffing copy's own verbs, which ONEWAY1c-ii retires with the copy.
+/// <c>settings actor</c>, which set a role's agents before the role door was the one door (ONEWAY1a, the oneway design §2 S1): refused
+/// naming the role door that sets and says them now. Its <c>export|import|found</c> are the staffing copy's own verbs, which ONEWAY1c-ii
+/// retires with the copy. <c>adapter</c>, <c>intake</c> and <c>helper</c> are the tree's moved forms, refused before they reach here.
 /// </summary>
 public sealed class RetiredStaffingVerb(string word) : ChoiceVerb
 {
     public override string Word => word;
 
-    /// <summary>The refusal every retired staffing verb says: the role door's words.</summary>
+    /// <summary>The refusal a retired staffing verb says: the role door's words.</summary>
     public static string Refusal(string verb) =>
-        $"`driver {verb}` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` "
-        + "(`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed.";
+        $"`settings {verb}` is retired: a role's agents are set through the role door, `daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` "
+        + "(`off` for Intake and Ask Daoris), and said by `daoris role <role>`; nothing was changed.";
 
     /// <summary><c>actor export|import|found</c> (FOUNDATION1w-s, §19.15): the staffing copy's own verbs, each acting alone; null for the rest.</summary>
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>

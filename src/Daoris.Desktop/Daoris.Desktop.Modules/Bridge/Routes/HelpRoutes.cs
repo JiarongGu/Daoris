@@ -53,7 +53,7 @@ public sealed class HelpRoutes(DriverContext context)
         {
             throw new DriverException(
                 "Ask Daoris has no agent to run on — name one under Agents → Roles, Ask Daoris, or "
-                + "`daoris driver role set ask-daoris \"<agent>\"`. Its starters need none.");
+                + "`daoris role set ask-daoris \"<agent>\"`. Its starters need none.");
         }
 
         var named = WorkspaceAsked(request);
@@ -1373,7 +1373,7 @@ public sealed class HelpRoutes(DriverContext context)
         {
             throw new DriverException(
                 "Ask Daoris has no agent to run on — name one under Agents → Roles, Ask Daoris, or "
-                + "`daoris driver role set ask-daoris \"<agent>\"`. Its starters need none.");
+                + "`daoris role set ask-daoris \"<agent>\"`. Its starters need none.");
         }
 
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)

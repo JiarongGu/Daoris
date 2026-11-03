@@ -585,11 +585,6 @@ const NETWORK = new RegExp([
 /** The spawning primitive, in any spelling — held to one module the way the network is. */
 const SPAWNING = importing('child_process');
 
-/**
- * The one module permitted a network primitive. Every management command speaks through it. Modules here are named by
- * their path under `src/`, found by name (STRUCT5d): the sources sit in module folders.
- */
-const SERVICE_CLIENT = cliSource('service.ts');
 
 /**
  * A check you have not watched fail proves nothing — and a pattern is only as good as the spellings it
@@ -657,14 +652,14 @@ test('the seam starts its one child in one place, from runDriverProgram, with th
   assert.ok(seam > 0 && asked[0]!.index! > seam && asked[0]!.index! < after, 'the start is asked inside runDriverProgram alone');
 });
 
-test('only the service client may touch the network', () => {
+/**
+ * ONEWAY1ai-i: the CLI reaches no network at all. Its service client left with the registry's verbs, which are the desktop program's
+ * typed operations now (ONEWAY1u), so no module of this package may open a socket.
+ */
+test('no module of the CLI touches the network', () => {
   for (const dir of ['src', 'bin']) {
     for (const file of listFiles(join(cliRoot, dir), (n) => n.endsWith('.ts') || n.endsWith('.mjs'))) {
-      if (file === SERVICE_CLIENT) continue;
-      const text = readText(join(cliRoot, dir, file));
-      assert.equal(
-        NETWORK.test(text), false,
-        `${dir}/${file} reaches the network — only ${SERVICE_CLIENT} may`);
+      assert.equal(NETWORK.test(readText(join(cliRoot, dir, file))), false, `${dir}/${file} reaches the network — no module of the CLI may`);
     }
   }
 });
@@ -692,16 +687,6 @@ test('the doctrine rows are read from the table, and check is one of them', () =
   assert.ok(DOCTRINE_ROWS.includes('cli/sync.ts'), `the doctrine rows were: ${DOCTRINE_ROWS.join(', ')}`);
 });
 
-test('nothing a doctrine command reaches can import the service client', () => {
-  for (const entry of DOCTRINE) {
-    const seen = reachableFrom(entry);
-
-    assert.equal(
-      seen.has(SERVICE_CLIENT), false,
-      `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
-    assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
-  }
-});
 
 /**
  * The same guarantee, one door further out (D49 §4). `driverprogram.ts` SPAWNS A PROCESS — Daoris's driver program, which runs
@@ -719,6 +704,7 @@ test('nothing a doctrine command reaches can spawn a harness', () => {
     assert.equal(
       seen.has(SPAWNS), false,
       `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
+    assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
   }
 });
 
@@ -746,80 +732,16 @@ function reachableFrom(entry: string): Set<string> {
 }
 
 /**
- * Most of the management class needs no network at all (D50): `remote` edits the home's `remotes.json`
- * and `status --machine` reads it. The usage text says so out loud, and prose is the one surface with
- * no compiler — so the claim is held here.
- *
- * It is also what keeps the class from becoming a list. The offline guarantee survived management
- * growing past `connect` because the network itself stayed in ONE file; a verb that quietly acquired a
- * socket through a convenience import would make "the named management modules" something people
- * append to without thinking.
+ * ONEWAY1ai-i (the oneway design §11): every word outside the doctrine commands is the desktop program's, handed by the dispatcher
+ * alone. No row reaches the seam, so every row is a doctrine command, offline and spawning nothing; the dispatcher is the one module
+ * that does.
  */
-test('the file-local management verbs reach no network module either', () => {
-  for (const entry of ['remotes.ts', 'remotemap.ts', 'driverprogram.ts', 'browser.ts'].map((name) => cliSource(name))) {
-    const seen = reachableFrom(entry);
-
-    assert.equal(
-      seen.has(SERVICE_CLIENT), false,
-      `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
-    assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
+test('the dispatcher alone hands words to the desktop\'s program, and no row reaches it', () => {
+  assert.ok(reachableFrom('cli.ts').has(SPAWNS), 'the dispatcher does not reach the seam, so nothing hands a word on');
+  for (const command of COMMANDS) {
+    assert.equal(command.kind, 'doctrine', `cli/${command.name}.ts is not a doctrine command`);
+    assert.equal(reachableFrom(`cli/${command.name}.ts`).has(SPAWNS), false, `cli/${command.name}.ts reaches the seam`);
   }
-});
-
-/**
- * `daoris tool` is Daoris's driver program's since PUSH1f2c (D194 point 1): its row hands the family and its words to the seam, and
- * the program reaches a tool's maker and a resource location itself, every hop held to the address rule (`ToolInstall`). The CLI's
- * row reaches no fetcher and no door of its own.
- */
-test('tool hands its words to the driver\'s program, and the rows that reach the service client say so', () => {
-  const row = readText(join(cliRoot, 'src', 'cli', 'tool.ts'));
-  assert.match(row, /import \{ runDriverProgram \} from '\.\.\/(?:[\w-]+\/)*driverprogram\.ts';/);
-  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('tool', args\.argv\),/);
-  assert.doesNotMatch(row, /service\.ts|releaseFetcher|instanceDoor/);
-
-  // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
-  const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
-  // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8). PUSH1f2b
-  // and PUSH1f2c: `driver` and `tool` reach none, each family the driver program's, which reads the service and the pipe itself;
-  // PUSH1f2e: `agent` neither, a pin's download the program's own; and PUSH1f2f: `plugin` neither, the pipe the program's alone.
-  assert.deepEqual(reaching.sort(), [
-    'cli/brainstorm.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/wire.ts',
-  ]);
-});
-
-/**
- * `daoris driver` is Daoris's driver program's whole since PUSH1f2b (D194 points 1 and 7): its row hands the family and every word to
- * the seam and imports nothing else, so no word of it is the CLI's to read or act on, and `retry` and `review` read the service
- * through the program, never through this package.
- */
-test('the driver row hands every word to the driver\'s program and reads nothing itself', () => {
-  const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
-  const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
-  assert.deepEqual(imports, ['../platform/types.ts', '../platform/driverprogram.ts']);
-  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('driver', args\.argv\),/);
-});
-
-/**
- * `daoris agent` is Daoris's driver program's whole since PUSH1f2e (D194 point 1, the alone-path design §5): its row hands the family
- * and every word to the seam and imports nothing else, as `daoris driver`'s does, so no verb of it is the CLI's to read, write or fetch.
- */
-test('the agent row hands every word to the driver\'s program and reads nothing itself', () => {
-  const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
-  const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
-  assert.deepEqual(imports, ['../platform/types.ts', '../platform/driverprogram.ts']);
-  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('agent', args\.argv\),/);
-});
-
-/**
- * `daoris plugin` is Daoris's driver program's whole since PUSH1f2f (D194 point 1, the alone-path design §5), the last family: its row
- * hands the family and every word to the seam and imports nothing else, so no verb of it reads the plugins' folders, writes
- * `plugins.json` or opens the running Daoris's pipe in this package.
- */
-test('the plugin row hands every word to the driver\'s program and reads nothing itself', () => {
-  const row = readText(join(cliRoot, 'src', 'cli', 'plugin.ts'));
-  const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
-  assert.deepEqual(imports, ['../platform/types.ts', '../platform/driverprogram.ts']);
-  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('plugin', args\.argv\),/);
 });
 
 /**

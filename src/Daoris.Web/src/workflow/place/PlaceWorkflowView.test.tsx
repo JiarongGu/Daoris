@@ -381,6 +381,32 @@ describe('Change… and Edit steps…', () => {
     expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
   });
 
+  // REVIEW2 P5's rest: the chart is drawn at one tree position whatever the layout, so the page taking a column for it, or giving it
+  // back, keeps the editor's selected step and its open drawer.
+  it("keep the editor's selected step and its open drawer when the page changes its layout", async () => {
+    const column = document.body.appendChild(document.createElement('div'));
+    const props = { editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) };
+    const laid = (aside: HTMLElement | null) => (
+      <Tooltip.Provider><PlaceAside.Provider value={aside}><Held {...props} /></PlaceAside.Provider></Tooltip.Provider>
+    );
+    const { rerender } = rtlRender(laid(null));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    await userEvent.click(await screen.findByRole('listitem', { name: 'find by local-release' }));
+    const name = (await screen.findByRole('dialog')).getAttribute('aria-labelledby');
+    // The open drawer is modal, so the editor behind it is hidden from the reader: found as hidden.
+    const composer = () => screen.getByRole('heading', { name: 'Compose a workflow', hidden: true });
+
+    rerender(laid(column));
+    expect(column).toContainElement(composer());
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-labelledby', name);
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Duplicate' })).toBeInTheDocument();
+
+    rerender(laid(null));
+    expect(column).not.toContainElement(composer());
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-labelledby', name);
+    column.remove();
+  });
+
   it('do not ask before Change… where the editor holds no changes', async () => {
     render(<Kept editor={editor()} current={withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT)} />);
     await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));

@@ -10,7 +10,7 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  roles      `daoris driver role` says each role's agents, and `role set` changes them",
+        "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
@@ -19,7 +19,7 @@
         "             `daoris driver drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one",
         "  review     none set — work is offered to land once its quest is done; `daoris driver review <repository> <environment> --kind local|deployed --procedure <path>` declares one",
-        "  opinion    none set — no other agent reads work before it lands; `daoris driver opinion <repository> --reviewers <adapter>` declares one",
+        "  opinion    none set — no other agent reads work before it lands; `daoris place opinion <repository> --agents <adapter>` declares one",
         "  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> --mode on|off` sets one",
         "  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris driver handover <repository> --mode on|off` sets one",
         "  brainstorms  none set — ask; the agents each request names; 10 minutes a pass, 10 the synthesis, 10 the challenge, 30 the request; `daoris driver brainstorms --agents <a,b>` sets one",
@@ -36,7 +36,7 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  roles      `daoris driver role` says each role's agents, and `role set` changes them",
+        "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
@@ -45,7 +45,7 @@
         "             `daoris driver drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one",
         "  review     none set — work is offered to land once its quest is done; `daoris driver review <repository> <environment> --kind local|deployed --procedure <path>` declares one",
-        "  opinion    none set — no other agent reads work before it lands; `daoris driver opinion <repository> --reviewers <adapter>` declares one",
+        "  opinion    none set — no other agent reads work before it lands; `daoris place opinion <repository> --agents <adapter>` declares one",
         "  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> --mode on|off` sets one",
         "  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris driver handover <repository> --mode on|off` sets one",
         "  brainstorms  none set — ask; the agents each request names; 10 minutes a pass, 10 the synthesis, 10 the challenge, 30 the request; `daoris driver brainstorms --agents <a,b>` sets one",
@@ -64,7 +64,7 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  roles      `daoris driver role` says each role's agents, and `role set` changes them",
+        "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
         "  cap        3 concurrent session(s)",
         "  strikes    off — a quest is never parked, and it keeps trying at the cost of a login each time",
         "  retried    #q1  (counting from 3 failure(s))",
@@ -582,51 +582,6 @@
         "daoris: `driver cooloff` needs a whole number of minutes, at least 1 — e.g. `daoris driver cooloff 60`; a zero cool-off would start a spent account again at every look."
       ],
       "after": null
-    },
-    {
-      "name": "adapter, retired",
-      "argv": [
-        "adapter",
-        "claude-code"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver adapter` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
-      ],
-      "after": null,
-      "changed": "ONEWAY1a (the oneway design §2 S1): Build's order is set through the role door alone, `driver role set build …`; the verb is refused naming it."
-    },
-    {
-      "name": "helper, retired",
-      "argv": [
-        "helper",
-        "claude-code-acp"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver helper` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
-      ],
-      "after": null,
-      "changed": "ONEWAY1a (the oneway design §2 S1): Ask Daoris's order is set through the role door alone, `driver role set ask-daoris …`; the verb is refused naming it."
-    },
-    {
-      "name": "intake, retired",
-      "argv": [
-        "intake",
-        "off"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver intake` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
-      ],
-      "after": null,
-      "changed": "ONEWAY1a (the oneway design §2 S1): Intake's order is set through the role door alone, `driver role set intake …|off`; the verb is refused naming it."
     },
     {
       "name": "line",
@@ -1980,7 +1935,7 @@
       "argv": [
         "opinion",
         "engine",
-        "--reviewers",
+        "--agents",
         "codex-acp",
         "--required"
       ],
@@ -1991,7 +1946,7 @@
         "  Before work here lands, `codex-acp` reads it, in a copy of its own that nothing is taken back from; its findings go to the session that did the work, and to you.",
         "  If no reviewer can read it, the work waits for you.",
         "  One pass takes at most 20 minutes.",
-        "  Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, `daoris-driver opinion myself <session>`.",
+        "  Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go on without it, `daoris session opinion anyway <session>`, or say you looked yourself, `daoris session opinion myself <session>`.",
         "  Written to <config>."
       ],
       "err": [],
@@ -2002,7 +1957,7 @@
       "argv": [
         "opinion",
         "engine",
-        "--reviewers",
+        "--agents",
         "claude-code-acp,codex-acp",
         "--verify"
       ],
@@ -2015,7 +1970,7 @@
         "  If no reviewer can read it, the work waits for you.",
         "  One pass takes at most 20 minutes.",
         "  `claude-code-acp` is the same agent as the one that does the work here: a fresh conversation of the same agent is not an independent reading, and each opinion says so.",
-        "  Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, `daoris-driver opinion myself <session>`.",
+        "  Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go on without it, `daoris session opinion anyway <session>`, or say you looked yourself, `daoris session opinion myself <session>`.",
         "  What this repository declares safe is not handed to a reviewer yet.",
         "  Written to <config>."
       ],
@@ -2028,7 +1983,7 @@
         "opinion",
         "--workspace",
         "aurora",
-        "--reviewers",
+        "--agents",
         "codex-acp,dsh",
         "--on",
         "steps",
@@ -2045,7 +2000,7 @@
         "  One pass takes at most 15 minutes.",
         "  Commits made in answer to its findings are not read again.",
         "  Where a chain's next step here waits for another agent's reading of the step before it, it starts only once that reading is settled.",
-        "  A repository with a rule of its own keeps it — `daoris driver opinion <repository> --clear` hands it back.",
+        "  A repository with a rule of its own keeps it — `daoris place opinion <repository> --clear` hands it back.",
         "  Written to <config>."
       ],
       "err": [],
@@ -2113,7 +2068,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--reviewer` is not a flag `driver opinion` takes — `driver opinion` needs <repository>|--workspace <name>, then --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck], or none, or --clear — e.g. `daoris driver opinion web-app --reviewers codex-acp --required`."
+        "daoris: `--reviewer` is not a flag `place opinion` takes — `place opinion` needs <repository>|--workspace <name>, then --agents <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck], or none, or --clear — e.g. `daoris place opinion web-app --agents codex-acp --required`."
       ],
       "after": null
     },
@@ -2122,7 +2077,7 @@
       "argv": [
         "opinion",
         "engine",
-        "--reviewers",
+        "--agents",
         "codex-acp",
         "--required",
         "--not-required"
@@ -2145,7 +2100,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver opinion` needs <repository>|--workspace <name>, then --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck], or none, or --clear — e.g. `daoris driver opinion web-app --reviewers codex-acp --required`."
+        "daoris: `place opinion` needs <repository>|--workspace <name>, then --agents <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck], or none, or --clear — e.g. `daoris place opinion web-app --agents codex-acp --required`."
       ],
       "after": null
     },
@@ -2154,7 +2109,7 @@
       "argv": [
         "opinion",
         "engine",
-        "--reviewers",
+        "--agents",
         "codex-acp",
         "--minutes",
         "ten"
@@ -2285,7 +2240,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--modes` is not a flag `driver helpers` takes — `driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`."
+        "daoris: `--modes` is not a flag `place helpers` takes — `driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`."
       ],
       "after": null
     },
@@ -2403,7 +2358,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--agents` is not a flag `driver handover` takes — `driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. `daoris driver handover web-app --mode on`."
+        "daoris: `--agents` is not a flag `settings handover` takes — `driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. `daoris driver handover web-app --mode on`."
       ],
       "after": null
     },
@@ -2555,7 +2510,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--style` is not a flag `driver commits` takes — `driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or --convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`."
+        "daoris: `--style` is not a flag `place commits` takes — `driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or --convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`."
       ],
       "after": null
     },
@@ -2898,7 +2853,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver actor` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
+        "daoris: `settings actor` is retired: a role's agents are set through the role door, `daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris role <role>`; nothing was changed."
       ],
       "after": "{\n  \"adapter\": \"claude-code\"\n}\n",
       "changed": "ONEWAY1a (the oneway design §2 S1): a role's order is set through the role door alone; the verb is refused naming it, and the file stays as it was."
@@ -2912,10 +2867,10 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver actor` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
+        "daoris: `settings actor` is retired: a role's agents are set through the role door, `daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris role <role>`; nothing was changed."
       ],
       "after": null,
-      "changed": "ONEWAY1a (the oneway design §2 S1): `daoris driver role` says each role's order; the verb is refused naming it."
+      "changed": "ONEWAY1a (the oneway design §2 S1): `daoris role` says each role's order; the verb is refused naming it."
     }
   ]
 }

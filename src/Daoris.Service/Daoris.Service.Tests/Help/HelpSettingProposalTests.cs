@@ -130,10 +130,10 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("review", "storefront", null, "--drop dev")]
     [InlineData("review", null, "work", "--not-required")]
     [InlineData("review", "storefront", null, "--clear")]
-    // XAGENT1a (D155 point 3): a second-opinion rule for a repository or a workspace, as `daoris driver opinion` takes its
+    // XAGENT1a (D155 point 3): a second-opinion rule for a repository or a workspace, as `daoris place opinion` takes its
     // words, a quoted list kept whole; the rule and the registry are the driver's to judge.
-    [InlineData("opinion", "web-app", null, "--reviewers codex-acp,dsh --on landing,steps --required --verify --minutes 30")]
-    [InlineData("opinion", null, "work", "--reviewers \"codex-acp, dsh\" --no-recheck")]
+    [InlineData("opinion", "web-app", null, "--agents codex-acp,dsh --on landing,steps --required --verify --minutes 30")]
+    [InlineData("opinion", null, "work", "--agents \"codex-acp, dsh\" --no-recheck")]
     [InlineData("opinion", "web-app", null, "--not-required --no-verify --recheck")]
     [InlineData("opinion", "notes-site", null, "none")]
     [InlineData("opinion", "web-app", null, "--clear")]
@@ -315,7 +315,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
 
-        Assert.Contains("`--reviewers <adapter,adapter> [--on landing,steps]", Described("value"));
+        Assert.Contains("`--agents <adapter,adapter> [--on landing,steps]", Described("value"));
         Assert.Contains("opinion", Described("door"));
         Assert.Contains("a second opinion", Described("target"));
         Assert.Contains("a second opinion", Described("workspace"));
@@ -409,18 +409,18 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("review", "storefront", "work", "none", "review rule is set for a repository or a workspace — name exactly one")]
     [InlineData("review", "storefront", null, null, "review is `<environment> --kind local|deployed --procedure <path>")]
     [InlineData("review", "storefront", null, "dev --kind local --colour blue", "`none`, `--drop <environment>`, `--required|--not-required` or `--clear`")]
-    // XAGENT1a: exactly one of a repository or a workspace, some words, and only the flags `daoris driver opinion` takes.
+    // XAGENT1a: exactly one of a repository or a workspace, some words, and only the flags `daoris place opinion` takes.
     [InlineData("opinion", null, null, "none", "second-opinion rule is set for a repository or a workspace — name exactly one")]
     [InlineData("opinion", "web-app", "work", "--clear", "second-opinion rule is set for a repository or a workspace — name exactly one")]
-    [InlineData("opinion", "web-app", null, null, "opinion is `--reviewers <adapter,adapter> [--on landing,steps]")]
-    [InlineData("opinion", "web-app", null, "  ", "opinion is `--reviewers <adapter,adapter> [--on landing,steps]")]
-    [InlineData("opinion", "web-app", null, "--reviewers dsh --colour blue", "`none` or `--clear`")]
+    [InlineData("opinion", "web-app", null, null, "opinion is `--agents <adapter,adapter> [--on landing,steps]")]
+    [InlineData("opinion", "web-app", null, "  ", "opinion is `--agents <adapter,adapter> [--on landing,steps]")]
+    [InlineData("opinion", "web-app", null, "--agents dsh --colour blue", "`none` or `--clear`")]
     // DOORS1a: exactly one of a repository or a workspace, some words, and only the flags `daoris driver helpers` and
     // `daoris driver commits` take; a merge carrying a key or a squash is no shape the box takes, and its sentence names both.
     [InlineData("helpers", null, null, "--mode on", "helpers rule is set for a repository or a workspace — name exactly one")]
     [InlineData("helpers", "web-app", "work", "--clear", "helpers rule is set for a repository or a workspace — name exactly one")]
     [InlineData("helpers", "web-app", null, null, "`helpers` is `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear`")]
-    [InlineData("helpers", "web-app", null, "--mode on --reviewers dsh", "`helpers` is `--mode ask|on|off`")]
+    [InlineData("helpers", "web-app", null, "--mode on --on landing", "`helpers` is `--mode ask|on|off`")]
     [InlineData("commits", null, null, "--mode ask", "commit rule is set for a repository or a workspace — name exactly one")]
     [InlineData("commits", "web-app", "work", "--clear", "commit rule is set for a repository or a workspace — name exactly one")]
     [InlineData("commits", "web-app", null, "  ", "`commits` is `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear`")]

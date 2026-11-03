@@ -64,11 +64,10 @@ public sealed class SessionsPartnerTests : IDisposable
     [Fact]
     public void The_usage_spells_the_verb_in_both_places_a_person_reads_it()
     {
-        foreach (var usage in new[] { SessionsCommand.Usage, DriverCommand.Usage })
-        {
-            Assert.Contains("sessions partner <id> \"<piece>\" --agent <name> [--paths <path>…]", usage);
-            Assert.Contains("sessions partner <id> --list  ·  sessions partner <piece> --stop", usage);
-        }
+        Assert.Contains("sessions partner <id> \"<piece>\" --agent <name> [--paths <path>…]", SessionsCommand.Usage);
+        Assert.Contains("sessions partner <id> --list  ·  sessions partner <piece> --stop", SessionsCommand.Usage);
+        Assert.Contains("session partner <id> \"<piece>\" --agent <name> [--paths <path>…]", DriverCommand.Usage);
+        Assert.Contains("session partner <id> --list  ·  session partner <piece> --stop", DriverCommand.Usage);
     }
 
     private (SessionsWorld World, OpinionStandIn Host, List<string> Read) World(Action<OpinionStandIn>? set = null, string? head = Head)

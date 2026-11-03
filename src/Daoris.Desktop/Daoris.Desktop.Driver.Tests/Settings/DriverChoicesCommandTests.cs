@@ -52,24 +52,23 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1a (the oneway design §2 S1): the verbs that set a role's agents before the role door was the one door are refused naming it,
-    /// exit 2, and write nothing; `actor`'s copy verbs stay until ONEWAY1c-ii.
+    /// ONEWAY1a (the oneway design §2 S1): `settings actor`, naming a role or none, is refused naming the role door, exit 2, and writes
+    /// nothing; its copy verbs stay until ONEWAY1c-ii. `adapter`, `intake` and `helper` are no verb of the family any more (the tree refuses
+    /// their old forms, `CommandTreeTests`), and no route is `SET_ACTOR`.
     /// </summary>
     [Theory]
-    [InlineData("adapter claude-code")]
-    [InlineData("intake off")]
-    [InlineData("helper claude-code")]
     [InlineData("actor build claude-code")]
     [InlineData("actor")]
-    public async Task ONEWAY1a_a_retired_staffing_verb_is_refused_naming_the_role_door(string words)
+    public async Task ONEWAY1a_settings_actor_is_refused_naming_the_role_door(string words)
     {
         var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), World(), CancellationToken.None);
 
         Assert.Equal(2, exit);
-        Assert.Equal($"daoris: {RetiredStaffingVerb.Refusal(words.Split(' ')[0])}", _error.ToString().TrimEnd());
-        Assert.Contains("daoris driver role set", _error.ToString());
+        Assert.Equal($"daoris: {RetiredStaffingVerb.Refusal("actor")}", _error.ToString().TrimEnd());
+        Assert.Contains("daoris role set", _error.ToString());
         Assert.False(File.Exists(Config));
         Assert.DoesNotContain(ChoiceRoutes.Verbs, row => row.Route?.Route == "SET_ACTOR");
+        Assert.DoesNotContain(DriverChoicesCommand.Verbs, verb => verb is "adapter" or "intake" or "helper");
     }
 
     [Fact]

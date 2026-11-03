@@ -15,7 +15,7 @@ public sealed class ShortWaitsCensusTests
 {
     private const string Units = "Milliseconds|Seconds|Minutes|Hours";
 
-    private static readonly string[] Projects = [SourceFiles.DriverTestsProject, "Daoris.Desktop.Modules.Tests"];
+    private static readonly string[] Projects = [SourceFiles.DriverTestsProject, SourceFiles.ModulesTestsProject];
 
     private static readonly Regex Waits = new($@"WaitAsync\(\s*(?<bound>TimeSpan\.From(?<unit>{Units})\((?<n>\d+(?:\.\d+)?)\))");
 

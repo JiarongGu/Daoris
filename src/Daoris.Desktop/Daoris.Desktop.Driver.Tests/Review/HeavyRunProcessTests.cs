@@ -307,7 +307,7 @@ public sealed class HeavyRunProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        var inner = $"set \"DAORIS_HOME={_fixture.Home}\" && dotnet \"{DriverHostTests.HostDll()}\" run-heavy --gate inner";
+        var inner = $"set \"DAORIS_HOME={_fixture.Home}\" && dotnet \"{DriverHostTests.HostDll()}\" gate run --gate inner";
         _fixture.Gates(
             _fixture.Checkout,
             ("outer", inner, true),
@@ -415,7 +415,8 @@ public sealed class HeavyRunProcessTests : IDisposable
             WorkingDirectory = directory,
         };
         info.ArgumentList.Add(DriverHostTests.HostDll());
-        info.ArgumentList.Add("run-heavy");
+        info.ArgumentList.Add("gate");
+        info.ArgumentList.Add("run");
         foreach (var name in info.Environment.Keys.Where(key => key.StartsWith("DAORIS_", StringComparison.OrdinalIgnoreCase)).ToList())
         {
             info.Environment.Remove(name);

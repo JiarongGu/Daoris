@@ -106,7 +106,7 @@ export function starters(
   }
 
   if (!machine.helper) {
-    found.push({ id: 'helper-off', values: {}, door: { view: 'settings', section: 'ai' }, command: 'daoris driver role set ask-daoris "<agent>"' });
+    found.push({ id: 'helper-off', values: {}, door: { view: 'settings', section: 'ai' }, command: 'daoris role set ask-daoris "<agent>"' });
   }
 
   return found;

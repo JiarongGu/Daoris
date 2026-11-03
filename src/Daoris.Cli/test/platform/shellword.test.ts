@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // @ts-expect-error — untyped workspace tooling; see desktop-tool.test.ts for why
-import { CLI_BIN, CLI_ENTRY, CLI_PACKAGE, cliLaunchers } from '../../../../tools/desktop-publish.mjs';
+import { CLI_BIN, DRIVER_EXE, DRIVER_HOME, cliLaunchers } from '../../../../tools/desktop-publish.mjs';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -33,23 +33,28 @@ test('the table holds a spelled row and a placeholder row', () => {
 });
 
 /**
- * The install's launchers (`daoris` and `daoris.cmd`, as the publish lays them) in front of a package whose entry prints
- * the arguments it was handed as JSON, each character past ASCII escaped, so a shell's code page cannot change it on the way
- * back. The folder is put first on PATH, as the install's own is found.
+ * The install's launchers (`daoris` and `daoris.cmd`, as the publish lays them) in front of a desktop program that prints the
+ * arguments it was handed as JSON, each character past ASCII escaped, so a shell's code page cannot change it on the way back. The
+ * program is this test's node under the program's name, which a preload makes print and end before it reads its first word as a
+ * script (ONEWAY1ai-i: the launchers run the program, not node). The folder is put first on PATH, as the install's own is found.
  */
 function install(root: string): NodeJS.ProcessEnv {
   const bin = join(root, ...CLI_BIN);
-  const entry = join(root, ...CLI_PACKAGE, ...CLI_ENTRY);
+  const program = join(root, ...DRIVER_HOME, DRIVER_EXE);
   mkdirSync(bin, { recursive: true });
-  mkdirSync(dirname(entry), { recursive: true });
+  mkdirSync(dirname(program), { recursive: true });
   for (const [name, text] of Object.entries(cliLaunchers() as Record<string, string>)) {
     writeFileSync(join(bin, name), text, { mode: 0o755 });
   }
-  writeFileSync(entry, [
+  copyFileSync(process.execPath, program);
+  const echo = join(root, 'echo.cjs');
+  writeFileSync(echo, [
+    // The first word is the one node took for its script, resolved: the line hands a placeholder there.
     'const said = JSON.stringify(process.argv.slice(2));',
     "process.stdout.write(said.replace(/[\\u007f-\\uffff]/g, (c) => '\\\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')) + '\\n');",
+    'process.exit(0);',
   ].join('\n'), 'utf8');
-  const env: NodeJS.ProcessEnv = { ...process.env };
+  const env: NodeJS.ProcessEnv = { ...process.env, NODE_OPTIONS: `--require ${JSON.stringify(echo)}` };
   const key = Object.keys(env).find((name) => name.toUpperCase() === 'PATH') ?? 'PATH';
   env[key] = `${bin}${delimiter}${env[key] ?? ''}`;
   return env;
@@ -75,7 +80,7 @@ test('every spelled value reaches the installed daoris as one argument, itself, 
   const fx = makeFixture('shell-words-spelled');
   const env = install(fx.root);
 
-  const line = `daoris ${SPELLED.map(([, , word]) => word).join(' ')}`;
+  const line = `daoris first ${SPELLED.map(([, , word]) => word).join(' ')}`;
   for (const { shell, out, code } of shells(line, fx.root, env)) {
     assert.equal(code, 0, `${shell}: ${out}`);
     assert.deepEqual(JSON.parse(out.trim().split(/\r?\n/).at(-1)!), SPELLED.map(([, value]) => value), `${shell}: ${out}`);
@@ -87,7 +92,7 @@ test('a line ending in a placeholder, pasted as it is, reaches nothing: each she
   const fx = makeFixture('shell-words-placeholder');
   const env = install(fx.root);
 
-  for (const { shell, out, code } of shells('daoris agent profile rename claude-code acct-1a2b3c4d <name>', fx.root, env)) {
+  for (const { shell, out, code } of shells('daoris agent account rename claude-code acct-1a2b3c4d <name>', fx.root, env)) {
     assert.notEqual(code, 0, `${shell}: ${out}`);
     assert.doesNotMatch(out, /"agent"/, `${shell} handed the line on: ${out}`);
   }

@@ -122,7 +122,7 @@ public sealed partial class HelpCoverageTests
         + "to a verification (D192): no proposal names `SET_SESSION_CHECKS`, so a helper never chooses what a session may run.";
 
     /// <summary>
-    /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
+    /// ACCT2's <c>daoris agent account rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
     /// person's own word. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
     private static readonly Exempt RenameDoor = new(
@@ -437,24 +437,24 @@ public sealed partial class HelpCoverageTests
     private static readonly Owed CheckDoor = new(HelpRoomOwed.Check);
 
     /// <summary>
-    /// XAGENT1f's <c>daoris-driver opinion ask</c> and <c>opinion stop</c> (D155 point 10; the second-agent design §9), verbs of the
+    /// XAGENT1f's <c>daoris session opinion ask</c> and <c>opinion stop</c> (D155 point 10; the second-agent design §9), verbs of the
     /// headless host: exempt, since asking another agent for a second opinion spends an account at the person's choice, as going on
     /// in a new session does (MSG1g), and a stop is the person's own (D104). <c>opinion show</c> reads and changes nothing.
     /// </summary>
     private static readonly Exempt OpinionAskDoor = new(
         "asking another agent for a second opinion, or the same agent in a fresh conversation, spends an account at the person's "
         + "choice, as going on in a new session does (D137 §2.2), and stopping a reviewer is their own stop (D104), so Ask Daoris "
-        + "proposes neither (the second-agent design §9); it can name `daoris-driver opinion ask`, and `opinion show` changes nothing.");
+        + "proposes neither (the second-agent design §9); it can name `daoris session opinion ask`, and `opinion show` changes nothing.");
 
     /// <summary>
-    /// XAGENT1f's <c>daoris-driver opinion anyway</c> and <c>opinion myself</c> (D155 point 10; the second-agent design §9): exempt,
+    /// XAGENT1f's <c>daoris session opinion anyway</c> and <c>opinion myself</c> (D155 point 10; the second-agent design §9): exempt,
     /// since going on without a settled opinion, or reading the work oneself in its place, is a judgement Ask Daoris cannot have
     /// made (D110), as D154's verdict is.
     /// </summary>
     private static readonly Exempt OpinionJudgementDoor = new(
         "going on without a settled second opinion, or recording one's own reading in its place, is a judgement Ask Daoris cannot "
         + "have made (D110), as D154's verdict is, so it proposes neither (the second-agent design §9); it can name "
-        + "`daoris-driver opinion anyway` and `opinion myself`.");
+        + "`daoris session opinion anyway` and `opinion myself`.");
 
     /// <summary>
     /// GIT1c's <c>daoris-driver git branches</c> (D147 §3.3), a verb of the headless host: exempt, since it reads each
@@ -1235,12 +1235,17 @@ public sealed partial class HelpCoverageTests
         return found[0];
     }
 
+    /// <summary>
+    /// ONEWAY1ai-i: the standing choices' verbs are the driver's own table (the CLI's row this read left with the tree), spread over the
+    /// tree's <c>place</c>, <c>settings</c>, <c>role</c>, <c>workflow</c> and <c>quest retry</c>. <c>handover</c> and <c>brainstorms</c>
+    /// were never in the CLI's table this test read, so their door or reason is still owed, named here rather than invented.
+    /// </summary>
     [Fact]
     public void Every_driver_verb_is_a_door_owed_or_exempt_with_its_reason()
     {
-        var table = File.ReadAllText(Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Cli", "src", "cli", "driver.ts"));
+        string[] neverRead = ["handover", "brainstorms"];
 
-        Same("`daoris driver` verbs", DriverVerbs(table), Verbs.Select(row => row.Verb));
+        Same("the standing choices' verbs", DriverChoicesCommand.Verbs.Except(neverRead), Verbs.Select(row => row.Verb.Split(' ')[0]).Distinct());
     }
 
     [Fact]
@@ -1433,7 +1438,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_opinion_verbs_are_the_persons_own_and_exempt()
     {
-        Assert.Contains("opinion ask <session> [--reviewer <adapter>] [--same-agent]", DriverCommand.Usage);
+        Assert.Contains("session opinion ask <session> [--agent <adapter>] [--same-agent]", DriverCommand.Usage);
         Assert.Contains("opinion stop <opinion>", DriverCommand.Usage);
         Assert.Contains("opinion anyway <session>", DriverCommand.Usage);
         Assert.Contains("opinion myself <session>", DriverCommand.Usage);
@@ -1472,7 +1477,8 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_pause_and_resume_are_the_pause_kinds_doors()
     {
-        Assert.Contains("ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>", DriverCommand.Usage);
+        Assert.Contains("ask pause <id>  ·  ask resume <id>", DriverCommand.Usage);
+        Assert.Contains("quest pause <id>  ·  quest resume <id>", DriverCommand.Usage);
         Assert.Equal(["pause", "resume"], HelpProposalKinds.Find("pause")!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --pause|--resume <id>`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver quest pause|resume <id>`", StringComparison.Ordinal)
@@ -1486,11 +1492,12 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_abandon_is_exempt_and_the_room_says_so()
     {
-        Assert.Contains("ask --abandon <id> [--reason \"…\" --yes]  ·  quest abandon <id> [--reason \"…\" --yes]", DriverCommand.Usage);
+        Assert.Contains("ask abandon <id> [--reason \"…\" --yes]", DriverCommand.Usage);
+        Assert.Contains("quest abandon <id> [--reason \"…\" --yes]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("abandon"));
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver quest abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D37", AbandonDoor.Reason);
     }
 
@@ -1501,10 +1508,10 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_say_is_exempt_and_the_room_says_so()
     {
-        Assert.Contains("sessions say <id> \"…\" [--file <path>]…", DriverCommand.Usage);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver sessions say <id> \"…\" [--file <path>]…`", StringComparison.Ordinal)
+        Assert.Contains("session say <id> \"…\" [--file <path>]…", DriverCommand.Usage);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris session say <id> \"…\" [--file <path>]…`", StringComparison.Ordinal)
             && door.Screen.Contains("box", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D133", SayDoor.Reason);
     }
 
@@ -1515,7 +1522,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_take_back_and_reword_are_exempt_as_the_person_s_words()
     {
-        Assert.Contains("sessions take-back <id> [<word>]  ·  sessions reword <id> <word> \"…\"", DriverCommand.Usage);
+        Assert.Contains("session take-back <id> [<word>]  ·  session reword <id> <word> \"…\"", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("take-back"));
         Assert.Null(HelpProposalKinds.Find("reword"));
         Assert.Contains("D133", TakeBackDoor.Reason);
@@ -1529,15 +1536,15 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_help_history_is_exempt_and_the_room_says_so()
     {
-        Assert.Contains("help list [--search \"…\"] [--json]", DriverCommand.Usage);
+        Assert.Contains("ask-daoris list [--search \"…\"] [--json]", DriverCommand.Usage);
         Assert.Contains("[--workspace <name> | --all]", DriverCommand.Usage);
-        Assert.Contains("help rename <id> \"…\" | --clear", DriverCommand.Usage);
+        Assert.Contains("ask-daoris rename <id> \"…\" | --clear", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("help"));
         // ASKSCOPE1e: the list's door names its workspace flags, as the usage above spells them.
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver help rename|pin|unpin|delete <id>`", StringComparison.Ordinal)
             && door.Screen.Contains("History", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("ASKHIST1", HistoryDoor.Reason);
         Assert.All(["useRenameHelp", "usePinHelp", "useHelpStartFrom"], hook => Assert.Same(HistoryDoor, Elsewhere.Single(row => row.Hook == hook).Answer));
     }
@@ -1549,7 +1556,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_go_on_new_is_exempt_as_the_person_s_choice()
     {
-        Assert.Contains("sessions go-on-new <id>", DriverCommand.Usage);
+        Assert.Contains("session go-on-new <id>", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("go-on-new"));
         Assert.Contains("D133", GoOnNewDoor.Reason);
         Assert.Contains("D143", GoOnNewDoor.Reason);
@@ -1563,7 +1570,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_start_from_is_exempt_as_the_person_s_press()
     {
-        Assert.Contains("sessions start-from <id>", DriverCommand.Usage);
+        Assert.Contains("session start-from <id>", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("start-from"));
         Assert.Contains("D133", StartFromDoor.Reason);
         Assert.Contains("D137", StartFromDoor.Reason);
@@ -1577,7 +1584,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_sessions_helper_is_exempt_as_the_persons_own_ask()
     {
-        Assert.Contains("sessions helper <id> \"<question>\" [--agent <name>]", DriverCommand.Usage);
+        Assert.Contains("session helper <id> \"<question>\" [--agent <name>]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("helper"));
         Assert.Contains("D163", HelperAskDoor.Reason);
         Assert.Contains("D133", HelperAskDoor.Reason);
@@ -1590,7 +1597,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_sessions_partner_is_exempt_as_the_persons_own_ask()
     {
-        Assert.Contains("sessions partner <id> \"<piece>\" --agent <name>", DriverCommand.Usage);
+        Assert.Contains("session partner <id> \"<piece>\" --agent <name>", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("partner"));
         Assert.Contains("D199", PartnerAskDoor.Reason);
         Assert.Contains("D133", PartnerAskDoor.Reason);
@@ -1603,7 +1610,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_hand_over_yes_and_no_are_exempt_as_the_persons_word_on_one_ask()
     {
-        Assert.Contains("sessions hand-over <id> --approve|--decline", DriverCommand.Usage);
+        Assert.Contains("session hand-over <id> --approve|--decline", DriverCommand.Usage);
         Assert.Contains("sessions hand-over <id> --approve|--decline", HandOverAnswerDoor.Reason);
         Assert.Contains("D163", HandOverAnswerDoor.Reason);
         Assert.Contains("daoris driver handover", HandOverRuleDoor.Reason);
@@ -1612,7 +1619,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_helper_yes_and_no_are_exempt_as_the_persons_word_on_one_ask()
     {
-        Assert.Contains("sessions helper --approve|--decline <ask>", DriverCommand.Usage);
+        Assert.Contains("session helper --approve|--decline <ask>", DriverCommand.Usage);
         Assert.Contains("sessions helper --approve|--decline", HelperAnswerDoor.Reason);
         Assert.Contains("D163", HelperAnswerDoor.Reason);
     }
@@ -1630,7 +1637,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver update --when-idle|--now|--cancel`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver update`", StringComparison.Ordinal)
             && new[] { "Settings → Driver", "*Update when idle*", "*Update now*", "*Not now*" }.All(word => door.Screen.Contains(word, StringComparison.Ordinal))
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D139", UpdateDoor.Reason);
         Assert.Same(UpdateDoor, Controls.Single(row => row.Hook == "useSayUpdate").Answer);
     }
@@ -1926,7 +1933,7 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("state"));
         Assert.DoesNotContain("state", HelpProposalKinds.Find("sync")!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver trees state <session|branch> [--repository <name>]`", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("changes nothing", TreesStateDoor.Reason);
         Assert.Contains("D148", TreesStateDoor.Reason);
     }
@@ -1988,7 +1995,7 @@ public sealed partial class HelpCoverageTests
     {
         var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
 
-        Assert.Contains("sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>", DriverCommand.Usage);
+        Assert.Contains("session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>", DriverCommand.Usage);
         Assert.Equal(["archive", "unarchive"], HelpProposalKinds.Find("session")!.Doors);
         Assert.Contains("session", HelpProposalKinds.Find("delete")!.Doors);
         Assert.Contains("`daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…`", room);
@@ -2002,7 +2009,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_sessions_stop_is_its_own_conversation_as_the_pages_is()
     {
-        Assert.Contains("sessions stop <id>", DriverCommand.Usage);
+        Assert.Contains("session stop <id>", DriverCommand.Usage);
         Assert.Equal("sessions", SessionsStopVerb.Place);
         Assert.True(HelpPlaces.Views.Any(view => view.Id == SessionsStopVerb.Place));
         Assert.Contains("daoris-driver sessions stop", SessionsStopVerb.Reason);
@@ -2020,7 +2027,8 @@ public sealed partial class HelpCoverageTests
         var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
 
         Assert.Contains("history clear --workspace <name> [--yes]", DriverCommand.Usage);
-        Assert.Contains("quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]", DriverCommand.Usage);
+        Assert.Contains("quest clear <id> [--failed] [--yes]", DriverCommand.Usage);
+        Assert.Contains("ask clear <id> [--yes]", DriverCommand.Usage);
         Assert.Equal(
             [ClearQuestDoor.Name, ClearAskDoor.Name, ClearFailedDoor.Name, ClearWorkspaceDoor.Name],
             HelpProposalKinds.Find(ClearWorkspaceDoor.Kind)!.Doors);
@@ -2080,14 +2088,15 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_account_name_door_is_answered_for_and_named_in_the_room_and_the_join_doors_are_gone()
     {
-        var usage = File.ReadAllText(Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Cli", "src", "cli", "agent.ts"));
+        // ONEWAY1ai-i: the agents' usage is the driver's own (the CLI's row this read left with the tree), `profile` named `account` now.
+        var usage = AgentsCommand.Usage;
         var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
 
-        Assert.Contains("profile rename <agent> <account> <name>", usage);
-        Assert.Contains("login <agent> --new [--name N]", usage);
-        Assert.Contains("`daoris agent profile rename <agent> <account> <name>`", room);
+        Assert.Contains("account rename <agent> <account> <name>", usage);
+        Assert.Contains("login <agent> --new [--name <name>]", usage);
+        Assert.Contains("`daoris agent account rename <agent> <account> <name>`", room);
         Assert.Contains("`daoris agent login <agent> --new [--name <name>]`", room);
-        foreach (var gone in new[] { "profile join", "--join", "profile default" })
+        foreach (var gone in new[] { "account join", "--join", "account default", "agent profile" })
         {
             Assert.DoesNotContain(gone, usage, StringComparison.Ordinal);
             Assert.DoesNotContain(gone, room, StringComparison.Ordinal);
@@ -2320,7 +2329,9 @@ public sealed partial class HelpCoverageTests
     [GeneratedRegex("^[a-z][a-z-]*$")]
     private static partial Regex PlainWord();
 
-    [GeneratedRegex(@"daoris driver ([a-z|-]+)")]
+    // ONEWAY1ai-i: a standing choice is spelled under the tree's group it moved to; the old family's spelling is read until the room's
+    // words are all rewritten.
+    [GeneratedRegex(@"daoris (?:driver |place |settings |quest (?=retry))?([a-z|-]+)")]
     private static partial Regex RoomVerb();
 
     [GeneratedRegex(@"\n(?=export |const |function |type |/\*\*|//)")]

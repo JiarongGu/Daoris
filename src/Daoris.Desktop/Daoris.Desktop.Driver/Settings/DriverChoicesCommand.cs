@@ -160,8 +160,7 @@ public static class DriverChoicesCommand
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
-        "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
+        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
         "brainstorms", "workflow", "keep", "actor", "role",
     ];
 
@@ -184,7 +183,7 @@ public static class DriverChoicesCommand
                daoris-driver driver language <repository>|--workspace <name> en|zh|--clear
                daoris-driver driver review <repository>|--workspace <name> <environment> --kind local|deployed --procedure <path>
                       [--address <url>] [--run "…"] [--required|--not-required]; none, --drop <environment>, or --clear
-               daoris-driver driver opinion <repository>|--workspace <name> --reviewers <adapter,adapter> [--on landing,steps]
+               daoris-driver driver opinion <repository>|--workspace <name> --agents <adapter,adapter> [--on landing,steps]
                       [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]; none, or --clear
                daoris-driver driver helpers <repository>|--workspace <name> [--mode ask|on|off] [--agents <a,b>] | --clear
                daoris-driver driver handover <repository>|--workspace <name> --mode ask|on|off | --clear
@@ -205,7 +204,7 @@ public static class DriverChoicesCommand
                daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
                daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]
-                      (adapter, intake, helper and actor <role> are retired: `role set` sets a role's agents)
+                      (actor <role> is retired: `daoris role set` sets a role's agents)
                daoris-driver driver role [<id>] · role set <id> [--name "…"] [--name-in <tag>="…"]… [--takes <work,…>]
                       [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" … | off]
                       · role remove|default <id> · role suggested [--use]
@@ -651,7 +650,7 @@ public static class DriverChoicesCommand
         void Say(string line) => write.WriteLine(line);
         void Section(string word) => Registered(world, word)?.Listed(choices, world);
         Say($"daoris: {world.ConfigPath}");
-        Say("  roles      `daoris driver role` says each role's agents, and `role set` changes them");
+        Say("  roles      `daoris role` says each role's agents, and `daoris role set` changes them");
         Say($"  cap        {choices.Cap} concurrent session(s)");
         Say($"  strikes    {(choices.Strikes == 0
             ? "off — a quest is never parked, and it keeps trying at the cost of a login each time"

@@ -555,7 +555,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
         // CHATFLOW1c (the chat-flow design §4.2, §4.3): a chat in a tree of its own is gated by its chat run's process. A press on a run
         // not bound yet binds it first; one the home cannot keep refuses the press (`bind-failed`), never falling back to Current. A graph
-        // choice binds nothing and is gated as before; a plan binds nothing.
+        // choice binds its version (WORKFLOWCLEAN1 row 1d); a plan binds nothing.
         var chatRun = questId is null ? ChatRuns.ChatOf(id, recordsJson, trees.Holds) : null;
         if (press && chatRun is not null && ChatRunBound(chatRun, tree) is { Failed: { } failed }) return Refused(id, TreesWords.BindFailed(id, failed));
         // CHATFLOW1d (the chat-flow design §5.2): a chat run's press is the driver's one operation, which reserves the conversation, judges
@@ -920,7 +920,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             Says = gate.Says,
         };
 
-    // The second opinion's presses (XAGENT1f, the second-agent design §8.5, §9): the screen's half of `daoris-driver opinion`,
+    // The second opinion's presses (XAGENT1f, the second-agent design §8.5, §9): the screen's half of `daoris session opinion`,
     // each the driver's own press (OpinionPresses), so both doors say and keep the same. A refusal is an answer, as a landing's is.
     /// <summary>
     /// The second opinion's gate for a session's work, and the person's presses on it (XAGENT1f): <c>OPINION_GATE</c> reads it;
@@ -946,7 +946,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     {
         var service = _loop.Service ?? throw NotReady();
         var presses = new OpinionPresses(_loop.Home, service);
-        // RPC1e: `daoris-driver opinion …` sent over the pipe asks for the verb's own words, a refusal among them as its exit 1.
+        // RPC1e: `daoris session opinion …` sent over the pipe asks for the verb's own words, a refusal among them as its exit 1.
         if (Flag(request, "said"))
         {
             var said = await TerminalSaid.RunAsync(output => OpinionCommand.RunAsync(
@@ -984,7 +984,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         };
     }
 
-    /// <summary>What <c>daoris-driver opinion</c> asked, read from the route it sent and its payload (RPC1e).</summary>
+    /// <summary>What <c>daoris session opinion</c> asked, read from the route it sent and its payload (RPC1e).</summary>
     private static OpinionCommandAsk OpinionAsked(IpcRequest request) => request.Type switch
     {
         "STOP_OPINION" => new("stop", PayloadHelper.GetRequiredValue<string>(request.Payload, "opinion")),

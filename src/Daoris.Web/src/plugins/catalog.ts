@@ -107,8 +107,14 @@ export type PluginOfferShown = {
   iconProblem?: string | null;
 };
 
-/** An installed copy of one of the install's own plugins that is older than the shipped one, or changed from it (LANDPIN3). */
-export type PluginShippedShown = { state: 'older' | 'changed'; installed: string; shipped: string; changes?: string | null };
+/**
+ * An installed copy of one of the install's own plugins that is older than the shipped one, or changed from it (LANDPIN3).
+ * `changed` at an older version is a copy edited since its install from the offer; `unjudged` is an older one with no record of
+ * the files its install copied (LANDPIN3b), absent from an older shell.
+ */
+export type PluginShippedShown = {
+  state: 'older' | 'changed'; installed: string; shipped: string; changes?: string | null; unjudged?: boolean;
+};
 
 /**
  * One installed plugin as the driver's `PLUGINS` answers it (D64). The bridge's own type is the same shape; the

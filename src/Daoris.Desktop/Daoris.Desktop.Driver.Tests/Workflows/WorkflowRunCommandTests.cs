@@ -267,7 +267,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
 
         var said = WorkflowRunWords.Say([run], session: null);
 
-        Assert.Contains("`daoris-driver opinion show s1` lists what is unsettled; `daoris-driver opinion anyway s1 \"…\"` goes on without it.", said);
+        Assert.Contains("`daoris session opinion show s1` lists what is unsettled; `daoris session opinion anyway s1 \"…\"` goes on without it.", said);
     }
 
     // ——— stand-ins

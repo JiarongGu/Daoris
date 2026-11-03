@@ -255,7 +255,7 @@ public sealed record ActorView(string Id, string State, IReadOnlyList<ActorEffec
 
 /// <summary>An actor's stored entry in <c>driver.json</c> that does not read: the start that reads it holds with this sentence (§6.4).</summary>
 public sealed class ActorUnreadableException(string actor, string why)
-    : DriverException($"driver.json's `actors.{actor}` {why}, so {actor} starts nothing until it is set again (`daoris driver role set {actor} …`).")
+    : DriverException($"driver.json's `actors.{actor}` {why}, so {actor} starts nothing until it is set again (`daoris role set {actor} …`).")
 {
     public string Actor { get; } = actor;
 }

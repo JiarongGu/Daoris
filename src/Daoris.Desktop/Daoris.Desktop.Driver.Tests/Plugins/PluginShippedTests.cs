@@ -5,7 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// An installed copy of one of Daoris's own example plugins that is older than the one this build ships (LANDPIN3, D119): the
 /// catalogue says so with both versions and what the newer one brings, offers the update as the person's press, and says a copy
-/// whose files the person changed as changed, which is never overwritten by that press.
+/// whose files the person changed as changed, which is never overwritten by that press. An older copy is judged by the digest
+/// its install from the offer recorded (LANDPIN3b); one from before the digest is said as unjudged.
 /// </summary>
 public sealed class PluginShippedTests : IDisposable
 {
@@ -60,7 +61,79 @@ public sealed class PluginShippedTests : IDisposable
 
         var shipped = PluginOffers.ShippedOf(folder, manifest, offer);
 
-        Assert.Equal(new PluginShipped(PluginShipped.Older, "1.2.0", "1.3.0", "Pushes the commit judged."), shipped);
+        // A copy with no record of what its install copied is unjudged (LANDPIN3b): whether it was edited cannot be told.
+        Assert.Equal(new PluginShipped(PluginShipped.Older, "1.2.0", "1.3.0", "Pushes the commit judged.", Unjudged: true), shipped);
+    }
+
+    private PluginManifest InstalledManifest() => PluginCatalog.Load(Home).Plugins.Single().Manifest;
+
+    [Fact]
+    public void An_older_copy_installed_from_the_offer_and_edited_since_is_said_as_changed_and_never_updated()
+    {
+        Offer("1.2.0", "// old");
+        PluginInstall.AddOffer(Home, Offers, "acme.land", Reserved);
+        var script = Path.Combine(Installed("acme.land"), "land.mjs");
+        File.WriteAllText(script, "// old, and then edited by hand");
+        var offer = Offer();
+
+        var shipped = PluginOffers.ShippedOf(Installed("acme.land"), InstalledManifest(), offer);
+
+        Assert.Equal(new PluginShipped(PluginShipped.Changed, "1.2.0", "1.3.0", "Pushes the commit judged."), shipped);
+        // Neither the update its own record names nor the shipped press replaces it.
+        var (plan, refusal) = PluginInstall.PlanUpdate(Home, "acme.land", Reserved, Offers);
+        Assert.Null(plan);
+        Assert.Contains("changed here since it was installed", refusal);
+        Assert.Contains("changed here since it was installed", PluginInstall.PlanUpdate(Home, "acme.land", Reserved, Offers, shipped: true).Refusal);
+        Assert.Throws<DriverException>(() => PluginInstall.Update(Home, "acme.land", Reserved, Offers));
+        Assert.Equal("// old, and then edited by hand", File.ReadAllText(script));
+    }
+
+    [Fact]
+    public void A_file_added_to_or_taken_from_an_older_copy_is_a_change_too()
+    {
+        Offer("1.2.0", "// old");
+        PluginInstall.AddOffer(Home, Offers, "acme.land", Reserved);
+        var offer = Offer();
+        File.WriteAllText(Path.Combine(Installed("acme.land"), "mine.mjs"), "// mine");
+        Assert.Equal(PluginShipped.Changed, PluginOffers.ShippedOf(Installed("acme.land"), InstalledManifest(), offer)?.State);
+
+        File.Delete(Path.Combine(Installed("acme.land"), "mine.mjs"));
+        File.Delete(Path.Combine(Installed("acme.land"), "land.mjs"));
+        Assert.Equal(PluginShipped.Changed, PluginOffers.ShippedOf(Installed("acme.land"), InstalledManifest(), offer)?.State);
+    }
+
+    [Fact]
+    public void An_older_copy_as_its_install_left_it_is_said_older_and_its_update_records_the_files_it_takes()
+    {
+        Offer("1.2.0", "// old");
+        PluginInstall.AddOffer(Home, Offers, "acme.land", Reserved);
+        var offer = Offer();
+
+        Assert.Equal(new PluginShipped(PluginShipped.Older, "1.2.0", "1.3.0", "Pushes the commit judged."),
+            PluginOffers.ShippedOf(Installed("acme.land"), InstalledManifest(), offer));
+
+        PluginInstall.Update(Home, "acme.land", Reserved, Offers);
+        Assert.Equal("// shipped", File.ReadAllText(Path.Combine(Installed("acme.land"), "land.mjs")));
+        Assert.Null(PluginOffers.ShippedOf(Installed("acme.land"), InstalledManifest(), offer));
+
+        // The update recorded what it copied: an edit after it, under a newer offer, is said as changed.
+        File.WriteAllText(Path.Combine(Installed("acme.land"), "land.mjs"), "// shipped, and then edited by hand");
+        var newer = Offer("1.4.0", "// newer");
+        Assert.Equal(PluginShipped.Changed, PluginOffers.ShippedOf(Installed("acme.land"), InstalledManifest(), newer)?.State);
+    }
+
+    [Fact]
+    public void An_older_copy_whose_record_is_from_before_the_digest_is_said_unjudged_and_its_update_stays_the_persons_press()
+    {
+        var offer = Offer();
+        var (folder, manifest) = Copy("1.2.0", "// old");
+        File.WriteAllText(Path.Combine(folder, PluginSource.FileName), "{ \"offer\": \"acme.land\" }");
+
+        Assert.Equal(new PluginShipped(PluginShipped.Older, "1.2.0", "1.3.0", "Pushes the commit judged.", Unjudged: true),
+            PluginOffers.ShippedOf(folder, manifest, offer));
+        var (plan, refusal) = PluginInstall.PlanUpdate(Home, "acme.land", Reserved, Offers);
+        Assert.Null(refusal);
+        Assert.Equal("1.3.0", plan!.Changes[0].Now);
     }
 
     [Fact]
@@ -148,6 +221,7 @@ public sealed class PluginShippedTests : IDisposable
 
         Assert.Equal("// shipped", File.ReadAllText(Path.Combine(Installed("acme.land"), "land.mjs")));
         Assert.Equal("acme.land", PluginSource.Read(Installed("acme.land")).Source?.Offer);
+        Assert.Equal(PluginFolders.Digest(Installed("acme.land")), PluginSource.Read(Installed("acme.land")).Source?.Digest);
         Assert.Equal("mine", File.ReadAllText(Path.Combine(data, "settings.json")));
         Assert.Equal("1.3.0", PluginCatalog.Load(Home).Plugins.Single().Manifest.Version);
     }

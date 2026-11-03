@@ -231,6 +231,8 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
             var said = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single().GetProperty("shipped");
             Assert.Equal(("older", "1.2.0", "1.3.0", "Pushes the commit judged."),
                 (said.GetProperty("state").GetString(), said.GetProperty("installed").GetString(), said.GetProperty("shipped").GetString(), said.GetProperty("changes").GetString()));
+            // No record says what its install copied, so whether it was edited is not told (LANDPIN3b).
+            Assert.True(said.GetProperty("unjudged").GetBoolean());
 
             // Asked first: what it would change, from the install's offer, with no press made.
             var asked = await AnswerAsync(module, "PLUGIN_UPDATE", new { id = "github-pull-request", shipped = true });
@@ -252,6 +254,45 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
             Assert.Equal("changed", changed.GetProperty("state").GetString());
             Assert.Contains("changed", await RefusalAsync(module, "PLUGIN_UPDATE", new { id = "github-pull-request", shipped = true, apply = true }));
             Assert.Equal("// mine", File.ReadAllText(Path.Combine(copy, "land.mjs")));
+        }
+        finally
+        {
+            try { Directory.Delete(offers, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>
+    /// LANDPIN3b (D119): an example installed from the offer records what its install copied, so once the install ships a newer
+    /// one, a copy edited since is said as changed, with both versions, and neither update door replaces it.
+    /// </summary>
+    [Fact]
+    public async Task An_example_installed_from_the_offer_and_edited_since_is_said_changed_when_a_newer_one_ships_and_is_never_updated()
+    {
+        var offers = Path.Combine(Home, "..", "offers-" + Path.GetFileName(Home));
+        try
+        {
+            string Manifest(string version) => "{ \"id\": \"github-pull-request\", \"version\": \"" + version + "\","
+                + " \"hooks\": { \"command\": [\"node\", \"${plugin}/land.mjs\"], \"points\": [\"work/land\"] } }";
+            var offer = Path.Combine(offers, "github-pull-request");
+            Directory.CreateDirectory(offer);
+            File.WriteAllText(Path.Combine(offer, "plugin.json"), Manifest("1.2.0"));
+            File.WriteAllText(Path.Combine(offer, "land.mjs"), "// old");
+            var module = new DriverModule(Bus, Loop()) { Offers = offers };
+            await AnswerAsync(module, "PLUGIN_INSTALL", new { offer = "github-pull-request" });
+            var script = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Plugins, "github-pull-request"), "land.mjs");
+            File.WriteAllText(script, "// old, and then mine");
+            File.WriteAllText(Path.Combine(offer, "plugin.json"), Manifest("1.3.0"));
+            File.WriteAllText(Path.Combine(offer, "land.mjs"), "// shipped");
+
+            var plugin = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single();
+            var said = plugin.GetProperty("shipped");
+            Assert.Equal(("changed", "1.2.0", "1.3.0", false), (said.GetProperty("state").GetString(), said.GetProperty("installed").GetString(),
+                said.GetProperty("shipped").GetString(), said.GetProperty("unjudged").GetBoolean()));
+            Assert.Equal(JsonValueKind.Null, plugin.GetProperty("update").ValueKind);
+            Assert.Contains("changed here since it was installed", await RefusalAsync(module, "PLUGIN_UPDATE", new { id = "github-pull-request", apply = true }));
+            Assert.Contains("changed here since it was installed",
+                await RefusalAsync(module, "PLUGIN_UPDATE", new { id = "github-pull-request", shipped = true, apply = true }));
+            Assert.Equal("// old, and then mine", File.ReadAllText(script));
         }
         finally
         {

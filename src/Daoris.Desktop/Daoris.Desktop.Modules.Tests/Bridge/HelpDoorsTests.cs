@@ -224,7 +224,7 @@ public sealed class HelpDoorsTests : Bridge
             doors.AddOffer("acme.quiet-hours");
 
             var installed = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.quiet-hours");
-            Assert.Equal(PluginSource.FromOffer("acme.quiet-hours"), PluginSource.Read(installed).Source);
+            Assert.Equal("acme.quiet-hours", PluginSource.Read(installed).Source?.Offer);
             Assert.Contains("already installed", Assert.Throws<DriverException>(() => doors.AddOffer("acme.quiet-hours")).Message);
 
             File.WriteAllText(Path.Combine(offer, "hooks.mjs"), "// v2");

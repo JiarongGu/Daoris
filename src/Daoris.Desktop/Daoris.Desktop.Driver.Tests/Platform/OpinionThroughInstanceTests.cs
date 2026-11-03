@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris-driver opinion ask|stop|anyway|myself</c> through the running Daoris (the terminal RPC design §7.2 and §7.3): each
+/// RPC1e: <c>daoris session opinion ask|stop|anyway|myself</c> through the running Daoris (the terminal RPC design §7.2 and §7.3): each
 /// the person's press, sent to the instance, which shows it in its window; <c>opinion show</c> is a read of <c>OPINION_GATE</c>. The
 /// terminal prints the lines the route answers (<c>said</c>, the alone path's own words), and this process asks the service nothing.
 /// </summary>

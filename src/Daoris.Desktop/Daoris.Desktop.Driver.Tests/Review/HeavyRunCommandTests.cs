@@ -411,12 +411,12 @@ public sealed class HeavyRunCommandTests : IDisposable
     [Fact]
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
-        Assert.Equal("usage: daoris-driver run-heavy [--gate <name> | --look | -- <command>]", HeavyRun.Usage);
+        Assert.Equal("usage: daoris gate run [--gate <name> | --look | -- <command>]", HeavyRun.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"run-heavy\", .. var heavyArgs])", program);
         Assert.Contains("Daoris.Driver.Host.HeavyConsole.RunAsync(heavyArgs)", program);
-        Assert.Contains("//   run-heavy [--gate <name> | --look | -- <command>]", program);
+        Assert.Contains("gate run [--gate <name> | --look | -- <command>]", DriverCommand.Usage);
         Assert.Contains("if (ask.Look) return HeavyRun.Look(", File.ReadAllText(
             Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "HeavyConsole.cs")));
     }

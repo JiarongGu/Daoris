@@ -341,7 +341,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--kind` is not a flag `driver workflow new` takes — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `--kind` is not a flag `workflownew` takes — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -1203,7 +1203,7 @@
         "  Another agent reads the work first. You accept each piece of work, and it merges into the line.",
         "  work · work — Agent alone.",
         "  opinion · opinion — Agent alone. reviewers `codex-acp`; required false; steps false; recheck true.",
-        "      Partial: work here lands only once another agent's reading of it is settled, or you go on without one by `daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.",
+        "      Partial: work here lands only once another agent's reading of it is settled, or you go on without one by `daoris session opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.",
         "  landing · landing — You · your press: Accept. form `merge`; accept `you`; pattern as declared; plugin as declared.",
         "  Versions kept: v1, v2.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
@@ -3023,7 +3023,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--label` is not a flag `driver workflow use` takes — `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `--label` is not a flag `workflowuse` takes — `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -3409,7 +3409,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--name` is not a flag `driver workflow kind` takes — `driver workflow kind` takes <workspace> <kind> --label \"…\" [--paths <path,…>], or <workspace> <kind> --drop — e.g. `daoris driver workflow kind work docs --label \"Documentation\" --paths \"docs/**,**/*.md\"`."
+        "daoris: `--name` is not a flag `workflowkind` takes — `driver workflow kind` takes <workspace> <kind> --label \"…\" [--paths <path,…>], or <workspace> <kind> --drop — e.g. `daoris driver workflow kind work docs --label \"Documentation\" --paths \"docs/**,**/*.md\"`."
       ],
       "after": "{\n  \"workflows\": {\n    \"notes-site\": {\n      \"kinds\": {\n        \"docs\": \"docs-to-pr\"\n      }\n    },\n    \"web-app\": {\n      \"kinds\": {\n        \"docs\": \"current\"\n      }\n    }\n  }\n}\n"
     },
@@ -3689,7 +3689,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--name` is not a flag `driver workflow show` takes — `driver workflow show` takes --repository <name>|--workspace <name>, and --kind <kind> for a kind of task: the workflow its work follows, Current or the one chosen — e.g. `daoris driver workflow show --repository web-app`; or a named workflow's <id>[@<version>]."
+        "daoris: `--name` is not a flag `workflowshow` takes — `driver workflow show` takes --repository <name>|--workspace <name>, and --kind <kind> for a kind of task: the workflow its work follows, Current or the one chosen — e.g. `daoris driver workflow show --repository web-app`; or a named workflow's <id>[@<version>]."
       ],
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
     },
@@ -4876,7 +4876,7 @@
         "       daoris-driver driver language <repository>|--workspace <name> en|zh|--clear",
         "       daoris-driver driver review <repository>|--workspace <name> <environment> --kind local|deployed --procedure <path>",
         "              [--address <url>] [--run \"…\"] [--required|--not-required]; none, --drop <environment>, or --clear",
-        "       daoris-driver driver opinion <repository>|--workspace <name> --reviewers <adapter,adapter> [--on landing,steps]",
+        "       daoris-driver driver opinion <repository>|--workspace <name> --agents <adapter,adapter> [--on landing,steps]",
         "              [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]; none, or --clear",
         "       daoris-driver driver helpers <repository>|--workspace <name> [--mode ask|on|off] [--agents <a,b>] | --clear",
         "       daoris-driver driver handover <repository>|--workspace <name> --mode ask|on|off | --clear",
@@ -4897,7 +4897,7 @@
         "       daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default",
         "              · history <days>|never|default · floor <n>GB|<n>%|off|default]",
         "       daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]",
-        "              (adapter, intake, helper and actor <role> are retired: `role set` sets a role's agents)",
+        "              (actor <role> is retired: `daoris role set` sets a role's agents)",
         "       daoris-driver driver role [<id>] · role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>]",
         "              [--scope machine|workspace:<id>|repository:<id>] [\"<agent> [<model>|-] [<effort>|-]\" … | off]",
         "              · role remove|default <id> · role suggested [--use]",
@@ -5091,7 +5091,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--force` is not a flag `driver brainstorms` takes — `driver brainstorms` takes [--workspace <name>], then --mode ask|off, --agents <adapter,adapter>, --pass-minutes, --synthesis-minutes, --challenge-minutes and --request-minutes <n>, or --clear — e.g. `daoris driver brainstorms --agents claude-code,codex-acp --pass-minutes 10`."
+        "daoris: `--force` is not a flag `settings brainstorms` takes — `driver brainstorms` takes [--workspace <name>], then --mode ask|off, --agents <adapter,adapter>, --pass-minutes, --synthesis-minutes, --challenge-minutes and --request-minutes <n>, or --clear — e.g. `daoris driver brainstorms --agents claude-code,codex-acp --pass-minutes 10`."
       ],
       "after": "{}\n"
     },

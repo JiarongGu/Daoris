@@ -247,7 +247,7 @@ public static class SessionsSuperviseCommand
         Part(print, fence, "the line's course: Daoris's count from its records, not the asking agent's", CountTexts.Print(course));
         Part(print, fence, "the branch's commits since its base: the asking agent's", await CommitsAsync(record, ct).ConfigureAwait(false));
         print.Append($"generation: {Text(listed, "generation")}\n");
-        print.Append($"answer: daoris-driver sessions supervise {id} --question {asked.Id} --generation {Text(listed, "generation")} "
+        print.Append($"answer: daoris session supervise {id} --question {asked.Id} --generation {Text(listed, "generation")} "
             + "--choice \"<label>\" --reason \"…\" --source \"<where>\"\n");
         print.Append($"or leave it to the owner: … --leave <{string.Join("|", SupervisorBounds.All)}> --reason \"…\" --source \"<where>\"\n");
         await output.WriteAsync(print.ToString()).ConfigureAwait(false);

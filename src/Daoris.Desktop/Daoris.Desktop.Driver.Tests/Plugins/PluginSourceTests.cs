@@ -86,6 +86,8 @@ public sealed class PluginSourceTests : IDisposable
     [InlineData("no record", null, null, null)]
     [InlineData("a folder", """{ "folder": "WHOLE" }""", "folder WHOLE", null)]
     [InlineData("an offer", """{ "offer": "github-pull-request" }""", "offer github-pull-request", null)]
+    [InlineData("an offer with what its install copied", """{ "offer": "github-pull-request", "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" }""", "offer github-pull-request sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", null)]
+    [InlineData("a digest that is not one", """{ "offer": "github-pull-request", "digest": "sha256:ABC" }""", null, "its digest is not a SHA-256 of its files")]
     [InlineData("a package from a folder", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE" }""", "package Acme.Gate 1.0.0 SHA WHOLE", null)]
     [InlineData("a package from an address", """{ "package": "Daoris.Plugins.GitHubPullRequest", "version": "1.2.0-preview.1", "sha512": "SHA", "source": "https://api.nuget.org/v3/index.json" }""", "package Daoris.Plugins.GitHubPullRequest 1.2.0-preview.1 SHA https://api.nuget.org/v3/index.json", null)]
     [InlineData("a package from this machine over http", """{ "package": "Acme.Gate", "version": "1.0.0.1", "sha512": "SHA", "source": "http://127.0.0.1:5555/v3/index.json" }""", "package Acme.Gate 1.0.0.1 SHA http://127.0.0.1:5555/v3/index.json", null)]
@@ -134,7 +136,7 @@ public sealed class PluginSourceTests : IDisposable
     {
         null => null,
         { Package: { } package } => $"package {package.Package} {package.Version} {package.Sha512} {package.Source}",
-        { Offer: { } offer } => $"offer {offer}",
+        { Offer: { } offer } => $"offer {offer}{(source.Digest is { } digest ? $" {digest}" : "")}",
         _ => $"folder {source.Folder}",
     };
 
@@ -334,7 +336,11 @@ public sealed class PluginSourceTests : IDisposable
 
         Assert.Equal("github-pull-request", added.Id);
         Assert.Equal("// v1", File.ReadAllText(Path.Combine(Installed("github-pull-request"), "land.mjs")));
-        Assert.Equal(PluginSource.FromOffer("github-pull-request"), PluginSource.Read(Installed("github-pull-request")).Source);
+        // The offer, and what its install copied (LANDPIN3b), so an edit to the copy can be told later.
+        var first = PluginSource.Read(Installed("github-pull-request")).Source;
+        Assert.Equal("github-pull-request", first?.Offer);
+        Assert.Matches("^sha256:[0-9a-f]{64}$", first?.Digest);
+        Assert.Equal(PluginFolders.Digest(Path.Combine(Offers, "github-pull-request")), first?.Digest);
         Assert.True(Assert.Single(PluginOffers.Load(Offers, Home, Reserved)).Installed);
 
         // A republish brings a newer offer.
@@ -343,7 +349,10 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Equal([new PluginChange("version", "1.0.0", "1.1.0")], plan!.Changes);
         PluginInstall.Update(Home, "github-pull-request", Reserved, Offers);
         Assert.Equal("// v2", File.ReadAllText(Path.Combine(Installed("github-pull-request"), "land.mjs")));
-        Assert.Equal(PluginSource.FromOffer("github-pull-request"), PluginSource.Read(Installed("github-pull-request")).Source);
+        var updated = PluginSource.Read(Installed("github-pull-request")).Source;
+        Assert.Equal("github-pull-request", updated?.Offer);
+        Assert.Equal(PluginFolders.Digest(Path.Combine(Offers, "github-pull-request")), updated?.Digest);
+        Assert.NotEqual(first?.Digest, updated?.Digest);
     }
 
     [Fact]

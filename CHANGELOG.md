@@ -6,6 +6,19 @@ with the version and date at release.
 ## Unreleased
 
 - `DAORIS_DRIVER_CONFIG` is no longer read: Daoris's standing choices are always the home's own `driver.json`, so a second set of choices is a second home (`DAORIS_HOME`). This Daoris's list of variables no longer shows it.
+- Fixed: a copy of one of Daoris's own plugins that was older than the one the install ships, and whose files you had edited, was offered an update that replaced your edits. Installing or updating one of Daoris's own plugins now records the files it copied, so an older copy edited since is shown as *changed here*, with both versions, and neither the window nor `daoris plugin update` replaces it. A copy installed before this has no such record: its page says Daoris cannot tell whether it was changed and that an update replaces every file.
+- **One command, `daoris`.** Everything is `daoris …` now, in one tree of groups: `daoris help` names them, and `daoris help <group>`
+  one group. The doctrine commands (`check`, `sync`, `status` and the rest) are where they were. What `daoris-driver` and the nested
+  families did has a group of its own: `daoris session say` for `daoris-driver sessions say`, `daoris tree land` for `trees land`,
+  `daoris place drive` and `daoris settings notify` for `daoris driver drive` and `daoris driver notify`, `daoris role` for
+  `daoris driver role`, `daoris gate run` for `run-heavy`, `daoris repository connect` for `daoris connect`, `daoris ask publish` for
+  `ask --publish`, and `daoris brainstorm … --kind meeting` for `meeting`. An old spelling runs nothing and says its new one. A few flags
+  have one name now: `--agent` and `--account` for `chat`'s `--adapter` and `--profile`, `--account` for `agent login`, `trust` and
+  `settings`, `--agent` for `session opinion ask`'s `--reviewer`, and `--agents` for `place opinion`'s `--reviewers`; `daoris agent
+  profile …` is `daoris agent account …`. An install's `daoris` runs Daoris's desktop program, which needs no Node for its own groups;
+  `daoris-driver` stays one release, only to say what each of its words is now. `daoris status --machine` is gone: `daoris remote list`
+  shows this machine's remotes.
+- Fixed: on a place's page, the window growing or shrinking past the width where the Workflow chart takes a column of its own drew the chart again from nothing, so the step editor lost the step you had selected and closed its open drawer. The chart now keeps its place, and the editor keeps both.
 - `daoris-driver sessions say` takes its level one way, `--level ordinary|urgent|now`: `--now` is refused, naming `--level now`, and the usage no longer lists it.
 - A session waiting on you is answered one way: through its box, its card or `daoris-driver sessions say <id> "…"`. The terminal's `daoris-driver answer` is gone, and an answer needs words: the card's *Carry on with this answer* waits for them, as the box does.
 - **`daoris reconcile`: a canon update is decided in the repository, not imposed.** It prints, offline, a brief of every difference between the canon and the repository (what a sync would change or add, the files edited here, a keep the canon moved past, a set-up gap such as an `AGENTS.md` too long for one agent to read whole) for the repository's own session to adopt, keep with its reason, or propose upstream. A kept file is recorded in `daoris.json`'s `kept` with its reason and the canon file's digest it was judged against: `sync` and `sync --force` pass over it, `check` names it without calling it drift, and `status` reports it again only once that canon file moves. A core file cannot be kept absent. Outside the canon's own checkout, `daoris upstream` now prints a request's words for the repository that keeps the shared doctrine and writes nothing there.

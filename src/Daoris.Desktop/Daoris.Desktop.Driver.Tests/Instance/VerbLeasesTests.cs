@@ -62,9 +62,6 @@ public sealed class VerbLeasesTests
     [InlineData("driver retry 12 --session s-1")]
     [InlineData("driver timeout 90")]
     [InlineData("driver cooloff 45")]
-    [InlineData("driver adapter claude-code")]
-    [InlineData("driver helper off")]
-    [InlineData("driver intake claude-code")]
     [InlineData("driver line engine develop")]
     [InlineData("driver landing engine merge")]
     [InlineData("driver across engine read off")]
@@ -292,34 +289,16 @@ public sealed class VerbLeasesTests
         Assert.True(VerbLeases.HoldsHere(["driver", "drive", "engine"], Named));
     }
 
-    /// <summary>A lease names a verb by its own words, never an argument: a session, a branch or a path stays out of it.</summary>
+    /// <summary>ONEWAY1ai-i: the remotes' and the browser's edits hold the lease; their reads and the registry, the service's, hold none.</summary>
     [Theory]
-    [InlineData("trees land s-1", "daoris-driver trees land")]
-    [InlineData("ask --pause a-1", "daoris-driver ask --pause")]
-    [InlineData("trees remove some/tree/path", "daoris-driver trees remove")]
-    [InlineData("register", "daoris-driver register")]
-    [InlineData("help mode full", "daoris-driver help mode")]
-    [InlineData("heavy engine build=x", "daoris-driver heavy")]
-    [InlineData("driver drive engine", "daoris-driver driver drive")]
-    [InlineData("driver retry 12 --at 2", "daoris-driver driver retry")]
-    [InlineData("driver workflow new docs --from merge-after-accept", "daoris-driver driver workflow")]
-    [InlineData("driver work-cycle engine quest cycle.json", "daoris-driver driver work-cycle")]
-    [InlineData("tool use git system", "daoris-driver tool use")]
-    [InlineData("tool look", "daoris-driver tool look")]
-    [InlineData("agent rules accept p0000007", "daoris-driver agent rules")]
-    [InlineData("agent settings claude-code model opus", "daoris-driver agent settings")]
-    [InlineData("agent trust claude-code D:/work/engine --yes", "daoris-driver agent trust")]
-    [InlineData("agent unpin claude-code", "daoris-driver agent unpin")]
-    [InlineData("agent profile order claude-code account-1", "daoris-driver agent profile")]
-    [InlineData("agent list", "daoris-driver agent list")]
-    [InlineData("agent key claude-code", "daoris-driver agent key")]
-    [InlineData("agent install claude-code", "daoris-driver agent install")]
-    [InlineData("agent login claude-code --new", "daoris-driver agent login")]
-    [InlineData("plugin add D:/work/acme.gate", "daoris-driver plugin add")]
-    [InlineData("plugin disable acme.gate", "daoris-driver plugin disable")]
-    [InlineData("plugin acme.gate", "daoris-driver plugin")]
-    [InlineData("workflow skip q7 go nobody raises it", "daoris-driver workflow skip")]
-    [InlineData("workflow stop q7 go", "daoris-driver workflow stop")]
-    public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
-        Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
+    [InlineData("remote add work --url https://x", true)]
+    [InlineData("remote remove work", true)]
+    [InlineData("remote list", false)]
+    [InlineData("browser favorite add https://x", true)]
+    [InlineData("browser favorite list", false)]
+    [InlineData("browser use edge", true)]
+    [InlineData("browser use", false)]
+    [InlineData("repository connect", false)]
+    public void ONEWAY1ai_i_the_moved_verbs_hold_the_lease_only_to_write(string words, bool holds) =>
+        Assert.Equal(holds, VerbLeases.Holds(words.Split(' ')));
 }

@@ -21,7 +21,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverRefused, refusal);
         Assert.Contains("Agents → Roles, Ask Daoris", refusal);
         // ONEWAY1a: the role door names it, the retired `driver helper` never.
-        Assert.Contains("daoris driver role set ask-daoris", refusal);
+        Assert.Contains("daoris role set ask-daoris", refusal);
         Assert.DoesNotContain("driver helper", refusal);
     }
 
