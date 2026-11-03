@@ -1493,7 +1493,7 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("abandon"));
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver quest abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D37", AbandonDoor.Reason);
     }
 
@@ -1507,7 +1507,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("sessions say <id> \"…\" [--file <path>]…", DriverCommand.Usage);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver sessions say <id> \"…\" [--file <path>]…`", StringComparison.Ordinal)
             && door.Screen.Contains("box", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D133", SayDoor.Reason);
     }
 
@@ -1540,7 +1540,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver help rename|pin|unpin|delete <id>`", StringComparison.Ordinal)
             && door.Screen.Contains("History", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("ASKHIST1", HistoryDoor.Reason);
         Assert.All(["useRenameHelp", "usePinHelp", "useHelpStartFrom"], hook => Assert.Same(HistoryDoor, Elsewhere.Single(row => row.Hook == hook).Answer));
     }
@@ -1633,7 +1633,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver update --when-idle|--now|--cancel`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver update`", StringComparison.Ordinal)
             && new[] { "Settings → Driver", "*Update when idle*", "*Update now*", "*Not now*" }.All(word => door.Screen.Contains(word, StringComparison.Ordinal))
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D139", UpdateDoor.Reason);
         Assert.Same(UpdateDoor, Controls.Single(row => row.Hook == "useSayUpdate").Answer);
     }
@@ -1929,7 +1929,7 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("state"));
         Assert.DoesNotContain("state", HelpProposalKinds.Find("sync")!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver trees state <session|branch> [--repository <name>]`", StringComparison.Ordinal)
-            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+            && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("changes nothing", TreesStateDoor.Reason);
         Assert.Contains("D148", TreesStateDoor.Reason);
     }
