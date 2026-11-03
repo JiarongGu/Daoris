@@ -32,7 +32,7 @@ const ROWS: HelpConversationRow[] = [
     about: 'Repositories → engine → Setup → **Line and landing**, or `daoris place landing engine branch feature/{slug}`.' }),
   row({ session: 'h2b3c4d5', title: 'why is engine held?', opening: 'why is engine held?', live: true, last: minutesAgo(1),
     about: 'It is held by your press on Repositories → engine; *Resume* lets its quests start again.' }),
-  row({ session: 'u1v2w3x4', title: PASTED, opening: PASTED, last: minutesAgo(50), from: 'h1a2b3c4', handed: 'transcript',
+  row({ session: 'u1v2w3x4', title: PASTED, opening: PASTED, last: minutesAgo(50), from: 'h1a2b3c4', handed: 'brief',
     about: `Opened ${URL}#comment-1234567 and read the ticket's whole description.` }),
   row({ session: 'u2v3w4x5', title: `to complete this ${URL_TOO} so the sprint closes`, last: minutesAgo(70),
     about: '## The accent\nSet `--accent` to **#d208d4** in both themes.' }),

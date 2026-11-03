@@ -444,7 +444,6 @@ describe('the real glossary and catalogues', () => {
    */
   it('name the budget judgements NAME2 renamed by the shorter names that say the same', () => {
     const renamed: Record<string, [string, string]> = {
-      'help.proposal.titleHand': ['Ask Daoris proposes a hand-off', '问道衍提议交接一个分支'],
       'help.proposal.titleSync': ['Ask Daoris proposes updates', '问道衍提议更新到最新'],
       'quests.groups.open': ['Open — waiting to be taken ({{count}})', '待接——等人接下（{{count}}）'],
       'work.intakeRunning.title': ['This intake is reading ask #{{ask}}', '受理会话正在读需求 #{{ask}}'],

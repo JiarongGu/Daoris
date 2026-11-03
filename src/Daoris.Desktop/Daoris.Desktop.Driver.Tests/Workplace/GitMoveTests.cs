@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// No ambient credentials (GITAUTH1e, the git-auth design §6.8): an SSH remote nothing serves is held as <c>no-identity</c> before the
-/// act and an HTTPS refusal is classed so; a serving identity or the person's own choice lifts the hold; the ssh door refuses a host
-/// nothing serves in one line.
+/// No ambient credentials (GITAUTH1e, the git-auth design §6.8): where the doors are laid, an SSH remote nothing serves is held as
+/// <c>no-identity</c> before the act and an HTTPS refusal is classed so; a serving identity or the person's own choice lifts the hold; the
+/// ssh door refuses a host nothing serves in one line. A home with no doors laid holds nothing (GITMOVED1, D233 choice 7).
 /// </summary>
 [Collection(Alone.Name)]
 public sealed class GitMoveTests : IDisposable
@@ -20,10 +20,16 @@ public sealed class GitMoveTests : IDisposable
 
     private string Repo => Path.Combine(_root, "engine");
 
+    private string Bin => Path.Combine([_root, .. Tools.InstallBinLayout]);
+
     public GitMoveTests()
     {
         Directory.CreateDirectory(Home);
         Directory.CreateDirectory(Repo);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        Directory.CreateDirectory(Bin);
+        File.WriteAllText(Path.Combine(Bin, GitWiring.SshDoor), "");
+        File.WriteAllText(Path.Combine(Bin, GitWiring.RemoteHelper), "");
         var empty = Path.Combine(_root, "global");
         File.WriteAllText(empty, "");
         foreach (var (name, value) in new[] { ("GIT_CONFIG_NOSYSTEM", "1"), ("GIT_CONFIG_GLOBAL", empty) })
@@ -45,10 +51,22 @@ public sealed class GitMoveTests : IDisposable
     [Fact]
     public async Task An_ssh_remote_nothing_serves_is_held_as_no_identity()
     {
+        Assert.True(GitMove.Moved(Home));
         var held = Assert.IsType<GitHold>(await HeldAsync());
 
         Assert.Equal(("no-identity", "all", "github.com"), (held.Class, held.Holds, held.Host));
         Assert.Contains("has no git identity on this machine", GitHolds.Said(held));
+    }
+
+    [Fact]
+    public async Task A_home_with_no_doors_laid_holds_nothing()
+    {
+        File.Delete(Path.Combine(Bin, GitWiring.RemoteHelper));
+
+        Assert.False(GitMove.Moved(Home));
+        Assert.Null(await HeldAsync());
+        Assert.Equal(GitFailureClass.Refused,
+            GitMove.Reclass(Home, "engine", "games", "origin", "https://github.com/org-a/engine.git", GitFailureClass.Refused));
     }
 
     [Fact]

@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The keys of <c>driver.json</c> no code of this build writes, taken out (D232 point 3): <c>gitMoved</c>, since every home is reached with no
-/// credential of the person's where nothing serves a remote, and <c>timeoutMinutes</c>, which bounds no session. The staffing keys and
+/// The keys of <c>driver.json</c> no code of this build writes, taken out (D232 point 3): <c>gitMoved</c>, since the move is read from the doors laid
+/// (<see cref="GitMove.Moved"/>), and <c>timeoutMinutes</c>, which bounds no session. The staffing keys and
 /// <c>strikes</c> go with their own steps.
 /// </summary>
 public sealed class DriverKeysStep : IHomeMigrationStep

@@ -73,9 +73,11 @@ public static class GitDoors
 
     /// <summary>
     /// The ssh door: judge the remote command, then start the ssh git would have started without Daoris with <c>BatchMode</c> first,
-    /// its streams the door's own; the exit is that ssh's, or <see cref="Refused"/>.
+    /// its streams the door's own; the exit is that ssh's, or <see cref="Refused"/>. A push's commands are read from git's side and judged
+    /// before they reach the remote (<see cref="GitPushUpdates"/>).
     /// </summary>
-    public static int Ssh(IReadOnlyList<string> arguments, Func<string, string?> variable, TextWriter error, string folder)
+    /// <param name="input">git's side of the conversation, read only for a push; null is the door's standard input.</param>
+    public static int Ssh(IReadOnlyList<string> arguments, Func<string, string?> variable, TextWriter error, string folder, Stream? input = null)
     {
         var (call, refusal) = ReadSsh(arguments);
         if (call is null) return Refuse(error, refusal!);
@@ -84,11 +86,24 @@ public static class GitDoors
 
         var act = GitAccessRules.ClassOf(call.Program, call.Operation)!.Value;
         var host = call.Host[(call.Host.LastIndexOf('@') + 1)..];
-        var verdict = Judge(home, act, GitAddressKeys.Of(call.Host, call.Path), variable, remote: null, host, folder);
+        var key = GitAddressKeys.Of(call.Host, call.Path);
+        var verdict = Judge(home, act, key, variable, remote: null, host, folder);
         if (!verdict.Allowed) return Refuse(error, verdict.Line!);
 
+        // D233 choice 3: a push's force or delete is judged for every agent, whatever its harness's rules, before the remote hears it.
+        var pushes = call.Program == "git-receive-pack"
+            ? new SshPush(input ?? Console.OpenStandardInput(), updates =>
+            {
+                var git = Find("git", variable("PATH"));
+                var most = GitPushUpdates.Most(updates.Select(update => GitPushUpdates.KindOf(
+                    update, (old, now) => git is not null && Ask(git, folder, ["merge-base", "--is-ancestor", old, now]) is not null)));
+                return most == GitPushKind.Plain ? null
+                    : JudgeDangerous(home, verdict, key, variable, remote: null, host, folder) is { Allowed: false } refused ? refused.Line : null;
+            })
+            : null;
+
         var serves = Serving(home, folder, call, variable);
-        if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host);
+        if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host, pushes);
 
         // Nothing serving a host means no key to reach it with (GITAUTH1e, §6.8).
         if (serves.Kind == GitServeKind.None)
@@ -106,8 +121,11 @@ public static class GitDoors
             return Refuse(error, problem);
         }
 
-        return Run(SshStart(file!, folder, [.. prefix, .. call.Options, call.Host, call.Command]), error);
+        return Run(SshStart(file!, folder, [.. prefix, .. call.Options, call.Host, call.Command]), error, pushes);
     }
+
+    /// <summary>A push's side of the ssh door: git's stream, and the judge of its commands, which answers the refusal's line or null.</summary>
+    private sealed record SshPush(Stream Input, Func<IReadOnlyList<GitPushUpdate>, string?> Refusal);
 
     /// <summary>The ssh the door starts, under an identity or as git would have: its file, its folder and its words.</summary>
     private static ProcessStartInfo SshStart(string file, string folder, IReadOnlyList<string> words)
@@ -202,7 +220,8 @@ public static class GitDoors
     /// <c>SendEnv</c>. A chosen ssh that is not OpenSSH cannot carry an identity, and is refused naming it.
     /// </summary>
     private static int IdentitySsh(
-        string home, GitIdentity identity, SshCall call, Func<string, string?> variable, TextWriter error, string folder, GitAct act, string host)
+        string home, GitIdentity identity, SshCall call, Func<string, string?> variable, TextWriter error, string folder, GitAct act, string host,
+        SshPush? pushes)
     {
         var (ssh, problem) = OpenSsh(home, variable);
         if (ssh is null)
@@ -218,7 +237,7 @@ public static class GitDoors
         }
 
         GitSshFiles.Used(home, identity.Id);
-        return Run(SshStart(ssh, folder, IdentityArguments(home, identity.Id, call)), error);
+        return Run(SshStart(ssh, folder, IdentityArguments(home, identity.Id, call)), error, pushes);
     }
 
     /// <summary>Every argument an identity's ssh is started with (§4.2 step 3), in order: the door's argument table holds it.</summary>
@@ -445,6 +464,7 @@ public static class GitDoors
         _ = Task.Run(() =>
         {
             var judged = new Dictionary<GitAct, GitVerdict>();
+            GitVerdict? dangerous = null;
             var to = process.StandardInput.BaseStream;
             try
             {
@@ -454,6 +474,9 @@ public static class GitDoors
                     if (ClassOfHelperCommand(text) is { } act)
                     {
                         if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable, remote, host, folder ?? Environment.CurrentDirectory);
+                        // D233 choice 3: a push line's force (`+src:dst`) or delete (`:dst`) is judged for every agent, before the transport runs it.
+                        if (verdict.Allowed && GitPushUpdates.OfHelperPush(text) is GitPushKind.Force or GitPushKind.Delete)
+                            verdict = dangerous ??= JudgeDangerous(home, verdict, key, variable, remote, host, folder ?? Environment.CurrentDirectory);
                         if (!verdict.Allowed)
                         {
                             Volatile.Write(ref refused, verdict.Line);
@@ -526,6 +549,28 @@ public static class GitDoors
     }
 
     /// <summary>
+    /// The judge asked for a push's force or delete (D233 choice 3), once its Write passed as <paramref name="write"/>: Dangerous's value,
+    /// the landing's grant passing it, an ask held at the door as a Write's is; a refusal a coded line.
+    /// </summary>
+    private static GitVerdict JudgeDangerous(
+        string home, GitVerdict write, string? key, Func<string, string?> variable, string? remote, string? host, string folder)
+    {
+        var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
+        var value = GitAccessKeys.Resolve(home, repository, workspace).Of(GitAccessKeys.Dangerous).Value;
+        var verdict = GitAccessRules.JudgeDangerous(value, granted: write.Code == "granted");
+        if (verdict.Ask)
+        {
+            var allowed = GitAsks.Hold(home, repository, workspace, remote, host, GitAccessKeys.Dangerous, variable(GitLog.SessionVariable), key,
+                () => DateTimeOffset.UtcNow, Thread.Sleep);
+            verdict = allowed ? new GitVerdict(true, "asked", null) : new GitVerdict(false, "ask-refused", GitAccessRules.RefusedLine);
+            GitLog.Asked(home, variable, allowed, GitAct.Write, remote, host);
+        }
+
+        if (!verdict.Allowed) GitLog.Refused(home, variable, verdict.Code, GitAct.Write, remote, host);
+        return verdict;
+    }
+
+    /// <summary>
     /// The remote's name git handed the helper, for the log: git hands the address itself for a push or fetch to an address with no
     /// remote, which is never logged, so such an act's remote is none.
     /// </summary>
@@ -539,17 +584,57 @@ public static class GitDoors
         return Refused;
     }
 
-    private static int Run(ProcessStartInfo info, TextWriter error)
+    private static int Run(ProcessStartInfo info, TextWriter error, SshPush? pushes)
     {
+        // A push's commands come from git through the door, so its judge reads them before the remote does; its other streams stay git's.
+        if (pushes is not null) info.RedirectStandardInput = true;
+        Process process;
         try
         {
-            using var process = Process.Start(info)!;
-            process.WaitForExit();
-            return process.ExitCode;
+            process = Process.Start(info)!;
         }
         catch (System.ComponentModel.Win32Exception failure)
         {
             return Refuse(error, $"daoris-git-ssh: could not start {Path.GetFileName(info.FileName)} ({failure.Message}).");
+        }
+
+        using (process)
+        {
+            string? refused = null;
+            if (pushes is not null)
+            {
+                // git's side, on a thread of its own: git sends its commands only once the remote's advertisement reached it, and an ssh
+                // that ends first (a key refused) must end the door rather than leave it reading git.
+                _ = Task.Run(() =>
+                {
+                    var to = process.StandardInput.BaseStream;
+                    try
+                    {
+                        if (GitPushUpdates.ReadCommands(pushes.Input) is { } commands)
+                        {
+                            if (pushes.Refusal(commands.Updates) is { } line)
+                            {
+                                Volatile.Write(ref refused, line);
+                                Stop(process);
+                                return;
+                            }
+
+                            to.Write(commands.Read);
+                            to.Flush();
+                            Relay(pushes.Input, to);
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        // The ssh went first; its exit says why.
+                    }
+
+                    try { to.Close(); } catch (IOException) { }
+                });
+            }
+
+            process.WaitForExit();
+            return Volatile.Read(ref refused) is { } said ? Refuse(error, said) : process.ExitCode;
         }
     }
 

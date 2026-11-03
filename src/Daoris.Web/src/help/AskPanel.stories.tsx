@@ -137,11 +137,6 @@ export const ProposingEveryKind: Story = {
                 harnesses: [], servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }], copied: true,
               },
             },
-            {
-              id: 'h1', kind: 'hand' as const,
-              describe: 'Hand `feature/0fda18-fix-the-api-gap` (in `engine`) to plugin `example.github-pull-request`: it pushes the branch and opens the pull request against the line, signed in as you, for the work landed from session `s1a2b3c4` “Fix the API gap”.',
-              terminal: 'daoris tree hand feature/0fda18-fix-the-api-gap --repository engine', why: 'you want its pull request opened',
-            },
             // HELP10: the browser's settings, and bringing up to date before and after the person looked.
             {
               id: 'b1', kind: 'browser' as const,
@@ -184,21 +179,6 @@ export const ProposingEveryKind: Story = {
                   lastFetch: new Date(Date.now() - 2 * 86_400_000).toISOString(), reach: 'ssh',
                 }],
                 apart: ['docs', 'site', 'tools'],
-              },
-            },
-            // DRIFT1d2: the person's yes to a done's departure, each departure shown before the press.
-            {
-              id: 'a1', kind: 'accept' as const,
-              describe: 'Accept the departure on quest `#he0he0` “Stream the tiles from the cold cache”, for `engine`: it departed from requirement 2, and what it held goes on — its next step, “Verify he0he0 in a playtest” to `game`, is published.',
-              terminal: 'daoris quest accept he0he0', why: 'you said the first frame may go over',
-              accept: {
-                quest: 'he0he0', title: 'Stream the tiles from the cold cache',
-                departures: [{
-                  requirement: 2, quote: 'keep the budget under the ceiling the engine sets',
-                  check: 'no frame hydrates more than the ceiling in a playtest',
-                  departed: 'a cold cache cannot hold the ceiling on its first frame, so that frame may hydrate twice the ceiling',
-                  words: 'keep the budget under the ceiling the engine sets',
-                }],
               },
             },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}

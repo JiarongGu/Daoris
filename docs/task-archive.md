@@ -23092,3 +23092,21 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **OWNSPACE1b-B2 — the sign-in's toast says Daoris's accounts serve in turn** (web; D175's OWNSPACE1b note, settlement 5). `harness.loginNew.doneNowhere` and `unnamedNowhere` key on `places` alone, so after a sign-in they say "no list holds it yet" even where nothing is named and Daoris's accounts serve in turn: key them on the accounts answer's `inherited` too, and say the account serves in turn there. Proof: an `AgentsView.test.tsx` end-of-sign-in test with `inherited` true, en and zh. *Back from the parked list, 2026-11-02: a defect.*
 
   **Outcome** 2026-11-04: superseded by POOL1c (84eab5d75, D197): the two keys are gone and the accounts answer has no `inherited`; a sign-in says it joined Daoris's accounts (D175's POOL1 note). No code.
+
+## SEVEN1 (2026-11-04)
+
+- [x] **SEVEN1 — the seven settled choices in the code** (driver, web; D233 point 4): Ask Daoris's start-from hands the brief; the Accept and hand-over proposals removed; the git doors enforce push, force and delete for every agent, and Codex is said to hold no denies; the launcher refuses an older build; GITMOVED1. → `docs/areas/README.md`
+
+  **Outcome** 2026-11-04: built with SEVEN1 and DOORSONE1 (merge on main); the help-room goldens were edited by hand and are regenerated at SCOPEVERIFY1.
+
+## DOORSONE1 (2026-11-04)
+
+- [x] **DOORSONE1 — a door only where one is wanted** (driver, modules, web; D233 point 1): the every-door rule retired; the proposal kinds, coverage rows and terminal twins kept only for what is used, and the coverage tests cut to them. → `docs/areas/roles-and-supervision.md`, `docs/areas/desktop-app.md`
+
+  **Outcome** 2026-11-04: built with SEVEN1 and DOORSONE1 (merge on main); the help-room goldens were edited by hand and are regenerated at SCOPEVERIFY1.
+
+## GITMOVED1 (2026-11-04)
+
+- [x] **GITMOVED1 — a home moved off ambient credentials only when its release says so** (driver): every home is marked moved at its first start and its SSH remotes with no identity held (`DriverWatch.cs:405`), likely why the work workspace's remotes stood held. The owner settles which is right; then the code says it. → `docs/areas/README.md`, choice 7
+
+  **Outcome** 2026-11-04: built with SEVEN1 and DOORSONE1 (merge on main); the help-room goldens were edited by hand and are regenerated at SCOPEVERIFY1.

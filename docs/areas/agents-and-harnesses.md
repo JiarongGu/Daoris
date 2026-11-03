@@ -89,7 +89,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     defaults `connector`, `commit`, `no-push` and `tree-guard`. The union is handed as the harness's command-line settings tier;
     the harness's own precedence decides, and `deny` wins. (from D72)
 19. Only a harness that takes Claude Code's rule language is handed rules (`TakesSettings`: the two Claude Code doors). Others
-    are handed none, and nothing is translated until measured. (from D72, D213)
+    are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its
+    standing block and the access setup say so, and the git doors judge its push, force and delete. (from D72, D213, D233)
 20. A session may propose a rule change with `permission_propose`. A narrowing applies at the next look; a widening waits for
     the person's yes. Every change records who made it. (from D74)
 21. A driven session runs in its harness's own judged mode: `auto`, else `acceptEdits`, on Claude's protocol door; `acceptEdits`
@@ -207,7 +208,7 @@ Agents page, and `orient-index` and `code-map` once files move.
 4. D81 (a driven session is never `bypassPermissions`) vs D184 and `Adapters.cs:2299` (bypass by a repository's unrestricted
    setup). D184 reads right; D81 holds only for the auto setup.
 5. D184 point 5 (the person's deny rules hold in every setup) vs `Adapters.cs:2053-2054` (Codex takes no rules file, so no deny
-   reaches it in any mode). The code reads right.
+   reaches it in any mode). The code reads right, and is said (D233 choice 3).
 6. D125 point 4 (per-workspace rotation) and D130 points 3-4 (machine and workspace lists) vs D197 and `HarnessRoster.cs:1227-1228`
    (one set per agent, whatever the workspace). D197 reads right.
 7. D125 point 5 (the tool's own home as an account a start may use) vs D175, D197 and `HarnessRoster.cs:1253-1255` (a start with

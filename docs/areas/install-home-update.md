@@ -30,6 +30,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `UpdateModule`, `UpdateLauncher` | `Mod/Update/UpdateModule.cs`, `UpdateLauncher.cs` | The page's `STATE`/`SET`; the launcher's start through the start gate |
 | `UpdateCommand` | `Drv/Install/UpdateCommand.cs` | The terminal's door, `daoris update` |
 | `StartConfirmation` | `Drv/Install/StartConfirmation.cs` | Whether this start can still be rolled back, read from the swap journal |
+| `HomeLastBuild` | `Drv/Install/HomeLastBuild.cs` | `data/last-build.json`: the newest build that ran on the home; the launcher's refusal of an older one. Compiled into the launcher |
 | `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build while a delivery is unresolved |
 | `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: numbered steps, the writer stamp, settled-gated imports |
 | `HomeMigration` | `Drv/Install/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
@@ -163,7 +164,10 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     and `previous/` comes back. A failed move undoes the journal in reverse; a launcher that died mid-swap is undone at the next
     start. Confirmed, `previous/` is removed. A build that failed is not tried again. (from D139)
 46. A start that finds a build staged and nothing running from `app/` swaps first, unless the person said *Not now* of that
-    build. Whatever happens, the launcher's last act is starting Daoris. (from D139)
+    build. Whatever happens, the launcher's last act is starting Daoris, unless that build is older than its home's last: a
+    start nothing can roll back keeps its version in `data/last-build.json`, never lowered, and the launcher refuses a build
+    below it in one sentence naming both, a swap onto one rolling back. It is the launcher's one check of an older build.
+    (from D139, D232, D233)
 47. The launcher writes no log. The next start says the outcome once (`update.installed`, `update.rolled-back`,
     `update.refused`), and every state carries `last` from the journal. Log lines name things and count them, never a path or
     a command line. (from D94, D139)

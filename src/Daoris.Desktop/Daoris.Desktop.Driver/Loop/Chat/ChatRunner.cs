@@ -2355,7 +2355,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// Daoris's own words to a live chat (COWORK1b, D188; ASKQUESTS1): a turn, as the person's words make one, so the agent hears them
     /// at once, and kept on the record as Daoris's (<see cref="DaorisWords.From"/>), never the person's. What Ask Daoris's Apply did,
     /// and a proposal refused before it was shown. They take none of what a conversation hands with the person's first words (a
-    /// preface, an earlier conversation's words, a browser, a process), which stay for those words. False when nothing listens.
+    /// preface, an earlier conversation's brief, a browser, a process), which stay for those words. False when nothing listens.
     /// </summary>
     /// <param name="key">The word's key (<see cref="DaorisWord"/>): one no fact of Daoris's is judged by, so it always goes.</param>
     public bool Tell(string sessionId, string message, string key)
@@ -2442,17 +2442,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     {
         var held = _context.Turned.ContainsKey(sessionId) || _context.Talking.ContainsKey(sessionId);
         IReadOnlyList<KeptFile> kept = held && files is { Count: > 0 } ? ChatFiles.Keep(_home, sessionId, files) : [];
-        // A conversation started from an earlier one is handed that one's words with the person's first message (ASKHIST1), its
-        // line first, so where the person is never crowds it out of the preface's bound.
-        if (held && _context.Handing.TryRemove(sessionId, out var handed))
-        {
-            kept = [.. handed.Files, .. kept];
-            preface = preface?.Trim() is { Length: > 0 } where ? $"{handed.Preface}\n\n{where}" : handed.Preface;
-        }
-
+        // A conversation started from an earlier one is handed Daoris's brief of that one's line with the person's first message (D233).
+        var brief = held && _context.Handing.TryRemove(sessionId, out var handed) ? handed.Brief : null;
         // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
         var briefing = held && _context.Browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
-        var composed = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing, Draft = held ? DraftOf(sessionId) : null };
+        var composed = new ChatMessage(message, kept)
+        {
+            Brief = brief, Preface = ChatMessage.Bound(preface), Briefing = briefing, Draft = held ? DraftOf(sessionId) : null,
+        };
         return held ? WithProcess(sessionId, composed) : composed;
     }
 

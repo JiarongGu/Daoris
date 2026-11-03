@@ -438,15 +438,27 @@ public sealed class DaorisHomeTests
         Assert.Equal(table.IndexOf(HomeEntry.PlaceReceipts) + 1, table.IndexOf(HomeEntry.StewardDesk));
     }
 
-    /// <summary>NOCOMPAT1 (D232): the migration's record and its copies are data, after the steward desk, as the three twins hold them.</summary>
+    /// <summary>D233 choice 6: the newest build that has run on the home, a data file of its own after the steward desk, as the three twins hold it.</summary>
     [Fact]
-    public void NOCOMPAT1_the_migration_record_and_salvage_are_data_after_the_steward_desk()
+    public void The_last_build_is_a_data_file_after_the_steward_desk()
+    {
+        Assert.Same(HomeEntry.LastBuild, HomeEntry.Named("last-build"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/last-build.json", "data/last-build.json"),
+            (HomeEntry.LastBuild.Category, HomeEntry.LastBuild.New, HomeEntry.LastBuild.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.StewardDesk) + 1, table.IndexOf(HomeEntry.LastBuild));
+    }
+
+    /// <summary>NOCOMPAT1 (D232): the migration's record and its copies are data, after the last build, as the three twins hold them.</summary>
+    [Fact]
+    public void NOCOMPAT1_the_migration_record_and_salvage_are_data_after_the_last_build()
     {
         Assert.Equal(
             (HomeCategory.Data, "data/migration.json", HomeCategory.Data, "data/salvage"),
             (HomeEntry.Migration.Category, HomeEntry.Migration.New, HomeEntry.Salvage.Category, HomeEntry.Salvage.New));
         var table = HomeEntry.Table.ToList();
-        Assert.Equal(table.IndexOf(HomeEntry.StewardDesk) + 1, table.IndexOf(HomeEntry.Migration));
+        Assert.Equal(table.IndexOf(HomeEntry.LastBuild) + 1, table.IndexOf(HomeEntry.Migration));
         Assert.Equal(table.IndexOf(HomeEntry.Migration) + 1, table.IndexOf(HomeEntry.Salvage));
     }
 

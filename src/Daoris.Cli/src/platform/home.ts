@@ -149,6 +149,8 @@ export const HOME_ENTRIES = [
   row('place-receipts', 'data', 'data/place-receipts', 'data/place-receipts'),
   // COMMS1l: the steward desk's requests kept across a restart; named here, never read by the CLI.
   row('steward-desk', 'data', 'data/steward-desk.json', 'data/steward-desk.json'),
+  // D233 choice 6: the newest build that has run on the home, which the launcher refuses an older one by; named here, never read by the CLI.
+  row('last-build', 'data', 'data/last-build.json', 'data/last-build.json'),
   // NOCOMPAT1 (D232): the desktop's migration record and its copies; named here, never read by the CLI.
   row('migration', 'data', 'data/migration.json', 'data/migration.json'),
   row('salvage', 'data', 'data/salvage', 'data/salvage'),

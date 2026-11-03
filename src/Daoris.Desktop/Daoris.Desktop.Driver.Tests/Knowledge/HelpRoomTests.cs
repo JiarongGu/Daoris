@@ -161,8 +161,9 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
         // PLUG9: adding a landed plugin, or switching one, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__plugin_propose", allowed);
-        // WSR5b: handing a landed branch to its plugin, a card the person applies like the rest.
-        Assert.Contains("mcp__daoris-knowledge__hand_propose", allowed);
+        // D233: a quest's yes and a landed branch's hand-off are the person's own presses, never a card.
+        Assert.DoesNotContain("mcp__daoris-knowledge__hand_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__accept_propose", allowed);
         // ENTRY1d1: moving a registered repository to a workspace, by name, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__repository_propose", allowed);
         // SESSUX1h2b: archiving or unarchiving sessions, a card the person applies like the rest.

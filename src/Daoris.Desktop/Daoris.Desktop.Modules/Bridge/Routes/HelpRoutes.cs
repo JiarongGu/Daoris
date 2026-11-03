@@ -469,8 +469,6 @@ public sealed class HelpRoutes(DriverContext context)
                 ? new { grant.Plugin, grant.Name, grant.Server, grant.Reads, grant.Writes, grant.Accepted, grant.Withdraw }
                 : null,
             Sync = SyncShown(plan.Sync),
-            // An accept's departures (DRIFT1d2), for the card to show the person's words before the yes.
-            Accept = AcceptShown(plan.Accept),
             // A workflow's version, as the card shows it (WORKFLOW1h-c), never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
             // A place's quick set-up (AGENTSPLACE1k): the ask, its workspace, each change once, and the plan's digest, so a plan that moved
@@ -487,24 +485,6 @@ public sealed class HelpRoutes(DriverContext context)
                 : null,
         };
 
-    /// <summary>
-    /// What an accept card shows (DRIFT1d2), the page's <c>HelpAcceptShown</c>: the quest, and each departure its done
-    /// answered — the requirement's number, the person's words it quotes and its check, the done's reason, and the person's
-    /// words the reason relied on, each as the service answered it. Null for every other kind.
-    /// </summary>
-    public static object? AcceptShown(HelpAcceptPlan? accept) => accept is null ? null : new
-    {
-        accept.Quest,
-        accept.Title,
-        Departures = accept.Departures.Select(departure => new
-        {
-            departure.Requirement,
-            Quote = departure.Required,
-            departure.Check,
-            Departed = departure.Reason,
-            departure.Words,
-        }).ToArray(),
-    };
 
     /// <summary>
     /// What a bring-up-to-date card shows (HELP10), the page's <c>HelpSyncShown</c>: whether the person has looked, every
@@ -576,9 +556,8 @@ public sealed class HelpRoutes(DriverContext context)
             PipeDoor.Standing, cancellationToken).ConfigureAwait(false);
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, Doors(_context, service), Say, cancellationToken).ConfigureAwait(false);
-        // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work;
-        // a set-up publishes an ask its session takes at the next look (LAYOUT8).
-        if (proposal.Kind is "ask" or "delete" or "accept" or "session" or "pause" or "clear") _loop.Nudge();
+        // A delete or an ask moves the work; a set-up publishes an ask its session takes at the next look (LAYOUT8).
+        if (proposal.Kind is "ask" or "delete" or "session" or "pause" or "clear") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
     }
@@ -672,10 +651,6 @@ public sealed class HelpRoutes(DriverContext context)
         // The ask's record's Delete: the local host's `DELETE /api/asks/{id}`.
         public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct) =>
             (service ?? throw NotReady()).DeleteAskAsync(id, ct);
-
-        // The quest page's Accept the departure (DRIFT1d2): the local host's `POST /api/quests/{id}/accept`, the terminal's too.
-        public Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct) =>
-            (service ?? throw NotReady()).AcceptDepartureAsync(id, ct);
 
         // SESSION_ARCHIVE's own marks (SESSUX1h2c): each judged again by where the list places it as it goes, counted in the
         // machine log as the screen's. The service is the one this Apply was handed, as the other doors use it.
@@ -877,19 +852,6 @@ public sealed class HelpRoutes(DriverContext context)
             _loop.Nudge();
         }
 
-        // HANDOFF's own press (WSR5b): the recorded branch, its repository's checkout, the same note kept.
-        public async Task<TreeHand> HandAsync(string repository, string branch, string? plugin, CancellationToken ct)
-        {
-            var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-                _loop.Home, say: (id, line) => _loop.Output.Append($"plugin:{id}", line),
-                log: _loop.Log, health: _loop.Health));
-            if (trees.Recorded.Of(repository, branch) is not { } entry) return new TreeHand(false, TreeHand.NotLanded(branch), branch);
-            var root = await TreesRoutes.CheckoutOfAsync(service ?? throw NotReady(), repository, ct).ConfigureAwait(false);
-            return root is null
-                ? new TreeHand(false, $"`{repository}` has no checkout on this machine, so there is no `{branch}` here to hand on.", branch)
-                : await TreesRoutes.HandAsync(_loop, trees, root, entry, plugin, ct).ConfigureAwait(false);
-        }
-
         // PLUGIN_INSTALL's own copy of one of the install's offers (PLUG9 d); nothing runs here.
         public void AddOffer(string id)
         {
@@ -1040,8 +1002,6 @@ public sealed class HelpRoutes(DriverContext context)
                 .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
             Reserved = AdapterSet.Built().Names,
-            // A hand-off names a branch this machine's landings recorded (WSR5b), read as its door reads it.
-            Landed = new LandedBranches(_loop.Home).All(),
             // The install's own plugins (PLUG9 d), which an add may name by id, and where an offer's update reads.
             OffersFolder = OffersFolder,
             Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
@@ -1166,13 +1126,6 @@ public sealed class HelpRoutes(DriverContext context)
             }
 
             facts = facts with { History = plans };
-        }
-
-        // Every quest as the service answers it, its requirements, answers and hold with it (DRIFT1d2), read only when an
-        // accept is pending: the quest page's yes is shown by the same answer.
-        if (proposals.Any(proposal => proposal.Kind == "accept"))
-        {
-            facts = facts with { QuestRecords = await service.EveryQuestAsync(ct).ConfigureAwait(false) };
         }
 
         // A workflow proposal is judged by the named workflows here and the runs bound to them (WORKFLOW1h-c, design §8.1, §8.2); the
@@ -1362,9 +1315,9 @@ public sealed class HelpRoutes(DriverContext context)
         return new { Session = id, kept.Read(id).Pinned };
     }
 
-    // A new Ask Daoris conversation from an earlier one's words (ASKHIST1): opened as START_HELP opens one, on the helper's
-    // agent, its workspace's running conversation set aside first, and the earlier one's transcript handed with the person's first
-    // words. Its end reaches the page as a start's does.
+    // A new Ask Daoris conversation from an earlier one (ASKHIST1): opened as START_HELP opens one, on the helper's agent, its
+    // workspace's running conversation set aside first, and Daoris's brief of the earlier line handed with the person's first
+    // words (D233). Its end reaches the page as a start's does.
     [DriverRoute("HELP_START_FROM")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
     private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)

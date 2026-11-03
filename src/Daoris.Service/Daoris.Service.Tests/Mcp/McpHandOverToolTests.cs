@@ -7,8 +7,7 @@ namespace Daoris.Service.Tests;
 /// <summary>
 /// MIXAGENT1c (D163 point 3; the mixed agents design §2, §5): the connector's `handover_propose`. A working session's agent asks to
 /// hand its session over to another agent with a note of its own, kept as its claim: one file per session under the home's
-/// sessions folder, which the driver judges by the person's `handOver` rule. Not Ask Daoris's `hand_propose`, which hands a landed
-/// branch to a plugin.
+/// sessions folder, which the driver judges by the person's `handOver` rule.
 /// </summary>
 public sealed class McpHandOverToolTests : McpToolsFixture
 {

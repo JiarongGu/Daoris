@@ -45,10 +45,8 @@ public sealed class HelpProposalBox(string? home)
         ("account", "agent_settings_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
-        ("hand", "hand_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
-        ("accept", "accept_propose"),
         ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
@@ -111,10 +109,6 @@ public sealed class HelpProposalBox(string? home)
         string? offer = null, string? server = null, IReadOnlyList<string>? writes = null) =>
         new HelpPluginProposalWriter(file).Propose(action, id, folder, repository, why, session, at, offer, server, writes);
 
-    /// <inheritdoc cref="HelpHandProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeHand(string target, string? repository, string? plugin, string why, string? session, DateTimeOffset at) =>
-        new HelpHandProposalWriter(file).Propose(target, repository, plugin, why, session, at);
-
     /// <inheritdoc cref="HelpBrowserProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeBrowser(
         string door, string? value, string? address, string? title, string why, string? session, DateTimeOffset at) =>
@@ -124,10 +118,6 @@ public sealed class HelpProposalBox(string? home)
     public (string? Id, string Message) ProposeSync(
         string? repository, string why, string? session, DateTimeOffset at, string? workspace = null) =>
         new HelpSyncProposalWriter(file).Propose(repository, why, session, at, workspace);
-
-    /// <inheritdoc cref="HelpAcceptProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeAccept(string quest, string why, string? session, DateTimeOffset at) =>
-        new HelpAcceptProposalWriter(file).Propose(quest, why, session, at);
 
     /// <inheritdoc cref="HelpRoleProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeRole(

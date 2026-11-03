@@ -17,8 +17,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     /// <summary>Every name the host advertised before the tools left one class, in ordinal order.</summary>
     private static readonly string[] Advertised =
     [
-        "accept_propose", "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize", "browser_propose", "channel_post",
-        "channel_read", "checkout_read", "clear_propose", "delete_propose", "go_ahead_ask", "go_propose", "hand_propose", "handback_read", "handover_propose",
+        "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize", "browser_propose", "channel_post",
+        "channel_read", "checkout_read", "clear_propose", "delete_propose", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
@@ -80,9 +80,9 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(marked, KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
         Assert.Equal(
             [
-                "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools", "HelpAcceptTool",
+                "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
                 "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
-                "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpRoleTool", "HelpSessionTool",
+                "HelpDeleteTool", "HelpGoTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpRoleTool", "HelpSessionTool",
                 "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools",

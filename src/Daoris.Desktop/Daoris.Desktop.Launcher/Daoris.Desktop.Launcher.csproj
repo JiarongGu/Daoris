@@ -25,6 +25,8 @@
     <!-- What a move the swap was refused found held, and by which process (DEPLOYBUSY1). The base library and Windows'
          own calls alone. -->
     <Compile Include="..\Daoris.Desktop.Driver\Install\HeldFiles.cs" Link="HeldFiles.cs" />
+    <!-- The newest build that has run on the home (D233 choice 6): the launcher refuses to start an older one. The base library alone. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Install\HomeLastBuild.cs" Link="HomeLastBuild.cs" />
     <!-- The marks of a process's own writes (FABRIC-EVENT4): `StagedBuild` marks the journal it writes, so the updater's watch
          wakes nothing on it. It uses the base library alone. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeWrites.cs" Link="HomeWrites.cs" />

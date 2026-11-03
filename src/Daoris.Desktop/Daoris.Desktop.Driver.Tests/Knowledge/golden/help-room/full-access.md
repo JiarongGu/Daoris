@@ -65,11 +65,6 @@ Daoris's rules, the person's own denies still hold.
   An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,
   and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you
   are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.
-- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it
-  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and
-  a plugin only where the workflow it followed (or, for a place still on Current, its old landing rule) names none.
-  Only a branch a landing made and recorded
-  here can be handed on; the person's own branches are theirs to push.
 - `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,
   `links` `system` or `daoris`, `extensions` `offer` or `refuse`,
   or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).
@@ -79,10 +74,8 @@ Daoris's rules, the person's own denies still hold.
   work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace
   to look within, or none for every one with a checkout here. Its card asks the person to look first, which fetches each line as them,
   then lists what the press would do; apply acts on those rows only. Daoris never pushes.
-- `accept_propose`: the person's yes to a quest a done's departure holds: it closed done departing from what
-  the person required, so the chain's next step and a quest waiting on it wait (`quest_list` marks it held for
-  the person's yes). Propose it only when the person asks to accept it, never on your own reading of the
-  departure. Its card shows each departure with the person's words it relied on, as the quest's page does.
+- Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the
+  person's own presses, on the quest's page and in the review, where `go_propose` takes them.
 - `repository_propose`: move a repository registered here to a workspace, as its page's Manage →
   Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,
   or a new name, which the move starts. It changes one row of this machine's registry and touches no file.
@@ -156,7 +149,6 @@ Each proposal reaches the person as a card with two buttons, and you name them a
 a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),
 a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),
 a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),
-an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**),
 and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
 A press of not now comes back to you as the person's next message;
 dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing
@@ -209,7 +201,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the repositories holding Daoris's branches, and another where named or included) | Repositories → the workspace's page → Branches → Updates | `daoris tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]` |
 | clean up session branches whose work landed, and branches a landing made whose work reached the line | Repositories → the workspace's page → Branches → Session branches | `daoris tree clean [--workspace <name>]` |
 | discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris tree remove <session|branch> [--repository <name>] --force` |
-| hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → Hand to <plugin> | `daoris tree hand <session|branch> [--plugin <id>]` |
+| hand a branch a landing made to a landing plugin, to push it and open the pull request (Ask Daoris never proposes it: the push is yours) | Sessions → the session's review → Hand to <plugin> | `daoris tree hand <session|branch> [--plugin <id>]` |
 | ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine (Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was last answered) | (no screen yet) | `daoris tree state <session|branch> [--repository <name>]` |
 | choose who does each kind of work, with which agent and model: driven sessions (Build), asks (Intake), Ask Daoris and every other role | Agents → Roles → Working roles | `daoris role set <role> "<agent> [<model>|-] [<effort>|-]" …|off` |
 | add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, added roles kept | Agents → Roles → Working roles, and its *Restore all role defaults* | `daoris role set|remove|default <id> …`, `daoris role default --all` |
@@ -238,7 +230,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed first; or unarchive one (a session running, waiting on you or to review is never archived) | Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived | `daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…` |
 | delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its files (one that worked on a quest is archived instead) | Sessions → a session's ⋯ → Delete… | `daoris session delete <id>` |
 | clear finished history from this machine: a closed quest's work, an ask's with every quest it became, a closed quest's failed sessions, or a workspace's, listed first, then pressed; what is open, running or waiting on you is kept, and nothing brings it back | Quests → the quest's page or the ask's page → its header's ⋯ → Clear from this machine…, and the quest's Clear failed sessions…; Repositories → the workspace's page → Details → Kept on this machine → Clear history… | `daoris history [--workspace <name>]`, `daoris history clear --workspace <name> [--yes]`, `daoris quest clear <id> [--failed] [--yes]`, `daoris ask clear <id> [--yes]` |
-| accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it (Ask Daoris proposes it only when you ask for it: the yes is yours, never its own reading of the departure) | Quests → the quest's page → Accept the departure | `daoris quest accept <id>` |
+| accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it (Ask Daoris never proposes it: the yes is yours) | Quests → the quest's page → Accept the departure | `daoris quest accept <id>` |
 | mark a quest done as yours, with a note if you give one: what a finish at a checkpoint says, said on the quest itself (Ask Daoris never proposes it: it takes you to the quest's page, and the done is yours to write) | Quests → the quest's page → Mark done… | `daoris quest done <id> [--note "…"]` |
 | read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, or one named after it on the same history (a done no session here ended needs the commit named) | (no screen yet) | `daoris quest check <id> [--commit <sha>]` |
 | add a plugin that has landed, or switch one on or off | Plugins → the plugin's page → Turn on or Turn off | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
@@ -259,13 +251,10 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | find an earlier conversation with Ask Daoris and go on in it, start a new one from its words, or name, pin or delete one; they are kept on this machine only (Ask Daoris never proposes it: the conversations are yours) | Ask Daoris → History | `daoris ask-daoris list [--workspace <name> | --all] [--search "…"]`, `daoris ask-daoris resume <id> "…"`, `daoris ask-daoris rename|pin|unpin|delete <id>` |
 | answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on the ask is handed | Quests → the ask's page → Go-aheads | `daoris ask go-ahead <id> <n> approve|refuse ["…"]` |
 
-## Doors Daoris still owes
+## Done at a terminal
 
-Each act below is one a person can start at a terminal and you cannot propose yet: Daoris still owes you
-its door. That is a door missing from Daoris, not a limit of yours and not how the act is meant to be done.
-When the person wants one, say that Daoris still owes this door, name its command so they can run it
-themselves, and its screen where the doors above name one; never offer a way around it as if it were the
-design.
+Each act below is one the person runs at a terminal, and no proposal of yours takes it. When the person
+wants one, name its command so they can run it themselves, and its screen where the doors above name one.
 
 - set every repository of a workspace up, one at a time, or pause, resume or stop that plan: `daoris place --workspace <name> --adoption [--plan]`, `daoris place --workspace <name> --pause | --resume | --stop`
 - register a repository from what its line declares: `daoris repository register [--repository <name>]`

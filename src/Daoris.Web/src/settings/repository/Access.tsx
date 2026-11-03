@@ -255,7 +255,7 @@ export function AccessRows({ owner, name, workspace, pauses, aboveFull, busy = f
             : t('settings.access.full.off')}
         </p>
         <p className="m-0 mt-1 text-small text-ink-faint">
-          {[t('settings.access.full.offs'), t('settings.access.full.stays')].join(sentence)}
+          {[t('settings.access.full.offs'), t('settings.access.full.stays'), t('settings.access.full.codex')].join(sentence)}
         </p>
         {refusals.full && <Refused className="mt-2" sentence={refusals.full} />}
         {asking && (
