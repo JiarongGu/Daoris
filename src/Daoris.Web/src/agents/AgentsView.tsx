@@ -24,6 +24,7 @@ import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, MACHINE, readAgentsMode, repositoryId, type RoleSection, setupLit, storeAgentsMode } from './modes';
 import { AllRoles } from './roles/AllRoles';
 import { MachineNotes } from './setup/MachineNotes';
+import { OldRecords } from './setup/OldRecords';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
@@ -306,8 +307,14 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
                   onSource={sourceDoor({ id: modes.place!, name }, row.workspace, onGo)}
                 />
               ),
-              // SETUPUX1m: This machine alone draws every role once, its diagram, the suggested choices and the changes found.
-              ...(placed.kind === 'machine' ? { allRoles: <AllRoles notify={notify} page={rolesPage} doors={roleDoors} onGo={onGo} /> } : {}),
+              // SETUPUX1m: This machine alone draws every role once, its diagram, the suggested choices and the changes found; and
+              // (ONEWAY1ad-ii) the old shapes Daoris still reads, each with when it ends, the conversion's review its door.
+              ...(placed.kind === 'machine'
+                ? {
+                  allRoles: <AllRoles notify={notify} page={rolesPage} doors={roleDoors} onGo={onGo} />,
+                  oldRecords: <OldRecords onReview={convert?.onOpen} />,
+                }
+                : {}),
               ...(ofBodies ?? {}),
             }
             : {}}

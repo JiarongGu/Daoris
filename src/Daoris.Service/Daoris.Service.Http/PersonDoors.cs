@@ -305,7 +305,6 @@ public static class PersonDoors
         new("POST", "/api/sessions/{id}/take-back", DoorClass.Person, "words taken back from a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
         // LINESTOGETHER1b: the person's held word moved to the head, theirs to move as saying it is.
         new("POST", "/api/sessions/{id}/move", DoorClass.Person, "words moved to a session's head") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
-        new("POST", "/api/sessions/{id}/answer", DoorClass.Person, "an answer to a parked session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionMove, "session-note:ledger.answered") },
         // KNOWCENTRAL2d (the memory coordinator design §4): until a second opinion may approve, the person is every memory end's approver,
         // and only they keep or drop what an ended session staged.
         new("POST", "/api/memory/{id}/decide", DoorClass.Person, "a memory end's approval") { Marks = OwnerMark.None("a memory row, no quest") },

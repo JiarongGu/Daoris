@@ -1118,6 +1118,7 @@ public static class NodeGraphHomes
     /// (<see cref="Review"/>), before the <c>land</c>. LANDNODE1k: the quest's holds and what the line holds come before both, and the graph
     /// is entered at the first.
     /// </summary>
+    // transitional: current-followed
     public static NodeGraph Landing(LandingRule rule)
     {
         var (kinds, method) = rule.Form != LandingForm.Branch ? (Landed, LandNodes.Merge)
@@ -1201,6 +1202,7 @@ public static class NodeGraphHomes
         if (kind == WorkUnitKind.Branch) return Current(config, repository, workspace);
         if (WorkCycleKinds.Contains(kind))
         {
+            // transitional: work-cycles
             if (config.WorkCycles.TryGetValue(repository.Trim(), out var own) && own.TryGetValue(kind, out var mine)) return Whole(kind, LandingSource.Repository, mine);
             if (config.WorkspaceWorkCycles.TryGetValue(RemoteTarget.Workspace(workspace), out var shared) && shared.TryGetValue(kind, out var theirs))
             {

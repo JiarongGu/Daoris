@@ -322,28 +322,10 @@ public sealed class SessionLogTests : IDisposable
         Assert.DoesNotContain("said no", raw);
     }
 
-    /// <summary>A parked session the person answered ends `completed`, through the answer door.</summary>
-    [Fact]
-    public async Task An_answered_session_ends_in_the_log()
-    {
-        using var w = Watch();
-        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code");
-        _now = _now.AddSeconds(42);
-
-        var (ok, _) = await w.Client.AnswerSessionAsync(id!, "yes, the second option");
-
-        Assert.True(ok);
-        await Told(w, id, "Completed");
-        var ended = Data(Assert.Single(Named("session.ended")));
-        Assert.Equal("completed", ended.GetProperty("state").GetString());
-        Assert.Equal(42, ended.GetProperty("seconds").GetInt64());
-        Assert.DoesNotContain("second option", Raw());
-    }
-
     /// <summary>
     /// WSSETUP11 (D124 §7.3): a session that stopped to ask the person (D83) is the owner's complaint, counted.
     /// One line per park, naming the door, the repository and the workspace the record ran in, and never what
-    /// the session asked. A park is no ending: the record ends when the person answers.
+    /// the session asked. A park is no ending: the record ends when it goes on and ends.
     /// </summary>
     [Fact]
     public async Task A_session_that_parks_is_one_line_naming_its_kind_repository_and_workspace_and_never_its_words()
@@ -361,31 +343,11 @@ public sealed class SessionLogTests : IDisposable
         Assert.Empty(Named("session.ended"));
         Assert.DoesNotContain("daily one", Raw());
 
-        await w.Client.AnswerSessionAsync(id!, "the one the plant reads");
+        await w.Client.AdvanceAsync(id!, "completed");
         await Told(w, id, "Completed", marks: "driven");
 
         Assert.Equal("completed", Data(Assert.Single(Named("session.ended"))).GetProperty("state").GetString());
         Assert.Single(Named("session.parked"));
-        Assert.DoesNotContain("plant reads", Raw());
-    }
-
-    /// <summary>
-    /// ANSWER1b (D131 §5): an answer that keeps the record parked moves nothing. It is no ending, and no second park:
-    /// the record ends when its resumed conversation does, or when the driver carries the answer on in a new session.
-    /// </summary>
-    [Fact]
-    public async Task An_answer_that_keeps_its_park_is_neither_an_ending_nor_a_second_park()
-    {
-        using var w = Watch();
-        _ledger.AnswerKeepsPark = true;
-        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code");
-        await w.Client.AdvanceAsync(id!, "awaiting-person");
-
-        var (ok, _) = await w.Client.AnswerSessionAsync(id!, "the one the plant reads");
-
-        Assert.True(ok);
-        Assert.Single(Named("session.parked"));
-        Assert.Empty(Named("session.ended"));
     }
 
     /// <summary>
@@ -677,11 +639,9 @@ public sealed class SessionLogTests : IDisposable
 
         var (id, message) = await w.Client.OpenChatAsync("engine", "claude-code");
         await Assert.ThrowsAsync<DriverException>(() => w.Client.AdvanceAsync("s9", "completed"));
-        var (answered, _) = await w.Client.AnswerSessionAsync("s9", "words");
 
         Assert.Null(id);
         Assert.Equal("the repository is busy", message);
-        Assert.False(answered);
         Assert.Empty(Lines());
     }
 
@@ -725,9 +685,6 @@ public sealed class SessionLogTests : IDisposable
 
         public bool Refusing { get; set; }
 
-        /// <summary>The ledger as ANSWER1b has it: an answer keeps the record parked (D131 §5).</summary>
-        public bool AnswerKeepsPark { get; set; }
-
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
@@ -736,11 +693,10 @@ public sealed class SessionLogTests : IDisposable
 
             if (Refusing) return Answer(HttpStatusCode.Conflict, new { error = "the repository is busy" });
 
-            var moved = System.Text.RegularExpressions.Regex.Match(path, "^/api/sessions/([^/]+)/(state|answer)$");
+            var moved = System.Text.RegularExpressions.Regex.Match(path, "^/api/sessions/([^/]+)/state$");
             if (moved.Success)
             {
-                var state = moved.Groups[2].Value == "answer" ? (AnswerKeepsPark ? "awaiting-person" : "completed") : Field("state");
-                return Answer(HttpStatusCode.OK, new { session = new { id = moved.Groups[1].Value, state }, message = "moved" });
+                return Answer(HttpStatusCode.OK, new { session = new { id = moved.Groups[1].Value, state = Field("state") }, message = "moved" });
             }
 
             var id = $"s{Interlocked.Increment(ref _next)}";

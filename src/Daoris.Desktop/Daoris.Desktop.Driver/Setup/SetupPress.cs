@@ -11,8 +11,9 @@ namespace Daoris.Driver;
 /// admission (AGENTSPLACE1b), in Daoris's own files.</para>
 ///
 /// <para><b>The rule is exact verbs</b> (D124 §2.4), never a runner, since a session on the protocol door cannot ask for
-/// another (D52): no <c>upstream</c>, which writes into the canon inside the install, and no management verb, since a
-/// set-up registers nothing. <c>sync --force</c> is in: on a set-up's branch, in a tree grown from the line, what it
+/// another (D52): no <c>upstream</c> for a set-up, and only <c>upstream --all</c> for a reconcile, which outside the canon's
+/// own checkout composes a request's words and writes nothing (D230); and no management verb, since a set-up registers
+/// nothing. <c>sync --force</c> is in: on a set-up's branch, in a tree grown from the line, what it
 /// replaces is committed on the line and can be taken back. As <c>Bash(…)</c>; <c>PowerShell(…)</c> waits on the
 /// canary that says a driven session on Windows uses that tool.</para>
 ///
@@ -103,6 +104,62 @@ public static class SetupPress
         var (title, body) = SetupBrief.Compose(new SetupBriefInput(
             kind.Value, day, row.Repository, facts, tools.DaorisVersion is { Length: > 0 } version ? version : "(no version was found)",
             description, await world.EntriesAsync(row.Repository, ct).ConfigureAwait(false), neighbours, form, builds));
+        return plan with { Title = title, Body = body };
+    }
+
+    /// <summary>
+    /// What a reconcile press on <paramref name="repository"/> would do today (D230): the press's own refusals, in its order, and
+    /// one open per repository, beside any set-up; then a quest whose session runs <c>daoris reconcile</c> and decides each item,
+    /// the person's standing answer for it among them. Reads, and writes nothing.
+    /// </summary>
+    /// <remarks>
+    /// Offered for a repository the registry marks adopted. Whether the canon has moved is the doctrine tool's answer
+    /// (<c>status --json</c>), which the driver does not read, so the body says a reconcile that finds nothing closes done;
+    /// the driver keeps no copy of the tool's table (D117).
+    /// </remarks>
+    public static async Task<SetupPlan> PlanReconcileAsync(
+        ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, CancellationToken ct = default)
+    {
+        var name = repository.Trim();
+        var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
+        var row = registry.FirstOrDefault(repo => string.Equals(repo.Repository, name, StringComparison.OrdinalIgnoreCase));
+        if (row is null) return new SetupPlan(name) { Refusals = [NotOnRegistry(name)] };
+
+        var plan = new SetupPlan(row.Repository)
+        {
+            Workspace = row.Workspace,
+            Landing = LandingRules.Choose(config, row.Repository, row.Workspace),
+            Adapter = config.Adapter,
+            Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
+            Case = SetupCase.Reconcile,
+        };
+        var refusals = ConfigurationRefusals(config, door, row).ToList();
+        if (row.Root is null) return plan with { Refusals = refusals };
+
+        var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
+        if (line.Facts is null)
+        {
+            refusals.Add(new(SetupRefusals.NoHistory,
+                $"`{row.Repository}` has no git history to reconcile here: {line.Problem ?? "its line could not be read"}."));
+        }
+        else if (!row.Adopted || !line.Facts.Adopted || !line.Facts.Locked)
+        {
+            refusals.Add(new(SetupRefusals.NotAdopted,
+                $"`{row.Repository}` has not taken up the shared doctrine{(row.Adopted ? " on its line" : "")}, so there is nothing to "
+                + $"reconcile: its set-up comes first, *{SetupQuests.SetUp}*."));
+        }
+
+        var tools = await world.ToolsAsync(ct).ConfigureAwait(false);
+        if (SetupPressRules.NodeRefusal(tools) is { } node) refusals.Add(node);
+        if (SetupPressRules.ToolRefusal(tools) is { } tool) refusals.Add(tool);
+        if (OpenRefusal(await world.QuestsAsync(ct).ConfigureAwait(false), row.Repository) is { } open) refusals.Add(open);
+
+        plan = plan with { Facts = line.Facts, Tools = tools, Refusals = refusals };
+        if (refusals.Count > 0) return plan;
+
+        var (title, body) = SetupBrief.Compose(new SetupBriefInput(
+            SetupCase.Reconcile, day, row.Repository, line.Facts!, tools.DaorisVersion is { Length: > 0 } version ? version : "(no version was found)",
+            Description: null, Entries: [], Neighbours: [], Standing: config.StandingFor(row.Repository)));
         return plan with { Title = title, Body = body };
     }
 

@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
 
 import i18n from '../../locales/i18n';
 import { show } from '../../test/shellHarness';
-import { APPLIED, MOVED, NOTHING, planOf, UNDO_OFFERED, UNDO_REFUSED, UNDONE } from './convertFixtures';
+import { APPLIED, FAILED_PART, MOVED, NOTHING, planOf, UNDO_OFFERED, UNDO_REFUSED, UNDONE } from './convertFixtures';
 import type { ConvertApplied, ConvertChoices, ConvertPlanned, ConvertUndoPlan } from './convertPlan';
 import { ConvertPanel } from './ConvertPanel';
 
@@ -112,5 +112,15 @@ describe('Convert…, on the page', () => {
     show(<ConvertPanel onClose={onClose} />);
     await screen.findByText('Nothing is left to convert.');
     await screen.findByRole('button', { name: 'Undo the conversion' });
+  });
+
+  it('ONEWAY1ae: a failed part is left by the receipt\'s digest and its name, and the receipt is pressed again by its digest', async () => {
+    apply = FAILED_PART;
+    show(<ConvertPanel onClose={onClose} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Apply' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Leave Quests for a later plan' }));
+    await waitFor(() => expect(sent('CONVERT_APPLY')).toContainEqual({ digest: FAILED_PART.digest, leave: 'quests' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Press again' }));
+    await waitFor(() => expect(sent('CONVERT_APPLY')).toContainEqual({ composed: 'none', landAutomatic: 'review', digest: FAILED_PART.digest }));
   });
 });

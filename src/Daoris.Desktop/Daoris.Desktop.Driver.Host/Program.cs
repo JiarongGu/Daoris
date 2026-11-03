@@ -124,13 +124,6 @@ using Daoris.Driver;
 //                 the machine log says the terminal's door. Never a tree, a branch, open work, or the team's copy on a
 //                 remote. A quest's or an ask's page and the workspace's *Kept on this machine* are the other doors.
 //
-//   answer <session> ["…"]
-//                 answer a driven session that parked to ask you (STANDDOWN2): its record stays parked with
-//                 your words, and at the next tick the same session goes on with them (D131), its own
-//                 conversation resumed; where it cannot be, a new session carries the quest on in the same
-//                 tree, handed them, and says why. Nothing after the id is "carry on". The page's box on the
-//                 parked session is the other door.
-//
 //   notices [--json]
 //                 what came to the person (NOTIFY2i, D196): the presses waiting for their confirmation, what needs them by
 //                 group, unread messages by ask and Done and failed, read through the running Daoris (NOTIFICATIONS); alone,
@@ -144,8 +137,9 @@ using Daoris.Driver;
 //                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
 //                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
 //                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
-//   sessions say <id> "…" [--file <path>]… [--now]
-//                 say something to a session of this machine's (MSG1e, D137 §5.2): a say request in the same folder,
+//   sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
+//                 say something to a session of this machine's, a park's answer among them, the one door that answers one
+//                 (MSG1e, D137 §5.2; ONEWAY1k): a say request in the same folder,
 //                 which the loop that runs it holds at its door, and any loop keeps on the record of one nothing here
 //                 runs, answering beside it. What never goes on is refused first, exit 1. Where no loop drives the
 //                 home, a driven session's words are kept on its record for the next, and a conversation's refused.
@@ -309,10 +303,10 @@ using Daoris.Driver;
 //                 the person's Keep (WORKFLOW1f, design §4.4): where a kind's paths hold a session's work, keep the workflow
 //                 the kind chose for it, with their words, on its run, and print what the landing gate says after.
 //
-//   workflow convert --plan | --apply <digest> | --undo [<digest>]
-//                 the old workflow records converted to saved graph workflows (WORKFLOWCLEAN1 1e, D227): the plan reads and
-//                 writes nothing, --apply and --undo are the person's presses, confirmed in the running Daoris's window; with
-//                 none running it says so.
+//   convert --plan | --apply <digest> [--leave <part>] | --undo [<digest>]
+//                 the home's old records converted, part by part, through one door (ONEWAY1ae, D228; WORKFLOWCLEAN1 1e's workflow
+//                 part among them): the plan reads and writes nothing, --apply and --undo are the person's presses, confirmed in
+//                 the running Daoris's window, and --leave closes a failed part; with none running it says so.
 //
 //   workflow skip <run> <node> "…"  ·  workflow stop <run> <node> ["…"]
 //                 the person's skip or stop of a node of a run bound to a graph version (FABRIC-CUTOVER1f, D190, design §5.2):
@@ -454,6 +448,12 @@ if (args is ["git", .. var gitArgs])
 if (args is ["workflow", .. var workflowArgs])
 {
     return await Daoris.Driver.Host.WorkflowConsole.RunAsync(workflowArgs);
+}
+
+// The home's one conversion door (ONEWAY1ae): through the running Daoris alone, routed before the machine log opens, with its own catch.
+if (args is ["convert", .. var convertArgs])
+{
+    return await Daoris.Driver.Host.ConvertConsole.RunAsync(convertArgs);
 }
 
 // A checkout's heavy gates under its repository's one slot (HEAVYRUN1a, D180's HEAVYRUN1 note). Routed before the machine log opens,
@@ -676,16 +676,6 @@ try
             : await client.AcceptDepartureAsync(questId);
         Console.WriteLine($"daoris-driver: {message}");
         // A refusal — something stands on the quest, or nothing waits for a yes — is an answer, not a tool error.
-        return ok ? 0 : 1;
-    }
-
-    // Answering a session that parked to ask the person (STANDDOWN2, D50): the page's box is the other door.
-    if (args is ["answer", var answered, .. var words])
-    {
-        using var client = ServiceClient.FromEnvironment();
-        var (ok, message) = await client.AnswerSessionAsync(answered, words.Length == 0 ? null : string.Join(" ", words));
-        Console.WriteLine($"daoris-driver: {message}");
-        // A refusal — nothing parked by that id — is an answer, not a tool error.
         return ok ? 0 : 1;
     }
 

@@ -815,10 +815,10 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ANSWER1b (D131 §5): the person's answer keeps the park. Its record stays `awaiting-person` with their words kept
-    /// and said on its note beneath what it asked, and the answer replies with it, so the driver's next look goes on with
-    /// this same record and its conversation (D131 §1). Nothing new opens on its quest meanwhile: the park still holds
-    /// it. Only a parked record answers; anything else is told why not.
+    /// ANSWER1b (D131 §5), through the say door alone since ONEWAY1k: the person's answer keeps the park. Its record stays
+    /// `awaiting-person` with their words kept and said on its note beneath what it asked, and the say replies with it, so the
+    /// driver's next look goes on with this same record and its conversation (D131 §1). Nothing new opens on its quest meanwhile:
+    /// the park still holds it. A running record is told its words reach it through its driver.
     /// </summary>
     [Fact]
     public async Task Answering_a_parked_session_keeps_it_parked_with_the_words_on_its_note()
@@ -826,13 +826,13 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var quest = await Publish();
         var working = await Working(quest, Now);
         await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now);
-        Assert.Equal(SessionAdvanceRefusal.InvalidMove, (await _ledger.AnswerAsync(working.Id, "merged", Now)).Refusal);
+        Assert.Equal(SessionSayRefusal.Running, (await _ledger.SayAsync(working.Id, "merged", null, Now)).Refusal);
         await _ledger.AdvanceAsync(working.Id, "awaiting-person", "needs a merge, a sign-in and a go-ahead.", null, null, Now);
 
-        var answered = await _ledger.AnswerAsync(working.Id, "  Signed in; apply to dev. ", Now.AddMinutes(5));
+        var answered = await _ledger.SayAsync(working.Id, "  Signed in; apply to dev. ", null, Now.AddMinutes(5));
 
-        Assert.Equal(SessionAdvanceRefusal.None, answered.Refusal);
-        Assert.Equal($"Answered session `{working.Id}`: it carries on with `#{quest.Id}` at the driver's next look.", answered.Message);
+        Assert.Equal(SessionSayRefusal.None, answered.Refusal);
+        Assert.Equal($"Kept for session `{working.Id}`: it carries on with `#{quest.Id}` at the driver's next look.", answered.Message);
         var record = (await _sessions.FindAsync(working.Id))!;
         Assert.Equal((record.State, record.Note), (answered.Session!.State, answered.Session.Note));
         Assert.Equal(record.Said.Select(word => word.Text), answered.Session.Said.Select(word => word.Text));
@@ -845,13 +845,17 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
     }
 
-    /// <summary>ANSWER1b: an answer with no words is "carry on.", and a park that said nothing is noted as having asked.</summary>
+    /// <summary>
+    /// ONEWAY1k: a park that said nothing is noted as having asked beneath its answer; an answer with no words is no answer, refused by the
+    /// say door as any say with none, where the retired answer door kept "carry on.".
+    /// </summary>
     [Fact]
-    public async Task An_answer_without_words_carries_on_beneath_a_park_that_said_nothing()
+    public async Task An_answer_beneath_a_park_that_said_nothing_and_none_without_words()
     {
         var (_, parked) = await Parked(asked: null);
+        Assert.Equal(SessionSayRefusal.Empty, (await _ledger.SayAsync(parked.Id, "   ", null, Now.AddMinutes(1))).Refusal);
 
-        var answered = await _ledger.AnswerAsync(parked.Id, "   ", Now.AddMinutes(1));
+        var answered = await _ledger.SayAsync(parked.Id, "carry on.", null, Now.AddMinutes(1));
 
         Assert.Equal(SessionState.AwaitingPerson, answered.Session!.State);
         Assert.Equal(["carry on."], answered.Session.Said.Select(word => word.Text));
@@ -861,17 +865,17 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     /// <summary>
     /// MSG1a (D137 §6, amending ANSWER1b): a second answer before the driver looks joins the first, on the record and on
     /// its note, each its own word with its own id, so the session goes on with everything the person said, in order,
-    /// and reads a correction as a correction. `Answer` is the words joined by a blank line, for a reader from before.
+    /// and reads a correction as a correction.
     /// </summary>
     [Fact]
     public async Task A_second_answer_joins_the_first()
     {
         var (_, parked) = await Parked();
-        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+        await _ledger.SayAsync(parked.Id, "Port 8080.", null, Now.AddMinutes(1));
 
-        var again = await _ledger.AnswerAsync(parked.Id, "Port 9090, not 8080.", Now.AddMinutes(2));
+        var again = await _ledger.SayAsync(parked.Id, "Port 9090, not 8080.", null, Now.AddMinutes(2));
 
-        Assert.Equal(SessionAdvanceRefusal.None, again.Refusal);
+        Assert.Equal(SessionSayRefusal.None, again.Refusal);
         var record = (await _sessions.FindAsync(parked.Id))!;
         Assert.Equal(SessionState.AwaitingPerson, record.State);
         Assert.Equal(["Port 8080.", "Port 9090, not 8080."], record.Said.Select(word => word.Text));
@@ -891,7 +895,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     public async Task A_new_park_clears_the_answer_and_an_ending_keeps_it_for_the_carry_on()
     {
         var (quest, parked) = await Parked();
-        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+        await _ledger.SayAsync(parked.Id, "Port 8080.", null, Now.AddMinutes(1));
 
         await _ledger.AdvanceAsync(parked.Id, "working", "resumed with your answer.", null, null, Now.AddMinutes(2));
         Assert.Equal(["Port 8080."], (await _sessions.FindAsync(parked.Id))!.Said.Select(word => word.Text));
@@ -901,7 +905,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal((SessionState.AwaitingPerson, false, "and which host?"), (reparked.State, reparked.PersonSaid, reparked.Note));
         Assert.Empty(reparked.Said);
 
-        await _ledger.AnswerAsync(parked.Id, "localhost.", Now.AddMinutes(4));
+        await _ledger.SayAsync(parked.Id, "localhost.", null, Now.AddMinutes(4));
         var ended = await _ledger.AdvanceAsync(
             parked.Id, "completed", "and which host?\n\nAnswered: localhost.\n\nCarried on in a new session, because its tree is gone.",
             null, null, Now.AddMinutes(5));
@@ -911,18 +915,18 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
     }
 
-    /// <summary>ANSWER1b: once the driver has taken the park up, an answer is refused, naming the state it is in.</summary>
+    /// <summary>ANSWER1b: once the driver has taken the park up, a word to its record is refused, naming the state it is in.</summary>
     [Fact]
     public async Task An_answer_to_a_park_already_going_on_is_refused()
     {
         var (_, parked) = await Parked();
-        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+        await _ledger.SayAsync(parked.Id, "Port 8080.", null, Now.AddMinutes(1));
         await _ledger.AdvanceAsync(parked.Id, "working", null, null, null, Now.AddMinutes(2));
 
-        var late = await _ledger.AnswerAsync(parked.Id, "Port 9090.", Now.AddMinutes(3));
+        var late = await _ledger.SayAsync(parked.Id, "Port 9090.", null, Now.AddMinutes(3));
 
-        Assert.Equal(SessionAdvanceRefusal.InvalidMove, late.Refusal);
-        Assert.Equal($"Session `{parked.Id}` is working, not waiting on you — there is nothing to answer.", late.Message);
+        Assert.Equal(SessionSayRefusal.Running, late.Refusal);
+        Assert.Contains($"Session `{parked.Id}` is working", late.Message);
         Assert.Equal(["Port 8080."], (await _sessions.FindAsync(parked.Id))!.Said.Select(word => word.Text));
     }
 
@@ -1155,8 +1159,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal("Helper codex-acp did not answer.\n\nIt stopped to ask you.", record.Note);
         Assert.True(NoteParts.Carries(record.NoteParts, "helper.refused-by"));
 
-        var answered = await _ledger.AnswerAsync(waiting.Id, "Go on without it.", Now.AddMinutes(21));
-        Assert.Equal(SessionAdvanceRefusal.None, answered.Refusal);
+        var answered = await _ledger.SayAsync(waiting.Id, "Go on without it.", null, Now.AddMinutes(21));
+        Assert.Equal(SessionSayRefusal.None, answered.Refusal);
     }
 
     /// <summary>
@@ -1417,13 +1421,13 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
     /// <summary>
     /// MSG1a (D137 §2.2, §5.3): words said to a parked session are its answer — kept with their line on its note, the park
-    /// kept, joining what was said before — so the answer door is the parked case of saying.
+    /// kept, joining what was said before — the one door that answers a park (ONEWAY1k).
     /// </summary>
     [Fact]
     public async Task Words_said_to_a_parked_session_are_its_answer()
     {
         var (quest, parked) = await Parked();
-        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+        await _ledger.SayAsync(parked.Id, "Port 8080.", null, Now.AddMinutes(1));
 
         var said = await _ledger.SayAsync(parked.Id, "Port 9090, not 8080.", null, Now.AddMinutes(2));
 

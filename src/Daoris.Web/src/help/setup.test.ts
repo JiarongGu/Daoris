@@ -3,6 +3,7 @@ import { readMachine } from './machine';
 import { opensAtStart, setupProgress, setupSteps } from './setup';
 import { starters } from './starters';
 import type { ToolDoor } from '../agents/tools';
+import { said } from '../test/said';
 
 // SETUP1a (D97): one pure reading of the machine serves the setup guide and Ask Daoris's starters, so a
 // step and a starter never disagree. Every machine is an argument: fresh, an agent signed in with nothing
@@ -150,8 +151,8 @@ describe('the machine, read once for the guide and the starters', () => {
     const machine = readMachine({
       ...MACHINES.everythingDone,
       sessions: [
-        { state: 'awaiting-person', answer: 'the second one' },
-        { state: 'awaiting-person', answer: null },
+        { state: 'awaiting-person', said: said('the second one') },
+        { state: 'awaiting-person', said: null },
         { state: 'awaiting-person' },
         { state: 'working' },
       ],
@@ -159,7 +160,7 @@ describe('the machine, read once for the guide and the starters', () => {
 
     expect(machine.waiting).toBe(2);
     expect(starters(machine).find((starter) => starter.id === 'waiting')?.values).toEqual({ count: 2 });
-    expect(readMachine({ ...MACHINES.everythingDone, sessions: [{ state: 'awaiting-person', answer: 'go on' }] }).waiting).toBe(0);
+    expect(readMachine({ ...MACHINES.everythingDone, sessions: [{ state: 'awaiting-person', said: said('go on') }] }).waiting).toBe(0);
   });
 
   /** The design's point (§2): the facts are the starters' facts, so the two never disagree. */

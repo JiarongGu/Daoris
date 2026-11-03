@@ -6,12 +6,16 @@ daoris <command> [options]
   sync                 materialize the manifest's packs; write daoris.lock
   check                drift, staleness, index freshness (offline); the core budget is reported,
                        never enforced
-  upstream <file>      promote a locally-edited canonical file back to the canon
+  upstream <file>      propose a locally-edited canonical file to the canon: the
+                       request's words, written into the canon only in its own
+                       checkout
   index                say where the roster is: the rules in AGENTS.md, the
                        knowledge and skills in the INDEX.md sync writes
   status               summary of packs, drift, local files, and any pending
                        canon update; --machine adds this machine's wiring;
                        --json for an agent to act on
+  reconcile            a brief of every difference from the canon, for this
+                       repository's session to adopt, keep or propose upstream
   doctor               report local documents that look like canonical ones
                        under a different name (advisory; never fails)
   connect              register this repo with a knowledge service: what it owns
@@ -338,14 +342,22 @@ daoris <command> [options]
                                                    the lists versions come from: yours in
                                                    order, then the one built in
                          look                      fetch every location; say what is newer
+  convert [verb]       this home's old records converted, every area's part in one
+                       plan, through the running Daoris:
+                         --plan                    what each part changes; writes nothing
+                         --apply <digest>          your press, confirmed in its window; a
+                                                   failed part is pressed again
+                         --apply <digest> --leave <part>
+                                                   a failed part left for a later plan
+                         --undo [<digest>]         the latest conversion taken back
 
   connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them; brainstorm too, to this machine's own service
-  only. remote, agent, driver, plugin, browser and
-  tool are management too — they edit files under the Daoris home ($DAORIS_HOME,
+  only. remote, agent, driver, plugin, browser, tool and
+  convert are management too — they edit files under the Daoris home ($DAORIS_HOME,
   the installed application's own data folder; nothing lives under your profile).
-  Every agent, driver, plugin and tool verb is run by Daoris's own driver program,
-  the one this install carries in app/daoris-driver/ (or the one
+  Every agent, driver, plugin, tool and convert verb is run by Daoris's own
+  driver program, the one this install carries in app/daoris-driver/ (or the one
   DAORIS_DRIVER_PROGRAM names), which spawns each agent's own tooling, reaches a
   maker's release channel for agent pin and update, and a tool's maker and a
   resource location for tool download, use … managed, update and look; a daoris
@@ -360,7 +372,7 @@ Options:
   --harness <name>     the layout init writes: claude-code (the default), or agents —
                        knowledge and skills under .agents/, mirrored for Claude Code (init only)
   --force              overwrite locally-drifted files (sync only)
-  --all                promote every drifted file (upstream only)
+  --all                every drifted file (upstream only)
   --machine            report this machine's wiring too (status only)
   --workspace <name>   which workspace this repo shares with, on THIS machine
                        (connect, import). Wiring, like a git remote: it is kept in

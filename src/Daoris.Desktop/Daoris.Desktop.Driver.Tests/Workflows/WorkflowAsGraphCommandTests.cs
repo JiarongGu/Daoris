@@ -80,7 +80,7 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
 
         Assert.Equal(1, await Run("workflow apply careful --as-graph"));
 
-        Assert.Contains("`daoris driver workflow convert`", Said);
+        Assert.Contains("`daoris convert`", Said);
         Assert.Equal(before, File.ReadAllBytes(FileOf("careful")));
     }
 

@@ -38,6 +38,7 @@ public static class StaffCapabilities
     {
         // A conversation's limit move is its own path (LimitMove), which reads neither a wait, an ask nor the bound of moves yet: nothing is
         // offered before it is enforced (design §11 point 6), so a role that takes a conversation's work is refused those fields.
+        // transitional: conversation-moves-refused
         if (record.Takes.Any(work => work is RoleWork.Chat or RoleWork.AskDaoris))
         {
             var unread = policy.Moves.TryGetValue(StaffConditions.Limit, out var limit) && limit.Do is StaffActions.Wait or StaffActions.Ask

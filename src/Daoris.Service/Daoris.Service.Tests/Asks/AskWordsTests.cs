@@ -116,7 +116,7 @@ public sealed class AskWordsTests : IAsyncLifetime
     {
         var (ask, quest) = await Asked();
         var parked = await Running(quest, "answer", "awaiting-person");
-        await _ledger.AnswerAsync(parked.Id, "I think we should be using the v3 common-report", Now.AddMinutes(5));
+        await _ledger.SayAsync(parked.Id, "I think we should be using the v3 common-report", null, Now.AddMinutes(5));
 
         var kept = await _ledger.KeepOnAskAsync(
             parked.Id, AskWordKind.Answered, "  I think we should be using the v3 common-report\n", Now.AddMinutes(5));

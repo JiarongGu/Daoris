@@ -33,8 +33,14 @@ public static class SetupQuests
     /// </summary>
     public const string Index = "Give this repository an index of where things are";
 
+    /// <summary>
+    /// An adopted repository reconciling with the canon this machine's doctrine tool carries (D230): a case of the press, so a
+    /// second is refused beside it, as beside any open set-up.
+    /// </summary>
+    public const string Reconcile = "Reconcile this repository with the shared doctrine";
+
     /// <summary>The titles the press composes, before the day.</summary>
-    public static readonly IReadOnlyList<string> Titles = [SetUp, Declare, Move, Index];
+    public static readonly IReadOnlyList<string> Titles = [SetUp, Declare, Move, Index, Reconcile];
 
     /// <summary>Whether a quest so titled is a set-up, the index quest among them.</summary>
     public static bool IsSetup(string? title) => Titles.Any(stem => Is(title, stem));

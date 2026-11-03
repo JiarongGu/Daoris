@@ -94,6 +94,25 @@ export function readManifest(root: string): Manifest {
     }
   }
 
+  // A keep is a reason and the canon file's digest it was judged against (D230). One without either could never be
+  // reopened by the canon or read by the next person, so it is refused here rather than honoured half.
+  if ((parsed as Record<string, unknown>).kept === null) delete manifest.kept;
+  if (manifest.kept !== undefined) {
+    const declared: unknown = manifest.kept;
+    const isKeep = (keep: unknown): boolean => {
+      const { reason, canon } = (typeof keep === 'object' && keep !== null ? keep : {}) as Record<string, unknown>;
+      return typeof reason === 'string' && reason.trim() !== '' && typeof canon === 'string' && /^[0-9a-f]{64}$/.test(canon);
+    };
+    const valid = typeof declared === 'object' && declared !== null && !Array.isArray(declared)
+      && Object.values(declared).every(isKeep);
+    if (!valid) {
+      throw new DaorisError(
+        `${MANIFEST_FILE} declares kept as ${JSON.stringify(declared)} — it is a map from a canonical file to why this `
+        + "repository keeps its own text and the canon file's digest it was judged against: "
+        + '{ "rules/<name>.md": { "reason": "<why>", "canon": "<sha256>" } }, as \'daoris reconcile\' gives it');
+    }
+  }
+
   // Resolve here so an unknown name fails at the edge, naming what exists, rather than deeper down
   // where the message would be about a missing directory.
   manifest.harnessDescriptor = resolveHarness(manifest.harness);

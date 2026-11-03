@@ -625,7 +625,7 @@ public sealed partial class HelpCoverageTests
         // WORKFLOWCLEAN1g: the conversion's review, over CONVERT_APPLY and CONVERT_UNDO.
         ("agents", "useConvertApply", null, new Exempt(
             "converting the old workflow records is the person's own press over the plan they read, by its digest (D227): Ask Daoris "
-            + "opens the review and names `workflow convert --plan`, and never proposes the apply.")),
+            + "opens the review and names `daoris convert --plan`, and never proposes the apply.")),
         ("agents", "useConvertUndo", null, new Exempt(
             "undoing the conversion is the person's own press over its own plan's digest, offered on the review while the receipt "
             + "stands (D227); Ask Daoris takes the person to the review and never proposes it.")),
@@ -708,8 +708,6 @@ public sealed partial class HelpCoverageTests
             "stopping a session ends its process and holds its quest until the person tries again (D126 §7.3)")),
         ("work", "useResolveSession", null, Own("sessions",
             "finishing, declining or stopping a session parked at a checkpoint is the person's answer to it (D126 §7.3)")),
-        ("work", "useAnswerSession", null, Own("sessions",
-            "answering a session parked to ask the person sends its own conversation on with their words (STANDDOWN2, D131)")),
         ("work", "useParkGoAhead", null, Own("sessions",
             "a go-ahead a parked session asked is answered on the session's own page (KNOWUSE1a2, D135 §2)")),
         ("work", "useLandSessionTree", null, Own("sessions",

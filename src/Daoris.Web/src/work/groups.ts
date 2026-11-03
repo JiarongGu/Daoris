@@ -153,7 +153,7 @@ const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answe
  * derives that this page does not know reads as the record's own, never as nothing.
  */
 export function shownOf(
-  session: Pick<Session, 'kind' | 'state' | 'answer' | 'limit' | 'noteParts'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
+  session: Pick<Session, 'kind' | 'state' | 'said' | 'limit' | 'noteParts'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
   taking: boolean | undefined,
 ): ShownState {
   if (grouping && DERIVED.has(grouping.shown)) return grouping.shown as ShownState;
@@ -165,7 +165,7 @@ export function shownOf(
  * failures. Not a park they answered, which the same session goes on from at the driver's next look (ANSWER1c).
  */
 export function waitsOnYou(
-  session: Pick<Session, 'state' | 'answer'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
+  session: Pick<Session, 'state' | 'said'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
 ): boolean {
   return (session.state === 'awaiting-person' && !answeredPark(session)) || grouping?.shown === 'parked';
 }

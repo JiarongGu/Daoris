@@ -149,9 +149,6 @@ public static class DriverCommand
           quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]
               list what clearing a workspace's finished history, one closed quest's work (or, with --failed, its
               failed sessions) or one ask's work would take and keep; with --yes, clear it from this machine.
-          answer <session> ["…"]
-              answer a session that parked to ask you; the same session goes on with your words at the
-              driver's next look.
           notices [--json]
               what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
               you by group, unread messages by ask, and Done and failed, as the running Daoris holds them; without
@@ -165,12 +162,12 @@ public static class DriverCommand
               waiting for its turn's end go next, where its door can.
           sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
-          sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now] [--now]
+          sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
               say something to a session of this machine's: read at its next step or when its turn ends while it
-              works, or, parked or ended, the same session goes on with it. Prints where the words stand. --level
-              is when it reads them while it works: ordinary at its turn's end, urgent (the default) at its next
-              step, now cutting its step where its agent steers; no level stops its turn. --now is --level now. It
-              says what the door did, and why where it could not.
+              works, or, parked or ended, the same session goes on with it: a park's answer is said here. Prints
+              where the words stand. --level is when it reads them while it works: ordinary at its turn's end,
+              urgent (the default) at its next step, now cutting its step where its agent steers; no level stops
+              its turn. It says what the door did, and why where it could not.
           sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
               take back one of your words waiting on a parked or ended session before it goes on with them, or put
               new words in its place; with no word, list those waiting with their ids.
@@ -327,13 +324,13 @@ public static class DriverCommand
           workflow stop <run> <node> ["…"]
               pass a node of a run bound to a graph version over, with your words, or stop it: kept on the run's record,
               and Daoris's next look applies it. `workflow run` names the run and its nodes. Daoris's window confirms it.
-          workflow convert --plan | --apply <digest> | --undo [<digest>]
-              convert the old workflow records (steps, `handed`, a `land` with `accept`, and the places that follow Current
-              from the rules) to saved graph workflows: the plan reads and writes nothing, `--apply` is your press, confirmed
-              in Daoris's window, and `--undo` puts the removed rules back. Needs the running Daoris.
           workflow changes <run> <node> "…"
               ask for changes on a run's review in place of its Accept, with your words: the work's session is told
               them as its next turn, and what it commits is reviewed again. Daoris's window confirms it.
+          convert --plan | --apply <digest> [--leave <part>] | --undo [<digest>]
+              convert this home's old records, every area's part in one plan: the plan reads and writes nothing,
+              `--apply` is your press, confirmed in Daoris's window, a failed part is pressed again or left with
+              `--leave`, and `--undo` takes the latest back. Needs the running Daoris. Also `daoris convert`.
           git branches [--repository <name>] [--all] [--json]
               each repository's line and branches: the sessions', the landed (on origin or not, their pull
               request), yours, and how many only origin holds, each against the line; and the git each read
