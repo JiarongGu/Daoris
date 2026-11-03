@@ -115,8 +115,8 @@ machine): the tool reads it once at its start for the admission alone and hands 
 without it the confirm run cannot hold the whole admission, so every confirm run reads inconclusive and a failure that
 would not recur hands the batch back (2026-10-30: three candidates lost so, before the home was given).
 
-**Inside a big scope** (D180's note of 2026-11-04) the brief asks for less: the builder compiles, runs only the tests it wrote or
-changed, and hands back; the merge's gates send back what they catch and the scope's CI runs the rest. Outside one:
+**Inside a big scope** (D180's note of 2026-11-04) the brief asks for less: the builder writes its tests, compiles and hands
+back, running none; the parent merges with no gates; every check runs once when the scope's development is done. Outside one:
 
 A builder runs before it hands back the checks a candidate runs that its lines reach, not only its own classes: on
 2026-10-30 three candidates of one batch went red on checks no member's builder had run (the mark census, `optional-locks`,
