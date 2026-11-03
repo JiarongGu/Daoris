@@ -107,7 +107,7 @@ public static class GitOwnInput
             if (serves == GitServeKind.Identity && await CertificateAsync(root, address, ct).ConfigureAwait(false) is { } certificate)
                 return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.OwnInput, certificate, DateTimeOffset.UtcNow);
             // A scoped header or cookie file is the person's own authentication where an identity serves, or the move has left nothing to serve.
-            if ((serves == GitServeKind.Identity || (serves == GitServeKind.None && GitMoved.Moved(home)))
+            if ((serves == GitServeKind.Identity || (serves == GitServeKind.None && GitMove.Moved(home)))
                 && await ScopedInputAsync(root, address, ct).ConfigureAwait(false) is { } scoped)
                 return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.OwnInput, scoped, DateTimeOffset.UtcNow);
         }
@@ -116,7 +116,7 @@ public static class GitOwnInput
 
         // GITAUTH1e (§6.8): once the home has moved, an SSH remote nothing serves has no key to reach it with, so it is held before it
         // connects; an HTTPS one reads anonymously and is classed where the host refuses it (GitMove.Reclass). A serving choice lifts it.
-        var nothing = GitMoved.Moved(home) && ServesNothing(home, repository, workspace, remote, address);
+        var nothing = GitMove.Moved(home) && ServesNothing(home, repository, workspace, remote, address);
         if (nothing && TreeRefs.ReachOf(address) == "ssh")
             return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.NoIdentity, words: null, DateTimeOffset.UtcNow);
         if (!nothing) GitHolds.Lift(home, root, remote, "identity", hold => hold.Class == GitFailures.Code(GitFailureClass.NoIdentity));

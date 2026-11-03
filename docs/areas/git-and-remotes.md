@@ -27,7 +27,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Author | `GitAuthor.cs` | The `commitsAs` of origin's identity on a session's or Daoris's commit |
 | Config and floors | `Install/GitGlobalFile.cs`, `Install/GitVersions.cs`, `GitForWindows.cs` | `profiles/git/global.gitconfig`; the version floors; Git for Windows' launcher started past |
 | Failures and holds | `GitFailures.cs`, `GitHolds.cs`, `GitOwnInput.cs` | Class a failure; hold in `run/git/held.json`; find `own-input` and `no-identity` before the act |
-| The move | `GitMove.cs`, `GitMoved.cs` | Marks `gitMoved` at first start; after it, a remote nothing serves gets no credential of the person's |
+| The move | `GitMove.cs`, `GitMoved.cs` | Marks `gitMoved` at the first start with the doors laid; after it, a remote nothing serves gets no credential of the person's |
 | Redaction and log | `GitWords.cs`, `GitLog.cs`, `GitUnended.cs` | One redaction for every git, ssh, GCM or plugin text; coded `git.*` machine-log lines |
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
 | The judge, grants | `GitAccessRules.cs` (`GitGrants`) | One verdict per act; the landing's grant in `run/git/grants` |
@@ -83,8 +83,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **The move and the holds**
 
-16. A build's first start marks the home moved (`gitMoved` in `driver.json`). Then a remote nothing serves gets no
-    credential of the person's: SSH is held `no-identity` before it connects; HTTPS reads anonymously. Nothing is pre-applied. (from D198)
+16. The first start of a release that lays both doors marks the home moved (`gitMoved` in `driver.json`). Then a remote
+    nothing serves gets no credential of the person's: SSH is held `no-identity` before it connects; HTTPS reads anonymously.
+    Without the doors laid a home is not moved, marked or not, and its git is as it was. Nothing is pre-applied. (from D198, D233)
 17. The move is one *What needs you* row per workspace: *Set up identity…* or *Keep using my own sign-ins…*. A held row
     holds work where a session of one of its repositories runs or is parked. (from D198)
 18. `own` is a widening. It is confirmed before it is written, on the page or in the window for a terminal's press. No
@@ -216,9 +217,6 @@ catalogues (`i18n:check`); a new door needs its `HelpCoverageTests` row.
   `LandingPlugins.cs:107` does): the code is today's truth, so a session's push under a read-only identity reaches the host.
 - D198 point 14 (a switched-off `no-push` read once as the machine's Write *allow*) vs `GitAccessRules.cs:41-47,79` and
   `GitDoors.cs:513` (read live at each act): the code reads right.
-- D198's 2026-10-22 steward note (a release without `--git-doors` leaves an install's git as it was) vs
-  `DriverWatch.cs:405` and `GitOwnInput.cs:119-121` (every home moves at first start and holds an SSH remote nothing serves,
-  doors laid or not): the code is today's truth.
 - D87 and D100's plugin push "with whatever that platform's tools are signed in as" (still said at `LandingPlugins.cs:8-10`)
   vs D198 point 13 and `LandingPlugins.cs:122-131` (its git push passes the door under origin's identity and a grant): D198 reads right.
 

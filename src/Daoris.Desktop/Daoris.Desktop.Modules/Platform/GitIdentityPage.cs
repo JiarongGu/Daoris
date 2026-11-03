@@ -16,7 +16,7 @@ internal static class GitIdentityPage
         return new
         {
             Problem = GitIdentities.Problem(home),
-            Moved = GitMoved.Moved(home),
+            Moved = GitMove.Moved(home),
             Identities = identities.Select(each =>
             {
                 var used = GitSshFiles.LastUsed(home, each.Id);
