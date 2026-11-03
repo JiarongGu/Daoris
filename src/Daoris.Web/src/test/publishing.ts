@@ -176,6 +176,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   REGISTRY_REFRESH: { scopes: ['registry'] },
   // A place's apply: the configuration, an adoption's asks and quests, and the rules.
   PLACE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
+  // A reconcile asked: its quest and ask, its admission alone, and its rules.
+  RECONCILE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
   // The conversion of the old records, and its undo: the configuration, the rules and each place's lines.
   CONVERT_APPLY: { scopes: ['lines', 'driver', 'rules'] },
   CONVERT_UNDO: { scopes: ['lines', 'driver', 'rules'] },

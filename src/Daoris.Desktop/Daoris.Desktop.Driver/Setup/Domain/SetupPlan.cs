@@ -21,6 +21,12 @@ public static class SetupRefusals
     /// <summary>A reconcile asked of a repository the registry does not mark adopted, or whose line has not synced the doctrine (D230).</summary>
     public const string NotAdopted = "not-adopted";
 
+    /// <summary>A reconcile asked where the doctrine tool printed no status for the checkout (D230).</summary>
+    public const string StatusUnread = "status-unread";
+
+    /// <summary>A reconcile asked over a lock a newer canon wrote, which the doctrine tool never rolls back (WSSETUP4, D230).</summary>
+    public const string NewerLock = "newer-lock";
+
     public const string Open = "open";
 }
 
@@ -45,6 +51,9 @@ public sealed record SetupPlan(string Repository)
 
     /// <summary>The programs its session needs, as found.</summary>
     public SetupTools? Tools { get; init; }
+
+    /// <summary>A reconcile's: what the doctrine tool's <c>status --json</c> said of the checkout, where it was asked and answered.</summary>
+    public DoctrineStatus? Doctrine { get; init; }
 
     /// <summary>Which set-up the line calls for, where it could be read.</summary>
     public SetupCase? Case { get; init; }

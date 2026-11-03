@@ -34,9 +34,12 @@ public static class ReconcileBrief
 
         var facts = input.Facts;
         body.Append("**What was read here**, from its line `").Append(facts.Line).Append("` at commit `")
-            .Append(SetupBrief.Short(facts.Commit)).Append("`: the doctrine is taken up and synced. Whether the canon has moved ")
-            .Append("since is the doctrine tool's answer, which this request did not read first: if `daoris reconcile` finds ")
-            .Append("nothing, and no line below is this repository's to keep, close it `done`, saying so.\n\n");
+            .Append(SetupBrief.Short(facts.Commit)).Append("`: the doctrine is taken up and synced. ")
+            .Append(input.Doctrine is { } doctrine
+                ? $"This machine's doctrine tool, asked `daoris status --json` before this request, said {StatusSaid(doctrine)} The brief is still the "
+                  + "tool's answer to read: "
+                : "Whether the canon has moved since is the doctrine tool's answer, which this request did not read first: ")
+            .Append("if `daoris reconcile` finds nothing, and no line below is this repository's to keep, close it `done`, saying so.\n\n");
 
         var lines = StandingLines(input.Standing);
         string[] steps =
@@ -82,6 +85,35 @@ public static class ReconcileBrief
             .Append("; and what you found that needs a request elsewhere. Or decline, with the reason, *the doctrine command could ")
             .Append("not run here* among them.\n");
         return (SetupQuests.Title(SetupQuests.Reconcile, input.Day), body.ToString().TrimEnd() + "\n");
+    }
+
+    /// <summary>The status's own verdicts in a sentence: how the canons stand, what a sync would do, and the keeps the canon moved past.</summary>
+    private static string StatusSaid(DoctrineStatus status)
+    {
+        var said = new List<string>
+        {
+            status.Update switch
+            {
+                DoctrineUpdates.Behind => $"its canon, `{status.Carried}`, is newer than the `{status.Locked}` this repository synced from",
+                DoctrineUpdates.Differs => $"its canon differs from the one this repository synced from at the same version, `{status.Carried}`, "
+                    + "so which is newer only the text can say",
+                _ => "the canon has not moved since this repository synced",
+            },
+        };
+
+        var moves = new[] { ("change", status.Changed), ("add", status.Added), ("retire", status.Retired) }.Where(each => each.Item2 > 0).ToList();
+        if (moves.Count > 0)
+        {
+            var words = moves.Select((each, i) => i == 0 ? $"{each.Item1} {each.Item2} {(each.Item2 == 1 ? "file" : "files")}" : $"{each.Item1} {each.Item2}").ToList();
+            said.Add("a sync would " + (words.Count == 1 ? words[0] : $"{string.Join(", ", words.SkipLast(1))} and {words[^1]}"));
+        }
+
+        if (status.Reopened > 0)
+        {
+            said.Add($"{status.Reopened} {(status.Reopened == 1 ? "keep was" : "keeps were")} judged against a canon text that has moved since");
+        }
+
+        return string.Join("; ", said) + ".";
     }
 
     /// <summary>The standing answer's lines, trimmed, the blank ones left out.</summary>

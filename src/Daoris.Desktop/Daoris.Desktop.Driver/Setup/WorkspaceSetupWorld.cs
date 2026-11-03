@@ -34,6 +34,8 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
 
     public Task<SetupTools> ToolsAsync(CancellationToken ct) => _tools ??= _press.ToolsAsync(ct);
 
+    public Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct) => _press.StatusAsync(repository, ct);
+
     public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => _quests ??= _press.QuestsAsync(ct);
 
     public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => _press.EntriesAsync(repository, ct);

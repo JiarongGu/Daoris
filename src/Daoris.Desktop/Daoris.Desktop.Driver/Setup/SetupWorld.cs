@@ -48,8 +48,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
     public async Task<SetupTools> ToolsAsync(CancellationToken ct)
     {
         var read = Tools.Read(home);
-        var inherited = Environment.GetEnvironmentVariable(Tools.PathVariable);
-        var path = Tools.ChildPath(read, home, inherited) ?? inherited;
+        var path = ChildPath(read);
 
         var node = Tools.Resolve(read, home, "node", path);
         var (nodeVersion, nodeProblem) = node.File is null
@@ -64,6 +63,20 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
         return new SetupTools(node.File, nodeVersion, nodeProblem, daoris, daorisVersion, daorisProblem);
     }
 
+    /// <summary>
+    /// The checkout's <c>daoris status --json</c>, asked of the <c>daoris</c> a child finds, as <see cref="ToolsAsync"/> finds it: in an install
+    /// the install's own launcher, whose program hands the doctrine commands to the CLI the install carries (ONEWAY1ai-i,
+    /// <see cref="CommandWords.CarriedCli"/>), so the answer is that CLI's own and no table of its is kept here.
+    /// </summary>
+    public async Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct)
+    {
+        if (repository.Root is null) return new(null, "it has no checkout here");
+        var read = Tools.Read(home);
+        return CommandPresence.Resolve("daoris", ChildPath(read), startable: true) is { } daoris
+            ? await DoctrineStatusRead.ReadAsync(daoris, [], repository.Root, read, home, ct).ConfigureAwait(false)
+            : new(null, "no `daoris` on the PATH Daoris's children start with");
+    }
+
     public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => service.EveryQuestAsync(ct);
 
     public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => service.EntryPathsAsync(repository, ct);
@@ -72,6 +85,13 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct) =>
         service.AskAsync(workspace, sentence, [], [], to, ct);
+
+    /// <summary>The <c>PATH</c> a child starts with (TOOLS5's one environment, D124 §1.3).</summary>
+    private string? ChildPath(ToolsRead read)
+    {
+        var inherited = Environment.GetEnvironmentVariable(Tools.PathVariable);
+        return Tools.ChildPath(read, home, inherited) ?? inherited;
+    }
 
     /// <summary>A program's first line to <c>--version</c>, or what it said in place of one.</summary>
     private async Task<(string? Version, string? Problem)> VersionAsync(string file, ToolsRead read, CancellationToken ct)

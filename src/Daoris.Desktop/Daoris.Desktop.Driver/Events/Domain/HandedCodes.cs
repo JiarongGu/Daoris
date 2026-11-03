@@ -23,6 +23,7 @@ public static class HandedSections
     public const string GoAheads = "go-aheads";
 
     /// <summary>The standing answer beneath the quest, before the standing block carried it (CONTEXTONE1c); kept for the records that hold it.</summary>
+    // transitional: handed-before-block
     public const string Standing = "standing";
 
     /// <summary>The person's words to an earlier session on the quest after it ended, handed to a first start.</summary>
@@ -40,6 +41,7 @@ public static class HandedSections
     public const string Language = "language";
 
     /// <summary>The code map, before the standing block carried it (CONTEXTONE1c); kept for the records that hold it.</summary>
+    // transitional: handed-before-block
     public const string Map = "map";
 
     public const string Landing = "landing";
@@ -48,9 +50,11 @@ public static class HandedSections
     public const string Reading = "reading";
 
     /// <summary>Where to look before asking, before the standing block carried it (CONTEXTONE1c); kept for the records that hold it.</summary>
+    // transitional: handed-before-block
     public const string Look = "look";
 
     /// <summary>The indexes the session's tree keeps, before the standing block carried them (CONTEXTONE1c); kept for the records that hold it.</summary>
+    // transitional: handed-before-block
     public const string Indexes = "indexes";
 
     /// <summary>

@@ -209,4 +209,35 @@ public sealed class TransitionalRegisterTests : IDisposable
         Assert.True(Entry("work-cycles").Ended(_home));
         Assert.All(new[] { "solicited-older-host", "solicited-old-guards", "say-now-field" }, id => Assert.NotNull(Entry(id).Waits));
     }
+
+    /// <summary>
+    /// CONTEXTONE1c's retired codes (D230's note): the account's four sections and a chat's routing note, written no more and kept declared
+    /// for the records that hold them, are each an entry that waits out CONTEXTONE1c's build, ended by no file of the home, deleted by its row.
+    /// Each of the account's kept sites is the declaration of one of the four.
+    /// </summary>
+    [Fact]
+    public void The_codes_the_standing_block_retired_are_registered_with_their_row()
+    {
+        foreach (var id in new[] { "handed-before-block", "chat-told-routing" })
+        {
+            Assert.Equal("ONEWAY1af", Entry(id).Row);
+            Assert.NotNull(Entry(id).Waits);
+            Assert.False(Entry(id).Ended(_home), id);
+        }
+
+        var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
+        var declared = Entry("handed-before-block").Kept.Split(", ").Select(site =>
+        {
+            var lines = File.ReadAllLines(Path.Combine(driver, site[..site.IndexOf(':')].Replace('/', Path.DirectorySeparatorChar)));
+            var at = int.Parse(site[(site.IndexOf(':') + 1)..], System.Globalization.CultureInfo.InvariantCulture);
+            Assert.Contains("transitional: handed-before-block", lines[at - 1]);
+            return lines[at].Trim();
+        });
+        Assert.Equal(
+            [$"public const string Standing = \"{HandedSections.Standing}\";", $"public const string Map = \"{HandedSections.Map}\";",
+                $"public const string Look = \"{HandedSections.Look}\";", $"public const string Indexes = \"{HandedSections.Indexes}\";"],
+            declared);
+        Assert.Contains("transitional: chat-told-routing", File.ReadAllLines(Path.Combine(driver, "Events", "NoteCodes.cs"))[774]);
+        Assert.Contains(NoteCodes.ChatToldRouting.Code, File.ReadAllLines(Path.Combine(driver, "Events", "NoteCodes.cs"))[775]);
+    }
 }

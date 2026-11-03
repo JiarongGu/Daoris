@@ -106,6 +106,9 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
 
     public Task<SetupTools> ToolsAsync(CancellationToken ct) => Task.FromResult(Tools);
 
+    public Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct) =>
+        Task.FromResult(new DoctrineReading(new DoctrineStatus { Synced = true }, null));
+
     public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests]);
 
     public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => Task.FromResult<IReadOnlyList<string>>([]);

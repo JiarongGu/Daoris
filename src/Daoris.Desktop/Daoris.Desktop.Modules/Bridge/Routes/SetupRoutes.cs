@@ -85,6 +85,59 @@ public sealed class SetupRoutes(DriverContext context)
         };
     }
 
+    // A repository's reconcile with the shared doctrine (the context-one design §3 B, D230 point 2), the set-up press's own case, planned:
+    // {repository} answers {repository, offered, status, refusals, pressable, title}. `status` is what the doctrine tool's `status --json` said of
+    // its checkout (`synced`, `update` `behind` or `differs`, `carried` and `locked`, the files a sync would `changed`, `added` and `retired`, the
+    // keeps `reopened`, a `newerLock`), absent where it was not asked or printed none; `offered` is where it says the canon moved or a keep
+    // reopened. It reads the registry, the quests, the line and the tool, and writes nothing.
+    [DriverRoute("RECONCILE_PLAN")]
+    [ByEvent("RECONCILE_PLAN", Untold = "the service's registry and quests, driver.json, the repository's line and the doctrine tool's status for its checkout")]
+    private async Task<object?> ReconcilePlanAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (plan, _) = await ReconcileOfAsync(request, cancellationToken).ConfigureAwait(false);
+        return new
+        {
+            plan.Repository,
+            Offered = plan.Doctrine?.Offers == true,
+            Status = plan.Doctrine is { } status
+                ? new { status.Synced, status.Update, status.Carried, status.Locked, status.Changed, status.Added, status.Retired, status.Reopened, status.NewerLock }
+                : null,
+            Refusals = plan.Refusals.Select(each => new { each.Code, each.Sentence }).ToArray(),
+            plan.Pressable,
+            plan.Title,
+        };
+    }
+
+    // The reconcile's press (D230 point 2: the person's own), {repository}: it plans again and presses that plan as the set-up press presses one, the
+    // rule into the repository's scope, then one ask to it as the person's, its quest admitted alone where the repository is not driven here. It
+    // answers {done, refused, message, quest, ask}; a plan that is refused is an answer by its first refusal's code, nothing published or allowed.
+    [DriverRoute("RECONCILE_APPLY")]
+    [Publishes("RECONCILE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
+    private async Task<object?> ReconcileApplyAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (plan, world) = await ReconcileOfAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!plan.Pressable)
+        {
+            return new { Done = false, Refused = plan.Refusals.FirstOrDefault()?.Code ?? SetupRefusals.Open, Message = plan.Refusals.FirstOrDefault()?.Sentence ?? "nothing to ask." };
+        }
+
+        var outcome = await SetupPress.ApplyAsync(plan, world, _loop.Home, cancellationToken).ConfigureAwait(false);
+        // The look starts the quest the press asked.
+        _loop.Nudge();
+        return new { Done = outcome.Published, Refused = outcome.Published ? null : "refused", outcome.Message, Quest = outcome.QuestId, Ask = outcome.AskId };
+    }
+
+    /// <summary>The reconcile's plan for the payload's <c>repository</c>, and the world it was read from, which its press asks through.</summary>
+    private async Task<(SetupPlan Plan, ISetupWorld World)> ReconcileOfAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a reconcile names its repository as `repository`.");
+        var world = _context.SetupWorldOf(_loop.Service ?? throw NotReady());
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var plan = await SetupPress.PlanReconcileAsync(
+            world, config, _context.Door(config), repository, DateOnly.FromDateTime(DateTime.Now), cancellationToken).ConfigureAwait(false);
+        return (plan, world);
+    }
+
     private static PlaceAsk PlaceAskOf(IpcRequest request) =>
         new(Names(request), Optional(request, "preset") ?? "")
         {
