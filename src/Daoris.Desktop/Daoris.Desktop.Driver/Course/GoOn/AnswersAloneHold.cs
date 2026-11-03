@@ -19,8 +19,20 @@ namespace Daoris.Driver;
 /// event trimmed or lost afterwards takes nothing from it. Where the service's records did not read, or the store holds no admissions
 /// (a start before its confirmation settled), the record's line is counted from its events as it was before.</para>
 /// </remarks>
-public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions)
+public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null)
 {
+    /// <summary>
+    /// The answers alone in a row <paramref name="session"/>'s line goes on by (CONTEXTDRIVE1e; the context counters design §4.5): on a reached
+    /// home its line's effective rule, null where none holds it; else D188's bound.
+    /// </summary>
+    public int? At(string session, IReadOnlyDictionary<string, PriorSession> records)
+    {
+        // transitional: answers-alone-bound
+        if (rules is not { Reached: true } book) return AnswersAlone.Bound;
+        var record = records.GetValueOrDefault(session);
+        return SupervisorRuleBook.AnswersAloneAt(book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key));
+    }
+
     /// <summary>
     /// Whether going on with <paramref name="words"/> on <paramref name="record"/> now would take its line on by answers alone past the
     /// bound; where it would, every answer waiting on it is marked (once, with its note), and true. Where it would not, the go-on is
@@ -93,7 +105,7 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
     public bool AtBound(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
         if (!SessionEventText.IsLocalId(session)) return false;
-        if (records.ContainsKey(session) && admissions.Count(History(session, records)) is { } count) return count.N >= AnswersAlone.Bound;
+        if (records.ContainsKey(session) && admissions.Count(History(session, records)) is { } count) return At(session, records) is { } at && count.N >= at;
         // transitional: answers-alone-events
         return AnswersAlone.AtBound(Line(session, records));
     }
@@ -122,7 +134,7 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
     {
         var ids = Keys(record, words);
         if (records.ContainsKey(record.Session)
-            && admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, AnswersAlone.Bound) is { } admission)
+            && admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, At(record.Session, records)) is { } admission)
         {
             return admission.Admitted;
         }

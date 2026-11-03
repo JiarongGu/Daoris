@@ -7,14 +7,64 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class StaffCourse
 {
-    /// <summary>The tries a driven run's transient episode makes: the role's <c>after</c> where it moves on <c>transient</c>, else D210's five.</summary>
-    internal static int Tries(StaffLedger? staff, string? role)
+    /// <summary>
+    /// The tries a driven run's transient episode makes: on a reached home the lowest <c>at</c> of the line's effective tries rules (CONTEXTDRIVE1e);
+    /// else the role's <c>after</c> where it moves on <c>transient</c>, else D210's five.
+    /// </summary>
+    internal static int Tries(StaffLedger? staff, string? role, StaffPlace? place = null)
     {
-        if (staff is null || role is null || staff.Policy(role).Applied is not { } policy) return TransientRetry.Bound;
+        if (staff is null || role is null) return TransientRetry.Bound;
+        var book = staff.Rules();
+        if (book.Reached) return SupervisorRuleBook.TriesLimit(book.For(role, place?.Repository, place?.Workspace, place?.Line));
+        // transitional: transient-bound
+        if (staff.Policy(role).Applied is not { } policy) return TransientRetry.Bound;
         return policy.Moves.TryGetValue(StaffConditions.Transient, out var move) && move.After is { } after
             ? Math.Clamp(after, 1, TransientRetry.Bound)
             : TransientRetry.Bound;
     }
+
+    /// <summary>
+    /// The policy the course reads for <paramref name="role"/>'s line at <paramref name="place"/> (CONTEXTDRIVE1e; the context counters design §4.5):
+    /// on a reached home the applied policy's moves and bound are the line's effective rules'; on one not reached, the policy's own.
+    /// </summary>
+    internal static StaffPolicy? CourseOf(StaffLedger staff, string role, StaffPlace place)
+    {
+        var applied = staff.Policy(role).Applied;
+        var book = staff.Rules();
+        // transitional: policy-moves
+        if (!book.Reached) return applied;
+        return SupervisorRuleBook.Course(applied, book.For(role, place.Repository, place.Workspace, place.Line));
+    }
+
+    /// <summary>A driven quest's line as the rules place it: its repository, the repository's workspace and the quest's id, the line's key.</summary>
+    internal static StaffPlace PlaceOf(Snapshot snapshot, QuestView quest) =>
+        new(quest.To, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace, quest.Id);
+
+    /// <summary>
+    /// The failed sessions that park each open quest on a reached home (CONTEXTDRIVE1e): its line's effective failures rule, 0 where none holds;
+    /// none on a home not reached, where the planner reads <c>strikes</c>.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, int> FailuresAt(StaffLedger? staff, Snapshot snapshot)
+    {
+        var at = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (staff is null) return at;
+        var book = staff.Rules();
+        if (!book.Reached) return at;
+        foreach (var quest in snapshot.Quests.Where(quest => quest.Status is "Open" or "Taken"))
+        {
+            var place = PlaceOf(snapshot, quest);
+            var role = RoleOf(staff, place.Workspace, quest, snapshot.LastRun.GetValueOrDefault(quest.Id));
+            at[quest.Id] = SupervisorRuleBook.FailuresAt(book.For(role, place.Repository, place.Workspace, place.Line));
+        }
+
+        return at;
+    }
+
+    /// <summary>The failed sessions that park <paramref name="quest"/>: its rule's where the look read one, else the home's <c>strikes</c>.</summary>
+    internal static int FailuresBound(Snapshot snapshot, string quest, DriverConfig config) =>
+        snapshot.FailuresAt.TryGetValue(quest, out var ruled) ? ruled
+        // transitional: strikes-key
+        : config.Strikes;
 
     /// <summary>Whether a record ended on the watcher's quiet end (<see cref="NoteCodes.EndedQuiet"/>), by its code: failed, and the quiet policy's, never the failed one's.</summary>
     internal static bool EndedQuiet(PriorSession record) =>
@@ -33,19 +83,27 @@ internal static class StaffCourse
     /// <summary>
     /// Why a part moved, as the opening note says it (design §5): the condition, and the role's moves in 24 hours against its bound.
     /// </summary>
-    internal static string MovedSaid(string condition, StaffPolicy? policy, int moves, string roleName)
+    internal static string MovedSaid(string condition, StaffPolicy? policy, int moves, string roleName, bool ruled = false)
     {
-        var why = condition switch
+        // CONTEXTDRIVE1e: on a reached home the move is the supervisor's rule's, said so.
+        if (ruled)
         {
-            StaffConditions.Transient => "its service did not answer",
-            StaffConditions.Failed => "it failed again",
-            StaffConditions.Quiet => "it stopped after a quiet spell",
-            StaffConditions.Budget => "it was over its budget",
-            _ => $"the {condition} condition was met",
-        };
+            var bound = policy?.Bound is { } at ? $"{moves} of {at} moves today" : $"{moves} move{(moves == 1 ? "" : "s")} today";
+            return $"{Why(condition)}. Your supervisor rule for {roleName}'s lines moves on that; {bound}";
+        }
+
         var count = policy?.Bound is { } most ? $"{moves} of {most} moves today" : $"{moves} move{(moves == 1 ? "" : "s")} today";
-        return $"{why}. {roleName}'s policy moves on that; {count}";
+        return $"{Why(condition)}. {roleName}'s policy moves on that; {count}";
     }
+
+    private static string Why(string condition) => condition switch
+    {
+        StaffConditions.Transient => "its service did not answer",
+        StaffConditions.Failed => "it failed again",
+        StaffConditions.Quiet => "it stopped after a quiet spell",
+        StaffConditions.Budget => "it was over its budget",
+        _ => $"the {condition} condition was met",
+    };
 
     /// <summary>
     /// The role a record's line goes on under, whose policy the course reads: the role its start was bound to (<c>binding_roles</c>) while the
@@ -100,11 +158,12 @@ internal static class StaffCourse
             if (condition is null || (condition == StaffConditions.Transient && config.ReleasesTransient(quest.Id, last.Session, last.Updated))) continue;
             var role = RoleOf(staff, snapshot, quest, last);
             if (snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, last.Session, StringComparison.Ordinal)) continue;
-            if (staff.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(condition, out _)) continue;
+            if (CourseOf(staff, role, PlaceOf(snapshot, quest)) is not { } policy || !policy.Moves.TryGetValue(condition, out _)) continue;
 
             // The strikes park a quest as they always did: a parked line is the person's, and a move would only be counted against it.
             var strikes = snapshot.Strikes.GetValueOrDefault(quest.Id) - config.ForgivenAt(quest.Id);
-            if (condition != StaffConditions.Transient && config.Strikes > 0 && strikes >= config.Strikes) continue;
+            var parks = FailuresBound(snapshot, quest.Id, config);
+            if (condition != StaffConditions.Transient && parks > 0 && strikes >= parks) continue;
 
             written ??= staff.Moves.Moving();
             if (written.TryGetValue(quest.Id, out var done) && done.Session == last.Session)
@@ -163,6 +222,7 @@ internal static class StaffCourse
     internal static Snapshot Held(StaffLedger? staff, Snapshot snapshot, DriverConfig config, DateTimeOffset now)
     {
         if (staff is null) return snapshot;
+        snapshot = snapshot with { FailuresAt = FailuresAt(staff, snapshot) };
         var (_, holds) = Look(staff, snapshot, config, now, write: false);
         var limit = LimitHolds(staff, snapshot);
         return holds.Count == 0 && limit.Count == 0
@@ -175,9 +235,10 @@ internal static class StaffCourse
     /// policy says <c>wait</c> for a limit, and the <c>upTo</c> minutes after the cut-off it names have not passed. D206's own resume is
     /// asked first either way, and the accounts of the choice's agent are still walked inside the choice (D197).
     /// </summary>
-    internal static LineCourse? LimitWait(StaffLedger? staff, string role, PriorSession cut, DateTimeOffset now)
+    internal static LineCourse? LimitWait(StaffLedger? staff, string role, PriorSession cut, DateTimeOffset now, StaffPlace? place = null)
     {
-        if (staff?.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move) || move.Do != StaffActions.Wait) return null;
+        if (staff is null || CourseOf(staff, role, place ?? new(cut.Repository, cut.Workspace, cut.Quest)) is not { } policy
+            || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move) || move.Do != StaffActions.Wait) return null;
         var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, 0));
         return CourseDecision.Decide(
             new CourseFacts(
@@ -193,7 +254,7 @@ internal static class StaffCourse
     internal static void LimitMoved(StaffLedger? staff, string role, string line, PriorSession cut, ActorEffective? taken)
     {
         if (staff is null || taken is null || ChoiceOf(cut) is not { } was || was == StaffKey.Of(taken)) return;
-        if (staff.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move)) return;
+        if (CourseOf(staff, role, new(cut.Repository, cut.Workspace, line)) is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move)) return;
         staff.Moves.Record(line, role, cut.Session, StaffConditions.Limit, move.Do, was.Text);
     }
 
@@ -210,7 +271,7 @@ internal static class StaffCourse
             if (quest.Status is not ("Open" or "Taken") || !snapshot.LastRun.TryGetValue(quest.Id, out var last) || !last.Limit || last.State != "failed") continue;
             if (snapshot.Handed.ContainsKey(quest.Id)) continue;
             var role = RoleOf(staff, snapshot, quest, last);
-            if (staff.Policy(role).Applied is not { } policy || !policy.Moves.ContainsKey(StaffConditions.Limit)) continue;
+            if (CourseOf(staff, role, PlaceOf(snapshot, quest)) is not { } policy || !policy.Moves.ContainsKey(StaffConditions.Limit)) continue;
             var moved = staff.Moves.Of(quest.Id);
             var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, moved.Moves));
             if (action.Do == StaffActions.Ask && !moved.Approved) holds[quest.Id] = action.MovesBound ? HoldMovesBound : HoldAsk;
@@ -224,3 +285,6 @@ internal static class StaffCourse
 
     private const string HoldMovesBound = SittingFact.MovesBound;
 }
+
+/// <summary>A line as the supervisor's rules place it (CONTEXTDRIVE1e): its repository, its workspace where known, and its key.</summary>
+internal sealed record StaffPlace(string? Repository, string? Workspace, string? Line);

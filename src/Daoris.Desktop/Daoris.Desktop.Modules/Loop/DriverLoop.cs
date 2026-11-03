@@ -986,7 +986,8 @@ public sealed class DriverLoop(
         var moves = new ConversationMoves(homeDirectory, service, Events, Output);
 
         // WORKFLOWCLEAN1 1a: a fresh home is seeded once with the copy of the merge workflow, which a place then follows.
-        HomeSeed.Once(ConfigPath, homeDirectory);
+        // CONTEXTDRIVE1e: and with the supervisor's rules at today's numbers, so its lines read them from the first start.
+        if (HomeSeed.Once(ConfigPath, homeDirectory)) SupervisorRuleBook.SeedFresh(homeDirectory, DriverConfig.Load(ConfigPath));
         _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser)
         {
             // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).

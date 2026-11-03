@@ -172,7 +172,8 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         if (park.GoAheadOpen) return SupervisorWhy.GoAheadOpen;
         if (park.OwnerWaits) return SupervisorWhy.OwnerAnswered;
         // SUPERVISOR1b (§4.3): a word that would go on past D188's bound is never kept only to be held behind it.
-        return park.AtBound ? SupervisorWhy.SupervisorBound : null;
+        // CONTEXTDRIVE1e (§4.6 point 2): nor behind a rule of the person's on any other count.
+        return park.AtBound ? SupervisorWhy.SupervisorBound : park.RuleHolds ? SupervisorWhy.RuleHolds : null;
     }
 
     /// <summary>

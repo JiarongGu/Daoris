@@ -920,8 +920,8 @@ public sealed class Driver(
             Log = Log,
             Gate = Gate,
             Staff = Context.Harnesses.StaffFor(home),
-            // The choices this quest's line moved off in the last 30 minutes are passed (STAFFPOLICY1e2).
-            LineFacts = LineMovedOff(quest.Id),
+            // The choices this quest's line moved off in the last 30 minutes are passed (STAFFPOLICY1e2), where its rules move on them (CONTEXTDRIVE1e).
+            LineFacts = LineMovedOff(quest, start.Workspace, role),
         };
     }
 
@@ -933,12 +933,13 @@ public sealed class Driver(
         ServiceClient service, string sessionId, string role, string line, StaffMoving moving, PriorSession left, string? to)
     {
         var staff = Context.Harnesses.StaffFor(home);
-        var policy = staff.Policy(role);
+        // CONTEXTDRIVE1e: the move's reason is the line's rule's on a reached home, its policy's on one not reached.
+        var policy = StaffCourse.CourseOf(staff, role, new StaffPlace(left.Repository, left.Workspace, line));
         var read = staff.Moves.Of(line);
-        var said = StaffCourse.MovedSaid(moving.Condition, policy.Applied, read.Moves, ActorWords.Name(role));
-        ActorMoves.Write(Log, role, line, left.Choice, to, moving.Condition, StaffCourse.ActionOf(policy.Applied, moving.Condition), read.Moves);
+        var said = StaffCourse.MovedSaid(moving.Condition, policy, read.Moves, ActorWords.Name(role), staff.Rules().Reached);
+        ActorMoves.Write(Log, role, line, left.Choice, to, moving.Condition, StaffCourse.ActionOf(policy, moving.Condition), read.Moves);
         await service.TryKeepActorAsync(
-                sessionId, Log, chosen: new ActorChosen(policy.Applied?.Rule ?? StaffRules.Order, StaffBy.Moved, moving.Condition, left.Choice))
+                sessionId, Log, chosen: new ActorChosen(policy?.Rule ?? StaffRules.Order, StaffBy.Moved, moving.Condition, left.Choice))
             .ConfigureAwait(false);
         RotatedOpening.SayMovedChoice(Context.Events, sessionId, StaffCourse.ChoiceOf(left)?.Said ?? left.Adapter ?? "", said);
     }
@@ -959,11 +960,15 @@ public sealed class Driver(
         }
     }
 
-    private StaffFacts? LineMovedOff(string line)
+    private StaffFacts? LineMovedOff(QuestView quest, string? workspace, string? role)
     {
         try
         {
-            return Context.Harnesses.StaffFor(home).Moves.LineFacts(line);
+            var staff = Context.Harnesses.StaffFor(home);
+            var facts = staff.Moves.LineFacts(quest.Id);
+            if (!staff.Rules().Reached) return facts;
+            var named = role ?? StaffCourse.RoleOf(staff, workspace, quest, null);
+            return facts with { Moves = StaffCourse.CourseOf(staff, named, new StaffPlace(quest.To, workspace, quest.Id))?.Moves ?? new Dictionary<string, StaffMove>() };
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {
@@ -1151,7 +1156,7 @@ public sealed class Driver(
             (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
         var undecided = snapshot;
         // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
-        var alone = new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home));
+        var alone = new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home));
         IReadOnlyDictionary<string, PriorSession>? lines = null;
         SupervisorBound bound = async (session, token) =>
             alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
@@ -1180,6 +1185,8 @@ public sealed class Driver(
         snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
         // STAFFPOLICY1e: a quest whose last session ended past its transient bound under a role that moves on it: the course decides once, and
         // the move is written down before the planner reads it, so a restart or a second look reads the one decision.
+        // CONTEXTDRIVE1e: each open quest's failures rule, where this home's rules are reached, read before anything weighs its failures.
+        snapshot = snapshot with { FailuresAt = StaffCourse.FailuresAt(Context.Harnesses.StaffFor(home), snapshot) };
         var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, Context.Harnesses.Clock());
         var limitHolds = StaffCourse.LimitHolds(Context.Harnesses.StaffFor(home), snapshot);
         snapshot = snapshot with { PolicyMoving = policyMoving, PolicyHolds = limitHolds.Count == 0 ? policyHolds : policyHolds.Concat(limitHolds).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
@@ -2360,7 +2367,7 @@ public sealed class Driver(
                     // STAFFPOLICY1e: a role that waits on a limit keeps the choice and waits for its accounts' reset (D197's walk of its
                     // accounts stays inside the choice), until its `upTo` has passed.
                     if (limitWalks && policyMove is null && cut.Limit
-                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), policyRole, cut, Context.Harnesses.Clock()) is LineCourse.Wait)
+                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), policyRole, cut, Context.Harnesses.Clock(), new StaffPlace(quest.To, start.Workspace, quest.Id)) is LineCourse.Wait)
                     {
                         limitWalks = false;
                     }
@@ -4564,7 +4571,7 @@ public sealed class Driver(
                 Context.Adapters, adapter, Context.Harnesses, service, Context.Events, output, Watch, Log, sessionId, retried,
                 prior?.Profile, RetryClock, transientWanted,
                 // STAFFPOLICY1e: a driven run's bound is its role's `after` where the role moves on `transient`, else D210's five.
-                tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), Context.Conversations.RoleOf(sessionId)?.Role ?? actor))
+                tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), Context.Conversations.RoleOf(sessionId)?.Role ?? actor, new StaffPlace(target.Repository, prior?.Workspace, retried)))
             : null;
         var protocol = adapter.Wire == SessionWire.Acp;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).

@@ -45,6 +45,14 @@ public sealed record DriverConfig(
     public int Strikes { get; init; } = Math.Max(0, Strikes);
 
     /// <summary>
+    /// Whether the save writes <c>strikes</c> (CONTEXTDRIVE1e, the context counters design §6.2): where the loaded file held it or a press set it,
+    /// kept as stored, never from the default, so the conversion's <c>rules</c> part can remove the key and its census can end. A configuration
+    /// built in memory holds it where it names a number other than the default.
+    /// </summary>
+    // transitional: strikes-key
+    public bool StrikesHeld { get; init; } = Strikes != 3;
+
+    /// <summary>
     /// Quests the person has restarted, and the failure count they were restarted at. A mark rather
     /// than an erasure: the records still say what happened, and the next three failures park it
     /// again. Machine-local, like every other choice in this file.
@@ -97,7 +105,10 @@ public sealed record DriverConfig(
     }
 
     /// <summary>How many failures park a quest on this machine.</summary>
-    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes) };
+    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes), StrikesHeld = true };
+
+    /// <summary>The <c>strikes</c> key taken out (CONTEXTDRIVE1f): the failures rule decides, and the save writes the key no more.</summary>
+    public DriverConfig WithoutStrikes() => this with { Strikes = Empty.Strikes, StrikesHeld = false };
 
     /// <summary>
     /// The quests the person released from their stop (SESSUX1b, D126 §3.4), each against the session they stopped: a
@@ -1142,7 +1153,8 @@ public sealed record DriverConfig(
             if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("pollSeconds", PollSeconds);
-            writer.WriteNumber("strikes", Strikes);
+            // transitional: strikes-key
+            if (StrikesHeld) writer.WriteNumber("strikes", Strikes);
             // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
             if (CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
             writer.WriteStartObject("forgiven");
@@ -1613,6 +1625,8 @@ public sealed record DriverConfig(
         {
             // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
             Source = json,
+            // CONTEXTDRIVE1e: written again only as the file held it.
+            StrikesHeld = root.TryGetProperty("strikes", out _),
             // Read only to be said (SESSWATCH1a): no bound is ever read from it.
             KeptTimeoutMinutes = Int(root, "timeoutMinutes"),
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.

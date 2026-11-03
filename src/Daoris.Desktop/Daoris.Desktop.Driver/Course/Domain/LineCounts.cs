@@ -157,16 +157,24 @@ public static class LineCounts
     /// The counts as facts below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i), each with the number Daoris acts on it at today: the
     /// answers-alone bound, and the home's failed sessions, none where it is 0.
     /// </summary>
-    public static IReadOnlyList<CountFact> Facts(IReadOnlyList<LineCount> counts, int strikes) =>
+    /// <param name="ruled">On a reached home the line's effective rules (CONTEXTDRIVE1e), each count watched by its lowest rule with its place; null reads Daoris's own numbers.</param>
+    public static IReadOnlyList<CountFact> Facts(
+        IReadOnlyList<LineCount> counts, int strikes, IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>>? ruled = null) =>
     [
         .. counts.Select(count => new CountFact(count.Count, count.N, count.Known, count.Why, count.From)
         {
-            Watch = count.Count switch
-            {
-                AnswersAlone => new CountWatch(global::Daoris.Driver.AnswersAlone.Bound, SupervisorRules.Hold),
-                Failures when strikes > 0 => new CountWatch(strikes, SupervisorRules.Hold),
-                _ => null,
-            },
+            Watch = ruled is not null
+                ? ruled.TryGetValue(count.Count, out var rules) && rules.Where(rule => rule.Do != SupervisorRules.Off).MinBy(rule => rule.At) is { } rule
+                    ? new CountWatch(rule.At, rule.Do, rule.Place)
+                    : null
+                : count.Count switch
+                {
+                    // transitional: answers-alone-bound
+                    AnswersAlone => new CountWatch(global::Daoris.Driver.AnswersAlone.Bound, SupervisorRules.Hold),
+                    // transitional: strikes-key
+                    Failures when strikes > 0 => new CountWatch(strikes, SupervisorRules.Hold),
+                    _ => null,
+                },
         }),
     ];
 

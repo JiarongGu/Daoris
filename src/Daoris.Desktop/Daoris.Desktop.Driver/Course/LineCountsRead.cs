@@ -51,7 +51,16 @@ public sealed class LineCountsRead(
             session, recordsJson, new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), new StaffMoves(home), new ContinuationAdmissions(home), home,
             config.Forgiven);
         return new LineFacts(
-            LineCounts.Facts(LineCounts.Of(session, evidence), config.Strikes), LineCounts.Parts(session, evidence), LineCounts.GoOns(session, evidence));
+            LineCounts.Facts(LineCounts.Of(session, evidence), config.Strikes, Ruled(home, session, evidence)), LineCounts.Parts(session, evidence), LineCounts.GoOns(session, evidence));
+    }
+
+    /// <summary>The line's effective rules where this home is reached (CONTEXTDRIVE1e); null where it is not, or the records did not read.</summary>
+    private static IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>>? Ruled(string home, string session, LineEvidence evidence)
+    {
+        var book = SupervisorRuleBook.Read(home);
+        if (!book.Reached || evidence.Records is not { } records) return null;
+        var record = records.GetValueOrDefault(session);
+        return book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key);
     }
 
     /// <summary>The same, the records read from <paramref name="service"/> now.</summary>

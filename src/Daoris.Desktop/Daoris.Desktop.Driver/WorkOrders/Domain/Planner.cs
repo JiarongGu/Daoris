@@ -217,6 +217,12 @@ public sealed record Snapshot(
     public IReadOnlyDictionary<string, string> PolicyHolds { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The failed sessions that park each open quest, by quest, where this home's rules are reached (CONTEXTDRIVE1e): its line's failures rule, 0
+    /// where none holds it. A quest absent is parked by the home's <c>strikes</c>.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> FailuresAt { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// How many active sessions take a place under the machine's cap (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot"/>): the ones the
     /// driver started, never a conversation the person holds. Every site that spends a slot reads this, never the list's length, which
     /// is every active session and is read as that for a busy tree and a repository's holder.
@@ -1359,7 +1365,11 @@ public static class Planner
                 : 0;
             // The person's words to its session are their Try again (MSG1b, D137 §2.2): a failure they write to is forgiven as
             // its record leaves `failed`, and a quest the strikes parked goes on with them, as a retry would start it.
-            if (config.Strikes > 0 && strikes >= config.Strikes && !(continuing && into is { WordsWaiting: true }))
+            // CONTEXTDRIVE1e: the number is the quest's failures rule where the home is reached.
+            var parks = snapshot.FailuresAt.TryGetValue(quest.Id, out var ruled) ? ruled
+                // transitional: strikes-key
+                : config.Strikes;
+            if (parks > 0 && strikes >= parks && !(continuing && into is { WordsWaiting: true }))
             {
                 return new(quest, StartVerdict.Exhausted,
                     $"{strikes} session(s) have failed on `#{quest.Id}` without landing anything — "
