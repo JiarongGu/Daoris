@@ -92,6 +92,26 @@ public sealed class LandingPlugins(
     public Task<PluginLanding> HandAsync(string plugin, LandingFrame frame, CancellationToken ct = default) =>
         SpeakAsync(plugin, frame, PluginEvents.ByHand, ct);
 
+    /// <summary>
+    /// Why the judge refuses the landing's push to origin (GITAUTH1f, the git-auth design §6.7), or null where it lets it: the person's yes
+    /// stands as the grant, so only <c>deny</c> or an identity read only on its host refuses. A coded <c>git.refused</c> line says it.
+    /// </summary>
+    private string? LandingRefusal(LandingFrame frame, string? pushTo)
+    {
+        if (pushTo is null) return null;
+        var value = GitAccessKeys.Resolve(home, frame.Repository, frame.Workspace).Of(GitAccessKeys.Write).Value;
+        var host = GitWords.HostOf(pushTo);
+        var way = pushTo.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? GitIdentity.Https : GitIdentity.Ssh;
+        var serves = host is null ? null : GitIdentityUse.Resolve(
+            GitIdentities.Read(home), GitIdentityUse.Read(home), frame.Repository, frame.Workspace, ["origin"], GitHosts.Canonical(host), way);
+        var verdict = GitAccessRules.Judge(GitAct.Write, value, pushesHere: true, granted: true, readOnlyIdentity: serves?.Identity?.ReadOnly == true);
+        if (verdict.Allowed) return null;
+        GitLog.Refused(home, name => name == "DAORIS_REPOSITORY" ? frame.Repository : null, verdict.Code, GitAct.Write, "origin", host);
+        return verdict.Code == "read-only"
+            ? $"{serves!.Identity!.Label} is read only on {host}, so it cannot push to origin"
+            : "this repository's git access denies writes to origin";
+    }
+
     private async Task<PluginLanding> SpeakAsync(string plugin, LandingFrame frame, string by, CancellationToken ct)
     {
         var catalog = Catalog();
@@ -106,6 +126,9 @@ public sealed class LandingPlugins(
         // GITAUTH1c (§4.1): on a git older than the doors need, the push would pass round them, so the plugin is not started for it.
         if (await GitWiring.RefusesAsync(home, frame.Repository, "origin", pushTo, GitAct.Write, ct).ConfigureAwait(false) is { } older)
             return Failed(plugin, $"{char.ToUpperInvariant(older[0])}{older[1..]}, so {id} was not started to push the branch.");
+        // GITAUTH1f (§6.7): the landing asks the judge before its plugin starts. The person's Accept, or the rule that accepts for them, is
+        // the yes for exactly this push, so ask passes; deny, or an identity read only on its host, refuses before anything starts.
+        if (LandingRefusal(frame, pushTo) is { } refused) return Failed(plugin, $"{refused}, so {id} was not started to push the branch.");
         var grant = pushTo is null ? null : GitGrants.Write(home, pushTo, _clock());
         // The person's press, or the rule that accepts automatically, standing for it (§6.7, §11).
         if (grant is not null) GitLog.Granted(home, frame.Repository, "origin", frame.Session, frame.AcceptedBy == AcceptedBy.Auto ? "standing" : "press");
