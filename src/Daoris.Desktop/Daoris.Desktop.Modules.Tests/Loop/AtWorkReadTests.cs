@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shenora.Core.Events;
@@ -70,9 +71,7 @@ public sealed class AtWorkReadTests
     [Fact]
     public async Task COMMS1i_the_read_carries_the_line_s_exchanges_and_a_helper_s_answer_moves_it()
     {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
-        while (root is not null && !Directory.Exists(Path.Combine(root.FullName, ".git")) && !File.Exists(Path.Combine(root.FullName, ".git"))) root = root.Parent;
-        var home = Path.Combine(root!.FullName, "_fixtures", "at-work-exchanges", Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "at-work-exchanges", Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var files = new HelperFiles(home);
@@ -99,7 +98,7 @@ public sealed class AtWorkReadTests
         }
         finally
         {
-            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+            GitSeed.Discard(home);
         }
     }
 
