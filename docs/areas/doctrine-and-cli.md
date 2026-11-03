@@ -34,7 +34,7 @@ one `change` skill, and `co-working` as a pack.
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do), `doctor` (look-alike documents), the LF pin |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
-| Command tree | `Daoris.Desktop.Driver/Platform/CommandWords.cs`, `Loop/CommandTree.cs` | Every group and verb of `daoris`, old forms refused, the carried CLI's path |
+| Command tree | `Daoris.Desktop.Driver/Platform/CommandWords.cs`, `Loop/CommandTree.cs` | Every group and verb of `daoris`, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a doctrine word through the CLI an install carries, marked `DAORIS_HANDED=driver` |
 | Set-up press | `Driver/Setup/SetupPress.cs`, `Setup/Domain/SetupPressRules.cs`, `SetupBrief.cs` | Which set-up a line calls for, its refusals, its quest and the exact-verb rule |
 | Place and workspace plan | `Driver/Setup/Place*.cs`, `WorkspaceSetup*.cs`, `Domain/WorkspaceSetupRules.cs`, `SetupOrder.cs` | `daoris place`: a place's set-up, and a workspace's paced adoption |
@@ -154,8 +154,8 @@ one `change` skill, and `co-working` as a pack.
 39. Exit codes are 0 clean, 1 policy failure, 2 tool error. A failure nobody anticipated is 2, said in one line.
     (from D8)
 40. The groups and verbs are declared in `CommandWords.cs` and the driver tests' `fixtures/command-tree.json`; the CLI's
-    rows are held to the same file. A management verb is a driver group, never a CLI row. An old form (`daoris-driver …`,
-    `driver place`, `connect`) is refused naming its new form. (from D194, D228)
+    rows are held to the same file. A management verb is a driver group, never a CLI row. No word is kept for an older name:
+    an old form is no command. (from D194, D232)
 
 **The devkit's universal gates**
 

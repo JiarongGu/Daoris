@@ -4,8 +4,7 @@ using Daoris.Driver;
 // The desktop's program (D46 §7, D194; ONEWAY1ai-i): every group of `daoris …`, which the install's launcher in app/bin/ runs, what
 // the family rehearsal drives, and what the desktop shell embeds. A person's words are routed once, at the entry, by the one command
 // tree (`CommandTree`, held to the driver tests' `fixtures/command-tree.json`), into the words each command below reads: a doctrine
-// command is handed to the CLI the install carries, an old form is refused naming its new one, and `DriverCommand.Usage` says each
-// group. The loop watches a service, starts sessions where the person opted in, and prints every verdict — a quest that is sitting
+// command is handed to the CLI the install carries, and `DriverCommand.Usage` says each group. The loop watches a service, starts sessions where the person opted in, and prints every verdict — a quest that is sitting
 // must always say why.
 //
 //   DAORIS_HOME            where every machine-local file lives (D63) — required unless each file's
@@ -37,14 +36,6 @@ if (OperatingSystem.IsWindows())
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
 
-// ONEWAY1ai-i (the oneway design §11): the old launcher runs nothing, and says what its words are now.
-// transitional: old-command-names
-if (Environment.GetEnvironmentVariable(CommandWords.OldNameVariable) == CommandWords.OldName)
-{
-    Console.Error.WriteLine($"daoris: {CommandWords.OldLauncher(args)}");
-    return 2;
-}
-
 // A word handed once is never handed back: who handed these words is read, and taken out of what this process passes on.
 var handedBy = Environment.GetEnvironmentVariable(CommandWords.HandedVariable);
 Environment.SetEnvironmentVariable(CommandWords.HandedVariable, null);
@@ -59,7 +50,7 @@ if (!InstanceDoor.TakeWait(args, out var verbArgs, out var pressWait, out var wa
 
 Daoris.Driver.Host.InstanceHost.Wait = pressWait;
 
-// ONEWAY1ai-i: the one tree routes the words once, into the words the commands below read; an old form never reaches one.
+// ONEWAY1ai-i: the one tree routes the words once, into the words the commands below read.
 var typed = verbArgs;
 var route = CommandTree.Route(typed, handedBy);
 switch (route.Kind)

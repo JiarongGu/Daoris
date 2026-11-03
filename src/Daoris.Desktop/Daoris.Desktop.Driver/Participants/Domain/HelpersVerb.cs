@@ -20,7 +20,7 @@ public sealed class HelpersVerb : ChoiceVerb
         string[] valued = ["--workspace", "--mode", "--agents"];
         const string usage = "`driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, "
             + "or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`.";
-        Flags(args, valued, ["--clear"], "helpers", usage);
+        Flags(args, valued, ["--clear"], "place helpers", usage);
         var workspace = FlagValue(args, "--workspace");
         var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
         var clear = args.Contains("--clear");

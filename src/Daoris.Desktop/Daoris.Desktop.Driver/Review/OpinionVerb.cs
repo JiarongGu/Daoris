@@ -28,7 +28,7 @@ public sealed class OpinionVerb(Func<string, AdapterSet> adapters) : ChoiceVerb
         const string usage = "`place opinion` needs <repository>|--workspace <name>, then --agents <adapter,adapter> [--on landing,steps] "
             + "[--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck], or none, or --clear — "
             + "e.g. `daoris place opinion web-app --agents codex-acp --required`.";
-        Flags(args, valued, switches, "opinion", usage);
+        Flags(args, valued, switches, "place opinion", usage);
 
         bool? Both(string on, string off, string why)
         {

@@ -20,7 +20,7 @@ public sealed class HandOverVerb : ChoiceVerb
         string[] valued = ["--workspace", "--mode"];
         const string usage = "`driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. "
             + "`daoris driver handover web-app --mode on`.";
-        Flags(args, valued, ["--clear"], "handover", usage);
+        Flags(args, valued, ["--clear"], "settings handover", usage);
         var workspace = FlagValue(args, "--workspace");
         var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
         var clear = args.Contains("--clear");

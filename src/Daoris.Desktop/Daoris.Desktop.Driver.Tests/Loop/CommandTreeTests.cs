@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// ONEWAY1ai-i (D228; the oneway design §11): one name, <c>daoris</c>, and one command tree, its words held to the fixture in
-/// <c>CommandWordsTests</c>. A person's words are routed once into the words each command reads; every old form is refused naming its
-/// new one and does nothing; a doctrine command is the CLI's, and a word handed once is never handed back.
+/// <c>CommandWordsTests</c>. A person's words are routed once into the words each command reads; a doctrine command is the CLI's, and a
+/// word handed once is never handed back.
 /// </summary>
 public sealed class CommandTreeTests
 {
@@ -58,62 +58,6 @@ public sealed class CommandTreeTests
 
         Assert.Equal(TreeRouteKind.Run, route.Kind);
         Assert.Equal(inward.Split(' '), route.Words);
-    }
-
-    /// <summary>Every old form is refused, exit 2, naming its new form; the new form routes.</summary>
-    [Fact]
-    public void ONEWAY1ai_i_every_old_form_is_refused_naming_its_new_one()
-    {
-        foreach (var move in CommandWords.Moved.Where(move => !move.Launcher))
-        {
-            var route = CommandTree.Route([.. move.From.Split(' '), "x"]);
-            Assert.Equal(TreeRouteKind.Refused, route.Kind);
-            Assert.Contains($"`daoris {move.From}`", route.Said);
-            Assert.Contains($"`daoris {move.To}", route.Said);
-            Assert.Contains("nothing was done", route.Said);
-            if (move.To != "help") Assert.NotEqual(TreeRouteKind.Refused, CommandTree.Route([.. move.To.Split(' '), "x"]).Kind);
-        }
-
-        // The remotes' `sync` is the old launcher's alone: at `daoris` it is the doctrine's.
-        Assert.Equal(TreeRouteKind.Doctrine, CommandTree.Route(["sync"]).Kind);
-    }
-
-    [Theory]
-    [InlineData("sessions --json", "`daoris sessions` is `daoris session list` now")]
-    [InlineData("sessions say s-1 hi", "`daoris sessions` is `daoris session` now, with the same words after it")]
-    [InlineData("driver role set build x", "`daoris driver role` is `daoris role` now, with the same words after it")]
-    [InlineData("meeting ask why --agents a,b", "`daoris meeting ask` is `daoris brainstorm … --kind meeting` now")]
-    [InlineData("--once", "`daoris --once` is `daoris drive --once` now")]
-    [InlineData("ask --publish a-1 --to engine", "`daoris ask --publish` is `daoris ask publish` now")]
-    [InlineData("ask --to engine fix it --set-review x", "`ask --set-review` is `daoris ask review` now")]
-    [InlineData("chat --repository engine --adapter codex", "`--adapter` is `--agent` now")]
-    [InlineData("agent login claude-code --profile work", "`--profile` is `--account` now")]
-    [InlineData("session opinion ask s-1 --reviewer codex", "`--reviewer` is `--agent` now")]
-    [InlineData("place opinion engine --reviewers codex", "`--reviewers` is `--agents` now")]
-    [InlineData("help mode full", "`daoris help mode` is `daoris ask-daoris mode` now")]
-    public void ONEWAY1ai_i_an_old_form_says_its_new_one(string typed, string said)
-    {
-        var route = CommandTree.Route(typed.Split(' '));
-
-        Assert.Equal(TreeRouteKind.Refused, route.Kind);
-        Assert.Contains(said, route.Said);
-    }
-
-    /// <summary>ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so each old staffing verb names `role set` and its role.</summary>
-    [Theory]
-    [InlineData("driver adapter claude-code", "`daoris driver adapter` is `daoris role set build` now")]
-    [InlineData("settings adapter claude-code", "`daoris settings adapter` is `daoris role set build` now")]
-    [InlineData("driver intake off", "`daoris driver intake` is `daoris role set intake` now")]
-    [InlineData("settings intake off", "`daoris settings intake` is `daoris role set intake` now")]
-    [InlineData("driver helper codex", "`daoris driver helper` is `daoris role set ask-daoris` now")]
-    [InlineData("settings helper codex", "`daoris settings helper` is `daoris role set ask-daoris` now")]
-    public void ONEWAY1a_an_old_staffing_verb_names_the_role_door(string typed, string said)
-    {
-        var route = CommandTree.Route(typed.Split(' '));
-
-        Assert.Equal(TreeRouteKind.Refused, route.Kind);
-        Assert.Contains(said, route.Said);
-        Assert.DoesNotContain(CommandWords.Groups.Single(group => group.Name == "settings").Verbs, verb => verb is "adapter" or "intake" or "helper");
     }
 
     [Fact]

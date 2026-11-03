@@ -70,8 +70,7 @@ test('every refusal the CLI says itself says it, with its exit code, and hands n
 
 /**
  * ONEWAY1ai-i (the oneway design §11): every word outside the doctrine commands goes to the desktop's program whole, its `--help` and
- * an old form among them (the program refuses those naming their new form), nothing written before the start, and the program's
- * exit the run's.
+ * a word it has no command for among them, nothing written before the start, and the program's exit the run's.
  */
 test('a word outside the doctrine goes to the desktop\'s program whole, with nothing written first, and its exit is the run\'s', async () => {
   for (const argv of [

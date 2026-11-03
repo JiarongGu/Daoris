@@ -21,7 +21,7 @@ public sealed class CommitsVerb : ChoiceVerb
         const string usage = "`driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or "
             + "--convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — "
             + "e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`.";
-        Flags(args, valued, ["--clear", "--no-convention"], "commits", usage);
+        Flags(args, valued, ["--clear", "--no-convention"], "place commits", usage);
         var workspace = FlagValue(args, "--workspace");
         var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
         var clear = args.Contains("--clear");

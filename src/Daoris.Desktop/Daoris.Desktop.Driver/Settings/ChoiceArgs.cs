@@ -23,7 +23,7 @@ public static class ChoiceArgs
         }
     }
 
-    /// <summary>Each word that is a flag must be one the verb takes, a valued flag's value skipped.</summary>
+    /// <summary>Each word that is a flag must be one the verb takes, a valued flag's value skipped; <paramref name="verb"/> is the tree's group and sub-verb.</summary>
     public static void Flags(IReadOnlyList<string> args, string[] valued, string[] switches, string verb, string usage)
     {
         for (var at = 1; at < args.Count; at++)
@@ -32,7 +32,7 @@ public static class ChoiceArgs
             if (valued.Contains(token)) at++;
             else if (token.StartsWith("--", StringComparison.Ordinal) && !switches.Contains(token))
             {
-                throw new ChoiceWords($"`{token}` is not a flag `{CommandWords.Now($"driver {verb}")}` takes — {usage}");
+                throw new ChoiceWords($"`{token}` is not a flag `{verb}` takes — {usage}");
             }
         }
     }
