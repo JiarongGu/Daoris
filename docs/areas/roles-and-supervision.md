@@ -37,7 +37,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `StandingConfirmation`, `RoleHolders` | `Modules/Platform/StandingConfirmation.cs` | Appointments, generations, holders, the two offered flags |
 | Steward | `Roles/StewardCommand.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Platform/RoleActs.cs` | `steward <act>` over `ROLE_ACT`; the eight acts; pending operations |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
-| `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 18 proposal kinds, each judged by its route's code and applied by the person |
+| `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
 | `HelpModes`, `HelpSwap`, `HelpHousekeeping`, `HelpSettings`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access, what a start handed |
 | The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor, the conversion |
 
@@ -169,7 +169,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **Ask Daoris**
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
-    quests, or proposes a change. A quest's or session's own acts stay in its own conversation. (from D161, D193)
+    quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
+    handing a landed branch to a landing plugin are the person's own presses, never proposed. (from D161, D193, D233)
 56. In restricted mode, the default, it reads and proposes. Each proposal is a kind under `Help/Proposals/`, judged by
     its route's own code against the machine now, and applied only by the person's *Apply* through that route. (from D89, D170)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings and checkouts, each request
@@ -235,12 +236,9 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 10. D209 point 1 and its COMPANYVIEW1e note, and D205's COMPANYVIEW1b note (appointed and staffed under Settings → This
     Daoris, then Agents → Roles) vs `Web/agents/modes.ts:3-8,29-33` (the Roles mode is retired; its sections sit under
     Agents → Setup). Code reads right.
-11. D161's ENTRY1 note (landing and answering a quest's delivery stay in its own conversation, never a proposal) vs the
-    `accept` and `hand` kinds (`Help/Proposals/HelpAcceptProposals.cs:19`, `HelpHandProposals.cs:24`). Code is today;
-    the owner settles which stands.
-12. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
+11. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
     (`Help/Proposals/HelpRoleProposals.cs:145`). D110 means permission rules; it should say so.
-13. D208 points 4 and 8 (a workspace's supervisor later; held five minutes) vs SUPERVISOR1e as built (workspace
+12. D208 points 4 and 8 (a workspace's supervisor later; held five minutes) vs SUPERVISOR1e as built (workspace
     appointments, `Web/agents/setup/PlaceSupervisor.tsx`; a window of 1 to 60, `StandingConfirmation.cs:183-184`). Code reads right.
 
 ## Open

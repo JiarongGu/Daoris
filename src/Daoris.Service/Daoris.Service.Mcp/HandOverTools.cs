@@ -6,7 +6,7 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>
 /// A working session's ask to go on with another agent (MIXAGENT1c, D163 point 3; the mixed agents design §2 and §5): the agent
 /// writes where its work stands, kept as its own claim, and the person's <c>handOver</c> rule, which the driver applies, settles the
-/// ask. Not Ask Daoris's <c>hand_propose</c> (<see cref="HelpHandTool"/>), which hands a landed branch to a plugin.
+/// ask.
 /// </summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box reads.</param>

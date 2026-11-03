@@ -49,9 +49,8 @@ public sealed class HelpRoomDoorAsksTests
         Assert.Equal($"{helpers.Act} (Ask Daoris proposes it)", helpers.To);
 
         var accept = Row("`daoris-driver quest accept <id>`");
-        Assert.IsType<HelpDoorAsk.OnlyWhenAsked>(accept.Ask);
-        Assert.Equal(("accept", "accept"), accept.Ask!.Through);
-        Assert.StartsWith($"{accept.Act} (Ask Daoris proposes it only when you ask for it: ", accept.To, StringComparison.Ordinal);
+        Assert.Equal(new HelpDoorAsk.Never("the yes is yours"), accept.Ask);
+        Assert.Null(accept.Ask!.Through);
 
         var abandon = Row("`daoris-driver ask --abandon <id>");
         Assert.Equal(new HelpDoorAsk.Never("the reason is your answer"), abandon.Ask);

@@ -645,7 +645,8 @@ public sealed partial class HelpCoverageTests
         ("quests", "useRespondQuest", "decline", new Exempt(
             "declining a quest is the person's answer with their reason (D37), as *Decline…* is exempt (D126 §7.3); Ask Daoris "
             + "takes the person to the quest and never writes the reason.")),
-        ("quests", "useAcceptQuest", null, new Door("accept", "accept")),
+        ("quests", "useAcceptQuest", null, Own("quests",
+            "accepting a departure is the person's own yes, on the quest's own page (D161, D233)")),
         ("quests", "useDeleteQuest", null, new Door("delete", "quest")),
         ("quests", "useRetryQuest", null, new Door("setting", "retry")),
         ("quests", "usePersonDone", null, PersonDone),
@@ -730,11 +731,13 @@ public sealed partial class HelpCoverageTests
         ("work", "useTrustFolder", null, TrustFolder),
         ("work", "usePublishAsk", null, PublishAsk),
         ("work", "useAnswerGoAhead", null, AnswerGoAhead),
-        ("work", "useAcceptQuest", null, new Door("accept", "accept")),
+        ("work", "useAcceptQuest", null, Own("quests",
+            "accepting a departure is the person's own yes, on the quest's own page (D161, D233)")),
         ("work", "useRetryQuest", null, new Door("setting", "retry")),
         // STEWARDROLE1b (D209 §5.4): the steward's line's reverse press of its stop, the owner's own Try again.
         ("notifications", "useRetryQuest", null, new Door("setting", "retry")),
-        ("work", "useHandOffPress", null, new Door("hand", "hand")),
+        ("work", "useHandOffPress", null, Own("work",
+            "handing a landed branch to a landing plugin is the person's own press, in the review (D161, D233)")),
         // PAUSE1f-b (D132 §7.4): the pages' Pause… and a session's Pause ask… and Pause quest…, and every Resume.
         ("work", "usePauseWork", null, new Door("pause", "pause")),
         ("work", "useResumeWork", null, new Door("pause", "resume")),
@@ -1435,19 +1438,6 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// DRIFT1d2: the headless host's <c>quest accept</c> (D133 §4), owed since DRIFT1d, is the <c>accept</c> kind's door while
-    /// the host's usage spells it, and the room names its screen, the quest page's yes, beside its command.
-    /// </summary>
-    [Fact]
-    public void The_headless_hosts_quest_accept_is_the_accept_kinds_door()
-    {
-        Assert.Contains("quest accept <id>", DriverCommand.Usage);
-        Assert.Contains("accept", HelpProposalKinds.Find("accept")!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal)
-            && door.Screen.Contains("Accept the departure", StringComparison.Ordinal));
-    }
-
-    /// <summary>
     /// EVID1b: the headless host's <c>quest check</c> (D144 §5) is a door owed to EVID1c's check card while the host's usage
     /// spells it and no kind takes it; the room names it meanwhile, so the helper can point the person at it.
     /// </summary>
@@ -1467,7 +1457,6 @@ public sealed partial class HelpCoverageTests
     public void The_headless_hosts_quest_check_is_a_door_owed_to_the_check_card()
     {
         Assert.Contains("quest check <id> [--commit <sha>]", DriverCommand.Usage);
-        Assert.DoesNotContain("check", HelpProposalKinds.Find("accept")!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest check <id> [--commit <sha>]`", StringComparison.Ordinal));
         Assert.Contains("EVID1c", CheckDoor.Reason);
     }

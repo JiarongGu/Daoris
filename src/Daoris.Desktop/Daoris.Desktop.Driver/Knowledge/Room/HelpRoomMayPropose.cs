@@ -67,12 +67,6 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,\n");
         text.Append("  and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you\n");
         text.Append("  are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.\n");
-        // WSR5b: the review's own hand-off, for a ticket landed before its workspace named a plugin, or whose plugin failed.
-        text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
-        text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
-        text.Append("  a plugin only where the workflow it followed (or, for a place still on Current, its old landing rule) names none.\n");
-        text.Append("  Only a branch a landing made and recorded\n");
-        text.Append("  here can be handed on; the person's own branches are theirs to push.\n");
         // HELP10: the browser's settings, which HELP9 left owed, each as `daoris browser` spells it.
         text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
         text.Append("  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,\n");
@@ -84,12 +78,9 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace\n");
         text.Append("  to look within, or none for every one with a checkout here. Its card asks the person to look first, which fetches each line as them,\n");
         text.Append("  then lists what the press would do; apply acts on those rows only. Daoris never pushes.\n");
-        // DRIFT1d2 (D133 §4): the person's yes to a departure, as the quest page's *Accept the departure* gives it. The yes
-        // is theirs, so the helper proposes it on their ask and never on its own reading of the departure.
-        text.Append("- `accept_propose`: the person's yes to a quest a done's departure holds: it closed done departing from what\n");
-        text.Append("  the person required, so the chain's next step and a quest waiting on it wait (`quest_list` marks it held for\n");
-        text.Append("  the person's yes). Propose it only when the person asks to accept it, never on your own reading of the\n");
-        text.Append("  departure. Its card shows each departure with the person's words it relied on, as the quest's page does.\n");
+        // D161, D233: a quest's yes and a landed branch's hand-off stay in their own place, which a go reaches.
+        text.Append("- Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the\n");
+        text.Append("  person's own presses, on the quest's page and in the review, where `go_propose` takes them.\n");
         // ENTRY1d1 (D161's ENTRY1d note): a move needs no path (D48 §7), so it is proposed by name; adding or importing needs a
         // folder, which stays the person's pick, so since ENTRY1d2a a go opens the drawer with the workspace filled.
         text.Append("- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →\n");
@@ -183,8 +174,6 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),\n");
         text.Append("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),\n");
         text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
-        // DRIFT1d2: an accept's press is the person's yes, worded as the quest page's.
-        text.Append("an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**),\n");
         text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n");
         text.Append("A press of not now comes back to you as the person's next message;\n");
         text.Append("dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing\n");

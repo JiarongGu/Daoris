@@ -4,11 +4,11 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; WSR5b; HELP10).</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser`, `sync`, `accept`, `repository`, `session`, `pause`, `clear`, `workflow` or `setup`.</param>
+/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; HELP10).</summary>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `browser`, `sync`, `repository`, `session`, `pause`, `clear`, `workflow`, `setup` or `role`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris driver` verb for a setting, `update` or `pin` for an agent, and so on.</param>
-/// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin, a session or a branch.</param>
-/// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a hand-off's plugin, a move's workspace.</param>
+/// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin or a session.</param>
+/// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a move's workspace.</param>
 /// <param name="Session">The conversation that proposed it.</param>
 /// <param name="State">`proposed`, then `applied`, `dismissed` or `refused`.</param>
 /// <remarks>MOD6: a field only one kind carries is read by that kind's judge in its file; PART4 keeps the fields in this one declaration, under a comment per kind.</remarks>
@@ -17,8 +17,7 @@ public sealed record HelpProposal(
     string Why, string? Session, string State)
 {
     /// <summary>
-    /// The repository whose checkout holds a plugin to add (PLUG9), or null for a whole path the person gave;
-    /// for a hand-off (WSR5b), the repository its branch is in, where a name alone is in several.
+    /// The repository whose checkout holds a plugin to add (PLUG9), or null for a whole path the person gave.
     /// </summary>
     public string? Repository { get; init; }
 
@@ -197,16 +196,8 @@ public sealed record HelpMachineFacts(
     /// <summary>The git identities on this machine (labels and hosts, never a key or a token), for a <c>git-use</c> door's judge (GITAUTH1e).</summary>
     public IReadOnlyList<HelpGitIdentity> GitIdentities { get; init; } = [];
 
-    /// <summary>This machine's plugins, for a landing rule that names one (HELP8, D100), a plugin proposal (PLUG9) and a hand-off (WSR5b).</summary>
+    /// <summary>This machine's plugins, for a landing rule that names one (HELP8, D100) and a plugin proposal (PLUG9).</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
-
-    // The accept kind's.
-
-    /// <summary>
-    /// Every quest as the service answers it, closed ones included, with what the person required, how each done answered
-    /// and whether a departure holds it (DRIFT1d2): what an accept is judged against, read only when one is pending.
-    /// </summary>
-    public IReadOnlyList<QuestView> QuestRecords { get; init; } = [];
 
     // The agent kind's: the machine's wiring a proposal is judged against (TOOL4g), <c>harnesses.json</c> as the screen reads it.
 
@@ -256,11 +247,6 @@ public sealed record HelpMachineFacts(
     /// is judged against (ENTRY1f2), and since SESSUX1h2b a session proposal and a session's delete; read only for those.
     /// </summary>
     public IReadOnlyList<SessionRecord> Sessions { get; init; } = [];
-
-    // The hand kind's.
-
-    /// <summary>The branches this machine's landings made and recorded, for a hand-off (WSR5b).</summary>
-    public IReadOnlyList<LandedBranch> Landed { get; init; } = [];
 
     // The pause kind's.
 
@@ -401,11 +387,6 @@ public sealed record HelpDoorFacts(string Name)
 /// <remarks>MOD6: what only one kind's card or Apply needs is read by that kind in its file; PART4 keeps the members in this one declaration, under a comment per kind.</remarks>
 public sealed record HelpPlan(string? Refusal, string Describe, string Terminal, Func<DriverConfig, DriverConfig>? Apply)
 {
-    // The accept kind's.
-
-    /// <summary>For an accept the route takes (DRIFT1d2): the quest and its departures, for the card; null for every other kind.</summary>
-    public HelpAcceptPlan? Accept { get; init; }
-
     // The setting kind's.
 
     /// <summary>A git identity a setting proposal points a repository's remote or a workspace's host at (GITAUTH1e), applied through the pointer's own write; null for every other plan.</summary>
@@ -420,11 +401,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
     public HelpPlace? Go { get; init; }
-
-    // The hand kind's.
-
-    /// <summary>The landed branch a hand-off gives its plugin (WSR5b); null for every other plan.</summary>
-    public HelpHandOff? Hand { get; init; }
 
     // The pause kind's.
 
@@ -502,8 +478,8 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// </summary>
 /// <remarks>MOD6: each kind's file declares the doors its Apply goes through as its own interface, gathered here (PART5).</remarks>
 public interface IHelpDoors :
-    IHelpAcceptDoors, IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
-    IHelpDeleteDoors, IHelpHandDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
+    IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
+    IHelpDeleteDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
     IHelpSettingDoors, IHelpSyncDoors
 {
 }

@@ -170,9 +170,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("discard a failed or superseded session's branch, with its tree where it is still here",
             "Sessions → the session's review → Discard, while its tree is here",
             "`daoris-driver trees remove <session|branch> [--repository <name>] --force`"),
-        // WSR5b: a landed branch handed to a landing plugin after its landing.
-        ("hand a branch a landing made to a landing plugin, to push it and open the pull request",
-            "Sessions → the session's review → Hand to <plugin>", "`daoris-driver trees hand <session|branch> [--plugin <id>]`"),
+        // WSR5b: a landed branch handed to a landing plugin after its landing; never a proposal (D161, D233).
+        new("hand a branch a landing made to a landing plugin, to push it and open the pull request",
+            "Sessions → the session's review → Hand to <plugin>", "`daoris-driver trees hand <session|branch> [--plugin <id>]`",
+            new HelpDoorAsk.Never("the push is yours")),
         // PLUGHOOK1c (D148 point 2): Ask again from a terminal, exempt from Ask Daoris as a read; the review's press is PLUGHOOK1d's.
         new("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine",
             "(no screen yet)", "`daoris-driver trees state <session|branch> [--repository <name>]`",
@@ -298,11 +299,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "sessions…; " + Ws + "Details → Kept on this machine → Clear history…",
             "`daoris-driver history [--workspace <name>]`, `daoris-driver history clear --workspace <name> [--yes]`, "
             + "`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`"),
-        // DRIFT1d: the person's yes to a done's departure, the terminal's door; DRIFT1d2 gave it the quest page's yes and
-        // Ask Daoris's `accept` kind.
+        // DRIFT1d: the person's yes to a done's departure, on the quest's page and the terminal; never a proposal (D161, D233).
         new("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
             + "waiting on it", "Quests → the quest's page → Accept the departure", "`daoris-driver quest accept <id>`",
-            new HelpDoorAsk.OnlyWhenAsked("accept", "accept", "the yes is yours, never its own reading of the departure")),
+            new HelpDoorAsk.Never("the yes is yours")),
         // QUESTCLOSE1b3: the person's own done, with the note they give (D126's QUESTCLOSE1): the page's press is its own
         // conversation on Quests, which Ask Daoris takes the person to and never writes (D161's ENTRY1 note).
         new("mark a quest done as yours, with a note if you give one: what a finish at a checkpoint says, said on the quest itself",
@@ -465,14 +465,6 @@ internal abstract record HelpDoorAsk
     public sealed record Proposes(string Kind, string Door, string? Also = null) : HelpDoorAsk
     {
         public override string Said => Also is null ? "Ask Daoris proposes it" : $"Ask Daoris proposes it, {Also}";
-
-        public override (string Kind, string Door)? Through => (Kind, Door);
-    }
-
-    /// <summary>Ask Daoris proposes it through <paramref name="Kind"/>'s <paramref name="Door"/> only when the person asks for it.</summary>
-    public sealed record OnlyWhenAsked(string Kind, string Door, string Why) : HelpDoorAsk
-    {
-        public override string Said => $"Ask Daoris proposes it only when you ask for it: {Why}";
 
         public override (string Kind, string Door)? Through => (Kind, Door);
     }

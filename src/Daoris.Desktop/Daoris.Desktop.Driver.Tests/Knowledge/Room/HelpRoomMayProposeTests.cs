@@ -63,17 +63,17 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// DRIFT1d2 (D133 §4): the person's yes to a done's departure is proposed only when they ask for it, of a quest
-    /// <c>quest_list</c> shows held, and the room says its card's press as the card labels it.
+    /// D233 (D161): the person's yes to a done's departure and a landed branch's hand-off are never proposed; the room says they
+    /// are the person's own presses, which a go reaches.
     /// </summary>
     [Fact]
-    public void The_room_says_how_a_yes_to_a_departure_is_proposed()
+    public void The_room_says_a_yes_to_a_departure_and_a_hand_off_are_never_proposed()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `accept_propose`: the person's yes to a quest a done's departure holds", proposes);
-        Assert.Contains("only when the person asks to accept it", proposes);
-        Assert.Contains("an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**)", proposes);
+        Assert.DoesNotContain("accept_propose", proposes);
+        Assert.DoesNotContain("hand_propose", proposes);
+        Assert.Contains("- Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin.", proposes);
     }
 
     /// <summary>
