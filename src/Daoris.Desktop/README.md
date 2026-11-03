@@ -391,7 +391,11 @@ holds it; a session handed no server sends none, and an adapter that does not re
 Since CONTEXTONE1d (D230 point 3) every session's spawn, of every kind and on either door, is equipped by `Driver.Equip`: its
 toolchain's environment, then the adapter's `ToolsUpFront`, which on both Claude Code doors is `ENABLE_TOOL_SEARCH=false` (HELP5), so the
 connector's tools come with the first request rather than behind a tool search; Codex holds them already and is handed nothing. The
-switch loads every MCP server the session has, the repository's own too: the connector's 58 tools are about 96 KB of definitions.
+switch loads every MCP server the session has, the repository's own too, so since CONTEXTONE1d2 the connector lists a session only its
+row of the call layer's table (`CallTable`, read by the work of the record its `DAORIS_SESSION_ID` names, which every spawn carries and a
+repository's own `.mcp.json` server inherits): a session in a repository the 18 tools of `CallTable.CoreServed` and its own kind's (a
+build 25, about 39 KB of definitions; a chat 22; an intake 16; a helper 12), Ask Daoris every tool but four (54, about 95 KB, of 102 KB
+for all 58). Nothing new rides the spawn: the kind is the record's, and the table is the one the connector already refused calls by.
 
 A conversation's turn (Ask Daoris and a repository's chat, on the protocol door) is tried again the same way since AGENTERRORS1b, inside
 the turn, on the conversation's own process: `ProtocolChat` hands its session the same `TransientRetry` once it is open (`ChatRetry`, the

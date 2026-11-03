@@ -16,23 +16,31 @@ export const REGISTERED_TOOLS: readonly string[] = [
 
 type Column = { only: readonly string[] } | { allBut: readonly string[] };
 
-const ASK_DAORIS_ONLY = ['checkout_read', 'housekeeping_clean_up', 'housekeeping_discard_branch', 'housekeeping_inspect'];
-const SETTINGS = ['settings_cap', 'settings_cooloff', 'settings_language', 'settings_notify', 'settings_timeout'];
 const TURNS = ['brainstorm_give', 'brainstorm_synthesize'];
-const OWN = [...TURNS, ...ASK_DAORIS_ONLY, ...SETTINGS];
 const READS = [
   'handback_read', 'knowledge_convergence', 'knowledge_get', 'knowledge_repositories', 'knowledge_search', 'line_read', 'memory_get',
   'memory_search', 'quest_list', 'registry',
 ];
+const MEMORY_CHANGES = ['memory_end', 'memory_write'];
+// What every session working in a repository is served (CONTEXTONE1d2), less what its work is refused.
+const CORE = [
+  ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
+];
+const CONVERSING = ['go_ahead_ask', 'handover_propose', 'opinion_answer', 'permission_propose'];
+const WORKING = [...CONVERSING, 'question_ask', 'review_ready', 'review_serve'];
+const without = (tools: readonly string[], left: readonly string[]) => tools.filter((tool) => !left.includes(tool));
 
 const COLUMNS: Record<string, Column> = {
-  build: { allBut: OWN },
-  design: { allBut: OWN },
-  chat: { allBut: OWN },
-  intake: { allBut: [...OWN, 'memory_end', 'memory_write'] },
-  'ask-daoris': { allBut: [...TURNS, 'memory_end', 'memory_write'] },
+  build: { only: [...CORE, ...WORKING] },
+  design: { only: [...CORE, ...WORKING] },
+  chat: { only: [...CORE, ...CONVERSING] },
+  intake: { only: without(CORE, MEMORY_CHANGES) },
+  'ask-daoris': { allBut: [...TURNS, ...MEMORY_CHANGES] },
   help: {
-    allBut: [...OWN, 'channel_post', 'channel_read', 'memory_end', 'memory_propose', 'memory_write', 'quest_publish', 'quest_respond'],
+    only: [
+      ...without(CORE, ['channel_post', 'channel_read', 'memory_propose', 'quest_publish', 'quest_respond', ...MEMORY_CHANGES]),
+      'helper_answer',
+    ],
   },
   partner: {
     only: [
