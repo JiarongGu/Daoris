@@ -173,6 +173,51 @@ public sealed class ContextBriefTests
     }
 
     [Fact]
+    public void A_read_only_turn_names_the_files_it_read_and_the_pages_it_opened_and_never_what_they_held()
+    {
+        var brief = ContextBrief.Compose(Line(Part(
+            "c0nv0001",
+            Asked("Look into the report."),
+            Call("t1", $"Read {Tree}/docs/a.md", kind: "read", locations: [$"{Tree}/docs/a.md"], output: "SECRET BODY"),
+            Call("t2", $"Read {Tree}/docs/a.md", kind: "read", locations: [$"{Tree}/docs/a.md"]),
+            Call("t3", "Search \"needle\"", kind: "search", input: $$"""{"pattern":"needle","path":"{{Tree}}/src"}"""),
+            Call("t4", "Fetch", kind: "fetch", input: """{"url":"https://example.test/page?token=abc#top"}"""),
+            Call("t5", "browser_navigate", kind: "other", input: """{"url":"https://example.test/other"}""", output: "PAGE TEXT"),
+            Said("Looked."), Ended())));
+
+        var text = Folded(brief);
+        Assert.Contains("It read `docs/a.md` and `src`; it opened `https://example.test/page` and `https://example.test/other`.", text);
+        Assert.DoesNotContain("SECRET BODY", brief.Text);
+        Assert.DoesNotContain("PAGE TEXT", brief.Text);
+        Assert.DoesNotContain("token=abc", brief.Text);
+    }
+
+    [Fact]
+    public void A_turn_with_edits_and_reads_names_both_and_a_file_it_edited_is_not_named_as_read()
+    {
+        var brief = ContextBrief.Compose(Line(Part(
+            "c0nv0001",
+            Asked("Fix the theme."),
+            Call("t1", "Read src/theme.ts", kind: "read", locations: ["src/theme.ts"]),
+            Call("t2", "Read src/colors.ts", kind: "read", locations: ["src/colors.ts"]),
+            Call("t3", "Edit src/theme.ts", kind: "edit", locations: ["src/theme.ts"]),
+            Said("Done."), Ended())));
+
+        Assert.Contains("It edited `src/theme.ts`; it read `src/colors.ts`.", Folded(brief));
+    }
+
+    [Fact]
+    public void The_reads_are_capped_and_the_rest_counted()
+    {
+        var calls = Enumerable.Range(1, 25).Select(n => Call($"r{n}", $"Read f{n}.ts", kind: "read", locations: [$"f{n}.ts"])).ToArray();
+        var brief = ContextBrief.Compose(Line(Part("c0nv0001", [Asked("Read it all."), .. calls, Said("Read."), Ended()])));
+
+        var text = Folded(brief);
+        Assert.Contains("`f20.ts` and 5 more", text);
+        Assert.DoesNotContain("`f21.ts`", text);
+    }
+
+    [Fact]
     public void A_check_is_a_call_matching_a_declared_gate_and_the_last_failed_one_carries_its_kept_output()
     {
         var brief = ContextBrief.Compose(Line(
