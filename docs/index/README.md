@@ -67,9 +67,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 54 | 879 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 47 | 900 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.tsx` | 43 | 736 |
-| `src/Daoris.Web/src/work/attention/attention.stories.tsx` | 45 | 1006 |
-| `src/Daoris.Web/src/work/attention/attention.test.ts` | 84 | 1380 |
-| `src/Daoris.Web/src/work/attention/attention.ts` | 64 | 1162 |
+| `src/Daoris.Web/src/work/attention/attention.stories.tsx` | 45 | 1009 |
+| `src/Daoris.Web/src/work/attention/attention.test.ts` | 84 | 1385 |
+| `src/Daoris.Web/src/work/attention/attention.ts` | 64 | 1168 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 77 | 1440 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 45 | 915 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 75 | 1391 |
