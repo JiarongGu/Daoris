@@ -72,10 +72,9 @@ source tests without an emit, so typechecking is a separate gate. CLI files are 
 as BOM-less UTF-8 with LF. Tools with importable helpers guard their runner with `isMain` from
 `tools/fsx.mjs`. Exit codes are `0` clean, `1` policy failure, `2` tool error.
 
-Use the discovery skills in `.claude/INDEX.md` before a non-trivial task. Open
-`docs/index/README.md` before searching code, then read its named ranges. Record plans and confirmed
-findings as they land. Use `post-feature` before committing; code changes need their relevant
-regression tests and checks. Installed-window proof remains distinct from a story or mocked bridge.
+Make every change through the `change` skill. Open `docs/index/README.md` before searching code, then
+read its named ranges. Code changes need their relevant regression tests and checks. Installed-window
+proof remains distinct from a story or mocked bridge.
 
 ## Where things are
 
