@@ -136,7 +136,7 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
   { within: 'knowledge', part: 'search' }, { within: 'knowledge', part: 'convergence' },
   { within: 'start', part: 'agent' }, { within: 'start', part: 'helper' }, { within: 'start', part: 'repositories' },
-  { within: 'start', part: 'driven' }, { within: 'start', part: 'landing' }, { within: 'start', part: 'rules' },
+  { within: 'start', part: 'setUp' }, { within: 'start', part: 'rules' },
   // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
   { within: 'agents', part: 'accounts' }, { within: 'agents', part: 'rules' }, { within: 'agents', part: 'usage' },
   // COMPANYVIEW1b: the Agents place's Roles mode (the company-view design §1), where the working roles are set.

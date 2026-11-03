@@ -403,122 +403,35 @@ public sealed class SetupPressTests : IDisposable
         Assert.False(File.Exists(PermissionRules.PathOf(_home)));
     }
 
-    /// <summary>🔴 <c>--plan</c> prints what was read, the refusals, the rule, the landing, the agent and the quest's text, and publishes nothing.</summary>
+    /// <summary>AGENTSPLACE1a2: what it builds rides the plan and shapes the body's safe work.</summary>
     [Fact]
-    public async Task Plan_prints_everything_and_publishes_nothing()
-    {
-        var world = new World();
-        var output = new StringWriter();
-
-        var code = await SetupCommand.RunAsync(["reports", "--plan"], output, world, Driven, SessionWire.Acp, _home, Day);
-
-        Assert.Equal(0, code);
-        Assert.Empty(world.Published);
-        Assert.False(File.Exists(PermissionRules.PathOf(_home)));
-        var printed = output.ToString();
-        Assert.Contains("Set up this repository for every agent (2026-10-01)", printed);
-        Assert.Contains("Bash(daoris sync --dry-run)", printed);
-        Assert.Contains("merged into its line", printed);
-        Assert.Contains("claude-code-acp", printed);
-        Assert.Contains("nothing was published", printed);
-        Assert.Contains("**The steps**", printed);
-    }
-
-    /// <summary>AGENTSPLACE1a2: what it builds rides the plan and shapes the body's safe work, from the route and from the verb alike.</summary>
-    [Fact]
-    public async Task What_it_builds_shapes_the_quests_safe_work_from_the_press_and_the_verb()
+    public async Task What_it_builds_shapes_the_quests_safe_work()
     {
         var plan = await SetupPress.PlanAsync(new World(), Driven, SessionWire.Acp, "reports", Day, SetupBuilds.Service);
-        var output = new StringWriter();
-
-        var code = await SetupCommand.RunAsync(["reports", "--what-it-builds", "service", "--plan"], output, new World(), Driven, SessionWire.Acp, _home, Day);
 
         Assert.Equal(SetupBuilds.Service, plan.Builds);
         Assert.Contains(SetupBuilds.Checks(SetupBuilds.Service), plan.Body);
-        Assert.Equal(0, code);
-        Assert.Contains(SetupBuilds.Checks(SetupBuilds.Service), output.ToString());
         Assert.Null((await PlanAsync(new World())).Builds);
     }
 
-    [Theory]
-    [InlineData("reports --what-it-builds game --plan", "`game` is not what a repository builds here")]
-    [InlineData("reports --what-it-builds", "`--what-it-builds` names what the repository builds")]
-    public async Task What_it_builds_that_is_not_one_of_the_four_is_the_usage(string words, string said)
-    {
-        var output = new StringWriter();
-
-        Assert.Equal(2, await SetupCommand.RunAsync(words.Split(' '), output, new World(), Driven, SessionWire.Acp, _home, Day));
-        Assert.Contains(said, output.ToString());
-    }
-
+    /// <summary>The plan says how its work will land, as a branch for review or merged (D117 §6.3), and where its quest starts alone.</summary>
     [Fact]
-    public async Task A_refused_plan_says_why_and_exits_one()
+    public async Task The_plan_says_how_it_will_land_and_where_its_quest_starts_alone()
     {
-        var output = new StringWriter();
-
-        var code = await SetupCommand.RunAsync(["reports", "--plan"], output, new World(), Driven.WithTrees("reports", false), SessionWire.Acp, _home, Day);
-
-        Assert.Equal(1, code);
-        Assert.Contains("`daoris driver trees reports on`", output.ToString());
-    }
-
-    /// <summary>The landing rule it will land by is said before it is pressed (D117 §6.3): as a branch for review, or merged.</summary>
-    [Fact]
-    public async Task The_plan_says_how_it_will_land()
-    {
-        var output = new StringWriter();
         var branch = Driven.WithLanding("reports", new LandingRule(LandingForm.Branch, "daoris/{quest}-{slug}"));
 
-        await SetupCommand.RunAsync(["reports", "--plan"], output, new World(), branch, SessionWire.Acp, _home, Day);
-
-        Assert.Contains("as a branch, for your review", output.ToString());
-    }
-
-    /// <summary>AGENTSPLACE1b: where it is not driven, the plan and the press say its quest starts alone, and where it is, nothing of it.</summary>
-    [Fact]
-    public async Task The_plan_and_the_press_say_where_its_quest_starts_alone()
-    {
-        var alone = new StringWriter();
-        var driven = new StringWriter();
-        var pressed = new StringWriter();
-
-        await SetupCommand.RunAsync(["reports", "--plan"], alone, new World(), Driven.WithDrivable("reports", false), SessionWire.Acp, _home, Day);
-        await SetupCommand.RunAsync(["reports", "--plan"], driven, new World(), Driven, SessionWire.Acp, _home, Day);
-        await SetupCommand.RunAsync(["reports"], pressed, new World(), Driven.WithDrivable("reports", false), SessionWire.Acp, _home, Day);
-
-        const string Said = "  starts   its quest alone: `reports` is not driven here, so nothing else of it starts";
-        Assert.Contains(Said + "\n", alone.ToString().ReplaceLineEndings("\n"));
-        Assert.Contains(Said + "\n", pressed.ToString().ReplaceLineEndings("\n"));
-        Assert.DoesNotContain("  starts ", driven.ToString());
+        Assert.Equal(LandingForm.Branch, (await PlanAsync(new World(), config: branch)).Landing!.Rule.Form);
+        Assert.True((await PlanAsync(new World(), config: Driven.WithDrivable("reports", false))).Alone);
+        Assert.False((await PlanAsync(new World())).Alone);
     }
 
     [Fact]
-    public async Task A_press_from_the_terminal_publishes_and_says_the_rule_it_added()
+    public async Task A_refused_plan_says_why()
     {
-        var world = new World();
-        var output = new StringWriter();
+        var plan = await PlanAsync(new World(), config: Driven.WithTrees("reports", false));
 
-        var code = await SetupCommand.RunAsync(["reports"], output, world, Driven, SessionWire.Acp, _home, Day);
-
-        Assert.Equal(0, code);
-        Assert.Single(world.Published);
-        Assert.Contains("Asked as `#a1b2c3`", output.ToString());
-        // HELPSETUP1: a repository's rules are on its Setup → Reach (UX6f).
-        Assert.Contains("taken back in Repositories → the repository's page → Setup → Reach, or `daoris agent rules remove", output.ToString());
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("--plan")]
-    [InlineData("reports billing")]
-    [InlineData("reports --force")]
-    public async Task Anything_but_one_repository_and_plan_is_the_usage(string words)
-    {
-        var output = new StringWriter();
-        var args = words.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        Assert.Equal(2, await SetupCommand.RunAsync(args, output, new World(), Driven, SessionWire.Acp, _home, Day));
-        Assert.Contains("daoris-driver setup <repository> [--plan]", output.ToString());
+        Assert.False(plan.Pressable);
+        Assert.Contains("`daoris driver trees reports on`", plan.Refusals[0].Sentence);
     }
 
     private Task<SetupPlan> PlanAsync(

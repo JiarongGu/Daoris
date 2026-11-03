@@ -36,7 +36,7 @@ const node = (id: string) => document.querySelector<HTMLElement>(`[data-flow-nod
 describe("a route's chart", () => {
   it('says what it draws: Current read from the rules, or the saved workflow and the route that follows it', () => {
     const { unmount } = draw(EFFECTIVE_CURRENT);
-    expect(screen.getByText('Current, read from the rules as they stand')).toBeInTheDocument();
+    expect(screen.getByText('Follows its old landing rule')).toBeInTheDocument();
     unmount();
 
     draw(EFFECTIVE_RELEASE);

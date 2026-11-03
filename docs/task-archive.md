@@ -22928,6 +22928,41 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: built. `PositionedCanvas` draws a scene of nodes, groups and edges in the canvas: laid out inline or in a worker under a revision, culled past 400, drawn by tier, a grouped world past 1,000 an overview opened one group at a time, with find, the minimap, the viewer's kept place and the grouped list. No feature draws on it yet (rows e and f). Detail: D224's CANVAS1d note, with the measured figures; `largeGraph.test.ts`, `PositionedCanvas.test.tsx`, `Canvas.test.tsx`, `measured/large.spec.ts`.
 
+## WORKFLOWCLEAN1a — a place follows a saved graph (2026-11-02, D227)
+
+> **1a** a place follows a saved graph (driver, modules). Contract and proof: the cleanup design's §1, §4.7's Current rows, §9 row 1a and §12.
+
+**Outcome** 2026-11-02: built. A home names its default workflow (`defaultWorkflow`, seeded `merge-after-accept` on a fresh home); a place follows it with nothing written, and *Set up…* saves and chooses the shipped copy through `PLACE_APPLY`'s new `WORKFLOW_SAVE` operation instead of writing a landing rule. The shipped `delivery` is derived from each graph; `land` has the option `key`; an open option resolves from derived defaults where the place has no rule; the line's policy is `linePolicies`, edited by `SET_LINE`. `SET_LANDING`, `daoris driver landing` and Ask Daoris's `landing` card refuse for a place that follows a saved workflow (row 1y retires them whole), and `new --from current:` is retired. Left to 1b to 1f: the transitional paths named in D227's 1a note. Detail: D227's 1a note; `HomeDefaultTests`, `PlacePlanTests`, `PlaceApplyTests`, `WorkflowRunBindingTests`, `SetupPresetsTests`.
+## WORKFLOWCLEAN1b — old saves refused (2026-11-02, D227)
+
+> **1b** saves refused (driver, modules; after a). Contract and proof: the cleanup design's §3, §9 row 1b and §13 point 2.
+
+**Outcome** 2026-11-02: built. A list of steps, a `handed` and a `land` with no method are refused at the one save point, in the same words at every door (the step presets deleted, `workflow new --from` steps, `edit`, `apply` of steps, `apply --as-graph` folded into `convert`, `import`, `WORKFLOW_SAVE` with `steps`, Ask Daoris's steps door); a stored version of each still reads, shows and binds. The palette's `offered` hides `handed` and a landing's tail from the picker. Detail: D227's 1b note; `SavesRefusedTests`, `WorkflowAsGraphCommandTests`, `HelpWorkflowProposalsTests`, `DriverModuleWorkflowWritesTests`.
+
+## WORKFLOWCLEAN1f — one adoption door (2026-11-02, D227)
+
+> **1f** one adoption door (driver, modules, web-shell, service; after a). Contract and proof: the cleanup design's §5 *One adoption door*, §9 row 1f, and the one-way census's A1 and A2.
+
+**Outcome** 2026-11-02: built. `PLACE_APPLY`'s adoption part, over `SetupPress`, is the one door that adopts a repository: `SETUP_PLAN` and `SETUP_PRESS`, `daoris-driver setup`, the repository page's *Set up for agents* with its routes and strings, the shell's set-up plan door, and Ask Daoris's `setup` door are gone; `daoris-driver place <repo> --preset keep --adoption [--what-it-builds …]` is the terminal's, and `setup_propose` is a place's. An adoption covering more of a workspace's repositories than `--at-once` (the plan's default, one) is paced: the apply writes the workspace plan (rule added once) and the tick publishes it, an existing plan file unchanged; `place --workspace <ws> --adoption --at-once <n> --pilot <n>` and `--pause`/`--resume`/`--stop` steer it. Detail: D227's 1f note and D221's; `PlaceApplyTests`, `WorkspaceSetupLoopTests`, `WorkspaceSetupCommandTests`, `HelpSetupProposalsTests`, `HelpSetupDoorTests`.
+
+## WORKFLOWCLEAN1c — the runtime performs `land` (2026-11-02, D227)
+
+> **1c** the runtime performs `land` (driver, modules; after a). Contract and proof: the cleanup design's §2.1–§2.6, §4.7, §9 row 1c and §13 point 3.
+
+**Outcome** 2026-11-02: built. The pass starts a run's `land` once, on `ILandingDoor`, and `LandingDoor` lands it off the pass from the node's bound intent, authorized by the review's Accept or the standing authority; a press and a pass land one delivery. The run's process carries the bound `land` (`LandNodes.RuleOf`) in place of the live rule; the look chooses nothing for it, closes the entries written before the update with their kept Accepts adopted as the review's word and repair (`NodeRecord.Repairs`), and the conversion writes no due entry. `LAND_SESSION_TREE` keeps the word and waits for the landing; an entry's Accept keeps each such part's word; `SET_ACCESS` refuses `landing`. Rest built 2026-11-02: `GraphGates.Of` reads a `land` graph's gates from its options, an entry's or ask's Accept keeps the head's word carrying the operation and the performer delivers the head's unit with its members brought in, the terminal alone keeps the word under the verb's lease, and `full` opens no landing pause for a place on a saved workflow. Left: the performer's combined-head landing has no test of its own beside the build. Detail: D227's 1c note, D215's, D145's, D190's and D184's; `GraphRunLandingTests`, `GraphGatesTests`.
+
+## WORKFLOWCLEAN1d — a chat's run binds its graph (CHATFLOW1f, 1h, 1i; 2026-11-02, D227)
+
+> **1d** a chat's run binds its graph (driver, modules, web-shell; after c). Contract and proof: the cleanup design's §2.7, §9 row 1d and §13 point 7; the chat-flow design's §4.5 (amended), with CHATFLOW1h and CHATFLOW1i brought in from the parked triage.
+
+**Outcome** 2026-11-02: built. **CHATFLOW1f:** a conversation in a tree of its own binds a graph version; its candidate, submitted at the person's press, is the subject its `claimed` observes, its `land` is the runtime's and its press is word-and-wait; `chat-graph-later` is gone, and a graph holding a `quest.close` is bound with that as its problem. **CHATFLOW1h:** each execution of such a conversation locks its tree in its id, keeps its run's checks for it, denies a light chat's heavy gates in its spawn and tells it the checks, and the view no longer says they are not enforced. **CHATFLOW1i:** a chat that took a quest, a worker gone on as a conversation and a line whose origin is a quest's are gated by that quest's chain at the window's press, the terminal's land and the opinion's door. Left: the terminal alone still lands a graph-bound chat's work in place; no chat-specific proof of a failed check's single send-back. Detail: D227's 1d note and the chat-flow design's §4.5; `ChatGraphRunTests`, `WorkflowRunBindingTests`, `WorkflowRunChatTests`.
+
+## WORKFLOWCLEAN1e — the conversion (2026-11-02, D227)
+
+> **1e** the conversion (driver, modules; after a, b, c). Contract and proof: the cleanup design's §4, §9 row 1e and §13 point 4.
+
+**Outcome** 2026-11-02: built. `WorkflowLegacy.Census` finds every old shape the home holds, and one plan, `CONVERT_PLAN`, saves each steps, `handed` and `land`+`accept` newest as the next version of its id, gives each place that follows Current a saved workflow (the home default where it has no rule, a shipped copy by shape, else its own), moves `integrate` to the line's policy and removes the converted rules; `CONVERT_APPLY` is the person's press (receipt first, `moved` where the plan changed, judged again inside the one edit, a place with a Current unit open keeping its rules), `CONVERT_UNDO` takes it back, and `workflow convert --plan|--apply|--undo` is the terminal's through the running Daoris. Left to 1g: the page. Detail: D227's 1e note; `ConversionTests`, `DriverModuleConvertTests`.
+
 ## The parked backlog triaged against D228: dropped rows (2026-11-02)
 
 > **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.

@@ -7,7 +7,6 @@ import { HELPER_DEFAULT, type HelperEdit, HelperField, type HelperRule, helperRo
 import {
   HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, type HandOverRule, handOverRowSays, handOverSummary,
 } from '../../settings/repository/HandOver';
-import { type Accepting, AcceptingNote, LandingField, landingProcessSays, type LandingRule } from '../../settings/repository/Landings';
 import { LanguageChoice, type LanguageOption } from '../../settings/repository/Languages';
 import { LineField } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../../settings/repository/Opinions';
@@ -16,7 +15,7 @@ import { shellWord } from '../../lib/shellWord';
 import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../../design/ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
-import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
+import { Inheritable, SetupSection } from './SetupParts';
 import type { SupervisorLine } from './SupervisorRow';
 import { SupervisorDoor } from './SupervisorDoor';
 import type { WorkspaceSection } from '../tabs';
@@ -32,14 +31,6 @@ import { GitHosts, type GitHostActs, type GitHostShown } from '../../settings/gi
 export type WorkspaceDefaults = {
   /** Its line (WSR2): `daoris driver line --workspace`. */
   line?: { set?: string; onSet: (branch: string | undefined) => void } | null;
-  /** How its work lands (WSR1, D87): `daoris driver landing --workspace`; the plugins here that land work (D100). */
-  landing?: {
-    set?: LandingRule; landers: string[]; onSet: (rule: LandingRule | undefined) => void;
-    /** A rule `driver.json` keeps for it that reads as no rule (FABRIC-GRAPH1d); absent where none. */
-    unread?: UnreadLanding;
-    /** The driver's sentence for the rule it last refused, shown under *Save* (AGENTSPLACE1d). */
-    refusal?: string | null;
-  } | null;
   /** The language its sessions write in (LANG1c), by the driver's table: `daoris driver language --workspace`. */
   language?: { set?: string; table: LanguageOption[]; onSet: (code: string | undefined) => void } | null;
   /** Whether agents outside its repositories read their checkouts (READ1, D107): `daoris driver across --workspace`. */
@@ -117,12 +108,9 @@ export type WorkspaceSetupProps = {
    * `rest` is what the old tab keeps until it goes: everything but the session rows. Absent, all.
    */
   rows?: 'all' | 'sessions' | 'defaults' | 'rest';
-  /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
-  onOpenPlugin?: (plugin: string) => void;
 };
 
 const JOIN = ' · ';
-const MERGE: LandingRule = { form: 'merge' };
 
 /** A body read in a tip, which draws no code: its marks go, and its words stay. */
 const plain = (text: string) => text.replace(/`/g, '');
@@ -144,14 +132,14 @@ const plain = (text: string) => text.replace(/`/g, '');
  */
 export function WorkspaceSetup({
   workspace, defaults, access: accessAnswered, git, supervisor: supervisorLine, onOpenAppointed, remote, busy = false, open, wiring: startWiring = false,
-  rows = 'all', onOpenPlugin,
+  rows = 'all',
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
   const mine = rows === 'all' || rows === 'sessions';
   const ofLine = rows !== 'sessions';
   const rest = rows === 'all' || rows === 'rest';
-  const { line, landing, review, opinion, commits } = ofLine ? defaults : ({} as WorkspaceDefaults);
+  const { line, review, opinion, commits } = ofLine ? defaults : ({} as WorkspaceDefaults);
   const { language, read, helpers, handOver } = mine ? defaults : ({} as WorkspaceDefaults);
   const access = mine ? accessAnswered : null;
   const supervisor = rest ? supervisorLine : null;
@@ -159,7 +147,6 @@ export function WorkspaceSetup({
 
   const defaultsParts = [
     ...(line ? [line.set ? t('projects.setup.summary.line', { branch: line.set }) : daoris(t('projects.workspace.summary.noLine'))] : []),
-    ...(landing ? [landing.set ? landingSays(t, landing.set) : daoris(t('projects.setup.summary.landsMerge'))] : []),
     ...(commits ? [commits.set ? commitSummary(t, commits.set) : daoris(commitSummary(t, COMMIT_DEFAULT))] : []),
     ...(language
       ? [language.set
@@ -212,7 +199,7 @@ export function WorkspaceSetup({
   const accessShown = access && access.pauses.length > 0 ? access : null;
 
   const opensItself: Record<WorkspaceSection, boolean> = {
-    defaults: Boolean(line?.set || landing?.set || landing?.unread || language?.set || read?.set !== undefined || review?.set || opinion?.set
+    defaults: Boolean(line?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set
       || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     reach: ruleCount > 0 || undeclared > 0,
@@ -254,7 +241,6 @@ export function WorkspaceSetup({
               )}
             />
           )}
-          {landing && <LandingDefault workspace={workspace} landing={landing} busy={busy} onOpenPlugin={onOpenPlugin} />}
           {commits && (
             <Inheritable
               setHere={t('projects.workspace.setHere')}
@@ -469,57 +455,6 @@ export function WorkspaceSetup({
         </SetupSection>
       ))}
     </div>
-  );
-}
-
-/** How work lands by default: an `Inheritable` whose control is the rule's own, and what accepting automatically gives. */
-function LandingDefault({ workspace, landing, busy, onOpenPlugin }: {
-  workspace: string;
-  onOpenPlugin?: (plugin: string) => void;
-  landing: NonNullable<WorkspaceDefaults['landing']>;
-  busy: boolean;
-}) {
-  const { t } = useTranslation();
-  const [accepting, setAccepting] = useState<Accepting>(null);
-  const set = landing.set;
-  const says = set
-    ? landingRowSays(
-        t,
-        t(`settings.landing.from.workspace.${set.form === 'branch' ? 'branch' : 'merge'}`, { pattern: set.pattern, workspace }),
-        set.form === 'branch' ? set.plugin : undefined,
-        set.form === 'branch' && !!set.autoAccept,
-        onOpenPlugin,
-        landingProcessSays(t, set),
-      )
-    :t('settings.landing.from.default');
-  return (
-    <Inheritable
-      setHere={t('projects.workspace.setHere')}
-      label={t('projects.setup.landing')}
-      twin={t('projects.workspace.twin.landing', { workspace: shellWord(workspace, '<workspace>') })}
-      why={plain(t('settings.landing.body'))}
-      says={says}
-      own={set !== undefined}
-      busy={busy}
-      wide
-      onClear={() => landing.onSet(undefined)}
-      editor={() => (
-        <LandingField
-          name={workspace}
-          set={set}
-          inherited={MERGE}
-          landers={landing.landers}
-          busy={busy}
-          clearable={false}
-          onSave={(rule) => landing.onSet(rule)}
-          onAccepting={setAccepting}
-          refusal={landing.refusal}
-        />
-      )}
-    >
-      <AcceptingNote accepting={accepting} />
-      {landing.unread && <UnreadLandingNote name={workspace} unread={landing.unread} />}
-    </Inheritable>
   );
 }
 

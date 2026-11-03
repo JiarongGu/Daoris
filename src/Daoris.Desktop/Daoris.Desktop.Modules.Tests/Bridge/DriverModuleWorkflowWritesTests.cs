@@ -11,9 +11,10 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
 {
-    private const string Steps = """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""";
+    /// <summary>Two graphs that differ (WORKFLOWCLEAN1 1b: a workflow is saved as a graph; a list of steps is refused).</summary>
+    private static readonly string Steps = WorkflowDefaults.Of("merge-after-accept")!.GraphJson;
 
-    private const string OtherSteps = """[{"id":"work","kind":"work"},{"id":"look","kind":"look"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""";
+    private static readonly string OtherSteps = WorkflowDefaults.Of("release")!.GraphJson;
 
     private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync()
     {
@@ -35,7 +36,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     {
         var (module, _) = await UpAsync();
 
-        var plan = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", from = "pull-request-no-press", plan = true });
+        var plan = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", from = "pull-request", plan = true });
         Assert.Equal((true, false, 1), (plan.GetProperty("done").GetBoolean(), plan.GetProperty("written").GetBoolean(), plan.GetProperty("version").GetInt32()));
         Assert.Null(WorkflowStore.Load(Home, "docs"));
 
@@ -51,27 +52,45 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Equal(1, NewestOnDisk("docs"));
     }
 
+    /// <summary>WORKFLOWCLEAN1 1b: the window's save refuses a list of steps, and a copy of a step preset, with the one judge's words and writes nothing.</summary>
+    [Fact]
+    public async Task A_save_of_steps_is_refused_with_the_steps_code_and_writes_nothing()
+    {
+        var (module, _) = await UpAsync();
+
+        var refused = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse("""[{"id":"work","kind":"work"}]""") });
+
+        Assert.Equal((false, "steps-refused"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("refused").GetString()));
+        Assert.Equal(WorkflowNamed.StepsRefused("docs"), refused.GetProperty("message").GetString());
+        Assert.Null(WorkflowStore.Load(Home, "docs"));
+
+        var preset = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", from = "pull-request-no-press" });
+        Assert.Equal((false, "refused"), (preset.GetProperty("done").GetBoolean(), preset.GetProperty("refused").GetString()));
+        Assert.Contains("is no preset", preset.GetProperty("message").GetString());
+        Assert.Null(WorkflowStore.Load(Home, "docs"));
+    }
+
     [Fact]
     public async Task A_save_onto_a_saved_id_names_the_version_it_was_made_against_and_a_stale_one_is_refused()
     {
         var (module, _) = await UpAsync();
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps) });
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(Steps) });
 
-        var unnamed = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(OtherSteps) });
+        var unnamed = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(OtherSteps) });
         Assert.Equal("stale", unnamed.GetProperty("refused").GetString());
 
-        var appended = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(OtherSteps), @base = 1 });
+        var appended = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(OtherSteps), @base = 1 });
         Assert.Equal((true, true, true, 2), (appended.GetProperty("done").GetBoolean(), appended.GetProperty("written").GetBoolean(),
             appended.GetProperty("appended").GetBoolean(), appended.GetProperty("version").GetInt32()));
         Assert.Empty(appended.GetProperty("scopes").EnumerateArray());
         Assert.Equal(2, NewestOnDisk("docs"));
 
-        var stale = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps), @base = 1 });
+        var stale = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(Steps), @base = 1 });
         Assert.Equal((false, "stale"), (stale.GetProperty("done").GetBoolean(), stale.GetProperty("refused").GetString()));
         Assert.Contains("`docs` is at v2 now, not v1", stale.GetProperty("message").GetString());
         Assert.Equal(2, NewestOnDisk("docs"));
 
-        var same = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(OtherSteps), @base = 2 });
+        var same = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(OtherSteps), @base = 2 });
         Assert.Equal((true, false), (same.GetProperty("done").GetBoolean(), same.GetProperty("written").GetBoolean()));
         Assert.Contains("already says this", same.GetProperty("message").GetString());
         Assert.Equal(2, NewestOnDisk("docs"));
@@ -87,23 +106,23 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
             }
             """);
         var (module, _) = await UpAsync();
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps) });
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(Steps) });
 
-        var asked = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(OtherSteps), @base = 1 });
+        var asked = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(OtherSteps), @base = 1 });
         Assert.Equal((false, "reach", true), (asked.GetProperty("done").GetBoolean(), asked.GetProperty("refused").GetString(), asked.GetProperty("appended").GetBoolean()));
         Assert.Equal(["repository:engine:default", "workspace:aurora:kind:docs"], Keys(asked));
         Assert.Equal(1, NewestOnDisk("docs"));
 
-        var partial = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(OtherSteps), @base = 1, authorize = new[] { "repository:engine:default" } });
+        var partial = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(OtherSteps), @base = 1, authorize = new[] { "repository:engine:default" } });
         Assert.Equal("reach", partial.GetProperty("refused").GetString());
         Assert.Equal(1, NewestOnDisk("docs"));
 
-        var planned = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(OtherSteps), @base = 1, plan = true });
+        var planned = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(OtherSteps), @base = 1, plan = true });
         Assert.Equal((true, false), (planned.GetProperty("done").GetBoolean(), planned.GetProperty("written").GetBoolean()));
         Assert.Equal(2, Keys(planned).Count);
 
         var written = await AnswerAsync(module, "WORKFLOW_SAVE",
-            new { id = "docs", steps = Parse(OtherSteps), @base = 1, authorize = new[] { "workspace:aurora:kind:docs", "repository:engine:default" } });
+            new { id = "docs", graph = Parse(OtherSteps), @base = 1, authorize = new[] { "workspace:aurora:kind:docs", "repository:engine:default" } });
         Assert.Equal((true, true, 2), (written.GetProperty("done").GetBoolean(), written.GetProperty("written").GetBoolean(), written.GetProperty("version").GetInt32()));
         Assert.Equal(2, NewestOnDisk("docs"));
     }
@@ -112,7 +131,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     public async Task A_workflow_is_chosen_for_a_place_in_one_change_and_cleared()
     {
         var (module, _) = await UpAsync();
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps) });
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(Steps) });
 
         var chosen = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "docs", version = 1 });
         Assert.Equal((true, true), (chosen.GetProperty("done").GetBoolean(), chosen.GetProperty("changed").GetBoolean()));
@@ -137,8 +156,8 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     public async Task A_choice_of_a_workflow_not_saved_or_moved_is_refused_and_writes_nothing()
     {
         var (module, _) = await UpAsync();
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps) });
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(OtherSteps), @base = 1 });
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(Steps) });
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(OtherSteps), @base = 1 });
 
         var missing = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "nope" });
         Assert.Equal((false, "refused"), (missing.GetProperty("done").GetBoolean(), missing.GetProperty("refused").GetString()));
@@ -160,7 +179,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     public async Task A_kind_is_declared_with_its_paths_mapped_to_a_workflow_and_dropped()
     {
         var (module, _) = await UpAsync();
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps) });
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(Steps) });
 
         var declared = await AnswerAsync(module, "WORKFLOW_KIND", new { workspace = "aurora", kind = "docs", label = "Documentation", paths = new[] { "docs/**", "**/*.md" } });
         Assert.Equal((true, true), (declared.GetProperty("done").GetBoolean(), declared.GetProperty("changed").GetBoolean()));
@@ -186,7 +205,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     [Fact]
     public async Task A_choice_says_where_a_repository_integrates_with_no_gates_and_refuses_one_that_cannot_start()
     {
-        File.WriteAllText(DriverConfigPath, """{"landings":{"engine":{"form":"branch","pattern":"w/{quest}"},"game":{"form":"merge"}}}""");
+        File.WriteAllText(DriverConfigPath, """{"landings":{"engine":{"form":"branch","pattern":"w/{quest}"},"game":{"form":"branch","pattern":"g/{quest}","plugin":"acme.pr"}}}""");
         var (module, _) = await UpAsync();
         await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "line", from = "integrated" });
 
@@ -341,7 +360,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     public async Task A_plan_that_clears_a_default_says_what_the_kinds_the_place_still_maps_keep()
     {
         var (module, _) = await UpAsync();
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps) });
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Parse(Steps) });
         await AnswerAsync(module, "WORKFLOW_KIND", new { workspace = "aurora", kind = "docs", label = "Documentation", paths = new[] { "docs/**" } });
         await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "docs", kind = "docs" });
         await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "docs" });

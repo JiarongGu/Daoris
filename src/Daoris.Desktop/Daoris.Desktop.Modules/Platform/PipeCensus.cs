@@ -315,7 +315,7 @@ public sealed class PipeCensus
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "INTEGRATION", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "ROLES", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
-            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_RECORD", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
+            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_RECORD", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "STARTS",
             // COWORKVIEW1a: who is at work on a session, from the slices and the lineage files.
             "SESSION_AT_WORK",
             // LINESTOGETHER1c: the sessions beside one, a read of git in their trees.
@@ -330,6 +330,8 @@ public sealed class PipeCensus
             "PLACES",
             // AGENTSPLACE1a2: a place's quick set-up planned on a copy of the configuration, written nowhere.
             "PLACE_PLAN",
+            // WORKFLOWCLEAN1 1e: the conversion's plan (or the undo's) read from the file, the saved workflows, the bound runs and the registry, written nowhere.
+            "CONVERT_PLAN",
             // WORKFLOWEDIT1a: the step editor's reads of the saved workflows and what a step graph may hold; they write nothing.
             "WORKFLOW_LIST", "WORKFLOW_SHOW", "WORKFLOW_PALETTE",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
@@ -353,7 +355,7 @@ public sealed class PipeCensus
             "GIT_TRY_AGAIN");
         Add(PipeClass.Person,
             // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
-            "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
+            "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
             // Deletes, clears and closes: a discard, a sweep, an archive, a delete, a stop, an end, an abandon.
             "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
             "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "WORK_ABANDON", "WORK_PAUSE", "WORK_RESUME",
@@ -401,7 +403,7 @@ public sealed class PipeCensus
             "SET_ROLE",
             // AGENTSPLACE1g2: several roles' changes made as one, the Roles mode's suggested choices.
             "SET_ROLES",
-            "SETUP_PRESS", "SET_ACCESS", "SET_GIT_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
+            "SET_ACCESS", "SET_GIT_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
@@ -410,6 +412,8 @@ public sealed class PipeCensus
             "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND",
             // AGENTSPLACE1b2: a place's plan applied, by its digest: the configuration's changes and acceptances, and each adoption quest.
             "PLACE_APPLY",
+            // WORKFLOWCLEAN1 1e: the old records converted to saved graph workflows, and the conversion taken back, each by its plan's digest.
+            "CONVERT_APPLY", "CONVERT_UNDO",
             // INTEGRATE1d: a repository's integration declaration, what integration runs and a tidy removes, accepted by its blob (D215 point 10).
             "INTEGRATION_GATES",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
@@ -518,13 +522,13 @@ public sealed class PipeCensus
             // hold a start.
             "SET_HELPERS", "SET_CAP", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
             "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "PLACE_APPLY", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            "PLACE_APPLY", "CONVERT_APPLY", "CONVERT_UNDO", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
             "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",
             // A repository changed through git: a landing, a hand-off, a discard, a drop of recovery refs, a sweep, a sync, an abandon
             // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
-            "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
+            "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
             "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
             // GITAPP2c: a ref act moves the person's repository's refs through git; GITAPP2m: so does a history edit, its plan's git included.
             "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH", "GIT_HISTORY_EDIT", "GIT_FETCH",
@@ -540,7 +544,7 @@ public sealed class PipeCensus
             "SESSION_PERMISSION_ANSWER",
             // A word kept whose going on is a quest's start or a park's resume, which the drain's look holds until the restart: a go-ahead, a
             // quest retried, a set-up's ask, a helper or hand-over declined, the supervisor's.
-            "SESSION_GO_AHEAD", "RETRY_QUEST", "SETUP_PRESS", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
+            "SESSION_GO_AHEAD", "RETRY_QUEST", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
             "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER",
             // A record, a mark or a list cleared: no tree, no branch and no process (a history's clear never takes a tree). A memory row
             // decided, which the service's applier settles and no session runs.

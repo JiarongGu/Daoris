@@ -253,6 +253,24 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndArray();
         }
 
+        // WORKFLOWCLEAN1 1c: the repairs a carried review Accept waits on, written only while one waits.
+        if (record.Repairs.Count > 0)
+        {
+            writer.WriteStartArray("repairs");
+            foreach (var repair in record.Repairs)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("node", repair.Node);
+                writer.WriteString("tip", repair.Tip);
+                writer.WriteString("turn", repair.Turn);
+                writer.WriteNumber("carries", repair.Carries);
+                writer.WriteString("at", Moments.Write(repair.At));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     });
 
@@ -515,11 +533,29 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 }
             }
 
+            // WORKFLOWCLEAN1 1c: the repairs a carried Accept waits on, absent in a record written before them; present, each reads whole.
+            var repairs = new List<NodeRepair>();
+            if (root.TryGetProperty("repairs", out var kept))
+            {
+                if (kept.ValueKind != JsonValueKind.Array) return null;
+                foreach (var each in kept.EnumerateArray())
+                {
+                    if (each.ValueKind != JsonValueKind.Object || Text(each, "node") is not { } node || Text(each, "tip") is not { } tip
+                        || Text(each, "turn") is not { } turn || Moments.Read(each, "at") is not { } at
+                        || !each.TryGetProperty("carries", out var carries) || !carries.TryGetInt32(out var count))
+                    {
+                        return null;
+                    }
+
+                    repairs.Add(new NodeRepair(node, tip, turn, count, at));
+                }
+            }
+
             return Consistent(unit, statuses, attempts)
                 ? new NodeRecord(unit)
                 {
                     Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history,
-                    Observations = observations, Ended = ended, Pending = pending,
+                    Observations = observations, Ended = ended, Pending = pending, Repairs = repairs,
                 }
                 : null;
         }

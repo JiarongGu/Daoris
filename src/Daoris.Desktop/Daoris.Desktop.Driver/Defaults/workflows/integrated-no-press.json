@@ -4,7 +4,6 @@
   "name": "No-press integration workflow",
   "for": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done.",
   "delivery": {
-    "id": "integrated-no-press", "method": "integrate", "accept": "automatic", "plugin": "none", "request": "done",
     "name": "Integrated with no press",
     "for": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done."
   },

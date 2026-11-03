@@ -9,6 +9,12 @@ import { cn } from '../../lib/cn';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
 import { FoldRow, type FoldSpec } from '../../projects/setup/FoldRow';
+import type { LandsHere } from '../../projects/setup/RepositorySetup';
+import { choiceLabel } from '../edit/editWords';
+import { draftOf, optionOf } from '../edit/graphDraft';
+import { presetName } from '../edit/presetWords';
+import { LandOptions } from './LandOptions';
+import { NextVersion } from './NextVersion';
 import type { IntegrationRequest } from '../../settings/repository/IntegrationDeclaration';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import type { WorkflowEffective, WorkflowStart } from '../current';
@@ -27,9 +33,82 @@ import { PlaceRepositories, repositoriesSummary } from './PlaceRepositories';
 export type LandingHand = {
   asked: 'landing' | null;
   again: number;
-  /** Gates, which the page owns, to stand before the folds of the line and its landing. */
+  /** Gates (and a workspace's repositories), which the page owns, to stand before the folds of the line and its landing. */
   lead: readonly FoldSpec[];
+  /** How the chosen route lands: the followed version's land options, or Current's door to the conversion; none while the route is read. */
+  lands: LandsHere | null;
 };
+
+/**
+ * *Daoris ships a newer … workflow · Update…* (WORKFLOWCLEAN1h-b; the cleanup design §1.1): a copy behind the default this build ships. *Update…*
+ * is a plan of one: the shipped graph judged and reviewed as the copy's next version, and saved only once the places it reaches are let follow it.
+ */
+function ShippedUpdate({ editor, effective, onReads }: {
+  editor: NonNullable<PlaceWorkflowProps['editor']>;
+  effective: WorkflowEffective;
+  onReads: (on: boolean) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const newer = effective.newer;
+  useEffect(() => { onReads(open); return () => onReads(false); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!newer || effective.version === null || !effective.graph) return null;
+  const base = draftOf(effective.graph);
+  return (
+    <div className="grid min-w-0 gap-1.5">
+      <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
+        {t('workflow.place.update.says', { name: presetName(t, i18n, { id: newer.default, name: newer.name }) })}
+        <Button variant="ghost" className="min-h-0 border border-line py-0.5 text-small" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
+          {t('workflow.place.update.open')}
+        </Button>
+      </p>
+      {open && (editor.palette
+        ? (
+          <NextVersion
+            palette={editor.palette}
+            base={base}
+            draft={draftOf(newer.graph)}
+            workflow={{ id: effective.workflow, version: effective.version }}
+            updates={newer.default}
+            judged={editor.judged}
+            judgedOf={editor.judgedOf ?? null}
+            onJudge={editor.onJudge}
+            saving={editor.saving}
+            onSave={editor.onSave}
+            onReread={() => setOpen(false)}
+          />
+        )
+        : <p className="m-0 text-small text-ink-soft">{t('workflow.reading')}</p>)}
+    </div>
+  );
+}
+
+/** The land options of the followed version, which read the palette only while they show. */
+function LandEditor({ editor, graph, workflow, lines, onReads }: {
+  editor: NonNullable<PlaceWorkflowProps['editor']>;
+  graph: unknown;
+  workflow: { id: string; version: number };
+  lines?: string[];
+  onReads: (on: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  useEffect(() => { onReads(true); return () => onReads(false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!editor.palette) return <p className="m-0 text-small text-ink-soft">{t('workflow.reading')}</p>;
+  return (
+    <LandOptions
+      palette={editor.palette}
+      roles={editor.roles}
+      graph={graph}
+      workflow={workflow}
+      lines={lines}
+      judged={editor.judged}
+      judgedOf={editor.judgedOf ?? null}
+      onJudge={editor.onJudge}
+      saving={editor.saving}
+      onSave={editor.onSave}
+    />
+  );
+}
 
 /** What the section draws under the routes: the line's landing rows, handed in by the page that holds the settings. */
 export type PlaceWorkflowProps = WorkflowTabProps & {
@@ -60,6 +139,8 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   /** The editor's draft the page kept when this section was last unmounted, and where it keeps the draft as the editor reports it (REVIEW2 P5). */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
+  /** Opens the home's conversion review (WORKFLOWCLEAN1g-i): the one door from a route, a Landing row or a tab that follows Current. */
+  onConvert?: () => void;
 };
 
 type EditStart = NonNullable<WorkflowEditorProps['startFrom']>;
@@ -70,11 +151,11 @@ type Panel = { is: 'change'; route: string } | { is: 'edit'; route: string; from
 /**
  * What *Edit steps…* opens the editor on (SETUPUX1r): the graph the selected route follows. A saved workflow's newest version is the version
  * the edit appends to; Current's, or a version of steps drawn as the graph it decodes to, begins a workflow of its own. None where the
- * route draws no graph, or is still being read: the editor begins empty.
+ * route draws no graph, or is still being read: the editor begins empty. A route that follows Current has no editor: it goes to the conversion.
  */
 function editStart(effective: WorkflowEffective | null): { graph: unknown; id?: string; name?: string; base?: number | null } | undefined {
   if (effective === null || effective.graph === null || effective.graph === undefined) return undefined;
-  if (effective.workflow !== 'current' && effective.version !== null && effective.schema === 2) {
+  if (effective.version !== null && effective.schema === 2) {
     return { graph: effective.graph, id: effective.workflow, name: effective.name ?? effective.workflow, base: effective.version };
   }
   return { graph: effective.graph, ...(effective.name ? { name: effective.name } : {}) };
@@ -134,7 +215,7 @@ function Routes({ rows, chosen, onChoose }: { rows: readonly RouteRow[]; chosen:
  */
 export function PlaceWorkflowView({
   name, page = 'repository', current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
-  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened, held = null, onHold,
+  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened, held = null, onHold, onConvert,
 }: PlaceWorkflowProps) {
   const { t } = useTranslation();
   const canAsk = useCanFillAsk();
@@ -155,13 +236,17 @@ export function PlaceWorkflowView({
   // panel, lets the draft go.
   const reported = useRef<EditorHold | null>(held?.editor ?? null);
   const [discarding, setDiscarding] = useState(false);
+  // The editor's reads are asked while a panel shows or the Landing row's options do.
+  const reads = useRef({ panel: false, land: false, update: false });
+  const tell = () => editor?.onOpen?.(reads.current.panel || reads.current.land || reads.current.update);
   const show = (next: Panel) => {
     setPanel(next);
-    editor?.onOpen?.(next !== null);
+    reads.current.panel = next !== null;
+    tell();
     if (next?.is !== 'edit') { reported.current = null; onHold?.(null); } else if (panel?.is !== 'edit') { reported.current = null; onHold?.({ route: next.route, ...(next.from ? { from: next.from } : {}), editor: null }); }
   };
   // The page may have unmounted this section with the editor open (a fold, *Set up…*, a change of layout): the editor is told it is shown.
-  useEffect(() => { if (panel) editor?.onOpen?.(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (panel) { reads.current.panel = true; tell(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (asked.section) document.querySelector('[data-place-row="landing"]')?.scrollIntoView?.({ block: 'nearest' });
@@ -226,6 +311,31 @@ export function PlaceWorkflowView({
     },
   };
 
+  // How the route lands (WORKFLOWCLEAN1h-b): under a saved version it is the version's `land` options; under Current, only the conversion.
+  const land = answered === null || !answered.graph || landed ? undefined : draftOf(answered.graph).nodes.find((node) => node.kind === 'land');
+  const lands: LandsHere | null = answered === null || landed ? null
+    : answered.workflow === 'current' ? { is: 'current', onConvert }
+      : editor && land && answered.schema === 2 && answered.version !== null
+        ? {
+          is: 'version',
+          summary: t('projects.setup.summary.landsVersion', {
+            method: choiceLabel(t, 'land', 'method', (optionOf(land, 'method') as string | undefined) ?? 'merge'),
+            workflow: answered.name ?? answered.workflow,
+            version: answered.version,
+          }),
+          editor: (
+            <LandEditor
+              key={`${answered.workflow}@${answered.version}`}
+              editor={editor}
+              graph={answered.graph}
+              workflow={{ id: answered.workflow, version: answered.version }}
+              lines={page === 'repository' && start?.landed.tip?.line ? [start.landed.tip.line] : undefined}
+              onReads={(on) => { reads.current.land = on; tell(); }}
+            />
+          ),
+        }
+        : null;
+
   const gates: FoldSpec[] = page === 'repository' && start
     ? [{
       id: 'gates',
@@ -286,6 +396,7 @@ export function PlaceWorkflowView({
           onPlan={editor.onPlan}
           onSave={editor.onSave}
           onStartFrom={(from) => show({ is: 'edit', route: open.route, from })}
+          onConvert={onConvert}
           onClose={() => show(null)}
         />
       )
@@ -325,16 +436,21 @@ export function PlaceWorkflowView({
     : [];
 
   const canChange = editor !== undefined && !landed;
+  // A route that follows Current has no steps to edit: its door is the conversion (WORKFLOWCLEAN1h-b).
+  const onCurrent = !landed && answered?.workflow === 'current';
   // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words (FLOWCHART2d),
   // and puts the start of a request in its box. The editor, once open, is not opened again.
-  const openEdit = () => { if (open?.is !== 'edit') show({ is: 'edit', route: routeKey, from: editStart(answered) }); };
+  const openEdit = () => {
+    if (onCurrent) onConvert?.();
+    else if (open?.is !== 'edit') show({ is: 'edit', route: routeKey, from: editStart(answered) });
+  };
   // Change… replaces the editor, so a draft with changes in it is asked about first.
   const openChange = () => {
     if (open?.is === 'edit' && (reported.current?.history.past.length ?? 0) > 0) setDiscarding(true);
     else show({ is: 'change', route: routeKey });
   };
   const askDaoris = () => {
-    if (open?.is !== 'edit') openEdit();
+    if (!onCurrent && open?.is !== 'edit') openEdit();
     fillAskDaoris(t('workflow.place.ask.fill', { place: name }));
   };
   const buttons = 'min-h-0 border border-line py-0.5 text-small';
@@ -360,11 +476,20 @@ export function PlaceWorkflowView({
             {canChange && (
               <>
                 <Button variant="ghost" className={buttons} onClick={openChange}>{t('workflow.place.change.open')}</Button>
-                <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>
+                {(!onCurrent || onConvert) && <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>}
                 {canAsk && <Button variant="ghost" className={buttons} onClick={askDaoris}>{t('workflow.place.ask.open')}</Button>}
               </>
             )}
           </div>
+        )}
+        {editor && answered?.newer && !landed && !open && (
+          <ShippedUpdate key={`${answered.workflow}@${answered.version}`} editor={editor} effective={answered} onReads={(on) => { reads.current.update = on; tell(); }} />
+        )}
+        {onCurrent && !open && (
+          <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
+            {t('agents.convert.follows')}
+            {onConvert && <Button variant="ghost" className={buttons} onClick={onConvert}>{t('agents.convert.open')}</Button>}
+          </p>
         )}
         {discarding && (
           <InlineConfirm
@@ -381,7 +506,7 @@ export function PlaceWorkflowView({
         )}
         {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
         {!wide && (open || chartShown) && chart}
-        {landing ? landing({ asked: asked.section, again: asked.n, lead: gates }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
+        {landing ? landing({ asked: asked.section, again: asked.n, lead: [...gates, ...repositories], lands }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
       </div>
       {wide && (aside ? createPortal(<div className="min-w-0">{chart}</div>, aside) : <div className="min-w-0">{chart}</div>)}
     </div>

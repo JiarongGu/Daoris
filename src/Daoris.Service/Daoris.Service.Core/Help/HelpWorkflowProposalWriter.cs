@@ -6,9 +6,9 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>workflow</c> kind's writer (WORKFLOW1h-a, D157, design §8.1): a whole version of a workflow, new or an edit on a
-/// base version, for a repository or a workspace, and optionally its choice there. Its <c>steps</c> are written as nested
-/// JSON, the first kind to carry any; since FABRIC-PIPELINE1i a verification pipeline's <c>graph</c> in their place, and a <c>route</c>
-/// the choice is made for, which with neither chooses a saved workflow alone. Only the shape is judged here; the editor's validation, the base's staleness and what
+/// base version, for a repository or a workspace, and optionally its choice there. Its <c>graph</c> is written as nested JSON (a list of
+/// <c>steps</c> is no longer proposed, WORKFLOWCLEAN1 1b), and a <c>route</c> the choice is made for, which with no graph chooses a
+/// saved workflow alone. Only the shape is judged here; the editor's validation, the base's staleness and what
 /// the steps need are the driver's to judge. Changes, a kind and an import are WORKFLOW1h2's, so they are refused by name.
 /// </summary>
 /// <remarks><c>partial</c> for its generated <see cref="WorkflowIdShape"/> alone (PART7), and declared in this one file.</remarks>
@@ -49,7 +49,6 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
         var notYet = new (string Name, string? Value)[] { ("changes", changes), ("kind", kind), ("import", import) }
             .FirstOrDefault(field => Blank(field.Value) is not null).Name;
 
-        JsonElement stepList = default;
         JsonElement graphObject = default;
         var hasSteps = Blank(steps) is not null;
         var hasGraph = Blank(graph) is not null;
@@ -62,7 +61,7 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
             : workflowName is not null ? "a change to the open draft names no `name`: the person names the workflow as they save it."
             : null;
         var refused =
-            notYet is not null ? $"`{notYet}` is not proposed yet: propose the whole `steps`."
+            notYet is not null ? $"`{notYet}` is not proposed yet: propose the whole `graph`."
             : scopeName is null ? "a workflow proposal names its scope: the repository or workspace it applies to."
             : Word(scopeName, "a scope")
               ?? mixed
@@ -74,10 +73,10 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
                  : workflowName is not null && baseVersion is not null ? "an edit keeps its workflow's name, so `name` is left out: renaming is not proposed."
                  : workflowName is { Length: > 60 } ? "`name` is a short line, at most 60 characters."
                  : routeName is not null && RouteProblem(routeName) is { } routeProblem ? routeProblem
-                 : hasSteps && hasGraph ? "a workflow proposal carries its `steps` or its `graph`, never both."
+                 : hasSteps ? "a workflow is saved as a graph of steps now, and a list of steps (`steps`) is no longer proposed: send the whole `graph`."
                  : hasGraph ? Graph(graph, out graphObject)
-                 : !hasSteps && routeName is not null ? null
-                 : Steps(steps, out stepList));
+                 : routeName is not null ? null
+                 : "a workflow proposal carries its whole `graph`; or, with none, the `route` it chooses a saved workflow for.");
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
         return file.Write(writer =>
@@ -93,12 +92,7 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
             writer.WriteBoolean("choose", choose);
             // FABRIC-PIPELINE1i: a version is its steps or a verification pipeline's graph, and a route with neither chooses alone.
             if (routeName is not null) writer.WriteString("route", routeName);
-            if (hasSteps)
-            {
-                writer.WritePropertyName("steps");
-                stepList.WriteTo(writer);
-            }
-            else if (hasGraph)
+            if (hasGraph)
             {
                 writer.WritePropertyName("graph");
                 graphObject.WriteTo(writer);
@@ -130,32 +124,6 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
         catch (JsonException)
         {
             return "`graph` is not valid JSON: send it as the graph's JSON object.";
-        }
-    }
-
-    /// <summary>Why <c>steps</c> is not a non-empty JSON list of objects, or null with the list.</summary>
-    private static string? Steps(string? text, out JsonElement list)
-    {
-        list = default;
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return "a workflow proposal carries its `steps`, a JSON list of step objects, or a verification pipeline's `graph`; or, with "
-                + "neither, the `route` it chooses a saved workflow for.";
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(text);
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Array) return "`steps` is a JSON list of step objects.";
-            if (root.GetArrayLength() == 0) return "`steps` is a list of at least one step.";
-            if (root.EnumerateArray().Any(step => step.ValueKind != JsonValueKind.Object)) return "each of `steps` is a step, a JSON object — not a bare value.";
-            list = root.Clone();
-            return null;
-        }
-        catch (JsonException)
-        {
-            return "`steps` is not valid JSON: send it as a JSON list of step objects.";
         }
     }
 }

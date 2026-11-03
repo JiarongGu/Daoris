@@ -13,8 +13,8 @@ public static class WorkInventories
     /// <param name="only">Where given, whether a repository is read at all (INTEGRATE1n part n3, F51): another's trees, records and refs are not.</param>
     public static Task<InventoryFacts> GatherAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread,
-        CancellationToken ct = default, DateTimeOffset? now = null, Func<string, bool>? only = null) =>
-        GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only, ct, now);
+        CancellationToken ct = default, DateTimeOffset? now = null, Func<string, bool>? only = null, IReadOnlyList<RecordedTree>? recorded = null) =>
+        GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only, ct, now, recorded);
 
     /// <summary>
     /// One part of the inventory (FACTSPLIT1a): the units, the recoveries no unit names and what could not be read, of the

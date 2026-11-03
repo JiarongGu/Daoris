@@ -12,5 +12,7 @@
   "settings.lines.set": "保存",
   "settings.lines.clear": "清除",
   "settings.lines.saved": "{{name}} 的工作现在从 `{{branch}}` 长出并落回其上。已在运行的会话保持原样。",
-  "settings.lines.cleared": "{{name}} 重新沿用其上层的主线。"
+  "settings.lines.cleared": "{{name}} 重新沿用其上层的主线。",
+  "settings.lines.policySaved": "{{name}} 的工作按你设定的策略并入它的主线。",
+  "settings.lines.policyCleared": "{{name}} 的工作并入主线时，各项选择重新用默认。"
 }

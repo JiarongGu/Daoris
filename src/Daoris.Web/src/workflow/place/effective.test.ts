@@ -40,8 +40,8 @@ describe("the place's routes", () => {
 });
 
 describe('the chart label', () => {
-  it('reads Current as read from the rules as they stand', () => {
-    expect(effectiveLabel(t, EFFECTIVE_CURRENT, 'default work')).toBe('Current, read from the rules as they stand');
+  it('says Current follows its old landing rule', () => {
+    expect(effectiveLabel(t, EFFECTIVE_CURRENT, 'default work')).toBe('Follows its old landing rule');
   });
 
   it('names a saved workflow, its version and the route that follows it', () => {
@@ -51,7 +51,7 @@ describe('the chart label', () => {
 
   it('says it in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    expect(effectiveLabel(i18n.t.bind(i18n), EFFECTIVE_CURRENT, '默认工作')).toContain('现行');
+    expect(effectiveLabel(i18n.t.bind(i18n), EFFECTIVE_CURRENT, '默认工作')).toContain('旧的落地规则');
   });
 });
 

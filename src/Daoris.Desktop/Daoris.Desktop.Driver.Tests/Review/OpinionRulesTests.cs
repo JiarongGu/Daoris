@@ -175,6 +175,23 @@ public sealed class OpinionRulesTests
     }
 
     /// <summary>
+    /// A place on a saved workflow has its opinion decided by that workflow's <c>opinion</c> node (WORKFLOWCLEAN1 1h): `none` is refused in
+    /// the shared edit, coded, naming the node; naming reviewers, or a place on Current, is unchanged.
+    /// </summary>
+    [Fact]
+    public void None_is_refused_for_a_place_on_a_saved_workflow_naming_its_opinion_node()
+    {
+        var saved = DriverConfig.Parse("""{"workflows":{"web-app":{"default":"merge-after-accept"}}}""");
+
+        var refused = Assert.Throws<ChoiceRefusal>(() => OpinionRules.Apply(saved, new OpinionEdit { Repository = "web-app", None = true }));
+        Assert.Equal(ChoiceRefusal.GraphDecides, refused.Check);
+        Assert.Contains("`opinion` node", refused.Message);
+
+        Assert.True(OpinionRules.Apply(DriverConfig.Empty, new OpinionEdit { Repository = "web-app", None = true }).Opinions["web-app"].IsNone);
+        Assert.NotNull(OpinionRules.Apply(saved, new OpinionEdit { Repository = "web-app", Set = new OpinionSet { Reviewers = ["codex-acp"] } }).Opinions["web-app"]);
+    }
+
+    /// <summary>
     /// The room's cell (design §2.5–§2.6): what Ask Daoris's room shows of the rule standing for a repository, and
     /// <c>no second opinion</c> where nothing is set.
     /// </summary>

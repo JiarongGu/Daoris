@@ -395,6 +395,14 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Landing(
         string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts, string whose, string scope)
     {
+        // WORKFLOWCLEAN1 1a: a place that follows a saved workflow lands as that workflow says; no rule is proposed for it (row 1y retires the card whole).
+        if ((workspace is { Length: > 0 } || target is { Length: > 0 })
+            && WorkflowSelection.Resolve(config, workspace is { Length: > 0 } ? null : target, workspace is { Length: > 0 } ? workspace : null, null).Workflow
+                != WorkflowSelection.Current)
+        {
+            return (LandingVerb.Retired, default);
+        }
+
         if (Words(value) is not { } words) return ("`landing`'s words close every quote they open.", default);
         var tidy = words.Remove("--tidy");
         var auto = words.Remove("--auto-accept");

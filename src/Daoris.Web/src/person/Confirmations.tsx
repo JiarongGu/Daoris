@@ -89,12 +89,11 @@ export function routeKey(module: string | undefined, route: string): string {
 
 /**
  * The page a terminal's press's plan is shown on (CONFIRMWAIT1c, the confirm-wait design §8.1, §15.3 item 13), scoped as the press is:
- * a land's session, whose review shows it; a set-up's repository; a sweep's or a sync's workspace, or a sync's repository; a clear's
+ * a land's session, whose review shows it; a sweep's or a sync's workspace, or a sync's repository; a clear's
  * workspace, quest or ask. A workspace a sweep or a sync names none of is null, the one in view.
  */
 export type PlanDoor =
   | { plan: 'land'; session: string }
-  | { plan: 'setup'; repository: string }
   | { plan: 'sweep'; workspace: string | null }
   | { plan: 'sync'; workspace: string | null; repository: string | null }
   | { plan: 'clear'; scope: 'workspace' | 'quest' | 'ask'; id: string };
@@ -114,10 +113,6 @@ export function planDoor(waiting: Confirmation): PlanDoor | null {
     case 'LAND_SESSION_TREE': {
       const session = field('id');
       return session ? { plan: 'land', session } : null;
-    }
-    case 'SETUP_PRESS': {
-      const repository = field('repository');
-      return repository ? { plan: 'setup', repository } : null;
     }
     case 'SWEEP':
       return { plan: 'sweep', workspace: field('workspace') };

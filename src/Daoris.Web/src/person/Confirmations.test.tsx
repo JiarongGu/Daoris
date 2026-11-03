@@ -425,7 +425,6 @@ describe("the door to a press's plan", () => {
 
   it.each<[string, Confirmation, PlanDoor]>([
     ['a land, its session', press('LAND_SESSION_TREE', { id: '3f2a91c4', branch: 'main' }), { plan: 'land', session: '3f2a91c4' }],
-    ['a set-up, its repository', press('SETUP_PRESS', { repository: 'game' }), { plan: 'setup', repository: 'game' }],
     ['a sweep, its workspace', press('SWEEP', { workspace: 'studio' }), { plan: 'sweep', workspace: 'studio' }],
     ['a sweep of no workspace named', press('SWEEP', {}), { plan: 'sweep', workspace: null }],
     ['a sync, its workspace', press('TREES_SYNC', { workspace: 'studio' }), { plan: 'sync', workspace: 'studio', repository: null }],
@@ -459,7 +458,7 @@ describe("the door to a press's plan", () => {
   });
 
   it('offers none where the window hands it no door', () => {
-    render(<Confirmations waiting={[press('SETUP_PRESS', { repository: 'game' })]} onAnswer={vi.fn()} names={NAMES} />);
+    render(<Confirmations waiting={[press('SWEEP', { workspace: 'studio' })]} onAnswer={vi.fn()} names={NAMES} />);
 
     expect(screen.queryByRole('button', { name: 'Look at it now' })).not.toBeInTheDocument();
   });

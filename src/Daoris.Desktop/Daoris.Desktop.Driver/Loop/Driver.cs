@@ -735,6 +735,15 @@ public sealed class Driver(
         public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
         public void Chosen(LandingLine line) => service.LandingSaid(line);
+
+        public async Task<string?> RemoteHostAsync(string repository, CancellationToken ct)
+        {
+            var row = (await service.RegistryAsync(ct).ConfigureAwait(false))
+                .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
+            return row?.Root is { Length: > 0 } root && Directory.Exists(root)
+                ? GitWords.HostOf(await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false))
+                : null;
+        }
     }
 
     /// <summary>

@@ -81,7 +81,7 @@ describe('Change…: the three tabs', () => {
     expect(screen.getAllByRole('tab').map((each) => each.textContent)).toEqual(['Presets', 'Saved here', 'Current']);
     // Current stands first while the route follows it; the presets are one tab away.
     expect(tab('Current')).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText(/Live and derived from the rules as they stand/)).toBeInTheDocument();
+    expect(screen.getByText(/Follows its old landing rule/)).toBeInTheDocument();
     expect(screen.getByText('v4740fb017006')).toBeInTheDocument();
 
     await userEvent.click(tab('Presets'));
@@ -176,13 +176,17 @@ describe('Change…: selecting a candidate against a driver that announces no pl
     expect(screen.queryByRole('button', { name: 'Use Verify the docs first here' })).toBeDisabled();
   });
 
-  it('chooses Current by name', async () => {
-    const { onUse } = draw();
+  // WORKFLOWCLEAN1h-b: Current is no candidate; its tab is the conversion's door.
+  it('offers Current only as the conversion, with no choice and no copy of it', async () => {
+    const onConvert = vi.fn();
+    const { onUse, onSave } = draw({ onConvert });
 
-    await pick('Current');
-    await userEvent.click(screen.getByRole('button', { name: 'Use Current here' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Convert…' }));
 
-    expect(onUse).toHaveBeenCalledWith({ repository: 'engine', workflow: 'current' });
+    expect(onConvert).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Use Current here' })).toBeNull();
+    expect(onUse).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it('does not read a plan when the driver announces one but the page has no sender for it', async () => {
@@ -312,18 +316,17 @@ describe('Change…: the plan of one, where the driver announces it', () => {
     let first!: (value: WorkflowUseAnswer) => void;
     const onPlan = vi.fn()
       .mockImplementationOnce(() => new Promise<WorkflowUseAnswer>((resolve) => { first = resolve; }))
-      .mockResolvedValue(plan({ expected: 'use-current' }));
+      .mockResolvedValue(plan({ expected: 'use-clear' }));
     const { onUse } = draw({ list: ANNOUNCED, onPlan });
 
     await userEvent.click(tab('Saved here'));
     await pick('Verify the docs first');
-    await userEvent.click(tab('Current'));
-    await pick('Current');
+    await userEvent.click(screen.getByRole('button', { name: "Use the workspace's" }));
     await screen.findByText('engine: Current → Verify the docs first');
     await act(async () => { first(plan({ expected: 'use-late' })); });
-    await userEvent.click(screen.getByRole('button', { name: 'Use Current here' }));
+    await userEvent.click(screen.getByRole('button', { name: "Use the workspace's" }));
 
-    expect(onUse).toHaveBeenCalledWith({ repository: 'engine', workflow: 'current', expected: 'use-current' });
+    expect(onUse).toHaveBeenCalledWith({ repository: 'engine', expected: 'use-clear' });
   });
 
   it('asks per route: a kind\'s plan and press carry the kind, and chosen here is read at that kind', async () => {
@@ -349,8 +352,9 @@ describe('Change…: the plan of one, where the driver announces it', () => {
   it('chooses for a workspace by its name', async () => {
     const { onPlan } = draw({ list: ANNOUNCED, place: { workspace: 'aurora' } });
 
-    await pick('Current');
-    expect(onPlan).toHaveBeenCalledWith({ workspace: 'aurora', workflow: 'current', plan: true });
+    await userEvent.click(tab('Saved here'));
+    await pick('Verify the docs first');
+    expect(onPlan).toHaveBeenCalledWith({ workspace: 'aurora', workflow: 'verify-docs', version: 2, plan: true });
   });
 });
 

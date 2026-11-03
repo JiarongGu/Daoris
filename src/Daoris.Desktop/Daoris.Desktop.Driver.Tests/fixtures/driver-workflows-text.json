@@ -81,7 +81,7 @@
       "exit": 1,
       "out": [],
       "err": [
-        "daoris: `docs-to-pr` is a workflow here already, at v1: `daoris driver workflow edit docs-to-pr …` adds a version to it."
+        "daoris: `docs-to-pr` is a workflow here already, at v1: `daoris driver workflow apply docs-to-pr <file>` adds a version to it."
       ],
       "after": null
     },
@@ -271,7 +271,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `pull-request-after-accept`, `pull-request-no-press`, `merge-after-accept`, `merge-automatic`, `documents`, `branch-to-push`, `pull-request`, `integrated`, `integrated-no-press`, `release`."
+        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `merge-after-accept`, `merge-automatic`, `documents`, `branch-to-push`, `pull-request`, `integrated`, `integrated-no-press`, `release`."
       ],
       "after": null
     },
@@ -292,7 +292,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow new` needs --from: a preset, `current:<repository>` or a saved workflow — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `driver workflow new` needs --from: a default or a saved workflow — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -315,9 +315,10 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `current:` names a repository, such as `current:web-app` — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
-      "after": null
+      "after": null,
+      "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
       "name": "workflow new, a flag it does not take",
@@ -340,7 +341,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--kind` is not a flag `driver workflow new` takes — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `--kind` is not a flag `driver workflow new` takes — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -432,18 +433,13 @@
           "root": null
         }
       ],
-      "exit": 0,
-      "out": [
-        "daoris: `web-app-today` v1, a new workflow — web-app's Current, from `web-app`'s Current (version 8d353243d8da), a graph:",
-        "  You look at it running before it lands. Each piece of work lands on a branch once its agent is done, and you push it yourself. Its agent's done closes the quest; the flow's end is the work's.",
-        "  Written to <home>/data/workflows/web-app-today.json.",
-        "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
-      "err": [],
       "after": "{\"workspaceLandings\":{\"work\":{\"form\":\"branch\",\"pattern\":\"work/{quest}-{slug}\",\"autoAccept\":true}},\"workspaceReviews\":{\"work\":{\"required\":true,\"environments\":[{\"name\":\"local\",\"kind\":\"local\",\"procedure\":\"README.md\",\"address\":\"http://localhost:4200\"}]}}}",
-      "written": {
-        "data/workflows/web-app-today.json": "{\"id\":\"web-app-today\",\"name\":\"web-app's Current\",\"versions\":[{\"version\":1,\"at\":\"2026-10-09T09:12:34Z\",\"door\":\"terminal\",\"schema\":2,\"graph\":{\"schemaVersion\":2,\"entries\":[\"work\"],\"end\":\"landing\",\"nodes\":[{\"id\":\"work\",\"kind\":\"claimed\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"requests\",\"kind\":\"work.requests\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"holds\",\"kind\":\"quest.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"content\",\"kind\":\"content.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"look\",\"kind\":\"look\",\"version\":1,\"reach\":\"observed\",\"options\":{\"environment\":\"local\"}},{\"id\":\"landing\",\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"branch\",\"pattern\":\"work/{quest}-{slug}\",\"plugin\":\"none\"}}],\"wires\":[{\"id\":\"w1\",\"kind\":\"after\",\"from\":\"work\",\"to\":\"requests\"},{\"id\":\"w2\",\"kind\":\"after\",\"from\":\"requests\",\"to\":\"holds\"},{\"id\":\"w3\",\"kind\":\"after\",\"from\":\"holds\",\"to\":\"content\"},{\"id\":\"w4\",\"kind\":\"after\",\"from\":\"content\",\"to\":\"look\"},{\"id\":\"w5\",\"kind\":\"after\",\"from\":\"look\",\"to\":\"landing\"}]}}]}\n"
-      }
+      "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
       "name": "workflow new, from Current, the registry unread and a workspace's rule set",
@@ -461,9 +457,10 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: cannot say which workspace's rules reach `web-app`: the registry could not be read — the service did not answer — and this file sets rules for a workspace. Nothing was drawn. `--workspace <name>` draws a workspace's Current from this file alone."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
-      "after": "{\"workspaceLandings\":{\"work\":{\"form\":\"branch\",\"pattern\":\"work/{quest}-{slug}\",\"autoAccept\":true}},\"workspaceReviews\":{\"work\":{\"required\":true,\"environments\":[{\"name\":\"local\",\"kind\":\"local\",\"procedure\":\"README.md\",\"address\":\"http://localhost:4200\"}]}}}"
+      "after": "{\"workspaceLandings\":{\"work\":{\"form\":\"branch\",\"pattern\":\"work/{quest}-{slug}\",\"autoAccept\":true}},\"workspaceReviews\":{\"work\":{\"required\":true,\"environments\":[{\"name\":\"local\",\"kind\":\"local\",\"procedure\":\"README.md\",\"address\":\"http://localhost:4200\"}]}}}",
+      "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
       "name": "workflow new, from a light Current",
@@ -482,18 +479,13 @@
           "root": null
         }
       ],
-      "exit": 0,
-      "out": [
-        "daoris: `web-app-light` v1, a new workflow — web-app's Current, from `web-app`'s Current (version 1036c26b713b), a graph:",
-        "  You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
-        "  Written to <home>/data/workflows/web-app-light.json.",
-        "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
-      "err": [],
       "after": "{\"sessionChecks\":{\"web-app\":\"light\"}}",
-      "written": {
-        "data/workflows/web-app-light.json": "{\"id\":\"web-app-light\",\"name\":\"web-app's Current\",\"versions\":[{\"version\":1,\"at\":\"2026-10-09T09:12:34Z\",\"door\":\"terminal\",\"schema\":2,\"graph\":{\"schemaVersion\":2,\"entries\":[\"work\"],\"end\":\"landing\",\"nodes\":[{\"id\":\"work\",\"kind\":\"claimed\",\"version\":1,\"reach\":\"observed\",\"options\":{\"checks\":\"light\"}},{\"id\":\"requests\",\"kind\":\"work.requests\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"holds\",\"kind\":\"quest.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"content\",\"kind\":\"content.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"review\",\"kind\":\"review\",\"version\":1,\"reach\":\"pressed\"},{\"id\":\"landing\",\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"merge\"}}],\"wires\":[{\"id\":\"w1\",\"kind\":\"after\",\"from\":\"work\",\"to\":\"requests\"},{\"id\":\"w2\",\"kind\":\"after\",\"from\":\"requests\",\"to\":\"holds\"},{\"id\":\"w3\",\"kind\":\"after\",\"from\":\"holds\",\"to\":\"content\"},{\"id\":\"w4\",\"kind\":\"after\",\"from\":\"content\",\"to\":\"review\"},{\"id\":\"w5\",\"kind\":\"after\",\"from\":\"review\",\"to\":\"landing\"}]}}]}\n"
-      }
+      "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
       "name": "workflow new, from a Current whose rule carries integrate",
@@ -512,18 +504,13 @@
           "root": null
         }
       ],
-      "exit": 0,
-      "out": [
-        "daoris: `web-app-integrating` v1, a new workflow — web-app's Current, from `web-app`'s Current (version 05b1cc9a230c), a graph:",
-        "  You accept each piece of work onto a branch, and you ask for it to be integrated into the line. Its agent's done closes the quest; the flow's end is the work's.",
-        "  Written to <home>/data/workflows/web-app-integrating.json.",
-        "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
-      "err": [],
       "after": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}",
-      "written": {
-        "data/workflows/web-app-integrating.json": "{\"id\":\"web-app-integrating\",\"name\":\"web-app's Current\",\"versions\":[{\"version\":1,\"at\":\"2026-10-09T09:12:34Z\",\"door\":\"terminal\",\"schema\":2,\"graph\":{\"schemaVersion\":2,\"entries\":[\"work\"],\"end\":\"line\",\"nodes\":[{\"id\":\"work\",\"kind\":\"claimed\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"requests\",\"kind\":\"work.requests\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"holds\",\"kind\":\"quest.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"content\",\"kind\":\"content.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"review\",\"kind\":\"review\",\"version\":1,\"reach\":\"pressed\"},{\"id\":\"landing\",\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"integrate\",\"pattern\":\"work/{session}\"}},{\"id\":\"integrate\",\"kind\":\"integrate\",\"version\":1,\"reach\":\"waited\",\"options\":{\"request\":\"owner\",\"conflicts\":\"session\"}},{\"id\":\"line\",\"kind\":\"line\",\"version\":1,\"reach\":\"observed\"}],\"wires\":[{\"id\":\"w1\",\"kind\":\"after\",\"from\":\"work\",\"to\":\"requests\"},{\"id\":\"w2\",\"kind\":\"after\",\"from\":\"requests\",\"to\":\"holds\"},{\"id\":\"w3\",\"kind\":\"after\",\"from\":\"holds\",\"to\":\"content\"},{\"id\":\"w4\",\"kind\":\"after\",\"from\":\"content\",\"to\":\"review\"},{\"id\":\"w5\",\"kind\":\"after\",\"from\":\"review\",\"to\":\"landing\"},{\"id\":\"w6\",\"kind\":\"after\",\"from\":\"landing\",\"to\":\"integrate\"},{\"id\":\"w7\",\"kind\":\"after\",\"from\":\"integrate\",\"to\":\"line\"}]}}]}\n"
-      }
+      "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
       "name": "workflow show, a Current whose rule carries integrate",
@@ -576,18 +563,13 @@
       "files": {
         "data/workflows/web-app-light.json": "{\n  \"id\": \"web-app-light\",\n  \"name\": \"web-app's Current\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\",\n          \"checks\": \"light\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"merge\",\n          \"accept\": \"you\"\n        }\n      ]\n    }\n  ]\n}\n"
       },
-      "exit": 0,
-      "out": [
-        "daoris: `docs-today` v1, a new workflow — docs's Current, from `docs`'s Current (version 06e90f358edc), a graph:",
-        "  You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
-        "  Written to <home>/data/workflows/docs-today.json.",
-        "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
-      "err": [],
       "after": "{\"sessionChecks\":{\"web-app\":\"light\"}}",
-      "written": {
-        "data/workflows/docs-today.json": "{\"id\":\"docs-today\",\"name\":\"docs's Current\",\"versions\":[{\"version\":1,\"at\":\"2026-10-09T09:12:34Z\",\"door\":\"terminal\",\"schema\":2,\"graph\":{\"schemaVersion\":2,\"entries\":[\"work\"],\"end\":\"landing\",\"nodes\":[{\"id\":\"work\",\"kind\":\"claimed\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"requests\",\"kind\":\"work.requests\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"holds\",\"kind\":\"quest.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"content\",\"kind\":\"content.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"review\",\"kind\":\"review\",\"version\":1,\"reach\":\"pressed\"},{\"id\":\"landing\",\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"merge\"}}],\"wires\":[{\"id\":\"w1\",\"kind\":\"after\",\"from\":\"work\",\"to\":\"requests\"},{\"id\":\"w2\",\"kind\":\"after\",\"from\":\"requests\",\"to\":\"holds\"},{\"id\":\"w3\",\"kind\":\"after\",\"from\":\"holds\",\"to\":\"content\"},{\"id\":\"w4\",\"kind\":\"after\",\"from\":\"content\",\"to\":\"review\"},{\"id\":\"w5\",\"kind\":\"after\",\"from\":\"review\",\"to\":\"landing\"}]}}]}\n"
-      }
+      "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
       "name": "workflow new, from Current, the registry unread",
@@ -603,18 +585,13 @@
         "data/workflows/docs-today.json": "{\n  \"id\": \"docs-today\",\n  \"name\": \"docs's Current\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"merge\",\n          \"accept\": \"you\"\n        }\n      ]\n    }\n  ]\n}\n",
         "data/workflows/web-app-light.json": "{\n  \"id\": \"web-app-light\",\n  \"name\": \"web-app's Current\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\",\n          \"checks\": \"light\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"merge\",\n          \"accept\": \"you\"\n        }\n      ]\n    }\n  ]\n}\n"
       },
-      "exit": 0,
-      "out": [
-        "daoris: `alone-today` v1, a new workflow — docs's Current, from `docs`'s Current (version 06e90f358edc), a graph:",
-        "  You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
-        "  Written to <home>/data/workflows/alone-today.json.",
-        "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
-      "err": [],
       "after": "{\"sessionChecks\":{\"web-app\":\"light\"}}",
-      "written": {
-        "data/workflows/alone-today.json": "{\"id\":\"alone-today\",\"name\":\"docs's Current\",\"versions\":[{\"version\":1,\"at\":\"2026-10-09T09:12:34Z\",\"door\":\"terminal\",\"schema\":2,\"graph\":{\"schemaVersion\":2,\"entries\":[\"work\"],\"end\":\"landing\",\"nodes\":[{\"id\":\"work\",\"kind\":\"claimed\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"requests\",\"kind\":\"work.requests\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"holds\",\"kind\":\"quest.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"content\",\"kind\":\"content.holds\",\"version\":1,\"reach\":\"observed\"},{\"id\":\"review\",\"kind\":\"review\",\"version\":1,\"reach\":\"pressed\"},{\"id\":\"landing\",\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"merge\"}}],\"wires\":[{\"id\":\"w1\",\"kind\":\"after\",\"from\":\"work\",\"to\":\"requests\"},{\"id\":\"w2\",\"kind\":\"after\",\"from\":\"requests\",\"to\":\"holds\"},{\"id\":\"w3\",\"kind\":\"after\",\"from\":\"holds\",\"to\":\"content\"},{\"id\":\"w4\",\"kind\":\"after\",\"from\":\"content\",\"to\":\"review\"},{\"id\":\"w5\",\"kind\":\"after\",\"from\":\"review\",\"to\":\"landing\"}]}}]}\n"
-      }
+      "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
       "name": "workflow edit, --plan",
@@ -1348,7 +1325,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -1518,7 +1495,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -1962,7 +1939,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2197,9 +2174,7 @@
       "exit": 0,
       "out": [
         "daoris: no workflow is named in <home>/data/workflows yet.",
-        "Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):",
-        "  `pull-request-after-accept` — A pull request after you accept. You accept; the plugin pushes and opens a pull request; you merge it.",
-        "  `pull-request-no-press` — A pull request with no press. A pull request opens once its quest is done; you merge it.",
+        "Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):",
         "  `merge-after-accept` — Merge workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `merge-automatic` — Automatic merge workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
         "  `documents` — Documents workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
@@ -2341,9 +2316,7 @@
         "  `broken` — cannot be read: `broken.json` is not readable JSON.",
         "  `docs` — Docs: v1, 2 steps. You accept each piece of work, and it merges into the line.",
         "  `release` — Release: v2 cannot be read here (v2, step `checks`: this build does not run a step of kind `check` yet.); v1 is the newest that reads.",
-        "Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):",
-        "  `pull-request-after-accept` — A pull request after you accept. You accept; the plugin pushes and opens a pull request; you merge it.",
-        "  `pull-request-no-press` — A pull request with no press. A pull request opens once its quest is done; you merge it.",
+        "Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):",
         "  `merge-after-accept` — Merge workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `merge-automatic` — Automatic merge workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
         "  `documents` — Documents workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
@@ -2542,7 +2515,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2562,7 +2535,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2583,7 +2556,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from pull-request-no-press --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2669,16 +2642,13 @@
       "files": {
         "data/workflows/docs-to-pr.json": "{\n  \"id\": \"docs-to-pr\",\n  \"name\": \"Documentation to a pull request\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"branch\",\n          \"accept\": \"automatic\"\n        },\n        {\n          \"id\": \"pull-request\",\n          \"kind\": \"pull-request\"\n        }\n      ]\n    }\n  ]\n}\n"
       },
-      "exit": 0,
-      "out": [
-        "daoris: `notes-site` now chooses Current as its default: its rules as they stand, read at each gate.",
-        "  This replaces the workspace's for every kind: `notes-site` follows its own kinds and its own default, and Current where it names none.",
-        "  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.",
-        "  Written to <config>.",
-        "  Every gate reads the version a run bound at its first start: how it lands, your look and its second opinion follow that version."
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: `current` is no longer chosen for a place's work: a place follows a saved workflow. Choose one, or clear the choice to follow this machine's default. Nothing was written."
       ],
-      "err": [],
-      "after": "{\n  \"workflows\": {\n    \"notes-site\": {\n      \"default\": \"current\"\n    },\n    \"web-app\": {\n      \"default\": \"docs-to-pr\"\n    }\n  }\n}\n"
+      "after": "{\n  \"workflows\": {\n    \"web-app\": {\n      \"default\": \"docs-to-pr\"\n    }\n  }\n}\n",
+      "changed": "WORKFLOWCLEAN1 1a: `current` is no longer chosen for a place's work; a place follows a saved workflow, so the verb refuses and writes nothing."
     },
     {
       "name": "workflow use, --clear",
@@ -2759,15 +2729,13 @@
       "files": {
         "data/workflows/docs-to-pr.json": "{\n  \"id\": \"docs-to-pr\",\n  \"name\": \"Documentation to a pull request\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"branch\",\n          \"accept\": \"automatic\"\n        },\n        {\n          \"id\": \"pull-request\",\n          \"kind\": \"pull-request\"\n        }\n      ]\n    }\n  ]\n}\n"
       },
-      "exit": 0,
-      "out": [
-        "daoris: the workspace `work` now chooses Current as its default: its rules as they stand, read at each gate.",
-        "  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.",
-        "  Written to <config>.",
-        "  Every gate reads the version a run bound at its first start: how it lands, your look and its second opinion follow that version."
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: `current` is no longer chosen for a place's work: a place follows a saved workflow. Choose one, or clear the choice to follow this machine's default. Nothing was written."
       ],
-      "err": [],
-      "after": "{\n  \"workflows\": {\n    \"notes-site\": {\n      \"default\": \"current\"\n    }\n  },\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"default\": \"current\"\n    }\n  }\n}\n"
+      "after": "{\n  \"workflows\": {\n    \"notes-site\": {\n      \"default\": \"current\"\n    }\n  },\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"default\": \"docs-to-pr\"\n    }\n  }\n}\n",
+      "changed": "WORKFLOWCLEAN1 1a: `current` is no longer chosen for a place's work; a place follows a saved workflow, so the verb refuses and writes nothing."
     },
     {
       "name": "workflow use, a graph newest, --plan",
@@ -2990,7 +2958,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -3011,7 +2979,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -3033,7 +3001,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -3055,7 +3023,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--label` is not a flag `driver workflow use` takes — `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `--label` is not a flag `driver workflow use` takes — `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -3194,16 +3162,13 @@
       "files": {
         "data/workflows/docs-to-pr.json": "{\n  \"id\": \"docs-to-pr\",\n  \"name\": \"Documentation to a pull request\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"branch\",\n          \"accept\": \"automatic\"\n        },\n        {\n          \"id\": \"pull-request\",\n          \"kind\": \"pull-request\"\n        }\n      ]\n    }\n  ]\n}\n"
       },
-      "exit": 0,
-      "out": [
-        "daoris: `web-app` now chooses Current for kind `docs`: its rules as they stand, read at each gate.",
-        "  This replaces the workspace's for every kind: `web-app` follows its own kinds and its own default, and Current where it names none.",
-        "  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.",
-        "  Written to <config>.",
-        "  Every gate reads the version a run bound at its first start: how it lands, your look and its second opinion follow that version."
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: `current` is no longer chosen for a place's work: a place follows a saved workflow. Choose one, or clear the choice to follow this machine's default. Nothing was written."
       ],
-      "err": [],
-      "after": "{\n  \"workflows\": {\n    \"web-app\": {\n      \"kinds\": {\n        \"docs\": \"current\"\n      }\n    }\n  },\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"paths\": [\n            \"docs/**\",\n            \"**/*.md\"\n          ],\n          \"workflow\": \"docs-to-pr\"\n        }\n      }\n    }\n  }\n}\n"
+      "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"paths\": [\n            \"docs/**\",\n            \"**/*.md\"\n          ],\n          \"workflow\": \"docs-to-pr\"\n        }\n      }\n    }\n  }\n}\n",
+      "changed": "WORKFLOWCLEAN1 1a: `current` is no longer chosen for a place's work; a place follows a saved workflow, so the verb refuses and writes nothing."
     },
     {
       "name": "workflow use, a repository's kind unchecked",
@@ -4226,9 +4191,7 @@
         "daoris: 2 workflows named in <home>/data/workflows:",
         "  `docs-to-pr` — A pull request with no press: v1, 3 steps. A pull request opens once its quest is done; you merge it.",
         "  `web-verify` — Verify the line: v1, a graph (schema 2) of 1 node and 0 wires, ending at `gates`, digest gph-33adad6e2b31c4063bc79327db9f9639.",
-        "Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):",
-        "  `pull-request-after-accept` — A pull request after you accept. You accept; the plugin pushes and opens a pull request; you merge it.",
-        "  `pull-request-no-press` — A pull request with no press. A pull request opens once its quest is done; you merge it.",
+        "Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):",
         "  `merge-after-accept` — Merge workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `merge-automatic` — Automatic merge workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
         "  `documents` — Documents workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
@@ -4904,6 +4867,7 @@
         "       daoris-driver driver retry <quest> [--at <n> | --session <id>]",
         "       daoris-driver driver line <repository>|--workspace <name> <branch>|--clear",
         "       daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear",
+        "              (serves only a place that follows Current; converting retires the old landing rule)",
         "              [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]",
         "              [--cycle <file>|--no-cycle]",
         "       daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear",
@@ -4923,11 +4887,12 @@
         "              [--synthesis-minutes <n>] [--challenge-minutes <n>] [--request-minutes <n>] | --clear",
         "       daoris-driver driver workflow list · show <id>[@<version>] · show --repository <name>|--workspace <name> [--kind <kind>]",
         "       daoris-driver driver workflow defaults [<default> [--to <file>]]",
-        "       daoris-driver driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]",
+        "       daoris-driver driver workflow new <id> --from <default>|<id>[@<version>]",
         "              [--with-opinion] [--with-look] [--name \"…\"]",
-        "       daoris-driver driver workflow edit <id> [--base <version>] <change>… · apply <id> <file>|--as-graph [--base <version>]",
+        "       daoris-driver driver workflow apply <id> <file> [--base <version>]",
         "       daoris-driver driver workflow export <id> [--to <file>] · import <file>",
-        "       daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
+        "       daoris-driver driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
+        "              (current only with --landed: no verification)",
         "       daoris-driver driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>] | --drop",
         "              (a workflow's writes say their change, and with --plan save nothing)",
         "       daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default",

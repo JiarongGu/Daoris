@@ -15,6 +15,12 @@ public static class WorkplaceRunFiles
     /// <summary>The folder under the home's workflows that holds a chat run's look files.</summary>
     public const string Looks = "looks";
 
+    /// <summary>The folder under the home's workflows that holds a graph-bound chat run's candidate file (<see cref="ChatCandidates"/>).</summary>
+    public const string Candidates = "candidates";
+
+    /// <summary>The folder of a chat run's candidate files.</summary>
+    public static string CandidatesFolder(string home) => Path.Combine(DaorisHome.Entry(home, HomeEntry.Workflows), Candidates);
+
     /// <summary>What a chat run's id begins with, apart from a quest's 12 hex digits by its spelling.</summary>
     public const string ChatPrefix = "chat-";
 

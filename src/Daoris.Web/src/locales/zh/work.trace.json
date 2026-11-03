@@ -169,6 +169,7 @@
   "work.trace.try.carried": "它的工作已按内容在主线或你的某个分支上，因此没有再次落地",
   "work.trace.try.carried-on": "你的采纳已让它的会话继续，去把它的工作树处理干净；工作树干净后即会落地",
   "work.trace.try.carry-bound": "已继续两次，它的工作树仍不干净，因此你的采纳已撤回；它在等你",
+  "work.trace.try.performed": "它所在工作流自己的落地步骤会落地这项工作，所以这次查看没有为它选择任何操作",
   "work.trace.try.superseded": "它工作树中更新的会话接替了它",
   "work.trace.try.gone": "它的工作树已丢弃",
   "work.trace.try.undone": "它的委托不再是完成状态",

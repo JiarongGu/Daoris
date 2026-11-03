@@ -163,8 +163,6 @@ internal static class PipeTargetRows
         Row("OPINION_ANYWAY", new SessionGround("id"), OpinionGate());
         Row("OPINION_MYSELF", new SessionGround("id"), OpinionGate());
         Row("ASK_OPINION", new SessionGround("id"), BranchGround.HeadOf("id"));
-        // CHATFLOW1d2: Accept without the look… on a chat run, bound to the tree's head its press captures and lands.
-        Row("LAND_WITHOUT_LOOK", new SessionGround("id"), BranchGround.HeadOf("id"));
         Row("STOP_OPINION", LoopGround.Wait("opinion", "opinion"));
         // The tree it removes, by `id` or by `path`: its head and index, and with `force` its uncommitted bytes (§15.1 item 2).
         Row("DISCARD_SESSION_TREE", new SessionGround("id"), BranchGround.HeadOf("id"), LoopGround.Plan("tree", Page, "id", "path", "force"));
@@ -232,13 +230,6 @@ internal static class PipeTargetRows
             (a, p) => Text(At(Each(At(a, "proposals")).FirstOrDefault(each => Text(At(each, "id")) == PipeGround.Id(Text(p, "id"))), "state")) ?? ""));
         Row("TRUST_FOLDER", LoopGround.Wait("trust", "folder", "trustFile"));
 
-        // The set-up, and a repository's standing choices.
-        Row("SETUP_PRESS", new RepositoryGround("repository"), Plan("SETUP_PLAN", ["repository", "builds"], p => new { repository = Text(p, "repository"), builds = Text(p, "builds") },
-            (a, _) => Fp(
-                Pick(a, "repository", "workspace", "line", "layout", "adopted", "declares", "asks", "agent", "lands", "landsWith", "pressable", "builds"),
-                string.Join(",", Each(At(a, "rules")).Select(each => Text(each)).Order(StringComparer.Ordinal)),
-                string.Join(",", Each(At(a, "refusals")).Select(each => Text(At(each, "code"))).Order(StringComparer.Ordinal))),
-            TimeSpan.FromMinutes(2)));
         // AGENTSPLACE1b2: the plan the person read, by its digest, which pins each repository's changes, its declaration's blob and the acceptances
         // offered, read at the press's ask and again at its Confirm; a plan that moved between them is refused.
         Row("PLACE_APPLY", Plan("PLACE_PLAN",
@@ -250,6 +241,13 @@ internal static class PipeTargetRows
             },
             (a, _) => Fp(Text(At(a, "digest"))),
             TimeSpan.FromMinutes(2)));
+        // WORKFLOWCLEAN1 1e: the conversion plan the person read, by its digest, which pins every operation, the census inputs and the row's choices;
+        // one that moved between the ask and the Confirm is refused. The undo is pinned the same, by its own plan's digest.
+        Row("CONVERT_APPLY", Plan("CONVERT_PLAN", ["digest", "composed", "landAutomatic"],
+            p => new { composed = Text(p, "composed"), landAutomatic = Text(p, "landAutomatic") },
+            (a, _) => Fp(Text(At(a, "digest"))),
+            TimeSpan.FromMinutes(2)));
+        Row("CONVERT_UNDO", Plan("CONVERT_PLAN", ["digest"], _ => new { undo = true }, (a, _) => Fp(Text(At(a, "digest"))), TimeSpan.FromMinutes(2)));
         Row("SET_DRIVABLE", new RepositoryGround("repository"), Listed("drivable", "drivable"));
         Row("SET_HOLD", new RepositoryGround("repository"), Listed("holds", "held"));
         Row("SET_TREES", new RepositoryGround("repository"), Listed("trees", "ownTree"));

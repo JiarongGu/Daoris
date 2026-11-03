@@ -108,7 +108,7 @@ public sealed class RegistrationFollowTests
         Assert.Empty(world.Sent);
         Assert.Equal(RegistryOutcome.NotSetUp, followed.Outcome);
         Assert.Contains("not set up on its line `main`", followed.Said);
-        Assert.Contains("`daoris-driver setup game`", followed.Said);
+        Assert.Contains("`daoris-driver place game --preset keep --adoption`", followed.Said);
     }
 
     [Fact]

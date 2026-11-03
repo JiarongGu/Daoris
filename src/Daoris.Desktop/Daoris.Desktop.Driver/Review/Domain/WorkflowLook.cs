@@ -6,4 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Environment">The environment the look is in; null where the version has no look, or its look cannot start for want of one.</param>
 /// <param name="Cannot">Why the look cannot start (§3.7), a sentence naming the Setup row that declares what it needs; else null.</param>
-public sealed record WorkflowLook(string? Environment, string? Cannot);
+public sealed record WorkflowLook(string? Environment, string? Cannot)
+{
+    /// <summary>The look node's id in the graph the run is bound to, where the look is a node; the one the person's skip names.</summary>
+    public string? Node { get; init; }
+}

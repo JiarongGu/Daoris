@@ -25,6 +25,9 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     {
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+        // The come-up's own reads (the conversion's census) are not the route's: settled, then forgotten.
+        await loop.Settling;
+        standIn.Forget();
         return (new DriverModule(Bus, loop), standIn);
     }
 
@@ -262,6 +265,13 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         public List<string> Requests { get; } = [];
 
         public List<string> Bodies { get; } = [];
+
+        /// <summary>Forget what was heard so far: the come-up's own reads.</summary>
+        public void Forget()
+        {
+            lock (Requests) Requests.Clear();
+            Bodies.Clear();
+        }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {

@@ -86,6 +86,12 @@ public static class EntryPartOutcome
 
     /// <summary>Its work was replayed onto the head bringing it in (LINESTOGETHER1d): the head's landing carries it, and it lands nothing itself.</summary>
     public const string BroughtInto = "brought-into";
+
+    /// <summary>
+    /// The person's Accept was kept as the review's word of the part's run (WORKFLOWCLEAN1 1c), whose <c>land</c> the runtime performs at its
+    /// pass: nothing was landed here, and the part is not refused.
+    /// </summary>
+    public const string Accepted = "accepted";
 }
 
 /// <summary>One part's outcome at an entry's Accept, with its landing's answer where it was tried.</summary>

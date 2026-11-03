@@ -8,7 +8,6 @@ import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../w
 import { WorkflowTab, type WorkflowTabProps } from '../workflow/WorkflowTab';
 import { RepositoryMarks } from './ProjectList';
 import { RepositorySetup, type RepositorySetupProps, type SetupSectionId } from './setup/RepositorySetup';
-import { SetUpForAgents, type SetUpForAgentsProps } from './setup/SetUpForAgents';
 import type { ProjectTab } from './tabs';
 import type { HeavySlot } from '../work/heavySlot';
 import { HeavySlotRow } from '../work/HeavySlotLine';
@@ -45,15 +44,14 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * - **A browser gets Details alone** (D47 §4): setup is this machine's, and so are its workflows (design §2.4, §6.1) and
  *   its branches and history (D147 §6); one tab is no tabs, so it has no tab row.
  * - **Adoption is the repository's own act** (D31, D32): one not adopted is offered the steps as text, and none of
- *   adoption's own acts, like *Manage*, which writes its declaration into it. Since LAYOUT8 (D117 §6.1, D170 point 1) one that
- *   can be asked is also offered *Set up for agents*, which asks its own session to take the steps, its plan first, and
- *   writes nothing into it.
+ *   adoption's own acts, like *Manage*, which writes its declaration into it. Asking its own session to take the steps is the
+ *   place's *Set up…* (its adoption part), plan first, which writes nothing into the repository.
  * - **An absent act is absent, never disabled**: *Manage* and Setup only where a shell answers (D48 §7), Setup's
  *   driving only where there is somewhere to start (INT3c).
  * - **A page never prints a machine path it was answered** (D47 §4): a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
-  registration, counts, line, unlanded = 0, here, drivable, held, setup, setUp, workflow, branches, history, changes, integration, tab = 'details', onTab,
+  registration, counts, line, unlanded = 0, here, drivable, held, setup, workflow, branches, history, changes, integration, tab = 'details', onTab,
   onManage, onOpenCode, onOpenSetup, heavy,
 }: {
   /** Open its page in the Agents place's Setup mode, where its Setup is once that mode is lit (AGENTSPLACE1f); then it has no Setup tab. */
@@ -78,11 +76,6 @@ export function ProjectPage({
   held?: boolean;
   /** Its Setup on this machine: a shell's. Absent, the page is Details alone, with no tab row. */
   setup?: RepositorySetupProps | null;
-  /**
-   * *Set up for agents* (LAYOUT8): a shell's, for one not adopted that can be asked, beside its adoption steps on Details.
-   * Absent where there is no driver to press it, or no checkout here to ask (D117 §6.5).
-   */
-  setUp?: SetUpForAgentsProps | null;
   /**
    * How its work moves (WORKFLOW1b): a shell's, beside its Setup. Its doors to the workspace's Setup are its holder's; the
    * door to its own Setup is the page's, which opens the section that sets the step.
@@ -257,9 +250,6 @@ export function ProjectPage({
           </p>
         </PageSection>
       )}
-
-      {/* The press that asks its own session to take those steps (LAYOUT8), its plan first. */}
-      {!adopted && setUp && <SetUpForAgents {...setUp} />}
     </>
   );
 

@@ -68,9 +68,11 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         var changes = plan.GetProperty("changes").EnumerateArray()
             .Select(each => (each.GetProperty("change").GetProperty("key").GetString(), string.Join(",", each.GetProperty("repositories").EnumerateArray().Select(name => name.GetString()))))
             .ToList();
-        Assert.Equal([("SET_TREES", "atlas,tools"), ("SET_DRIVABLE", "atlas,tools"), ("SETUP_PRESS", "atlas,tools")], changes);
         Assert.Equal(
-            "daoris-driver place atlas tools --preset merge-after-accept --with opinion,adoption --what-it-builds library --drive --plan",
+            [("SET_TREES", "atlas,tools"), ("WORKFLOW_SAVE", "atlas,tools"), ("WORKFLOW_USE", "atlas,tools"), ("SET_DRIVABLE", "atlas,tools"), ("SETUP_PRESS", "atlas,tools")],
+            changes);
+        Assert.Equal(
+            "daoris-driver place atlas tools --preset merge-after-accept --with opinion --adoption --what-it-builds library --drive --plan",
             plan.GetProperty("terminal").GetString());
     }
 
@@ -100,7 +102,7 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         var plan = await AnswerAsync(module, "PLACE_PLAN", new { repositories = new[] { "atlas", "nowhere" }, preset = SetupPresets.PullRequest, look = true });
 
         var codes = plan.GetProperty("refusals").EnumerateArray().Select(each => each.GetProperty("code").GetString()).ToList();
-        Assert.Equal([PlacePlans.NoLandingPlugin, "no-review-environment", SetupRefusals.NotOnRegistry], codes);
+        Assert.Equal([PlacePlans.NoLandingPlugin, SetupRefusals.NotOnRegistry], codes);
         Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
     }
 
