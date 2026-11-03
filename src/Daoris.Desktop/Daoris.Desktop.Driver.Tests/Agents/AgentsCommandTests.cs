@@ -437,7 +437,7 @@ public sealed class AgentsCommandTests : IDisposable
 
         // Every verb of the family is the program's since PUSH1f2e, `pin` the last: a word none is stands in for one it lacks.
         Assert.Equal(2, await AgentsCommand.RunAsync(["frobnicate", "claude-code"], World(), CancellationToken.None));
-        Assert.StartsWith("daoris-driver agent: `frobnicate` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
+        Assert.StartsWith("daoris agent: `frobnicate` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
     }
 
     /// <summary>A person typing a key: the read waits until the test answers it, so a test sees what is held meanwhile.</summary>
@@ -490,7 +490,7 @@ public sealed class AgentsCommandTests : IDisposable
     [Fact]
     public async Task A_key_s_publication_waits_on_a_held_lease_says_so_once_and_takes_it_when_let_go()
     {
-        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         Assert.NotNull(held);
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         // The clock moves past the thirty seconds once the wait began, so the hold is said; it is said once however long it lasts.
@@ -509,7 +509,7 @@ public sealed class AgentsCommandTests : IDisposable
         var account = Assert.Single(HarnessSettings.Profiles(Home, "claude-code"));
         Assert.Equal("sk-ant-api03-waited-abcd", HarnessKeys.Of(Home, "claude-code", account));
         var told = _error.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(["daoris: waiting for a terminal's `daoris-driver trees land`"], told.Select(line => line[..line.IndexOf(" (pid", StringComparison.Ordinal)]));
+        Assert.Equal(["daoris: waiting for a terminal's `daoris tree land`"], told.Select(line => line[..line.IndexOf(" (pid", StringComparison.Ordinal)]));
         Assert.False(File.Exists(HomeLease.PathIn(Home)), "the publication let the home go");
     }
 
@@ -541,7 +541,7 @@ public sealed class AgentsCommandTests : IDisposable
         }
 
         _error.GetStringBuilder().Clear();
-        using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using (var stop = new CancellationTokenSource())
         {
@@ -749,7 +749,7 @@ public sealed class AgentsCommandTests : IDisposable
         [Fact]
         public async Task A_Ctrl_C_while_a_finished_sign_in_s_end_waits_keeps_the_account_unnamed_and_says_how_to_finish()
         {
-            using var held = HomeLease.TryAcquire(_held.Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+            using var held = HomeLease.TryAcquire(_held.Home, LeaseKind.Verb, out _, "daoris tree land");
             Assert.NotNull(held);
             var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             using var stop = new CancellationTokenSource();

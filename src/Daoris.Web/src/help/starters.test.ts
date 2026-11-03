@@ -35,14 +35,14 @@ describe('starters', () => {
     // ENTRY1b: the sessions waiting on the person are Sessions' *Waiting on you*, which its door brings into view.
     expect(all[0]).toMatchObject({ values: { count: 2 } });
     expect(all[0]!.door).toEqual({ view: 'sessions', group: 'you' });
-    expect(all[1]).toMatchObject({ door: { view: 'projects' }, command: 'daoris connect' });
+    expect(all[1]).toMatchObject({ door: { view: 'projects' }, command: 'daoris repository connect' });
   });
 
   it('says nothing is driven only where something is registered to drive', () => {
     const lacking = starters({ ...READY, drivable: [] });
 
     expect(lacking).toEqual([expect.objectContaining({
-      id: 'nothing-driven', door: { view: 'projects' }, command: 'daoris driver drive <repository>',
+      id: 'nothing-driven', door: { view: 'projects' }, command: 'daoris place drive <repository>',
     })]);
   });
 
@@ -63,7 +63,7 @@ describe('starters', () => {
     expect(starters({ ...READY, unnamedLines: ['engine', 'game', 'tools'] })).toEqual([expect.objectContaining({
       // The first one's Setup, where its line is set (UX6f, UX6g).
       id: 'no-line', values: { count: 3, first: 'engine' }, door: { view: 'projects', item: 'engine', tab: 'setup' },
-      command: 'daoris driver line engine <branch>',
+      command: 'daoris place line engine <branch>',
     })]);
   });
 });

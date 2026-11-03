@@ -67,7 +67,7 @@
   "plugin.kit.ok": "通过",
   "plugin.kit.failed": "未通过",
   "plugin.kit.said": "它在 stderr 上说的话",
-  "plugin.kit.terminal": "也可用 `daoris-driver plugins new|try`——同一套工具，两道门。在没有 Daoris 的插件仓库里，`node --test` 会运行工具写下的线协议测试。",
+  "plugin.kit.terminal": "也可用 `daoris plugin new|try`——同一套工具，两道门。在没有 Daoris 的插件仓库里，`node --test` 会运行工具写下的线协议测试。",
   "plugin.list.add": "添加插件",
   "plugin.list.ask": "向问道衍提插件需求",
   "plugin.list.make": "制作插件…",
@@ -177,7 +177,7 @@
   "plugin.data.body": "它保存的内容。更新从不动这个文件夹，移除也会把它留下，由你决定是否删除。",
   "plugin.field.folder": "文件夹",
   "plugin.page.terminal": "也可用 `daoris plugin enable|disable|update|remove {{id}}`——同一个文件、同一个文件夹，两道门。",
-  "plugin.page.terminalTry": "在终端里，`daoris-driver plugins try {{id}}` 也以同样的方式试运行它。",
+  "plugin.page.terminalTry": "在终端里，`daoris plugin try {{id}}` 也以同样的方式试运行它。",
   "plugin.offer.note": "安装时不会运行任何东西：驱动会在下一次查看时读取它；落地工作的插件只在落地规则点名它时才运行。",
   "plugin.offer.terminal": "也可用 `daoris plugin add --offer {{id}}`——同样的拷贝，两道门。"
 }

@@ -22,7 +22,7 @@ internal sealed class HelpSetupProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to set repositories up: the repository as the registry names it, its <c>target</c>, and the place's others
-    /// make the ask, which the person's page plans and applies (<c>daoris-driver place … --adoption</c>'s twin: one quest to each
+    /// make the ask, which the person's page plans and applies (<c>daoris place … --adoption</c>'s twin: one quest to each
     /// session, and the rule it needs to run the doctrine tool). A set-up needs no path, so none is written. Whether the apply would
     /// publish (registered here, a tree of its own, the doctrine tool found, none open) is the driver's to judge, by the plan's refusals.
     /// </summary>

@@ -7,7 +7,7 @@ import type { CurrentWorkflow, WorkflowIntegration, WorkflowStart, WorkflowStep 
 /** The driver's words for each limit, as the table holds them (`WorkflowLimits.Table`). */
 export const LIMITS: Record<string, string> = {
   'opinion-partial': "Partial: work here lands only once another agent's reading of it is settled, or you go on without one by "
-    + '`daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.',
+    + '`daoris session opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.',
   'look-partial': "Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step's build is "
     + "shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a "
     + 'process of its own for one.',

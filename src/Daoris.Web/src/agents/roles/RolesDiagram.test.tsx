@@ -69,7 +69,7 @@ async function diagramFrom(section: keyof typeof SECTION) {
 describe('The Roles mode, the diagram', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);

@@ -20,9 +20,9 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
 
         var plan = HelpProposals.Plan(Sync("engine", "work"), DriverConfig.Empty, Facts);
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver trees sync --repository engine --workspace work", plan.Terminal);
+        Assert.Equal("daoris tree sync --repository engine --workspace work", plan.Terminal);
         Assert.Contains("workspace `work`", plan.Describe);
-        Assert.Equal("daoris-driver trees sync --workspace work", HelpProposals.Plan(Sync(null, "work"), DriverConfig.Empty, Facts).Terminal);
+        Assert.Equal("daoris tree sync --workspace work", HelpProposals.Plan(Sync(null, "work"), DriverConfig.Empty, Facts).Terminal);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(kept, DriverConfig.Empty, Facts);
         await HelpProposals.ApplyAsync(_home, kept, plan, doors, _ => { }, CancellationToken.None);
 
-        Assert.Equal("daoris-driver trees sync --repository engine --workspace work --yes", plan.Terminal);
+        Assert.Equal("daoris tree sync --repository engine --workspace work --yes", plan.Terminal);
         Assert.Equal(2, doors.Calls.Count);
         Assert.Equal("TREES_SYNC_PLAN engine in:work", doors.Calls[0]);
         Assert.EndsWith(" in:work", doors.Calls[1]);
@@ -75,7 +75,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Sync("engine"), DriverConfig.Empty, Facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver trees sync --repository engine", plan.Terminal);
+        Assert.Equal("daoris tree sync --repository engine", plan.Terminal);
         Assert.Contains("Look for updates first", plan.Describe);
         Assert.Contains("fetches each line from `origin`, as you", plan.Describe);
         Assert.False(plan.Sync!.Looked);
@@ -86,7 +86,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
     public void A_repository_this_machine_does_not_have_is_refused()
     {
         Assert.Contains("`nowhere` is not registered", HelpProposals.Plan(Sync("nowhere"), DriverConfig.Empty, Facts).Refusal);
-        Assert.Equal("daoris-driver trees sync", HelpProposals.Plan(Sync(), DriverConfig.Empty, Facts).Terminal);
+        Assert.Equal("daoris tree sync", HelpProposals.Plan(Sync(), DriverConfig.Empty, Facts).Terminal);
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Refusal);
         Assert.True(plan.Sync!.Looked);
         Assert.Equal(6, plan.Sync.Rows.Count);
-        Assert.Equal("daoris-driver trees sync --repository engine --yes", plan.Terminal);
+        Assert.Equal("daoris tree sync --repository engine --yes", plan.Terminal);
         Assert.Contains("3 thing(s) change", plan.Describe);
     }
 

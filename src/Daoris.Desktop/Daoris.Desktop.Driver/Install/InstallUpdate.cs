@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// mode holds for what is staged, and what a draining look plans with.
 /// </summary>
 /// <remarks>
-/// <para><b>Two doors, one file</b> (D50): the application's banner and <c>daoris-driver update</c> write
+/// <para><b>Two doors, one file</b> (D50): the application's banner and <c>daoris update</c> write
 /// <c>$DAORIS_HOME/update.json</c> through <c>InstallUpdate.Write</c>, and the application reads it at each of its looks. Absent or
 /// unreadable is the default, a staged build installed when idle, so a torn file never stops an update nor starts one now.</para>
 ///
@@ -31,7 +31,7 @@ public static class InstallUpdate
     /// </summary>
     public const string HoldReason =
         "an update is waiting for this machine's sessions to end: nothing new starts until it is installed and Daoris "
-        + "starts again — Not now, or `daoris-driver update --cancel`, lets work start meanwhile.";
+        + "starts again — Not now, or `daoris update --cancel`, lets work start meanwhile.";
 
     /// <summary>
     /// The look's line for a start the drain held that is not a quest's (DRAINHOLD1): <paramref name="family"/> and what was held, then the

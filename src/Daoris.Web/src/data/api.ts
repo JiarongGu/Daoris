@@ -806,7 +806,7 @@ export const api = {
       throw error;
     }
   },
-  // Asks (D65 §1a), a local host's doors: the screen twin of `daoris-driver ask` (INT4c, D50). Files
+  // Asks (D65 §1a), a local host's doors: the screen twin of `daoris ask` (INT4c, D50). Files
   // travel whole, as a quest's do, because the host keeps them until the ask becomes quests.
   asks: (includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Ask[]>(`/api/asks${qs({ includeClosed, workspace })}`, signal),
@@ -830,13 +830,13 @@ export const api = {
   closeAsk: (id: string, reason: string) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/close`, { reason }),
   // The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a), with their words where they give any;
-  // `daoris-driver ask --go-ahead` is the terminal's twin. `goesOn` false says no park goes on with the answer (GOAHEAD2's door):
+  // `daoris ask go-ahead` is the terminal's twin. `goesOn` false says no park goes on with the answer (GOAHEAD2's door):
   // a stale go-ahead's refusal runs nothing (GOAHEADSTALE1). Absent, the host reads it as true, as it always has.
   answerGoAhead: (id: string, number: number, approved: boolean, words?: string, goesOn = true) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/go-aheads/${number}`, {
       answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}), ...(goesOn ? {} : { goesOn: false }),
     }),
-  // Deleting a record made by mistake (D95) — `daoris-driver ask --delete` and `quest delete` are the
+  // Deleting a record made by mistake (D95) — `daoris ask delete` and `quest delete` are the
   // terminal's twins. A refusal is the service's sentence, verbatim, like every other write's.
   deleteAsk: (id: string) => post<Deleted>(`/api/asks/${encodeURIComponent(id)}`, undefined, 'DELETE'),
   deleteQuest: (id: string) => post<Deleted>(`/api/quests/${encodeURIComponent(id)}`, undefined, 'DELETE'),
@@ -867,7 +867,7 @@ export const api = {
       `/api/registry/${encodeURIComponent(repository)}/workspace`, { workspace }),
   retireRepository: (repository: string) =>
     post<Retired>(`/api/registry/${encodeURIComponent(repository)}`, undefined, 'DELETE'),
-  // `daoris import <folder> [--workspace W]`'s screen door (D50, D75, D77): a folder's subdirectories
+  // `daoris repository import <folder> [--workspace W]`'s screen door (D50, D75, D77): a folder's subdirectories
   // registered at once, into the named workspace when there is one. The answer's `message` is the
   // service's sentence, and it is shown as said.
   importFolder: (folder: string, workspace?: string) =>
@@ -887,7 +887,7 @@ export const api = {
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
   // The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): what it held goes on. A local
-  // host's door, as a delete is; `daoris-driver quest accept` is the terminal's twin.
+  // host's door, as a delete is; `daoris quest accept` is the terminal's twin.
   acceptQuest: (id: string) => post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/accept`, {}),
   // The person marks a quest done (QUESTCLOSE1, D126's note): their done, with their words where they wrote any, which the
   // service keeps after the sentence saying the done was theirs. A local host's door, as the yes is; `daoris-driver quest
@@ -895,17 +895,17 @@ export const api = {
   personDone: (id: string, note: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/done`, note ? { note } : {}),
   // The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): the submission the page showed, named whole, which the
-  // host refuses once another is current, and their words. `daoris-driver quest reopen` is the terminal's twin.
+  // host refuses once another is current, and their words. `daoris quest reopen` is the terminal's twin.
   reopenQuest: (id: string, submission: SubmissionRef, note: string | null) =>
     asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/reopen`, {
       submission: { machine: submission.machine, sequence: submission.sequence }, ...(note ? { note } : {}),
     }),
   // The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): it grows from the source's current
-  // submission, refused until that is unheld. `daoris-driver quest go-on` is the terminal's twin; abandoning it is the decline.
+  // submission, refused until that is unheld. `daoris quest go-on` is the terminal's twin; abandoning it is the decline.
   continueQuest: (id: string) => asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/continue`, {}),
   // The person's verdict on a review (REVIEWENV1g, D154 point 8; design §3.3, §3.6): `reviewed` or `not-yet` on the set-up their
   // view drew, named whole, which the host refuses as stale where a newer one was shown since (REVIEWENV1b3); a skip names
-  // none. `daoris-driver quest review` is the terminal's twin.
+  // none. `daoris quest review` is the terminal's twin.
   reviewQuest: (id: string, verdict: Verdict, words?: string | null, setUp?: SetUpRef | null) =>
     asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/review`, {
       verdict, ...(words ? { words } : {}), ...(setUp && verdict !== 'skipped' ? { setUp } : {}),
@@ -922,7 +922,7 @@ export const api = {
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),
   // The person bringing this machine's lost take forward (SYNCMERGE1a, D178 point 3), by the conflict's name: a fresh take of the step and
   // the conflict's dismissal marked with it, which the kept session goes on from. A refusal, or a loss again, is a 409 in the host's words.
-  // `daoris-driver sync forward` is the terminal's twin.
+  // `daoris remote sync forward` is the terminal's twin.
   forwardConflict: (id: string, machine: string, sequence: number) =>
     asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/forward`, { machine, sequence }),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,

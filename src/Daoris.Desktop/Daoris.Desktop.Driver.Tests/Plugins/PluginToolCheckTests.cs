@@ -329,7 +329,7 @@ public sealed class PluginToolCheckTests : IDisposable
         Assert.Contains("`versions`", readme);
         Assert.Contains("`ready`", readme);
         Assert.Contains("never runs `fix`", readme);
-        Assert.Contains("daoris-driver plugins try", readme);
+        Assert.Contains("daoris plugin try", readme);
         Assert.DoesNotContain("{{", readme);
         Assert.False(Directory.Exists(plan.Folder));
     }

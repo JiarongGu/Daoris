@@ -379,16 +379,16 @@ public static class InstanceDoor
     /// two verbs that read and take back what was sent are named.
     /// </summary>
     public const string StoppedAtCtrlC =
-        "daoris: stopped at your Ctrl+C. A change already sent to Daoris's window may still be confirmed there: `daoris-driver result <id>` "
-        + "asks how it ended, and `daoris-driver withdraw <id>` takes it back; nothing more was done here.";
+        "daoris: stopped at your Ctrl+C. A change already sent to Daoris's window may still be confirmed there: `daoris press result <id>` "
+        + "asks how it ended, and `daoris press withdraw <id>` takes it back; nothing more was done here.";
 
     /// <summary>
     /// A press still waiting for the person's Confirm when the verb's wait ended (the confirm-wait design §4.1): not lost and not an
     /// error, said with its id and the two verbs, exit 1.
     /// </summary>
     public static string StillWaiting(string verb, string id) =>
-        $"{verb}: still waiting for your confirmation in Daoris's window (request {id}); `daoris-driver result {id}` says how it ended, "
-        + $"and `daoris-driver withdraw {id}` takes it back (waiting)";
+        $"{verb}: still waiting for your confirmation in Daoris's window (request {id}); `daoris press result {id}` says how it ended, "
+        + $"and `daoris press withdraw {id}` takes it back (waiting)";
 
     /// <summary>
     /// Takes <c>--wait &lt;minutes&gt;</c> (0 to 30) and <c>--no-wait</c>, which is <c>--wait 0</c>, from the host's words before any
@@ -559,7 +559,7 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// <c>daoris-driver result &lt;id&gt;</c> (RPC1j, §6.1): how a press this terminal sent ended, asked of the instance with the key it
+    /// <c>daoris press result &lt;id&gt;</c> (RPC1j, §6.1): how a press this terminal sent ended, asked of the instance with the key it
     /// was sent with. An answered press's words are its route's (<c>said</c>), else its answer as the instance gave it; a press still
     /// under way, one the instance does not know and one it holds for another key are said, exit 2. CONFIRMWAIT1b (the confirm-wait
     /// design §4.2): a press still <c>waiting</c> for the person is said as the verb's own wait's end says it, exit 1, and kept past the
@@ -615,7 +615,7 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// <c>daoris-driver withdraw &lt;id&gt;</c> (CONFIRMWAIT1b, the confirm-wait design §4.3): takes back a press this terminal sent that
+    /// <c>daoris press withdraw &lt;id&gt;</c> (CONFIRMWAIT1b, the confirm-wait design §4.3): takes back a press this terminal sent that
     /// still waits for the person's Confirm, by the pipe's own <c>WITHDRAW { id, key }</c> with the key it was sent with, on a new
     /// connection; never the kit's <c>CANCEL</c>, which reaches a confirmed press and aborts it. Taken back is exit 0; confirmed meanwhile
     /// (nothing is cancelled) or already ended, said with its ending, exit 1; anything else exit 2, an instance from before the route
@@ -658,13 +658,13 @@ public static class InstanceDoor
             case "running":
                 await world.Error.WriteLineAsync(
                     $"{world.Verb}: request {id} was confirmed meanwhile and is under way, so nothing was taken back; "
-                    + $"`daoris-driver result {id}` says how it ended.").ConfigureAwait(false);
+                    + $"`daoris press result {id}` says how it ended.").ConfigureAwait(false);
                 return 1;
             case "ended":
                 presses!.Ended(id, DateTimeOffset.UtcNow);
                 string ending;
                 if (!data.TryGetProperty("answer", out var answer)) ending = "Daoris did not say how.";
-                else if (Succeeded(answer)) ending = $"it was done; `daoris-driver result {id}` says its answer.";
+                else if (Succeeded(answer)) ending = $"it was done; `daoris press result {id}` says its answer.";
                 else
                 {
                     var (code, message, _) = Refusal(answer);
@@ -676,7 +676,7 @@ public static class InstanceDoor
             default:
                 await world.Error.WriteLineAsync(
                     $"{world.Verb}: Daoris answered the withdrawal of request {id} in words this terminal does not read; "
-                    + $"`daoris-driver result {id}` says how it stands.").ConfigureAwait(false);
+                    + $"`daoris press result {id}` says how it stands.").ConfigureAwait(false);
                 return 2;
         }
     }
@@ -742,8 +742,8 @@ public static class InstanceDoor
                 // TERMTRUST1a: where the person's standing confirmation names this press and did not cover it, the wait says why.
                 var why = StandingWhy(InstanceClient.Text(status, "standing")) is { } standing ? $"; {standing}" : "";
                 world.Error.WriteLine(
-                    $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris-driver result {id}` says "
-                    + $"how it ended, and `daoris-driver withdraw {id}` takes it back…");
+                    $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris press result {id}` says "
+                    + $"how it ended, and `daoris press withdraw {id}` takes it back…");
                 world.Error.Flush();
                 // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): its record is marked waiting as the id is said, before any RESULT, so a
                 // verb killed now leaves its key kept as long as the card may live.

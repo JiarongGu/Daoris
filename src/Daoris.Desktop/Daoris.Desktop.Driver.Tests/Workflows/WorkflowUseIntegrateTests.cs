@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1r part r2 (the integration design §17.7; the workflow design §2.3, §4.7): <c>daoris driver workflow use</c> of a graph version
+/// INTEGRATE1r part r2 (the integration design §17.7; the workflow design §2.3, §4.7): <c>daoris workflow use</c> of a graph version
 /// that integrates its landing. It refuses, writing nothing, where a repository it reaches cannot carry the <c>integrate</c> (each case its own
 /// sentence naming the Setup row), and says, per repository it reaches, <i>integrates with no gates</i> where the rule's
 /// <c>integrate.gates</c> is absent or <c>none</c>. A workspace's <c>use</c> reaches the registry's repositories of that workspace whose own
@@ -95,7 +95,7 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
 
         Assert.Equal(1, exit);
         Assert.Contains("`web-app`: its `merge-in` (`integrate`) integrates the branch the landing `land` makes", _error.ToString());
-        Assert.Contains("daoris driver landing web-app branch <pattern>", _error.ToString());
+        Assert.Contains("daoris place landing web-app branch <pattern>", _error.ToString());
         Assert.Contains("Setup → Line and landing → How work lands", _error.ToString());
         Assert.EndsWith("Nothing was written.", _error.ToString().Trim());
         Assert.False(Chose());

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1f (the workflow design §4.4, D50): <c>daoris-driver workflow keep &lt;session&gt; ["…"]</c>, the person's <i>Keep</i> where
+/// WORKFLOW1f (the workflow design §4.4, D50): <c>daoris workflow keep &lt;session&gt; ["…"]</c>, the person's <i>Keep</i> where
 /// a kind's paths hold a session's work. Its words, its usage in the host's, and its routing. The press itself, over real git, is
 /// <c>AutoLandingTests</c>' kind's paths row.
 /// </summary>
@@ -39,7 +39,7 @@ public sealed class WorkflowKeepCommandTests
     [Fact]
     public void The_verb_is_in_the_hosts_usage_and_routed_through_the_workflow_console()
     {
-        Assert.StartsWith("usage: daoris-driver workflow keep <session> [\"…\"]", WorkflowKeepCommand.Usage);
+        Assert.StartsWith("usage: daoris workflow keep <session> [\"…\"]", WorkflowKeepCommand.Usage);
         Assert.Contains("\n  workflow keep <session> [\"…\"]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
 
         var host = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host");

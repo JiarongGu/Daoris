@@ -48,7 +48,7 @@ describe("a Workflow tab's start node", () => {
     expect(within(landed).queryByRole('button', { name: 'Accept the gates' })).not.toBeInTheDocument();
   });
 
-  // FABRIC-PIPELINE1d part 5: *Verify…*, daoris-driver verify's twin, asks for a branch or a commit once its gates are accepted.
+  // FABRIC-PIPELINE1d part 5: *Verify…*, daoris gate verify's twin, asks for a branch or a commit once its gates are accepted.
   it('offers Verify… once the gates are accepted, and sends a branch, or a commit by its hexadecimal name, for a verification', async () => {
     const onVerify = vi.fn((_ask: unknown, answered: { done: () => void }) => answered.done());
     render(<WorkflowTab page="repository" name="engine" current={ROUTED} onVerify={onVerify} />);

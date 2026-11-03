@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// does today.</para>
 ///
 /// <para>The versions a kept run names (<see cref="KeptVersions(IEnumerable{JsonElement}, string)"/>) are held to the table's
-/// <c>kept</c> rows, and <c>daoris driver workflow edit</c> keeps them through here since PUSH1f2b (<see cref="DriverWorkflowsCommand"/>). The file is the driver's
+/// <c>kept</c> rows, and <c>daoris workflow edit</c> keeps them through here since PUSH1f2b (<see cref="DriverWorkflowsCommand"/>). The file is the driver's
 /// alone to write. Machine-local, never on the wire (D47 §4).</para>
 ///
 /// <para><b>Over ports</b> (STRUCT3b, D166): the runs' use cases, written against <see cref="IWorkflowRunStore"/> and
@@ -111,12 +111,7 @@ public static class WorkflowRunBindings
             Undeclared = selected.Undeclared,
         };
 
-        if (binding.IsCurrent)
-        {
-            var current = WorkflowCurrent.Derive(config, repository, workspace, plugins);
-            return binding with { Digest = current.Version, CurrentSteps = [.. current.Steps.Select(WorkflowCurrent.ToJson)] };
-        }
-
+        if (selected.Workflow == WorkflowSelection.Current) return binding with { Problem = WorkflowProcess.NoWorkflow(repository) };
         if (!WorkflowNamed.IsId(selected.Workflow) || store.Load(selected.Workflow) is not { } found)
         {
             return binding with { Problem = $"no workflow `{selected.Workflow}` is saved here." };
@@ -126,20 +121,17 @@ public static class WorkflowRunBindings
         var newest = found.Read.Versions[^1];
         // FABRIC-PIPELINE1a (the pipeline design §2.1): a route naming a verification pipeline is judged at its bind, kept with why.
         if (found.Read.Verifies) return binding with { Version = newest.Version, Problem = WorkflowSelection.VerificationElsewhere(selected.Workflow) };
-        // A graph version (schema 2) binds its graph's digest (FABRIC-GRAPH1b); it is held as unrun where the process reads it.
-        if (newest.Steps is null && newest.Graph is null)
+        // A graph version (schema 2) binds its graph's digest (FABRIC-GRAPH1b).
+        if (newest.Graph is null)
         {
-            return binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem}" };
+            return binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem ?? "it is no graph"}" };
         }
 
-        // LANDNODE1h (the land node design §4), amended by WORKFLOWCLEAN1 1a: a `land` the version leaves open is resolved now, once, and kept,
-        // from derived defaults (the default pattern, the remote platform's plugin, the default key) and never from a landing rule.
-        // Transitional (design §4.7): a place that still has a landing rule resolves over it, as before, until the conversion writes those options
-        // into the version and removes the rule; with none, the derived defaults resolve them.
+        // LANDNODE1h (the land node design §4): a `land` the version leaves open is resolved now, once, and kept, from derived defaults (the
+        // default pattern, the remote platform's plugin, the default key).
         var platform = remoteHost is null ? null : SetupPresets.PlatformPlugin(remoteHost, plugins);
-        var standing = LandingRules.Effective(config, repository, workspace);
-        var resolved = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land
-            ? LandNodes.Resolve(land, standing.Source == LandingSource.Default ? null : standing.Rule, platform)
+        var resolved = newest.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land
+            ? LandNodes.Resolve(land, platform)
             : LandNodes.NoResolved;
         var unplugged = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } open && !open.Options.ContainsKey("plugin")
             && NodeOptions.Text(open, "method") is LandNodes.Push or LandNodes.PullRequest && !resolved.ContainsKey("plugin");

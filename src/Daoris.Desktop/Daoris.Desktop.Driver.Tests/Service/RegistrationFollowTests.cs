@@ -108,7 +108,7 @@ public sealed class RegistrationFollowTests
         Assert.Empty(world.Sent);
         Assert.Equal(RegistryOutcome.NotSetUp, followed.Outcome);
         Assert.Contains("not set up on its line `main`", followed.Said);
-        Assert.Contains("`daoris-driver place game --preset keep --adoption`", followed.Said);
+        Assert.Contains("`daoris place game --preset keep --adoption`", followed.Said);
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public sealed class RegistrationFollowTests
 
         Assert.Equal(RegistryOutcome.NoLine, followed.Outcome);
         Assert.Contains("none is set, and git names none", followed.Said);
-        Assert.Contains("`daoris driver line game <branch>`", followed.Said);
+        Assert.Contains("`daoris place line game <branch>`", followed.Said);
         // HELPSETUP1: a repository's line is set on its Setup since UX6f.
         Assert.Contains("on Repositories → the repository's page → Setup → Line and landing.", followed.Said);
         Assert.DoesNotContain("Settings → Workspace", followed.Said);

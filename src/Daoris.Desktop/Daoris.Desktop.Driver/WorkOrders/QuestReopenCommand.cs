@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver quest reopen</c> or <c>quest go-on</c> was asked: the quest, which, and the person's words.</summary>
+/// <summary>What <c>daoris quest reopen</c> or <c>quest go-on</c> was asked: the quest, which, and the person's words.</summary>
 public sealed record QuestReopenAsk(string Quest, bool GoOn, string? Note);
 
 /// <summary>
 /// The terminal's doors to the person's reopen of a sealed submission and their go-on with the step it held (FABRIC-CLOSE1c3, §E5;
-/// D173's CLOSE1c note; D50): <c>daoris-driver quest reopen &lt;id&gt; [--note "…"]</c> and <c>quest go-on &lt;id&gt;</c>, through the
+/// D173's CLOSE1c note; D50): <c>daoris quest reopen &lt;id&gt; [--note "…"]</c> and <c>quest go-on &lt;id&gt;</c>, through the
 /// service's own person doors, printing the service's sentence. The quest page's <i>Reopen…</i> and <i>Go on with it</i> are the
 /// other doors; abandoning a held step is <c>quest abandon</c>, its decline.
 /// </summary>
@@ -21,7 +21,7 @@ public sealed record QuestReopenAsk(string Quest, bool GoOn, string? Note);
 public static class QuestReopenCommand
 {
     public const string Usage =
-        "usage: daoris-driver quest reopen <id> [--note \"…\"]  ·  quest go-on <id>\n"
+        "usage: daoris quest reopen <id> [--note \"…\"]  ·  quest go-on <id>\n"
         + "       reopen what a quest submitted, once the step it published stands on it: its agent makes it ready again, and the\n"
         + "       step waits. go-on carries a step its source's reopen held on with the new work; `quest abandon` abandons it.";
 
@@ -58,7 +58,7 @@ public static class QuestReopenCommand
         if (quest?.Submission is not { } submission)
         {
             output.WriteLine(quest is null
-                ? $"daoris-driver: no quest `#{ask.Quest}` here. Ids come from Quests or `daoris-driver sessions`."
+                ? $"daoris-driver: no quest `#{ask.Quest}` here. Ids come from Quests or `daoris session list`."
                 : $"daoris-driver: quest `#{ask.Quest}` is {quest.Status} with no submission to reopen: only what an agent submitted in a "
                     + "workflow that closes its quests itself is reopened. Nothing moved.");
             return 1;

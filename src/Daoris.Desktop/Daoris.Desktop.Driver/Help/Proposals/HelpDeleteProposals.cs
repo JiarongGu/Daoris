@@ -61,7 +61,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
         if (proposal.Door == "quest")
         {
-            var terminal = $"daoris-driver quest delete {id}";
+            var terminal = $"daoris quest delete {id}";
             if (facts.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is not { } quest)
             {
                 return Refused($"there is no quest `#{id}` on this machine.", terminal);
@@ -75,7 +75,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
         if (proposal.Door == "ask")
         {
-            var terminal = $"daoris-driver ask --delete {id}";
+            var terminal = $"daoris ask delete {id}";
             if (facts.Asks.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is not { } ask)
             {
                 return Refused($"there is no ask `#{id}` on this machine.", terminal);
@@ -131,7 +131,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
     /// </summary>
     private static HelpPlan Session(string id, HelpMachineFacts facts)
     {
-        var terminal = $"daoris-driver sessions delete {id}";
+        var terminal = $"daoris session delete {id}";
         HelpPlan Refused(string why) => new(why, "", terminal, null);
         if (id.Length == 0) return Refused("a delete names the session by its id, as Sessions lists it.");
         if (facts.Sessions.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is not { } record)
@@ -140,7 +140,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
         }
 
         id = record.Id;
-        terminal = $"daoris-driver sessions delete {id}";
+        terminal = $"daoris session delete {id}";
         if (record.Teammate)
         {
             return Refused($"Session `{id}` ran on `{id[..id.IndexOf('/')]}`; its record is theirs — archive it here instead.");
@@ -148,7 +148,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
         if (WordsNever.IsHelp(record))
         {
-            return Refused($"`{id}` is Ask Daoris's own conversation: Ask Daoris → History deletes it, as `daoris-driver help delete {id}` does.");
+            return Refused($"`{id}` is Ask Daoris's own conversation: Ask Daoris → History deletes it, as `daoris ask-daoris delete {id}` does.");
         }
 
         if (record.Live) return Refused($"Session `{id}` is still running; stop it first.");

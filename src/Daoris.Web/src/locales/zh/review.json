@@ -28,7 +28,7 @@
   "review.choice.off": "不审阅",
   "review.choice.on": "在默认环境中审阅",
   "review.choice.in": "在 `{{environment}}` 中审阅",
-  "review.choiceTwin": "在终端里，`daoris-driver quest review {{quest}} off \"…\"` 跳过审阅，`daoris-driver quest review {{quest}} on|<environment>` 把它搭建起来。",
+  "review.choiceTwin": "在终端里，`daoris quest review {{quest}} off \"…\"` 跳过审阅，`daoris quest review {{quest}} on|<environment>` 把它搭建起来。",
   "review.setUp.newest": "它展示了什么",
   "review.setUp.older": "之前的展示",
   "review.setUp.where": "在哪里",
@@ -68,5 +68,5 @@
   "review.ask.withoutLookWords": "跳过审阅的原因",
   "review.ask.withoutLookMeanIt": "不经审阅采纳",
   "review.said.notYet": "你的话已作为下一轮发给会话 {{session}}。",
-  "review.said.notYetUnheard": "你的话已保存，但这里没有会话听到：请在 Daoris 的窗口中对会话 {{session}} 说，或运行 `daoris-driver sessions say {{session}} \"…\"`。"
+  "review.said.notYetUnheard": "你的话已保存，但这里没有会话听到：请在 Daoris 的窗口中对会话 {{session}} 说，或运行 `daoris session say {{session}} \"…\"`。"
 }

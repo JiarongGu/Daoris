@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1h (the integration design §5.8): <c>daoris-driver integrate &lt;repository&gt; --plan &lt;branch&gt;</c>, a branch previewed onto its
+/// INTEGRATE1h (the integration design §5.8): <c>daoris integrate &lt;repository&gt; --plan &lt;branch&gt;</c>, a branch previewed onto its
 /// line in git's objects alone over real git. The commits the line lacks, the files the branch changes and each conflict with what would settle
 /// it are said, and the repository's refs, objects, index and working files are as they were before.
 /// </summary>

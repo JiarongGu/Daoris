@@ -581,7 +581,7 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Waiting, waiting.Verdict);
         Assert.Contains("#q2", waiting.Reason);
         Assert.Contains("your yes", waiting.Reason);
-        Assert.Contains("`daoris-driver quest accept q2`", waiting.Reason);
+        Assert.Contains("`daoris quest accept q2`", waiting.Reason);
         Assert.Null(waiting.Resumes);
         Assert.Equal(new SittingFact(SittingFact.Departed) { Quest = "q2", Repository = "Backend" }, waiting.Said);
         Assert.DoesNotContain(plan, c => c.Quest.Id == "q2");
@@ -628,14 +628,14 @@ public sealed class PlannerTests
 
         Assert.Equal(
             "waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it resumes, in the same tree, once "
-            + "the evidence is found, `daoris-driver quest check q2`, or once you accept the done as it stands, your yes: "
-            + "`daoris-driver quest accept q2`.",
+            + "the evidence is found, `daoris quest check q2`, or once you accept the done as it stands, your yes: "
+            + "`daoris quest accept q2`.",
             Reason(driven));
-        Assert.Contains("`daoris-driver quest check q2 --commit <sha>`", Reason(outside));
+        Assert.Contains("`daoris quest check q2 --commit <sha>`", Reason(outside));
         Assert.Equal(
             "waits on `#q2`, which `Backend` closed done without the evidence it names — it resumes, in the same tree, once a later "
-            + "commit holds it, `daoris-driver quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: "
-            + "`daoris-driver quest accept q2`.",
+            + "commit holds it, `daoris quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: "
+            + "`daoris quest accept q2`.",
             Reason(notFound));
     }
 
@@ -1451,7 +1451,7 @@ public sealed class PlannerTests
         var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", PersonStop)), Config()));
 
         Assert.Equal(StartVerdict.Stopped, only.Verdict);
-        Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris driver retry q1 --session s1`.", only.Reason);
+        Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris quest retry q1 --session s1`.", only.Reason);
         Assert.Equal(PersonStop, only.HeldBy);
         Assert.Null(only.Resumes);
     }
@@ -1469,7 +1469,7 @@ public sealed class PlannerTests
 
         Assert.True(standing.PersonStopped);
         Assert.Equal(StartVerdict.Stopped, only.Verdict);
-        Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris driver retry q1 --session s1`.", only.Reason);
+        Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris quest retry q1 --session s1`.", only.Reason);
     }
 
     // ── the steward's stop: held the same way, said as the steward's, released by its Try again only through memory (STEWARDROLE1b) ──
@@ -1512,7 +1512,7 @@ public sealed class PlannerTests
         Assert.True(stop.StewardStopped);
         Assert.Equal(StartVerdict.Stopped, only.Verdict);
         Assert.Equal(
-            "the steward stopped session `s1`; Try again, by the steward or the owner, carries it on — `daoris driver retry q1 --session s1`.", only.Reason);
+            "the steward stopped session `s1`; Try again, by the steward or the owner, carries it on — `daoris quest retry q1 --session s1`.", only.Reason);
         Assert.Equal((SittingFact.Steward, "s1"), (only.Said?.Code, only.Said?.Session));
         Assert.Equal(stop, only.HeldBy);
         Assert.False(PersonStop.StewardStopped);
@@ -1550,7 +1550,7 @@ public sealed class PlannerTests
         var only = Assert.Single(Planner.Plan(Ran([Quest()], ("q1", stop)), Config()));
 
         Assert.Equal(StartVerdict.Stopped, only.Verdict);
-        Assert.Equal("you stopped session `s1`; Try again starts it again — `daoris driver retry q1 --session s1`.", only.Reason);
+        Assert.Equal("you stopped session `s1`; Try again starts it again — `daoris quest retry q1 --session s1`.", only.Reason);
         Assert.Equal(stop, only.HeldBy);
     }
 
@@ -1772,7 +1772,7 @@ public sealed class PlannerTests
         var only = Assert.Single(Planner.Plan(Paused(Ran([Quest()]), ("q1", ByAsk)), Config()));
 
         Assert.Equal(StartVerdict.Paused, only.Verdict);
-        Assert.Equal("paused with ask `#a1`; Resume starts it — `daoris-driver ask --resume a1`.", only.Reason);
+        Assert.Equal("paused with ask `#a1`; Resume starts it — `daoris ask resume a1`.", only.Reason);
         Assert.Equal(ByAsk, only.PausedBy);
         Assert.Null(only.HeldBy);
         Assert.Null(only.Root);
@@ -1787,7 +1787,7 @@ public sealed class PlannerTests
         var only = Assert.Single(Planner.Plan(snapshot, Config()));
 
         Assert.Equal(StartVerdict.Paused, only.Verdict);
-        Assert.Equal("paused with ask `#a1`; Resume carries it on — `daoris-driver ask --resume a1`.", only.Reason);
+        Assert.Equal("paused with ask `#a1`; Resume carries it on — `daoris ask resume a1`.", only.Reason);
         Assert.Null(only.Resumes);
     }
 
@@ -1800,8 +1800,8 @@ public sealed class PlannerTests
         var open = Assert.Single(Planner.Plan(Paused(Ran([Quest()]), ("q1", byQuest)), Config()));
         var taken = Assert.Single(Planner.Plan(Paused(Ran([Quest(status: "Taken")], ("q1", PersonStop)), ("q1", byQuest)), Config()));
 
-        Assert.Equal("you paused `#q1`; Resume starts it — `daoris-driver quest resume q1`.", open.Reason);
-        Assert.Equal("you paused `#q1`; Resume carries it on — `daoris-driver quest resume q1`.", taken.Reason);
+        Assert.Equal("you paused `#q1`; Resume starts it — `daoris quest resume q1`.", open.Reason);
+        Assert.Equal("you paused `#q1`; Resume carries it on — `daoris quest resume q1`.", taken.Reason);
         Assert.Equal(byQuest, taken.PausedBy);
     }
 

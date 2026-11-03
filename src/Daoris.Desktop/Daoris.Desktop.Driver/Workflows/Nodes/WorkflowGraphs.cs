@@ -89,7 +89,7 @@ public static class WorkflowGraphs
             nodes.Add(new NodeDeclaration(id, kind, 1, NodeAuthorities.BuiltIn[kind].Reach)
             {
                 Synthetic = true,
-                Options = new Dictionary<string, string> { ["outcome"] = WorkflowCurrent.Quoted(wire), ["step"] = WorkflowCurrent.Quoted(step.Id) },
+                Options = new Dictionary<string, string> { ["outcome"] = WorkflowSteps.Quoted(wire), ["step"] = WorkflowSteps.Quoted(step.Id) },
             });
             Wire(wire, step.Id, id);
         }
@@ -190,8 +190,8 @@ public static class WorkflowGraphs
     {
         null => "null",
         bool flag => flag ? "true" : "false",
-        string text => WorkflowCurrent.Quoted(text),
-        IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowCurrent.Quoted))}]",
+        string text => WorkflowSteps.Quoted(text),
+        IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowSteps.Quoted))}]",
         _ => throw new ArgumentException($"a field is text, a switch or a list of names, not {value.GetType().Name}."),
     };
 

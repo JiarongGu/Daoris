@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The machine log, from a terminal: `daoris-driver logs [--since &lt;30m|2h|3d&gt;] [--source &lt;name&gt;]
+/// The machine log, from a terminal: `daoris logs [--since &lt;30m|2h|3d&gt;] [--source &lt;name&gt;]
 /// [--event &lt;name&gt;] [--level &lt;warn|error&gt;] [--json]` (LOG1c, D94).
 /// </summary>
 /// <remarks>

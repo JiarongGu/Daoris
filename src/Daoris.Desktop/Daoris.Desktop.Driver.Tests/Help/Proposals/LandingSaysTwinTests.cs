@@ -5,7 +5,7 @@ namespace Daoris.Driver.Tests;
 
 /// <summary>
 /// The sentences Ask Daoris's landing, helpers and commits cards say as a rule is set (TWINWORDS1, D164's DOORS1a note) are
-/// <c>daoris driver landing</c>'s, <c>helpers</c>' and <c>commits</c>' words, held to one table, the CLI's
+/// <c>daoris place landing</c>'s, <c>helpers</c>' and <c>commits</c>' words, held to one table, the CLI's
 /// <c>fixtures/landing-says.json</c>, which the CLI's <c>landing-says.test.ts</c> read against its own code until the driver family's
 /// TypeScript left (PUSH1f2b); <c>daoris-driver driver</c> says these words now, so the table holds the one writer to them.
 /// </summary>

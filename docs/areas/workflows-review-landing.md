@@ -8,8 +8,8 @@ pushed branch, a pull request, integration, a release). Each place (this machine
 workflow; a fresh home follows a shipped copy of *Merge after you accept*. A chain's work in one repository is a run, bound at
 its first start to one version. The node runtime in the driver loop evaluates the run's graph, and it performs the `land` itself
 once the gates hold. A merge goes into the line; a branch is made for the person; a plugin pushes and opens a pull request; or
-the line's integration takes it. Old records (steps workflows, `handed`, landing rules, *Current*) still read, and convert only
-on the person's press.
+the line's integration takes it. Work no saved workflow governs is held, and nothing lands it. The release's migration converts
+the old records (steps versions, `handed`, `land` with `accept`, the places on the landing rules) to saved graphs once.
 
 ## Its parts
 
@@ -25,7 +25,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Palette | `Workflows/WorkflowPalette.cs` | What the editor offers per kind: alone, as a landing's tail, or retired |
 | Choosing | `Workflows/Domain/WorkflowSelection.cs` | Which workflow a chain's work follows, and the landed route |
 | Run binding | `Workflows/Domain/WorkflowRunBinding.cs`, `Workflows/WorkflowRunBindings.cs`, `Workflows/WorkflowRunStart.cs` | A run bound at its first start, kept in `workflows/runs/<run>.json` |
-| Process per gate | `Workflows/WorkflowProcesses.cs` | The binding and gate interface: a graph version read from its gate nodes; the steps engine kept for old runs |
+| Process per gate | `Workflows/WorkflowProcesses.cs` | The binding and gate interface: a graph version read from its gate nodes; no binding, no workflow |
 | Node runtime | `Workflows/Nodes/NodeRuntime.cs`, `WorkPerformer.cs`, `WorkObserver.cs`, `WireEvaluation.cs`, `NodeRecordFiles.cs` | One pass at a time: evaluate each governed unit, keep its moves, start what it proposes |
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs` | `land`'s options, their resolution at the bind, the intent a run lands by |
@@ -40,7 +40,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Review/Heavy/HeavyExecutor.cs` | The `check` node performed by Daoris, off the pass, under the heavy slots |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
-| Conversion | `Conversion/ConversionPart.cs`, `WorkflowPart.cs`, `WorkflowLegacy.cs`, `LegacyGraphs.cs`, `ConversionPlans.cs`, `ConversionApplies.cs`, `Transitional/Register.cs` | The home's one conversion door and its workflow part; the register of old ways still read |
+| Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
 | Routes and page | Modules `Bridge/Routes/WorkflowRoutes.cs`, `WorkflowEditRoutes.cs`, `SetupRoutes.cs`, `ConvertRoutes.cs`, `TreesRoutes.cs`, `EntriesRoutes.cs`; web `src/workflow/` (`chart/`, `edit/`, `place/`), `src/agents/setup/` | The bridge doors; the chart, the editor, the place page and *Convert…* |
 
 ## Its rules
@@ -50,7 +50,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 1. A place follows a saved graph workflow. A fresh home saves a copy of `merge-after-accept` and names it `defaultWorkflow`, once.
    A home that already has a `driver.json` is never seeded; it converts on the person's press. (from D227)
 2. The workflow a chain's work follows is the first of: the task's choice, the repository's for the kind, its default, the
-   workspace's for the kind, its default, the home default. Current only where the home names none. (from D157, D227)
+   workspace's for the kind, its default, the home default. Where none names one, its run is bound with no workflow (`current`)
+   and held. (from D157, D227, D232)
 3. A repository that names any development workflow replaces its workspace's whole. No door writes `current` as a development
    choice; a file that holds it is still read. (from D157, D227)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline, and keeps the blob id of the accepted
@@ -60,7 +61,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (from D157)
 7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `handed` (`handed-refused`), a `land`
-   with no method (`land-method`) and an `accept` option (`accept`). A stored old version still reads, shows and binds. (from D227)
+   with no method (`land-method`) and an `accept` option (`accept`). Only a graph version binds and runs. (from D227, D232)
 8. A graph holds at most 24 authored nodes and 96 wires, and one landing: one `land` or one stored `handed`, never both.
    (from D190, D227)
 9. The holds, the opinion, the look and the `review` each come before every landing and are wired straight into it. No landing
@@ -79,8 +80,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 15. A run is a chain's work in one repository, bound at its first start on this machine and written once. Its id is the chain's
     first quest in that repository. (from D157)
-16. Two engines, never on one run. A run bound to a steps version keeps D157's engine to its end. A run bound to a graph version
-    is the node runtime's. (from D190, D227)
+16. One engine: a run bound to a graph version is the node runtime's. A run bound to anything else is held, its problem said.
+    (from D190, D227, D232)
 17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests; the gates, the landing's
     nodes and a plugin's nodes the run's branch at its tip; a `go-ahead` the run's ask. (from D190)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, ask again, go on, accept, changes) on the
@@ -112,7 +113,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 28. For a graph run the runtime is the one performer of `land`. The pass that finds it active at its tip starts it once on the
     landing door, off the pass, under the tree's hold and the delivery key, so a press and a pass land one delivery. (from D227)
 29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}`, the remote platform's
-    plugin for `push` and `pull-request`, the default key where the pattern says `{ticket}`. A written option stands. (from D164, D227)
+    plugin for `push` and `pull-request`, the default key where the pattern says `{ticket}`. A written option stands; no landing rule
+    is read. (from D164, D227, D232)
 30. `merge` lands into the line. `branch` makes a new branch from the session's branch, moves no checkout, and refuses a name that
     exists. `push` and `pull-request` hand the branch to a plugin. `integrate` hands it to the line's integration. (from D87, D215)
 31. Daoris never pushes and never opens a pull request. A plugin speaking on `HookPoints.Land` does, for its platform. (from D87, D100)
@@ -144,13 +146,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     integrated. It suggests integrated where the line declares integration, a pull request where a plugin serves the remote's
     platform, else merge after accept. *Keep how it lands* writes no landing and no choice. (from D221, D227)
 43. `PLACE_APPLY` is the one adoption door. `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (from D227)
-44. Old records convert only on the person's press: `CONVERT_PLAN`, `CONVERT_APPLY {digest}`, `CONVERT_UNDO`, and
-    `daoris-driver convert`. One home-wide plan over every part; a receipt before the first effect; a changed rule is `moved`.
-    Undo puts the rules back; saved versions stay. (from D227, D228)
+44. The release's one migration converts the workflow records once through `WorkflowMigration.Convert`: each steps, `handed` or
+    `land`+`accept` newest gets the next version as a graph; each place on the landing rules follows the home default or a saved
+    copy of what its rules drew; a rule's `integrate` becomes its line's policy; the landing rules and work cycles leave
+    `driver.json`. A version the save refuses is left, said. (from D232)
 45. Under Current, a place still lands by its landing rule (`landings`, `workspaceLandings`): form, pattern, key, squash, plugin,
     `autoAccept`, tidy, cycle. `SET_LANDING` and `driver landing` refuse a place on a saved workflow. (from D87, D164, D227)
-46. Each old way still read is registered with the condition that ends it and the row that deletes it: the steps engine,
-    Current's rule and the auto lander end with WORKFLOWCLEAN1z; the conversion's readers with ONEWAY1ag. (from D227, D228)
+46. Each old way still read is registered with the condition that ends it and the row that deletes it: Current's rule and the
+    auto lander end with WORKFLOWCLEAN1z. (from D227, D228)
 
 **Drawing**
 
@@ -170,14 +173,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   `TreeLands`, the delivery files). Nothing new goes into `AutoLander`'s choosing or `LandingRules`: both are transitional.
 - **Integration:** `Workplace/Integration*.cs` and `Review/Integration/`; the node's half in `Workflows/Nodes/IntegrateNode.cs`.
 - **A gate or a hold at landing:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs` (the graph's part).
-- **An old shape to convert:** the workflow part in `Conversion/`; register any kept read in `Transitional/Register.cs` with its
-  `// transitional: <id>` marker.
+- **An old shape to convert:** the release migration's workflow step, `Workflows/Migration/WorkflowMigration.cs`.
 - **A door:** a route in the module's `Bridge/Routes/`, its census rows, and the page under `src/workflow/` or `src/agents/setup/`.
 - **The tests that pin it:** driver `Workflows/` (`NodeGraphsTests`, `SavesRefusedTests`, `WorkflowSelectionTests`,
   `WorkflowRunBindingTests`, `GraphRunLandingTests`, `GraphGatesTests`, `ChatGraphRunTests`, `HomeDefaultTests`,
-  `SetupPresetsTests`, `NodeRuntime*Tests`), `Review/` (`ReviewGateTests`, `OpinionGateTests`), `Workplace/` (`Landing*Tests`,
-  `Delivery*Tests`, `AutoLanding*Tests`, `Integration*Tests`, `PullRequest*Tests`), `Conversion/ConversionTests`,
-  `Setup/PlacePlanTests` and `PlaceApplyTests`; modules `DriverModuleWorkflow*Tests`, `DriverModuleConvertTests`,
+  `SetupPresetsTests`, `NodeRuntime*Tests`, `WorkflowMigrationTests`), `Review/` (`ReviewGateTests`, `OpinionGateTests`), `Workplace/`
+  (`Landing*Tests`, `Delivery*Tests`, `AutoLanding*Tests`, `Integration*Tests`, `PullRequest*Tests`),
+  `Setup/PlacePlanTests` and `PlaceApplyTests`; modules `DriverModuleWorkflow*Tests`,
   `DriverModulePlace*Tests`, `PipeCensusTests`, `OwnerSetCensusTests`; web `src/workflow/**/*.test.ts*` and
   `src/agents/setup/*.test.tsx`; the family rehearsal's 17c set-up phase (`tools/setup-kit.mjs`).
 - **The gates that bite:** `driver`, `driver-process-git` (landing and integration over real git), `modules`, `censuses` (a new
@@ -203,7 +205,6 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D227's 1e note (`daoris-driver workflow convert`) vs `Driver.Host/Program.cs:150` (`daoris-driver convert`): the code reads right.
 - D157 and D223 (no zoom, no minimap) vs D224 and `workflow/chart/FlowChart.tsx:62`: D224 reads right; `WorkflowChart.tsx:353` still says "no zoom".
 - D186 point 3 (a flow placed left to right where it fits) vs D221/D223 (a workflow always top to bottom, `flowLayout.ts:291`): both right, each for its flows.
-- D228 (one way) vs `Workflows/Domain/WorkflowChanges.cs:26`: the steps change language has no caller left. It is dead code.
 - `NodeContract.cs:49-53` (`check` started by nothing) vs `Loop/DriverWatch.cs:627` (the check's executor wired): the code reads right.
 
 ## Open
@@ -212,8 +213,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **SETUPUX1x:** the installed sitting of the place page, and its fixes.
 - **SETUPUX1y:** `daoris.agents.setup` lit by default (`src/agents/modes.ts:40` is still off); the old Workflow and Setup tabs, Roles mode and opener removed.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **WORKFLOWCLEAN1z:** the steps engine, Current's landing rule, the auto lander and the in-place landing doors deleted once the census ends.
-- **ONEWAY1ag:** the conversion's readers and the old receipt shape deleted.
+- **WORKFLOWCLEAN1z (NOCOMPAT1b):** Current's landing rules, the work cycles, Current's graphs in the runtime, the auto lander and the
+  in-place landing doors, `handed`, and the old Workflow and Setup tabs.
 - **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
 - **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.

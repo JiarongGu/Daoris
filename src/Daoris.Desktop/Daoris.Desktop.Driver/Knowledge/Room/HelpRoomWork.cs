@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Where each unit of work has got to (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached, the result
 /// kept, its cleanup (pending, with what waits and why, or completed, with what went) and the recovery retained, in the words
-/// `daoris-driver work state` says (<see cref="WorkWords"/>), so the helper answers from the records and never judges an end itself.
+/// `daoris work state` says (<see cref="WorkWords"/>), so the helper answers from the records and never judges an end itself.
 /// </summary>
 internal sealed class HelpRoomWork : IHelpRoomSection
 {
@@ -29,7 +29,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
         {
             // PARALLEL1a: not judged yet by the facts, which write the room again once they are.
             text.Append(machine.NotReadYet.Work ? "The milestones are not read yet" : "The milestones were not read");
-            text.Append(", so do not say where any work stands: the person may ask in the terminal, `daoris-driver work state`.\n\n");
+            text.Append(", so do not say where any work stands: the person may ask in the terminal, `daoris work state`.\n\n");
             return text.ToString();
         }
 
@@ -45,7 +45,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
 
         text.Append("Each unit's milestone is read from this machine's records and never judged again here: whether its end was reached,\n");
         text.Append("the result kept, its cleanup (pending, with what waits and why, or completed, with what went) and the recovery\n");
-        text.Append("retained and until when. Say it as listed; the terminal's `daoris-driver work state [<unit>]` says the same.\n\n");
+        text.Append("retained and until when. Say it as listed; the terminal's `daoris work state [<unit>]` says the same.\n\n");
         var open = units.Where(Open).ToList();
         if (open.Count > 0)
         {

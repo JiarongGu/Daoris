@@ -39,7 +39,7 @@ public sealed record LocationLook(string Address, string Outcome, string Sentenc
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The one implementation since PUSH1f2c</b> (D194): the CLI's <c>toolinstall.ts</c> was its twin, held row for row
-/// to <c>ToolInstallTests</c>' tables, until <c>daoris tool</c> became <c>daoris-driver tool</c> (<see cref="ToolsCommand"/>); a
+/// to <c>ToolInstallTests</c>' tables, until <c>daoris tool</c> became <c>daoris tool</c> (<see cref="ToolsCommand"/>); a
 /// member's note naming the CLI names the function it was the twin of. Its rules:</para>
 /// <list type="number">
 /// <item>A download is staged at <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;.part-&lt;pid&gt;/</c>, its own process's

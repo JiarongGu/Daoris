@@ -78,7 +78,6 @@ export interface SystemWiring {
     launchers: { name: string; present: boolean }[]; launchersWhy: Why;
     onAccountPath: boolean | null; onAccountPathWhy: Why; onMachinePath: boolean | null; onMachinePathWhy: Why;
     firstDaoris: { is: 'this' | 'another' | 'none'; path: string | null };
-    firstDriver: { is: 'this' | 'another' | 'none'; path: string | null };
     address: { present: boolean; url: string | null; pid: number | null; since: string | null; taken: boolean | null; why: Why };
   };
   knowledge: { path: string | null; pathWhy: Why; from: 'variable' | 'home' | null; bytes: number | null; bytesWhy: Why; familyRoot: string | null; familyRootWhy: Why };

@@ -1,6 +1,6 @@
 /**
  * One of Ask Daoris's conversations as its history lists it (ASKHIST1): the driver's `HELP_CONVERSATIONS` row, field for
- * field what `daoris-driver help list --json` prints. Kept on this machine only: its words are this machine's record, and its
+ * field what `daoris ask-daoris list --json` prints. Kept on this machine only: its words are this machine's record, and its
  * name and pin a file beside them.
  */
 export type HelpConversationRow = {

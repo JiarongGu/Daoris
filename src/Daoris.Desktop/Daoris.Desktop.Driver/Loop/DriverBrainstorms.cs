@@ -203,8 +203,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         files.WritePacket(request.Id, BrainstormPackets.Bytes(packet));
         files.WriteState(new BrainstormState(request.Id, BrainstormStates.Frozen, packet.Digest, null, DateTimeOffset.UtcNow));
         var from = request.Repository is null ? "the question alone" : $"{packet.Sources.Count} sources of `{request.Repository}` by {packet.Tier}";
-        return $"brainstorm `{request.Id}` frozen: packet `{packet.Digest[..19]}`, {from}. Read it with `daoris-driver brainstorm show {request.Id}`, "
-            + $"and send it with `daoris-driver brainstorm send {request.Id}`.";
+        return $"brainstorm `{request.Id}` frozen: packet `{packet.Digest[..19]}`, {from}. Read it with `daoris brainstorm show {request.Id}`, "
+            + $"and send it with `daoris brainstorm send {request.Id}`.";
     }
 
     /// <summary>
@@ -500,7 +500,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             files.WriteState(new BrainstormState(
                 id, BrainstormStates.Ended, digest, document.Unranked is null ? null : BrainstormStates.Unranked, DateTimeOffset.UtcNow));
             return Ran(LookClass.Progress, $"brainstorm `{id}` ended: {document.Rows.Count} {(document.Unranked is null ? "ranked" : "unranked")} rows from "
-                + $"{answered.Count} of {ran} generators. Read it with `daoris-driver brainstorm show {id}`.");
+                + $"{answered.Count} of {ran} generators. Read it with `daoris brainstorm show {id}`.");
         }
         finally
         {

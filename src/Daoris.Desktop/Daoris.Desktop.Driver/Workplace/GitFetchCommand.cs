@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record GitFetchVerb(string Repository, bool Yes);
 
 /// <summary>
-/// <c>daoris-driver git fetch &lt;repository&gt; [--plan|--yes]</c> (GITAPP2f, D204; the git-writes design §9): the terminal's twin of the Branches
+/// <c>daoris git fetch &lt;repository&gt; [--plan|--yes]</c> (GITAPP2f, D204; the git-writes design §9): the terminal's twin of the Branches
 /// tab's <i>Fetch</i>. Without <c>--yes</c> (or with <c>--plan</c>) it says what it would fetch and changes nothing. With <c>--yes</c> it is the
 /// running Daoris's client (<see cref="InstanceDoor.PressAsync"/>): the person's press, confirmed in the window; with no Daoris running it fetches
 /// itself, through the same act (<see cref="GitFetchActs"/>), refused from a session's terminal (<c>DAORIS_SESSION_ID</c>).
@@ -12,9 +12,9 @@ public sealed record GitFetchVerb(string Repository, bool Yes);
 /// <remarks>Exit codes: 0 done or planned · 1 refused, nothing changed · 2 could not, or the outcome is not known.</remarks>
 public static class GitFetchCommand
 {
-    public const string Usage = "usage: daoris-driver git fetch <repository> [--plan | --yes]";
+    public const string Usage = "usage: daoris git fetch <repository> [--plan | --yes]";
 
-    private const string Prefix = "daoris-driver git fetch";
+    private const string Prefix = "daoris git fetch";
 
     /// <summary>Whether the words after <c>git</c> are this verb's.</summary>
     public static bool Answers(IReadOnlyList<string> args) => args.Count > 0 && args[0] == "fetch";

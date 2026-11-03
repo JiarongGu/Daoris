@@ -983,7 +983,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: plugin `acme.gate` came from <root>/feed, package `Acme.Gate` 1.0.0, and a plugin from a package is installed whole. A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris-driver plugins install <file.nupkg>`, and what it kept stays where it is. Nothing was replaced."
+        "daoris: plugin `acme.gate` came from <root>/feed, package `Acme.Gate` 1.0.0, and a plugin from a package is installed whole. A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris plugin install <file.nupkg>`, and what it kept stays where it is. Nothing was replaced."
       ],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n",
@@ -1408,7 +1408,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: the plugin kit is `daoris-driver plugins new`, or the Plugins place — it starts a plugin as the driver would, so it lives with the driver. `daoris-driver plugins` says what each takes."
+        "daoris: the plugin kit is `daoris plugin new`, or the Plugins place — it starts a plugin as the driver would, so it lives with the driver. `daoris plugin` says what each takes."
       ],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n"
@@ -1427,7 +1427,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: the plugin kit is `daoris-driver plugins try`, or the Plugins place — it starts a plugin as the driver would, so it lives with the driver. `daoris-driver plugins` says what each takes."
+        "daoris: the plugin kit is `daoris plugin try`, or the Plugins place — it starts a plugin as the driver would, so it lives with the driver. `daoris plugin` says what each takes."
       ],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n"
@@ -1445,7 +1445,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: a plugin package is installed by `daoris-driver plugins install <file.nupkg>` — the driver reads a package and checks it before anything is extracted. `daoris plugin add <folder>` installs a plugin's folder."
+        "daoris: a plugin package is installed by `daoris plugin install <file.nupkg>` — the driver reads a package and checks it before anything is extracted. `daoris plugin add <folder>` installs a plugin's folder."
       ],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n"

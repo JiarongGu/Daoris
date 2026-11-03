@@ -221,7 +221,7 @@ public sealed class RoleCatalog
         new(null, $"The role `{slot.Id}` {slot.Error}, so {reach} hold until it reads or is deleted.");
 
     /// <summary>Where the person gives a work its role, named in every hold that waits for one.</summary>
-    private const string Configured = "Agents → Roles, or `daoris driver role`";
+    private const string Configured = "Agents → Roles, or `daoris role`";
 
     /// <summary>
     /// What a start of <paramref name="work"/> says where no role takes it (FOUNDATION1y-i): its role was removed or scoped elsewhere, so it

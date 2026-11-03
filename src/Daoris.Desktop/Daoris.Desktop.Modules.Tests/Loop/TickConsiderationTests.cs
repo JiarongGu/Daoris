@@ -42,7 +42,7 @@ public sealed class TickConsiderationTests
     [Fact]
     public void A_quest_a_pause_holds_names_whose_pause()
     {
-        var paused = new Consideration(Quest, StartVerdict.Paused, "paused with ask `#a1`; Resume carries it on — `daoris-driver ask --resume a1`.")
+        var paused = new Consideration(Quest, StartVerdict.Paused, "paused with ask `#a1`; Resume carries it on — `daoris ask resume a1`.")
         {
             PausedBy = new PausedBy(WorkScope.Ask, "a1"),
         };

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1y-i (the foundation design §2.7): <c>daoris driver role</c>, the terminal's door into the role catalogue. It lists the roles,
+/// FOUNDATION1y-i (the foundation design §2.7): <c>daoris role</c>, the terminal's door into the role catalogue. It lists the roles,
 /// adds, changes and removes a working role through the role door, and answers the judge's refusal before anything is written.
 /// </summary>
 public sealed class RoleVerbTests : IDisposable

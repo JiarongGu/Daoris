@@ -25,7 +25,7 @@ export type OpinionTarget = {
  * @remarks
  * **An organism**: it holds the bridge's hooks, so the gate and the rows, which press them, hold none.
  *
- * **Each press is the driver's own** (`OpinionPresses`, the terminal's `daoris-driver opinion`): a refusal is an answer, the
+ * **Each press is the driver's own** (`OpinionPresses`, the terminal's `daoris session opinion`): a refusal is an answer, the
  * driver's sentence said inside the gate that was pressed (UXFIX2), and a press taken says the driver's sentence. None is Ask
  * Daoris's (§9): asking spends an account at the person's choice, and going on or reading it themselves is a judgement.
  *

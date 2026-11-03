@@ -13,12 +13,13 @@ with the version and date at release.
   the service's tries, failures on one choice, a quiet or limited end, moves a day), Daoris waits for you, asks before the next move,
   waits for a reset or moves to another choice. `daoris role supervisor [--place …]` says them, `daoris role rules --place … --set
   <count>=<at>:<do>` changes them, and Ask Daoris proposes them for your Apply. A new home starts with today's numbers as rules, so
-  nothing runs differently until you change one; an existing home keeps its numbers until it is converted. On a home whose rules
-  are set, `daoris settings strikes` and a role policy's moves and *at most* are refused, naming `daoris role rules`, and a *Spread*
+  nothing runs differently until you change one; an existing home keeps its numbers until it is converted. The failed sessions
+  that park a quest are the failures rule's alone; on a home whose rules are set, a role policy's moves and *at most* are refused,
+  naming `daoris role rules`, and a *Spread*
   preset writes its moves as rules for that role. `driver.json` no longer writes `strikes` it did not hold.
 - **An adopted repository's page offers *Reconcile…* when the shared canon has moved.** Its place's page in Agents → Setup asks the doctrine tool's `daoris status --json` about its checkout and, where the canon is newer than the one it synced from, differs at the same version, or has moved past a file the repository keeps as its own, says so with the files a sync would change, add or remove. *Reconcile…*, once you confirm it, asks the repository's own session to decide each difference: adopt the canon's text, keep its own with a reason, or propose it upstream, on its own branch. Nothing is offered where nothing moved, and a lock a newer canon wrote is never reconciled back.
 - The conversion (This machine → *Convert*, or `daoris convert`) now converts the roles' staffing too. Each of Build, Chat, Brainstorm, Intake and Ask Daoris that ran *as before* is written as the order it runs, at its account default, so nothing runs or spends differently, and an Intake or Ask Daoris that was off is written off; Second opinion, Partner and Helper keep their caller's rule. `driver.json`'s old staffing keys are taken out (Undo puts them back), and the changes found in the copy of them are cleared. Once converted, changing a role no longer writes `driver.json` at all. A new home starts with each of the five written: Build, Chat and Brainstorm on Claude Code, Intake and Ask Daoris off, and *Use the default* writes that order. `daoris settings actor export` and `import` are gone: `daoris role set` and `daoris role` set and say the roles.
-- A role's agents are set one way: Agents → Roles' editor, `daoris role set <role> "<agent> [<model>|-] [<effort>|-]" …` (or `off` for Intake and Ask Daoris), or Ask Daoris's role proposal. `daoris settings adapter`, `intake` and `helper` are refused, naming `daoris role set build`, `intake` and `ask-daoris`; `daoris settings actor <role>` names the role door too, and Ask Daoris no longer proposes them as settings. A role's *Clear order* is *Use the default*, which gives the role back its name, work, place and agents as Daoris ships them.
+- A role's agents are set one way: Agents → Roles' editor, `daoris role set <role> "<agent> [<model>|-] [<effort>|-]" …` (or `off` for Intake and Ask Daoris), or Ask Daoris's role proposal; the old staffing verbs are gone, and Ask Daoris no longer proposes them as settings. A role's *Clear order* is *Use the default*, which gives the role back its name, work, place and agents as Daoris ships them.
 - `DAORIS_DRIVER_CONFIG` is no longer read: Daoris's standing choices are always the home's own `driver.json`, so a second set of choices is a second home (`DAORIS_HOME`). This Daoris's list of variables no longer shows it.
 - *What needs you* counts each thing you are asked once. A session parked on a go-ahead it asked, or on its agent's ask to hand it over, is now that request's one row (holding work), not a parked row beside it, so the bell, Sessions' and Quests' numbers and *Notifications* count it once; a channel message you have not read stays a dot on the channel and is never counted.
 - A session's head now says what its line waits on of others (*Waiting on Codex, as helper · asked*, or *Waiting on #q7 in core (docs lane)*), the same line *At work* shows, with *Open At work* beside it. *At work* gains *Co-workers*: each helper, partner and agent asked to go on with the line, where it stands (asked, starting, answered · taken, refused) and what Daoris saw of its delivery, with *Open* on the session that took it up; a part that could not be read is said, never shown as nobody. `daoris session at-work <id>` prints the same, as `waiting on:` and `co-workers:` lines and in its JSON.
@@ -26,19 +27,15 @@ with the version and date at release.
 - Every session Daoris runs (a build, a chat, Ask Daoris, a helper, an intake and the rest) now ends its first prompt with one standing block: where things are in its repository and workspace, the routing for a quest to another repository, your choices on this machine (the standing answer), its repository and workspace, and, after a move, the memory its line read. It replaces the routing line, the standing answer's preface and the instruction's separate code-map, look and index paragraphs. Ask Daoris, an intake and a brainstorm get the workspace's part only. A conversation that goes on is no longer told the routing again, since it is the same conversation. A session's record shows the block as *The agent was told Daoris's standing block*, and its *What it was handed* lists it as one section. A first prompt that would grow past 30,000 characters hands the block in a file instead and names it.
 - Fixed: a copy of one of Daoris's own plugins that was older than the one the install ships, and whose files you had edited, was offered an update that replaced your edits. Installing or updating one of Daoris's own plugins now records the files it copied, so an older copy edited since is shown as *changed here*, with both versions, and neither the window nor `daoris plugin update` replaces it. A copy installed before this has no such record: its page says Daoris cannot tell whether it was changed and that an update replaces every file.
 - **One command, `daoris`.** Everything is `daoris …` now, in one tree of groups: `daoris help` names them, and `daoris help <group>`
-  one group. The doctrine commands (`check`, `sync`, `status` and the rest) are where they were. What `daoris-driver` and the nested
-  families did has a group of its own: `daoris session say` for `daoris-driver sessions say`, `daoris tree land` for `trees land`,
-  `daoris place drive` and `daoris settings notify` for `daoris driver drive` and `daoris driver notify`, `daoris role` for
-  `daoris driver role`, `daoris gate run` for `run-heavy`, `daoris repository connect` for `daoris connect`, `daoris ask publish` for
-  `ask --publish`, and `daoris brainstorm … --kind meeting` for `meeting`. An old spelling runs nothing and says its new one. A few flags
-  have one name now: `--agent` and `--account` for `chat`'s `--adapter` and `--profile`, `--account` for `agent login`, `trust` and
-  `settings`, `--agent` for `session opinion ask`'s `--reviewer`, and `--agents` for `place opinion`'s `--reviewers`; `daoris agent
-  profile …` is `daoris agent account …`. An install's `daoris` runs Daoris's desktop program, which needs no Node for its own groups;
-  `daoris-driver` stays one release, only to say what each of its words is now. `daoris status --machine` is gone: `daoris remote list`
+  one group. The doctrine commands (`check`, `sync`, `status` and the rest) are where they were; every other word has a group of its
+  own (`daoris session say`, `daoris tree land`, `daoris place drive`, `daoris settings notify`, `daoris role`, `daoris gate run`,
+  `daoris repository connect`, `daoris ask publish`, `daoris brainstorm … --kind meeting`, `daoris agent account …`), and each flag one
+  name (`--agent`, `--account`, `--agents`). An install's `daoris` runs Daoris's desktop program, which needs no Node for its own
+  groups. The old command names, their flags and their launcher are gone. `daoris status --machine` is gone: `daoris remote list`
   shows this machine's remotes.
 - Fixed: on a place's page, the window growing or shrinking past the width where the Workflow chart takes a column of its own drew the chart again from nothing, so the step editor lost the step you had selected and closed its open drawer. The chart now keeps its place, and the editor keeps both.
-- `daoris-driver sessions say` takes its level one way, `--level ordinary|urgent|now`: `--now` is refused, naming `--level now`, and the usage no longer lists it.
-- A session waiting on you is answered one way: through its box, its card or `daoris-driver sessions say <id> "…"`. The terminal's `daoris-driver answer` is gone, and an answer needs words: the card's *Carry on with this answer* waits for them, as the box does.
+- `daoris session say` takes its level one way, `--level ordinary|urgent|now`: `--now` is gone, and the usage no longer lists it.
+- A session waiting on you is answered one way: through its box, its card or `daoris session say <id> "…"`. The terminal's `daoris session say` is gone, and an answer needs words: the card's *Carry on with this answer* waits for them, as the box does.
 - **`daoris reconcile`: a canon update is decided in the repository, not imposed.** It prints, offline, a brief of every difference between the canon and the repository (what a sync would change or add, the files edited here, a keep the canon moved past, a set-up gap such as an `AGENTS.md` too long for one agent to read whole) for the repository's own session to adopt, keep with its reason, or propose upstream. A kept file is recorded in `daoris.json`'s `kept` with its reason and the canon file's digest it was judged against: `sync` and `sync --force` pass over it, `check` names it without calling it drift, and `status` reports it again only once that canon file moves. A core file cannot be kept absent. Outside the canon's own checkout, `daoris upstream` now prints a request's words for the repository that keeps the shared doctrine and writes nothing there.
 - A session is told its line's course as Daoris counts it: a brief handed on a move, and a start whose quest failed here before, carry a short item (*Answers alone in a row: 2. Daoris waits for the person after 2.*, failed sessions, moves, hand-overs, each said *at least* or *cannot count* where part of its history is missing), and a go-on's words end with one line where the count of go-ons by answers alone moved or a count stands near where Daoris waits for you. The handed account shows it as *The line's course*. The supervisor's `sessions supervise <id>` print fences the same counts with their sources, the line's parts and its last ten go-ons; a reason may cite one as `count:answers-alone=2 (exact)`, and one naming a count it was not handed is refused.
 - **Fixed: `daoris status` reported no update while the canon had moved.** It looked for one only when the canon's version changed, and the version stays the same through every 0.0.x build, so a repository missing a canon file heard nothing. `status` now compares the files whatever the versions say and names each one that would change or arrive. `sync` records the digest of the canon it wrote from in `daoris.lock`. When the lock's version is older, the files are behind and `status` says to run `sync`. When the version is the same but the canon differs, `status` says the two differ and that it cannot tell which is newer, names both digests, and does not offer `sync`, which run from an older daoris would put the older text back. Drift is still the disk against the lock.
@@ -50,7 +47,7 @@ with the version and date at release.
 - This machine's page (Agents → Setup) has an *Old records* section: what the conversion still finds by part (*Workflows: nothing old here* once it is done), then each old shape Daoris still reads for an old record or an older build, said ended or kept until its condition holds, and the oldest build that can still write this home. Ask Daoris reads the same list.
 - This home's old records convert on your press, through one door: `daoris convert --plan` (and *Convert…* in the window) lists what each area's part changes, today every saved workflow of steps, `handed` or an `accept` on a `land`, and every place still following the rules' Current, and what each becomes as a saved graph workflow; `--apply <digest>` makes it after your Confirm in Daoris's window, keeping one receipt, a place with work in progress keeping its rules until that work ends; a part that failed or was not read is pressed again, or left for a later plan with `--leave <part>`; and `--undo` takes the latest conversion back. *What needs you* counts the old records waiting, by part. It needs the running Daoris.
 - A workflow is saved as a graph of steps now, and a list of steps is refused: the terminal's `workflow new --from`, `edit`, `apply`, `apply --as-graph` and `import`, the window's save and Ask Daoris's proposal each say so and write nothing, a `handed` step and a landing step with no method are refused when saved, and the editor's step picker no longer offers a `handed` or the steps a landing's method brings. A workflow already saved as steps, or with a `handed`, still opens, shows and runs as it did.
-- One door adopts a repository: *Set up…* on the Agents place, with adoption ticked (`daoris-driver place <repository> --preset keep --adoption`). The repository page's *Set up for agents* card and `daoris-driver setup` are gone, and Ask Daoris proposes the same *Set up…*. Adopting more repositories of a workspace than you ask at once writes the paced plan the driver works one at a time (`place --workspace <name> --adoption`, with `--pause`, `--resume` and `--stop`).
+- One door adopts a repository: *Set up…* on the Agents place, with adoption ticked (`daoris place <repository> --preset keep --adoption`). The repository page's *Set up for agents* card and `daoris-driver setup` are gone, and Ask Daoris proposes the same *Set up…*. Adopting more repositories of a workspace than you ask at once writes the paced plan the driver works one at a time (`place --workspace <name> --adoption`, with `--pause`, `--resume` and `--stop`).
 - Work that follows a saved workflow with a `land` step is landed by Daoris itself: your Accept (or a workflow with no review) writes your word and Daoris lands the work at its next pass, instead of the window landing it in place. The window says *accepted; landing* while it does, a tree with unfinished work is carried on and lands once its session has committed it, and the Access setup no longer takes a *Landing* choice: how work lands is its workflow's.
 
 - A new place follows a saved workflow: a fresh install saves the Merge workflow once and every place without a choice of its own follows it. *Set up…* now chooses a saved copy of the workflow Daoris ships for the delivery you pick (it saves the copy first if the install has none), and a second opinion or your look ticked picks that copy's variant. A place that follows a saved workflow takes no landing rule, and `workflow new --from current:` is retired.
@@ -58,12 +55,12 @@ with the version and date at release.
 - A git go-ahead waits in *What needs you* and on its session's head and foot: *fix-ranking asks to push to origin*, with how long it has waited of its 15 minutes, answered *Allow* or *Refuse* there; one whose command stopped keeps your Allow for its identical retry. Git access is set on a repository's and a workspace's Setup (in its Git section) and in Settings → Driver's access card as well as Settings → Git. A landing whose repository's git access denies writes, or whose identity is read only on its host, now says so before its plugin starts, and the branch stands.
 - `daoris git identity`, `git use … own`, a `git access` that loosens a class and `git answer` no longer refuse while Daoris runs: each is shown in Daoris's window, and runs there once you confirm it.
 - A git remote Daoris holds says what serves it and offers what mends it: *github.com refused Work* with *Copy public key…* and the host's key page (or *Sign in again…* for an HTTPS identity); a push refused offers *Choose another identity…* and *Mark read only on the host*; a host's key to compare opens the identity's test; a repository whose own configuration names a client certificate, key, header or cookie file names that setting. The move off your own sign-ins is one row however many hosts it covers, counting the repositories, and holds work where a session of one of them runs or waits on you. Each door opens Settings → Git with the host filled, or the repository's git remote row.
-- Git access is yours to set: Read and Write for a git remote may each be allowed, asked of you or denied for a repository, a workspace or this machine (Settings → Git shows the machine's; `daoris-driver git access` sets any). Where it says *ask*, a session's push waits at the door, and `daoris-driver git asks` and `git answer <ask> allow|refuse` list and answer it; an allow for a push whose command has stopped is kept for its identical retry for 15 minutes. Ask Daoris can point a repository's remote or a workspace's host at a git identity you already set up. An older build reading the same file ignores git access and enforces none of it.
+- Git access is yours to set: Read and Write for a git remote may each be allowed, asked of you or denied for a repository, a workspace or this machine (Settings → Git shows the machine's; `daoris git access` sets any). Where it says *ask*, a session's push waits at the door, and `daoris git asks` and `git answer <ask> allow|refuse` list and answer it; an allow for a push whose command has stopped is kept for its identical retry for 15 minutes. Ask Daoris can point a repository's remote or a workspace's host at a git identity you already set up. An older build reading the same file ignores git access and enforces none of it.
 
 - The canvas under the charts can now hold a large graph: it lays thousands of nodes out off the page's thread, draws only what is in view (a node is its full card, then a chip, then a dot as you zoom out), shows a grouped graph past a thousand nodes as one card per group that opens a group at a time, and offers find, a minimap (switch it in the size menu; it is remembered) and the grouped list for a reader. A graph's view is kept for you and restored if the graph is unchanged. The reference and code maps that use it follow.
 - Settings → Git sets up who Daoris's git acts as on a code host: add an SSH key (a new one, or one key file you import) or an HTTPS sign-in (through your browser, or a pasted token Git Credential Manager keeps), test it, and choose a host's default, which identity a repository's remote or a workspace's host uses, and where Daoris's git may use your own git sign-ins. **Remotes stop until you answer:** Daoris's git no longer uses your own SSH keys, git configuration or stored sign-ins; a remote no git identity serves is held, and *What needs you* says so with *Set up identity…* and *Keep using my own sign-ins…*. A repository's Setup shows each git remote with the identity it resolves to.
-- A role's policy can now move a quest to another choice when its service does not answer, and say what a limit does. In the terminal, `daoris driver role policy <role> --on transient=next:2` makes the quest's run try twice, then continue in a new part on the next choice, handed Daoris's brief, with the reason *its service did not answer*; `--on limit=wait` keeps the choice and waits for its accounts, and `ask` holds the quest until you say yes with *Try again*, which lets one move go. `--most` bounds a quest's moves in a day, and a hold that follows says so.
-- A role's choices can be set to share new starts: in the terminal, `daoris driver role policy <role>` sets a rule (first that can run, or a spread by weight), a share, a daily budget of starts and the works each choice takes, and `daoris driver role <role>` says the policy and the next new start; Ask Daoris can propose one for you to apply. A role with no policy runs its choices in order, as before; moves on a limit or a failure are not set yet.
+- A role's policy can now move a quest to another choice when its service does not answer, and say what a limit does. In the terminal, `daoris role policy <role> --on transient=next:2` makes the quest's run try twice, then continue in a new part on the next choice, handed Daoris's brief, with the reason *its service did not answer*; `--on limit=wait` keeps the choice and waits for its accounts, and `ask` holds the quest until you say yes with *Try again*, which lets one move go. `--most` bounds a quest's moves in a day, and a hold that follows says so.
+- A role's choices can be set to share new starts: in the terminal, `daoris role policy <role>` sets a rule (first that can run, or a spread by weight), a share, a daily budget of starts and the works each choice takes, and `daoris role <role>` says the policy and the next new start; Ask Daoris can propose one for you to apply. A role with no policy runs its choices in order, as before; moves on a limit or a failure are not set yet.
 - A workflow's chart stands in a canvas you can move and zoom: in the editor, on a place's and a repository's Workflow, and in a run shown 36rem wide or more. Drag the empty ground, use the middle button or the wheel to move it; Ctrl+wheel or a pinch zooms about the pointer, and the window's own zoom (Ctrl+=, Ctrl+-, Ctrl+0) is left as it was. Shift+1 shows the whole workflow, Shift+2 zooms to the selected step and Shift+0 returns to 100%, each also in the size menu above the chart. A workflow wider than its space is drawn whole and pans rather than turning into a list, the keys still walk its steps with one Tab stop, and the view follows the step you move to. Narrower, and in a run in the side bar, the chart is placed as before. A rem now follows the window's zoom wherever a flowchart is placed.
 - On a workflow's chart in the canvas, a step you press is outlined (in the editor, the one the inspector shows), and Ctrl or Shift on another step, or a Shift+drag box on the empty ground, chooses more than one, which Copy takes together; the empty ground releases a chart you only read. A line you drag from a decision's port is drawn to the pointer from inside the port, outlines the step that can take the way, pans the chart at its edge, and Escape gives it up. A step the checks refuse is outlined in the declined colour with a *To put right* tag beside it, where it clears everything, and its sentence is in the step's description and the list at the top of the editor rather than a line that moved the steps below it. The editor puts the step's inspector beside the chart by the window's text size, so at 200% the chart keeps its room and the inspector opens in a drawer.
 - The agents' structure is drawn by place: a band for This Daoris, each workspace and each repository that sets something of its own, its roles stacked beside its name (above it from 36rem to 40rem), and the agents once each across a gap, joined to the roles that lean on them by the numbered choices alone, dashed where the last reading says a choice cannot run. It pans and zooms in the canvas like a workflow's chart, in Roles under Agents and on a place's Roles; a role placed in two places is drawn in both and chosen as one, and below 36rem it is the list it was.
@@ -71,39 +68,39 @@ with the version and date at release.
 - Ask Daoris's change to the workflow draft open in the editor is drawn on its chart: each new step and way is marked *new*, each it removes *to remove* and each it changes *changed*, in words, with the agent and model that proposed it above the chart and every change listed. You take it whole or change by change, each change bringing what it needs and saying so, and leave the rest; a change your draft no longer fits is refused by name with *Ask again*, the others still takeable. Each take is one undo, nothing is saved until you press *Save*, and Ask Daoris is told what you took once every change is decided. Its card in Ask Daoris lists the changes, and *Open in the editor* takes you to the place's Workflow, settling nothing.
 - The workflow editor composes on its flowchart. A ＋ on a way, in a *No further step* or the + key on a step adds a step from a searchable picker; choosing a step shows what happens next beside the chart, or in a drawer on a narrow window, where each outcome's target is a later step or *Back to* an earlier one and never a kind of way you name. A decision's outcome can also be dragged to a step or chosen on the chart with the keys. A step moves within its chain, is duplicated, copied and pasted, and removed alone or with *Remove and join*; every change is undone and redone with Ctrl+Z and Ctrl+Y or the Edit menu. An empty draft begins from a preset or a workflow saved here, and a new workflow's id is made from its name.
 - Ask Daoris is told the workflow draft open in the editor beside your words, with what a step graph may hold on this machine, and proposes a change to it through `workflow_propose`'s new `draft`: the whole changed graph against that draft, judged as a save would judge it and shown as its changes, each with what it needs. It saves and chooses nothing: you take the changes into the draft and save it yourself. A draft larger than 48 KiB is refused whole, never cut.
-- A role, and a plugin step's `title` and `about`, may be named in one language, or in any: `daoris-driver role set <id> --name "…"` takes one text and `--name-in <tag>="…"` adds another language (`--zh` still works), Ask Daoris proposes a role the same way, and a name shows in your language, else its base language, else as written. The page offers every language it ships a catalogue for, and the checks that hold the catalogues hold each of them.
+- A role, and a plugin step's `title` and `about`, may be named in one language, or in any: `daoris role set <id> --name "…"` takes one text and `--name-in <tag>="…"` adds another language (`--zh` still works), Ask Daoris proposes a role the same way, and a name shows in your language, else its base language, else as written. The page offers every language it ships a catalogue for, and the checks that hold the catalogues hold each of them.
 
-- The workflows Daoris ships are named for what they are, each ending in *workflow* (*Merge workflow*, *Automatic merge workflow*, *Documents workflow*, *Branch workflow*, *Hosted merge workflow*, *Integration workflow*, *No-press integration workflow*, *Release workflow*), apart from the delivery a place's set-up offers (*Merge after you accept*, *A branch to push*, *A pull request*, *Integrated into the line*); `daoris-driver workflow defaults` and a copy's first name say them. A page that chooses a workflow can read the choice as a plan first: what it changes, what lowers your part, and what the place's kinds keep, and a choice made on a plan that has since moved is refused.
-- `daoris-driver place … --preset keep` plans a set-up that turns driving, a second opinion, your look or adoption on without touching how the place lands: it writes no landing rule and does not change the workflow the place follows, so a saved workflow survives it.
+- The workflows Daoris ships are named for what they are, each ending in *workflow* (*Merge workflow*, *Automatic merge workflow*, *Documents workflow*, *Branch workflow*, *Hosted merge workflow*, *Integration workflow*, *No-press integration workflow*, *Release workflow*), apart from the delivery a place's set-up offers (*Merge after you accept*, *A branch to push*, *A pull request*, *Integrated into the line*); `daoris workflow defaults` and a copy's first name say them. A page that chooses a workflow can read the choice as a plan first: what it changes, what lowers your part, and what the place's kinds keep, and a choice made on a plan that has since moved is refused.
+- `daoris place … --preset keep` plans a set-up that turns driving, a second opinion, your look or adoption on without touching how the place lands: it writes no landing rule and does not change the workflow the place follows, so a saved workflow survives it.
 - A repository that chooses a saved workflow with an automatic `land` (such as a copy of *Merge automatically*) now lands each piece of work through that step: Daoris writes what it will deliver before merging, as it does under Current, so a Daoris stopped part way is settled at its next start, and the run's view reads the landing done and the line's step passed instead of waiting on *What the line holds*.
 - `daoris` at a terminal waits for a slow service whose Daoris is running, as `daoris-driver` does: after the first two seconds it says one line on stderr and asks again each second, each ask up to ten seconds, for thirty in all, before saying nothing answered; a Daoris that is not running is still refused at once (SERVICEPROBE1b).
 - A plugin step that decides may say which of its outcomes carry an output (`outputsOn` in its manifest step and its graph node): a reach with another outcome leaves it out, so the release workflow's `none` route, where Local release's `find` finds nothing pending, now ends after the line instead of being refused. A graph that feeds such an output to a step another outcome's route can start is refused when saved.
-- A run's review step waiting on your Accept has *Ask for changes…* (and `daoris-driver workflow changes <run> <node> "…"`): your words go to the work's session as its next turn, nothing lands, and what it commits is reviewed again. A workflow's `back` wire takes its step back to an earlier one once, and a run's view now says each decision's outcome, marks the routes not taken, and draws its `when` and `back` wires.
+- A run's review step waiting on your Accept has *Ask for changes…* (and `daoris workflow changes <run> <node> "…"`): your words go to the work's session as its next turn, nothing lands, and what it commits is reviewed again. A workflow's `back` wire takes its step back to an earlier one once, and a run's view now says each decision's outcome, marks the routes not taken, and draws its `when` and `back` wires.
 - A workflow's work step and second-opinion step may name the role that takes it (`"role": "<id>"` in the step's options): a run of that version starts its work on that role's choices and asks its second opinion with that role's, and a role that is missing, scoped elsewhere or does not take the step holds the run, saying why, rather than another role taking it.
-- A merge landing rule may accept automatically (`daoris driver landing merge --auto-accept`): a quest's done then merges its work into the line with no press, as a branch rule's lands its branch. Every landing under the rules first writes what it will deliver, so your Accept and the automatic landing of the same work land it once, and one Daoris stopped part way is settled, from what git and the landing record show, before the next begins, also from a terminal with no loop running.
+- A merge landing rule may accept automatically (`daoris place landing merge --auto-accept`): a quest's done then merges its work into the line with no press, as a branch rule's lands its branch. Every landing under the rules first writes what it will deliver, so your Accept and the automatic landing of the same work land it once, and one Daoris stopped part way is settled, from what git and the landing record show, before the next begins, also from a terminal with no loop running.
 - *Set up for agents* (and `daoris-driver setup`, Ask Daoris's set-up card and a workspace's set-up plan) now works on a repository that is not driven on this machine: its set-up quest alone is started, while the repository's other queued and newly arriving work stays held as before, until that quest ends. Driving it stays your own choice. It still needs its sessions in trees of their own.
-- `daoris-driver place <repository>… --preset <delivery> --plan` plans a repository's set-up at once: how its work lands (*Not driven*, *Merge after you accept*, *A branch to push*, *A pull request* or *Integrated into the line*), its second opinion and your look, a set-up quest to its own session and general driving, each said before and after, every refusal at once, what lowers your part, the queued work driving would release and each declaration you would accept. `--plan` writes nothing; the window's *Set up…* will show the same plan. `--apply [--accept <repository>:landed|integration,…]` applies it: through a running Daoris it waits for your Confirm on one card in the window, and each acceptance is made only if you name it. `daoris-driver setup <repository> --what-it-builds library|service|desktop|tooling` names the checks the set-up quest asks its session to declare.
+- `daoris place <repository>… --preset <delivery> --plan` plans a repository's set-up at once: how its work lands (*Not driven*, *Merge after you accept*, *A branch to push*, *A pull request* or *Integrated into the line*), its second opinion and your look, a set-up quest to its own session and general driving, each said before and after, every refusal at once, what lowers your part, the queued work driving would release and each declaration you would accept. `--plan` writes nothing; the window's *Set up…* will show the same plan. `--apply [--accept <repository>:landed|integration,…]` applies it: through a running Daoris it waits for your Confirm on one card in the window, and each acceptance is made only if you name it. `daoris-driver setup <repository> --what-it-builds library|service|desktop|tooling` names the checks the set-up quest asks its session to declare.
 - Once this build has started and confirmed on a home, an older Daoris run on that home reads the desktop's store but writes nothing in it, saying it was written by a newer Daoris: update it to write again. A start that is rolled back before it confirms leaves the store writable by the build before it.
 - A branch landing rule, on a repository's or a workspace's Setup, has *Integrate into the line*: tick it to choose who asks, how each member lands, the batch, the order, the gates, what an unconfirmed failure does, where a conflict goes, an overlap and the line. Nothing is judged on the page: the driver's sentence for a policy it refuses stands under *Save*, and unticking withdraws it.
 - A repository's *Accept the gates* now sends the declaration it showed you, and is refused (nothing accepted) if the line's tip no longer holds that one: read it again, then accept it, as an integration's acceptance already did.
 - Workflows can now be saved, chosen and given kinds of task from Daoris's window, not only at the terminal: saving onto a workflow that is already saved says every place that chooses it (each new start there takes the newest version) and waits for your yes to those places, a version made on an older one is refused, and every choice says which repositories would integrate with no gates or could not start at all.
-- `daoris-driver brainstorm` takes `--source <path>`, repeated: each named repository document or code file goes into the packet whole (bounded as other sources are) ahead of the search's finds. The packet's search now asks by the question's terms, ranks designs, decisions and the code index above session records, and `brainstorm show` says why each source is in
+- `daoris brainstorm` takes `--source <path>`, repeated: each named repository document or code file goes into the packet whole (bounded as other sources are) ahead of the search's finds. The packet's search now asks by the question's terms, ranks designs, decisions and the code index above session records, and `brainstorm show` says why each source is in
 - A start whose agent refuses the model a role's first choice names now goes on at once under the role's next choice, in the same start, instead of waiting for the next look; the account is not struck or cooled, and the new session's record says which model was refused.
-- A repository's Branches has *Fetch origin…* where Daoris's git doors are installed: confirm and it fetches origin's branches into the `origin/…` branches here and nothing else (no tags, no submodules, your own branches and your last fetch's record untouched), removing and naming those origin no longer has. A repository whose origin is set to run another program or mirror is refused, and says why. From a terminal, `daoris-driver git fetch <repository>` plans, and `--yes` fetches after your yes in the window.
+- A repository's Branches has *Fetch origin…* where Daoris's git doors are installed: confirm and it fetches origin's branches into the `origin/…` branches here and nothing else (no tags, no submodules, your own branches and your last fetch's record untouched), removing and naming those origin no longer has. A repository whose origin is set to run another program or mirror is refused, and says why. From a terminal, `daoris git fetch <repository>` plans, and `--yes` fetches after your yes in the window.
 - A repository's Changes tab lists the saved stashes and can apply one: *Apply* puts that stash back by its own id onto a checkout with no tracked change, however many were saved since, and keeps it. It is refused, with its reason, while tracked files are changed, a file is in conflict or an untracked file the stash holds already stands in the way; a conflict the stash leaves is resolved in the same tab. Dropping a stash is not offered.
 - A repository's Changes tab can resolve a file a merge left in conflict: *Show conflicts* on its row lays ours and theirs side by side for each conflict, you take ours, theirs or both for every one, and the file is written with your choices; *Mark resolved* then adds it. The bytes it replaced and the file's stages are kept for thirty days, so *Undo* puts the file or the stages back where nothing has changed them since; a file that changed since it was shown, or one with a side deleted or in binary, is refused with its reason.
 - A repository's Changes tab can switch branch and save to the stash. *Switch branch* moves the checkout to another local branch, never forced and never carrying a change across: it says why it will not (tracked files changed, the branch open in another tree, an operation in progress), and switching back is the same press. *Stash* saves the changed tracked files, and the untracked ones too when you tick *Include untracked files*; it says the stash is one list shared with every other tree of the repository, sessions' included, and names the stash it saved. Both stay behind *Daoris may change this checkout's files*.
-- A branch of your own has *Edit history…* on its page: rebase it onto its line or another commit, or pick or revert a commit or an `A..B` range onto it, with no working tree touched. Daoris shows the commits it will take before you confirm, keeps the branch's old commit for recovery, and refuses, with nothing moved, a branch a tree has checked out, the line, a session's or a landing's branch, a merge, a root or signed commit, a conflict, a change that is already there, more than 50 commits, a rebase of commits already on a remote, and a repository whose git configuration would run a merge driver. From a terminal, `daoris-driver git pick|revert|rebase <repository> <branch> …` says the plan, and `--yes` makes it after your yes in Daoris's window.
+- A branch of your own has *Edit history…* on its page: rebase it onto its line or another commit, or pick or revert a commit or an `A..B` range onto it, with no working tree touched. Daoris shows the commits it will take before you confirm, keeps the branch's old commit for recovery, and refuses, with nothing moved, a branch a tree has checked out, the line, a session's or a landing's branch, a merge, a root or signed commit, a conflict, a change that is already there, more than 50 commits, a rebase of commits already on a remote, and a repository whose git configuration would run a merge driver. From a terminal, `daoris git pick|revert|rebase <repository> <branch> …` says the plan, and `--yes` makes it after your yes in Daoris's window.
 - A repository's Changes tab can commit what is staged: type a message and press *Commit*, or tick *Amend the last commit* to rewrite it (the old tip stays under *Kept for recovery*). It names the hooks your repository's git runs, which are never skipped, and who commits; a file a hook changed in the commit, or a message it rewrote, is said, and a hook that refuses leaves nothing committed.
 - A repository's Changes tab can stage and unstage: *Stage* and *Unstage* on a file, *Show changes* to stage or unstage a hunk or only the lines you tick in it, and *Undo* beside the last act, which puts the index back as it was where nothing has changed it since; a refusal says why (the switch off, a session working in the checkout, a merge or rebase under way, git's own lock, a file changed since it was read).
-- A branch of yours on a repository's Branches has *Rename…*: give the new name and confirm; the old tip stays under *Kept for recovery* and the new name starts a new reflog. If the rename stops after the branch moved but before its upstream settings did, the notice offers *Finish* and *Undo*, each allowed only while the branch and its settings stand as the rename left them. The same refusals as *Delete…* apply, and a name that is taken is refused. From a terminal, `daoris-driver git branch <repository> <name> --rename <new-name>` plans, and `--yes` renames after your yes in the window.
-- A branch of yours on a repository's Branches has *Delete…*: it names the commit and says its commits stay under *Kept for recovery*, and deletes only after you confirm; *Undo* makes the branch again, with its upstream settings, while its name is free. Daoris's own `daoris/` branches, a landing's, the line, one being brought together and one a working tree has checked out are refused with their reason, and a tag that carries a message is never deleted. From a terminal, `daoris-driver git branch|tag <repository> <name> --delete` says what it would delete, and `--yes` deletes it after your yes in Daoris's window.
-- A repository's Branches has *New branch or tag…*: name it, see the commit it will point at, and confirm; it makes a branch or a lightweight tag there, with an *Undo* that deletes it only while it still stands where it was made. A name that exists, a name git would not take or Daoris's own `daoris/` is refused with its reason, and nothing is written. From a terminal, `daoris-driver git branch|tag <repository> <name> [<commit>]` says what it would make, and `--yes` makes it after your yes in Daoris's window.
+- A branch of yours on a repository's Branches has *Rename…*: give the new name and confirm; the old tip stays under *Kept for recovery* and the new name starts a new reflog. If the rename stops after the branch moved but before its upstream settings did, the notice offers *Finish* and *Undo*, each allowed only while the branch and its settings stand as the rename left them. The same refusals as *Delete…* apply, and a name that is taken is refused. From a terminal, `daoris git branch <repository> <name> --rename <new-name>` plans, and `--yes` renames after your yes in the window.
+- A branch of yours on a repository's Branches has *Delete…*: it names the commit and says its commits stay under *Kept for recovery*, and deletes only after you confirm; *Undo* makes the branch again, with its upstream settings, while its name is free. Daoris's own `daoris/` branches, a landing's, the line, one being brought together and one a working tree has checked out are refused with their reason, and a tag that carries a message is never deleted. From a terminal, `daoris git branch|tag <repository> <name> --delete` says what it would delete, and `--yes` deletes it after your yes in Daoris's window.
+- A repository's Branches has *New branch or tag…*: name it, see the commit it will point at, and confirm; it makes a branch or a lightweight tag there, with an *Undo* that deletes it only while it still stands where it was made. A name that exists, a name git would not take or Daoris's own `daoris/` is refused with its reason, and nothing is written. From a terminal, `daoris git branch|tag <repository> <name> [<commit>]` says what it would make, and `--yes` makes it after your yes in Daoris's window.
 - *What needs you* now lists a repository whose line commits an integration declaration you have not accepted, or one that changed since you did (integration goes on under the last accepted one), counts it on the Repositories badge, and opens that repository's Setup, where *Line and landing* is open on the Integration declaration to read and accept; the row never accepts it, and ends at the next look once you do (INTEGRATE1h, D215).
 - A merge rule's Accept now waits while a session works in the repository's checkout (said, naming the session and the repository's page), and goes on at the next look once it ends; *Bring up to date* no longer waits for a session that has ended with its quest still open. A tidy that left a repository alone says which write held it.
 - A repository's Setup → Reach has a switch, *Daoris may change this checkout's files*, off by default; turning it on shows a Changes tab beside Branches and History that lists what is staged, not staged, untracked and in conflict (a file staged and then removed is in both lists), read when the tab opens, when the window gains focus and on *Refresh*, with the time it was read. Turned on, the row says how many sessions already run in that checkout. Nothing in the repository is changed yet.
 - Agents → Roles → Working roles says each role's last seven days under its row: how many starts, on which choice, and how many fell to a later choice and why (cooling, signed out, a model not offered); a role with no start has no line, and a log younger than seven days says the span it holds.
-- Agents → Roles → Working roles suggests models for your roles at first run (*Use these choices*, or *Not now*): Build on Claude Code `sonnet` · high then `opus` · high, and Second opinion, Helper, Partner and Brainstorm on `opus` · high, from the project's model reference. It can spend more than your roles use now, nothing is applied until you press, and an agent this machine has not set up is left out. `daoris driver role suggested` says them and `--use` sets them.
+- Agents → Roles → Working roles suggests models for your roles at first run (*Use these choices*, or *Not now*): Build on Claude Code `sonnet` · high then `opus` · high, and Second opinion, Helper, Partner and Brainstorm on `opus` · high, from the project's model reference. It can spend more than your roles use now, nothing is applied until you press, and an agent this machine has not set up is left out. `daoris role suggested` says them and `--use` sets them.
 - Daoris now writes a repository's checkout one write at a time, whichever window or terminal asks: *Bring up to date*'s pull, an integration's move of the line and a merge rule's Accept each wait their turn (said, and tried again at the next look or press) while another runs or a session is starting there, and a session starting in the checkout itself waits for them too. While a session works in the checkout itself, *Bring up to date* and an integration leave its line where it is, naming the session, and move it at the next look once that session's work is done. A session held so says what holds it (its branches brought up to date, its trees tidied, its line moved to an integration's work), and one checkout registered twice is held as one.
 - Agents → Roles can be shown as a diagram (*Show as diagram*, and back *Show as list*): the places that set something of their own, the roles and the agents their choices name, in three columns, each line from a record (a role placed in a place, a role's choices numbered and dashed where the last reading says one cannot run, an appointment dashed while dormant). Choosing a place lights the role each work takes there and who staffs it; choosing an agent lights every role leaning on it; the chosen one's row stands beside the diagram with its own doors and editor, and each row's ⋯ offers *On the diagram*. Where the area is too narrow it is a list with its lines said in words, and past 24 nodes each workspace folds to one.
 - Agents → Roles → Work names, read only, the connector tools each work may call when its row is opened (*May call*): the tools a partner or a second opinion is served, or every tool but those a building or helping session is refused.
@@ -126,27 +123,27 @@ with the version and date at release.
 - A session's head now says where the work stands and what comes next on its facts line: *working*, *waits on you*, *n parts to land* or *landing* (integrating and landed stay the integration and landing facts), and *next: Accept…* (or *Answer*) is a door to that step (REVIEWFLOW1b). An ask's and a quest's page lead the same way from what they read (*waiting on you*, *working*, *next: Answer*), and a box beside a session's head offers *To the head*, carrying your unsent draft to the head's box without sending it (LINESTOGETHER1b).
 - *Accept all* on a session now offers *Leave … out* per tree: a chat's parts that share one tree are left out together, the ask names every part it takes, and no part a kept later part grew from is offered it (REVIEWFLOW1d, D167).
 - A working session's head now says how many work with it and when it was last heard (*3 working with it · last heard 1m ago*), giving way to *quiet* once Daoris marks it so, and a subagent in the *At work* view has a *Console* button while Daoris holds its output.
-- A session has an *At work* view (分工) in its side bar, after *Workflow*: its parts with their own states and, for the part you are on, each subagent its agent started, what it is and whether it works, ended with its agent, was lost when its agent ended, or is not known to still run, read from Daoris's records and never from the conversation's text. It updates as the lineage moves, without the window asking. `daoris-driver sessions at-work <session> [--json]` prints the same from a terminal; with no window running it reads every open subagent as not known whether it still runs. Where the window has heard nothing of a working session, its head says *nothing heard since the window opened at 14:02*.
-- The *At work* view now says why a session that ran two or more subagents did not hand rows to lanes of its own, where that is so (*This repository is not driven here…*, *declares no lanes…*, or *its sessions run one at a time here…*), with a link to the guide's new *Lanes* section; it also shows the channel's newest three messages, each on the part that posted it, with *All messages* opening the session's channel; and an ask's page has an *At work* section above its quests: each line of work with its parts and subagents counted, opening its own view, and the quests the ask asked. `daoris-driver ask at-work <ask> [--json]` prints the same from a terminal.
+- A session has an *At work* view (分工) in its side bar, after *Workflow*: its parts with their own states and, for the part you are on, each subagent its agent started, what it is and whether it works, ended with its agent, was lost when its agent ended, or is not known to still run, read from Daoris's records and never from the conversation's text. It updates as the lineage moves, without the window asking. `daoris session at-work <session> [--json]` prints the same from a terminal; with no window running it reads every open subagent as not known whether it still runs. Where the window has heard nothing of a working session, its head says *nothing heard since the window opened at 14:02*.
+- The *At work* view now says why a session that ran two or more subagents did not hand rows to lanes of its own, where that is so (*This repository is not driven here…*, *declares no lanes…*, or *its sessions run one at a time here…*), with a link to the guide's new *Lanes* section; it also shows the channel's newest three messages, each on the part that posted it, with *All messages* opening the session's channel; and an ask's page has an *At work* section above its quests: each line of work with its parts and subagents counted, opening its own view, and the quests the ask asked. `daoris ask at-work <ask> [--json]` prints the same from a terminal.
 - A session's *Accept all* now stands where you read the changes, in the strip at the foot and at the Review view's foot as well as the head, in place of a part's own *Accept…*, and it appears even when the part you are on has no work beside a part that does (REVIEWFLOW1a).
 - A session's lineage file (`sessions/<id>/lineage.jsonl`, kept on this machine) now records each process its agent ran, from its start to its end, which process wrote each line, and the subagents an agent on the protocol door started, with their names, tasks and how each ended: what the coming view of who is at work on a session reads, never the conversation's text.
 - A knowledge search hit's `standing:` line now reads the one reading every session's connector shares, so a session never shows one reading's commit beside another's marks, and says `+ uncommitted unknown` where git did not answer instead of looking clean. The index is rebuilt once after the update (KNOWCENTRAL2a).
 - A session's page no longer stops on an error while the agent's long last message streams in line by line: each line had left React an update to draw, and some fifty in a row stopped the window's page (PAGELOOP1).
 - A workflow's *request* step asks another repository at its place in the flow: it publishes a quest once, waits on its done (or its taking), and a decline holds the run in *What needs you* until you *Ask again…* or *Go on without it…* with your words, on the run's Workflow view or `daoris-driver workflow ask-again|go-on`.
-- Settings → Disk space has an *allowance*, the most Daoris may use in all (default 48 GB, also `daoris driver keep allowance <n>GB`): over it, Daoris lets go of what can be made again, oldest first, only where that brings it within, and never of what cannot be made again; and a finished session's page shows the record of its tree, its landing, commits and recovery ref, once the tree is let go.
-- A repository's page has an *Integration* tab (`daoris-driver integrate <repository>` in a terminal): the queue of work asked into its line, the candidate being tried with its steps and what holds it, what was handed back, superseded commits and what the line now holds, with *Drop* and *Check again* for the owner.
-- A session's head says where its unit stands in its repository's integration (queued, being integrated, held, handed back, integrated), a workflow run's *integrate* step shows the same from the record, and `daoris-driver integrate <repository> --request <branch>`, `--drop <request>` and `--recheck` now ask the running Daoris, whose window you confirm; *handed back* is 已打回 in Chinese.
-- The Integration tab now lets you act on what waits for you: a candidate the line's rule held for your decide offers *Split*, *Hand back* and *Land*, and the line acts on your choice at its next look; the queue is numbered in its order, with *First* and *Last*; a superseded commit offers *Superseded* or *Rebase it*, which asks its session; and a landing waiting for your request offers *Request*. Each of these waits is a row in *What needs you*, counted on Repositories, that opens the tab. In a terminal, `daoris-driver integrate <repository> --decide <candidate> split|hand-back|land` and `--order <request> first|last` ask the running Daoris, and `--plan <branch>` previews the branch onto the line (its commits, its files, each conflict and what would settle it) while writing nothing to the repository.
-- Two workflow presets integrate or open a pull request through graphs: *Integrated into the line* (with a variant with no press) and *A pull request*, saved by `daoris driver workflow new <id> --from <preset>` and offered on a Workflow tab.
+- Settings → Disk space has an *allowance*, the most Daoris may use in all (default 48 GB, also `daoris settings keep allowance <n>GB`): over it, Daoris lets go of what can be made again, oldest first, only where that brings it within, and never of what cannot be made again; and a finished session's page shows the record of its tree, its landing, commits and recovery ref, once the tree is let go.
+- A repository's page has an *Integration* tab (`daoris integrate <repository>` in a terminal): the queue of work asked into its line, the candidate being tried with its steps and what holds it, what was handed back, superseded commits and what the line now holds, with *Drop* and *Check again* for the owner.
+- A session's head says where its unit stands in its repository's integration (queued, being integrated, held, handed back, integrated), a workflow run's *integrate* step shows the same from the record, and `daoris integrate <repository> --request <branch>`, `--drop <request>` and `--recheck` now ask the running Daoris, whose window you confirm; *handed back* is 已打回 in Chinese.
+- The Integration tab now lets you act on what waits for you: a candidate the line's rule held for your decide offers *Split*, *Hand back* and *Land*, and the line acts on your choice at its next look; the queue is numbered in its order, with *First* and *Last*; a superseded commit offers *Superseded* or *Rebase it*, which asks its session; and a landing waiting for your request offers *Request*. Each of these waits is a row in *What needs you*, counted on Repositories, that opens the tab. In a terminal, `daoris integrate <repository> --decide <candidate> split|hand-back|land` and `--order <request> first|last` ask the running Daoris, and `--plan <branch>` previews the branch onto the line (its commits, its files, each conflict and what would settle it) while writing nothing to the repository.
+- Two workflow presets integrate or open a pull request through graphs: *Integrated into the line* (with a variant with no press) and *A pull request*, saved by `daoris workflow new <id> --from <preset>` and offered on a Workflow tab.
 - A second opinion's reviewer and a brainstorm's voice are now held at Daoris's connector to the tools their rules hand them, on every agent: a reviewer reads and gives its opinion, a generator gives its answer and a synthesis its groups, and anything else is refused before it runs, also on Codex, which takes no handed rules. A session Daoris names whose record it cannot find or read is served the reads alone (FOUNDATION1r, D212).
 - A repository whose landing rule carries `integrate` now has its landed work merged into its line by Daoris: the unit's request, its Accept or its done as the rule says, is taken through the declared gates and the line moved only to a candidate that passed, each step written to the machine log. A merge rule's Accept is merged the same way, with its message and its repository's hooks as before, and your checkout is only ever fast-forwarded to that merge (INTEGRATE1g, D215).
 - Daoris's browser no longer opens when Daoris restarts, or when a session starts, just because that session's servers can drive it: it opens at your press, or when an agent first uses a page (BROWSERSTART1).
-- A repository's Workflow tab has a *Verify…* door once its gates are accepted: it verifies a branch or a commit under them, as `daoris-driver verify` does, and a check's verdict shows on the run's Workflow view as *verified*, *failed: gate*, *not known*, *waiting for* or *not now*, with *Run again* and *Not now* on one that could not be established.
-- A change to the actors' staffing made outside Daoris (a hand edit of `driver.json`, an older Daoris) is no longer silently taken or lost: Settings → AI features → Actors lists it under *Changed outside Daoris*, to *Take it* or *Dismiss*, and a turn-off of Intake or Ask Daoris applies at once. `daoris driver actor export`, `import` and `found` do the same from the terminal.
+- A repository's Workflow tab has a *Verify…* door once its gates are accepted: it verifies a branch or a commit under them, as `daoris gate verify` does, and a check's verdict shows on the run's Workflow view as *verified*, *failed: gate*, *not known*, *waiting for* or *not now*, with *Run again* and *Not now* on one that could not be established.
+- A change to the actors' staffing made outside Daoris (a hand edit of `driver.json`, an older Daoris) is no longer silently taken or lost: Settings → AI features → Actors lists it under *Changed outside Daoris*, to *Take it* or *Dismiss*, and a turn-off of Intake or Ask Daoris applies at once. `daoris settings actor found` does the same from the terminal.
 - Ask Daoris is no longer offered *Ask another agent…*: a helper is asked only by a session that works in a repository, and every door says so in your language.
 - Settings → Agent rules shows a rule change without a reload, and the status bar's index size keeps up while a repository's index is still filling.
 - A session parked for you and then ended tells you once, not twice.
-- Settings → AI features has a new *Role catalogue* card: add a role that takes a kind of work on this machine, in one workspace or in one repository, with its names in English and Chinese and its choices of agent, model and effort; change or remove one, or give a default role back its default. A Designer, taking design and decision work on Claude Code · opus · high, is suggested while no role takes it. A work whose role you removed waits, saying so, until a role takes it, and running work goes on. `daoris driver role` does the same from a terminal, and Ask Daoris can propose a change for you to apply (FOUNDATION1y-i).
+- Settings → AI features has a new *Role catalogue* card: add a role that takes a kind of work on this machine, in one workspace or in one repository, with its names in English and Chinese and its choices of agent, model and effort; change or remove one, or give a default role back its default. A Designer, taking design and decision work on Claude Code · opus · high, is suggested while no role takes it. A work whose role you removed waits, saying so, until a role takes it, and running work goes on. `daoris role` does the same from a terminal, and Ask Daoris can propose a change for you to apply (FOUNDATION1y-i).
 - A conversation that ends while its account's limit holds it, when Daoris quits or its agent exits, is now shown as *limited*, as a session a limit ended is, instead of stopped or finished, and it still goes on by itself at the reset or on another account. Your own stop of it stays a stop (FOUNDATION1g).
 - A driven session that finishes its quest with its work still uncommitted is now carried on in Daoris's own words to commit it, on every door: the protocol door, a native harness's session, and a closed quest's session resumed after it ended. You are no longer called in to finish a session's own work; a session still not clean after its carry-ons ends as it is, and says so (LANDBACK1).
 - A driven Claude Code session's prompt, a quest's text or your words to it, is now handed over on its standard input instead of in its command line, where any process on the machine could read it. Chinese text and emoji arrive exactly as written (AGENTLYNTAI1s-i).
@@ -154,13 +151,13 @@ with the version and date at release.
 - When a session goes on in a new part, the words you said to the old one, one said just as the new part opened among them, now go with it in one step, and the new part's conversation shows each of them on its own line, with its files, where it used to show them joined as one message or leave a late word behind on the old part. This holds for a quest's session carried on in a new one and for a conversation whose first account refused its model, which goes on in a replacement; a press sent twice there reaches the agent once (FOUNDATION1d-ii, D212).
 - A subagent that a driven Claude Code or Codex session starts now only reads through Daoris's connector: it searches and reads knowledge, lists quests and may ask another repository with a plain quest, and anything else it calls (answering the quest, asking a helper, posting, proposing) is refused before it runs, saying nothing was done and that the request belongs in its result for its parent. The session itself calls everything as before. A call whose agent Daoris cannot verify is refused the same way, and says so rather than calling it a subagent; a session on an agent that writes neither harness's lineage, such as `dsh`, is refused every change through the connector (FABRIC-C2a, D173).
 
-- A branch Daoris's landing made whose work the line will never hold, which *Clean up* keeps for ever because its files still differ, can now be withdrawn on your reason: `daoris-driver trees remove <branch> --why "…"` (`--plan` says what it would do), or the window's own press. Its commits stay on a recovery ref, its record says why, and a branch that is checked out, held by the line or still carried by a pull request is refused (LANDRETIRE1, part 1).
+- A branch Daoris's landing made whose work the line will never hold, which *Clean up* keeps for ever because its files still differ, can now be withdrawn on your reason: `daoris tree remove <branch> --why "…"` (`--plan` says what it would do), or the window's own press. Its commits stay on a recovery ref, its record says why, and a branch that is checked out, held by the line or still carried by a pull request is refused (LANDRETIRE1, part 1).
 - A branch Daoris's landing made that the line has not taken no longer sits unmerged in silence. *Clean up*'s list, in the terminal and on the Branches page, says how long it has stood and whether its quest is closed, with the withdraw door beside it (*Withdraw…* on Branches asks your reason once), *What needs you* names one whose quest is closed and which the line has not held for a day, and a session's review says when a branch was withdrawn, why, and where its commits stay (LANDRETIRE1, part 2).
 - An agent you pin for one workspace, with no install or pin for the whole machine, now starts on that pin in that workspace, where before every start of it was refused as not installed (WSPINONLY1).
 - A quest whose session ran on a later choice of Build's order, and stopped short, now goes on with that same choice: the same agent, model and effort, where before the session that carried it on started on the machine's first agent with the earlier session's model. Your words to such a session go on in its own conversation, the new session says the choice it runs as, and where that agent's accounts are cooling it waits for their reset. A brainstorm about a repository now runs each agent at the version that repository's workspace pins (FOUNDATION1j part ii, D212).
 
 - For contributors: the merge queue now runs a red candidate's failing gate once more, as it was composed, holding every place of the machine's heavy-run admission, before it runs anything on the base or the prefixes (INTEGRATE1b, D215). A failure that fails again is judged as before. One that passes is a sighting, kept in `local/integration-sightings.jsonl` and never filed as a flake, and the candidate splits; the owner may set `local/integration-policy.json`'s `unconfirmed` to `hold` (held for a decide) or `land` (promoted on that tip alone). A confirm run whose admission is not shown is read as a split, saying why, so the runner needs `DAORIS_HOME` at its start: without it no red candidate is bisected and a broken base no longer stops the queue. `local/scope-runs.jsonl` keeps each confirm run's composition, admission evidence and wait.
-- *Accept* no longer refuses a session whose tree holds uncommitted work or whose landing conflicts with the line. It carries the session on in Daoris's own words, with no card to confirm: it asks the session to commit what it holds by your repository's conventions, or to restore what it does not want and say which, and for a conflict to rebase in its own tree. Your Accept stays on the session, and its work lands once its tree is clean, by the repository's landing rule, with no second press. A session still not clean after two carry-ons waits in Review with the reason, never shown as landed, and a stop, a decline or a discard takes your Accept back. `daoris-driver trees land` prints that the session was carried on and exits 0 (中文 and English in the window).
+- *Accept* no longer refuses a session whose tree holds uncommitted work or whose landing conflicts with the line. It carries the session on in Daoris's own words, with no card to confirm: it asks the session to commit what it holds by your repository's conventions, or to restore what it does not want and say which, and for a conflict to rebase in its own tree. Your Accept stays on the session, and its work lands once its tree is clean, by the repository's landing rule, with no second press. A session still not clean after two carry-ons waits in Review with the reason, never shown as landed, and a stop, a decline or a discard takes your Accept back. `daoris tree land` prints that the session was carried on and exits 0 (中文 and English in the window).
 
 - A driven session that closes its quest done and ends its turn with uncommitted work in its tree, or with its own check still running, is no longer ended there. Daoris waits for the check, then carries the session on in its own words, with no card to confirm, to commit by your repository's conventions or restore what it does not want and say which; the record reads done once its tree is clean. After two such carry-ons the session ends as before, a note says so, and the work stays uncommitted in its tree for you to review (中文 and English in the window).
 
@@ -186,7 +183,7 @@ with the version and date at release.
 - A window whose page is blank, or broken past what the page's own error screen catches, can now be reloaded from the tray icon's menu (*Reload the page of every window*, in English or 中文). It opens the page again in every open window and leaves the service, the driver and every running session running; each reload is a line in the machine log.
 - A session's tree made again on its branch after it was gone now carries the same read-only copies of your checkout's declared `local/` files and the same installed dependencies an opened tree does, so its checks run as they do in an opened tree. The record of the remake says what was copied and what was not, and the session's agent is told the same; a remake cut off while copying leaves the session's branch with its commits (TREELOCAL2, D216).
 - A session's handback is now a record anyone on the work can read whole (HANDBACK1, D219). The note a session closes its quest with is
-  kept naming that session, and `daoris-driver sessions handback <session|quest>` and the connector's `handback_read` answer one quest's
+  kept naming that session, and `daoris session handback <session|quest>` and the connector's `handback_read` answer one quest's
   handback, open or closed, by the quest's id or the session's: its note, how it answered each requirement, when and by which session. A
   closing note that only points elsewhere, such as at the session's last message or a commit with nothing said of it, is refused, and the
   session is told to put the handback itself in the note.
@@ -198,7 +195,7 @@ with the version and date at release.
   the tree and is named.
 - A window whose page fails while drawing no longer goes blank. It says, in English or 中文, that this window's page stopped on an error, what the error was in one line, and that the sessions, the driver and everything else behind it go on, and offers *Reload the page*, which draws the page again without ending them. The machine log keeps the failure as a `page.error` line (PAGELOOP1).
 - A driven session whose quest has closed now ends and frees its seat even when its agent scheduled its own next turn (RUNENDS1). The session no longer sends its go-on to a closed quest, and no longer waits for a turn its harness started that never says its end: a turn that is still speaking, running a command or waiting on your answer to a permission is never cut, and one that does nothing for five minutes with the quest closed is left, said in the session's record, in English and Chinese. Words you sent that had not yet reached it come back to wait for its next run, and none is sent after it ends. A session whose quest still waits is unchanged.
-- A driven session's heavy test run and the merge queue's heavy gates now share one admission on the machine, so a session's focused test run beside a queued candidate no longer doubles the candidate's gate times into timeouts and unresolved flakes (HEAVYQUEUE1). `daoris-driver run-heavy -- <command>` runs a long test command as such a run, and a driven session is told to use it; a run that has to wait says what it waits for (who holds the machine's heavy-run places, and for how long), never times out, and a session waiting shows *waiting for the machine to admit its heavy run* on its page.
+- A driven session's heavy test run and the merge queue's heavy gates now share one admission on the machine, so a session's focused test run beside a queued candidate no longer doubles the candidate's gate times into timeouts and unresolved flakes (HEAVYQUEUE1). `daoris gate run -- <command>` runs a long test command as such a run, and a driven session is told to use it; a run that has to wait says what it waits for (who holds the machine's heavy-run places, and for how long), never times out, and a session waiting shows *waiting for the machine to admit its heavy run* on its page.
 - A terminal that finds the service busy now says so, instead of saying a variable is missing. The status door and a read are asked a second time after a second; the refusal names the address it tried, the bound, that it asked twice, and that `DAORIS_SERVICE_URL` is not the cause where the address came from the home's own record. A press that changes something is never asked again blindly, and says what to look at before you press it again (SERVICESTALL1).
 - A landing's replay settles two more things the merge tool already settled, and says so in its words: a table the repository declares to merge by rows (`daoris.gates.json`'s `integration.merge`, `by: rows`) keeps a row each side added at the same line, and a heading or note label that a union-merged record joined to the line above is set apart by a blank line in a commit on top (INTEGRATE1c). The merge queue records a branch whose work the candidate already holds as contained, in the main line or in an earlier branch of the batch, instead of setting it aside as a merge it could not make.
 - For contributors: a merge-queue wait whose request `--drop-batch` took off, while queued or while its candidate formed, now ends (exit 1) saying so and whether main holds the branch's tip anyway, and a wait whose request is in no record of the queue ends too, instead of starting a runner every few seconds for ever (QUEUEWAITEND1). Only the repository's main checkout previews, queues, drops, rechecks or runs the queue, and a tree's copy of the tool never runs it; the queue's gates no longer take the tool tests' variables or the tool's own switches from the process that started the runner (QUEUETESTLEAK1).
@@ -297,7 +294,7 @@ with the version and date at release.
   line closes the old part and one opens the new, and the account's opening line sits folded under it. Moves and hand-overs now read as
   a new part of the same session, saying what the new part was handed (Daoris's brief or record, not the agent's own turns), in English and 中文.
 - A second opinion, a helper, a partner and a brainstorm now run on the model you gave their actor (MODELROLE1e). Set it in the
-  terminal with `daoris driver actor opinion|helper|partner|brainstorm "<agent> <model> <effort>"`; the page's editors for them are
+  terminal with `daoris role set opinion|helper|partner|brainstorm "<agent> <model> <effort>"`; the page's editors for them are
   still to come. The rule you set for second opinions, helpers and partners and the agents a brainstorm names still decide who may
   answer and in what order, so another maker's agent still reads first, and the same agent on a stronger model reads as *the same
   agent, fresh: opus*, never as an independent reading. A model an account does not offer is passed for that account and the agent's
@@ -314,7 +311,7 @@ with the version and date at release.
   conversation or waits for the account as a limit does, without sending again words a try already carried.
 - The steward's desk is built and the steward is still not offered (STEWARDROLE1c, D209). Nothing you use changes until its
   activation. Once it is, any session or terminal can ask the steward for one of its acts with
-  `daoris-driver steward request <act> <target> "<why>"`, and needs no key to do so. A request grants nothing: the steward reads it
+  `daoris steward request <act> <target> "<why>"`, and needs no key to do so. A request grants nothing: the steward reads it
   as the asker's words and either makes the act itself, which closes the request, or declines it with a reason. One asker may have
   ten requests waiting and the desk a hundred. *Notifications* shows the desk under the steward's line: each request, its words as
   written, and whether it waits, was done or was declined, with the steward's reason.
@@ -346,7 +343,7 @@ with the version and date at release.
   helpers rule for a repository or its workspace, a helper it asks for starts at once if it is one of the agents Daoris has set up and
   signed in on this machine; one it names that is not is refused, and the session reads why. A rule you set still wins: *Ask me* still
   waits for your yes and *Not offered* still offers none. To keep a workspace on *Ask me*, set it on its Setup or run
-  `daoris driver helpers --workspace <name> --mode ask`.
+  `daoris place helpers --workspace <name> --mode ask`.
 - A session's own git now reads its tree with long paths, as Daoris's own git does (TREELONG1). Before, a committed file whose path
   passed Windows' 260 characters in a session's tree, deeper than your checkout, showed as deleted in the session's `git status`,
   and an agent's `git add -A` could commit the deletion. It is handed always, as Daoris's own git calls always pass it, and the start
@@ -357,14 +354,14 @@ with the version and date at release.
   try again a quest it stopped itself. It never accepts or closes a quest. It drives only a repository whose landing does not push and
   whose sessions open trees of their own, and Daoris never starts a session in your checkout because of its act. Each act is recorded
   as the steward's, never as yours, and listed in *Notifications* with your own press that reverses it. A quest it stopped shows in
-  *What needs you* as *Stopped by the steward* until a *Try again*, its or yours. `daoris-driver steward` is its verb, run only in its
+  *What needs you* as *Stopped by the steward* until a *Try again*, its or yours. `daoris steward` is its verb, run only in its
   tab.
 - The steward's door is built and no role is offered yet (STEWARDROLE1a-i, D209). Nothing you use changes until the steward's
   activation. Once a role is offered, *Appoint…* opens a tab of Daoris's terminal panel that runs Daoris's own pinned Claude Code,
   checked against the bytes its install verified, never the `claude` on your PATH. It starts on a configuration Daoris writes, with
   no hooks, plugins or instruction files, and signed out until you sign in once in that tab. While that tab is open, a second
   *Appoint…* asks whether to add the role to it or give it a terminal of its own. Turning one role off leaves the other answering,
-  and closing the tab ends every role it held. `daoris-driver roles brief` prints what each role does and never does, and a role's
+  and closing the tab ends every role it held. `daoris role brief` prints what each role does and never does, and a role's
   tab runs only its roles' verbs and the reads they need. The holder key's variable is now `DAORIS_ROLE_KEY`.
 - A terminal's change that waits for your Confirm in Daoris's window now still waits after Daoris closes or restarts for an update
   (CONFIRMWAIT1a-ii). Daoris keeps it on this machine and, when it starts again, checks it as if it were asked again. Its card then
@@ -387,28 +384,28 @@ with the version and date at release.
   window holds the conversation, says so and lands nothing, and a commit made while the work was being judged is never landed under
   that judgement. Words you send while Accept is landing wait and go once it answers. Where the rules ask for a look, a chat's review
   says no conversation can set one up, and *Accept without the look…* lands its work at the commit it stands at, with your words;
-  `daoris-driver trees land <session> --without-look "<words>"` does the same (CHATFLOW1d2). Both say why in your language.
+  `daoris tree land <session> --without-look "<words>"` does the same (CHATFLOW1d2). Both say why in your language.
 - A chat that works in a tree of its own now runs its repository's workflow (CHATFLOW1c). Its session's *Workflow* view draws the
   run: your turn to talk, the commits beyond the line waiting for you to accept them, and its work landed at the commit its tree
   stands at. A hand-over goes on in the same run. Its checks are shown and marked *not yet enforced for a conversation*, and its
   second opinion reads *not asked for a conversation's work in this build yet*, since Accept lands it with none for now. A
   conversation whose repository chooses a named workflow says so once when its tree opens, and Accept follows that workflow's
   landing. If the workflow could not be bound, Accept says why and lands nothing. A repository whose workflow is a graph runs none
-  for a conversation yet, as before. `daoris-driver workflow run` prints the same.
+  for a conversation yet, as before. `daoris workflow run` prints the same.
 - A session's *Workflow* view now says in your language why no workflow runs for it (CHATFLOW1a, CHATFLOW1b). Before, it showed
   the driver's English sentence, in Chinese too. A chat in your checkout says its changes are yours to commit, and that a
   conversation with a tree of its own is how work gets a workflow. A chat in a tree of its own says this build reads no workflow
   for a conversation's work yet. Ask Daoris, a reviewer, a helper, a partner and a teammate's session each say why they run none.
   Where the service did not answer, *Try again* reads again. A chat that took a quest shows that quest's run, after a hand-over too.
-  `daoris-driver workflow run` prints the same sentences in English.
+  `daoris workflow run` prints the same sentences in English.
 - A terminal's change that waits for your Confirm in Daoris's window no longer ends by itself (CONFIRMWAIT1a-i). Its card says it
   waits until you answer and whether a terminal still waits on it; there is no two minutes, and no ten. When you confirm it, Daoris
   first checks that what it rests on has not moved while it waited (the session, the setting, the branch, the plan it would act on);
   if something moved, nothing is done and the card says why. If Daoris cannot check just now, it keeps waiting and you can confirm
-  again. Ten may wait at once, and the terminal that sent one can take it back with `daoris-driver withdraw <id>`. A change taken
+  again. Ten may wait at once, and the terminal that sent one can take it back with `daoris press withdraw <id>`. A change taken
   back after you saw its card appears in *Done and failed*.
 - A terminal's change that waits for your Confirm in Daoris's window now names its request at once (CONFIRMWAIT1b). The line says
-  the request's id, that `daoris-driver result <id>` says how it ended, and that `daoris-driver withdraw <id>` takes it back.
+  the request's id, that `daoris press result <id>` says how it ended, and that `daoris press withdraw <id>` takes it back.
   `--wait <minutes>`, 0 to 30, says how long a verb waits for your answer, and `--no-wait` returns once it is asked. Ctrl+C still
   takes nothing back. The window's half follows: until it lands, a request still ends unanswered after its two minutes, and
   `withdraw <id>` says that this Daoris cannot take one back yet. Then the new `withdraw <id>` takes back a request that still
@@ -484,7 +481,7 @@ with the version and date at release.
 - The supervisor's door is built and not offered yet (SUPERVISOR1a-ii, D208). A repository's Setup → Driving has a *Supervisor*
   row that says it is not offered yet; once it is, *Appoint…* asks you once, then opens the supervisor's terminal as a tab of Daoris's
   own terminal panel with a key no page, clipboard or file ever holds, and *Notifications* says each appointment with *Turn off*. An
-  appointment lasts until Daoris restarts. `daoris-driver sessions supervise` is the supervisor's verb, run only in that tab.
+  appointment lasts until Daoris restarts. `daoris session supervise` is the supervisor's verb, run only in that tab.
 - Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208). A
   session that goes on with no words of yours, a helper's answer or Daoris's alone, now says whose words they are, never *your answer*.
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own
@@ -500,7 +497,7 @@ with the version and date at release.
   Ask Daoris and an intake take the first of their choices that can run, and open on that choice's model and effort; with none, the
   press says each choice and why. A model you set from a conversation's composer is kept, and set again when the conversation goes
   on. An intake whose account refuses its model before starting lets its ask go, and the next look answers it on another account.
-  `daoris driver intake|helper` now set Intake's or Ask Daoris's order.
+  `daoris role set intake|ask-daoris` now set Intake's or Ask Daoris's order.
 - The CI between releases no longer runs a driver or modules `Process` half when every class in it already passed and nothing
   changed since reaches any of them (CISCOPE1b). The half passes on those classes, and the run and its status say so. It still
   runs whole when its last run failed outside a test, when that run's results were missing, or when the classes the run found
@@ -535,7 +532,7 @@ with the version and date at release.
 - A quest's session that waits for an account's limit now says so under its header: when it goes on by itself, and on which account,
   whether it goes on in its own conversation or in a new session with Daoris's brief, and when a reset did not lift the limit
   (LIMITRESUME1d). Beside it, *Go on now with…* hands it to another agent or account now, *Pause quest…* holds it, and *Try now*
-  offers the account again. The terminal's `daoris-driver sessions` lists such a session as *limited*.
+  offers the account again. The terminal's `daoris session list` lists such a session as *limited*.
 - Conversations an update closes now come back (LIMITRESUME1i). A conversation stopped mid-turn, or with words waiting, goes on
   in its own conversation once the new version starts, and Daoris tells it that it restarted for an update. An idle
   conversation says it goes on at your next word. A session *Update now* stopped is not counted as a failure, and it goes on in
@@ -546,9 +543,9 @@ with the version and date at release.
   there. Its order holds up to four choices, each an agent with its model and effort in the agent's own words, or the account
   default. A new quest starts on the first choice that can run. Where none can, the quest waits and says why for each choice.
   On the protocol door the model and effort are set before the session's first turn. A model the agent does not take runs at
-  the account default, and *Details* says it was not carried. Changing Build's agent, here, with `daoris driver adapter` or
-  through Ask Daoris's proposal, no longer moves Chat or Brainstorm: they keep the agent they ran on. `daoris driver actor`
-  shows and sets each actor's order from a terminal. Until you set an order, every actor starts exactly as before.
+  the account default, and *Details* says it was not carried. Changing Build's agent, here, with `daoris role set build` or
+  through Ask Daoris's proposal, no longer moves Chat or Brainstorm: they keep the agent they ran on. `daoris role`
+  shows and sets each role's order from a terminal. Until you set an order, every actor starts exactly as before.
 - An intake, a second opinion or a helper cut off by an account's limit now runs again by itself (LIMITRESUME1h). An ask whose
   intake hit a limit is answered after the account is ready again, rather than left unanswered, and raises no *Ended* notice. A
   second opinion is asked again after the reset, without waiting for your *Try again*. A helper that a session waits on is run again
@@ -616,7 +613,7 @@ with the version and date at release.
   diffs, its status and the reads that can run a repository's own programs (a textconv, a filter, a merge driver) still run one
   at a time, in the order they did, so what Review shows is unchanged. `review.read` now says how deep the read went and how many
   of its starts went unused.
-- `daoris-driver git review <session>` reads a session's review from a terminal, as its Review page reads it (GITAPP1a-i). It
+- `daoris git review <session>` reads a session's review from a terminal, as its Review page reads it (GITAPP1a-i). It
   says the files and their base, the uncommitted ones, the line and the branch; `--json` writes them without their patches. With
   `--time` it lists every git the read started: which read it was, whose (the review, its untracked files, a landing's review or
   the Accept offer), and how long it waited to start, took to start and ran. Each Review read now writes a `review.read` line to
@@ -639,14 +636,14 @@ with the version and date at release.
   on* (your stop, released at once: the work goes on in a new part in the same tree, your waiting words go with it, and no strike
   counts), *Hand over…*, *Stop…* and *Leave it running*. A busy row never offers *End and carry on*. A quest's own session can now
   be handed over from its page. A finished run whose leftover process held its output is ended a minute after it exited, as it
-  finished. `daoris-driver drive --once` and `--until-idle` say a quiet session on the console, and `--quiet-end <minutes>` ends
-  and carries on one of that run unheard that long. `daoris driver timeout`, Ask Daoris's `timeout` door and `settings_timeout`
-  now say sessions are no longer limited by time and change nothing. A `timeoutMinutes` in `driver.json` is kept for an older
+  finished. `daoris drive --once` and `--until-idle` say a quiet session on the console, and `--quiet-end <minutes>` ends
+  and carries on one of that run unheard that long. Sessions are no longer limited by time: the timeout's verb, Ask Daoris's
+  `timeout` door and `settings_timeout` are gone. A `timeoutMinutes` in `driver.json` is kept for an older
   Daoris, and `driver list` says so. A reviewer's, a helper's and a partner's pass keep their own minutes, no longer cut by it.
 
 - You can ask another agent to write one piece of a driven session's work (COAGENT1b, D199). A session's head has a *Pieces*
   section (分项). *Ask another agent to work on a piece…* takes the piece, the paths it is about and the agent. The terminal's
-  twin is `daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]`. The partner (搭档) works in a clone
+  twin is `daoris session partner <id> "<piece>" --agent <name> [--paths <path>…]`. The partner (搭档) works in a clone
   of its own from the commit the session stands at, and changes nothing in the session's tree. Daoris keeps what it wrote as
   one commit at `refs/daoris/pieces/<id>`, and its answer comes back to the session naming the merge that takes it in. The
   section lists each piece with where it stands, its commit and its files, those beyond its paths among them. A working piece
@@ -689,7 +686,7 @@ with the version and date at release.
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts
   removes it and notes that in the machine log.
 - Daoris's git can act as SSH git identities of its own, set up from the terminal (GITAUTH1c, D198).
-  `daoris-driver git identity add-ssh <host> --label <label>` makes a key in a folder only your account can read, or imports
+  `daoris git identity add-ssh <host> --label <label>` makes a key in a folder only your account can read, or imports
   the one key file you name with `--import`. It says the public key to add on the host.
   `git identity test` shows the host's keys beside the ones the host publishes, and trusts one only where you name its
   fingerprint with `--trust-host`. `git default` and `git use` choose which identity a host, a workspace or a repository's
@@ -762,10 +759,10 @@ with the version and date at release.
   never prompts, and Git Credential Manager no longer opens a window for a session's HTTPS fetch or push, so a missing credential
   fails at once. What git says is cut of any token, password or key before Daoris keeps or shows it. In English and 中文.
 - Work that follows a workflow saved as a graph now lands. Its second opinion, your look and a plugin's steps start as its graph
-  reaches them, and *Accept…*, `daoris-driver trees land` and the automatic landing land its work only where Daoris has judged the
+  reaches them, and *Accept…*, `daoris tree land` and the automatic landing land its work only where Daoris has judged the
   graph at that very commit, and only that commit, a merge included: a commit made after the judgement lands nothing. Where the graph
   still waits, the landing says on what, in the words the run's *Workflow* view uses; where Daoris has not judged the commit yet, your
-  press asks for that judgement and waits up to twenty seconds for it. `daoris driver workflow list` and `use` no longer say a graph
+  press asks for that judgement and waits up to twenty seconds for it. `daoris workflow list` and `use` no longer say a graph
   version does not run. A graph that closes its quests still waits for a later build to start.
 - A session waiting on you now says what it asks in its box, under its last message: its question in its own words, each answer it
   offers as a button beside what it will do on it (the one it recommends marked), the go-aheads it waits on with *Approve* and
@@ -777,7 +774,7 @@ with the version and date at release.
   *Dismiss*. *Dismiss* only takes the card out of the conversation: Ask Daoris is told nothing, and the quest is left as it is. It
   was *Not now*, which Ask Daoris was told as your answer. A card about a quest a session has taken says it is taken. In English
   and 中文.
-- The terminal and Ask Daoris now treat an agent's accounts as one set for every workspace (D197). `daoris agent profile order`
+- The terminal and Ask Daoris now treat an agent's accounts as one set for every workspace (D197). `daoris agent account order`
   puts the accounts you name first and keeps the rest after them, and `--clear` returns to the accounts' ids' order without clearing
   how they are used; `profile use` sets how the whole set is used. `profile default`, `profile join`, `--workspace` on `order` and
   `use`, and `login --join` or `--join-machine` are refused, saying why, with nothing changed. `daoris agent login` and `settings`
@@ -788,7 +785,7 @@ with the version and date at release.
 - A machine that left a workspace you share through a remote, or whose Daoris store was deleted, no longer keeps its workflows from
   closing their quests. The workspace's *Setup*, under *Remote and reach*, now lists *Machines not declared*: each machine the remote
   counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the
-  workspace's next bind goes through. A retired machine that syncs again is counted again. `daoris-driver sync status` names the
+  workspace's next bind goes through. A retired machine that syncs again is counted again. `daoris remote sync status` names the
   machines too. In English and 中文.
 - A number on the activity bar now means one thing, what waits on you there, as the title bar's bell and the taskbar count it:
   Sessions counts what waits in a session (a question, work to review, a held call or answer, a helper's or hand-over ask), Quests
@@ -798,7 +795,7 @@ with the version and date at release.
   the driver runs (the status bar still does), nor Quests every outstanding quest. What is unread is said *N unread* in a quiet
   ink, no longer in the colour of what waits on you. In English and 中文.
 - A step of a run that follows a workflow saved as a graph can now be passed over or stopped by you: *Pass over…* and *Stop…*
-  under the step in the side bar's *Workflow* view, and `daoris-driver workflow skip <run> <node> "…"` and `workflow stop <run>
+  under the step in the side bar's *Workflow* view, and `daoris workflow skip <run> <node> "…"` and `workflow stop <run>
   <node>` at a terminal, which Daoris's window confirms. A skip keeps your words, so a go-ahead nobody will raise no longer strands
   the run; a stop ends the run once nothing else of it can move. Your word is kept on the run and applied at Daoris's next look,
   said there until then. In English and 中文.
@@ -811,7 +808,7 @@ with the version and date at release.
   command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
   application; it says which command held the home and asks you to start it again once that has finished.
 - A run bound to a workflow version saved as a graph is now drawn from what Daoris has judged of it, in the side bar's *Workflow* view
-  and `daoris-driver workflow run`, where it was said not to run: each node of its graph where it stands, on the quest or the branch it
+  and `daoris workflow run`, where it was said not to run: each node of its graph where it stands, on the quest or the branch it
   watches, a fork and its join drawn as the graph holds them, its branches said to be its graph's and not the landing rule's, a second
   opinion or a look not begun yet said so, every landing door still holding it said, and a look your chain or ask added drawn beside it.
   What a kind of task would ask of you now reads a workflow whose newest version is a graph. In English and 中文.
@@ -841,7 +838,7 @@ with the version and date at release.
   package folders of trees set aside, downloaded versions nothing uses unless you keep them until you remove them, and its browser's
   cache once while it is closed) and, if that is not enough, says so in *What needs you* with how much it freed and what *Free up
   space…* could free. By default the floor is the smaller of 10% of the disk and 20 GB; set a size, a share or none on the *Disk
-  space* card's *Free space* row, or with `daoris driver keep floor <n>GB|<n>%|off|default`. The card says the floor, shows the
+  space* card's *Free space* row, or with `daoris settings keep floor <n>GB|<n>%|off|default`. The card says the floor, shows the
   free space in the warn colour below it, and names the disk a kind is on where it is not Daoris's own. In English and 中文.
 - Ask Daoris can now propose a verification pipeline, as its whole graph, and choose a workflow already saved here for a route
   (the default, a kind of task, or the work that lands) without saving a new version. Its card says what the change asks less of
@@ -864,11 +861,11 @@ with the version and date at release.
   words it printed before. Their lists and readings (`history`, `help list`, `opinion show`, `setup --plan`, an abandon's or a
   clear's list) are read from Daoris too. With Daoris closed they act as before; a Daoris that is open and does not answer refuses
   the press, and nothing is done.
-- The plugin kit now makes a plugin that does a step of the work: `daoris-driver plugins new <id> --point work/perform` (or the
+- The plugin kit now makes a plugin that does a step of the work: `daoris plugin new <id> --point work/perform` (or the
   `work/perform` box under *Make a plugin* on Settings → Plugins) writes a performer whose only parts to write are the work itself,
   what became of an attempt, and removing what it made. The kit's half keeps a journal so a resent attempt never does the work twice,
   answers what became of each attempt, and removes each thing once. Beside its wire test, a contract test checks that over the wire
-  with `node --test`, and `daoris-driver plugins try <folder> --cycle <fixture>` drives it through the driver: a duplicate delivery,
+  with `node --test`, and `daoris plugin try <folder> --cycle <fixture>` drives it through the driver: a duplicate delivery,
   a failure, a timeout, a restart, a new revision and a cleanup asked twice. Every test and trial runs it in a stand-in world, so
   nothing reaches its platform, and a plugin that does not take that world is sent no attempt. `examples/plugins/local-preview` is one
   filled in. The three work points have their own descriptions under *Make a plugin* and on a plugin's page, in English and 中文.
@@ -892,7 +889,7 @@ with the version and date at release.
   sign-in's file. A conversation going on in your own sign-in that is held for a folder's trust says to trust it with the tool itself,
   at your terminal, and Daoris refuses to grant it there.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
-  `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
+  `daoris settings keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last
   move is older is cleared from this machine as *Clear history…* clears it: work that is open, running, waits on you, still has a tree
   or branch here or has not reached the remote stays, and is said. The card shows the age and the last clear; the machine log's
@@ -906,14 +903,14 @@ with the version and date at release.
   still within their days, the browser's caches, what an earlier build left and a failed update's folder. One press removes what the
   rules take; each early group has its own press, which says first what it removes. Each item is checked again just before it goes,
   and one that changed since the list is kept and said. The browser's caches are cleared only while Daoris's browser is closed, and
-  its sign-ins stay. The card then shows the run as it goes and what it removed and kept. `daoris-driver space free` lists the same at
+  its sign-ins stay. The card then shows the run as it goes and what it removed and kept. `daoris space free` lists the same at
   a terminal, and with `--yes` removes it: confirmed in Daoris's window when Daoris is running, refused from a session's own terminal.
   In English and 中文.
-- `daoris-driver notices` prints what came to you from a terminal, changing nothing: what waits for your confirmation (by its act
+- `daoris notices` prints what came to you from a terminal, changing nothing: what waits for your confirmation (by its act
   and session), what needs you by group, unread messages by ask, and *Done and failed*, as Daoris's *Notifications* holds them;
   `--json` prints the same as one JSON document. Without a running Daoris it reads the notices kept on this machine and says that the
   rest is the running Daoris's to read.
-- `daoris-driver trees land <session>` whose work conflicts with what the line changed now asks the session itself to rebase in its
+- `daoris tree land <session>` whose work conflicts with what the line changed now asks the session itself to rebase in its
   own tree, as an automatic landing does, and says so; run it again once the session has. Where the session cannot be reached, it
   says why and prints the words to pass on.
 - *Notifications* now has *Messages*: each ask with something new since you last read it, a teammate's ask among them. Each shows
@@ -927,7 +924,7 @@ with the version and date at release.
 - You can now set how long Daoris keeps three kinds of thing, from *Change…* on their rows of Settings → This Daoris → *Disk space*:
   trees set aside (1 to 90 days, or each folder kept whole), downloaded versions nothing uses (0 to 365 days, or until you remove
   them) and the machine log (7 to 30 days). *The default* takes a rule back. A value outside its bounds is refused under the editor,
-  and nothing is written. `daoris driver keep` says each rule and sets one at a terminal, and Ask Daoris can propose one for you to
+  and nothing is written. `daoris settings keep` says each rule and sets one at a terminal, and Ask Daoris can propose one for you to
   apply. The machine log is now trimmed once a day to your days as well as at each start. In English and 中文.
 - The driver's own report lines no longer pop up as English messages in the window. What is news among them now waits in
   *Notifications* → *Done and failed* in the window's language: a session that could not be handed over to another agent, or an
@@ -940,7 +937,7 @@ with the version and date at release.
   keeps (trees set aside, downloaded versions, the browser's cache, the machine log, conversations and records, trees in use,
   sign-ins, what an earlier build left, and everything else) with its size and when it was counted, the rule that keeps it, when it
   next goes and when it was last cleaned. A size is counted when you press *Count* or *Measure again*, and once a day by Daoris's own
-  look while it keeps trees set aside or downloads, never by opening the page. `daoris-driver space` says the same at a terminal, `--measure` counting first. It removes and changes nothing.
+  look while it keeps trees set aside or downloads, never by opening the page. `daoris space` says the same at a terminal, `--measure` counting first. It removes and changes nothing.
   Sizes of a gigabyte or more are now said in GB everywhere. In English and 中文.
 - A go-ahead that nothing on its ask can use any more is now marked *stale go-ahead* (过时的放行) in *What needs you* and on its ask's
   page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
@@ -998,7 +995,7 @@ with the version and date at release.
 - A plugin whose performed step creates something (a preview deployment, say) can now name it with its answer, by a schema its
   manifest's `resources` declares. Daoris keeps what it named with the work. Once the work ends, it asks the plugin to remove each
   temporary one through `work/cleanup`, and a result stays. The same request and key are sent again until the plugin answers. Something
-  made by an attempt the work had already moved past is asked for at once. For a branch's work, `daoris-driver work state` names each one
+  made by an attempt the work had already moved past is asked for at once. For a branch's work, `daoris work state` names each one
   still waiting, and `--entries` lists them all with what became of them. Its cleanup stays pending while one is still owed or an
   attempt's outcome is unsettled. A removal that keeps failing is said as
   blocked after seven days, with the plugin's words.
@@ -1018,7 +1015,7 @@ with the version and date at release.
 - A session's tree that Daoris set aside after its work landed now drops its installed packages an hour later: each `node_modules`
   beside a `package.json` the repository tracks, which `npm ci` makes again. The rest of the folder (your files, `bin/`, `obj/`, a
   `.env`, what the session wrote) still waits its fourteen days, and a folder anything was written in after it was set aside keeps
-  everything. `daoris-driver work state` and `trees list` name what went, and the look's report says it. A file copied into a folder set
+  everything. `daoris work state` and `trees list` name what went, and the look's report says it. A file copied into a folder set
   aside now keeps it as well as one written there. Folders set aside before this version keep their packages until their days.
 - A press from a terminal that you Confirm after its time has run out is now refused, and nothing runs. Before, a Confirm taken while
   the machine was slow to end it could still run it, and a window saying its card was shown after ten minutes gave it two more. Its
@@ -1026,7 +1023,7 @@ with the version and date at release.
   press's code (such as `SESSION_INPUT`); it says which terminal sent it.
 - A *What needs you* row for a `daoris/…` branch Daoris has no record of now opens the session it was made for, where you can
   discard it, if that session is still listed. Otherwise it opens the workspace's Branches as before.
-- `daoris driver workflow apply <id> --as-graph` saves a workflow's newest version of steps as its next version, a graph, one holding
+- `daoris workflow apply <id> --as-graph` saves a workflow's newest version of steps as its next version, a graph, one holding
   checks, stages or a group included. The graph is judged as any graph you save: two checks of one plugin are refused, naming both,
   and nothing is written. The steps version stays as it was, and a go-ahead is said, since in the graph it holds what follows it until
   your yes or your skip.
@@ -1040,7 +1037,7 @@ with the version and date at release.
   where `daoris driver` refused it; and a verb the family does not have is said with the program's usage.
 - A running session's page now shows *Who it worked with* once. It used to add another copy of that line each time the session's
   record changed, and kept the copies after you moved to another session.
-- `daoris tool` hands every verb to Daoris's own driver program, as `daoris-driver tool` with the same words, as `daoris driver`
+- `daoris tool` hands every verb to Daoris's own driver program, as `daoris tool` with the same words, as `daoris driver`
   does. What each verb says is as before, but for these: a delete refused, and a file named for a tool that is not there, are said
   as the window's Tools place says them, with their code, and exit 2; and a file you name is asked its version before it is written,
   with Daoris closed too. A download, an update or a managed use no longer holds your home while it fetches: it waits for the home
@@ -1071,7 +1068,7 @@ with the version and date at release.
   head says which agent it is on now. In English and 中文.
 - A landing rule in `driver.json` that does not read, such as one holding only `tidy` with no `form`, is now named at Setup: a
   repository's *How work lands* says its own such rule, or its workspace's where it lands by the default merge, and a workspace's
-  *Defaults* says its own, each saying that work there lands as though it set none, in English and 中文. `daoris driver list`
+  *Defaults* says its own, each saying that work there lands as though it set none, in English and 中文. `daoris place list`
   already named it.
 - Where a workflow closes its own quests, the page now says when you closed the quest before the workflow's end, naming the steps
   that stopped, and when a close went through only in part because another machine won one quest's take. In that case its close
@@ -1111,9 +1108,9 @@ with the version and date at release.
   line, with the other way offered, in English and 中文.
 - A driven session whose background command ends just before its turn does, before its agent was told, is no longer shown as
   waiting for you (等你处理): it stays working until its agent is woken with the ending, or Daoris tells it after a minute's
-  quiet, and goes on with its quest. A session that `daoris-driver drive` starts from a terminal now waits on its own background
+  quiet, and goes on with its quest. A session that `daoris drive` starts from a terminal now waits on its own background
   work as the app's sessions do.
-- A terminal that is not run as administrator can now press into a Daoris that is, such as `daoris-driver sessions say`. Where
+- A terminal that is not run as administrator can now press into a Daoris that is, such as `daoris session say`. Where
   the running Daoris's pipe does refuse a terminal, it says so (*Its pipe belongs to another Windows account or elevation.*)
   rather than that the pipe did not answer within 5 seconds.
 - Several sessions starting at once no longer leave one without its quest tools: a session's connector waits while another
@@ -1125,7 +1122,7 @@ with the version and date at release.
 - `daoris driver` hands its standing choices to Daoris's own driver program, as `daoris-driver driver` with the same words: the
   one your install carries, or the build `DAORIS_DRIVER_PROGRAM` names. A `daoris` with neither, such as a checkout's, says so and
   does nothing. What each choice says is as before; a refusal is said on the error stream, and a refusal the window's route would
-  make carries its code here too. `daoris driver retry <quest>` with Daoris closed now judges the quest as the window's *Try again*
+  make carries its code here too. `daoris quest retry <quest>` with Daoris closed now judges the quest as the window's *Try again*
   does, and refuses one that is neither parked nor held by your stop. From a terminal Daoris started for a session, a change no
   window confirms is refused: it is yours to make in the window or your own terminal. The window's terminal no longer passes a
   session's marker to the shells it opens.
@@ -1149,12 +1146,12 @@ with the version and date at release.
 - A repository's and a workspace's Workflow tab now begins with where work there goes: the default, each kind of task, and the
   work that lands on the line, each wired to the workflow it follows and saying what chose it. A workflow can be made a
   verification workflow of checks (marked `verification` in the file you import), which only the route for landed work names:
-  choose it on a repository's Setup, under *Line and landing*, or with `daoris driver workflow use <id> --repository <name>
+  choose it on a repository's Setup, under *Line and landing*, or with `daoris workflow use <id> --repository <name>
   --landed`, which shows the `daoris.gates.json` at the line's tip and accepts it. An edit of that file asks you again, with
   *Accept the gates* on the Workflow tab. This version keeps the route and does not run the checks yet. A run's Workflow view
-  says which route chose its workflow, and `daoris driver workflow show` prints the routes before the steps.
+  says which route chose its workflow, and `daoris workflow show` prints the routes before the steps.
 - A review's *Accept* or hand button that waits for another landing or push of the same work names the session it waits behind
-  (*Waiting behind 0fda18aa…*, 排在 0fda18aa 之后…), and `daoris-driver trees land` and `trees hand` name that session and its
+  (*Waiting behind 0fda18aa…*, 排在 0fda18aa 之后…), and `daoris tree land` and `trees hand` name that session and its
   branch. A landing that does not say who it is, from an older Daoris, is still said only as *Waiting its turn…*.
 - On Windows, where the git `PATH` finds is Git for Windows' `cmd\git.exe` launcher, `daoris-devkit` now starts the git
   behind it directly, with the environment the launcher would have given it: one process a git where it made two. Its
@@ -1162,21 +1159,21 @@ with the version and date at release.
 - On Windows, the `daoris` command's own children start Git for Windows' git directly where Daoris's git is the system's,
   as the desktop's do: one process where there were two, with the environment the `cmd\git.exe` launcher would have given
   it. A git you named as a file, or a managed version, starts as it is.
-- A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris-driver checks` sets
+- A repository's Setup says which checks its driven sessions run, beside its heavy gates, and `daoris place checks` sets
   the same choice from a terminal. *Light* has sessions run the gates the repository does not mark heavy and the checks their
   change reaches, filtered; its heavy gates are left out of every session. Each session is told so when it starts,
-  `daoris-driver run-heavy` refuses its tree, and on Claude Code each heavy gate's declared command is refused too; an agent
+  `daoris gate run` refuses its tree, and on Claude Code each heavy gate's declared command is refused too; an agent
   that takes no rules from Daoris is told them instead. *Heavy at end* has sessions run them once, at their end. Nothing set
   runs as before.
 - A named workflow keeps which checks its sessions run: its `work` step takes `checks` (`light` or `heavy-at-end`), and
-  `daoris driver workflow new <id> --from current:<repository>` copies the repository's choice onto it, so a workflow saved from
+  `daoris workflow new <id> --from current:<repository>` copies the repository's choice onto it, so a workflow saved from
   a light repository's Current stays light. A session following that workflow takes its version's choice, not the repository's;
   it reaches a run's later sessions now, and its first once a run is bound before its quest is taken. Every workflow saved
   before keeps its version.
 - Under *Light*, a session whose tool call or background task runs past 20 minutes is told so once, in its conversation, as
   Daoris's urgent word: what ran and for how long, and that a suite run whole is left to verification. Its row in the list says
   *past its bound: told* beside the call's time. Daoris never ends the call; *Stop* stays yours.
-- `daoris-driver ask channel` shows which messages are urgent and, under each message you posted, how far it got in each
+- `daoris ask channel` shows which messages are urgent and, under each message you posted, how far it got in each
   repository it went to: waiting, held, sent, taken, read, partly handed, answered or never reached, as the ask page shows it.
   Your post is still urgent by default. `--ordinary` posts it for each session to read when its turn ends instead.
 - Agents no longer go on answering each other with nobody between. A piece of work goes on by another agent's answers alone (a
@@ -1255,12 +1252,12 @@ with the version and date at release.
 - A heavy run is seen running and waiting. A session running its repository's heavy gates says which gate of how many and for
   how long, on its rail line and its head, and its *Details* lists the gates; a session waiting for another's heavy run says
   whom it waits behind, a link to that session, in a neutral colour, never in *What needs you*. A repository's *Details* has a
-  *Heavy run* row naming who holds it and who waits, and `daoris-driver run-heavy --look` says the same in a terminal.
+  *Heavy run* row naming who holds it and who waits, and `daoris gate run --look` says the same in a terminal.
 - The Quests list shows one row for one piece of work: an ask that became a single quest is that quest's row, named by the
   ask's short title with the ask on its second line (its page opens from the row's right-click menu), and the Asks group
   keeps only asks still waiting on something of their own. A published ask no longer wears the finished colour.
 - How many sessions Daoris starts at once on this machine is set in Settings → Driver, beside the strike limit and the
-  cool-off, and `daoris driver cap <n>` sets the same number while Daoris runs. It counts the sessions Daoris starts, never
+  cool-off, and `daoris settings cap <n>` sets the same number while Daoris runs. It counts the sessions Daoris starts, never
   a conversation you hold yourself.
 - Restricted Ask Daoris can change five ordinary settings itself where you grant them: Settings → AI features → Ask Daoris's
   access → *Configured access* → Chosen settings lets you choose notifications, a repository's or a workspace's session
@@ -1298,14 +1295,14 @@ with the version and date at release.
   or working, so conversations left open between turns no longer hold quests back. Ask Daoris says so when it describes the limit.
 - A session's agent can ask to hand its session over to another agent, with a note of where the work stands that the next agent
   reads as its claim, after what Daoris kept of the session. Each repository's or workspace's *Hand-over* row on its Setup, and
-  `daoris driver handover`, say what such an ask does: by default it waits at the foot of the session's page with *Hand over to …*
-  and *Not now* (or `daoris-driver sessions hand-over <id> --approve|--decline`); set to take it, the session goes on with the next
+  `daoris settings handover`, say what such an ask does: by default it waits at the foot of the session's page with *Hand over to …*
+  and *Not now* (or `daoris session hand-over <id> --approve|--decline`); set to take it, the session goes on with the next
   agent in your order once its turn ends, never in the middle of one; set to refuse, the session's timeline says so. A session that
   was itself just handed over cannot ask again before a turn of its own.
 - A landed branch's page draws how it landed as a flowchart, folded under *How it landed* above its commits until you open it:
   its tries to land, three alike in a row folded into one you can open, the landing with who accepted it, each later session that
   moved it on, the push, its pull request's latest answer, where its work ended, its clean-up and what is kept for recovery. The
-  work's milestone on a session's page and a run's landing step open it. `daoris-driver trace` now names the session a landing was
+  work's milestone on a session's page and a run's landing step open it. `daoris trace` now names the session a landing was
   made for, each session that moved it on, and the units of work it carries, and finds the landing from any of those sessions.
 - Where a piece of work stands reads in one line on a session's record, folded: *Ended · clean-up pending · recovery kept
   until 10 Nov*, which says *blocked* and *held for you* when something waits on you, and opens in place to four facts, the end,
@@ -1329,7 +1326,7 @@ with the version and date at release.
   when it expires, and the link and the code are there again when you come back to the page mid-sign-in. A sign-in that ends
   without signing anyone in says why in its own panel, with *Try again* and *Close*; one you cancel closes saying nothing. Under
   a row of *What needs you* the sign-in shows its step now alone.
-- `daoris-driver run-heavy` holds a heavy gate's Jest or Vitest to two workers when the gate runs it through `yarn test`,
+- `daoris gate run` holds a heavy gate's Jest or Vitest to two workers when the gate runs it through `yarn test`,
   `yarn run`, `pnpm test` or `pnpm run`, as it already did through npm. The flag goes where that yarn or pnpm version passes it
   on to the script; the version comes from the `packageManager` field or the install's own record. Where the version is not
   recorded, or is one whose argument handling was not read, the gate runs as written, and the run says why under the gate's line.
@@ -1338,7 +1335,7 @@ with the version and date at release.
   prune` and a `git worktree remove` without `--force` on it. The lock is lifted when the session ends, and kept while it waits
   on you; a lock of your own on a tree is never changed.
 - A change of a repository's permission prompts reaches a driven session already running there at its next turn, whether made on
-  its Setup tab or with `daoris-driver access`. Where you have said something to the session for its next turn, its run ends as the
+  its Setup tab or with `daoris place access`. Where you have said something to the session for its next turn, its run ends as the
   turn ends, never mid-turn, your words wait on it, and at the next look it goes on in the same conversation under the new setup,
   saying the change. The session's console says when a change made in the window applies, and the terminal says how a running
   session takes it.
@@ -1376,23 +1373,23 @@ with the version and date at release.
   *n more*: a wait, a submission, your verdict, a conflict marked ✕ and its dismissal, and a move that was recorded but not
   applied. A conflict that tried another status is drawn as a refused move toward it until it is dismissed, and a done held
   for you says what it awaits in the colour of what waits on you. A service from before this keeps no moves, and the
-  flowchart says so. `daoris-driver trace quest <id>` lists the same moves.
+  flowchart says so. `daoris trace quest <id>` lists the same moves.
 - Words to a working session no longer stop its turn. While a turn runs the box's press is *Send*, which reaches the agent at
   its next step where its door takes words then, and the menu beside it sends at another time: *When its turn ends*, *At its
   next step*, or *Now, cutting its step*, offered only where the agent can be steered and otherwise shown with the reason.
   Each waiting word has the same choices, *Make urgent*, *Make ordinary* and *Send now*. Where a session takes words only when
   its turn ends, they wait for it, said so, and *Stop its turn so this goes next…* beside them stops the turn on your own press,
-  asking first; a Claude Code run started with `claude -p` has no such stop and offers none. `daoris-driver sessions say` takes
-  `--level ordinary|urgent|now` (`--now` is `--level now`), and `daoris-driver sessions stop <id> --turn` is the same stop.
+  asking first; a Claude Code run started with `claude -p` has no such stop and offers none. `daoris session say` takes
+  `--level ordinary|urgent|now` (`--now` is `--level now`), and `daoris session stop <id> --turn` is the same stop.
 - Done work and its pull requests move on sooner:
   - Focusing another main window asks about an open pull request as focusing the first one does.
   - A pull request whose line you fetched within a minute of its last check is asked about at the next chance after that minute,
     where the fetch was forgotten until you fetched again.
   - Done work whose hold or review you let go while its session was still running lands as that session ends, instead of at the
     next full look.
-  - A `daoris/…` branch Daoris did not record is shown, in Ask Daoris, `daoris-driver work state` and the page, in a repository
+  - A `daoris/…` branch Daoris did not record is shown, in Ask Daoris, `daoris work state` and the page, in a repository
     where nothing else of Daoris's is recorded too.
-- `daoris-driver sessions archive` and `unarchive` run in a terminal while Daoris is open now ask Daoris's window instead of
+- `daoris session archive` and `unarchive` run in a terminal while Daoris is open now ask Daoris's window instead of
   acting beside it: a card under the window's title bar names the press, every value it carries and the program that sent
   it, says Daoris cannot tell whether you ran it or an agent did, and offers *Refuse* and *Confirm*. The terminal says it
   waits, then prints what it printed before; refused, or left two minutes, nothing is done and the command exits 1. At most
@@ -1405,14 +1402,14 @@ with the version and date at release.
   A `daoris` installed apart from the install and older than it no longer sees the keys, the remotes or the running Daoris:
   update it too.
 - The terminal judges a workflow's graph as the desktop does, in the same words, and saves what it judges:
-  - `daoris driver landing … --cycle <file>` sets a landing rule's cycle after the landing, and `--no-cycle` takes it away;
-    `daoris driver work-cycle <repository> quest|ask <file>` sets the cycle a quest or an ask follows to its end. A cycle that does
+  - `daoris place landing … --cycle <file>` sets a landing rule's cycle after the landing, and `--no-cycle` takes it away;
+    `daoris place work-cycle <repository> quest|ask <file>` sets the cycle a quest or an ask follows to its end. A cycle that does
     not hold, such as one whose steps wait on each other, is refused naming its first problem, and nothing is written.
-  - `daoris driver workflow apply` and `import` take a workflow version that is a graph, and write every version back as it was
+  - `daoris workflow apply` and `import` take a workflow version that is a graph, and write every version back as it was
     read, so a number written `1.0` or an option's keys in their order stay as you wrote them.
-  - `daoris driver list` names a landing rule in `driver.json` that is no rule, such as one holding only `tidy`, and says that work
+  - `daoris place list` names a landing rule in `driver.json` that is no rule, such as one holding only `tidy`, and says that work
     there lands as though it set none, where it was skipped without a word.
-- A session's state reads the same in the list, its page and `daoris-driver sessions`:
+- A session's state reads the same in the list, its page and `daoris session list`:
   - An open conversation in a tree of its own offers its work to land in the Sessions list and the terminal once its turn
     ends, as its page already did.
   - A session the words of a reopen go on in is listed as going on, or with what holds them, though a later session of its
@@ -1452,16 +1449,16 @@ with the version and date at release.
 - The sessions list no longer runs git in every ended session's tree each time a window refreshes it. Whether a tree holds
   work to review is judged once per repository as its branches move, and every open window reads that, so more windows cost
   no more git, and a tree's *Accept* leaves the list as soon as its landing is done.
-- A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates
+- A repository's heavy checks run one at a time across its trees: `daoris gate run`, run in a checkout, runs the gates
   its `daoris.gates.json` marks `"heavy": true` one after another, or the one `--gate <name>` names, and stops at the first that
   fails. A second run of the same repository, from its checkout or any tree of it, waits rather than running beside the first,
   and says whose run it waits behind and for how long. Everything a gate starts, a build's lingering workers included, is ended
   before the next run begins, whether the run passed, failed, was stopped with Ctrl+C or was killed.
 - In an installed Daoris, a session started in a repository that marks heavy gates is told to run the checks that cover its
-  change while it works, and those gates once, at its end, through `daoris-driver run-heavy`, so two sessions finishing
+  change while it works, and those gates once, at its end, through `daoris gate run`, so two sessions finishing
   together take turns. A repository that marks none is told nothing new.
 - A repository that marks no heavy gates of its own can be given them on this machine, never in the repository:
-  `daoris-driver heavy <repository> "build=npm run build" "test=npm test -- --maxWorkers=2"` sets them in the order they run
+  `daoris place heavy <repository> "build=npm run build" "test=npm test -- --maxWorkers=2"` sets them in the order they run
   (`--cwd <folder>` after a gate runs it in a folder of the repository), `--clear` takes them away, and `heavy` alone lists
   them. `run-heavy` then runs them for that repository, and its sessions are told to, wherever its own `daoris.gates.json`
   marks none.
@@ -1478,14 +1475,14 @@ with the version and date at release.
   keeping your words in the box. Its history lists the window's workspace's conversations, or every workspace's with each
   labelled, and searches only the one chosen. Another workspace's conversation can be read from any window, named as that
   workspace's, and *Switch to games and continue* moves the window there before you write to it. In the terminal,
-  `daoris-driver help list` takes `--workspace <name>` or `--all`.
+  `daoris ask-daoris list` takes `--workspace <name>` or `--all`.
 - Removing a session's tree no longer deletes what a link in it points at. On Windows git's removal followed a junction out
   of the tree, so a tree holding `npm link`'s link, a workspace's junction or a link of the session's own could take files in
   your checkout or another repository with it. Each link in a tree now goes as a link before git removes the tree, whether
   you remove it, a landing or the clean-up does, or an opening is undone; a tree with a link that will not go, or whose own
   folder is a link, stays, and says why.
 - Two of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
-  `daoris-driver access <repository> routing=intake` lets an ask's intake publish to its own best choice of repository rather
+  `daoris place access <repository> routing=intake` lets an ask's intake publish to its own best choice of repository rather
   than ask you which, saying in the quest that the route was its choice, and you can still publish the ask elsewhere.
   `goAheads=never` stops a session asking go-aheads before acts outside its repository or on a production system; a go-ahead your
   own words on the ask or the task demand is still asked. `landing=rule` lands a session's finished work when its quest is done,
@@ -1504,13 +1501,13 @@ with the version and date at release.
   name, or which of two sound ways, it now decides itself and says under *Readings* in its closing note, for you to change in
   review. It asks in its last message, and goes on in the same conversation when you answer. A session that asks again after
   your answer is announced again, and one you had already answered is not.
-- Ask Daoris can act on this machine itself, if you choose. `daoris-driver help mode full` runs it with full access from its
+- Ask Daoris can act on this machine itself, if you choose. `daoris ask-daoris mode full` runs it with full access from its
   next start, in its agent's own mode that asks nothing (Claude Code's `bypassPermissions`, Codex's full access). It then has a
   shell, file edits, Daoris's commands and every plugin server here, and your own denies still hold where its agent takes them.
-  Restricted, the default, is Ask Daoris as it was: it reads and proposes, and you apply. `daoris-driver help mode restricted`
+  Restricted, the default, is Ask Daoris as it was: it reads and proposes, and you apply. `daoris ask-daoris mode restricted`
   takes it back. On an agent with no such mode, the DeepSeek Harness or a plugin's, it does not start in full access, and says so.
   A conversation keeps the mode it started in while it runs, and its console says when a change takes it: end it, and your next
-  words resume it under the mode you chose, which its transcript says first. `daoris-driver help list` marks a conversation that
+  words resume it under the mode you chose, which its transcript says first. `daoris ask-daoris list` marks a conversation that
   ran with full access.
 - A session that waited on its own background work no longer hangs after it: when the work ends and Claude Code wakes the
   agent by itself, that turn's end is the session's end, where Daoris used to send a prompt the agent never answered and wait
@@ -1553,7 +1550,7 @@ with the version and date at release.
   and the like), or withdraw it. An approval an update changed says so and asks again. Ask Daoris says once, at the start, what
   it lacks and where it is approved, and can propose the approval itself: its card names the plugin, the server and every tool,
   reads and writes apart, and nothing changes until you press Apply. A tool that runs commands or a page's own code is never
-  handed to it. At a terminal, `daoris-driver plugins approve <id> <server> --writes <tool,…>` accepts only the writes named.
+  handed to it. At a terminal, `daoris plugin approve <id> <server> --writes <tool,…>` accepts only the writes named.
 - In a week's last day, a start now goes to the account where the most of its week would otherwise go unused, for the hours
   left to its reset, rather than to the one that resets first: three points resetting in two hours no longer go ahead of half
   a week resetting in twenty. Only a reading of the week's use counts; a reset known with no reading ranks nothing. Daoris's
@@ -1580,7 +1577,7 @@ with the version and date at release.
 
 - A quest whose take on this machine lost, to another machine's take or to the reopen of the work it grew from, offers two
   choices under *Conflicts* on its page: *Drop mine* puts the conflict away and moves nothing else, and *Bring mine forward* takes
-  the step again from this machine, so its kept session goes on (`daoris-driver sync forward` at a terminal). Where it cannot be
+  the step again from this machine, so its kept session goes on (`daoris remote sync forward` at a terminal). Where it cannot be
   brought forward (another machine holds the step, the step is closed, or its source is reopened) the page says why. A
   bring-forward that loses again says so, one made offline reads *unconfirmed* until the remote answers, and a settled conflict
   says how it ended. A step the reopen holds names its go-on and abandon the same way, and says that abandoning declines it for
@@ -1593,11 +1590,11 @@ with the version and date at release.
   the account the session ran as, and the model they were spent on where the agent said it, with a helper model's share kept
   apart and a stopped turn marked. It shares the readings' 90 days and 64 MiB, stays on this machine, and holds no email,
   organisation, key or words. Codex's turns say their counts' meaning is not yet known.
-- The machine log (Settings → Logs, `daoris-driver logs`) now holds the warnings and errors of the window's own toolkit and
+- The machine log (Settings → Logs, `daoris logs`) now holds the warnings and errors of the window's own toolkit and
   engine, which until now were written nowhere: among them why opening Daoris again did not reach the Daoris that runs. Opening
   it again is written as it arrives (`window.launch`), and anything that stops its window opening is written too.
 
-- A first brainstorm across agents, at the terminal: `daoris-driver brainstorm "<question>" [--repository <name>] [--agents a,b]`.
+- A first brainstorm across agents, at the terminal: `daoris brainstorm "<question>" [--repository <name>] [--agents a,b]`.
   Daoris freezes one context packet from its own knowledge of the repository, which `brainstorm show <id>` prints whole; nothing
   goes to any agent until `brainstorm send <id>`. Each named agent then proposes once, in a folder holding only that packet,
   answers that break the proposal schema get one retry, one agent ranks the proposals without knowing whose they are, and the ranked
@@ -1612,8 +1609,8 @@ with the version and date at release.
   the ranking's minutes kept in reserve; an agent past its time is stopped and what answered is kept; one that crashes fails alone;
   one whose account meets its limit starts once more on the next account; a full machine waits within the time. The document says
   which agents did not answer, and why, and when the ranking does not finish it lists the proposals unranked.
-  `daoris-driver brainstorm stop <id>` ends one and keeps what answered; `--id <id>` makes asking again the same brainstorm; a Daoris
-  that stopped mid-brainstorm ends it as interrupted and runs nothing again by itself. `daoris driver brainstorms` sets the agents a
+  `daoris brainstorm stop <id>` ends one and keeps what answered; `--id <id>` makes asking again the same brainstorm; a Daoris
+  that stopped mid-brainstorm ends it as interrupted and runs nothing again by itself. `daoris settings brainstorms` sets the agents a
   brainstorm runs and its minutes, for this machine or with `--workspace` for a workspace's questions.
 
 - A first meeting of agents, at the terminal: `daoris-driver meeting ask "<question>" --agents a,b [--repository <name>]`.
@@ -1636,9 +1633,9 @@ with the version and date at release.
   organisation (`person@example.invalid·Org-B`) as its name, where the email alone was refused as taken.
 - Accept, on a session's work or on a whole line of work, now looks at its quest again when it had to wait behind another landing
   of the same work. Where the quest was taken back or its result handed in again meanwhile, nothing lands and Accept says why; where
-  that happens just before the push, the branch stays and `daoris-driver trees hand <session>` pushes it. A hold alone does not stop
+  that happens just before the push, the branch stays and `daoris tree hand <session>` pushes it. A hold alone does not stop
   your Accept.
-- Handing a landed branch on (*hand it to*, Ask Daoris's card, or `daoris-driver trees hand`) now looks again at the quest of the
+- Handing a landed branch on (*hand it to*, Ask Daoris's card, or `daoris tree hand`) now looks again at the quest of the
   session whose work last moved the branch when it had to wait behind another push of it. Where that result was taken back or handed
   in again meanwhile, no plugin is told, the branch stays as it was, and the answer says why. A hold alone does not stop it.
 - Under *Accept automatically*, a session you carry on with more words after its work landed now lands again when it is done
@@ -1646,7 +1643,7 @@ with the version and date at release.
   stuck that way lands at the first look after the update, or is closed where nothing new is in it.
 - Under *Accept automatically*, work whose branch was made but whose push waits for a second opinion now has that opinion asked by
   the driver at its next look, as the landing's gate says, and pushes once it settles. Before, it waited until you asked one
-  (`daoris-driver opinion ask`), and an ask made then could be dropped at the next look before it was read.
+  (`daoris session opinion ask`), and an ask made then could be dropped at the next look before it was read.
 - Under *Accept automatically*, done work waiting for a second opinion nobody asked now has it asked by the driver at its next
   look, as the landing's gate says, and lands once it settles. Before, where the repository's opinion rule started reading after the
   work was done, or was switched off and on again meanwhile, it waited until you asked one.
@@ -1672,12 +1669,12 @@ with the version and date at release.
   has got to.
 - A workspace's Branches page can now delete the recovery refs nothing holds in one press, *Delete the ones nothing holds*, after a
   confirmation that lists them and says their commits may then be lost from this machine and that a git remote may still have the
-  work; `daoris-driver work recovery drop` does the same from a terminal. A ref that moved, or that a branch or a tag now holds, is
+  work; `daoris work recovery drop` does the same from a terminal. A ref that moved, or that a branch or a tag now holds, is
   kept, and the answer says which and why.
 - Work Daoris did not record: a `daoris/` branch that no record names now shows in What needs you and in `work state` as an
   unknown owner, blocked, saying only your Discard branch removes it; Daoris never removes it on its own.
 - An update that could not move a file because another program held it now says which file and which program, in
-  `daoris-driver update` and in the window's note of the rolled-back update.
+  `daoris update` and in the window's note of the rolled-back update.
 - A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,
   how it is retried, whether it is performed and how), and the `resources` they create with who cleans them. Daoris reads and
   checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet. A plugin
@@ -1739,7 +1736,7 @@ with the version and date at release.
   to the line or over without its result. Where anything leaves doubt (a branch of that name, a read git could not make, its session branch still there) it is
   kept and says why, and a landing branch you renamed is followed to its new name rather than read as over. A recovery ref whose
   commit a branch or tag of yours holds goes after 30 days (never one only a Daoris branch holds); one nothing of yours holds is kept
-  and `daoris-driver work state` says how to delete it. Folders set aside and recovery refs no work names are listed as recovery kept
+  and `daoris work state` says how to delete it. Folders set aside and recovery refs no work names are listed as recovery kept
   until their date, no longer as work with an unknown owner in *What needs you*; a folder whose deletion a later write, a link, or a
   read or delete that failed blocks past its date is in *What needs you*, saying why.
 - A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
@@ -1761,9 +1758,9 @@ with the version and date at release.
   Daoris still looks at all of it every `pollSeconds`.
 - Done work that lands automatically is checked again just before it lands: its quest, its holds, its review and its tree. A
   hold, or a commit nobody reviewed, that came after Daoris chose it holds it again, and only the commit it checked lands. Only the
-  loop holding the home lands work automatically: a `daoris-driver drive --share` loop beside it lands none, and says so as it
+  loop holding the home lands work automatically: a `daoris drive --share` loop beside it lands none, and says so as it
   starts.
-- `daoris-driver sessions say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
+- `daoris session say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
 - *This Daoris* also shows the settings files, the variables Daoris reads, the versions, the terminal's wiring, the
   knowledge store and the logs.
 - *Send now* (立即发送) sits beside *Queue* while an agent works. On Claude Code it steers your words into the running turn
@@ -1779,7 +1776,7 @@ with the version and date at release.
   in English and 中文, until you sign one in for Daoris. A conversation begun in your own sign-in still goes on there. A
   folder-trust hold on a Daoris account names Daoris's own command, since trusting the folder at your terminal would not
   reach that account.
-- `daoris-driver wiring` says how this Daoris is wired: its folder and each top folder as it runs (with what is still at an
+- `daoris wiring` says how this Daoris is wired: its folder and each top folder as it runs (with what is still at an
   old place and why), the service (its address and where it came from, its tier and version), who holds the home, each
   settings file (whether it reads, what overrides it), every variable Daoris reads with where it came from, the versions,
   and whether a new terminal finds this install's `daoris` and `daoris-driver`. `--measure` counts the folders' sizes first,
@@ -1803,7 +1800,7 @@ with the version and date at release.
   account's default.
 - A plugin's `plugin.json` can offer Ask Daoris an MCP server (`"to": ["help"]`, or both with `"sessions"`). It lists the
   tools that read (`allow`) and those that write outside Daoris (`writes`). Ask Daoris gets the server only once you approve
-  its exact tools on the plugin's page, or with `daoris-driver plugins approve <id> <server> [--reads-only]`. You can take
+  its exact tools on the plugin's page, or with `daoris plugin approve <id> <server> [--reads-only]`. You can take
   that back (`withdraw`), and an update that adds a tool asks again. A write you did not accept is refused. A tool whose
   name says it runs commands is never offered to Ask Daoris. The page says plainly that a plugin is code that runs as you.
 - A plugin can carry skills (`"skills": [{ "name": …, "to": [...] }]`, each a `skills/<name>/SKILL.md`). Sessions, Ask
@@ -1842,7 +1839,7 @@ with the version and date at release.
 - A part's own *Accept* now lands on its line of work's one branch, as the line's *Accept* does; a part you leave out of
   the line's *Accept* says so in its review, with *Discard tree* first; and under a squash rule a line's later parts are
   squashed onto its branch, fetching the line once. While work lands, its *Accept* says *Checking…* (检查中…) at the gate,
-  then *Landing…*, and a line's or an ask's *Accept* shows it in every open window; `daoris-driver trees land --entry` or
+  then *Landing…*, and a line's or an ask's *Accept* shows it in every open window; `daoris tree land --entry` or
   `--ask` lands them from a terminal. The window now opens in the theme you chose, from its first frame, and the splash stays
   until the first screen has its data (at most ten seconds). A word you take back never reaches a session that goes on in a
   new one, and withdrawing a stop or words from a terminal says truly whether the loop took them first.
@@ -1850,7 +1847,7 @@ with the version and date at release.
   order they were made, and in the list grouped by ask, *Accept the ask's N parts…* lands every repository's, each answered on
   its own. Before it lands, its plan says where and in what order, and names a part a later one superseded, which you may
   leave out. A plugin can now observe each change to what the driver holds (`state/changed`), after the press has answered.
-  `daoris-driver trees land`, `remove`, `clean`, `sync` and `hand` in a terminal now show in the open window within a
+  `daoris tree land`, `remove`, `clean`, `sync` and `hand` in a terminal now show in the open window within a
   second. A stop or words sent to a session are no longer lost when two Daoris loops take them at once. *Read again* on the
   agents, a word said or a conversation deleted in Ask Daoris, and a change to the browser's settings now show in every open
   window. The plugin kit names `work/state` a query, not the raw word.
@@ -1921,7 +1918,7 @@ with the version and date at release.
   the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.
 - Words that could not go on in a session whose tree was gone no longer leave a fresh tree and branch behind at each look.
 - Words you said to a session that ended, or that parked to ask you, can be taken back or reworded until it goes on with
-  them: `daoris-driver sessions take-back <id>` lists the words waiting with their ids, `sessions take-back <id> <word>` takes
+  them: `daoris session take-back <id>` lists the words waiting with their ids, `sessions take-back <id> <word>` takes
   one back, and `sessions reword <id> <word> "…"` puts new words in its place, so a finished quest's session need not go on
   with words you no longer mean.
 - The installed Daoris now ships the driver's own verbs to a terminal: `daoris-driver` (and `daoris-driver.cmd`) in the
@@ -1934,7 +1931,7 @@ with the version and date at release.
   only the rest onto the line in a tree of Daoris's own, so the next pull request carries no second copy; the session's tree then
   moves to what landed. Where that replay conflicts, nothing is made: the review names the files and offers *Ask it to rebase*,
   which sends the session the words to replay its own commits onto the line. The press fetches the line first, and a fetch that
-  fails is said, with when origin was last fetched, without stopping the landing. `daoris-driver trees land <session> --plan`
+  fails is said, with when origin was last fetched, without stopping the landing. `daoris tree land <session> --plan`
   says the same.
 - The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
   the window's thread, at most four programs start at once, and each repository's line is asked of git once per list. The
@@ -1954,7 +1951,7 @@ with the version and date at release.
   whose installed packages hold paths past Windows' 260 characters is moved aside and deleted fourteen days later like any other.
 - Folders beside a repository's session trees that are no tree, an empty one a removed tree left, a tree half removed, or one a
   session wrote next to its own (`devtools`, `.tmp`), are now moved aside by themselves once nothing has written in them for ten
-  minutes, and deleted fourteen days later like a tree's; `daoris-driver trees list` names them *(not a tree)* until then, and
+  minutes, and deleted fourteen days later like a tree's; `daoris tree list` names them *(not a tree)* until then, and
   each folder moved aside *(moved aside)* with the day. A session's start cut off as the app closes no longer leaves a
   half-made tree and branch behind: a cancel undoes it at once, and one a crash cut off is moved aside, its branch removed, by a
   later look. A folder a running session names stays, and so does a tree you locked.
@@ -1967,7 +1964,7 @@ with the version and date at release.
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel
   kept to its own repository, folded under its head. The ask's row and *Group by ask* say how many items are unread, and
-  `daoris-driver ask channel <id> [--to <repository>] ["…"]` reads the channel or posts to it from a terminal.
+  `daoris ask channel <id> [--to <repository>] ["…"]` reads the channel or posts to it from a terminal.
 - Sessions working on an ask can post to and read the ask's channel (`channel_post`, `channel_read`), and Daoris hands them
   what was written there: a running session reads a message at its next step where its agent takes words during a turn,
   another session's always marked as that agent's claim and never as yours; your message reaches it as your words, and one
@@ -2004,23 +2001,23 @@ with the version and date at release.
   within thirty minutes, and where no account has room it stays, with the offer to go on with another agent as before.
 - Words said to a conversation that was handed to another agent or moved to another account go to the conversation that
   continues it: said while it moves, they wait and reach the new one after what Daoris told it; said afterwards, the old one
-  takes none and says which conversation to write to (`daoris-driver sessions say` names it too). An old conversation no longer
+  takes none and says which conversation to write to (`daoris session say` names it too). An old conversation no longer
   starts again in the tree its successor holds.
 - Review measures a session's work from the newest commit it shares with its line, so work merged on the line since the
   session began is no longer shown as the session's, and a tree that holds nothing beyond the line says so; where the line
   has commits the work does not, the review's head says it is not based on the latest line, in both languages. Where a tree
   holds nothing beyond its line, Review says there is nothing to land and leads with *Discard tree*, offering no *Accept*, and
   its head names the tree's own branch, or *detached HEAD*, rather than a session branch that is gone.
-- `daoris agent profile use` takes when to switch accounts, `--switch smart|curve|off`, and your own curve per window,
+- `daoris agent account use` takes when to switch accounts, `--switch smart|curve|off`, and your own curve per window,
   `--curve session=0:85` or `--curve weekly=0:30,50:70,100:100` (`--no-curve` takes it out), and prints both; a curve that
   breaks its rules is refused saying which window, which point and why. `--early` and `--near` still work as the old names,
   and settings saved with them are read as the switch and the curve they meant, and saved that way.
 - A landing rule names the pull request's branch as your repository names its own: its pattern may say `{ticket}`, the
   ticket key found in the title, then the request, then its links (`TK-2202` by default, or the shape `--key` names, as in
-  `daoris driver landing <repository> branch "feature/{ticket}-{slug}" --key "[A-Z]+-\d+"`), the session's id where none is
+  `daoris place landing <repository> branch "feature/{ticket}-{slug}" --key "[A-Z]+-\d+"`), the session's id where none is
   found. A branch's words are never cut from a web address, so a title that was only a ticket's address no longer makes
   `feature/https-…`.
-- A landing rule may squash: with `daoris driver landing <repository> branch <pattern> --squash`, Accept makes the pull
+- A landing rule may squash: with `daoris place landing <repository> branch <pattern> --squash`, Accept makes the pull
   request's branch one commit from the session's work, its message the quest's title and each of the session's commits'
   subjects, made as your repository's own `user.name` and `user.email` (Accept says how to set them where git has none). A
   chain's later step adds one more commit to the same branch, and the session's head, Discard and the clean-up read the
@@ -2052,9 +2049,9 @@ with the version and date at release.
   start still passes an account over Daoris's curve, and ranks the rest by its week's pace as before. A conversation's first
   line says the window, its use and the curve's value, in both languages, and an account's settings mark the same accounts
   *near its limit*.
-- `daoris agent profile use`, `daoris agent list` and an agent's account settings say what passes an account at a start, its
+- `daoris agent account use`, `daoris agent list` and an agent's account settings say what passes an account at a start, its
   limit reached, usage credits or its use over its curve, and the next start's steps by the curve, in both languages; the next
-  start's reason names which of the three passed an account and on which window. `daoris agent profile use` marks a reading
+  start's reason names which of the three passed an account and on which window. `daoris agent account use` marks a reading
   over the scope's curve with the curve's value now, *over its weekly curve's 63%*, where it said *near at 90%* before.
 - A session whose agent committed its work on a branch of its own (as its repository's rules ask) is followed: its work, Review
   and Accept read that branch, Accept lands it as it stands instead of making another, and the tidy no longer warns it cannot read
@@ -2064,7 +2061,7 @@ with the version and date at release.
   so before the press, in both languages.
 - A repository's or workspace's commit rule says how its work is committed: as you go, asking you first, or once at the end,
   with an optional convention in your words on how a commit is written (one paragraph, at most 400 characters). Set it with
-  `daoris driver commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end] [--convention "…"]`; a repository's own
+  `daoris place commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end] [--convention "…"]`; a repository's own
   rule replaces its workspace's, and none set is as you go.
 - A quest's session in a tree of its own is told its process at its start, on a first start, a resume and a carry-on alike:
   the commit rule standing for its repository (as you go, asking you first, or once at the end, where it was set, and your
@@ -2076,11 +2073,11 @@ with the version and date at release.
   conversation shows what it was told under its own line, in both languages; one in your checkout or handed over from another
   agent is told none of it. A session's *What it was handed* names the landing section's source as this machine's landing and
   commit rules.
-- A quest's session can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
+- A quest's session can go on with another agent from the terminal (`daoris session hand-over <id> --agent <adapter>
   [--account <name>]`): the driver stops it, then carries the quest on in the same tree on the agent you name, told it was
   handed over from the first agent's session, and it stays on that agent until the quest closes or leaves this machine.
   Both sessions say where it went and where it came from, in both languages.
-- A working session can ask another agent for help, and you can too (`daoris-driver sessions helper <id> "<question>"
+- A working session can ask another agent for help, and you can too (`daoris session helper <id> "<question>"
   [--agent <name>]`): a read-only session on that agent reads a copy of the session's work at its last commit and answers the
   one question, and its answer comes back to the asking session as its next turn, marked as the helper's and never as your
   words. Your `helpers` rule says whether an agent's ask waits for your yes, starts at once or is off; at most two helpers work
@@ -2101,7 +2098,7 @@ with the version and date at release.
   over…* while it works) asks which agent and account, then it goes on in a new conversation there, which the page opens; the
   old conversation's last line presses through to it.
 
-- A conversation can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
+- A conversation can go on with another agent from the terminal (`daoris session hand-over <id> --agent <adapter>
   [--account <name>]`), as when its account's allowance runs low: it ends, and a new conversation starts in the same tree on
   the agent you name, told what Daoris kept of it (your request, its last plan and words, what is uncommitted); both say
   where it went. The page's press follows.
@@ -2126,7 +2123,7 @@ with the version and date at release.
   typed); nothing is sent. The composer gains a quiet *Make it a task with Daoris…*, which puts its draft in Ask Daoris for
   you to send.
 
-- `daoris-driver ask` takes `--short "…"`, the ask's short title the composer's field gives, and Ask Daoris's ask card
+- `daoris ask` takes `--short "…"`, the ask's short title the composer's field gives, and Ask Daoris's ask card
   says it in its terminal line.
 
 - A session that goes on with your answer no longer stops to ask you again while its own background work (a build, the
@@ -2255,7 +2252,7 @@ with the version and date at release.
   opened is a line beside it.
 - The line saying a permission was refused, because the rules the agent runs under do not allow it, reads in the
   window's language too; the call it names stays as the agent titled it.
-- `daoris wire <repository> --workspace <name>` moves a registered repository to another workspace from a
+- `daoris repository wire <repository> --workspace <name>` moves a registered repository to another workspace from a
   terminal, as the page's Manage → *Move to workspace* does, and changes nothing else about it. An unknown
   repository, or a workspace a shared host does not serve, is refused in the service's own words.
 - A toast no longer covers an open drawer: while one is open, toasts stand at its left edge, so an ask at
@@ -2281,7 +2278,7 @@ with the version and date at release.
   Apply, as at a terminal. The kind and workflow stay yours to choose on the ask.
 - Ask Daoris history orders and searches every conversation before it shows a page, so a pinned or
   recently resumed old conversation stays listed and search reaches older ones; one Chinese character is
-  enough to search. `daoris-driver help list` takes `--offset` and `--limit`. *Show more* lists the next
+  enough to search. `daoris ask-daoris list` takes `--offset` and `--limit`. *Show more* lists the next
   page, a search says how many conversations it found, and a row shows where in a long line the words were.
   The sessions rail's search and a conversation's find also take one Chinese character, and the rail's
   search reaches older sessions.
@@ -2373,7 +2370,7 @@ with the version and date at release.
   that changes source without its document is refused before it is committed; the devkit's own docs
   gate does this too, for any repository that gates a merge before committing it.
 - An account refused for its sign-in after Daoris last read it signed in is asked once more before it
-  is passed over, so signing in again is noticed at the next start. `daoris-driver --once` and
+  is passed over, so signing in again is noticed at the next start. `daoris drive --once` and
   `--until-idle` print each report as it is made and wait for their sessions before exiting.
 - `daoris init` writes a `.gitattributes` holding `* text=auto eol=lf` where a repository has none, so
   the files `sync` writes keep their line endings on Windows; an existing one is never touched.
@@ -2385,12 +2382,12 @@ with the version and date at release.
 - Knowledge search finds an identifier from its words (`ProbeLock` from "probe lock") and lists each
   dated note of a decision as its own result, so a question lands on the note that answers it.
 - A quest's requirement may name files the done must have committed: the driver reads them at the
-  session's end (and `daoris-driver quest check` reads them from a terminal), and the done is held until
+  session's end (and `daoris quest check` reads them from a terminal), and the done is held until
   they are found or the person says yes.
 - The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
   quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
   machine only. The driver now clears what the home kept of them too, never a tree in use or a standing
-  branch. At a terminal, `daoris-driver history` says what each workspace keeps, and `history clear
+  branch. At a terminal, `daoris history` says what each workspace keeps, and `history clear
   --workspace`, `quest clear` and `ask --clear` list what would go until `--yes`. On the screen, a
   closed quest's ⋯ and a done ask's offer *Clear from this machine…*, and a workspace's Details shows
   what this machine keeps with *Clear history…*; each lists what goes and what stays before it clears. Deleting a conversation now also takes the
@@ -2404,7 +2401,7 @@ with the version and date at release.
   terminal lines.
 - A failed session's work is no longer carried on over a quest another machine has since taken; the
   refusal names who holds it.
-- `daoris-driver sessions start-from <id>` carries a conversation's words into a new one at a terminal,
+- `daoris session start-from <id>` carries a conversation's words into a new one at a terminal,
   as the window's *Start from* does. The sessions list shows a chat whose words wait as going on, or
   as resuming later with its reset time.
 - `daoris-driver` exits 2 naming the timeout when the service does not answer in time; only Ctrl+C
@@ -2461,9 +2458,9 @@ with the version and date at release.
 - A comma or full stop after a command or branch name no longer starts a line of its own, and a
   session's header shows a long branch name whole.
 - Status words (open, taken, done) are easier to read in both themes, as danger words already were.
-- `daoris-driver trees clean` and `trees sync` take `--workspace <name>`, as a workspace's Branches tab
+- `daoris tree clean` and `trees sync` take `--workspace <name>`, as a workspace's Branches tab
   does, and refuse a word they do not know instead of ignoring it.
-- `daoris-driver trees land <session>` takes `--branch <name>`, in `--plan` and the press alike: the name replaces
+- `daoris tree land <session>` takes `--branch <name>`, in `--plan` and the press alike: the name replaces
   the landing rule's wholesale, a name git would not take or a branch Daoris did not make is refused in words about
   that name, and a rule that merges, making no branch, refuses a name rather than ignoring it.
 - A quest sitting because another machine took it says so in Chinese too, naming that machine.
@@ -2489,7 +2486,7 @@ with the version and date at release.
 - The window no longer redraws continuously for a pulsing status dot, and it logs when its own thread
   is held, so a frozen title bar can be traced.
 - A quest left taken after you finished its session can be marked done by you, with a note, from its
-  page, from the session's *Finish…*, or with `daoris-driver quest done`.
+  page, from the session's *Finish…*, or with `daoris quest done`.
 - Saying something to a session while the driver looks at it no longer fails with a server error: the
   service's database now takes one request at a time on its shared connection.
 - An ask that names its repository now proposes that repository first, even one that has declared
@@ -2509,7 +2506,7 @@ with the version and date at release.
 - An ask's proposal of a repository its words name says *named in the ask*, not *shares …*.
 - Answering every go-ahead a waiting session asked on its ask now sends that session on with your answers.
 - A workspace or repository can declare where its work is reviewed before it lands (Setup → *Review before
-  landing*, or `daoris driver review`); nothing waits on it yet.
+  landing*, or `daoris place review`); nothing waits on it yet.
 - Settings → Logs no longer fills with a warning about `server/discover` for every session.
 - The update banner says in your language why an update was put back or refused for its two newest reasons.
 - A session branch whose work a squash-merged pull request or a cherry-pick already holds can be discarded
@@ -2521,9 +2518,9 @@ with the version and date at release.
 - A session branch discarded because its work is held elsewhere now keeps its commits at a recovery ref the
   sentence names, and a tree holding files only it has is kept.
 - A workspace or repository can name the agents that give a second opinion before its work lands (Setup →
-  *Second opinion before landing*, or `daoris driver opinion`); nothing asks one yet.
+  *Second opinion before landing*, or `daoris place opinion`); nothing asks one yet.
 - Work in a repository whose review rule says so now waits for your *reviewed* (or a skip) before it lands;
-  `daoris-driver quest review` gives it.
+  `daoris quest review` gives it.
 - A web page in your browser can no longer press a door on Daoris's local service.
 - Setup's *Review before landing* now says that work there waits for your review, and how to give it.
 - Daoris's local service answers only to its own loopback names, so a website cannot read it through a rebound
@@ -2534,7 +2531,7 @@ with the version and date at release.
   your verdict; *In review* beside the browser's door shows it again.
 - Ask Daoris keeps its conversations on this machine: *History* lists, searches, renames, pins and deletes them,
   an ended one goes on in its own conversation, and a new one can start from an earlier one's transcript.
-- `daoris driver workflow show --repository <name>` says how work moves in a repository: each step, who does it,
+- `daoris workflow show --repository <name>` says how work moves in a repository: each step, who does it,
   which rule sets it, and what is not built yet.
 - Work waiting on your review says so where *Accept* was: *Review in <environment>*, with *Reviewed*, *Not yet…*,
   *Show it again* and *Skip…*, on the session, the set-up step's page, What needs you and the strip; an ask can
@@ -2547,19 +2544,19 @@ with the version and date at release.
   says so in the machine log; everything else stays for *Clean up*.
 - A Daoris host that fails to start says why on the window: the last lines it printed, not only that it exited.
 - Where a repository asks for a second opinion, its work waits for it before landing, at every door; the person can
-  ask, stop, land anyway or say they looked themselves (`daoris-driver opinion`).
+  ask, stop, land anyway or say they looked themselves (`daoris session opinion`).
 - Ask Daoris's history no longer runs past the side bar's edge when a conversation's title is a long link.
-- The review choice can be set from a terminal: `daoris-driver ask … --review`, `ask --set-review` and
+- The review choice can be set from a terminal: `daoris ask … --review`, `ask --set-review` and
   `quest review <id> off|on|<environment>`.
-- Workflows can be named and saved: `daoris driver workflow new|edit|apply|list|show|export|import`, each version
+- Workflows can be named and saved: `daoris workflow new|edit|apply|list|show|export|import`, each version
   kept and each change shown with your part first; nothing chooses one yet.
 - A session's side bar has a *Workflow* view: where its work stands in its repository's workflow, step by step, with
   doors from a quest, an ask and What needs you.
 - A `driver.json` that does not read is said with its file and where, instead of a stack trace.
-- `daoris-driver workflow run` prints where a piece of work stands in its workflow, step by step.
+- `daoris workflow run` prints where a piece of work stands in its workflow, step by step.
 - Where a second opinion holds work, the session shows it before the review: what the other agent found, the working
   session's answers, and the presses to ask again, go on anyway or say you looked yourself.
-- A repository or a workspace can choose its workflow, per kind of task (`daoris driver workflow use|kind`), and an
+- A repository or a workspace can choose its workflow, per kind of task (`daoris workflow use|kind`), and an
   ask can name its kind; work started then is bound to the version chosen, though no gate reads it yet.
 - Accepting a candidate with Enter in a Chinese (or any) input method no longer sends the message or runs the
   command; Escape that drops a composition no longer closes the box.
@@ -2772,7 +2769,7 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Deployable, two modes, one binary each.** Local needs no daemon: the MCP host (`daoris-knowledge`)
   is spawned per agent session and the persistent per-user store is what survives, shared by every
   repository's sessions on the machine. Remote is the HTTP host: registrations pushed by
-  `daoris connect` persist across restarts, and quests publish and answer over the same shared judgement
+  `daoris repository connect` persist across restarts, and quests publish and answer over the same shared judgement
   (`QuestExchange`) as the MCP host. There are two trust shapes and no third: **local** trusts the
   loopback — the OS account is the boundary, and the host refuses to bind anywhere else — and **shared**
   (the team deployment) gates every route with minted keys (below). It runs with **no model at all** and
@@ -2819,7 +2816,7 @@ The first version: doctrine that installs, is checked, and flows back.
   index. Found on the platform's own Overview, serving a repository renamed weeks earlier.
 - **An example family under `examples/`**, tracked in full: two miniature adopters and
   `npm run rehearse:family`, which proves the router through the real artefacts — adoption,
-  registration through `daoris connect`, a quest's whole life including its refusals, knowledge
+  registration through `daoris repository connect`, a quest's whole life including its refusals, knowledge
   crossing projects, and a restart losing nothing.
 
 ### The driver
@@ -3014,7 +3011,7 @@ The first version: doctrine that installs, is checked, and flows back.
   talking. A tool card names a file inside the session's tree relative to it. The context a session
   used is recorded for the native door too.
 - **A turn can be stopped without ending the conversation.** Ctrl+C during a turn in
-  `daoris-driver chat` stops it and keeps the session, on the protocol door and on Claude Code's own.
+  `daoris chat` stops it and keeps the session, on the protocol door and on Claude Code's own.
   A script sends a line holding only ETX to do the same. The turn ends *cancelled* in the record,
   never as a failure. A message you send while a turn runs waits for it on both doors: Claude Code
   used to be handed it mid-turn, and the record put it inside the turn before. A stop hands back what
@@ -3048,7 +3045,7 @@ The first version: doctrine that installs, is checked, and flows back.
 - **The menus are the setup domains** (D75). The title bar carries *Daoris · Workspace · Agents ·
   View*, and each setup item opens its own domain. Settings is one page with its domains in a
   list, one shown at a time, as an IDE's settings are. The Workspace menu lists every workspace with
-  what it holds and scopes the window, and can import a folder of repositories as `daoris import`
+  what it holds and scopes the window, and can import a folder of repositories as `daoris repository import`
   does. The workspace is named in the title bar and the status bar in every state, *no workspace
   yet* included. And the scope has one name everywhere, *workspace* / 工作区, in the interface and in
   what the CLI, the driver and the service print.
@@ -3176,7 +3173,7 @@ The first version: doctrine that installs, is checked, and flows back.
   and a tool whose settings Daoris does not know (Codex, dsh) is offered nothing, and says so.
 - **The machine log, read back at two doors, and a report to improve Daoris from** (LOG1c, LOG1d,
   D94). Every Daoris process writes what happens to it under the home's `logs/`, without anyone's
-  words. `daoris-driver logs [--since 30m|2h|3d] [--source <name>] [--event <name>] [--level
+  words. `daoris logs [--since 30m|2h|3d] [--source <name>] [--event <name>] [--level
   warn|error] [--json]` prints every source's lines merged by time, and Settings → Logs on the desktop
   shows the newest with the same filters, a count per level, and *Open the folder*; a line that cannot
   be read is skipped and counted. `node tools/usage-report.mjs --install <dir> [--days 7]` summarises
@@ -3200,7 +3197,7 @@ The first version: doctrine that installs, is checked, and flows back.
   start on it. The desktop now asks PATH for what Windows can start, as the terminal does, and a
   session over a `.cmd` whose prompt the command shell would reinterpret is refused in a sentence
   naming what to do instead.
-- **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
+- **Ask at a workspace, not a repository** (D65 §1a). `daoris ask [--workspace <name>]
   [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
   and files, who asked, and what became of it, naming the tier that answered on every record. With
   no intake harness, the **declarations tier** ranks the workspace's repositories by the words their
@@ -3222,7 +3219,7 @@ The first version: doctrine that installs, is checked, and flows back.
   asker's beneath. The ask names its intake, and its tier reads `intake`. Where the declarations do
   not settle it, the intake publishes nothing and the session waits for you; publishing or closing
   the ask ends it. The intake is off until a harness is named, because each intake spends a login,
-  and `daoris driver intake off` goes back to declarations only.
+  and `daoris role set intake off` goes back to declarations only.
 - **An ask that waits on you is in *What needs you*** (INT4d). A proposal, or an ask whose intake
   parked asking, is a row of Overview's band that opens the ask's record. A parked intake is counted
   once, as its ask. The band stays live on the desktop: an ask made by the other door arrives with
@@ -3235,8 +3232,8 @@ The first version: doctrine that installs, is checked, and flows back.
   the quests each time the ask is read, so a quest closed on another machine counts as soon as it
   syncs in. The same words asked again after an ask is done make a new ask.
 - **Delete a quest or an ask made by mistake** (QUEST1, D95). A duplicate or a test can go. Use the
-  quest drawer's *Delete* or the ask record's, each asking once, or run `daoris-driver quest delete
-  <id>` or `daoris-driver ask --delete <id>`. Only a quest nobody has started on goes: it is open, no
+  quest drawer's *Delete* or the ask record's, each asking once, or run `daoris quest delete
+  <id>` or `daoris ask delete <id>`. Only a quest nobody has started on goes: it is open, no
   session was started for it, and no taken quest waits on it. Anything else stays, and the refusal says
   to decline it or leave it closed. An ask goes with every quest it became, or not at all. A shared
   quest's delete travels to the remote as an operation, so no later sync brings it back. It is pushed
@@ -3414,7 +3411,7 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A branch a landing made goes once its pull request's work is on the line** (WSR5, D102). A squash
   merge puts none of the branch's commits on the line, so git calls it unmerged and the session-branch
   clean-up never looked at it. A landing now records the branch it makes, under the Daoris home, and
-  Settings → Workspace → *Session branches* and `daoris-driver trees clean` list those branches in a
+  Settings → Workspace → *Session branches* and `daoris tree clean` list those branches in a
   group of their own. The same press removes each whose changed files all read on the line (or on
   `origin/<line>`) as it left them, and each inside another that does. One checked out anywhere, one with
   commits its remote lacks, one a kept session branch still needs, and one whose files differ are kept,
@@ -3423,7 +3420,7 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A landed branch can be handed to its plugin afterwards** (WSR5, D102). A ticket landed before its
   workspace named a plugin, or one whose plugin failed, had no door but a hand push: pressing Accept again
   is refused while the branch stands. The review of the session that landed it now offers *hand it to
-  <plugin>* (its tree may be gone), `daoris-driver trees hand <session|branch>` does the same from a
+  <plugin>* (its tree may be gone), `daoris tree hand <session|branch>` does the same from a
   terminal (`--plugin <id>` where the rule names none, `--plan` to see it first), and Ask Daoris can
   propose it as a card. The plugin is told the same frame a landing tells it, for the branch as it stands,
   and its answer is said and kept the same way. A branch no landing made, one moved away from what the
@@ -3432,7 +3429,7 @@ The first version: doctrine that installs, is checked, and flows back.
 - **`daoris-driver` drives only when asked to, and one loop drives a home** (DRV8, D104). Run with no
   verb to read its usage, it used to start a headless loop beside the desktop, and that loop took a
   quest first. With no verb, or a word it does not know, it now prints its usage and exits 2. The loop
-  is `daoris-driver drive [--once | --until-idle]` (a bare `--once` or `--until-idle` still works). A
+  is `daoris drive [--once | --until-idle]` (a bare `--once` or `--until-idle` still works). A
   loop takes the home's `driver.lock` first, and a home another live driver holds is refused, naming
   it: the desktop or a headless loop, its process id, and since when. `--share` runs beside it on
   purpose. A lock whose process is gone never blocks. The desktop's loop takes the same lock, and where
@@ -3447,8 +3444,8 @@ The first version: doctrine that installs, is checked, and flows back.
   may read another registered checkout in its workspace (its files, `git status`, the branch list) and
   change nothing there; Ask Daoris may read every workspace's, still with no shell. Reading can be
   switched off per repository or per workspace, and writing into another repository is allowed only
-  toward one you declare (`daoris driver across plugins write-to engine`), in one direction. Both doors:
-  `daoris driver across …` and Settings → Permissions → *Reading and writing across repositories*.
+  toward one you declare (`daoris place across plugins write-to engine`), in one direction. Both doors:
+  `daoris place across …` and Settings → Permissions → *Reading and writing across repositories*.
 - **A pinned Daoris is one taskbar button** (TASKBAR1, D108). An install's windows name one taskbar id and
   relaunch `Daoris.exe` at the install's root, so a pin made from the running window survives a republish and
   later windows, a second one included, join it. Pin from the running button; a pin made on `Daoris.exe` in
@@ -3464,7 +3461,7 @@ The first version: doctrine that installs, is checked, and flows back.
   switch where the review holds a patch. It reads the session's own tree as it is now, up to 256 KiB, and
   refuses a path outside that tree, a link leading out of it, and `.git`, each with its own sentence.
 - **One press brings a repository up to date after its pull request merges** (WSR6, D109). Settings →
-  Workspace → Session branches → *Bring up to date*, or `daoris-driver trees sync [--repository <name>]
+  Workspace → Session branches → *Bring up to date*, or `daoris tree sync [--repository <name>]
   [--yes]`, lists first and then: fetches the line and fast-forwards it only (a clean checkout on it, or a
   ref nothing has checked out; never a merge commit, a force or a push); replays the session branches not
   in use and the landed branches not yet on the line onto it, cut where each grew from, so a squash-merged
@@ -3504,7 +3501,7 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Every list is one list pane** (FRAME1b, D118). Sessions' list becomes a strip only when the conversation would fall below 400 px, not below a fixed width; a strip opens the list over the conversation; ↑, ↓, Home and End move through any list, and pressing the current place on the activity bar shows or hides it.
 - **Every view is laid out the same way** (FRAME1c, D118). Each view hands the frame its list, where it has one, and its main area; each remembers its own list's width, closing, chosen item and filters; and one opener carries every door, so a link to a quest, a plugin or a Settings domain lands on that item whichever screen it came from.
 - **Plugins have a view of their own** (PLUGUI1b, D119). *Plugins* on the activity bar lists what is installed, grouped by what each does, with its own page: what it declares, whether it is running, its trial's report, an update's plan, and *Remove…*; Daoris's own offers have a page before they are installed. A browser over a remote is offered neither the view nor its doors.
-- **A plugin's health and activity are kept, and the desktop answers the Plugins view** (PLUGUI1d, PLUGUI1e, D119). The machine log records seven plugin events (names, counts and times, never a message or a pull request), the driver loop keeps each plugin's health, and `daoris-driver plugins show <id>` and `plugins activity <id>` say both from a terminal. The window asks the desktop for a plugin's page, its activity, what a folder's plugin would run, an install from a folder (never over an installed one), and to open its folder.
+- **A plugin's health and activity are kept, and the desktop answers the Plugins view** (PLUGUI1d, PLUGUI1e, D119). The machine log records seven plugin events (names, counts and times, never a message or a pull request), the driver loop keeps each plugin's health, and `daoris plugin show <id>` and `plugins activity <id>` say both from a terminal. The window asks the desktop for a plugin's page, its activity, what a folder's plugin would run, an install from a folder (never over an installed one), and to open its folder.
 - **Quests and Repositories are on the frame** (FRAME1d, FRAME1e, D118). Quests lists the asks, then the quests by state, with a receiver filter and *Include closed* in its ⋯ and remembered; a quest or an ask opens as a page with its acts in the header, and the composers stay drawers. Repositories lists the adopted, then *Registered, not adopted*, each with its standing on this machine; a repository's page carries *Open code map* and *Manage*.
 - **A long list or menu stays inside the window** (SELECT1, MENU1). A select's list and every dropdown menu are capped at the room the window has and scroll inside it; every menu is one shared atom now, and a test holds that nothing builds its own.
 - **A parked session's card shows its whole question** (PARK1). A driven session that stops to ask you is quoted from its saved conversation, lists and all, where the console's last lines had cut a question off at its first indented line.
@@ -3512,18 +3509,18 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A decision kept as its own file is listed by its heading** (DOC8c, D134). A record in a declared decisions, fixes or archive folder is titled by its first heading, or by its file name when it has none; a router folder keeps its file names.
 - **A terminal command breaks only between its words** (LOOK5). Every code span on the window wraps at its spaces and never inside a flag, so `--no-keep` no longer splits as `--no-` / `keep` on a narrow settings card; the machine log's terminal command renders as code too.
 - **Words written to a session that has stopped go on in the same conversation** (MSG1b, MSG1d, D137). Write to a parked or ended driven session and the next look resumes the agent's own conversation with your words, in the same row, on both doors; words written while a session winds up wait for it rather than being refused. Where a session can never take words (a teammate's, an intake, one stood down, an earlier session of a quest), the box says why and nothing is sent.
-- **The install updates when its work allows** (UPDATE1, D139). `publish:desktop --stage` puts a checked build beside the running install; the desktop starts nothing new, installs it once no session's turn is running, and starts again, saying so once. A failed swap puts the old build back. *Update now*, *Not now* and `daoris-driver update` choose when. The first install carrying this is a publish in place.
+- **The install updates when its work allows** (UPDATE1, D139). `publish:desktop --stage` puts a checked build beside the running install; the desktop starts nothing new, installs it once no session's turn is running, and starts again, saying so once. A failed swap puts the old build back. *Update now*, *Not now* and `daoris update` choose when. The first install carrying this is a publish in place.
 - **Right-click opens Daoris's own menu** (CTX1, D138). A session, a quest, an ask, a repository, a plugin or a document offers the acts its ⋯ already has; selected words offer copy, *Search Daoris for it* and *Ask Daoris about it*; a link offers open and copy. Text fields and the in-app browser keep the engine's menu, and the title bar opens the window's menu.
 - **A chat that took a quest keeps that work's record** (CHATTAKE1). Its record is marked as having taken a quest, so *Delete…* is no longer offered for it.
-- **Every session takes words, and the box says how they reach it** (MSG1f, MSG1c, MSG1e, D137). A running session hears them at its next step or its turn's end; a parked or ended one, a chat among them, goes on in its own conversation; where a session can never take words, a line says why. `daoris-driver sessions say <id> "…"` is the terminal's door, and words said while no Daoris ran are taken up at the next start.
+- **Every session takes words, and the box says how they reach it** (MSG1f, MSG1c, MSG1e, D137). A running session hears them at its next step or its turn's end; a parked or ended one, a chat among them, goes on in its own conversation; where a session can never take words, a line says why. `daoris session say <id> "…"` is the terminal's door, and words said while no Daoris ran are taken up at the next start.
 - **What Daoris says is in your language** (LANG1a, LANG1b, D142). Daoris's lines on a session's record are worded by the window in English or 中文; an agent's or your own words are shown as written; a record from before says *shown as recorded*.
-- **A session language for the work** (LANG1c, D142). Set per repository or workspace (`daoris driver language`, a repository's page, Settings → Workspace, or Ask Daoris), it asks driven sessions to write their questions and closing notes to you in that language; the window's own language stays yours, and chats answer in whatever language you write.
+- **A session language for the work** (LANG1c, D142). Set per repository or workspace (`daoris place language`, a repository's page, Settings → Workspace, or Ask Daoris), it asks driven sessions to write their questions and closing notes to you in that language; the window's own language stays yours, and chats answer in whatever language you write.
 - **A page's content takes its pane's width** (LAYOUT11, D141). A quest's body, a plugin's detail and every other block wrap at the pane's edge rather than a fixed column, which in 中文 had held half the words.
 - **The plugins page is a catalogue, and each plugin has its icon** (PLUGUI2, D140). Installed, Daoris's own and available plugins, each with an icon its manifest names or a generated monogram; boxes that ask once draw on their own sunken surface (LOOK6).
 - **Settings says which account the next start takes, and why** (TOOL6e). Each workspace's accounts name the next pick and the step that chose it, what holds each other account, and when a cool-off ended.
 - **A park's go-aheads are answered on its page, in one press** (KNOWUSE1a2, D135). Approving or refusing one there also answers the park, and the same session goes on.
 - **A quest's page shows what you required and takes your yes** (DRIFT1d2, D133). Each requirement with the words it quotes and how the done answered it; a held departure takes *Accept the departure*, and Ask Daoris can propose it.
-- **`daoris-driver trace <commit|session|quest>` reads a change back to its ask** (TRACE1, D143), and **a session's page shows what it was handed**, section by section, with what each bound left out (CONTEXT1). Neither changes anything.
+- **`daoris trace <commit|session|quest>` reads a change back to its ask** (TRACE1, D143), and **a session's page shows what it was handed**, section by section, with what each bound left out (CONTEXT1). Neither changes anything.
 - **Settings → Driver shows the install's update** (UPDATE1b): what is staged, the drain, the last swap and the three words.
 - **`daoris agent list` says the next start beneath each list** (TOOL6f): the walk's steps, each account cooling and until when, and where the screen names the account the next start takes.
 - **Settings → Driver keeps the last update after the banner is dismissed** (UPDATE1d), and Ask Daoris names the update's doors without proposing them (UPDATE1f).
@@ -3531,12 +3528,12 @@ The first version: doctrine that installs, is checked, and flows back.
 - **The title bar behaves as a window's does** (FRAME2): a double-click maximizes and restores, a click on a maximized window leaves it maximized, and only a drag restores and moves it.
 - **A session that goes on with your words gets the files you sent with them** (MSG1d3), **words you send as a session ends survive a restart** (MSG1d4), and the line saying a stopped turn may have read what you added is in your language (MSG1c3).
 - **The review opens in seconds, and says what it is doing while it loads** (REVIEW3, REVIEW4). It reads a session's changes in one git process instead of one per file (a 61-file review went from about a minute to a couple of seconds), shows its frame and a skeleton at once with what it is reading and for how long, waits long enough instead of timing out at thirty seconds, keeps a finished session's review for a second open, and words each refusal with what to do next. A renamed file now shows its rename, and a path outside ASCII its changes.
-- **Words to a session go on with the account it ran on** (MSG1g). If that account is cooling, the words wait for it, and *Go on in a new session* (`daoris-driver sessions go-on-new`) starts over on another account instead, without the conversation's context.
+- **Words to a session go on with the account it ran on** (MSG1g). If that account is cooling, the words wait for it, and *Go on in a new session* (`daoris session go-on-new`) starts over on another account instead, without the conversation's context.
 - **Done work can land itself** (LAND2a, LAND2b, D145). A branch rule may *Accept automatically* (自动采纳; `--auto-accept` at the terminal, or through Ask Daoris). Each door says that the rule's plugin then pushes and opens a pull request without asking, or warns that with no plugin nothing leaves the machine. A merge rule refuses it. Under the rule, a session whose quest is done lands at the next look exactly as the review's *Accept* would. A plugin that cannot land leaves the branch and names the hand-off. The landing records who accepted it, `person` or `auto`.
-- **A landing tidies every session branch its work holds** (LAND3). It removes each session branch the landed work contains, keeping and naming one that a running session holds, that has uncommitted work, or that is checked out elsewhere. `daoris-driver trees remove <session|branch> --force` removes a failed attempt's branch, and `trees clean` offers it.
-- **`daoris-driver git branches` lists what each repository holds** (GIT1a, GIT1c, D147): its line and branches by kind (the line, session branches, landed branches with their push standing, your own, and origin's), each with the git command that read it.
+- **A landing tidies every session branch its work holds** (LAND3). It removes each session branch the landed work contains, keeping and naming one that a running session holds, that has uncommitted work, or that is checked out elsewhere. `daoris tree remove <session|branch> --force` removes a failed attempt's branch, and `trees clean` offers it.
+- **`daoris git branches` lists what each repository holds** (GIT1a, GIT1c, D147): its line and branches by kind (the line, session branches, landed branches with their push standing, your own, and origin's), each with the git command that read it.
 - **Words a cooling account holds say so** (MSG1g2, MSG1f2). The page says the words wait for the account's reset and offers *Go on in a new session*. *Start a conversation with these words* is one act that moves the words off the old record. The session list says *going on* for a record whose run is planned, and *Resumes later* with what holds its words.
-- **How this came to be** (TRACE1b): a session's page and a quest's page fold out the ask, quest, sessions, the rules each was handed and where its work landed. This is the same reading as `daoris-driver trace`, and a link it could not read is marked missing.
+- **How this came to be** (TRACE1b): a session's page and a quest's page fold out the ask, quest, sessions, the rules each was handed and where its work landed. This is the same reading as `daoris trace`, and a link it could not read is marked missing.
 - **One piece of work, one branch and one pull request** (LAND2c, D149). When a chain's later step finishes, its work moves the chain's landed branch on by fast-forward instead of making a second branch, and a follow-up ask's quest that *follows* the chain joins it. The pull-request plugins (1.1.0) push to the pull request that is still open and never open a second one. A branch whose pull request already merged is refused, and nothing moves.
 - **An ask's page shows what a pause or an abandon reaches** (PAUSE1h): each of its quests with its state and why it sits, the questions its sessions asked other repositories, and those sessions as doors into Sessions.
 - **Daoris no longer signs your accounts out, and says when one is** (TOOL6g). It asks an account's status one question at a time (shared with the terminal), never while a session runs on it, never at each look, and never your own sign-in unless you press refresh. A start held on accounts that are not signed in names each one and how to sign it in, in both languages, and `daoris agent list` shows Claude Code's accounts once, not once per way of running it.
@@ -3544,22 +3541,22 @@ The first version: doctrine that installs, is checked, and flows back.
 - **The shared doctrine says how often to verify** (CANON10): the checks a change can reach while working, the whole set once at the boundary, and after a fix only what failed.
 - **What needs you leads Overview** (UX6c, D150): what is holding work, what waits for your word and what is ready for you, the longest waiting first, with go-aheads, departures and work to review among them. A row settles what one press can (*Publish to …*, *Try again*, *Accept the departure*) and asks once where a press would widen what Daoris may do; no row starts anything by itself.
 - **A view you come back to opens on what is still live** (UX6b): a closed or deleted item you had chosen is no longer reopened, the side bar off Sessions follows only a session that is running or waiting on you, and a long note in the timeline folds to four lines with *Show all*.
-- **`daoris-driver trees state` asks a landed branch's plugin again** (PLUGHOOK1c), and bringing a repository up to date asks after its fetch; the clean-up, `trees land --plan`, `git branches` and `trace` say what the plugin last answered about the branch's pull request, or why nothing was asked.
+- **`daoris tree state` asks a landed branch's plugin again** (PLUGHOOK1c), and bringing a repository up to date asks after its fetch; the clean-up, `trees land --plan`, `git branches` and `trace` say what the plugin last answered about the branch's pull request, or why nothing was asked.
 - **Publishing the desktop app refuses a tree the full gates have not passed** (GATE3): `node tools/merge-branch.mjs --full` runs them, and `--force-ungated` publishes anyway, saying so.
-- **A plugin declares the tools it runs** (PLUGTOOL1a, D150): `tools` in `plugin.json` names each one, the version it needs and why, with up to four readiness checks; `daoris-driver plugins try` checks each before the handshake, and `daoris plugin list` names them. A malformed entry is shown, never a refusal of the plugin.
+- **A plugin declares the tools it runs** (PLUGTOOL1a, D150): `tools` in `plugin.json` names each one, the version it needs and why, with up to four readiness checks; `daoris plugin try` checks each before the handshake, and `daoris plugin list` names them. A malformed entry is shown, never a refusal of the plugin.
 - **A repository's setup is on its own page** (UX6f, D150): Details and Setup tabs, with driving, line and landing, session language and standing answer, and reading and writing across, each section folded to one line when it holds Daoris's defaults. Settings keeps each workspace's default and a door to each repository that sets its own.
 - **A workspace has its own page, and Settings is the machine's and yours** (UX6g, D150): Repositories groups by workspace; a workspace's page holds its repositories and accounts, its branches' clean-up and bring up to date, and its defaults, remote and rules. Settings → Workspace and Settings → Permissions are retired, and every door to them leads to the new pages.
 - **Agents is a place, with one account list per agent** (UX6e, D150): each account's last known state and when it was read, its acts on its row, and how accounts are used, workspaces, ways in and what the agent may do folded beneath. Opening it asks no account; *Read again* reads one agent's. Settings → Agents is retired.
 - **Daoris reads an account only when you ask** (ROSTER1): not at start, not at a look, not when a view opens. Each account keeps its last reading and when it was read across a restart, *Read again* reads one agent or one account, and changing a default or removing an account reads nothing.
 - **A start refused for its sign-in no longer parks the work** (ROSTER1b): the account is marked signed out and the next start goes to another, the refusal never counts as a failure of the quest, and the record says which account needs signing in.
 - **Every agent Daoris supports is on the Agents list** (AGENTS2), with *Install* where it is missing, including Codex and DeepSeek Harness (DeepSeek's own agent, on the protocol door).
-- **An account is named by you, and signing in reaches the account you meant** (ACCT1, ACCT2, D125): a new account's id is `acct-` and eight hex characters, never reused, and its name is yours (`daoris agent profile rename`), kept by every list, default, reading and record. A sign-in reaches an account already here or is refused before anything starts, joins the rotation lists you name in the same step (`--join`), and an account in no list says so.
+- **An account is named by you, and signing in reaches the account you meant** (ACCT1, ACCT2, D125): a new account's id is `acct-` and eight hex characters, never reused, and its name is yours (`daoris agent account rename`), kept by every list, default, reading and record. A sign-in reaches an account already here or is refused before anything starts, joins the rotation lists you name in the same step (`--join`), and an account in no list says so.
 - **A menu bar like an IDE's** (UX7a, D152): Workspace, Edit, View, Go, Run, Terminal and Help, from one table that the palette, the keys and Help → *Keyboard shortcuts* also read. Alt or F10 reaches it, Alt and a letter opens a menu, and Run's and Edit's acts are enabled exactly when the page offers them.
 - **A quest has a short title** (SESSUX1j, D126): its publisher's, at most 40 characters, from the intake, `quest_publish`, the HTTP doors or the composer; otherwise one read from its own words, a ticket key such as `TK-2203` leading. Lists, heads, session names and a landing's branch use it.
 - **A quest's head and a session's lead with what matters** (UX7c, D152): the state, the title, and one line of facts; ids and the rest fold into *Details*, and no title is said twice.
 - **This workspace's agents get a knowledge server that starts** (ORIENT1c) and an index of where things are (ORIENT1, `docs/index/`), kept fresh at every merge.
 - **Managed tools download, verify and lay out** (TOOLS4, D121). `daoris tool download|update|delete|locations|look` and `use <tool> managed` fetch a version from the resource list, check its size and SHA-256 at each address, unpack it whole and record it; a refusal names its check and leaves nothing behind. Starting a managed tool is next.
-- **A plugin installs from its package** (PLUGDIST1a, D120). `daoris-driver plugins install <file.nupkg>` reads a Daoris plugin package offline, refuses one that is not of the type, carries dependencies, or names a path outside its folder, and records where it came from.
+- **A plugin installs from its package** (PLUGDIST1a, D120). `daoris plugin install <file.nupkg>` reads a Daoris plugin package offline, refuses one that is not of the type, carries dependencies, or names a path outside its folder, and records where it came from.
 - **Search finds what a long document says past its start** (SEM3, D123). The semantic tier embeds every part of an entry in pieces the deployment's window bounds (`DAORIS_EMBED_WINDOW`, default 2000), where it had cut each entry at its first 2,000 characters; a hit still names an entry once, and a refresh says how many entries were split.
 - **The service reads the records a repository declares** (DOC5, D122), and this repository declares its own (DOC4): the decisions, fixes and archive at the paths `daoris.json`'s `documents` names, the router as a document, and a declared path judged where it lands rather than as spelled (DOC3a).
 - **Every program Daoris starts is the tool you chose** (TOOLS5, D121). Daoris's own git, a hook's first word, a pin's npm, the tree guard's node and the terminal's shells start as the files the tools resolve, and every session, chat, hook, plugin and terminal is handed the tools' folders first on its `PATH`; a tool whose chosen way cannot run refuses rather than falling back to whatever `PATH` holds.
@@ -3569,24 +3566,24 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A repository that has not adopted is searchable by its README** (WSSETUP8, D124), split at its headings, until it adopts; nothing is written into it.
 - **A refresh says what it embedded** (SEM3b), and Settings → AI names `DAORIS_EMBED_WINDOW`. **Saving a declaration keeps what the repository uses** (MANAGE1): Repositories → Manage no longer erased its `uses` from the registry.
 - **A repository is set up for agents by its own session** (LAYOUT7 as D124 amends it). `daoris-driver setup <repository> [--plan]` reads the repository's line as git objects (its layout, instruction files, tiers and rooms), says every reason it would refuse at once, and publishes one set-up quest as your ask: the doctrine tool's version checked first, the doctrine taken up, the knowledge a neighbour needs written (what it owns, its contracts and data, the computations others depend on, each with its place in the code), the brief, documents and safe work, in the repository's own tree and never pushed. The session is allowed exactly the `daoris` verbs it needs. The family rehearsal sets a repository up end to end (LAYOUT7a).
-- **Sessions are listed by what they wait on** (SESSUX1c, D126): Waiting on you, To review, Working, Resumes later and Ended, with *Group by repository* in the list's ⋯, and the badge counts a parked quest. **Your stop holds its quest** (SESSUX1b, SESSUX1b2): it is not planned again until you press *Try again*, also `daoris driver retry --session` and Ask Daoris's `retry`.
+- **Sessions are listed by what they wait on** (SESSUX1c, D126): Waiting on you, To review, Working, Resumes later and Ended, with *Group by repository* in the list's ⋯, and the badge counts a parked quest. **Your stop holds its quest** (SESSUX1b, SESSUX1b2): it is not planned again until you press *Try again*, also `daoris quest retry --session` and Ask Daoris's `retry`.
 - **The doctrine says a session pays for what it reads** (SESSOPT1a, D127): a backlog row, a router row and an archive outcome each take a short shape and point to their detail, and `verify` reports any that run over (SESSOPT1b).
-- **Pause, resume and abandon an ask from its page** (PAUSE1d, PAUSE1e, D132): *Pause…* stops an ask's or a quest's work and keeps its place; *Abandon…* lists what would go and what stays, and with your reason declines its quests, discards only trees whose commits exist nowhere else, archives its sessions and shows *What went* with the command that brings a branch back; also `daoris-driver ask --abandon` and `quest abandon`. **A session's closing note keeps what needs you apart** (KNOWUSE1c, KNOWUSE1d, D135): *Needs you* holds only go-aheads, sign-ins and preferences; every reading names its ticket line, document line or code path; and your words quoted second-hand count only as someone's reading.
-- **What you tell a working session reaches it at its next step** (STEER1, D136): on Claude Code's protocol door your words are handed over at once and read before its next model call, shown in the conversation as soon as you send them; other doors hold them to the turn's end and say so. **A go-ahead is asked once** (KNOWUSE1a, D135): a session asks for an act through one tool, a second request for the same act joins the first, and every session on the ask is handed your answer; answer on the ask's *Go-aheads* or with `daoris-driver ask --go-ahead`. **A standing answer per repository** (KNOWUSE1b): `daoris driver standing <repo> "…"`, the repository's page or Ask Daoris keep one answer on this machine that every session there is handed.
-- **An ask's work can be paused and resumed** (PAUSE1b, PAUSE1c, D132): `daoris-driver ask --pause|--resume <id>` and `quest pause|resume <id>` stop what it runs as your own stop and keep each quest's place, tree and strikes, and a paused quest says so before any other reason; a decline that applies only while a quest is open never overrides a teammate's take.
-- **A quest's requirements are your words, and a done answers each** (DRIFT1c, DRIFT1d, D133): a quest from an ask carries requirements, each your words quoted with its check, and words you never said are refused; a session is handed them, a done must say for each whether it was met or departed from (with your words), and a departure holds the next step until `daoris-driver quest accept`. **A conversation that served no quest can be deleted** (SESSUX1f, D126), from its header or row, asking once. **`daoris-driver sessions`** (SESSUX1g) lists sessions by group and stops, finishes, declines, archives or deletes one from a terminal.
+- **Pause, resume and abandon an ask from its page** (PAUSE1d, PAUSE1e, D132): *Pause…* stops an ask's or a quest's work and keeps its place; *Abandon…* lists what would go and what stays, and with your reason declines its quests, discards only trees whose commits exist nowhere else, archives its sessions and shows *What went* with the command that brings a branch back; also `daoris ask abandon` and `quest abandon`. **A session's closing note keeps what needs you apart** (KNOWUSE1c, KNOWUSE1d, D135): *Needs you* holds only go-aheads, sign-ins and preferences; every reading names its ticket line, document line or code path; and your words quoted second-hand count only as someone's reading.
+- **What you tell a working session reaches it at its next step** (STEER1, D136): on Claude Code's protocol door your words are handed over at once and read before its next model call, shown in the conversation as soon as you send them; other doors hold them to the turn's end and say so. **A go-ahead is asked once** (KNOWUSE1a, D135): a session asks for an act through one tool, a second request for the same act joins the first, and every session on the ask is handed your answer; answer on the ask's *Go-aheads* or with `daoris ask go-ahead`. **A standing answer per repository** (KNOWUSE1b): `daoris place standing <repo> "…"`, the repository's page or Ask Daoris keep one answer on this machine that every session there is handed.
+- **An ask's work can be paused and resumed** (PAUSE1b, PAUSE1c, D132): `daoris ask pause|--resume <id>` and `quest pause|resume <id>` stop what it runs as your own stop and keep each quest's place, tree and strikes, and a paused quest says so before any other reason; a decline that applies only while a quest is open never overrides a teammate's take.
+- **A quest's requirements are your words, and a done answers each** (DRIFT1c, DRIFT1d, D133): a quest from an ask carries requirements, each your words quoted with its check, and words you never said are refused; a session is handed them, a done must say for each whether it was met or departed from (with your words), and a departure holds the next step until `daoris quest accept`. **A conversation that served no quest can be deleted** (SESSUX1f, D126), from its header or row, asking once. **`daoris session list`** (SESSUX1g) lists sessions by group and stops, finishes, declines, archives or deletes one from a terminal.
 - **Settings → Agents sets how your accounts are used** (TOOL4g, D130): each account's cool-off with *Try now*, its running sessions and what its agent last said; the machine's list and each workspace's own, with *Use accounts*, *Keep for conversations*, *Switch before the limit* and *Near at*; Settings → Driver sets the cool-off, and a quest waiting for an account says so. **Every session on an ask is handed your words** (DRIFT1b, DRIFT1a2, D133): beneath its quest, newest last, whatever account it starts on; a message you type into a running session is kept on its ask too. **An answered session reads as going on** (ANSWER1c): it moves to *Working* as *answered*, its card shows your answer, and the badge stops counting it.
 - **Answering a session that asked you continues it** (ANSWER1b, D131): the session keeps your answer and, at the driver's next look, its own conversation resumes with your words, one row going on, on the same account and tree. **Everything you say on an ask is kept on the ask** (DRIFT1a, D133): its sentence, each answer and each message to a running session, verbatim, with when and to which session, in the ask's `words`.
 - **What each account has left is read from its agent** (TOOL6c, D130): Claude Code's own report of each window's use and reset, on both doors, is kept per account; an account its agent says is near its limit is passed before it cuts a session off, the weekly pace ranks the rest, and `daoris agent list` and `profile use` show each account's last reading and its age. **An answer says why it starts a new session** (ANSWER1, D131): where the agent's own conversation can be resumed on the same account and tree, the answered session goes on; until the service keeps an answered park open (ANSWER1b), the new session's note names the reason.
 - **Your accounts are used toward the most work** (TOOL6b, D130): by default each start goes to the listed account running the fewest of Daoris's sessions, then one whose weekly reset is within a day, then the one started least recently, so sessions running at once spread over your accounts and one limit cuts off fewer of them; `use order` keeps the one-by-one walk, and each start's first line says which step chose its account. **What needs you holds a parked quest** (SESSUX1i, D126): a quest parked on its failed sessions shows on Overview with a door to its page, and its park is said once. **The knowledge index is read on demand** (WSSETUP14a, D128, D129): `sync` writes `INDEX.md` beside the doctrine with the knowledge and skill tables, and the always-loaded region keeps the rules and a pointer to it, so a repository's knowledge no longer crowds out its rules.
-- **How each account list is used is yours to set** (TOOL6a, D130): `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace W]` keeps, per machine or per workspace, whether its accounts are used toward the most work or in your order, an account kept for conversations, and switching before a limit; `daoris agent list` shows them, and a default or a kept account outside its list is refused. **A Codex limit is read, and a weekday reset** (ACPDATA1, TOOL4k, D125): the protocol door keeps the sentence a refusal carries, so Codex's *usage limit* cools its account, and *resets Mon 12:00am* is read.
+- **How each account list is used is yours to set** (TOOL6a, D130): `daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace W]` keeps, per machine or per workspace, whether its accounts are used toward the most work or in your order, an account kept for conversations, and switching before a limit; `daoris agent list` shows them, and a default or a kept account outside its list is refused. **A Codex limit is read, and a weekday reset** (ACPDATA1, TOOL4k, D125): the protocol door keeps the sentence a refusal carries, so Codex's *usage limit* cools its account, and *resets Mon 12:00am* is read.
 - **Every act on a session is where the session is** (SESSUX1d, D126): Sessions has a pinned page header with the session's primary act, *Stop…* (asking once) and ⋯, and a row's ⋯ offers the same acts, *Open folder* and *Open a terminal here* among them; the quest page's *Try again* also releases a stop. **A limit that resets later today is read as tomorrow's when its hour has passed** (D125 fix): an agent that says *resets 4pm* at 4:12pm keeps that account cooling until tomorrow, instead of two minutes.
 - **A limit moves the next start to your next ready account** (TOOL4f, D125): a start whose default account is cooling runs on the next ready account of your order, and its record says which account it moved from; a carry-on is handed the cut-off session's last plan and last words. **Ended sessions are archived from the list** (SESSUX1e, D126): *Archive* on a row, and *Show archived* and *Archive what ended…* in the list's ⋯.
-- **Your account order is kept, and set from a terminal** (TOOL4e, D125): `daoris agent profile order|ready`, `daoris driver cooloff <minutes>`, and `daoris agent list` shows each cool-off; a sign-in or a key ends that account's cool-off.
+- **Your account order is kept, and set from a terminal** (TOOL4e, D125): `daoris agent account order|ready`, `daoris settings cooloff <minutes>`, and `daoris agent list` shows each cool-off; a sign-in or a key ends that account's cool-off.
 - **An account limit no longer parks your work** (TOOL4a, TOOL4c, TOOL4d, D125). When an agent says its account hit a limit, that account cools off until the reset it named; the refused session is marked with the limit and is not a strike, and new starts on that account wait, said once, instead of being refused into a parked quest.
 - **A whole workspace is set up one repository at a time** (WSSETUP6, D124): `daoris-driver setup --workspace <name>` orders the repositories by what other work touches, publishes one set-up at a time, and pauses after a pilot of two until you resume.
 - **A plugin is switched on and off by 启用 / 停用** (NAME2, D116), a page header's line wraps whole, and *lane* is 泳道.
-- **Daoris's sessions find the install's doctrine tool, and a repository registers itself once its set-up lands** (WSSETUP3, WSSETUP5, D124). Every program Daoris starts has the install's `app/bin/` first on its PATH, so a set-up session runs `daoris` by name; and after Daoris moves a repository's line (a merge landing, *Bring up to date*), once at start, or on `daoris-driver register`, the driver reads `daoris.json` from the line and registers the repository as `connect` would, for its checkout, saying any refusal on the repository's row.
+- **Daoris's sessions find the install's doctrine tool, and a repository registers itself once its set-up lands** (WSSETUP3, WSSETUP5, D124). Every program Daoris starts has the install's `app/bin/` first on its PATH, so a set-up session runs `daoris` by name; and after Daoris moves a repository's line (a merge landing, *Bring up to date*), once at start, or on `daoris repository register`, the driver reads `daoris.json` from the line and registers the repository as `connect` would, for its checkout, saying any refusal on the repository's row.
 - **The install carries its doctrine tool** (WSSETUP2, D124): the CLI as the release packs it, in `app/cli/`, with `daoris` launchers for Command Prompt, PowerShell and Git Bash in `app/bin/`. **An older tool never rewrites a newer lock** (WSSETUP4): `sync` and `upstream` refuse a lock written by a newer canon, naming the version to run, and `status` says so instead of offering a downgrade.
 - **The monitor and a detached session are on the frame** (FRAME1h, D118): the monitor's rail is a list that closes to a strip and is never hidden, and a detached window's console is the output panel, resized and hidden like the main window's.
 - **Agents are told to look before they ask** (WSSETUP10, D124). The canon's `autonomous-development` says a question the task's own material, the repository's documents, code and history, or a neighbour's documents can settle is the agent's to settle, with its evidence kept; only what no source holds and only the person can give reaches them mid-run.
@@ -3596,12 +3593,12 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A plugin's landing waits as long as the plugin may, and the rest of the night's leftovers** (LEFT3).
   Accepting into a plugin's pull request, and handing a branch to one, wait up to six minutes rather than
   thirty seconds. Ask Daoris's *Bring up to date* card says on the card what it could not fetch and what it
-  left apart. `daoris agent profile default <agent> --clear [--workspace <name>]` clears a default from a
+  left apart. `daoris agent account default <agent> --clear [--workspace <name>]` clears a default from a
   terminal, as the screen does. The usage report counts previews opened, and the landing record keeps
   each repository's newest fifty traces of gone branches.
 - **The window says when the driver is up, and a landed session says where its work went** (LOOK2). Right after a start the status bar reads *starting* until the driver is ready, and every screen that asked too early asks again, so Settings no longer shows *no repository* for a moment that lasted. The session list names where a landed session's work went instead of a tree that is gone, and choosing a workspace default on the Agents screen says what sessions there will run as.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
-  name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
+  name an installed plugin (`daoris place landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,
   the plugin is told it on the new `work/land` point, pushes it and opens the pull request for its
   platform, and answers with the pull request's address, which the review offers as a link and
@@ -3611,17 +3608,17 @@ The first version: doctrine that installs, is checked, and flows back.
   says how to push it by hand. Two example plugins are tracked, inert until installed and named:
   `examples/plugins/github-pull-request` (`gh`) and `examples/plugins/azure-devops-pull-request`
   (`az repos`).
-- **A kit to make a plugin with** (PLUG8, D101). `daoris-driver plugins new <id> --point <point>…`,
+- **A kit to make a plugin with** (PLUG8, D101). `daoris plugin new <id> --point <point>…`,
   or *Make a plugin* in Settings → Plugins, writes a plugin's folder into one you name: a manifest, a
   wire script already answering each point in the right shape, a README carrying the wire and the rules,
   and a wire test that needs nothing of Daoris's, so `node --test` is a plugins repository's whole gate.
-  It refuses a folder that holds anything, and installs nothing. `daoris-driver plugins try <folder|id>`,
+  It refuses a folder that holds anything, and installs nothing. `daoris plugin try <folder|id>`,
   or **Try** beside each plugin that speaks, starts a plugin as the driver would, sends the driver's own
   frames, and says each check in its own sentence: a wrong answer, a silent plugin, a crash, a stray
   line on stdout, a plugin that stays after shutdown. The sample frames name no repository, so a
   plugin that pushes first pushes nothing. `daoris plugin new|try` say where the kit is. A JSON line on
   a plugin's stdout that is not a frame no longer ends its wire.
-- **`daoris-driver trees land <session>`** accepts a session's work from a terminal, as the review's
+- **`daoris tree land <session>`** accepts a session's work from a terminal, as the review's
   Accept does, by the workspace's rule; `--plan` says where it would go. A tidied landing no longer
   also says its tree is still there.
 - **Session branches are cleaned up once their work lands** (WSR3, D88). They piled up: one repository
@@ -3630,7 +3627,7 @@ The first version: doctrine that installs, is checked, and flows back.
   lists every session branch with what it holds, and one press removes those that hold nothing or
   whose work has landed, with their trees. Work nothing of the person's holds, uncommitted work, and a
   tree a session still uses are kept, and Projects names a repository whose branches hold such work.
-  `daoris-driver trees clean` is the same list from a terminal, and `--yes` is the press. A landing
+  `daoris tree clean` is the same list from a terminal, and `--yes` is the press. A landing
   rule can say *tidy*, so the tree and branch go as soon as the work lands. A tree whose work is on a
   feature branch is now removed without `--force`.
 - **How work lands is a workspace's rule** (WSR1, D87). Accepting a session's work merged it into
@@ -3643,7 +3640,7 @@ The first version: doctrine that installs, is checked, and flows back.
   (WSR4, above).
 - **A repository's line can be set** (WSR2, D86). The branch its work grows from and lands on was
   only git's guess (`origin/HEAD`, else `main`, else `master`). A person now sets it per repository or
-  as a workspace's default, with `daoris driver line` or Settings → Workspace → *Lines*, and a
+  as a workspace's default, with `daoris place line` or Settings → Workspace → *Lines*, and a
   repository's own setting wins. A session's tree, the merge, a tree's removal, sync's feed and a
   chain's next step all read it from one place. Projects shows each repository's line and what said
   so. A line only the remote has is grown from `origin/`, and one that is nowhere is refused, naming
@@ -3700,7 +3697,7 @@ The first version: doctrine that installs, is checked, and flows back.
   session records all answer within one workspace and never across one — so a machine can hold a game
   family and a work family without either seeing the other. A machine that never names one runs exactly
   as before: everything lands in `default`, silently.
-- **Membership is wiring, like a git remote — never a tracked declaration.** `daoris connect
+- **Membership is wiring, like a git remote — never a tracked declaration.** `daoris repository connect
   --workspace <name>` records it in this machine's registry and **writes nothing into the repository**,
   so a fork, a mirror and a second machine may each wire the same repository differently. Omitting the
   flag preserves whatever wiring already existed, because an ordinary `connect` runs on every sync tick
@@ -3754,8 +3751,8 @@ The first version: doctrine that installs, is checked, and flows back.
   rewrites a copy whose declaration changed, and removes a copy the circle no longer lists. A joined
   checkout that leaves a circle owes that circle a retire: removed, moved to another circle, or no
   longer joined. The store records the retire when the row changes, and the next pass carries it.
-- **Sync when asked, and see where a circle stands** (SYNC6a). `daoris-driver sync` runs the tick's
-  own pass now, for every circle with a remote or the one `--workspace` names. `daoris-driver sync
+- **Sync when asked, and see where a circle stands** (SYNC6a). `daoris remote sync` runs the tick's
+  own pass now, for every circle with a remote or the one `--workspace` names. `daoris remote sync
   status` prints where each circle stands on this machine: operations not yet pushed, quests left
   behind, quests in conflict, and when it last reached its remote. A pass that could not reach the
   remote keeps that time and names the wall as the last try. The status reads the machine's own
@@ -3764,7 +3761,7 @@ The first version: doctrine that installs, is checked, and flows back.
   control: ↑ for work waiting to go up, ↓ for quests left behind, ⚠ for quests in conflict, `synced`
   when level, and `unreachable` when the last try hit a wall. Pressing it shows when the circle last
   synced, the wall in the host's own words, and the quests in conflict, each of which opens in its
-  drawer. The desktop adds *Sync now*, the same pass `daoris-driver sync` runs. A browser on this
+  drawer. The desktop adds *Sync now*, the same pass `daoris remote sync` runs. A browser on this
   machine reads the same standing and has no *Sync now*. A quest's drawer now shows each move that
   lost the race to the remote, with that session's note.
 - **Every wired circle syncs, and a wall no longer hides itself.** A circle where nothing on this
@@ -3773,7 +3770,7 @@ The first version: doctrine that installs, is checked, and flows back.
   is where the try is recorded, so the status bar can no longer say `synced` while the sync is
   failing.
 - **A conflict can be dismissed, everywhere** (SYNC6c). The quest's drawer has *Dismiss* beside each
-  move that lost the race, and `daoris-driver sync dismiss <quest>` dismisses every one a quest
+  move that lost the race, and `daoris remote sync dismiss <quest>` dismisses every one a quest
   carries. A dismissal is an operation like a take, so the next pass carries it and every machine
   stops showing the conflict. It moves no status, and two people dismissing one conflict make one
   dismissal.
@@ -3802,7 +3799,7 @@ The first version: doctrine that installs, is checked, and flows back.
   The adapter seam grew one honest capability — an adapter that has not been wired for turn-taking
   says so rather than spawning something that will never answer.
 - **Two doors, one conversation.** The desktop has a chat drawer over the live console; a machine with
-  no screen has `daoris-driver chat --repository <name>`, where stdin is the person and stdout is the
+  no screen has `daoris chat --repository <name>`, where stdin is the person and stdout is the
   session. Same runner, same lock, same record — what stays desktop-only is the *stream*, not the
   capability.
 - **Daoris manages the harnesses, and never a credential.** It finds the agent tools on the machine,
@@ -3826,7 +3823,7 @@ The first version: doctrine that installs, is checked, and flows back.
   to run — not a bare not-found. The quest stays open and nobody's, and doing what the sentence says
   releases it on the very next tick, with nothing restarted.
 - **Two more commands, and both surfaces do the same thing.** `daoris agent list|install|update|
-  login|profile …` and `daoris driver list|drive|hold|resume|cap|adapter` set all of it from a
+  login|profile …` and `daoris place list|drive|hold|resume|cap|adapter` set all of it from a
   terminal, because a server with no screen is still a machine; the desktop's roster edits the same
   files. Neither reaches a network.
 - **Fixed: every refusal the desktop made reached you as a blank failure.** When the app could not do
@@ -3845,9 +3842,9 @@ The first version: doctrine that installs, is checked, and flows back.
   governs as much as what it says, and nobody reviews a silence. Now it is an explicit list — name,
   workspace, declaration, and the checkout path, machine-locally. The index reads the registered paths,
   so a folder nobody added contributes nothing.
-- **Two new commands, `retire` and `import`.** `daoris retire [name]` takes a repository off this
+- **Two new commands, `retire` and `import`.** `daoris repository retire [name]` takes a repository off this
   machine's registry and **nothing else** — no file, no history, no doctrine — and says so; retiring
-  something already retired is an answer, not a failure. `daoris import [folder]` is the old folder
+  something already retired is an answer, not a failure. `daoris repository import [folder]` is the old folder
   scan, demoted to a verb a person runs: safe to re-run, because it states no workspace and unstated
   wiring is preserved.
 - **A store that has never been managed imports its root once, and says so.** Without it, a machine
@@ -3882,7 +3879,7 @@ The first version: doctrine that installs, is checked, and flows back.
   request, keeping the synced files as local forks — the adoption remains the proof of the collision,
   twin and budget paths, and re-adoption is a decision that stays with that repository.
 - The deployable service was driven live, not only tested: an unauthorized write answered 401,
-  `daoris connect` registered through the real endpoint, the host was killed and restarted with the
+  `daoris repository connect` registered through the real endpoint, the host was killed and restarted with the
   pushed registration and a taken quest both still served, and publishing to a non-adopter was refused
   naming who is addressable.
 - **A deployment rehearsal** (`npm run rehearse:deploy`) that publishes the desktop shell to a folder

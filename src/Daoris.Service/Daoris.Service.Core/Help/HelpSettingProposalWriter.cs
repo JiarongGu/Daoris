@@ -4,7 +4,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `strikes`, `retry`, `timeout`, `notify`, `cap`, `cooloff`, `keep` or `git-use`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `keep` or `git-use`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
 /// <param name="Workspace">The workspace, for a line, a landing, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent, `set-aside 30`…</param>
@@ -22,21 +22,10 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     public static readonly IReadOnlyList<string> Doors =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "strikes", "retry", "timeout", "notify", "cap", "cooloff", "keep", "git-use",
+        "helpers", "commits", "retry", "notify", "cap", "cooloff", "keep", "git-use",
     ];
 
-    /// <summary>The doors that set a role's agents before the role door was the one (ONEWAY1a), each refused with <see cref="StaffingRetired"/>.</summary>
-    private static readonly IReadOnlyList<string> Retired = ["adapter", "intake", "helper"];
-
-    /// <summary>
-    /// What a retired staffing door answers (ONEWAY1a, the oneway design §2 S1): the twin of the driver's
-    /// <c>HelpSettingProposals.StaffingRetired</c>, word for word.
-    /// </summary>
-    public const string StaffingRetired =
-        "a role's agents are no longer a setting: propose them through `role_propose` (the role door), as Agents → Roles and "
-        + "`daoris role set` set them; nothing was planned.";
-
-    /// <summary>The flags a review's words may carry, as <c>daoris driver review</c> takes them (REVIEWENV1a).</summary>
+    /// <summary>The flags a review's words may carry, as <c>daoris place review</c> takes them (REVIEWENV1a).</summary>
     private static readonly IReadOnlyList<string> ReviewFlags =
         ["--kind", "--procedure", "--address", "--run", "--drop", "--clear", "--required", "--not-required"];
 
@@ -47,10 +36,10 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
         "--clear",
     ];
 
-    /// <summary>The flags a helpers rule's words may carry, as <c>daoris driver helpers</c> takes them (DOORS1a).</summary>
+    /// <summary>The flags a helpers rule's words may carry, as <c>daoris place helpers</c> takes them (DOORS1a).</summary>
     private static readonly IReadOnlyList<string> HelpersFlags = ["--mode", "--agents", "--clear"];
 
-    /// <summary>The flags a commit rule's words may carry, as <c>daoris driver commits</c> takes them (DOORS1a).</summary>
+    /// <summary>The flags a commit rule's words may carry, as <c>daoris place commits</c> takes them (DOORS1a).</summary>
     private static readonly IReadOnlyList<string> CommitsFlags = ["--mode", "--convention", "--no-convention", "--clear"];
 
     /// <summary>The most characters a standing answer holds — the driver's <c>DriverConfig.StandingLimit</c>, a deliberate copy.</summary>
@@ -66,7 +55,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     public static string? Refusal(SettingChange change)
     {
         var door = change.Door;
-        if (Retired.Contains(door)) return StaffingRetired;
         if (!Doors.Contains(door)) return $"`{door}` is not a door — one of {string.Join(", ", Doors.Select(d => $"`{d}`"))}.";
 
         var value = change.Value?.Trim();
@@ -91,26 +79,21 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                       + "installed plugin that pushes it and opens the pull request, `--auto-accept` for a quest's done to land it "
                       + "with no press, `--key <shape>` for the shape `{ticket}` is found by, and `--squash` for the pull request's "
                       + "branch as one commit), or `--clear`.";
-            case "strikes":
-                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out _) ? null : "`strikes` is a whole number, 0 or more.";
             case "retry":
-                // HELP10: the quest by id, as `daoris driver retry <quest>` takes it; whether it is parked, or held by the
+                // HELP10: the quest by id, as `daoris quest retry <quest>` takes it; whether it is parked, or held by the
                 // person's stop (SESSUX1b), is the driver's to judge, so the box takes either id unchanged.
                 return !named || circle || !string.IsNullOrWhiteSpace(value) || Word(change.Target!.Trim(), "a quest") is not null
                     ? "`retry` names the quest its failed sessions parked or the person's stop holds, by id, as the target — and nothing else."
                     : null;
-            // SESSWATCH1a (D200): retired, refused whatever it is given, for a helper reading an older room.
-            case "timeout":
-                return SettingsBox.TimeoutRetired;
             case "across":
                 return AcrossShape(named, circle, value);
             case "standing":
-                // KNOWUSE1b (D135 §3): one repository's standing answer, in the person's words, as `daoris driver standing` takes it.
+                // KNOWUSE1b (D135 §3): one repository's standing answer, in the person's words, as `daoris place standing` takes it.
                 if (!named || circle) return "a standing answer names the repository it holds for, as the target, and no workspace.";
                 if (string.IsNullOrWhiteSpace(value)) return "`standing` is set to the person's words, or `--clear`.";
                 return value.Length > StandingLimit ? $"a standing answer is at most {StandingLimit} characters of the person's words." : null;
             case "language":
-                // LANG1c2 (D142 point 7): the work's session language, as `daoris driver language` takes it — a code of the
+                // LANG1c2 (D142 point 7): the work's session language, as `daoris place language` takes it — a code of the
                 // table in any case, as the driver reads one, or `--clear`; whether the repository or the workspace is one
                 // this machine holds is the driver's to judge.
                 if (named == circle) return "a session language is set for a repository or a workspace — name exactly one.";
@@ -118,7 +101,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                     ? null
                     : $"`language` is set to {string.Join(" or ", Languages.Select(code => $"`{code}`"))}, or `--clear`.";
             case "review":
-                // REVIEWENV1a (D154 point 2): where work is shown to the person before it lands, as `daoris driver review` takes
+                // REVIEWENV1a (D154 point 2): where work is shown to the person before it lands, as `daoris place review` takes
                 // its words; the rule itself, the registry and the procedure are the driver's to judge, in the twins' words.
                 if (named == circle) return "a review rule is set for a repository or a workspace — name exactly one.";
                 // A quoted run, a command or a path with spaces, is one word whatever it holds.
@@ -135,14 +118,14 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                       + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear`."
                     : null;
             case "helpers":
-                // DOORS1a (D163 point 3): what a helper an agent asks for does, as `daoris driver helpers` takes its words; the rule,
+                // DOORS1a (D163 point 3): what a helper an agent asks for does, as `daoris place helpers` takes its words; the rule,
                 // its agents and the registry are the driver's to judge, in the twins' words.
                 if (named == circle) return "a helpers rule is set for a repository or a workspace — name exactly one.";
                 return string.IsNullOrWhiteSpace(value) || Flags(value).Any(word => !HelpersFlags.Contains(word))
                     ? "`helpers` is `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear`."
                     : null;
             case "commits":
-                // DOORS1a (D164's amendment point 1): how work is committed, as `daoris driver commits` takes its words, a quoted
+                // DOORS1a (D164's amendment point 1): how work is committed, as `daoris place commits` takes its words, a quoted
                 // convention one word whatever it holds; the rule and the registry are the driver's to judge.
                 if (named == circle) return "a commit rule is set for a repository or a workspace — name exactly one.";
                 return string.IsNullOrWhiteSpace(value) || Flags(value).Any(word => !CommitsFlags.Contains(word))
@@ -153,13 +136,13 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                     ? null
                     : "`cap` is a whole number, 1 or more: how many sessions run at once.";
             case "cooloff":
-                // TOOL4l-b (D125 §6): the default cool-off, as `daoris driver cooloff` takes it; under a minute would spin.
+                // TOOL4l-b (D125 §6): the default cool-off, as `daoris settings cooloff` takes it; under a minute would spin.
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1
                     ? null
                     : "`cooloff` is a whole number of minutes, 1 or more: how long an account cools when its limit names no time.";
             case "keep":
             {
-                // KEEP1d (D195 point 2): one kind's keep rule, as `daoris driver keep <kind> <rule>` takes it; its bounds are the
+                // KEEP1d (D195 point 2): one kind's keep rule, as `daoris settings keep <kind> <rule>` takes it; its bounds are the
                 // driver's to judge, which knows them. History's age since KEEP1g, and the free-space floor since KEEP1f, applied by the
                 // person's press as every door is.
                 var words = (value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -170,7 +153,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
             }
             case "git-use":
             {
-                // GITAUTH1e (D198 point 15): a repository's remote or a workspace's host pointed at an identity, as `daoris-driver git use`
+                // GITAUTH1e (D198 point 15): a repository's remote or a workspace's host pointed at an identity, as `daoris git use`
                 // takes it; whether the identity exists, its host, and never `own`, are the driver's to judge.
                 if (named == circle) return "a git identity is chosen for a repository's remote or a workspace's host — name exactly one.";
                 var words = (value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -190,7 +173,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
             .Where(word => word.StartsWith("--", StringComparison.Ordinal));
 
     /// <summary>
-    /// <c>across</c>'s shape (HELP9, D107), as <c>daoris driver across</c> takes its words: <c>read on|off|--clear</c>
+    /// <c>across</c>'s shape (HELP9, D107), as <c>daoris place across</c> takes its words: <c>read on|off|--clear</c>
     /// for a repository or a workspace, or <c>write-to &lt;other&gt; [--clear]</c> from a repository.
     /// </summary>
     private static string? AcrossShape(bool named, bool circle, string? value)

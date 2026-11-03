@@ -88,7 +88,7 @@ public sealed record RegistrationFollowed(
     string Repository, string Outcome, string Said, string? Line = null, string? Commit = null, bool Sent = false)
 {
     /// <summary>
-    /// The answer <c>REGISTRY_REFRESH</c> gives for this repository (RPCOPEN1), which <c>daoris-driver register</c> reads back into the
+    /// The answer <c>REGISTRY_REFRESH</c> gives for this repository (RPCOPEN1), which <c>daoris repository register</c> reads back into the
     /// record it prints from (<see cref="Read"/>): beside the page's fields, <paramref name="refresh"/> where the index was not read again.
     /// </summary>
     public object ToWire(string? refresh) => new

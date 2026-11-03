@@ -23,7 +23,7 @@ describe("a repository's landed route on its Setup", () => {
     expect(screen.getByText('Verification of the work that lands')).toBeInTheDocument();
     expect(screen.getByText(/^Verify the line, as engine chooses\./)).toHaveTextContent(
       "Verify the line, as engine chooses. Its gates run unasked as you accepted them, at blob 3b18e51 on main's tip aa11bb2.");
-    expect(screen.getByText(code('daoris driver workflow use <id> --repository engine --landed'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris workflow use <id> --repository engine --landed'))).toBeInTheDocument();
   });
 
   it("chooses among the verification workflows saved here, no verification, or the workspace's again, and the choice goes out", async () => {
@@ -42,7 +42,7 @@ describe("a repository's landed route on its Setup", () => {
     render(<LandedRoute repository="engine" workspace="aurora" start={NO_VERIFICATION} onChoose={vi.fn()} />);
 
     expect(screen.getByText(/No verification workflow is saved here/)).toHaveTextContent(
-      'No verification workflow is saved here: daoris driver workflow import <file> makes one from a file marked verification.');
+      'No verification workflow is saved here: daoris workflow import <file> makes one from a file marked verification.');
     expect(screen.getByRole('button', { name: 'No verification here' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('button', { name: "Follow aurora's" })).not.toBeInTheDocument();
   });

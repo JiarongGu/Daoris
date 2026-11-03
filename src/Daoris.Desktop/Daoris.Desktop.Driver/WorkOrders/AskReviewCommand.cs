@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record AskReviewComposed(string? Choice, string? Words);
 
-/// <summary>What <c>daoris-driver ask --set-review</c> was asked: the ask, the choice, and the person's words.</summary>
+/// <summary>What <c>daoris ask review</c> was asked: the ask, the choice, and the person's words.</summary>
 /// <param name="Choice"><c>off</c>, <c>on</c> or an environment's name, as the service spells it.</param>
 public sealed record AskReviewAsk(string Ask, string Choice, string? Words);
 
@@ -16,8 +16,8 @@ public sealed record AskReviewWorld(ServiceClient Service, Func<DriverConfig> Co
 /// <summary>
 /// The ask's review choice at a terminal (REVIEWENV1j, D154 point 3; the review environment design §1.4–§1.5, D50), the twin of the
 /// ask composer's and the ask page's (REVIEWENV1g):
-/// <c>daoris-driver ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]</c> with a new ask, and
-/// <c>daoris-driver ask --set-review &lt;id&gt; on|&lt;environment&gt;|off ["…"]</c> on one, which applies an intake's proposal too.
+/// <c>daoris ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]</c> with a new ask, and
+/// <c>daoris ask review &lt;id&gt; on|&lt;environment&gt;|off ["…"]</c> on one, which applies an intake's proposal too.
 /// </summary>
 /// <remarks>
 /// <para><b>The doors the page presses</b>: a new ask's <c>POST /api/asks</c> with <c>review</c> and <c>reviewWords</c>, and the ask's
@@ -114,7 +114,7 @@ public static class AskReviewCommand
         if (declared.Contains(choice)) return null;
         return declared.Count == 0
             ? $"No review environment is declared in workspace `{circle}`, so nothing of its work can be shown in `{choice}`: "
-              + $"`daoris driver review <repository>|--workspace {circle} {choice} --kind local|deployed --procedure <path>` declares one. "
+              + $"`daoris place review <repository>|--workspace {circle} {choice} --kind local|deployed --procedure <path>` declares one. "
               + "Nothing was kept."
             : $"No review environment `{choice}` is declared in workspace `{circle}`: its rules declare {ReviewDoorWords.Either(declared)}. "
               + "Nothing was kept.";

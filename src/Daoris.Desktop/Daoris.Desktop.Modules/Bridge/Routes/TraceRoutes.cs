@@ -5,7 +5,7 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How a change came to be, the page's `bridge/trace.ts` (TRACE1b, D143, D50): the screen's door to `daoris-driver trace`,
+/// How a change came to be, the page's `bridge/trace.ts` (TRACE1b, D143, D50): the screen's door to `daoris trace`,
 /// one read from a session or a quest back to its ask through the stores that keep each link.
 /// </summary>
 public sealed class TraceRoutes(DriverLoop loop)

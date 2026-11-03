@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver tool</c> (PUSH1f2c, D194, the alone-path design §1.2, §1.4, §2): a person's press acting alone is refused from a
+/// <c>daoris tool</c> (PUSH1f2c, D194, the alone-path design §1.2, §1.4, §2): a person's press acting alone is refused from a
 /// session's terminal, an open look is not; a download holds nothing while it fetches and publishes under the home's lease, waited for
 /// and never refused, said once its hold has lasted thirty seconds, taken the moment it is let go, run beside an instance that started
 /// meanwhile, and stopped by the person's Ctrl+C with its staging gone. Today's words are <see cref="ToolsTextTests"/>'.
@@ -171,7 +171,7 @@ public sealed class ToolsCommandTests : IDisposable
     public async Task A_publication_waits_on_a_held_lease_says_so_once_and_takes_it_when_let_go()
     {
         Offered();
-        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         Assert.NotNull(held);
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         // The clock moves past the thirty seconds once the wait began, so the hold is said; it is said once however long it lasts.
@@ -192,7 +192,7 @@ public sealed class ToolsCommandTests : IDisposable
         Assert.Empty(Stagings());
         Assert.Equal("2.62.0", Tools.Read(Home).Entries["gh"].Version);
         var told = _error.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(["daoris: waiting for a terminal's `daoris-driver trees land`"], told.Select(line => line[..line.IndexOf(" (pid", StringComparison.Ordinal)]));
+        Assert.Equal(["daoris: waiting for a terminal's `daoris tree land`"], told.Select(line => line[..line.IndexOf(" (pid", StringComparison.Ordinal)]));
         Assert.False(File.Exists(HomeLease.PathIn(Home)), "the publication let the home go");
     }
 
@@ -231,7 +231,7 @@ public sealed class ToolsCommandTests : IDisposable
     public async Task A_Ctrl_C_while_the_publication_waits_takes_the_staging_and_switches_nothing()
     {
         Offered();
-        using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var stop = new CancellationTokenSource();
         var run = ToolsCommand.RunAsync(["use", "gh", "managed"], World(waiting: waiting.SetResult), stop.Token);

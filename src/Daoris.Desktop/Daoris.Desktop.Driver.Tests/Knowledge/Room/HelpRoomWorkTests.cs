@@ -33,7 +33,7 @@ public sealed class HelpRoomWorkTests
         var room = HelpRoom.Render(HelpRoomFixture.Machine with { Work = [Waiting("u1"), Ended("u2")], WorkUnread = ["`engine` has no checkout here, so its recovery refs were not read"] });
 
         Assert.Contains("## Where work has got to", room);
-        Assert.Contains("daoris-driver work state", room);
+        Assert.Contains("daoris work state", room);
         Assert.Contains("end       reached: every commit of it is on `main`", room);
         Assert.Contains("cleanup   pending:", room);
         Assert.Contains("blocked  tree `s1`: a session still holds this tree", room);

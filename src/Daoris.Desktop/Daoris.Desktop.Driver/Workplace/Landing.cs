@@ -344,7 +344,7 @@ public static class LandingAdvance
             {
                 return new TreeLanding(false,
                     $"`{name}`'s work was integrated into `{where}` by Daoris, so Daoris does not move it on: commits added to it now "
-                    + "would land on a branch the line already holds. Bring the repository up to date (`daoris-driver trees sync`, or "
+                    + "would land on a branch the line already holds. Bring the repository up to date (`daoris tree sync`, or "
                     + "Bring up to date on the page), which replays this session's own commits onto the line and removes that branch; "
                     + $"then Accept lands this work on a fresh `{name}`, which Daoris integrates into the line in turn.")
                 { Refusal = AutoLandingCode.Completed };
@@ -352,7 +352,7 @@ public static class LandingAdvance
 
             return new TreeLanding(false,
                 $"`{name}`'s work already reads on `{where}` — its pull request was merged — so Daoris does not move it on: commits "
-                + "added to it now would ride no pull request. Bring the repository up to date (`daoris-driver trees sync`, or "
+                + "added to it now would ride no pull request. Bring the repository up to date (`daoris tree sync`, or "
                 + "Bring up to date on the page), which replays this session's own commits onto the line and removes that branch; "
                 + $"then Accept lands this work on a fresh `{name}`, and its plugin opens a new pull request.")
             { Refusal = AutoLandingCode.Completed };
@@ -361,7 +361,7 @@ public static class LandingAdvance
         if (!facts.Descends)
         {
             return Exists($"`{sessionBranch}` does not grow from `{name}`, so moving it on would not be a fast-forward, and Daoris "
-                + "merges nothing into a branch. Land this work by hand, or change the pattern with `daoris driver landing`.");
+                + "merges nothing into a branch. Land this work by hand, or change the pattern with `daoris place landing`.");
         }
 
         return facts.Ahead > 0
@@ -386,7 +386,7 @@ public static class LandingAdvance
         if (recorded is null)
         {
             return Exists($"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it did not make. "
-                + "Rename or delete it there, or change the pattern with `daoris driver landing`.");
+                + "Rename or delete it there, or change the pattern with `daoris place landing`.");
         }
 
         if (!string.Equals(tip, recorded.Tip, StringComparison.OrdinalIgnoreCase))
@@ -413,7 +413,7 @@ public static class LandingAdvance
                 $"`{name}`'s pull request {(completed ? "completed" : "was abandoned")}{answered}, so Daoris does not move it on: "
                 + "commits added to it now would ride no pull request. "
                 + (completed
-                    ? "Bring the repository up to date (`daoris-driver trees sync`, or Bring up to date on the page), which replays "
+                    ? "Bring the repository up to date (`daoris tree sync`, or Bring up to date on the page), which replays "
                       + "this session's own commits onto the line and removes that branch; "
                     : $"Delete or rename `{name}` once you no longer want its work; ")
                 + $"then Accept lands this work on a fresh `{name}`, and its plugin opens a new pull request.")
@@ -588,7 +588,7 @@ public static class LandingRules
 
     /// <summary>
     /// A landing rule set, or cleared with null (D100): its plugin, where it names one and its shape holds, asked of the plugins
-    /// <paramref name="catalog"/> holds before anything is written, as <c>daoris driver landing</c> asks it.
+    /// <paramref name="catalog"/> holds before anything is written, as <c>daoris place landing</c> asks it.
     /// </summary>
     /// <exception cref="DriverException">The rule's shape, or its plugin cannot land work here; nothing was written.</exception>
     public static DriverConfig Put(DriverConfig config, string? repository, string? workspace, LandingRule? rule, IWorkplacePluginCatalog catalog)
@@ -636,7 +636,7 @@ public static class LandingRules
     /// <summary>
     /// What a door says as <i>Accept automatically</i> is set (LAND2a, D145 point 5, design §6): the switch is the
     /// person's standing say-so for a push with no press, so it is said where it is given. With no plugin, the warning
-    /// that nothing leaves the machine. <c>daoris-driver driver landing</c> says these words; the page says them in its own catalogue.
+    /// that nothing leaves the machine. <c>daoris place landing</c> says these words; the page says them in its own catalogue.
     /// </summary>
     public static string AutoAcceptSays(string? plugin, bool merge = false) => merge
         ? "when a quest here is done, its work is merged into its line with no press. Switch it off to accept each one yourself."
@@ -647,7 +647,7 @@ public static class LandingRules
           + "request, so each done's branch waits here for you to push it. Switch it off to accept each one yourself.";
 
     /// <summary>
-    /// What finds a branch's ticket (PROCESS1b-i), said as a rule is set: by <c>daoris-driver driver landing</c> and Ask Daoris's card
+    /// What finds a branch's ticket (PROCESS1b-i), said as a rule is set: by <c>daoris place landing</c> and Ask Daoris's card
     /// (TWINWORDS1, <c>landing-says.json</c>'s <c>ticket</c>).
     /// </summary>
     public static string TicketSays(string? key) =>

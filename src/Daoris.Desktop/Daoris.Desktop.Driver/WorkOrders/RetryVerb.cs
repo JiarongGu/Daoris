@@ -6,7 +6,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver retry</c> (RETRY1, SESSUX1b; FOUNDATION1 mod-iii): the work orders' own verb, the settings' port
+/// <c>daoris quest retry</c> (RETRY1, SESSUX1b; FOUNDATION1 mod-iii): the work orders' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the judgement of a quest's <i>Try again</i> (<see cref="QuestRetry"/>). The planner's verdict on
 /// each quest, over a fresh snapshot of the service this machine's driver watches, is handed it by Loop (<paramref name="readVerdicts"/>).
 /// </summary>
@@ -58,7 +58,7 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
             if (string.IsNullOrEmpty(session) || session.StartsWith("--", StringComparison.Ordinal))
             {
                 throw new ChoiceWords("`--session` needs the session your stop ended — the quest's *Sitting* names it: "
-                    + "`daoris driver retry <quest> --session <id>`.");
+                    + "`daoris quest retry <quest> --session <id>`.");
             }
 
             if (args.Contains("--at"))
@@ -102,7 +102,7 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
             {
                 var mark = before.ForgivenAt(quest);
                 throw new ChoiceWords($"cannot count the failures of `#{quest}`: this machine's session records could not be read — "
-                    + $"{unread.Message.TrimEnd('.')}.\n  Nothing was written. Give the count yourself: `daoris driver retry {quest} --at <n>`, with n the "
+                    + $"{unread.Message.TrimEnd('.')}.\n  Nothing was written. Give the count yourself: `daoris quest retry {quest} --at <n>`, with n the "
                     + $"failures its *Sitting* names{(mark > 0 ? $" plus {mark}, the mark its last retry left" : "")}.\n"
                     + "  The quest's page's *Try again* counts them for you.");
             }

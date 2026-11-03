@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A repository's integration from a terminal (INTEGRATE1h): <c>daoris-driver integrate &lt;repository&gt;</c> reads the record. The words are the
+/// A repository's integration from a terminal (INTEGRATE1h): <c>daoris integrate &lt;repository&gt;</c> reads the record. The words are the
 /// library's (<see cref="IntegrateCommand"/>); an act is the owner's card in the running window, pressed over the pipe and waited on.
 /// </summary>
 internal static class IntegrateConsole
@@ -31,7 +31,7 @@ internal static class IntegrateConsole
 
         if (DaorisHome.Resolve() is not { } home)
         {
-            Console.Error.WriteLine("integrate: the integration is kept under Daoris's home, and none is named here: run the installed daoris-driver, or name the home with DAORIS_HOME.");
+            Console.Error.WriteLine("integrate: the integration is kept under Daoris's home, and none is named here: run the installed daoris, or name the home with DAORIS_HOME.");
             return 2;
         }
 

@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import { CommitField, type CommitRule, commitRowSays, commitSays, commitSummary, commitToast } from './Commits';
 
 // DOORS1b (D164's amendment points 1 and 3): how a repository's work is committed, set on its Setup's *Line and landing* and on
-// a workspace's Defaults as `daoris driver commits` sets it from a terminal (D50). Each mode's sentence is the terminal's
+// a workspace's Defaults as `daoris place commits` sets it from a terminal (D50). Each mode's sentence is the terminal's
 // (`driver commits`' words in the CLI's `driverconfig.ts`), the person's convention is quoted as written, and the field sends
 // the twins' edit, which the driver judges.
 
@@ -78,9 +78,9 @@ describe('what a commit rule says', () => {
       expect(english).toMatch(/--mode as-you-go\|ask\|at-end --convention "…"\|--clear`$/);
     }
     expect(i18n.getFixedT('en')('settings.commits.twin.repository', { repository: 'engine' }))
-      .toBe('`daoris driver commits engine --mode as-you-go|ask|at-end --convention "…"|--clear`');
+      .toBe('`daoris place commits engine --mode as-you-go|ask|at-end --convention "…"|--clear`');
     expect(i18n.getFixedT('en')('settings.commits.twin.workspace', { workspace: 'aurora' }))
-      .toBe('`daoris driver commits --workspace aurora --mode as-you-go|ask|at-end --convention "…"|--clear`');
+      .toBe('`daoris place commits --workspace aurora --mode as-you-go|ask|at-end --convention "…"|--clear`');
   });
 });
 

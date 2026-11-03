@@ -22,20 +22,7 @@ public sealed class ConversionPartsTests : IDisposable
 
     private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
-    /// <summary>The registry the workflow part reads: none until <see cref="SeedWorkflows"/>, so a home without one holds nothing old for it.</summary>
-    private RepoView[] Registry { get; set; } = [];
-
-    /// <summary>One old workflow shape: a place on Current with its own merge rule, so the workflow part saves a default and removes the rule.</summary>
-    private void SeedWorkflows()
-    {
-        Directory.CreateDirectory(_home);
-        Registry = [new("plain", true, "/f/plain", "default")];
-        (DriverConfig.Empty with { Landings = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase) { ["plain"] = new(LandingForm.Merge) } }).Save(ConfigPath);
-    }
-
-    private ConvertDoors Doors(params IConversionPart[] others) => new(
-        _home, _ => Task.FromResult(new ConvertWorld(DriverConfig.Load(ConfigPath), _home, Registry, WorkflowPorts.Store(_home), [])),
-        edit => edit(DriverConfig.Load(ConfigPath)).Save(ConfigPath), () => DriverConfig.Load(ConfigPath), () => new HashSet<string>())
+    private ConvertDoors Doors(params IConversionPart[] others) => new(_home, edit => edit(DriverConfig.Load(ConfigPath)).Save(ConfigPath), () => DriverConfig.Load(ConfigPath))
     {
         Others = others, Build = "0.42.0", Answered = Answered,
     };
@@ -119,27 +106,9 @@ public sealed class ConversionPartsTests : IDisposable
     }
 
     [Fact]
-    public async Task ONEWAY1ae_the_workflow_part_alone_keeps_its_own_digest_and_a_planted_part_joins_the_plan()
+    public async Task ONEWAY1ae_a_planted_part_is_done_in_one_receipt_stamped_with_its_build()
     {
-        SeedWorkflows();
-        var alone = await ConversionApplies.PlanAsync(Doors(), new ConversionChoices());
-        var settings = Plant();
-
-        var both = await ConversionApplies.PlanAsync(Doors(settings), new ConversionChoices());
-
-        Assert.Equal(alone.Of(ConversionParts.Workflows)!.Digest, alone.Digest);
-        Assert.Equal(["settings", "workflows"], both.Parts.Select(each => each.Part));
-        Assert.NotEqual(alone.Digest, both.Digest);
-        Assert.Equal(alone.Of(ConversionParts.Workflows)!.Digest, both.Of(ConversionParts.Workflows)!.Digest);
-        Assert.Equal(both.Parts.Sum(each => each.Census.Count), both.Count);
-        Assert.False(both.Ended);
-        Assert.Contains(ConvertCommand.Lines(both), line => line.Contains("settings 1", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public async Task ONEWAY1ae_a_planted_part_is_done_beside_the_workflows_in_one_receipt_stamped_with_its_build()
-    {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var settings = Plant();
         var plan = await ConversionApplies.PlanAsync(Doors(settings), new ConversionChoices());
 
@@ -147,10 +116,9 @@ public sealed class ConversionPartsTests : IDisposable
 
         Assert.True(result.Done, result.Message);
         Assert.Equal("new", settings.Value);
-        Assert.Equal("merge-after-accept", DriverConfig.Load(ConfigPath).DefaultWorkflow);
         var receipt = new HomeReceipts(_home).Read(plan.Digest)!;
         Assert.Equal("0.42.0", receipt.Build);
-        Assert.Equal([("settings", ConversionOutcomes.Done), ("workflows", ConversionOutcomes.Done)], receipt.Parts.Select(each => (each.Part, each.Outcome)));
+        Assert.Equal([("settings", ConversionOutcomes.Done)], receipt.Parts.Select(each => (each.Part, each.Outcome)));
         Assert.True(ConversionReceipts.Stands(_home));
         Assert.Equal(plan.Of("settings")!.Digest, receipt.Of("settings")!.Digest);
     }
@@ -184,7 +152,7 @@ public sealed class ConversionPartsTests : IDisposable
     [Fact]
     public async Task ONEWAY1ae_a_part_that_moved_since_the_plan_refuses_the_whole_press_with_nothing_written()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var settings = Plant();
         var plan = await ConversionApplies.PlanAsync(Doors(settings), new ConversionChoices());
         settings.Value = "old, edited";
@@ -194,13 +162,12 @@ public sealed class ConversionPartsTests : IDisposable
         Assert.Equal(ConversionRefusals.Moved, result.Refused);
         Assert.NotNull(result.Plan);
         Assert.Empty(new HomeReceipts(_home).All());
-        Assert.Null(DriverConfig.Load(ConfigPath).DefaultWorkflow);
     }
 
     [Fact]
     public async Task ONEWAY1ae_a_part_that_does_not_answer_at_apply_is_written_failed_with_its_pressed_digest_and_retried_in_its_receipt()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var quests = Plant("quests");
         var plan = await ConversionApplies.PlanAsync(Doors(quests), new ConversionChoices());
         quests.Unread = true;
@@ -211,8 +178,6 @@ public sealed class ConversionPartsTests : IDisposable
         var entry = new HomeReceipts(_home).Read(plan.Digest)!.Of("quests")!;
         Assert.Equal((ConversionOutcomes.Failed, plan.Of("quests")!.Digest, 0), (entry.Outcome, entry.Digest, entry.Operations.Count));
         Assert.Contains("not read: the service did not answer", entry.Said);
-        Assert.Equal("merge-after-accept", DriverConfig.Load(ConfigPath).DefaultWorkflow);
-        Assert.True(ConversionReceipts.Stands(_home));
         Assert.Contains(ConvertCommand.Lines(first), line => line.Contains("--leave quests", StringComparison.Ordinal));
 
         quests.Unread = false;
@@ -226,7 +191,7 @@ public sealed class ConversionPartsTests : IDisposable
     [Fact]
     public async Task ONEWAY1ae_an_unreachable_part_that_moved_before_its_retry_is_closed_moved_and_offered_again()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var quests = Plant("quests");
         var plan = await ConversionApplies.PlanAsync(Doors(quests), new ConversionChoices());
         quests.Unread = true;
@@ -247,7 +212,7 @@ public sealed class ConversionPartsTests : IDisposable
     [Fact]
     public async Task ONEWAY1ae_a_press_of_a_plan_this_Daoris_did_not_answer_with_a_part_unread_is_refused_moved()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var quests = Plant("quests");
         var plan = await ConversionApplies.PlanAsync(Doors(quests) with { Answered = null }, new ConversionChoices());
         quests.Unread = true;
@@ -262,7 +227,7 @@ public sealed class ConversionPartsTests : IDisposable
     [Fact]
     public async Task ONEWAY1ae_leave_it_closes_a_failed_part_as_left_the_receipt_settles_and_the_next_plan_offers_it_again()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var quests = Plant("quests", clears: true);
         var notes = Plant("notes", clears: true);
         var plan = await ConversionApplies.PlanAsync(Doors(quests, notes), new ConversionChoices());
@@ -305,7 +270,7 @@ public sealed class ConversionPartsTests : IDisposable
     [Fact]
     public async Task ONEWAY1ae_a_restart_mid_apply_goes_on_from_the_receipt_written_before_the_first_effect()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var settings = Plant();
         settings.Crash = true;
         var plan = await ConversionApplies.PlanAsync(Doors(settings), new ConversionChoices());
@@ -314,37 +279,12 @@ public sealed class ConversionPartsTests : IDisposable
 
         var stopped = new HomeReceipts(_home).Read(plan.Digest)!;
         Assert.Equal(ConversionOutcomes.Pending, stopped.Of("settings")!.Outcome);
-        Assert.Null(DriverConfig.Load(ConfigPath).DefaultWorkflow);
         settings.Crash = false;
 
         var resumed = await ConversionApplies.ApplyAsync(Doors(settings), new ConversionChoices(), plan.Digest);
 
         Assert.True(resumed.Done, resumed.Message);
-        Assert.Equal(("new", "merge-after-accept"), (settings.Value, DriverConfig.Load(ConfigPath).DefaultWorkflow));
-    }
-
-    [Fact]
-    public void ONEWAY1ae_a_receipt_written_before_parts_reads_as_one_workflow_part_with_no_build()
-    {
-        Directory.CreateDirectory(_home);
-        var digest = new string('a', 64);
-        var old = new ConversionReceipt(digest, DateTimeOffset.Parse("2026-11-02T10:00:00Z"), new ConversionChoices(), [], [], "merge-after-accept", [], [], [],
-            [new("configuration", "configuration", "the choices, in one change", ConversionOutcomes.Done)]) { Before = new(null, [], [], [], []) };
-        var path = new HomeReceipts(_home).PathOf(digest);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(old, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
-
-        var read = new HomeReceipts(_home).Read(digest)!;
-
-        Assert.Null(read.Build);
-        Assert.Equal([(ConversionParts.Workflows, ConversionOutcomes.Done)], read.Parts.Select(each => (each.Part, each.Outcome)));
-        Assert.Equal("merge-after-accept", new ConversionReceipts(_home).Read(digest)!.DefaultWorkflow);
-        Assert.True(ConversionReceipts.Stands(_home));
-        Assert.True(HomeReceipts.AnyBeforeParts(_home));
-        var entry = TransitionalRegister.Entries.Single(each => each.Id == "conversion-receipt-before-parts");
-        Assert.False(entry.Ended(_home));
-        new HomeReceipts(_home).Write(read);
-        Assert.True(entry.Ended(_home));
+        Assert.Equal("new", settings.Value);
     }
 
     [Fact]
@@ -364,7 +304,7 @@ public sealed class ConversionPartsTests : IDisposable
     [Fact]
     public async Task ONEWAY1ae_undo_of_a_two_part_receipt_puts_both_back_and_the_rollback_lifts()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var settings = Plant();
         var plan = await ConversionApplies.PlanAsync(Doors(settings), new ConversionChoices());
         await ConversionApplies.ApplyAsync(Doors(settings), new ConversionChoices(), plan.Digest);
@@ -376,9 +316,6 @@ public sealed class ConversionPartsTests : IDisposable
 
         Assert.True(result.Done, result.Message);
         Assert.Equal("old", settings.Value);
-        var config = DriverConfig.Load(ConfigPath);
-        Assert.Null(config.DefaultWorkflow);
-        Assert.True(config.Landings.ContainsKey("plain"));
         Assert.False(ConversionReceipts.Stands(_home));
         Assert.Contains("`settings` is old again", result.Message, StringComparison.Ordinal);
     }
@@ -386,7 +323,7 @@ public sealed class ConversionPartsTests : IDisposable
     [Fact]
     public async Task ONEWAY1ae_undo_is_refused_when_a_parts_write_moved_and_once_the_floor_is_needed()
     {
-        SeedWorkflows();
+        Directory.CreateDirectory(_home);
         var settings = Plant();
         var plan = await ConversionApplies.PlanAsync(Doors(settings), new ConversionChoices());
         await ConversionApplies.ApplyAsync(Doors(settings), new ConversionChoices(), plan.Digest);

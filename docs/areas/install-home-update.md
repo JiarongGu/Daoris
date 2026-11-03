@@ -248,6 +248,5 @@ drains, swaps, rolls back and refuses.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
 - **ONEWAY1af**: delete each register entry's read once its condition ends, the floor-waited ones among them. Undo is refused
   from the first such deletion (`Register.FloorNeeded`, null today).
-- **ONEWAY1ag**: the reading of receipts from before parts, and the conversion's old readers, retired.
 - **ONEWAY1ai-ii, ai-iv**: the driver's, the tools' and the documents' words name `daoris …` alone.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris-driver run-heavy</c> was asked: one gate by name, or every heavy one (null); or, with <see cref="Look"/>, who holds
+/// What <c>daoris gate run</c> was asked: one gate by name, or every heavy one (null); or, with <see cref="Look"/>, who holds
 /// the slot and who waits, running nothing (HEAVYSLOT1); or, with <see cref="Command"/>, a command of the caller's own as a heavy run
 /// (HEAVYQUEUE1).
 /// </summary>
@@ -41,7 +41,7 @@ public sealed record HeavyRunWorld(string Home, string Directory, Func<string, s
 public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 
 /// <summary>
-/// <c>daoris-driver run-heavy [--gate &lt;name&gt;]</c> (HEAVYRUN1a, D180's HEAVYRUN1 note): run in a checkout, it runs the gates its
+/// <c>daoris gate run [--gate &lt;name&gt;]</c> (HEAVYRUN1a, D180's HEAVYRUN1 note): run in a checkout, it runs the gates its
 /// <c>daoris.gates.json</c> marks heavy one after another (<see cref="HeavyGates"/>), or where it marks none this machine's mapping
 /// for it (<see cref="HeavyMapping"/>, HEAVYRUN1b2a), holding its repository's one heavy-run slot (<see cref="HeavySlot"/>), every
 /// gate's processes in one job that is ended and emptied before the slot is let go.

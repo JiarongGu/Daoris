@@ -1,8 +1,8 @@
 {
   "settings.commits.label": "Commits",
   "settings.commits.body": "How a session here commits its work in its own tree: each piece that passes its checks as it goes, each commit after your yes, or one commit when the work is done. It never makes, switches or pushes a branch, and your Accept lands only what is committed. Your convention, how a commit message is written, is quoted to each session as you wrote it. A repository's rule replaces its workspace's whole.",
-  "settings.commits.twin.repository": "`daoris driver commits {{repository}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
-  "settings.commits.twin.workspace": "`daoris driver commits --workspace {{workspace}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
+  "settings.commits.twin.repository": "`daoris place commits {{repository}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
+  "settings.commits.twin.workspace": "`daoris place commits --workspace {{workspace}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
   "settings.commits.says.asYouGo": "Each piece that passes its checks is committed as the work goes.",
   "settings.commits.says.ask": "Each commit waits for your yes before it is made.",
   "settings.commits.says.atEnd": "One commit is made when the work is done.",

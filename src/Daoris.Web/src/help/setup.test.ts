@@ -191,17 +191,17 @@ describe('each step: its state, its doors and its commands', () => {
       doors: [{ view: 'agents', agentPart: 'accounts' }],
       commands: ['daoris agent install <agent>', 'daoris agent login <agent>'],
     });
-    // Ask Daoris and the intake are roles, set on Agents → Roles and by `daoris driver role`.
+    // Ask Daoris and the intake are roles, set on Agents → Roles and by `daoris role`.
     expect(steps.helper).toMatchObject({
       doors: [{ view: 'agents', agentsMode: 'setup', roleSection: 'working' }],
-      commands: ['daoris driver role'],
+      commands: ['daoris role'],
     });
     expect(steps.repositories).toMatchObject({
       doors: [{ view: 'projects', drawer: 'add' }, { view: 'projects', drawer: 'import' }],
-      commands: ['daoris connect', 'daoris import <folder>'],
+      commands: ['daoris repository connect', 'daoris repository import <folder>'],
     });
     // One step for the place's Set up…, which chooses how its work lands and drives it.
-    expect(steps.setUp).toMatchObject({ doors: [{ view: 'agents', agentsMode: 'setup' }], commands: ['daoris-driver place <repository> --plan'] });
+    expect(steps.setUp).toMatchObject({ doors: [{ view: 'agents', agentsMode: 'setup' }], commands: ['daoris place <repository> --plan'] });
     // UX6e: what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
     expect(steps.rules).toMatchObject({ doors: [{ view: 'agents', agentPart: 'rules' }], commands: ['daoris agent rules'] });
   });
@@ -226,6 +226,6 @@ describe('each step: its state, its doors and its commands', () => {
   it('offers a browser no door to a screen it does not have, and still says the commands', () => {
     const steps = byId(MACHINES.browser);
     for (const step of Object.values(steps)) expect(step.doors).toEqual([]);
-    expect(steps.repositories.commands).toEqual(['daoris connect', 'daoris import <folder>']);
+    expect(steps.repositories.commands).toEqual(['daoris repository connect', 'daoris repository import <folder>']);
   });
 });

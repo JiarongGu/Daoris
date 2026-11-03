@@ -152,7 +152,7 @@ public sealed class LandedIntegrateTests : IDisposable
                       {"id":"line","kind":"line","version":1,"reach":"observed"}],
              "wires":[{"id":"h>i","kind":"after","from":"handed","to":"integrate"},{"id":"i>l","kind":"after","from":"integrate","to":"line"}]}
             """).Graph!;
-        var current = WorkflowProcess.Current(DriverConfig.Empty, "engine", null);
+        var current = WorkflowProcess.Declared(DriverConfig.Empty, "engine", null);
 
         Assert.Null(current.IntegrateRequest);
         Assert.Equal(LandingIntegrate.Done, (current with { Graph = Graph(LandingIntegrate.Done) }).IntegrateRequest);

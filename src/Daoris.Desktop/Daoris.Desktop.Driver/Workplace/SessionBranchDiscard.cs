@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// Discarding a session branch on the person's word (LAND3, LAND3b, LAND3c): a failed or superseded attempt's, whose commits
 /// no branch of the person's holds, so no landing's tidy and no clean-up takes it. Its tree goes with it where it is still
 /// here. One act, two doors (D50): the screen's <c>DISCARD_SESSION_BRANCH</c> names the branch and its repository
-/// (<see cref="DiscardAsync"/>); the terminal's <c>daoris-driver trees remove &lt;session|branch&gt; [--repository &lt;name&gt;]
+/// (<see cref="DiscardAsync"/>); the terminal's <c>daoris tree remove &lt;session|branch&gt; [--repository &lt;name&gt;]
 /// [--force]</c> names the branch or the session (<see cref="DiscardNamedAsync"/>), and ends in the same call.
 /// </summary>
 /// <remarks>

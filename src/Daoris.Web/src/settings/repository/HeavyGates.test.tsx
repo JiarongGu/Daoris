@@ -59,7 +59,7 @@ describe("a repository's heavy gates on its Setup", () => {
       'e2enpm run e2e',
     ]);
     const mine = row("This machine's heavy gates");
-    expect(within(mine).getByText(code('daoris-driver heavy engine <name>=<command> [--cwd <folder>]…|--clear'))).toBeInTheDocument();
+    expect(within(mine).getByText(code('daoris place heavy engine <name>=<command> [--cwd <folder>]…|--clear'))).toBeInTheDocument();
     expect(mine).toHaveTextContent("Used only where engine's own daoris.gates.json marks no heavy gate");
     expect(within(mine).getByText(code('npm test -- --maxWorkers=2'), { selector: 'p code' })).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: 'Edit' })).toBeInTheDocument();

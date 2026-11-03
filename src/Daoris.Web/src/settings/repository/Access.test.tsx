@@ -121,9 +121,9 @@ describe("a level's access rows", () => {
     expect(row('Landing')).toHaveTextContent("Finished work waits for your Accept… before it lands, as today. Daoris's default: nothing is set.");
     expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the quest or your words demand. Set for this repository.');
     // Each row's hint is its terminal twin, and each pause's own meaning is on its glyph.
-    expect(within(row('Permission prompts')).getByText(code('daoris-driver access engine permissions=asking|auto|unrestricted')))
+    expect(within(row('Permission prompts')).getByText(code('daoris place access engine permissions=asking|auto|unrestricted')))
       .toBeInTheDocument();
-    expect(within(row('Full access')).getByText(code('daoris-driver access engine full|--clear'))).toBeInTheDocument();
+    expect(within(row('Full access')).getByText(code('daoris place access engine full|--clear'))).toBeInTheDocument();
     expect(within(row('Landing')).getByRole('note')).toHaveAccessibleName(
       "Whether a quest's finished work waits for your Accept… or lands by the repository's landing rule, pushed as the rule says.");
   });
@@ -251,14 +251,14 @@ describe("a level's access rows", () => {
   it("says a workspace's and this machine's own values as theirs, each twin at its level", () => {
     draw(resolveAccess([{ setting: { full: false, pauses: [{ pause: 'routing', value: 'intake' }] }, source: 'workspace' }]), { owner: 'workspace' });
     expect(row('Intake routing')).toHaveTextContent('Set for this workspace.');
-    expect(within(row('Intake routing')).getByText(code('daoris-driver access --workspace aurora routing=person|intake'))).toBeInTheDocument();
+    expect(within(row('Intake routing')).getByText(code('daoris place access --workspace aurora routing=person|intake'))).toBeInTheDocument();
     expect(within(row('Intake routing')).getByRole('button', { name: 'Clear' })).toBeInTheDocument();
   });
 
   it("says this machine's own values as its own, and offers to set one for it", () => {
     draw(resolveAccess([{ setting: { full: false, pauses: [{ pause: 'landing', value: 'rule' }] }, source: 'machine' }]), { owner: 'machine' });
     expect(row('Landing')).toHaveTextContent('Set for this machine.');
-    expect(within(row('Landing')).getByText(code('daoris-driver access landing=person|rule'))).toBeInTheDocument();
+    expect(within(row('Landing')).getByText(code('daoris place access landing=person|rule'))).toBeInTheDocument();
     expect(within(row('Permission prompts')).getByRole('button', { name: 'Set for this machine' })).toBeInTheDocument();
   });
 

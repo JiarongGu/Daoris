@@ -19,7 +19,7 @@ public sealed record QuestSyncReport(
     public QuestClosure? Closure { get; init; }
 }
 
-/// <summary>Where a circle stands on this machine (SYNC6a) — what the status bar and `daoris-driver sync status` read.</summary>
+/// <summary>Where a circle stands on this machine (SYNC6a) — what the status bar and `daoris remote sync status` read.</summary>
 /// <param name="Ahead">Operations this machine made that the circle's remote has not numbered yet.</param>
 /// <param name="Behind">
 /// Quests the last pass could not bring level, because the remote moved them on every round. A pass

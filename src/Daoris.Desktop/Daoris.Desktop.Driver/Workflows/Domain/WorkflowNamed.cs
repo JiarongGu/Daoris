@@ -307,7 +307,7 @@ public static class WorkflowNamed
     /// <summary>What every door says to a list of steps (schema 1) being saved.</summary>
     public static string StepsRefused(string? id) =>
         $"`{id ?? "the workflow"}` is not saved: a workflow is saved as a graph of steps now, and a list of steps (schema 1) is no longer saved. "
-        + $"Compose it in the workflow editor, or save a graph with `daoris driver workflow apply {id ?? "<id>"} <file>`. "
+        + $"Compose it in the workflow editor, or save a graph with `daoris workflow apply {id ?? "<id>"} <file>`. "
         + "A workflow saved as steps before is converted by the conversion plan: `daoris convert --plan`.";
 
     /// <summary>A version's <c>from</c>, or null where it names none or names one in another shape: where it came from never makes it unreadable.</summary>
@@ -738,7 +738,7 @@ public static class WorkflowNamed
         var lines = new List<string> { "workflow" };
         void Write(NamedStep step, string indent)
         {
-            lines.Add($"{indent}step {WorkflowCurrent.Quoted(step.Id)} {step.Kind}");
+            lines.Add($"{indent}step {WorkflowSteps.Quoted(step.Id)} {step.Kind}");
             var row = WorkflowKindTable.Of(step.Kind);
             foreach (var each in step.Fields)
             {
@@ -767,8 +767,8 @@ public static class WorkflowNamed
     {
         null => "-",
         bool flag => flag ? "true" : "false",
-        string text => WorkflowCurrent.Quoted(text),
-        IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowCurrent.Quoted))}]",
+        string text => WorkflowSteps.Quoted(text),
+        IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowSteps.Quoted))}]",
         _ => throw new ArgumentException($"a field is text, a switch or a list of names, not {value.GetType().Name}."),
     };
 

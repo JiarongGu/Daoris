@@ -599,7 +599,7 @@ public sealed class ReviewerChoiceTests : IDisposable
         var held = await Choose("builder");
         Assert.False(held.Chosen);
         Assert.Equal(
-            (Refused, "No second opinion: The role `builder` does not take `review`, so the starts naming it hold until it does: Agents → Roles, or `daoris driver role`."),
+            (Refused, "No second opinion: The role `builder` does not take `review`, so the starts naming it hold until it does: Agents → Roles, or `daoris role`."),
             (held.Code, held.Sentence));
     }
 

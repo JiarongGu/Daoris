@@ -25,7 +25,7 @@ import { DRIVER_STATE, respond, serviceCalls, show } from '../test/shellHarness'
 
 /**
  * Settings → Logs (LOG1c, D94): the machine log read back over `DAORIS.LOG`, with the filters the
- * terminal's `daoris-driver logs` takes applied by the shell, and the folder opened by the shell. None
+ * terminal's `daoris logs` takes applied by the shell, and the folder opened by the shell. None
  * of it goes over the service: the log is the machine's (D47 §4).
  */
 describe('the logs domain', () => {

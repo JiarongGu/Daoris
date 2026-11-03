@@ -18,7 +18,7 @@ export type SyncConflictRow = { id: string; title?: string };
  * the last try hit one, the quests in conflict — and *Sync now*.
  *
  * **Two doors, one pass** (D50): `onSyncNow` is the shell running the tick's own pass, the same one
- * `daoris-driver sync` runs. A browser reads the standing over HTTP like anything else and simply is
+ * `daoris remote sync` runs. A browser reads the standing over HTTP like anything else and simply is
  * not given it, so the menu has no *Sync now* rather than one that cannot work.
  *
  * The wall is the host's sentence and renders verbatim (frontend architecture §3): it names what

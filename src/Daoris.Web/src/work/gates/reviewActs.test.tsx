@@ -104,7 +104,7 @@ describe("a review's presses", () => {
     act(() => result.current.actsFor({ state: 'shown', step: 'q2', record: STEP_SHOWN })
       .notYet!({ machine: 'desk', sequence: 7 }, 'Not the right page.', answered()));
 
-    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/daoris-driver sessions say s9/), 'error'));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/daoris session say s9/), 'error'));
   });
 
   it('gives a skip on the set-up step, and on the work once the step was reviewed', async () => {

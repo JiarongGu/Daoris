@@ -9,7 +9,7 @@ public sealed record ChatLandWorld(ServiceClient Service, string Home, SessionTr
 }
 
 /// <summary>
-/// <c>daoris-driver trees land &lt;session&gt;</c> on a chat run's work (CHATFLOW1d; the chat-flow design §5.2
+/// <c>daoris tree land &lt;session&gt;</c> on a chat run's work (CHATFLOW1d; the chat-flow design §5.2
 /// point 1, Codex's finding 11): bound first, as the window's press binds it, then the driver's one press operation
 /// (<see cref="ChatPresses.PressAsync"/>). A live conversation is held by the running Daoris's runner, so the press is sent there (the connected
 /// terminal), confirmed in its window and reserved there; with none to reach, it is refused, never landed beside a turn this terminal cannot

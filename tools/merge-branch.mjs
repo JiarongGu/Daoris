@@ -1353,13 +1353,12 @@ export const REACH = Object.freeze([
   },
   // GATESLIM1: desktop-publish.test.ts (the tool-tests) imports the tarball reader from the CLI's sources; a path rule replaces the cli lane's.
   { paths: ['src/Daoris.Cli/src/**/tarball.ts'], gates: [...CLI_READERS, 'tool-tests'], why: "the CLI's own readers (the lane's), and the publish's tool-tests import it (GATESLIM1)" },
-  // CONFIG1: the driver's KeepLockProcessTests runs the CLI's keeping write under node beside the driver's, so a change to
-  // either side of the lock reaches the driver's Process half; a path rule replaces the cli lane's. PUSH1f2b: driverconfig.ts left
-  // with the driver family's TypeScript, and the test runs the keeping write over driver.json.
+  // CONFIG1: the driver's KeepLockProcessTests runs the CLI's keeping lock under node beside the driver's, so a change to
+  // either side of the lock reaches the driver's Process half; a path rule replaces the cli lane's.
   {
-    paths: ['src/Daoris.Cli/src/**/keeplock.ts', 'src/Daoris.Cli/src/**/jsonkeep.ts'],
+    paths: ['src/Daoris.Cli/src/**/keeplock.ts'],
     gates: [...CLI_READERS, 'driver-process'],
-    why: "the CLI's own readers (the lane's), and the driver's KeepLockProcessTests runs these under node against the driver's lock (CONFIG1)",
+    why: "the CLI's own readers (the lane's), and the driver's KeepLockProcessTests runs it under node against the driver's lock (CONFIG1)",
   },
   // PUSH1f2a (D194 point 1): the driver's DriverProgramWordsProcessTests runs a word outside the doctrine under node, the CLI's
   // dispatcher and the seam (ONEWAY1ai-i), beside a native program, so a change to those reaches the driver's Process half too.

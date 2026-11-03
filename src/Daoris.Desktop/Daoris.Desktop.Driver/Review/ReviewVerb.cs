@@ -6,7 +6,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver review</c> (REVIEWENV1a, D154 point 2; FOUNDATION1 mod-iii): the review's own verb, the settings' port
+/// <c>daoris place review</c> (REVIEWENV1a, D154 point 2; FOUNDATION1 mod-iii): the review's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="ReviewRules"/>).
 /// </summary>
 public sealed class ReviewVerb : ChoiceVerb
@@ -43,7 +43,7 @@ public sealed class ReviewVerb : ChoiceVerb
         {
             throw new ChoiceWords("`driver review` needs <repository>|--workspace <name>, then <environment> --kind local|deployed --procedure <path> "
                 + "[--address <url>] [--run \"<command>\"] [--required|--not-required], or none, --drop <environment>, "
-                + "--required|--not-required, or --clear — e.g. `daoris driver review storefront dev --kind local --procedure README.md "
+                + "--required|--not-required, or --clear — e.g. `daoris place review storefront dev --kind local --procedure README.md "
                 + "--address http://localhost:4200 --required`.");
         }
 
@@ -125,7 +125,7 @@ public sealed class ReviewVerb : ChoiceVerb
 
             if (rule is { IsNone: false } && workspace is not null)
             {
-                Say("  A repository with a rule of its own keeps it — `daoris driver review <repository> --clear` hands it back.");
+                Say("  A repository with a rule of its own keeps it — `daoris place review <repository> --clear` hands it back.");
             }
         }
 
@@ -208,7 +208,7 @@ public sealed class ReviewVerb : ChoiceVerb
         foreach (var (workspace, rule) in choices.WorkspaceReviews) Say($"  review     workspace {workspace}  {ReviewListed(rule)}  (for each repository there that sets none)");
         if (choices.Reviews.Count == 0 && choices.WorkspaceReviews.Count == 0)
         {
-            Say("  review     none set — work is offered to land once its quest is done; `daoris driver review <repository> "
+            Say("  review     none set — work is offered to land once its quest is done; `daoris place review <repository> "
                 + "<environment> --kind local|deployed --procedure <path>` declares one");
         }
     }

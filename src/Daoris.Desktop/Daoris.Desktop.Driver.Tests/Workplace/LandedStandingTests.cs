@@ -76,7 +76,7 @@ public sealed class LandedStandingTests
         var door = LandedWords.Door(Differs());
 
         Assert.NotNull(door);
-        Assert.Contains("daoris-driver trees remove feature/q2-fix --repository engine --why", door);
+        Assert.Contains("daoris tree remove feature/q2-fix --repository engine --why", door);
         Assert.Contains("--plan", door);
         Assert.Null(LandedWords.Door(Differs(kind: LandedKind.CheckedOut)));
         Assert.Null(LandedWords.Door(Differs(kind: LandedKind.OnLine)));

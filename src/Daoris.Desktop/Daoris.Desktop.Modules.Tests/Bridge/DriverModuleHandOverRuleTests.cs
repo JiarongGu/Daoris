@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The hand-over rule over the bridge (MIXAGENT1c, D163 point 3): the screens' half of `daoris driver handover`, over the same file,
+/// The hand-over rule over the bridge (MIXAGENT1c, D163 point 3): the screens' half of `daoris settings handover`, over the same file,
 /// for a repository or a workspace; each edit judged by the twin's table in its words; the state answering what is set as rows; and
 /// the lines answering what each repository resolves to and from where, `default` where nothing is set.
 /// </summary>

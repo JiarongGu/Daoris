@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Which of the two looks over the checkouts here <c>daoris-driver trees</c> was asked for.</summary>
+/// <summary>Which of the two looks over the checkouts here <c>daoris tree list</c> was asked for.</summary>
 public enum TreesLook
 {
     /// <summary>The clean-up (WSR3, D88): the session branches whose work landed or that hold nothing, and the landed branches whose work reached the line.</summary>
@@ -10,7 +10,7 @@ public enum TreesLook
     Sync,
 }
 
-/// <summary>What <c>daoris-driver trees clean|sync</c> was asked: which checkouts, and whether it is the press.</summary>
+/// <summary>What <c>daoris tree clean|sync</c> was asked: which checkouts, and whether it is the press.</summary>
 /// <param name="Look">The clean-up, or bringing up to date.</param>
 public sealed record TreesAsk(TreesLook Look)
 {
@@ -27,7 +27,7 @@ public sealed record TreesAsk(TreesLook Look)
     public bool Yes { get; init; }
 }
 
-/// <summary>What <c>daoris-driver trees land --entry &lt;id&gt; | --ask &lt;id&gt;</c> was asked (ACCEPTALL1e, D167's amendment, D50).</summary>
+/// <summary>What <c>daoris tree land --entry &lt;id&gt; | --ask &lt;id&gt;</c> was asked (ACCEPTALL1e, D167's amendment, D50).</summary>
 /// <param name="IsAsk">The ask's one Accept (<c>--ask</c>, the page's <c>LAND_ASK</c>); else the entry's (<c>--entry</c>, <c>LAND_ENTRY</c>).</param>
 /// <param name="Id">The entry's key, or the ask's id.</param>
 /// <param name="LeaveOut">The parts the person leaves out (<c>--leave-out &lt;session&gt;</c>, once each), as the page sends them.</param>
@@ -40,7 +40,7 @@ public sealed record EntryLandAsk(bool IsAsk, string Id, IReadOnlySet<string> Le
 public sealed record TreesTaken(IReadOnlyList<(string Repository, string? Workspace, string? Root)> Repositories, string? Refusal);
 
 /// <summary>
-/// The words of <c>daoris-driver trees clean|sync</c> (BRSCOPE1a, D150's BRSCOPE1 note, D50, WSP5): what they ask, which
+/// The words of <c>daoris tree clean|sync</c> (BRSCOPE1a, D150's BRSCOPE1 note, D50, WSP5): what they ask, which
 /// checkouts each look is handed, and what its sentences call them. The looks and presses stay the host's
 /// (<c>TreesConsole</c>), which hands them <see cref="Take"/>'s rows. In the library, so a test holds them.
 /// </summary>
@@ -227,7 +227,7 @@ public static class TreesCommand
 
     /// <summary>The press a list suggests, carrying the list's own scope (D112) and its workspace, so <c>--yes</c> takes what was listed.</summary>
     public static string Press(TreesAsk ask) =>
-        $"daoris-driver trees {(ask.Look == TreesLook.Clean ? "clean" : "sync")}"
+        $"daoris tree {(ask.Look == TreesLook.Clean ? "clean" : "sync")}"
         + (ask.Repository is { } named ? $" --repository {named}" : "")
         // A workspace's name goes through the one spelling every shell keeps whole (ACCTQUOTE1b).
         + (ask.Workspace is { } workspace ? $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}" : "")

@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where <c>daoris-driver tool</c> acts (PUSH1f2c): the terminal it says its words on and finds the running Daoris from, and what a
+/// Where <c>daoris tool</c> acts (PUSH1f2c): the terminal it says its words on and finds the running Daoris from, and what a
 /// verb reads the machine by: the folder a relative file is named from, the <c>PATH</c> a system tool is found on, this machine's
 /// platform, the network, a named file's answer to its version question, and the process a download stages under. A test hands its
 /// own of each.
@@ -69,7 +69,7 @@ public sealed class ToolWords(string message, int exit = 2) : Exception(message)
 }
 
 /// <summary>
-/// <c>daoris-driver tool</c> (PUSH1f2c, D194, the alone-path design §1.2): the programs Daoris runs beside its agents from a terminal,
+/// <c>daoris tool</c> (PUSH1f2c, D194, the alone-path design §1.2): the programs Daoris runs beside its agents from a terminal,
 /// the words <c>daoris tool …</c> hands this program. Each short change is its route through <see cref="InstanceDoor.PressAsync"/>
 /// where the running Daoris answers, confirmed in its window; else its operation, on the terminal's word (D50), refused from a
 /// session's terminal (D194 point 5). A download, an update and a managed use are long: they hold nothing while they fetch, stage
@@ -88,12 +88,12 @@ public static class ToolsCommand
 
     public const string Usage =
         """
-        usage: daoris-driver tool [list]
-               daoris-driver tool path <tool>
-               daoris-driver tool use <tool> system | managed [<version>] | file <path>
-               daoris-driver tool download <tool> [<version>] · update <tool> · delete <tool> <version>
-               daoris-driver tool locations [add|remove <address>] · look
-               daoris-driver tool git ssh <command> | --clear
+        usage: daoris tool [list]
+               daoris tool path <tool>
+               daoris tool use <tool> system | managed [<version>] | file <path>
+               daoris tool download <tool> [<version>] · update <tool> · delete <tool> <version>
+               daoris tool locations [add|remove <address>] · look
+               daoris tool git ssh <command> | --clear
         `daoris tool …` runs these; the tools are git, node, pwsh, gh and az.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
@@ -551,7 +551,7 @@ public static class ToolsCommand
     /// holds it; beside an instance, holding nothing.
     /// </summary>
     private static Task<HomeLease> Publication(ToolsWorld world, string home, string action, CancellationToken ct) =>
-        HomeLease.ForPublicationAsync(home, $"daoris-driver tool {action}",
+        HomeLease.ForPublicationAsync(home, $"daoris tool {action}",
             holder => world.Instance.Error.WriteLine(
                 $"{Prefix}: waiting for {holder.Named} to let this home go; what was downloaded is kept until then, and Ctrl+C stops."),
             ct, world.Waiting, world.Now);

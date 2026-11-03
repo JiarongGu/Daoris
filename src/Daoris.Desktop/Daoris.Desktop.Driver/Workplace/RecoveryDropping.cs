@@ -19,7 +19,7 @@ public sealed record RecoveryDrops(IReadOnlyList<RecoveryDropped> Dropped, IRead
 /// <summary>
 /// The person's press to delete the recovery refs nothing holds (RECOVERYDROP1, amending D102's CLEANUP1 note): the one way past
 /// CLEANUP1's rule that a recovery ref whose commit no branch or tag of the person's holds is kept at any age. One act, two doors
-/// (D50): the screen's <c>RECOVERY_DROP</c> and the terminal's <c>daoris-driver work recovery drop</c>.
+/// (D50): the screen's <c>RECOVERY_DROP</c> and the terminal's <c>daoris work recovery drop</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Only what nothing holds, at the moment of the delete.</b> The refs are read again here (<see cref="RecoveryRetention.ReadAsync"/>),

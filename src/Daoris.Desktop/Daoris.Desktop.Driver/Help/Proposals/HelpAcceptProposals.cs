@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para>Not the yes over MCP that D133's DRIFT1d note rules out: the tool only proposes, and the yes is the person's
 /// press, applied through the local host's <c>POST /api/quests/{id}/accept</c>, the door the quest page's
-/// <i>Accept the departure</i> and <c>daoris-driver quest accept</c> use.</para>
+/// <i>Accept the departure</i> and <c>daoris quest accept</c> use.</para>
 ///
 /// <para>A refusal says what the service's door would say of the same quest, so the helper hears the route's words and
 /// the person is never shown a card the door would refuse.</para>
@@ -37,7 +37,7 @@ internal sealed class HelpAcceptProposals : IHelpProposalKind
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var id = proposal.Target?.Trim().TrimStart('#') ?? "";
-        var terminal = $"daoris-driver quest accept {id}";
+        var terminal = $"daoris quest accept {id}";
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
         if (proposal.Door != "accept") return new($"`{proposal.Door}` is not a door of an accept — `accept`.", "", "", null);
@@ -59,7 +59,7 @@ internal sealed class HelpAcceptProposals : IHelpProposalKind
         // follows goes on, which waits for the person's look.
         var after = ReviewGate.Waits(quest)
             ? $"{departed}. Its review still holds it after your yes: it waits for your review in `{quest.SetUpIn}`, and what follows "
-              + $"it waits until you say it is reviewed (`daoris-driver quest review {quest.Id} reviewed`) or skip the review"
+              + $"it waits until you say it is reviewed (`daoris quest review {quest.Id} reviewed`) or skip the review"
             : $"{departed}, and what it held goes on — {GoesOn(quest, facts.QuestRecords)}";
         return new HelpPlan(null,
             $"Accept the departure on quest `#{quest.Id}` “{quest.Title}”, for `{quest.To}`: {after}.",

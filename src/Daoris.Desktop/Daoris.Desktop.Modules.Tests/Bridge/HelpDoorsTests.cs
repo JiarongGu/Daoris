@@ -107,7 +107,7 @@ public sealed class HelpDoorsTests : Bridge
 
     /// <summary>
     /// DRIFT1d2: a yes to a departure is the local host's own accept route, the one the quest page's *Accept the departure*
-    /// and `daoris-driver quest accept` call, and the service's sentence comes back as said.
+    /// and `daoris quest accept` call, and the service's sentence comes back as said.
     /// </summary>
     [Fact]
     public async Task A_yes_to_a_departure_goes_through_the_local_hosts_own_accept_route()

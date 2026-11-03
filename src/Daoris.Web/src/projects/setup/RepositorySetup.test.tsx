@@ -99,10 +99,10 @@ describe("a repository's Setup", () => {
     await userEvent.click(head('Driving'));
 
     for (const twin of [
-      'daoris driver drive|undrive engine', 'daoris driver hold|resume engine', 'daoris driver trees engine on|off',
-      'daoris driver line engine <branch>|--clear', 'daoris driver landing engine merge|branch <pattern>|--clear',
-      'daoris driver language engine en|zh|--clear', 'daoris driver standing engine "…"|--clear',
-      'daoris driver across engine read on|off|--clear', 'daoris driver across engine write-to <other> [--clear]',
+      'daoris place drive|undrive engine', 'daoris place hold|resume engine', 'daoris place trees engine on|off',
+      'daoris place line engine <branch>|--clear', 'daoris place landing engine merge|branch <pattern>|--clear',
+      'daoris place language engine en|zh|--clear', 'daoris place standing engine "…"|--clear',
+      'daoris place across engine read on|off|--clear', 'daoris place across engine write-to <other> [--clear]',
       'daoris agent rules allow|ask|deny|remove "<rule>" --repository engine',
     ]) {
       expect(screen.getByText(code(twin))).toBeInTheDocument();
@@ -509,7 +509,7 @@ describe("a repository's review before landing", () => {
     await userEvent.click(head('Line and landing'));
     const review = row(section('Line and landing'), 'Review before landing');
     expect(review).toHaveTextContent('None: work is offered to land once its quest is done.');
-    expect(within(review).getByText(code('daoris driver review engine <environment> --kind local|deployed --procedure <path>|none|--drop <environment>|--clear')))
+    expect(within(review).getByText(code('daoris place review engine <environment> --kind local|deployed --procedure <path>|none|--drop <environment>|--clear')))
       .toBeInTheDocument();
     expect(within(review).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
   });
@@ -572,7 +572,7 @@ describe("a repository's second opinion before landing", () => {
     await userEvent.click(head('Line and landing'));
     const opinion = row(section('Line and landing'), 'Second opinion before landing');
     expect(opinion).toHaveTextContent('None: no other agent reads work here.');
-    expect(within(opinion).getByText(code('daoris driver opinion engine --reviewers <adapter,adapter>|none|--clear'))).toBeInTheDocument();
+    expect(within(opinion).getByText(code('daoris place opinion engine --reviewers <adapter,adapter>|none|--clear'))).toBeInTheDocument();
     expect(within(opinion).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
   });
 
@@ -590,7 +590,7 @@ describe("a repository's second opinion before landing", () => {
     expect(opinion).toHaveTextContent('claude-code-acp is the same agent as the one that does the work here');
     // XAGENT1f4: the twins' gate sentence, its terminal doors drawn as code.
     expect(opinion).toHaveTextContent("Where work here waits for another agent's reading, it lands only once that reading is settled");
-    expect(within(opinion).getByText(code('daoris-driver opinion anyway <session>'))).toBeInTheDocument();
+    expect(within(opinion).getByText(code('daoris session opinion anyway <session>'))).toBeInTheDocument();
     expect(opinion).not.toHaveTextContent('Declared only');
     expect(opinion).toHaveTextContent('From the workspace work.');
     await userEvent.click(within(opinion).getByRole('button', { name: 'Set for this repository' }));
@@ -638,7 +638,7 @@ describe("a repository's commit rule", () => {
     await userEvent.click(head('Line and landing'));
     const commits = row(section('Line and landing'), 'Commits');
     expect(commits).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
-    expect(within(commits).getByText(code('daoris driver commits engine --mode as-you-go|ask|at-end --convention "…"|--clear')))
+    expect(within(commits).getByText(code('daoris place commits engine --mode as-you-go|ask|at-end --convention "…"|--clear')))
       .toBeInTheDocument();
     await userEvent.click(within(commits).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(commits).getByRole('radio', { name: 'At the end' }));
@@ -684,7 +684,7 @@ describe("a repository's helpers rule", () => {
     expect(helpers).toHaveTextContent('A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.');
     expect(helpers).toHaveTextContent('Only codex-acp, else dsh, may help, tried in that order unless the session names one of them.');
     expect(helpers).toHaveTextContent('From the workspace work.');
-    expect(within(helpers).getByText(code('daoris driver helpers engine --mode ask|on|off --agents <adapter,adapter>|--clear')))
+    expect(within(helpers).getByText(code('daoris place helpers engine --mode ask|on|off --agents <adapter,adapter>|--clear')))
       .toBeInTheDocument();
     await userEvent.click(within(helpers).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(helpers).getByRole('radio', { name: 'Ask me' }));
@@ -824,7 +824,7 @@ describe("a repository's landed route", () => {
 
     expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
     const work = section('Line and landing');
-    expect(within(row(work, 'Verification of the work that lands')).getByText(code('daoris driver workflow use <id> --repository engine --landed')))
+    expect(within(row(work, 'Verification of the work that lands')).getByText(code('daoris workflow use <id> --repository engine --landed')))
       .toBeInTheDocument();
     await userEvent.click(within(work).getByRole('button', { name: 'No verification here' }));
     expect(onChoose).toHaveBeenLastCalledWith('current', expect.anything());
@@ -897,7 +897,7 @@ describe("a repository's heavy gates", () => {
     expect(head('Heavy gates')).toHaveAttribute('aria-expanded', 'true');
     const heavy = section('Heavy gates');
     expect(within(row(heavy, "This machine's heavy gates"))
-      .getByText(code('daoris-driver heavy engine <name>=<command> [--cwd <folder>]…|--clear'))).toBeInTheDocument();
+      .getByText(code('daoris place heavy engine <name>=<command> [--cwd <folder>]…|--clear'))).toBeInTheDocument();
     await userEvent.click(within(heavy).getByRole('button', { name: 'Edit' }));
     await userEvent.click(within(heavy).getByRole('button', { name: 'Move gate 2 up' }));
     await userEvent.click(within(heavy).getByRole('button', { name: 'Save' }));

@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The work of an ask or a quest, the page's <c>bridge/work.ts</c> (PAUSE1b, PAUSE1d, D132 §7.3): what it holds and what a
 /// pause and an abandon would do with each piece, a pause, a resume and an abandon. The driver library's
-/// <see cref="WorkPausing"/> and <see cref="WorkAbandoning"/> are the one implementation, which <c>daoris-driver ask
+/// <see cref="WorkPausing"/> and <see cref="WorkAbandoning"/> are the one implementation, which <c>daoris ask
 /// --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> call too (D50).
 /// </summary>
 /// <remarks>

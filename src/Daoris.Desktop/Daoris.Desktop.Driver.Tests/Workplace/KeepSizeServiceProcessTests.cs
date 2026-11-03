@@ -140,7 +140,7 @@ public sealed class KeepSizeServiceProcessTests : KeepSizeFixture, IAsyncLifetim
         Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
     }
 
-    /// <summary>The person's choice in the scratch home's <c>driver.json</c>, as <c>daoris driver keep</c> writes it.</summary>
+    /// <summary>The person's choice in the scratch home's <c>driver.json</c>, as <c>daoris settings keep</c> writes it.</summary>
     private void Keep(bool whole) =>
         DriverConfig.Load(DriverConfig.ResolvePath(_home)).WithKeep(new KeepSet("set-aside", Whole: whole)).Save(DriverConfig.ResolvePath(_home));
 

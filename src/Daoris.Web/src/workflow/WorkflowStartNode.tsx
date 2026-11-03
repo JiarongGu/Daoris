@@ -6,7 +6,7 @@ import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import type { WorkflowLanded, WorkflowRoute, WorkflowStart } from './current';
 import { type RouteScope, whySaid } from './routeSaid';
 
-/** What *Verify…* asks of a repository: a branch, or a commit, which `daoris-driver verify` takes as `--branch` and `--commit`. */
+/** What *Verify…* asks of a repository: a branch, or a commit, which `daoris gate verify` takes as `--branch` and `--commit`. */
 export type VerifyAsk = { branch: string } | { commit: string };
 
 /** A name typed as a commit where it is seven to forty hexadecimal digits, else a branch. */

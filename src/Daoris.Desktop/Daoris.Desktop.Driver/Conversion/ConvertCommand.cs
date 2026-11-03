@@ -132,27 +132,6 @@ public static class ConvertCommand
         return lines;
     }
 
-    /// <summary>The workflow part's plan in the terminal's words: what changes by shape, what lowers your part, what stays.</summary>
-    public static IReadOnlyList<string> PartLines(ConversionPlan plan)
-    {
-        var census = plan.Census;
-        var lines = new List<string>
-        {
-            census.Ended
-                ? "  nothing old is left here."
-                : $"  {census.Versions.Count} saved workflow{(census.Versions.Count == 1 ? "" : "s")} and {census.Places.Count} place{(census.Places.Count == 1 ? "" : "s")} follow old shapes.",
-        };
-        foreach (var save in plan.Saves) lines.Add($"  save    {(save.Mode == "append" ? $"`{save.Id}` v{save.Base + 1}" : $"`{save.Id}` (new)")} — {save.Said}");
-        if (plan.DefaultWorkflow is { } home) lines.Add($"  default `{home}` is the home's default workflow");
-        foreach (var use in plan.Uses) lines.Add($"  choose  {use.Said}");
-        foreach (var policy in plan.Policies) lines.Add($"  policy  `{policy.Place}`'s line policy is moved out of its landing rule");
-        foreach (var removal in plan.Removals) lines.Add($"  remove  `{removal.Place}`: {string.Join(", ", removal.Keys)}");
-        foreach (var lowered in plan.Lowers) lines.Add($"  lowers  {lowered}");
-        foreach (var kept in plan.Kept) lines.Add($"  kept    {kept.Said}");
-        foreach (var leftover in census.Leftovers) lines.Add($"  left    `{leftover.Place}`: {string.Join(", ", leftover.Keys)} — {leftover.Why}");
-        return lines;
-    }
-
     /// <summary>The undo's plan in the terminal's words.</summary>
     public static IReadOnlyList<string> UndoLines((HomeReceipt? Receipt, string? Refusal, string? Digest, IReadOnlyList<string> Lines) plan) =>
         plan.Refusal is { } refusal

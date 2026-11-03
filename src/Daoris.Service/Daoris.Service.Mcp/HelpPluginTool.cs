@@ -18,7 +18,7 @@ public sealed class HelpPluginTool(IntakeScope? intake = null, HelpProposalBox? 
         + "before the person presses Apply, and nothing is copied, switched, replaced or started until they do. Never for "
         + "a plugin that has not landed: making one is work, proposed with ask_propose at the workspace of the repository "
         + "that holds plugins. `approve` proposes the person's approval of what an installed plugin's server offers you, "
-        + "the plugin's page's Approve (`daoris-driver plugins approve <id> <server>`): name the plugin's `id`, its `server`, "
+        + "the plugin's page's Approve (`daoris plugin approve <id> <server>`): name the plugin's `id`, its `server`, "
         + "and in `writes` only the writes outside Daoris the person said they accept; the card names every tool, its reads "
         + "and its writes apart, and you are handed it from your next conversation once they press Apply. `withdraw` takes "
         + "an approval back.")]

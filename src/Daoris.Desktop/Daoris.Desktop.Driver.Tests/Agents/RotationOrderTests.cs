@@ -6,20 +6,17 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The order in <c>harnesses.json</c> (TOOL4e, D125 §3.1): <c>rotation</c> and <c>workspaceRotation</c>, the accounts
-/// rotation may use per agent, for the machine and for a workspace. The driver's half of a TWIN with the CLI's
-/// <c>rotation.ts</c> and <c>toolchain.ts</c>, whose <c>rotation.test.ts</c> holds the same tables, row for row and in
-/// the same order, and parses these theories to hold them to its own, cell for cell.
+/// rotation may use per agent, for the machine and for a workspace.
 /// </summary>
 /// <remarks>
 /// <para>An order is a JSON list of account names; <c>null</c> is none. A file is the text on disk, and an <c>after</c>
 /// is the sections a save writes, compared as JSON.</para>
-/// <para>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</para>
 /// </remarks>
-public sealed class RotationTwinTests : IDisposable
+public sealed class RotationOrderTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-rotation-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public RotationTwinTests() => Directory.CreateDirectory(_home);
+    public RotationOrderTests() => Directory.CreateDirectory(_home);
 
     public void Dispose()
     {
@@ -79,7 +76,7 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("a workspace is found in any case", """{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"claude-code":["account-2"]}}}""", "claude-code", "WORK", """["account-2"]""", "workspace")]
     [InlineData("a workspace written twice in any case is one, holding the later's orders", """{"workspaceRotation":{"work":{"claude-code":["account-1"]},"WORK":{"claude-code":["account-2"]}}}""", "claude-code", "work", """["account-2"]""", "workspace")]
     [InlineData("a workspace whose capital is two letters is not those two: straße has no order of STRASSE's", """{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"STRASSE":{"claude-code":["account-2"]}}}""", "claude-code", "straße", """["account-1"]""", "machine")]
-    public void An_order_resolves_as_the_cli_resolves_it(string name, string file, string agent, string? workspace, string? order, string from)
+    public void An_order_resolves_from_the_workspace_then_the_machine(string name, string file, string agent, string? workspace, string? order, string from)
     {
         var (resolved, rung) = Read(file).ResolveRotationFrom(agent, workspace);
 
@@ -103,7 +100,7 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("a name is kept trimmed", "{}", "claude-code", """[" account-1 "]""", null, """{"rotation":{"claude-code":["account-1"]}}""")]
     [InlineData("a workspace order set in another case replaces the one there, as first written", """{"workspaceRotation":{"work":{"claude-code":["account-1"]}}}""", "claude-code", """["account-2"]""", "WORK", """{"workspaceRotation":{"work":{"claude-code":["account-2"]}}}""")]
     [InlineData("a workspace order cleared in another case", """{"workspaceRotation":{"work":{"claude-code":["account-2"]},"lab":{"codex":["account-1"]}}}""", "claude-code", null, "WORK", """{"workspaceRotation":{"lab":{"codex":["account-1"]}}}""")]
-    public void An_order_is_set_and_cleared_as_the_cli_writes_it(string why, string before, string agent, string? order, string? workspace, string after)
+    public void An_order_is_set_and_cleared(string why, string before, string agent, string? order, string? workspace, string after)
     {
         Read(before).WithRotation(agent, order is null ? null : Names(order), workspace).Save(Wiring);
 
@@ -111,7 +108,7 @@ public sealed class RotationTwinTests : IDisposable
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(after), written), $"{why}: {written.ToJsonString()}");
     }
 
-    // ——— Refused by both doors (§3.1): an account that does not exist, or one named twice.
+    // ——— Refused (§3.1): an account that does not exist, or one named twice.
 
     [Theory]
     [InlineData("accounts that exist, each once, in any order", """["account-1","account-2"]""", """["account-2","account-1"]""", null)]
@@ -122,7 +119,7 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("the first problem in the order is the one said", """["account-1"]""", """["account-8","account-1","account-1"]""", "missing account-8")]
     [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """["straße","STRASSE"]""", """["straße","STRASSE"]""", null)]
     [InlineData("a dotted capital I is not an i with a dot above", """["İzmir","i\u0307zmir"]""", """["İzmir","i\u0307zmir"]""", null)]
-    public void An_order_is_refused_as_the_cli_refuses_it(string why, string accounts, string order, string? refused)
+    public void An_order_naming_a_missing_or_twice_named_account_is_refused(string why, string accounts, string order, string? refused)
     {
         var problem = HarnessSettings.OrderProblem(Names(accounts), Names(order));
 
@@ -140,7 +137,7 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("another agent's account of the same name stays", """{"defaults":{"codex":"account-1"},"rotation":{"codex":["account-1"]}}""", "claude-code", "account-1", """{"defaults":{"codex":"account-1"},"rotation":{"codex":["account-1"]}}""")]
     [InlineData("a kept account removed is kept no longer, the rest of its settings kept", """{"rotation":{"claude-code":["account-1","account-2"]},"rotationUse":{"claude-code":{"use":"order","keep":"account-1"}}}""", "claude-code", "account-1", """{"rotation":{"claude-code":["account-2"]},"rotationUse":{"claude-code":{"use":"order"}}}""")]
     [InlineData("an account removed that leaves a workspace's list naming nobody takes its settings too", """{"workspaceRotation":{"work":{"claude-code":["account-1"]}},"workspaceRotationUse":{"work":{"claude-code":{"keep":"account-1","use":"order"}}}}""", "claude-code", "account-1", "{}")]
-    public void An_account_removed_leaves_the_wiring_as_the_cli_leaves_it(string why, string before, string agent, string profile, string after)
+    public void An_account_removed_leaves_no_default_or_order_naming_it(string why, string before, string agent, string profile, string after)
     {
         Read(before).WithoutAccount(agent, profile).Save(Wiring);
 
@@ -148,8 +145,8 @@ public sealed class RotationTwinTests : IDisposable
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(after), written), $"{why}: {written.ToJsonString()}");
     }
 
-    // ——— 🔴 Each writer keeps the other's sections (D125 §0.1): both write the same file for the same wiring, a key
-    // neither knows included, so a screen edit after a terminal's order, or the other way, loses nothing.
+    // ——— 🔴 A save keeps every section it does not edit, a key it does not know included, so a screen edit after a terminal's
+    // order, or the other way, loses nothing.
 
     [Theory]
     [InlineData("every section either writes, and a key neither knows: saved with no edit, nothing is written", """{"later":{"kept":true},"defaults":{"claude-code":"account-1"},"workspaces":{"work":{"claude-code":"account-2"}},"versions":{"claude-code":"2.1.0"},"workspaceVersions":{"work":{"codex":"0.50.0"}},"rotation":{"claude-code":["account-1","account-2","account-3"]},"rotationUse":{"claude-code":{"use":"order","keep":"account-3","switch":"off","curve":{"session":[[0,85]]}}},"workspaceRotation":{"work":{"claude-code":["account-2","account-3"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}}}}""", null, """{"later":{"kept":true},"defaults":{"claude-code":"account-1"},"workspaces":{"work":{"claude-code":"account-2"}},"versions":{"claude-code":"2.1.0"},"workspaceVersions":{"work":{"codex":"0.50.0"}},"rotation":{"claude-code":["account-1","account-2","account-3"]},"rotationUse":{"claude-code":{"use":"order","keep":"account-3","switch":"off","curve":{"session":[[0,85]]}}},"workspaceRotation":{"work":{"claude-code":["account-2","account-3"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}}}}""")]
@@ -161,7 +158,7 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("the retired prefer and parallel are taken out at a save, and an entry naming nothing else goes", """{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"prefer":"left","keep":"account-1","parallel":true},"codex":{"prefer":"soonest"}}}""", null, """{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"keep":"account-1"}}}""")]
     [InlineData("settings with no list stay as read, and read only with one", """{"rotationUse":{"claude-code":{"switch":"off"}},"workspaceRotationUse":{"work":{"codex":{"keep":"account-1"}}}}""", null, """{"rotationUse":{"claude-code":{"switch":"off"}},"workspaceRotationUse":{"work":{"codex":{"keep":"account-1"}}}}""")]
     [InlineData("a workspace written twice in any case is read as one, and both are kept as written when another section is edited", """{"workspaces":{"work":{"claude-code":"account-1"},"WORK":{"claude-code":"account-2"}},"workspaceVersions":{"Lab":{"codex":"0.50.0"},"lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-1"]},"Work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}},"WORK":{"claude-code":{"use":"order"}}}}""", "account-9", """{"defaults":{"codex":"account-9"},"workspaces":{"work":{"claude-code":"account-1"},"WORK":{"claude-code":"account-2"}},"workspaceVersions":{"Lab":{"codex":"0.50.0"},"lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-1"]},"Work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}},"WORK":{"claude-code":{"use":"order"}}}}""")]
-    public void Both_twins_write_the_same_file(string why, string before, string? codexDefault, string after)
+    public void A_save_keeps_every_section_it_does_not_edit(string why, string before, string? codexDefault, string after)
     {
         // The file in the writer's layout, so a save with no edit, which writes nothing (KEEPALL1b), leaves the bytes it wrote.
         static string Laid(string file) => JsonNode.Parse(file)!.ToJsonString(new JsonSerializerOptions { WriteIndented = true, NewLine = "\n" }) + "\n";
@@ -173,7 +170,7 @@ public sealed class RotationTwinTests : IDisposable
         Assert.True(wanted == File.ReadAllText(Wiring), $"{why}:\n{File.ReadAllText(Wiring)}");
     }
 
-    // ——— What the twin tables do not hold: the sentence a door says, and the order's resolution beside a pick.
+    // ——— The sentence a door says, and the order's resolution beside a pick.
 
     [Fact]
     public void A_refused_order_says_which_account_and_names_the_ones_there()

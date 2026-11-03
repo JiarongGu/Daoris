@@ -8,13 +8,13 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// ENTRY1c: an ask proposal's Apply is the ask composer's own door, the local host's <c>POST /api/asks</c>, with the review choice
 /// and the person's words as the composer sends them. A named environment the ask's workspace does not declare is refused before
-/// anything is sent, as <c>daoris-driver ask --review</c> refuses it (<see cref="AskReviewCommand.UndeclaredAsync"/>): the
+/// anything is sent, as <c>daoris ask --review</c> refuses it (<see cref="AskReviewCommand.UndeclaredAsync"/>): the
 /// proposal's plan holds no repositories per workspace, so the door judges it. A service stood in, and nothing starts a process:
 /// the fast half (MOD8), beside <see cref="HelpDoorsTests"/>, whose update runs a script.
 /// </summary>
 public sealed class HelpAskDoorTests : DriverModuleBridge
 {
-    /// <summary>Workspace <c>work</c>'s own rule declaring <c>dev</c>, as <c>daoris driver review --workspace work dev …</c> writes it.</summary>
+    /// <summary>Workspace <c>work</c>'s own rule declaring <c>dev</c>, as <c>daoris place review --workspace work dev …</c> writes it.</summary>
     private void DeclareDev() => (DriverConfig.Empty with
     {
         WorkspaceReviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase)

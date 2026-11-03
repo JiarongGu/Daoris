@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import { HELPER_DEFAULT, HelperField, type HelperRule, helperRowSays, helperSays, helperSummary, helperToast } from './Helpers';
 
 // DOORS1b (D163 point 3, D164's amendment point 3): what a helper a repository's agent asks for does, set on its Setup's
-// *Sessions* and on a workspace's Defaults as `daoris driver helpers` sets it from a terminal (D50). Each mode's sentence is the
+// *Sessions* and on a workspace's Defaults as `daoris place helpers` sets it from a terminal (D50). Each mode's sentence is the
 // terminal's (`driver helpers`' words in the CLI's `driverconfig.ts`), the agents are named in the order they are tried as the
 // driver's choice walks them (D163's MIXAGENT2a-ii note), and the field sends the twins' edit, which the driver judges.
 
@@ -89,9 +89,9 @@ describe('what a helpers rule says', () => {
       expect(english).toMatch(/--mode ask\|on\|off --agents <adapter,adapter>\|--clear`$/);
     }
     expect(i18n.getFixedT('en')('settings.helpers.twin.repository', { repository: 'engine' }))
-      .toBe('`daoris driver helpers engine --mode ask|on|off --agents <adapter,adapter>|--clear`');
+      .toBe('`daoris place helpers engine --mode ask|on|off --agents <adapter,adapter>|--clear`');
     expect(i18n.getFixedT('en')('settings.helpers.twin.workspace', { workspace: 'aurora' }))
-      .toBe('`daoris driver helpers --workspace aurora --mode ask|on|off --agents <adapter,adapter>|--clear`');
+      .toBe('`daoris place helpers --workspace aurora --mode ask|on|off --agents <adapter,adapter>|--clear`');
   });
 });
 

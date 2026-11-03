@@ -21,7 +21,7 @@ namespace Daoris.Desktop;
 /// driver's refusal.</para>
 ///
 /// <para><b>The answers are the driver library's projection</b> (<see cref="HistoryAnswers"/>, HIST1d), which
-/// <c>daoris-driver history --json</c> prints too, so the terminal's answer is this route's field for field (D50).</para>
+/// <c>daoris history --json</c> prints too, so the terminal's answer is this route's field for field (D50).</para>
 /// </remarks>
 public sealed class HistoryRoutes(DriverLoop loop)
 {
@@ -41,7 +41,7 @@ public sealed class HistoryRoutes(DriverLoop loop)
         var plan = await HistoryClearing.PlanAsync(WorldOf(_loop), scope, id, cancellationToken).ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && plan.Units is [{ Keep.Word: HistoryWords.Unknown } unknown]) throw HistoryKept(unknown.Keep!);
 
-        // HIST1d: the driver library's projection, which `daoris-driver history --json` prints too, field for field.
+        // HIST1d: the driver library's projection, which `daoris history --json` prints too, field for field.
         return HistoryAnswers.Plan(plan);
     }
 

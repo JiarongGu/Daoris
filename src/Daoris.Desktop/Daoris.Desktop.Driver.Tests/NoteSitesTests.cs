@@ -465,7 +465,7 @@ public sealed class NoteSitesTests
             "the agent's turn failed before publishing anything onto ask `#a1`: refused", "intake.turn-failed", null);
         Wrote(IntakeObservation.Conclude(0, 0, Ask()), "awaiting-person",
             "published nothing: the declarations did not settle ask `#a1`, so it asks you rather than guess — its question ends "
-            + "its transcript. `daoris-driver ask --publish a1 --to <repository>` answers it; `daoris-driver ask --close a1 "
+            + "its transcript. `daoris ask publish a1 --to <repository>` answers it; `daoris ask close a1 "
             + "--reason \"…\"` ends it.",
             "intake.asks");
         Wrote(IntakeObservation.Conclude(4, 0, Ask()), "failed", "exit 4 before publishing anything onto ask `#a1`.", "intake.exit");

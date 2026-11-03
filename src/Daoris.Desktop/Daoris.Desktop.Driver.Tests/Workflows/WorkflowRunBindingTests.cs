@@ -20,28 +20,37 @@ public sealed class WorkflowRunBindingTests : IDisposable
 
     private static DriverConfig Config(string json) => DriverConfig.Parse(json);
 
-    private void Save(string id, params JsonNode[] steps)
+    private void Save(string id, params JsonNode[] graphs)
     {
-        foreach (var each in steps)
+        foreach (var each in graphs)
         {
-            StoredSteps.Add(_home, new WorkflowVersionAdded(id, "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", each), kept: []);
+            StoredSteps.AddGraph(WorkflowPorts.Store(_home), id, "Documentation to a pull request", "2026-10-09T09:00:00Z", each);
         }
     }
 
-    private static JsonNode Steps(string accept) => JsonNode.Parse(
-        $$"""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"branch","accept":"{{accept}}","pattern":"docs/{quest}","plugin":"none"}]""")!;
+    /// <summary>A branch landing under <c>docs/{quest}</c>, the person's Accept before it where <paramref name="accept"/> is <c>you</c>.</summary>
+    private static JsonNode Steps(string accept) => JsonNode.Parse(accept == "you"
+        ? """
+          {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+            {"id":"review","kind":"review","version":1,"reach":"pressed"},
+            {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"docs/{quest}","plugin":"none"}}],
+           "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"b","kind":"after","from":"review","to":"landing"}]}
+          """
+        : """
+          {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+            {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"docs/{quest}","plugin":"none"}}],
+           "wires":[{"id":"a","kind":"after","from":"work","to":"landing"}]}
+          """)!;
 
     [Fact]
-    public void Nothing_set_binds_Current_with_the_graph_it_drew()
+    public void Nothing_set_binds_no_workflow_and_holds_its_run()
     {
         var binding = WorkflowRunBindings.Plan(Config("{}"), _home, "a1b2c3", "web-app", "work", null, null, [], At);
 
         Assert.True(binding.IsCurrent);
         Assert.Equal(WorkflowLevels.Current, binding.Level);
         Assert.Null(binding.Version);
-        var current = WorkflowCurrent.Derive(Config("{}"), "web-app", "work", []);
-        Assert.Equal(current.Version, binding.Digest);
-        Assert.Equal(current.Steps.Select(WorkflowCurrent.ToJson), binding.CurrentSteps);
+        Assert.Equal(WorkflowProcess.NoWorkflow("web-app"), binding.Problem);
         Assert.Equal(new DateTimeOffset(2026, 10, 9, 9, 12, 30, TimeSpan.Zero), binding.At);
     }
 
@@ -64,7 +73,6 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Equal(["docs/**"], binding.Paths);
         Assert.Equal("f00d01", binding.Ask);
         Assert.Null(binding.Problem);
-        Assert.Empty(binding.CurrentSteps);
         Assert.Equal(
             "workflow  #a1b2c3 → web-app: its run follows `docs-to-pr` v2, chosen by the workspace `work` for Documentation.",
             WorkflowRunBindings.Said(binding, "a1b2c3"));
@@ -252,7 +260,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.False(WorkflowRunBindings.Bind(_home, first with { Workflow = "other" }));
 
         var read = WorkflowRunBindings.Read(_home, "a1b2c3")!;
-        Assert.Equal(first with { Paths = read.Paths, CurrentSteps = read.CurrentSteps }, read);
+        Assert.Equal(first with { Paths = read.Paths }, read);
         var text = File.ReadAllText(WorkflowRunBindings.PathOf(_home, "a1b2c3"));
         Assert.DoesNotContain("\r", text);
         Assert.EndsWith("}\n", text);
@@ -391,18 +399,6 @@ public sealed class WorkflowRunBindingTests : IDisposable
         {
             Assert.Equal(digest, new GraphRuns(new NodeRecordFiles(_home)).Find("q1")?.Binding.Digest);
         }
-    }
-
-    [Fact]
-    public void A_Current_binding_reads_back_its_graph()
-    {
-        var binding = WorkflowRunBindings.Plan(Config("{}"), _home, "a1b2c3", "web-app", "work", null, null, [], At);
-        WorkflowRunBindings.Bind(_home, binding);
-
-        var read = WorkflowRunBindings.Read(_home, "a1b2c3")!;
-
-        Assert.Equal(binding.CurrentSteps.Select(step => JsonNode.Parse(step)!.ToJsonString()), read.CurrentSteps.Select(step => JsonNode.Parse(step)!.ToJsonString()));
-        Assert.Equal(binding.Digest, read.Digest);
     }
 
     [Fact]
@@ -575,7 +571,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
 
         Assert.Equal(
             "`staffed` v1's step `second` names the role `security`, which cannot take it: The role `security` does not take `review`, so the starts "
-            + "naming it hold until it does: Agents → Roles, or `daoris driver role`.",
+            + "naming it hold until it does: Agents → Roles, or `daoris role`.",
             planned.Problem);
         Assert.Equal("security", planned.RoleOf(NodeKinds.Opinion)?.Role);
 

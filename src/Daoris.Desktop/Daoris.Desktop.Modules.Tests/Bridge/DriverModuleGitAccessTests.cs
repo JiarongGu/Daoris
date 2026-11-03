@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Git access over the bridge (GITAUTH1f, D198 points 8, 10 and 12): <c>SET_GIT_ACCESS</c>, the page's half of <c>daoris-driver git
+/// Git access over the bridge (GITAUTH1f, D198 points 8, 10 and 12): <c>SET_GIT_ACCESS</c>, the page's half of <c>daoris git
 /// access</c>, over the same keys in the same file, separate from <c>SET_ACCESS</c>; the state answering each level as set; a class or a
 /// value there is not, and Dangerous, refused in the driver's words with nothing written.
 /// </summary>

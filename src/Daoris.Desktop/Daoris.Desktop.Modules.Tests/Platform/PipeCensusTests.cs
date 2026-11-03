@@ -126,7 +126,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The tools' presses <c>daoris-driver tool</c> sends (PUSH1f2c, D194 point 5): each a route of the driver's module the census classes
+    /// The tools' presses <c>daoris tool</c> sends (PUSH1f2c, D194 point 5): each a route of the driver's module the census classes
     /// as the verb reads it, the person's changes the person's and the look open, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]
@@ -154,7 +154,7 @@ public sealed class PipeCensusTests
         Assert.Equal(Daoris.Driver.RouteClass.Open, Daoris.Driver.ToolRoutes.Look.Class);
     }
 
-    /// <summary>The route <c>daoris-driver integrate</c>'s acts press (INTEGRATE1h) is a driver route the census classes as the person's.</summary>
+    /// <summary>The route <c>daoris integrate</c>'s acts press (INTEGRATE1h) is a driver route the census classes as the person's.</summary>
     [Fact]
     public void The_integrate_verbs_route_is_the_persons_in_the_census()
     {
@@ -559,7 +559,7 @@ public sealed class PipeCensusTests
         ];
         string[] inert =
         [
-            "SET_HOLD", "SET_DRIVABLE", "SET_STRIKES", "SET_TREES", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
+            "SET_HOLD", "SET_DRIVABLE", "SET_TREES", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
             "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
             "SET_HELP_GRANT", "SET_NOTIFY", "SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
             // INTEGRATE1d: an acceptance of a repository's integration declaration, a standing choice that starts nothing.

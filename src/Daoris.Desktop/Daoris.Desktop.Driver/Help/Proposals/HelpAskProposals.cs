@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Since ENTRY1c (D161's ENTRY1c note)</b> it carries the review choice the person said for the ask's work and their
-/// words with it, as the composer sends them and <c>daoris-driver ask --review rule|on|&lt;environment&gt;|off
+/// words with it, as the composer sends them and <c>daoris ask --review rule|on|&lt;environment&gt;|off
 /// [--review-words "…"]</c> takes them (REVIEWENV1j): judged here with <see cref="AskReviewCommand.Compose"/>, the
 /// composer's own judgement, and a named environment the ask's workspace does not declare refused by the ask door at Apply,
 /// as the terminal refuses it. An ask's kind and workflow are the person's (D157 point 10), so no proposal carries them.</para>
@@ -43,7 +43,7 @@ internal sealed class HelpAskProposals : IHelpProposalKind
         var sentence = proposal.Sentence?.Trim() ?? "";
         var composed = AskReviewCommand.Compose(proposal.Review, proposal.ReviewWords, out var unfit);
         // ACCTQUOTE1b: the workspace spelled for any shell, as every command the driver names spells it.
-        var terminal = $"daoris-driver ask --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} "
+        var terminal = $"daoris ask --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} "
             + ReviewFlags(proposal.Review, proposal.ReviewWords)
             + $"\"{sentence.Replace("\"", "\\\"", StringComparison.Ordinal)}\""
             // HEAD2e2: the terminal's own `--short`, where the card says a short title.

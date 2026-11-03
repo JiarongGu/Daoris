@@ -67,7 +67,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
     {
         Choose();
         WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "engine", "aurora", null, null, [], At));
-        IWorkplaceProcess current = WorkflowProcess.Current(Config(), "engine", "aurora");
+        IWorkplaceProcess current = WorkflowProcess.Declared(Config(), "engine", "aurora");
         var process = WorkflowProcesses.Read(_home, Config(), "engine", "aurora", "q1");
         IWorkplaceProcess named = process;
 

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1c2 (D157's WORKFLOW1c2 note; the workflow design §5.2, §7, D50): <c>daoris-driver workflow run --session|--quest|--ask
+/// WORKFLOW1c2 (D157's WORKFLOW1c2 note; the workflow design §5.2, §7, D50): <c>daoris workflow run --session|--quest|--ask
 /// &lt;id&gt;</c>, the terminal's twin of the session's <i>Workflow</i> view. It prints what <see cref="WorkflowRunReader"/> reads,
 /// one line per step with its state and what that state says, the step the run stands at marked. Reads only.
 /// </summary>
@@ -261,7 +261,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     [Fact]
     public void An_opinion_waiting_on_you_names_its_terminal_presses()
     {
-        var current = WorkflowCurrent.Derive(DriverConfig.Parse("""{"opinions":{"engine":{"reviewers":["codex-acp"]}}}"""), "engine", "aurora", []);
+        var current = new CurrentWorkflow([], [], "");
         var opinion = Step(WorkflowKinds.Opinion, WorkflowRunStates.WaitingOnYou, OpinionGateStates.CommitsSince) with { Session = "s1", Count = 2 };
         var run = new WorkflowRun("engine", "aurora", current, ["q1"], [opinion]);
 

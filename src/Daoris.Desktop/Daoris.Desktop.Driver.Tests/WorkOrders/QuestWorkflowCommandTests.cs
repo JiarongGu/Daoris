@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// WORKFLOW1e2 (D157; the workflow design §4.1 row 1, §4.3, D50): a quest's own kind and workflow at a terminal,
-/// <c>daoris-driver quest workflow &lt;id&gt; [--kind …] [--workflow …]|--clear ["…"]</c>, for a quest no ask published. A kind is one
+/// <c>daoris quest workflow &lt;id&gt; [--kind …] [--workflow …]|--clear ["…"]</c>, for a quest no ask published. A kind is one
 /// the quest's workspace declares, judged before the service is asked; every other answer is the service's sentence. A service
 /// stood in: the fast half (MOD8).
 /// </summary>

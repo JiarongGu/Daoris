@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// Git's reads, the page's `bridge/git.ts` (GIT1d-a, D147 §2, D150): the branch list and a graph, a commit, a file's history,
 /// a blame and a compare, for Repositories' Branches and History tabs. Shell-only: each is the driver's own read
-/// (<see cref="GitBranches"/>, <see cref="GitReads"/>) through the git the agents run, and `daoris-driver git` is the terminal's.
+/// (<see cref="GitBranches"/>, <see cref="GitReads"/>) through the git the agents run, and `daoris git` is the terminal's.
 /// </summary>
 public sealed class GitRoutes(DriverLoop loop)
 {

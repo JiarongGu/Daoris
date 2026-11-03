@@ -273,9 +273,9 @@ public static class WorkPausing
             PauseAct.Intake => $"  its intake {kept.Session} keeps reading; what it publishes waits too.",
             PauseAct.Teammate => $"  {kept.Session}{On(kept.Quest)} runs on {kept.Machine}; nothing this machine sends reaches it.",
             PauseKept.Elsewhere => $"  could not stop {kept.Session}{On(kept.Quest)}: the Daoris process that runs it took no request in time "
-                         + $"(a terminal's chat stops with its own Ctrl+C); `daoris-driver sessions stop {kept.Session}` asks again.",
+                         + $"(a terminal's chat stops with its own Ctrl+C); `daoris session stop {kept.Session}` asks again.",
             PauseKept.Unanswered => $"  could not stop {kept.Session}{On(kept.Quest)}: the service did not move its record; "
-                          + $"`daoris-driver sessions stop {kept.Session}` asks again.",
+                          + $"`daoris session stop {kept.Session}` asks again.",
             _ => $"  could not stop {kept.Session}{On(kept.Quest)}: it is queued, and nothing on this machine runs it yet.",
         }));
         return lines;
@@ -298,7 +298,7 @@ public static class WorkPausing
             $"  released the pause's stop of {stop.Session}{On(stop.Quest)}: a taken quest is carried on in its tree."));
         if (outcome.Holds is null)
         {
-            lines.Add("  what still holds its quests could not be read; `daoris-driver sessions` says where each stands.");
+            lines.Add("  what still holds its quests could not be read; `daoris session list` says where each stands.");
         }
         else
         {

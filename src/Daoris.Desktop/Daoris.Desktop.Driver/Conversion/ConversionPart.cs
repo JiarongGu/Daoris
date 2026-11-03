@@ -82,7 +82,6 @@ public static class ConversionParts
     /// <summary>A part's place in <see cref="Order"/>; a name it does not hold goes last.</summary>
     public static int Rank(string part) => Array.IndexOf(Ordered, part) is var at and >= 0 ? at : Ordered.Length;
 
-    /// <summary>The parts the door composes from <paramref name="doors"/>: the workflow part, and the others it is handed, in apply order.</summary>
-    public static IReadOnlyList<IConversionPart> Of(ConvertDoors doors) =>
-        [.. new IConversionPart[] { new WorkflowPart(doors) }.Concat(doors.Others).OrderBy(each => Rank(each.Name))];
+    /// <summary>The parts the door composes from <paramref name="doors"/>, in apply order.</summary>
+    public static IReadOnlyList<IConversionPart> Of(ConvertDoors doors) => [.. doors.Others.OrderBy(each => Rank(each.Name))];
 }

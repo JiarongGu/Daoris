@@ -232,7 +232,7 @@ public sealed class AgentSignInProcessTests : IDisposable
     [Fact]
     public async Task A_finished_sign_in_s_end_waits_for_another_process_s_hold_on_the_home_and_is_published_when_it_lets_go()
     {
-        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         Assert.NotNull(held);
         using var run = Typed("agent", "login", Agent, "--new", "--name", "Seat");
         var output = run.StandardOutput.ReadToEndAsync();

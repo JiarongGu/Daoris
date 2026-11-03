@@ -54,7 +54,7 @@ export type AsksPart = {
 };
 
 /**
- * **The asks' half of Quests** (INT4c; FRAME1d, D118 §2): the screen twin of `daoris-driver ask` (D50) — the
+ * **The asks' half of Quests** (INT4c; FRAME1d, D118 §2): the screen twin of `daoris ask` (D50) — the
  * composer that makes one, the rows at the head of the list, and the chosen one's page in the main area with its
  * two acts. A hook, since the rows and the page are drawn where the frame decides (`useQuestsView` holds it).
  *

@@ -241,7 +241,7 @@ public sealed class LandingSquashTests : IDisposable
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("git config user.name", refused.Message);
         Assert.Contains("git config user.email", refused.Message);
-        Assert.Contains("daoris driver landing", refused.Message);
+        Assert.Contains("daoris place landing", refused.Message);
         Assert.False(await BranchAsync(root, Named));
         Assert.Empty(trees.Recorded.All());
         Assert.Equal(1, (await trees.WorkAsync(tree.Path))!.Commits);

@@ -249,7 +249,7 @@ public sealed class GoAheadsHandedTests
     }
 
     /// <summary>
-    /// The terminal's door (`daoris-driver ask --go-ahead`): the person's yes or no posted to the ask's go-ahead door with
+    /// The terminal's door (`daoris ask go-ahead`): the person's yes or no posted to the ask's go-ahead door with
     /// their words, and the service's sentence back verbatim; a refusal is an answer too.
     /// </summary>
     [Fact]

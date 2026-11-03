@@ -55,7 +55,7 @@ public sealed class NewSessionChoices(string home)
 /// <summary>
 /// *Go on in a new session* (MSG1g, D137 §2.2's account paragraph): words a resume holds while the account their session ran on
 /// cools go on now in a new session, handed them, without that conversation. One door for the screen's route and the terminal's
-/// <c>daoris-driver sessions go-on-new</c> (D50): it keeps the person's choice (<see cref="NewSessionChoices"/>), and the
+/// <c>daoris session go-on-new</c> (D50): it keeps the person's choice (<see cref="NewSessionChoices"/>), and the
 /// driver's next look carries the words on as it carries on words whose account cannot run there.
 /// </summary>
 /// <remarks>
@@ -162,14 +162,14 @@ public static class GoOnNew
             $"{id} is Ask Daoris's own conversation, which has no quest a new session would serve: its words go on in it, or "
             + "Ask Daoris's history starts a new conversation from it."),
         Running => Refused(Running, $"{id} is {record.State}: words reach it there, so it needs no new session."),
-        NoWords => Refused(NoWords, $"no words wait on {id} to go on with: `daoris-driver sessions say {id} \"…\"` says some."),
+        NoWords => Refused(NoWords, $"no words wait on {id} to go on with: `daoris session say {id} \"…\"` says some."),
         // MSG1f3: the terminal's *Start a conversation with these words*, which takes them off this session.
         Conversation => Refused(Conversation,
             $"{id} is a conversation, which nothing carries on by itself: start a conversation with these words instead: "
-            + $"`daoris-driver sessions start-from {id}`."),
+            + $"`daoris session start-from {id}`."),
         Closed => Refused(Closed,
             $"#{record.Quest} has closed, so nothing carries its session's words on by itself: start a conversation with them "
-            + $"instead: `daoris-driver sessions start-from {id}`."),
+            + $"instead: `daoris session start-from {id}`."),
         NotCooling => Refused(NotCooling, $"the account {id} ran on is not cooling, so the same session goes on with your words at the driver's next look."),
         _ => Refused(code, $"{id} cannot go on in a new session."),
     };

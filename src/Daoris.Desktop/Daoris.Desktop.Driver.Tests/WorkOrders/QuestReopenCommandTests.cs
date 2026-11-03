@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1c3 (the fabric events design §E5; D173's CLOSE1c note; D156, D50): <c>daoris-driver quest reopen</c> and <c>quest
+/// FABRIC-CLOSE1c3 (the fabric events design §E5; D173's CLOSE1c note; D156, D50): <c>daoris quest reopen</c> and <c>quest
 /// go-on</c>, the terminal's doors to the person's reopen of a sealed submission and their go-on with the step it held, beside the
 /// quest page's <i>Reopen…</i> and <i>Go on with it</i>. The reopen names the quest's current submission, read just before; each says
 /// the service's sentence: 0 moved, 1 refused, 2 the usage. Runs no process: the fast half (MOD8).
@@ -99,7 +99,7 @@ public sealed class QuestReopenCommandTests
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  quest reopen <id> [--note \"…\"]\n", usage);
         Assert.Contains("\n  quest go-on <id>\n", usage);
-        Assert.StartsWith("usage: daoris-driver quest reopen <id> [--note \"…\"]", QuestReopenCommand.Usage);
+        Assert.StartsWith("usage: daoris quest reopen <id> [--note \"…\"]", QuestReopenCommand.Usage);
     }
 
     /// <summary>A service standing in: each request answered, or 404 with no JSON where the answer is null.</summary>

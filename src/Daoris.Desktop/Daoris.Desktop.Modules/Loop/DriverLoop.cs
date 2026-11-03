@@ -624,7 +624,7 @@ public sealed class DriverLoop(
 
     /// <summary>
     /// One circle's pass now (SYNC6b): the tick's own pass through the loop's own sync set, so the
-    /// screen's *Sync now* and `daoris-driver sync` run the same thing (D50). Null before the loop is up.
+    /// screen's *Sync now* and `daoris remote sync` run the same thing (D50). Null before the loop is up.
     /// </summary>
     /// <exception cref="DriverException">The circle has no remote on this machine.</exception>
     public Task<SyncReport>? SyncNowAsync(string workspace, CancellationToken ct) =>
@@ -1191,7 +1191,7 @@ public sealed class DriverLoop(
     }
 
     /// <summary>
-    /// Whether this machine's notify switch is on (Settings → Driver, <c>daoris driver notify</c>), read from its choices now: for an
+    /// Whether this machine's notify switch is on (Settings → Driver, <c>daoris settings notify</c>), read from its choices now: for an
     /// announcement made outside any look, a conversation's answer (NOTIFY1a) or a held tool call (NOTIFY2d). Choices that do not read
     /// err toward saying it, as the shell's notifier does.
     /// </summary>
@@ -1447,7 +1447,7 @@ public sealed class DriverLoop(
 
     /// <summary>
     /// This home's lease, taken for the desktop's loop for its life (DRV8a, D104; HOMELEASE1, the terminal RPC design §5).
-    /// While another live driver holds it — a terminal's `daoris-driver drive` — the loop waits, and says so at once, on the
+    /// While another live driver holds it — a terminal's `daoris drive` — the loop waits, and says so at once, on the
     /// channel a person acts on; while an act holds it — a terminal's verb acting alone, the first-start move, the launcher's
     /// swap — it waits, and says so once that hold has lasted <see cref="TellAfter"/>, on that channel and in the machine log.
     /// Either way it takes the lease the moment the holder lets go. Null when the shell closes first.

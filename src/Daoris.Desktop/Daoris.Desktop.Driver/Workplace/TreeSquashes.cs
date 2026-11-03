@@ -48,7 +48,7 @@ internal sealed class TreeSquashes(TreeContext context)
             ? null
             : $"the landing rule for `{repository}` squashes the work into one commit, which git makes as its own identity there, and git "
               + $"has no {missing} in `{repository}`, so nothing was landed. Set them in its checkout (`git config user.name \"Your Name\"` "
-              + "and `git config user.email you@example.com`), or set the rule without `--squash` (`daoris driver landing`), then accept again.";
+              + "and `git config user.email you@example.com`), or set the rule without `--squash` (`daoris place landing`), then accept again.";
     }
 
     /// <summary>

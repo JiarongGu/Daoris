@@ -2,7 +2,7 @@
   "integration.view.reading": "Reading the integration.",
   "integration.view.title": "Integration",
   "integration.view.body": "How work asked into {{repository}}'s line moves: the queue, the candidate being tried, what was handed back and what the line now holds.",
-  "integration.view.twin": "In a terminal: `daoris-driver integrate {{repository}}`",
+  "integration.view.twin": "In a terminal: `daoris integrate {{repository}}`",
   "integration.view.recheck": "Check again",
   "integration.view.none": "Nothing is asked into this line, and nothing was integrated here yet.",
   "integration.view.queue": "Queued",

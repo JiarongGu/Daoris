@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris driver workflow use … --landed</c> against real git (PUSH1f2b; FABRIC-PIPELINE1a, the pipeline design §1.3, §4.2), the part
+/// <c>daoris workflow use … --landed</c> against real git (PUSH1f2b; FABRIC-PIPELINE1a, the pipeline design §1.3, §4.2), the part
 /// of the family's text table (<c>DriverWorkflowsTextTests</c>) a repository git makes: the declaration at the line's tip shown and
 /// accepted by its blob, accepted again when it changes, accepted as none where the tip holds none, and the start node's routes that
 /// <c>show</c> says before the steps. The words are the CLI's, as its <c>workflowchoice-door.test.ts</c> held them.
@@ -44,7 +44,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
         return root;
     }
 
-    /// <summary><c>daoris driver workflow …</c> alone on this test's home, the terminal in it, the registry naming the repository's checkout.</summary>
+    /// <summary><c>daoris workflow …</c> alone on this test's home, the terminal in it, the registry naming the repository's checkout.</summary>
     private async Task<(int Exit, IReadOnlyList<string> Out)> RunAsync(string root, params string[] words)
     {
         _out.GetStringBuilder().Clear();

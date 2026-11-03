@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A repository's standing answer over the bridge (KNOWUSE1b, D135 §3): the screen's half of `daoris driver standing`, over
+/// A repository's standing answer over the bridge (KNOWUSE1b, D135 §3): the screen's half of `daoris place standing`, over
 /// the same file, answered in the state as rows so no key policy on the bridge respells a repository's name.
 /// </summary>
 public sealed class DriverModuleStandingTests : DriverModuleBridge

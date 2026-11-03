@@ -11,7 +11,7 @@ import { type HelpProposal, ProposalCard } from './ProposalCard';
 const LANDING = {
   id: 'p1a2b3c4', kind: 'setting' as const,
   describe: 'Land workspace `work`\'s accepted work on a branch `feature/{quest}-{slug}`.',
-  terminal: 'daoris driver landing --workspace work branch feature/{quest}-{slug}',
+  terminal: 'daoris place landing --workspace work branch feature/{quest}-{slug}',
   why: 'the person asked for feature branches',
 };
 
@@ -60,7 +60,7 @@ const ACCOUNT: HelpProposal = {
 const DELETE: HelpProposal = {
   id: 'p4', kind: 'delete',
   describe: 'Delete ask `#a1b2c3d4` “a test ask”, with the quest it became: `#q1a2b3c4` “Cap the chunk budget”.',
-  terminal: 'daoris-driver ask --delete a1b2c3d4',
+  terminal: 'daoris ask delete a1b2c3d4',
   why: 'it was a test',
 };
 
@@ -133,7 +133,7 @@ const press = async (proposal: HelpProposal, apply: string, dismiss = 'Not now')
 const GRANT: HelpProposal = {
   id: 'p9', kind: 'plugin',
   describe: 'Approve server `browser` of plugin `in-app-browser` for Ask Daoris.',
-  terminal: 'daoris-driver plugins approve in-app-browser browser --writes browser_click',
+  terminal: 'daoris plugin approve in-app-browser browser --writes browser_click',
   why: 'the person wants Ask Daoris to read a page',
   grant: {
     plugin: 'in-app-browser', name: 'In-app browser', server: 'browser',
@@ -246,7 +246,7 @@ describe('the kinds that reach every door', () => {
   // SESSUX1h2a: archiving sessions is the generic card, with its command; a session delete is the delete kind's.
   it('a session archive card is the generic one, with the terminal command beside Apply and Not now', async () => {
     const archive: HelpProposal = {
-      id: 'p14', kind: 'session', terminal: 'daoris sessions archive s1 s2', why: 'the person is done with them',
+      id: 'p14', kind: 'session', terminal: 'daoris session archive s1 s2', why: 'the person is done with them',
       describe: 'Archive 2 sessions: `s1`, `s2`. They leave the rail and keep their record.',
     };
 
@@ -285,7 +285,7 @@ describe('the kinds that reach every door', () => {
 
   // WORKFLOW1h-d: the design's card (§8.2): the title by version, Your part first, the diff, the outward acts, needs, applies to.
   const WORKFLOW: HelpProposal = {
-    id: 'p21', kind: 'workflow', terminal: 'daoris driver workflow edit docs-to-pr --base 1', why: 'the person asked',
+    id: 'p21', kind: 'workflow', terminal: 'daoris workflow edit docs-to-pr --base 1', why: 'the person asked',
     describe: 'Save version 2 of workflow `docs-to-pr` for `web-app`: new work only.',
     workflow: {
       id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
@@ -475,7 +475,7 @@ describe('the kinds that reach every door', () => {
 
   it('a session delete card is the delete kind\'s, naming the session', async () => {
     const remove: HelpProposal = {
-      id: 'p15', kind: 'delete', terminal: 'daoris sessions delete s9', why: 'a test run',
+      id: 'p15', kind: 'delete', terminal: 'daoris session delete s9', why: 'a test run',
       describe: 'Delete session `s9` and its transcript.',
     };
 
@@ -517,7 +517,7 @@ describe('the kinds that reach every door', () => {
   const HAND: HelpProposal = {
     id: 'p8', kind: 'hand',
     describe: 'Hand `feature/q2-second` (in `engine`) to plugin `example.lands`: it pushes the branch and opens the pull request against the line.',
-    terminal: 'daoris-driver trees hand feature/q2-second --repository engine',
+    terminal: 'daoris tree hand feature/q2-second --repository engine',
     why: 'the person wants its pull request opened',
   };
 
@@ -551,14 +551,14 @@ describe('the kinds that reach every door', () => {
   const SYNC: HelpProposal = {
     id: 'p11', kind: 'sync',
     describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you.',
-    terminal: 'daoris-driver trees sync --repository engine',
+    terminal: 'daoris tree sync --repository engine',
     why: 'the person\'s pull request merged',
     sync: { looked: false, rows: [] },
   };
   const LOOKED: HelpProposal = {
     ...SYNC,
     describe: 'Bring `engine` up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts.',
-    terminal: 'daoris-driver trees sync --repository engine --yes',
+    terminal: 'daoris tree sync --repository engine --yes',
     sync: {
       looked: true,
       rows: [
@@ -708,7 +708,7 @@ const ACCEPT: HelpProposal = {
   id: 'p12', kind: 'accept',
   describe: 'Accept the departure on quest `#q3done00` “Stream the tiles”, for `engine`: it departed from requirement 2, '
     + 'and what it held goes on — its next step, “Report on q3done00” to `game`, is published.',
-  terminal: 'daoris-driver quest accept q3done00',
+  terminal: 'daoris quest accept q3done00',
   why: 'the person said the first frame may go over',
   accept: {
     quest: 'q3done00', title: 'Stream the tiles',
@@ -758,7 +758,7 @@ describe('a place\'s set-up card', () => {
   const PLACE: HelpProposal = {
     id: 'pl1a2b3c', kind: 'setup',
     describe: 'Open the Agents place\'s Setup for `engine`, `site` in workspace `aurora`, with *Set up…* open on this ask.',
-    terminal: 'daoris-driver place engine site --preset merge-after-accept --plan',
+    terminal: 'daoris place engine site --preset merge-after-accept --plan',
     why: 'the person asked to set both up',
     place: {
       workspace: 'aurora', digest: 'd1',

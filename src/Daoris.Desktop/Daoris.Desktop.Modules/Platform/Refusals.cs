@@ -199,7 +199,7 @@ public static class Refusals
     // HIST1c (D153 point 2; the history-clearing design §1.2): why a clear of finished history keeps a unit, or a piece of one.
     // Each is a unit's code in HISTORY_PLAN's and HISTORY_CLEAR's answers, and the refusal of a clear of one quest, one ask or
     // one quest's failed sessions; which of a code's sentences is meant travels as the catalogue's `context`. Declared as the
-    // driver library's codes (HIST1d), which `daoris-driver history --json` prints from the same projection, so the two doors
+    // driver library's codes (HIST1d), which `daoris history --json` prints from the same projection, so the two doors
     // cannot spell one differently.
 
     /// <summary>No such quest or ask on this machine. Its <c>quest</c> or <c>ask</c> names it; a quest's travels as <c>context</c> <c>quest</c>.</summary>

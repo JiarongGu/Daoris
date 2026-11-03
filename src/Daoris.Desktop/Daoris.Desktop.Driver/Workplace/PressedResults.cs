@@ -252,7 +252,7 @@ public sealed class PressedResult
     /// </summary>
     internal static string HeldBack(string why, string session) =>
         $"{Capital(why)} before its plugin was told, so its push was not tried: the branch stands, and once you have looked at the quest "
-        + $"as it stands, `daoris-driver trees hand {session}` hands it on";
+        + $"as it stands, `daoris tree hand {session}` hands it on";
 
     private static string Capital(string words) => char.ToUpperInvariant(words[0]) + words[1..];
 }

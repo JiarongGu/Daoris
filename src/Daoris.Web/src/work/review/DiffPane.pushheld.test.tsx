@@ -34,7 +34,7 @@ const FILES = [{ path: 'notes.txt', status: 'added', added: 1, removed: 0, patch
 const DIFF = { session: 's1a2b3c4', base: '0123456789abcdef', truncated: null, files: FILES, source: 'tree' };
 const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'mine/x', plugin: 'example.lands', source: 'workspace' };
 const WHY = 'Its quest was taken back before its plugin was told, so its push was not tried: the branch stands, and once you have '
-  + 'looked at the quest as it stands, `daoris-driver trees hand s1a2b3c4` hands it on';
+  + 'looked at the quest as it stands, `daoris tree hand s1a2b3c4` hands it on';
 const HELD = { session: 's1a2b3c4', done: true, message: `put its work on \`mine/x\` — 1 commit(s). ${WHY}.`, branch: 'mine/x', withheld: WHY };
 const PUSHED = {
   session: 's1a2b3c4', done: true, message: 'put its work on `mine/x` — 1 commit(s).', branch: 'mine/x',

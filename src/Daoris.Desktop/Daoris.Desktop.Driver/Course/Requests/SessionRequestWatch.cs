@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// take, an answer, a removal: <see cref="Hears"/>), so a look never wakes the next.</para>
 ///
 /// <para>The shell's loop and the headless host's run one each, with the registry their conversations and driven sessions
-/// share. A terminal's <c>daoris-driver chat</c> runs none: a stop asked of its session is withdrawn after the wait, and
+/// share. A terminal's <c>daoris chat</c> runs none: a stop asked of its session is withdrawn after the wait, and
 /// it stops with its own Ctrl+C.</para>
 ///
 /// <para><b>A terminal's words</b> (MSG1e, D137 §5.2) are a say, handed to <see cref="Say"/> and answered beside the request. A

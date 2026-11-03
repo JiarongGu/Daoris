@@ -1649,7 +1649,7 @@ public sealed class QuestExchange(
     {
         const string Lead = " The person chooses how its conflict ends: *Drop mine* dismisses it and leaves this machine's work where it is, "
             + "or *Bring mine forward* takes the step afresh and goes on with that work in its kept tree";
-        const string Doors = " (on the quest's page, or `daoris-driver sync dismiss` and `sync forward`).";
+        const string Doors = " (on the quest's page, or `daoris remote sync dismiss` and `sync forward`).";
         return step switch
         {
             { Status: QuestStatus.Open, SourceReopened: not null } => Lead + ", once the work the step grows from is submitted again" + Doors,
@@ -2345,7 +2345,7 @@ public sealed class QuestExchange(
 
     /// <summary>
     /// The person marks a quest done (QUESTCLOSE1, D126's note), open or taken: what the quest page's *Mark done…* and
-    /// <c>daoris-driver quest done</c> say, after a session finished at a checkpoint left its quest taken, or whenever they
+    /// <c>daoris quest done</c> say, after a session finished at a checkpoint left its quest taken, or whenever they
     /// decide its work is done. It is the person's done, so it answers none of their requirements one by one: they are the
     /// person's own words, and the done is their word on them. Its note says it was theirs (<see cref="PersonDoneNote"/>), its
     /// parts beside it (<see cref="PersonDoneParts"/>, QUESTCLOSE1b1).
@@ -2597,7 +2597,7 @@ public sealed class QuestExchange(
             if (quest.Hold == QuestHold.Departed)
             {
                 return $"{at}: each of its {Count(verdict.Items.Count, "item")} is there. It still departs from a requirement, "
-                       + $"so it waits for the person's yes: `daoris-driver quest accept {quest.Id}`.";
+                       + $"so it waits for the person's yes: `daoris quest accept {quest.Id}`.";
             }
 
             if (quest.Hold == QuestHold.Unreviewed)
@@ -2619,8 +2619,8 @@ public sealed class QuestExchange(
                + $"there, so it stays held for the person:\n\n"
                + string.Join("\n", missing.Select(item => $"- requirement {item.Requirement}: `{item.Path ?? item.Gate}` {item.Result}"
                    + (item.Spelled is { } spelled ? $" (the commit holds `{spelled}`)" : "")))
-               + $"\n\nThe person accepts the done as it stands with `daoris-driver quest accept {quest.Id}`, or reads it again "
-               + $"at a later commit on the same history with `daoris-driver quest check {quest.Id} --commit <sha>`.";
+               + $"\n\nThe person accepts the done as it stands with `daoris quest accept {quest.Id}`, or reads it again "
+               + $"at a later commit on the same history with `daoris quest check {quest.Id} --commit <sha>`.";
     }
 
     /// <summary>A commit as a sentence names it: its first seven characters.</summary>
@@ -2786,7 +2786,7 @@ public sealed class QuestExchange(
 
         return $" It departed from {departed} of its {Count(closed.Answers.Count, "requirement")}, so it is held for the "
                + $"person's yes: {string.Join("; and ", await reviews.HoldsAsync(closed, "they accept it", ct).ConfigureAwait(false))}. "
-               + $"The departure is kept on the quest, and the person accepts it with `daoris-driver quest accept {closed.Id}`."
+               + $"The departure is kept on the quest, and the person accepts it with `daoris quest accept {closed.Id}`."
                + (closed.AwaitsEvidence ? $" Its evidence is read too: {read}." : "");
     }
 

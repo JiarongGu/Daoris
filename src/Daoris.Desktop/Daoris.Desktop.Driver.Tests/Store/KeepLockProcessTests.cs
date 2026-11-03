@@ -5,10 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONFIGLOCK1 across the two runtimes (D173's CONFIG1 note): the driver's writer of <c>driver.json</c> and the CLI's take one lock,
+/// CONFIGLOCK1 across the two runtimes (D173's CONFIG1 note): the driver's writer of <c>driver.json</c> and a Node writer take one lock,
 /// <c>driver.json.lock</c>, so neither's edit lands inside the other's re-read and rename. The other process is a Node running the CLI's
-/// own <c>keeplock.ts</c> and its keeping write, <c>jsonkeep.ts</c>, which the CLI's other home files still write through until PUSH1f2f
-/// (<c>driverconfig.ts</c> left with the driver family's TypeScript in PUSH1f2b): the lock file is the contract, as the lease's is
+/// own <c>keeplock.ts</c>, which the repository's tools take: the lock file is the contract, as the lease's is
 /// (<see cref="RecordLockProcessTests"/>). The in-process half is <see cref="KeepLockTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -27,12 +26,9 @@ public sealed class KeepLockProcessTests : IDisposable
         try { Directory.Delete(_folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    // Each source named whole, so the merge tool's scan reads which CLI files this Process class runs (CONFIG1's reach row).
+    // The source named whole, so the merge tool's scan reads which CLI file this Process class runs (CONFIG1's reach row).
     private static readonly string KeepLockSource =
         new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "keeplock.ts")).AbsoluteUri;
-
-    private static readonly string KeepingSource =
-        new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "jsonkeep.ts")).AbsoluteUri;
 
     /// <summary>A Node process running <paramref name="script"/> as a module, <c>KEEP_FILE</c> naming the file.</summary>
     private static Process Node(string script, string file)
@@ -76,39 +72,4 @@ public sealed class KeepLockProcessTests : IDisposable
         Assert.Equal(Both, File.ReadAllText(path));
     }
 
-    /// <summary>
-    /// 🔴 The driver holds the lock across its read and its write; the terminal's edit, made meanwhile, waits for it, then reads the file
-    /// again and keeps the driver's change.
-    /// </summary>
-    [Fact]
-    public async Task The_terminals_edit_waits_for_the_driver_holding_the_lock_and_neither_is_lost()
-    {
-        var path = Path.Combine(_folder, "driver.json");
-        File.WriteAllText(path, Start);
-        var script = $$"""
-            import { writeKeeping } from '{{KeepingSource}}';
-            process.stdout.write('read\n');
-            writeKeeping(process.env.KEEP_FILE, true, { drivable: ['engine'], notify: true }, { drivable: ['engine', 'orders'], notify: true });
-            """;
-        Process other;
-        Task<string> errors;
-        using (KeepLock.Take(path))
-        {
-            var read = File.ReadAllText(path);
-            other = Node(script, path);
-            errors = other.StandardError.ReadToEndAsync();
-            Assert.Equal("read", await other.StandardOutput.ReadLineAsync());
-            // Long enough for the terminal to reach its write, and to have made it, had it not waited.
-            await Task.Delay(400);
-            File.WriteAllText(path, read.Replace("\"notify\": true", "\"notify\": false"));
-        }
-
-        using (other)
-        {
-            await other.WaitForExitAsync();
-            Assert.True(other.ExitCode == 0, await errors);
-        }
-
-        Assert.Equal(Both, File.ReadAllText(path));
-    }
 }

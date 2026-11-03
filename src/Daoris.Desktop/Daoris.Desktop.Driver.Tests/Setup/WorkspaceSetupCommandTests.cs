@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSSETUP6 (D124 §4.5): the terminal's door to a workspace plan, <c>daoris-driver place --workspace &lt;name&gt; --adoption</c>.
+/// WSSETUP6 (D124 §4.5): the terminal's door to a workspace plan, <c>daoris place --workspace &lt;name&gt; --adoption</c>.
 /// <c>--plan</c> prints the list with what touched each and every refusal, and writes nothing; a press writes the plan and
 /// says the rule it added; <c>--pause</c>, <c>--resume</c> and <c>--stop</c> steer a plan already made, and print where it
 /// stands. Fast: the world is a stand-in.
@@ -57,7 +57,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         var code = await RunAsync(words.Split(' '), output);
 
         Assert.Equal(2, code);
-        Assert.Contains("daoris-driver place --workspace <name> --adoption [--plan]", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("daoris place --workspace <name> --adoption [--plan]", output.ToString(), StringComparison.Ordinal);
         Assert.False(File.Exists(WorkspaceSetupFile.PathOf(_home, "work")));
     }
 
@@ -162,7 +162,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         Assert.Contains("— paused by you", paused.ToString(), StringComparison.Ordinal);
         Assert.Contains("the plan for workspace `work` carries on", resumed.ToString(), StringComparison.Ordinal);
         Assert.Contains("the plan for workspace `work` is stopped", stopped.ToString(), StringComparison.Ordinal);
-        Assert.Contains("#q1 to `atlas` is open and nobody has started it: `daoris-driver quest delete q1` deletes it.", stopped.ToString(), StringComparison.Ordinal);
+        Assert.Contains("#q1 to `atlas` is open and nobody has started it: `daoris quest delete q1` deletes it.", stopped.ToString(), StringComparison.Ordinal);
         Assert.Contains("— stopped", stopped.ToString(), StringComparison.Ordinal);
     }
 
@@ -195,9 +195,9 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
 
         Assert.Contains("taken back in Repositories → the workspace's page → Setup → Remote and reach, or `daoris agent rules remove <rule> --workspace \"my team\"`.",
             pressed.ToString(), StringComparison.Ordinal);
-        Assert.Contains("a plan for workspace `my team` is already working, made 2026-10-02. `daoris-driver place --workspace \"my team\" "
+        Assert.Contains("a plan for workspace `my team` is already working, made 2026-10-02. `daoris place --workspace \"my team\" "
             + "--pause`, `--resume` or `--stop` steers it", again.ToString(), StringComparison.Ordinal);
-        Assert.Contains("the plan for workspace `my team` is paused: nothing more is asked until `daoris-driver place --workspace "
+        Assert.Contains("the plan for workspace `my team` is paused: nothing more is asked until `daoris place --workspace "
             + "\"my team\" --resume`", paused.ToString(), StringComparison.Ordinal);
     }
 
@@ -210,10 +210,10 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         Assert.Equal(1, await RunAsync(["--workspace", "R&D", "--pause"], steered));
         Assert.Equal(1, await RunAsync(["--workspace", "R&D", "--adoption"], pressed));
 
-        Assert.Contains("there is no plan for workspace `R&D`: `daoris-driver place --workspace <workspace> --adoption` makes one.",
+        Assert.Contains("there is no plan for workspace `R&D`: `daoris place --workspace <workspace> --adoption` makes one.",
             steered.ToString(), StringComparison.Ordinal);
         Assert.Contains("no repository on this machine's registry is in workspace `R&D`. Add them on Repositories, or with "
-            + "`daoris import <folder> --workspace <workspace>`, then press again.", pressed.ToString(), StringComparison.Ordinal);
+            + "`daoris repository import <folder> --workspace <workspace>`, then press again.", pressed.ToString(), StringComparison.Ordinal);
     }
 
     private Task<int> RunAsync(string[] args, TextWriter output, WorkspaceSetupStandIn? world = null, DriverConfig? config = null) =>

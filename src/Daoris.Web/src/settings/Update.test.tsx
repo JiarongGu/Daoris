@@ -91,8 +91,8 @@ describe("Settings' update row", () => {
   it.each([
     {
       code: 'move', phase: 'rolled-back',
-      en: 'Daoris 0.0.2 could not start, so Daoris went back to the build before it: a file could not be moved for a reason other than being held open, so what had moved was put back; daoris-driver update says why.',
-      zh: 'Daoris 0.0.2 无法启动，已退回到之前的版本：有文件因被占用以外的原因无法移动，已移动的文件都已放回原处；daoris-driver update 会说明原因。',
+      en: 'Daoris 0.0.2 could not start, so Daoris went back to the build before it: a file could not be moved for a reason other than being held open, so what had moved was put back; daoris update says why.',
+      zh: 'Daoris 0.0.2 无法启动，已退回到之前的版本：有文件因被占用以外的原因无法移动，已移动的文件都已放回原处；daoris update 会说明原因。',
     },
     {
       code: 'error', phase: 'refused',

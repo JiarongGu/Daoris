@@ -311,7 +311,7 @@ public sealed class WorkflowGraphsTests : IDisposable
             // FABRICRUN1: the runtime asks which version a quest's run is bound to (`NodeRuntime.BoundIn`), only to leave that unit
             // ungoverned by Current's graph; it evaluates nothing on the version and stores no digest of it, so that one read stays.
             // FABRIC-GRAPH1j: `workflow apply --as-graph` writes a decoded graph as a new version, which binds its own digest, never a decoded one.
-            // SETUPUX1b: the effective graph draws a version of steps as the graph it decodes to, for the page to read; it binds nothing.
+            // The migration draws a version of steps as the graph it saves, once.
             // REVIEW2 T11: each exemption is one code line, pinned by its text; a second call in the file, or this one changed, fails here, and
             // a comment's mention is no read.
             .Where(file => (Path.GetFileName(file) is var name && PinnedReads.TryGetValue(name, out var pinned)
@@ -327,9 +327,8 @@ public sealed class WorkflowGraphsTests : IDisposable
     private static readonly Dictionary<string, string> PinnedReads = new(StringComparer.Ordinal)
     {
         ["NodeRuntime.cs"] = ": WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(ReviewGate.ChainOf([.. quests], quest.Id), unit.Owner.Repository ?? \"\") ?? quest.Id);",
-        // WORKFLOWCLEAN1 1e: the conversion draws a version of steps as the graph it saves, once.
-        ["WorkflowLegacy.cs"] = "if (version.Steps is { } steps) return WorkflowGraphs.Saved(steps);",
-        ["WorkflowEffectives.cs"] = ": ((JsonNode)WorkflowGraphs.Saved(newest.Steps!), WorkflowGraphs.Graph(newest.Steps!).Nodes);",
+        // The migration draws a version of steps as the graph it saves, once.
+        ["WorkflowMigration.cs"] = "return WorkflowNamed.ReadSteps(document.RootElement.Clone(), version.Version).Steps is { } steps ? WorkflowGraphs.Saved(steps) : null;",
     };
 
     /// <summary>A file's text without its comment lines and its pinned line, which must be there exactly once.</summary>

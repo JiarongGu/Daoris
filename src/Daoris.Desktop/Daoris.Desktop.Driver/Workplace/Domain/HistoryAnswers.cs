@@ -115,12 +115,12 @@ public sealed record HistoryClearAnswer(
 /// <summary>A unit the list said may go that stayed, with what keeps it now.</summary>
 public sealed record HistoryChangedAnswer(string Kind, string Id, HistoryReasonAnswer Keep);
 
-/// <summary><c>daoris-driver history --json</c> with no workspace: each workspace's <c>HISTORY_PLAN</c> answer.</summary>
+/// <summary><c>daoris history --json</c> with no workspace: each workspace's <c>HISTORY_PLAN</c> answer.</summary>
 public sealed record HistoryWorkspacesAnswer(IReadOnlyList<HistoryPlanAnswer> Workspaces);
 
 /// <summary>
 /// What a clear's two presses answer, for both doors (HIST1c, HIST1d; the history-clearing design §6.2–§6.3): the shell's
-/// <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c> return these, and <c>daoris-driver history --json</c> prints the first, so the
+/// <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c> return these, and <c>daoris history --json</c> prints the first, so the
 /// terminal's answer is the route's field for field by construction. Ids, counts and bytes: never a path or a title.
 /// </summary>
 /// <remarks>

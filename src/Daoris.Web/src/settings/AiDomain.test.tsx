@@ -27,7 +27,7 @@ import { DRIVER_STATE, respond, show, STATUS, WIRING } from '../test/shellHarnes
 /**
  * Daoris's own AI (AGT6): the jobs it may use a model for, the tier answering each, and how to change
  * it. The search tier is the service's answer, over HTTP like every browser's; Intake is this machine's `driver.json`, an actor's
- * row since MODELROLE1d, its editor the screen's half of `daoris driver intake` (D50).
+ * row since MODELROLE1d, its editor the screen's half of `daoris role set intake` (D50).
  */
 describe('AI features on Settings', () => {
   const ROSTER = {

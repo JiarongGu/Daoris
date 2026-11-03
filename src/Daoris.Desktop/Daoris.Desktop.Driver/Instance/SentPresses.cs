@@ -22,7 +22,7 @@ public sealed record SentPress(string Id, string Key, string Route, DateTimeOffs
 
 /// <summary>
 /// The presses a terminal sent to the running Daoris, each with the key that reads it (RPC1j, the terminal RPC design §6.1), so
-/// <c>daoris-driver result &lt;id&gt;</c> can ask <c>RESULT</c> for one whose answer did not reach the verb. One file per press in the
+/// <c>daoris press result &lt;id&gt;</c> can ask <c>RESULT</c> for one whose answer did not reach the verb. One file per press in the
 /// home's <c>profiles/pipe-sent</c> (<see cref="HomeEntry.PipeSent"/>; CONFIRMWAIT1, the confirm-wait design §15.2 item 6): a file
 /// that holds a key is a sign-in (D172 point 3), and the card it reads may live for weeks in <c>data/</c>, so it is never under
 /// <c>run/</c>, which anyone may clear while Daoris is closed; one a build before kept under <c>run/pipe/sent</c> is still read there.

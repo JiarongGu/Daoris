@@ -9,7 +9,7 @@
   "work.trace.story.sessions_other": "{{count}} sessions",
   "work.trace.nothing.session": "Nothing on the record names this session.",
   "work.trace.nothing.quest": "Nothing on the record names this quest.",
-  "work.trace.terminal": "A terminal reads the same chain with `daoris-driver trace {{kind}} {{id}}`, which also says why a store did not answer.",
+  "work.trace.terminal": "A terminal reads the same chain with `daoris trace {{kind}} {{id}}`, which also says why a store did not answer.",
   "work.trace.missing": "missing",
   "work.trace.from": "from {{source}}",
   "work.trace.source.sessions": "the service's session record",

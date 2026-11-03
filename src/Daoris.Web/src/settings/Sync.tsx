@@ -194,7 +194,7 @@ export const syncKeys = (plan: SyncPlan) => [
  * the press of *Look for updates*. **The press does only what the list showed**, and the driver judges each row again
  * right before it acts: a line only by a fast-forward, in a clean checkout on it or as a ref nothing has checked out;
  * a replay in a tree of Daoris's own, aborted on a conflict. Nothing is pushed, and a branch on its remote is left.
- * `daoris-driver trees sync` is the terminal's door (D50). A section of the session branches card, drawn above them.
+ * `daoris tree sync` is the terminal's door (D50). A section of the session branches card, drawn above them.
  *
  * **It takes the repositories that hold Daoris's branches** (D112). Every other one with a checkout is listed apart,
  * collapsed, and looked at only once the person ticks it — or all of them — and asks; looking again keeps it. A workspace's

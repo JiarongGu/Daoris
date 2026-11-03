@@ -159,7 +159,7 @@ describe('where it is said', () => {
         <SessionRow
           session={session()}
           heavy={heavyPartOf(RUNNING, 's-fts')}
-          grouping={{ session: 's-fts', group: 'working', calling: { title: 'daoris-driver run-heavy', since: ago(9) } } as never}
+          grouping={{ session: 's-fts', group: 'working', calling: { title: 'daoris gate run', since: ago(9) } } as never}
         />
       </ul>,
     );
@@ -170,7 +170,7 @@ describe('where it is said', () => {
   it('the head\'s facts say it in place of the call, and a held permission still comes first', () => {
     const t = i18n.t.bind(i18n);
     const heavy = heavyLine(t, heavyPartOf(RUNNING, 's-chan')!, titleOf);
-    const facts = sessionFacts(t, { session: session({ id: 's-chan' }), shown: 'working', heavy, calling: { title: 'daoris-driver run-heavy', since: ago(3) } });
+    const facts = sessionFacts(t, { session: session({ id: 's-chan' }), shown: 'working', heavy, calling: { title: 'daoris gate run', since: ago(3) } });
     expect(facts).toContain(heavy);
     expect(facts.some((fact) => fact.includes('running daoris-driver'))).toBe(false);
   });
