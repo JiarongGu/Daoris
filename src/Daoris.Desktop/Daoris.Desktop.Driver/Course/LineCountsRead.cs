@@ -16,21 +16,61 @@ public sealed class LineCountsRead(
     /// <summary>Every count of the line <paramref name="session"/> is on; none for a teammate's record.</summary>
     public async Task<IReadOnlyList<LineCount>> OfAsync(string session, CancellationToken ct)
     {
-        string? json = null;
+        var json = await RecordsJsonAsync(service, ct).ConfigureAwait(false);
+        return LineCounts.Of(session, Gather(session, json, events, moves, admissions, home, forgiven()));
+    }
+
+    /// <summary>The service's records as it answered them, closed ones included; null where it did not, so their counts read unknown.</summary>
+    public static async Task<string?> RecordsJsonAsync(ServiceClient service, CancellationToken ct)
+    {
         try
         {
-            json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+            return await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            // The service did not answer: the counts that come from its records read unknown.
+            return null;
         }
-
-        var evidence = Gather(
-            session, json, id => EventsOf(events, id), line => MovesOf(home, line, moves), forgiven(),
-            history => admissions.Count(history) is { From: ContinuationAdmissions.Admission } kept ? kept : null);
-        return LineCounts.Of(session, evidence);
     }
+
+    /// <summary>
+    /// The line <paramref name="session"/> is on as facts below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i; the context-counters design §3,
+    /// §5): its counts, each with the number Daoris acts on it at today, its parts and its last go-ons, read from this home's files over the
+    /// records' text as the service answered it (null where it did not).
+    /// </summary>
+    public static LineFacts FactsOf(string home, string session, string? recordsJson)
+    {
+        var config = Config(home);
+        var evidence = Gather(
+            session, recordsJson, new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), new StaffMoves(home), new ContinuationAdmissions(home), home,
+            config.Forgiven);
+        return new LineFacts(
+            LineCounts.Facts(LineCounts.Of(session, evidence), config.Strikes), LineCounts.Parts(session, evidence), LineCounts.GoOns(session, evidence));
+    }
+
+    /// <summary>The same, the records read from <paramref name="service"/> now.</summary>
+    public static async Task<LineFacts> FactsAsync(ServiceClient service, string home, string session, CancellationToken ct) =>
+        FactsOf(home, session, await RecordsJsonAsync(service, ct).ConfigureAwait(false));
+
+    // The home's own configuration, its failed sessions and the marks Try again left; one that does not read is the defaults'.
+    private static DriverConfig Config(string home)
+    {
+        try
+        {
+            return DriverConfig.Load(DriverConfig.ResolvePath(home));
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            return DriverConfig.Empty;
+        }
+    }
+
+    private static LineEvidence Gather(
+        string session, string? json, SessionEvents events, StaffMoves moves, ContinuationAdmissions admissions, string home,
+        IReadOnlyDictionary<string, int> forgiven) =>
+        Gather(
+            session, json, id => EventsOf(events, id), line => MovesOf(home, line, moves), forgiven,
+            history => admissions.Count(history) is { From: ContinuationAdmissions.Admission } kept ? kept : null);
 
     /// <summary>
     /// The evidence for the line <paramref name="session"/> is on, from the records' text as the service answered it (null where it did not) and

@@ -277,6 +277,12 @@ public sealed record SessionTarget(
     public ComposedBrief? Brief { get; init; }
 
     /// <summary>
+    /// For a start that holds no brief (CONTEXTDRIVE1b; the context-counters design §3 point 2): its line's course as Daoris counts it,
+    /// the brief's item and its account, where any count of its line is not zero. Null where none is, and the instruction reads as before.
+    /// </summary>
+    public ComposedBrief? Course { get; init; }
+
+    /// <summary>
     /// For a carry-on after an account's limit (TOOL4f, D125 §3.5): the cut-off session ran on another account, which is
     /// now cooling, so nothing of its own conversation carries over. Names no account: the instruction is the agent's.
     /// </summary>
@@ -496,6 +502,8 @@ public static class TargetPrompt
         // What waited on the ask's channel for this line of work (SESSONE2b), counted with what the sessions before it left, as the
         // parts before it are (SESSONE1d), so no page catalogue changed.
         new(HandedSections.CarryOn, AgentWorkWords.Current.Channel(target.Channel)),
+        // CONTEXTDRIVE1b: a start's line's course, counted in the brief's own section; a carry-on's brief carries it among its own.
+        .. (target.Course?.Pieces ?? []).Select(piece => new Piece(piece.Section, piece.Text)),
     ];
 
     /// <summary>

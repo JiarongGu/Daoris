@@ -3143,6 +3143,9 @@ public sealed class Driver(
                     service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
             if (prior is not null && continues is not null && brief is not null) SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
+            // CONTEXTDRIVE1b (§3 point 2): a start with no brief carries its line's course where any count is not zero, a quest that failed here
+            // before among them; a carry-on's brief carries it among its own.
+            var course = brief is null ? ContextBrief.Counted((await LineCountsRead.FactsAsync(service, home, sessionId, ct).ConfigureAwait(false)).Counts) : null;
             var elsewhere = prior is not null && AccountIdentity.OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -3285,6 +3288,7 @@ public sealed class Driver(
                 BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
                 Brief = brief,
+                Course = course,
                 // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim; the brief carries it.
                 HandedNote = handedNote,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
