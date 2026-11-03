@@ -1425,20 +1425,26 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.True(woken >= 2);
     }
 
-    /// <summary>WORKFLOWCLEAN1g-ii: while the kept census holds places, one row for the home says how many, and it is pushed.</summary>
+    /// <summary>
+    /// WORKFLOWCLEAN1g-ii, ONEWAY1ae: while any part's kept census holds old records, one row for the home, its stored kind kept, says how many
+    /// and how many by part, and it is pushed; a part that has ended is not counted.
+    /// </summary>
     [Fact]
     [Trait("Category", "Census")]
-    public void A_census_that_holds_places_is_one_row_for_the_home()
+    public void A_census_that_holds_old_records_is_one_row_for_the_home_counted_by_part()
     {
         var conversion = new ConversionCensus(null);
-        conversion.Tell(new([], [new("aurora", false, "default", ["steps"], false, false)], [], []));
+        conversion.Tell([new("workflows", 3, false), new("settings", 2, false), new("git", 0, true)]);
         var row = Assert.Single(Rows(new() { Conversion = conversion.Wait() }));
         Assert.Equal("workflow-convert:home", $"{row["kind"]}:{row["id"]}");
-        Assert.Equal(1, row["convert"]!["places"]!.GetValue<int>());
+        Assert.Equal(5, row["convert"]!["records"]!.GetValue<int>());
+        Assert.Equal((3, 2), (row["convert"]!["parts"]!["workflows"]!.GetValue<int>(), row["convert"]!["parts"]!["settings"]!.GetValue<int>()));
+        Assert.Null(row["convert"]!["parts"]!["git"]);
         var pushed = AttentionStateSlice.Judge(new() { Conversion = conversion.Wait() })!.Single(each => each.Partition == AttentionStateSlice.Rows);
-        Assert.Contains("\"places\"", JsonSerializer.Serialize(pushed.Data, IpcJson.Options));
+        Assert.Contains("\"records\"", JsonSerializer.Serialize(pushed.Data, IpcJson.Options));
+        Assert.False(conversion.Tell([new("settings", 2, false), new("workflows", 3, false)]));
 
-        conversion.Tell(new([], [], [], []));
+        conversion.Tell([new("workflows", 0, true)]);
         Assert.Empty(Rows(new() { Conversion = conversion.Wait() }));
     }
 

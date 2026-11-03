@@ -36,6 +36,12 @@ public static class TransitionalRegister
     private static readonly string[] OldNames = ["early", "near", "prefer", "parallel"];
     private static readonly string[] PooledSections = ["defaults", "workspaces", "workspaceVersions", "workspaceRotation", "workspaceRotationUse"];
 
+    /// <summary>
+    /// The first build that deleted a read the floor ended (a ONEWAY1af step, or FOUNDATION1 row v), from which the conversion's Undo is refused:
+    /// Undo lifts the rollback refusal that holds the floor. Null while no such read is deleted; the row that deletes one names its build here.
+    /// </summary>
+    public static string? FloorNeeded => null;
+
     public static IReadOnlyList<TransitionalEntry> Entries { get; } =
     [
         new()
