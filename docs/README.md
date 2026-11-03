@@ -340,7 +340,22 @@ Read records by identifier; do not read a whole log to find one entry.
 | `backlog-parked.md` | Open rows set aside; moved back to `TASKS.md` when taken up
 | `../CHANGELOG.md` | Release-facing changes; workflow stamps headings
 | `DECISIONS.md` | Pointer to decisions; append none here
-| `decisions/` | Numbered decisions, dated amendments, one file each
+| `areas/README.md` | The areas: the current truth per area, read first, and the choices still open
+| `areas/agents-and-harnesses.md` | Area: Agents and harnesses, how it works now
+| `areas/co-working-and-messages.md` | Area: Co-working and messages, how it works now
+| `areas/code-structure-and-process.md` | Area: Code structure and the development process, how it works now
+| `areas/conversations-and-context.md` | Area: Conversations and context, how it works now
+| `areas/desktop-app.md` | Area: The desktop app and its window, how it works now
+| `areas/doctrine-and-cli.md` | Area: Doctrine and the CLI, how it works now
+| `areas/driving.md` | Area: Driving, how it works now
+| `areas/git-and-remotes.md` | Area: Git and remotes, how it works now
+| `areas/install-home-update.md` | Area: Install, home and update, how it works now
+| `areas/knowledge-memory-records.md` | Area: Knowledge, memory and records, how it works now
+| `areas/plugins.md` | Area: Plugins, how it works now
+| `areas/roles-and-supervision.md` | Area: Roles and supervision, how it works now
+| `areas/workflows-review-landing.md` | Area: Workflows, review and landing, how it works now
+| `decisions/` | History: numbered decisions, dated amendments, one file each, read for the reasoning
+| `decisions/README.md` | Which rule of each decision lives in which area, generated
 | `task-archive.md` | Completed tasks: wording, date, outcome
 | `FIX-LOG.md` | Defect cause, repair, verification
 | `2026-09-25-rev3-review.md` | REV3/CLEAN1 ledger

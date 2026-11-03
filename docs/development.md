@@ -514,11 +514,12 @@ the private patterns. A test that needs an example machine path spells it in pie
 (`string.Concat("D:", @"\", "Users", …)`, as `SessionSyncTests` does) so the scan does not read the
 fixture as a leak; a literal home path in a test fails the merge, not the worker.
 
-Record plans and findings while working, in the backlog or the matching review/design record. A
-load-bearing decision belongs under `docs/decisions/`, with its rejected alternatives and limits.
-A regression gets its entry in `docs/FIX-LOG.md`, and any fix's commit body names the root cause.
-A finished task moves to `docs/task-archive.md` with a short dated outcome. The changelog describes
-release-facing behavior; it does not retell a documentation audit.
+A change rewrites its area's sentence in `docs/areas/` where behaviour changed, and nothing else by
+hand unless a gate asks (the `change` skill). A decision under `docs/decisions/` is written only for a
+choice that rejected an alternative. A regression's root cause goes in its commit body, and in
+`docs/FIX-LOG.md` only for a regression. A finished task moves to `docs/task-archive.md` with one
+outcome line. The changelog describes what a user of a release sees, and the steward writes it at
+the scope's end.
 
 ## Review and refactor
 
@@ -537,8 +538,8 @@ replace their independent implementations and parity fixtures.
 ## Maintain the documentation
 
 Each fact has one home. User instructions belong in the root/component guides; current development
-practice in this guide and the shared brief; contracts in the router; build decisions in their dated
-notes; open work in the backlog; receipts in the archive. A design's baseline code snapshot stays
+practice in this guide and the shared brief; how each area works now in `docs/areas/`; the reasoning
+behind a choice in its decision; open work in the backlog; receipts in the archive. A design's baseline code snapshot stays
 dated. Update its standing pointer when later decisions supersede it, rather than rewriting evidence
 as if the observation had been made today.
 

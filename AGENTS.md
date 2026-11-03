@@ -29,8 +29,9 @@ without a service. Model-dependent capabilities state the tier that actually ran
 - Do each thing one way (D228). A change that supersedes an older way removes it — code, doors, words and
   defaults — in the same chunk; an older record still read keeps its path only with the condition that ends it
   and the row that deletes it. A second way to do one job is a defect.
-- Keep project facts in versioned records. Rewrite a present fact where it lives (D220); append
-  amendments to decisions as history, and move completed tasks from the backlog to the archive.
+- Keep project facts current in `docs/areas/`, one document per area written from the code: a change
+  rewrites its area's sentence in place. Decisions are history; write one only for a choice that rejected
+  an alternative. Move a completed task from the backlog to the archive with one outcome line.
 - Do not hand-edit versions or release headings. The release workflow owns their stamping.
   Local commits follow green gates; push, publication and history rewrites remain the owner's call.
 - Keep Codex execution defaults in `.codex/config.toml`. Authorized scratch cleanup follows
@@ -73,15 +74,17 @@ source tests without an emit, so typechecking is a separate gate. CLI files are 
 as BOM-less UTF-8 with LF. Tools with importable helpers guard their runner with `isMain` from
 `tools/fsx.mjs`. Exit codes are `0` clean, `1` policy failure, `2` tool error.
 
-Make every change through the `change` skill. Open `docs/index/README.md` before searching code, then
-read its named ranges. Code changes need their relevant regression tests and checks. Installed-window
+Make every change through the `change` skill: read its area in `docs/areas/` first, then open
+`docs/index/README.md` before searching code and read its named ranges. Code changes need their relevant regression tests and checks. Installed-window
 proof remains distinct from a story or mocked bridge.
 
 ## Where things are
 
 The generated table below names the records declared in `daoris.json`. The document router also
 lists user and contributor guides. `ROADMAP.md` gives sequence; `TASKS.md` holds remaining work.
-Each numbered decision and its dated notes are read by lookup, as are archive and fix entries.
+`docs/areas/README.md` lists the areas and the choices still open. The decisions, the archive and the
+fix log are history, read by lookup for the reasoning; `docs/decisions/README.md` says which rule of
+each lives in which area.
 
 <!-- daoris:rules — generated; edit the canon, not this -->
 # Doctrine
@@ -117,7 +120,8 @@ Declared in `daoris.json`; look here before searching.
 |---|---|---|
 | router | `docs/README.md` | every document, its kind and its standing |
 | index | `docs/index/README.md` | where things are in the code and the records, generated: open it before searching |
-| decisions | `docs/decisions` | numbered decisions, with why and what each rejected |
+| areas | `docs/areas` | how each area works now, from the code: read first, rewritten in place |
+| decisions | `docs/decisions` | history: why each rule was chosen and what it rejected, read for the reasoning only |
 | backlog | `TASKS.md` | open work only |
 | archive | `docs/task-archive.md` | finished work, with its date and outcome |
 | fixes | `docs/FIX-LOG.md` | regressions only: the root cause, and the commit that introduced it |
