@@ -162,13 +162,12 @@ public static class DriverCommand
               waiting for its turn's end go next, where its door can.
           sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
-          sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now] [--now]
+          sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
               say something to a session of this machine's: read at its next step or when its turn ends while it
               works, or, parked or ended, the same session goes on with it: a park's answer is said here. Prints
-              where the words stand. --level
-              is when it reads them while it works: ordinary at its turn's end, urgent (the default) at its next
-              step, now cutting its step where its agent steers; no level stops its turn. --now is --level now. It
-              says what the door did, and why where it could not.
+              where the words stand. --level is when it reads them while it works: ordinary at its turn's end,
+              urgent (the default) at its next step, now cutting its step where its agent steers; no level stops
+              its turn. It says what the door did, and why where it could not.
           sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
               take back one of your words waiting on a parked or ended session before it goes on with them, or put
               new words in its place; with no word, list those waiting with their ids.

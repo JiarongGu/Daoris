@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver sessions say` takes its level one way, `--level ordinary|urgent|now`: `--now` is refused, naming `--level now`, and the usage no longer lists it.
 - A session waiting on you is answered one way: through its box, its card or `daoris-driver sessions say <id> "…"`. The terminal's `daoris-driver answer` is gone, and an answer needs words: the card's *Carry on with this answer* waits for them, as the box does.
 - Fixed: a finished session you were still talking to could lose its tree to the look's tidy, and your next words then had no way on but a new conversation that knew nothing of the session. The tidy now leaves a session's tree for an hour after you last spoke to it, and where a finished quest's session's tree is gone anyway, *Go on with Daoris's brief* is offered: your words go on in a new part of it, in a fresh tree, handed Daoris's brief of the session (TREEGONE2).
 - A chat or build in a repository that declares no lanes (or is not driven here) is no longer told to work everything itself: "yourself" is kept to that repository's own rows, and every routing line now says that work another repository owns goes to it as a quest, and a question about this repository goes to a helper.

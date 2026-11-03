@@ -490,7 +490,7 @@ public sealed class DriverCommandTests
         Assert.Contains("\n  sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>\n", usage);
         Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
         // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too, at a level (COWORK1a).
-        Assert.Contains("\n  sessions say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now] [--now]\n", usage);
+        Assert.Contains("\n  sessions say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now]\n", usage);
         Assert.Contains("sessions say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));

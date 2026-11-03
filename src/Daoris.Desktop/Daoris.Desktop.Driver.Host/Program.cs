@@ -137,7 +137,7 @@ using Daoris.Driver;
 //                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
 //                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
 //                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
-//   sessions say <id> "…" [--file <path>]… [--now]
+//   sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
 //                 say something to a session of this machine's, a park's answer among them, the one door that answers one
 //                 (MSG1e, D137 §5.2; ONEWAY1k): a say request in the same folder,
 //                 which the loop that runs it holds at its door, and any loop keeps on the record of one nothing here
