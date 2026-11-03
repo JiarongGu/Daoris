@@ -1134,7 +1134,9 @@ a plugin) — and every line one writes reaches the console under `plugin:<id>`,
 `daoris plugin list|add|update|remove|enable|disable` is the terminal door; the Settings page's Plugins
 card is the other — the same rows, the same `plugins.json`, Remove naming what a plugin kept. Since
 PLUG9 (c, d; D103) each row carries its `source` (a folder, the install's offer, or none recorded, from
-`.daoris-source.json` in its install folder); `PLUGIN_UPDATE` {id} answers what an update would change or
+`.daoris-source.json` in its install folder, an offer's with the digest of the files its install copied);
+a copy of an offer's id carries `shipped` where it is older than the offer or changed from it (LANDPIN3,
+LANDPIN3b; D119); `PLUGIN_UPDATE` {id} answers what an update would change or
 why it cannot, and `{id, apply: true}` swaps the folder in, the hook stopped first. `PLUGINS` also answers
 `offers`, Daoris's own plugins the install carries in `app/plugin-offers/` (found beside this
 executable, else beside the home), each with its README's requirement lines, and `PLUGIN_INSTALL`

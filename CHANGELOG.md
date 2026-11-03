@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- Fixed: a copy of one of Daoris's own plugins that was older than the one the install ships, and whose files you had edited, was offered an update that replaced your edits. Installing or updating one of Daoris's own plugins now records the files it copied, so an older copy edited since is shown as *changed here*, with both versions, and neither the window nor `daoris plugin update` replaces it. A copy installed before this has no such record: its page says Daoris cannot tell whether it was changed and that an update replaces every file.
 - Fixed: on a place's page, the window growing or shrinking past the width where the Workflow chart takes a column of its own drew the chart again from nothing, so the step editor lost the step you had selected and closed its open drawer. The chart now keeps its place, and the editor keeps both.
 - `daoris-driver sessions say` takes its level one way, `--level ordinary|urgent|now`: `--now` is refused, naming `--level now`, and the usage no longer lists it.
 - A session waiting on you is answered one way: through its box, its card or `daoris-driver sessions say <id> "…"`. The terminal's `daoris-driver answer` is gone, and an answer needs words: the card's *Carry on with this answer* waits for them, as the box does.

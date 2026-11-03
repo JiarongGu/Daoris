@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-04 - An older copy of an example plugin edited since its install was said older, and its update replaced the edits (LANDPIN3b)
+
+- **Symptom:** a copy of `github-pull-request` or `azure-devops-pull-request` installed from the install's offer, edited by hand, and then older than the offer a republish brought, was said *update available*; its update, from the record's offer or the shipped press, replaced the edited files.
+- **Root cause:** LANDPIN3 judged edits by comparing the copy with the shipped files, which only answers at the same version; nothing recorded the files an older install had copied, so an older copy could only be said older.
+- **Fix:** an install or update from an offer writes `digest` (`PluginFolders.Digest`) into `.daoris-source.json`; `PluginShipped.Judge` says an older copy `changed` where its files no longer give that digest, `PluginInstall.PlanUpdate` refuses both doors for it, and an older copy whose record has no digest is `older` with `unjudged` (D119's LANDPIN3b note).
+- **Verify:** `PluginShippedTests` (the edited, added-and-removed, as-installed and from-before-the-digest cases), `PluginSourceTests`' record rows, `PluginsTextTests`' new `update, an offer's copy changed since it was installed` row, `DriverModulePluginsTests`' new route test and `PluginPage.test.tsx`'s two cases, each seen failing first (compile, missing `unjudged`, missing words).
+
 ## 2026-11-04 - The staffing judge passed a marked agent before the choice its line had just left (REVIEW2 L4)
 
 - **Symptom:** of two choices, one this line moved off within the 30-minute hold and one on an agent marked not answering, the walk kept the one it had just left and passed the other.
