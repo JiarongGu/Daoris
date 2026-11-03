@@ -211,6 +211,20 @@ describe('following the focus', () => {
     expect(region().scrollLeft).toBe(0);
     expect(region().scrollTop).toBe(0);
   });
+
+  it('holds the view while a node is pressed, so it stays under the pointer, and follows the focus when the press ends', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} />);
+    act(() => handle.current!.measured(WORLD));
+    placeByView();
+    const start = view();
+    const node = document.querySelector('[data-flow-node="b"]') as HTMLElement;
+    fireEvent.pointerDown(node, { button: 0, clientX: 300, clientY: 100, pointerId: 1 });
+    act(() => { node.focus({ preventScroll: true }); });
+    expect(view()).toEqual(start);
+    fireEvent.pointerUp(region(), { pointerId: 1 });
+    expect(view().x).toBe(1132);
+  });
 });
 
 describe('a drag', () => {

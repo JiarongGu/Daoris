@@ -181,8 +181,9 @@ export function Canvas({
   const element = useRef<HTMLDivElement>(null);
   const settle = useRef(0);
   const hitScale = useRef(1);
-  // The element a focus landed on while a way was being pressed: revealed when the press ends, if it was no drag.
+  // The element a focus landed on while a way or any control was being pressed: revealed when the press ends, if it was no drag.
   const pressedFocus = useRef<HTMLElement | null>(null);
+  const pressing = useRef(false);
 
   const heightAt = (k: number, size: Size | null = worldRef.current) => Math.min(cap, Math.max(least, size === null ? least : size.h * k + 2 * pad));
   const viewport = (k: number): Size => ({ w: width ?? 0, h: heightAt(k) });
@@ -338,6 +339,7 @@ export function Canvas({
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     connection.down(event);
     if (!on) return;
+    pressing.current = true;
     if (event.pointerType === 'touch') {
       touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (touches.current.size === 2) {
@@ -391,6 +393,7 @@ export function Canvas({
     connection.up(event);
     const waiting = pressedFocus.current;
     pressedFocus.current = null;
+    pressing.current = false;
     const scene = element.current;
     if (waiting && !connection.dragged() && scene?.contains(waiting) && waiting.isConnected) {
       const box = worldBox(waiting, scene.getBoundingClientRect(), viewRef.current.k);
@@ -408,6 +411,7 @@ export function Canvas({
   };
   const onPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
     connection.lost();
+    pressing.current = false;
     touches.current.delete(event.pointerId);
     end(false);
   };
@@ -480,8 +484,9 @@ export function Canvas({
     const shown = holder ?? (event.target as HTMLElement);
     const scene = element.current;
     if (scene && scene.contains(shown)) {
-      // While a way is pressed on a port the view is the person's; a press that was no drag follows the focus when it ends.
-      if (connection.active()) pressedFocus.current = shown;
+      // While a way or a control is pressed the view is the person's, and a card or line moved from under the pointer loses its click;
+      // a press that was no drag follows the focus when it ends.
+      if (connection.active() || pressing.current) pressedFocus.current = shown;
       else {
         const box = worldBox(shown, scene.getBoundingClientRect(), viewRef.current.k);
         if (box.w > 0 || box.h > 0) commit(reveal(viewRef.current, box, viewport(viewRef.current.k), 2 * rem));
