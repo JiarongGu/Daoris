@@ -7,7 +7,7 @@ import type { AccountNamer } from '../../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../../locales/format';
 import {
-  answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Button, Inline, PathText, personsSaid, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { AnsweredPark } from '../waits/AnsweredPark';
@@ -308,8 +308,8 @@ export function SessionHead({
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
   const parked = session.state === 'awaiting-person';
-  // ANSWER1c: answered, it goes on at the driver's next look, so nothing below asks the person again.
-  const answered = answeredPark(session);
+  // ANSWER1c: answered, it goes on at the driver's next look, so nothing below asks the person again. ONEWAY1m: its words read from `said`.
+  const answered = answeredPark(session) ? personsSaid(session) : null;
   const waiting = parked && !answered;
   const intake = isIntake(session);
   const shown = shownState(session, taking);
@@ -326,7 +326,7 @@ export function SessionHead({
     <header ref={own} data-record-head tabIndex={-1} className="grid gap-2.5 outline-none" onBlur={(event) => { if (leftFor(event)) letGo(); }}>
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
-      {answered && <AnsweredPark answer={session.answer!} />}
+      {answered !== null && <AnsweredPark answer={answered} />}
       {/* Each section a wait stands in is marked (WAITFOOT2a): the frame watches them, and the strip at the foot stands aside
           while they are on screen. */}
       {waiting && intake && (onResolve || onAnswerAsk) && (

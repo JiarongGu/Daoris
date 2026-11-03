@@ -8,6 +8,7 @@ import type { Answered } from '../InlineConfirm';
 import { DETAIL, GATES } from '../gates/opinionFixtures';
 import type { SessionProcess } from './process';
 import { SessionHead } from './SessionHead';
+import { said } from '../../test/said';
 
 // Props-only, like every molecule here: a parked session with its analysis, a record read over a
 // remote with no tree and no account, and an ended one are all reached by passing them.
@@ -528,7 +529,7 @@ describe('the attended session\'s head', () => {
   it('shows a park the person answered as going on, with the answer and no moves', () => {
     render(
       <SessionHead
-        session={session({ state: 'awaiting-person', note: 'Two ways forward.\n\nAnswered: The second.', answer: 'The second.' })}
+        session={session({ state: 'awaiting-person', note: 'Two ways forward.\n\nAnswered: The second.', said: said('The second.') })}
         onResolve={vi.fn()}
         onAnswerSession={vi.fn()}
       />,
@@ -1179,7 +1180,7 @@ describe('a park\'s go-aheads', () => {
       ASKED[1]!,
     ];
     render(
-      <SessionHead session={session({ ...parked, answer: 'carry on.' })} goAheads={answered} onGoAhead={vi.fn()} />,
+      <SessionHead session={session({ ...parked, said: said('carry on.') })} goAheads={answered} onGoAhead={vi.fn()} />,
     );
 
     expect(screen.getByRole('heading', { name: 'Your answer' })).toBeInTheDocument();

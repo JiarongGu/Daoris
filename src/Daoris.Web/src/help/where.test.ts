@@ -5,6 +5,7 @@ import type { KnowledgeMode } from '../knowledge/modes';
 import { en } from '../locales';
 import { PLACE_DOMAINS, PLACE_PARTS } from './places';
 import { attendedOf, type HelpWhere, itemOf, prefaceOf } from './where';
+import { said as saidWords } from '../test/said';
 
 // HELP1b (D89): where the person is, as the helper is told it ahead of their words.
 
@@ -88,12 +89,12 @@ describe('where the person is', () => {
   /**
    * ANSWER1f (D131's ANSWER1c note): a park the person answered stays `awaiting-person` until the driver's next look
    * (ANSWER1b), and the same session goes on with the answer then. The helper is told so, as the session list says it,
-   * never that it waits on the person. A blank answer is none, as `answeredPark` reads it.
+   * never that it waits on the person. No word of the person's waiting is no answer, as `answeredPark` reads it (ONEWAY1m).
    */
   it('names an answered park as going on with the answer at the next look, never as waiting on the person', () => {
     const sessions = [
-      { id: 'p4rk3d00', repository: 'engine', state: 'awaiting-person', note: 'Which port?\n\nAnswered: 8080', answer: '8080' },
-      { id: 'b1ank000', repository: 'engine', state: 'awaiting-person', note: 'Which port?', answer: '' },
+      { id: 'p4rk3d00', repository: 'engine', state: 'awaiting-person', note: 'Which port?\n\nAnswered: 8080', said: saidWords('8080') },
+      { id: 'b1ank000', repository: 'engine', state: 'awaiting-person', note: 'Which port?', said: [] },
     ] as Session[];
 
     const answered = attendedOf('p4rk3d00', sessions);

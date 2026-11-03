@@ -8,7 +8,7 @@ import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
 import type { AccountNamer } from '../agents/tools';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../data/signals';
-import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../design/ui';
+import { Button, Icon, type IconName, Inline, Menu, personsSaid, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../design/ui';
 import { type SessionGrouping, shownOf } from '../work/groups';
 import { joinLines, liveParts } from '../work/noteLines';
 import { placedFact } from '../work/rail/SessionRow';
@@ -320,7 +320,7 @@ export function QuestPage({
   // is not this machine's take.
   const endedHere = quest.status === 'Taken' && !because && !hold && !pausedUnseen && session != null
     && sessionOrigin(session) === null
-    && ((session.state === 'completed' && !session.answer) || session.state === 'declined');
+    && ((session.state === 'completed' && personsSaid(session) === null) || session.state === 'declined');
 
   // A pause that stops nothing applies at once, with its notice, since nothing is lost (§2.6).
   const onPauseFirst = () => {

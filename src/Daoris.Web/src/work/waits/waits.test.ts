@@ -8,6 +8,7 @@ import { GATES } from '../gates/opinionFixtures';
 import type { PermissionWait } from './PermissionAsks';
 import type { AnswerWait } from './AnswerAlone';
 import { conversationOffer, landingStands, rulesAsked, waitsOf } from './waits';
+import { said } from '../../test/said';
 
 // WAITFOOT1b (D168 point 2): which waits on the person stand, one rule the foot's strip and the head's work read, so the two
 // cannot disagree. A wait is the person's to press; what waits on an agent, a workflow or nothing is not one.
@@ -38,7 +39,7 @@ describe('the waits on the person', () => {
     expect(waitsOf({ session: parked, onResolve: press, answerBelow: true })).toEqual([{ kind: 'question', below: true }]);
     expect(waitsOf({ session: parked, onResolve: press })).toEqual([{ kind: 'question', below: false }]);
     // Answered (ANSWER1c), it goes on at the driver's next look: nothing asks the person again.
-    expect(waitsOf({ session: { ...parked, answer: 'the first' }, onResolve: press, answerBelow: true })).toEqual([]);
+    expect(waitsOf({ session: { ...parked, said: said('the first') }, onResolve: press, answerBelow: true })).toEqual([]);
   });
 
   it('names an intake\'s park by its ask, whose door answers it', () => {

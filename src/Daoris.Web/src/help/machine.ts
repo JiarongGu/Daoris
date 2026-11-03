@@ -44,7 +44,7 @@ export function readMachine(answers: {
   /** The driver's standing state. The adapters are `""` for none: the bridge leaves a null out. */
   driver?: { drivable?: readonly string[]; helperAdapter?: string; intakeAdapter?: string };
   harnesses?: readonly ToolDoor[];
-  sessions?: readonly Pick<Session, 'state' | 'answer'>[];
+  sessions?: readonly Pick<Session, 'state' | 'said'>[];
   lines?: readonly RepositoryLine[];
 }): Machine {
   const repositories = (answers.registry ?? []).map((row) => row.repository);

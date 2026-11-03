@@ -600,6 +600,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         async Task<JsonElement> RecordAsync(string id) =>
             (await host.GetAsync("/api/sessions?includeClosed=true")).Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == id);
+        // ONEWAY1m: a park's answer is read from its keyed words alone.
+        static IReadOnlyList<string?> SaidOf(JsonElement record) =>
+            [.. record.GetProperty("said").EnumerateArray().Select(word => word.GetProperty("text").GetString())];
 
         var (ask, parked) = await ParkedAsync("goahead2-park", "The dashboard figure reads zero; ship the fix.");
 
@@ -607,7 +610,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         Assert.Equal(200, first.Status);
         Assert.EndsWith($"Session `{parked}` is still waiting on you for go-ahead 2.", first.Json.GetProperty("message").GetString());
-        Assert.False((await RecordAsync(parked)).TryGetProperty("answer", out _));
+        Assert.Empty(SaidOf(await RecordAsync(parked)));
 
         var last = await host.PostAsync($"/api/asks/{ask}/go-aheads/2", new { answer = "refused" });
 
@@ -616,7 +619,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             $"Session `{parked}` was waiting on you for its go-aheads: it goes on with your answers at the driver's next look.",
             last.Json.GetProperty("message").GetString());
         var answered = await RecordAsync(parked);
-        Assert.Equal(("awaiting-person", "carry on."), (answered.GetProperty("state").GetString(), answered.GetProperty("answer").GetString()));
+        Assert.Equal("awaiting-person", answered.GetProperty("state").GetString());
+        Assert.Equal(["carry on."], SaidOf(answered));
+        Assert.False(answered.TryGetProperty("answer", out _));
 
         var (ownAsk, own) = await ParkedAsync("goahead2-own", "The report tile shows last week; ship that fix too.");
         await host.PostAsync($"/api/asks/{ownAsk}/go-aheads/1", new { answer = "approved", goesOn = false });
@@ -624,7 +629,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         Assert.Equal(200, left.Status);
         Assert.DoesNotContain("Session", left.Json.GetProperty("message").GetString());
-        Assert.False((await RecordAsync(own)).TryGetProperty("answer", out _));
+        Assert.Empty(SaidOf(await RecordAsync(own)));
 
         // Each record holds its tree until the driver goes on with it; stopped, nothing of them holds a later test.
         foreach (var id in new[] { parked, own })
@@ -1867,7 +1872,6 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         var offMachine = (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Json.EnumerateArray()
             .Single(row => row.GetProperty("id").GetString() == id);
         Assert.Equal("awaiting-person", offMachine.GetProperty("state").GetString());
-        Assert.False(offMachine.TryGetProperty("answer", out _));
         Assert.False(offMachine.TryGetProperty("said", out _));
 
         // The record holds its tree until the driver goes on with it; stopped, nothing of it holds a later test.
@@ -1877,7 +1881,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// <summary>
     /// MSG1a (D137 §2.3, §5.3): the say door keeps the person's words on an ended session of this machine's, the record
     /// staying as it ended. It answers the word with its id, when and its files' names (never a path), and the session as
-    /// it stands. The words are answered to this machine only, `answer` the words joined for a client from before. The
+    /// it stands. The words are answered to this machine only, as the keyed words alone: no joined `answer` (ONEWAY1m). The
     /// state door then takes the record out of its ended state to working, and the taken door takes the words off it.
     /// </summary>
     [Fact]
@@ -1905,11 +1909,10 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         var listed = (await ListedSessionAsync(id))!.Value;
         Assert.Equal([wordId], listed.GetProperty("said").EnumerateArray().Select(w => w.GetProperty("id").GetString()));
-        Assert.Equal("Also add the changelog line.", listed.GetProperty("answer").GetString());
+        Assert.False(listed.TryGetProperty("answer", out _));
         var offMachine = (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Json.EnumerateArray()
             .Single(row => row.GetProperty("id").GetString() == id);
         Assert.False(offMachine.TryGetProperty("said", out _));
-        Assert.False(offMachine.TryGetProperty("answer", out _));
 
         var reopened = await host.PostAsync($"/api/sessions/{id}/state", new { state = "working" });
 
@@ -1923,7 +1926,6 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         Assert.Equal(200, taken.Status);
         Assert.Equal(0, taken.Json.GetProperty("session").GetProperty("said").GetArrayLength());
-        Assert.False(taken.Json.GetProperty("session").TryGetProperty("answer", out _));
         Assert.Equal(400, (await host.PostAsync($"/api/sessions/{id}/taken", new { said = Array.Empty<string>() })).Status);
         Assert.Equal(404, (await host.PostAsync("/api/sessions/nothing2/taken", new { said = new[] { wordId } })).Status);
         Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped" })).Status);
