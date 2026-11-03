@@ -216,7 +216,7 @@
   "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 83459,
   "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 108815,
   "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 54933,
-  "src/Daoris.Web/src/projects/setup/RepositorySetup.tsx": 47360,
+  "src/Daoris.Web/src/projects/setup/RepositorySetup.tsx": 47357,
   "src/Daoris.Web/src/quests/QuestPage.tsx": 60939,
   "src/Daoris.Web/src/quests/QuestsView.test.tsx": 76739,
   "src/Daoris.Web/src/settings/WiringDomain.test.tsx": 64226,

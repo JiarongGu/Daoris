@@ -252,8 +252,7 @@ export const SESSIONS_SECTIONS: readonly SetupSectionId[] = ['git', 'access', 's
 
 /**
  * The folds the place's page draws under its Workflow beside Gates (SETUPUX1o, the Setup design's §2.3), each with its owner: *Landing*
- * (the workflow's `land`), *Second opinion*, *Your look*, *Landed route* (`WORKFLOW_LANDED`), *The line*, and *More* (commits and the heavy
- * gates).
+ * (its `land`), *Second opinion*, *Your look*, *Landed route* (`WORKFLOW_LANDED`), *The line*, and *More* (commits and the heavy gates).
  */
 export const FOLD_SECTIONS: readonly SetupSectionId[] = ['landing', 'opinion', 'look', 'landedRoute', 'line', 'more'];
 
