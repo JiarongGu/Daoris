@@ -60,6 +60,9 @@ public static class TransitionalRegister
     /// <summary>The builds before the staffing part's w-s, which read the staffing keys from driver.json. No release names it yet.</summary>
     private static readonly OlderBuild BeforeStaffingStore = new("the builds before the staffing part's w-s, which read the staffing keys from driver.json");
 
+    /// <summary>The builds before CONTEXTONE1c's, which handed the map, the look, the indexes and the standing answer as sections and told a chat its routing. No release names CONTEXTONE1c's yet.</summary>
+    private static readonly OlderBuild BeforeContextOne1c = new("the builds before CONTEXTONE1c's, which handed the map, the look, the indexes and the standing answer as sections of their own and told a chat its routing in a note");
+
     /// <summary>
     /// This machine's list (ONEWAY1ad-ii; the oneway design §1.3): each conversion part's census first, as last read (WORKFLOWCLEAN1's
     /// <i>Workflows: nothing old here</i> its first line), then each kept read with its condition's state; a read that ends with a part's census
@@ -191,6 +194,30 @@ public static class TransitionalRegister
             Ends = "No event log on the home holds an `answered` receipt (the logs are history, cleared by their store's remover), and the floor passes COMMS1h's build. The logs are every session's, so it never reads as ended here and the row deletes it.",
             Row = "ONEWAY1af",
             Waits = BeforeComms1h,
+            Ended = Never,
+        },
+        new()
+        {
+            Id = "handed-before-block",
+            Kept = "Events/Domain/HandedCodes.cs:26, Events/Domain/HandedCodes.cs:44, Events/Domain/HandedCodes.cs:53, Events/Domain/HandedCodes.cs:57",
+            Reaches = "A session's account of what it was handed, kept on its record by an older build, that names a `map`, `look`, `indexes` or "
+                + "`standing` section: the codes stay declared, and the page's `work.handed.section.*` rows word them as they were.",
+            Ends = "No session record holds an account naming one of the four (finished ones go with their history's clear), and the floor passes "
+                + "CONTEXTONE1c's build, the last that wrote them. The records are the service's, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1af",
+            Waits = BeforeContextOne1c,
+            Ended = Never,
+        },
+        new()
+        {
+            Id = "chat-told-routing",
+            Kept = "Events/NoteCodes.cs:775, ../../Daoris.Web/src/work/noteLines.ts:329",
+            Reaches = "An event log an older build wrote, holding the note `chat.told-routing` a chat's start was told: the code stays declared, "
+                + "and the page's `note.chat.told-routing` row words it as it was.",
+            Ends = "No event log on the home holds a `chat.told-routing` note (the logs are history, cleared by their store's remover), and the floor "
+                + "passes CONTEXTONE1c's build. The logs are every session's, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1af",
+            Waits = BeforeContextOne1c,
             Ended = Never,
         },
         new()
