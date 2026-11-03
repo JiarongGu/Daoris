@@ -281,7 +281,9 @@
  * change's, never for FLAKE1; a second death of memory fails, still named as memory; another failure fails plainly. A Process
  * half whose dead tests are named runs them alone as FLAKE1's are, once its memory is free. A run a failure stopped runs none
  * again, saying so. The gate's own pass and fail are unchanged, and so is `--one-at-a-time`, whose memory re-runs come last.
- * A clock gate's timed specs run again alone (MEASUREDALONE1) take the same turn, and are run again in the same way.
+ * A clock gate's timed specs run again alone (MEASUREDALONE1) take the same turn, and are run again in the same way. So do the
+ * failed tests of a gate that runs `node --test` (NODEALONE1, `nodeTestDirs`: read from its npm scripts), when every failure is
+ * named in the run's `✖ failing tests` list and the list matches its count: each is run again alone by its own title.
  *
  * ## Two lanes (GATELANES1)
  *
@@ -2496,6 +2498,78 @@ export function timedDecision(output) {
 /** The gate's command run for the specs named, alone: `npm run` forwards what follows its second `--` to Playwright. */
 export const timedRerunCommand = (run, specs) => `${run.trim()} -- -- ${specs.join(' ')}`;
 
+/**
+ * NODEALONE1: the folders a gate's `node --test` runs in, read from the npm scripts the gate's command runs (`npm run x`,
+ * `npm test`, with `-w <package>` to a workspace) and the `&&` steps of each; none for a gate that runs no node test.
+ */
+export function nodeTestDirs(root, gate) {
+  const found = [];
+  const seen = new Set();
+  const read = (dir) => {
+    try { return JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')); } catch { return null; }
+  };
+  const workspace = (name) => (read(root)?.workspaces ?? []).map((entry) => join(root, entry)).find((dir) => read(dir)?.name === name) ?? null;
+  const walk = (command, dir) => {
+    for (const part of command.split('&&')) {
+      const step = part.trim();
+      if (/^node --test\b/.test(step)) {
+        if (!found.includes(dir)) found.push(dir);
+        continue;
+      }
+      const npm = /^npm (?:run )?([\w:.-]+)(?:\s+(?:-w|--workspace)[ =](\S+))?/.exec(step);
+      if (!npm) continue;
+      const from = npm[2] ? workspace(npm[2]) : dir;
+      const key = `${from}|${npm[1]}`;
+      const script = from && !seen.has(key) ? read(from)?.scripts?.[npm[1]] : null;
+      seen.add(key);
+      if (typeof script === 'string') walk(script, from);
+    }
+  };
+  walk(gate.run.trim(), gate.cwd ? join(root, gate.cwd) : root);
+  return found;
+}
+
+/**
+ * NODEALONE1: whether a `node --test` run's failures are re-run alone: all named in its `✖ failing tests` list (a
+ * `test at <file>:<line>` line, then `✖ <title> (<ms>)`), and the list as long as the run's `ℹ fail` counts say. `rerun` is each
+ * file's failed titles, once, with the file as node printed it.
+ */
+export function nodeTestDecision(output) {
+  const lines = output.replace(/\r\n/g, '\n').split('\n');
+  let summaries = 0;
+  let failedCount = 0;
+  let named = 0;
+  const files = new Map();
+  lines.forEach((line, i) => {
+    const total = /^ℹ fail (\d+)\s*$/.exec(line);
+    if (total) {
+      summaries += 1;
+      failedCount += Number(total[1]);
+      return;
+    }
+    const at = /^test at (.+?):\d+:\d+\s*$/.exec(line);
+    const test = at && /^✖ (.*?)(?: \(\d+(?:\.\d+)?ms\))?\s*$/.exec(lines[i + 1] ?? '');
+    if (!test) return;
+    named += 1;
+    const file = at[1].replaceAll('\\', '/');
+    if (!files.has(file)) files.set(file, []);
+    if (!files.get(file).includes(test[1])) files.get(file).push(test[1]);
+  });
+  if (summaries === 0) return { node: false, rerun: [], reason: 'no failed node test is named: it printed no node test result' };
+  if (named === 0) return { node: true, rerun: [], reason: 'no failed node test is named: the run failed outside a test' };
+  if (named !== failedCount) return { node: true, rerun: [], reason: `${failedCount} failed but ${named} are named` };
+  return { node: true, rerun: [...files].map(([file, tests]) => ({ file, tests })) };
+}
+
+/**
+ * One test of a file run alone, by its own title as node printed it, anchored: node matches a nested test by its own name too.
+ * A character a shell reads inside double quotes is matched by a dot; the rest that a pattern reads is escaped.
+ */
+export const nodeTestRerunCommand = (file, title) => {
+  const pattern = title.replace(/(["%$`\\!])|([.*+?^${}()|[\]])/g, (match, shell) => (shell ? '.' : `\\${match}`));
+  return `node --test --test-name-pattern="^${pattern}$" ${file}`;
+};
+
 // ---------------------------------------------------------------------------------------------------
 // PROC1: where a Process half's time goes
 
@@ -3987,7 +4061,7 @@ function endedResult(result, started, trees, before = '') {
  * once `memory` (the run's wait) has its memory free.
  */
 export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null, again = null, memory = null } = {}) {
-  if (again) return (again.timed ? runTimedAgain : runAgain)(root, gate, dir, again, guarded(step, trees), trees);
+  if (again) return (again.nodes ? runNodeAgain : again.timed ? runTimedAgain : runAgain)(root, gate, dir, again, guarded(step, trees), trees);
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
   const go = guarded(step, trees);
@@ -4003,6 +4077,7 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
   const died = code !== 0 ? memoryDeath(readFileSync(log, 'utf8'), code) : null;
   const testsAlone = died !== null && isProcessGate(gate) && /^dotnet test\b/.test(gate.run) && flakeDecision(readFileSync(log, 'utf8')).rerun.length > 0;
   const timed = code !== 0 && gate.clock && !died && !/^npm run rehearse/.test(gate.run.trim()) ? timedDecision(readFileSync(log, 'utf8')) : null;
+  const node = code !== 0 && !died && !timed?.playwright && nodeTestDirs(root, gate).length ? nodeTestDecision(readFileSync(log, 'utf8')) : null;
   if (died && !testsAlone) {
     // MEMGATE1: before a rehearsal's report and LEFT1's re-run in place, beside the gates still running.
     Object.assign(result, {
@@ -4015,6 +4090,16 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
       Object.assign(result, { again: true, timed: timed.rerun, note: `exit ${code}; ${count(timed.rerun.length, 'timed spec')} failed beside other gates: run alone once every other gate has ended` });
     } else {
       result.note = `exit ${code}; ${timed.reason}; not re-run`;
+    }
+  } else if (node) {
+    // NODEALONE1: a gate that runs node tests is a light-lane gate, so its failed tests run again after every gate has ended (`runNodeAgain`).
+    if (node.rerun.length) {
+      const dirs = nodeTestDirs(root, gate);
+      const nodes = node.rerun.map((each) => ({ ...each, cwd: dirs.find((dir) => existsSync(join(dir, each.file))) ?? dirs[0] }));
+      const tests = nodes.flatMap((each) => each.tests);
+      Object.assign(result, { again: true, nodes, note: `exit ${code}; ${count(tests.length, 'test')} failed beside other gates: run alone once every other gate has ended` });
+    } else {
+      result.note = `exit ${code}; ${node.reason}; not re-run`;
     }
   } else if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
     // A rehearsal that died is run again once, whole, into a log of its own beside the first (LEFT1).
@@ -4114,6 +4199,45 @@ async function runTimedAgain(root, gate, dir, first, go, trees) {
     Object.assign(result, { verdict: 'FLAKE', flakes: first.timed, note: `${count(first.timed.length, 'timed spec')} failed beside other gates and passed alone: ${specs}; ${shown(root, log)}` });
   } else {
     result.note = `exit ${code}; ${count(first.timed.length, 'timed spec')} failed beside other gates and failed again alone: ${specs}; ${shown(root, log)}`;
+  }
+  result.ms = (first.ms ?? 0) + Date.now() - started;
+  return result;
+}
+
+/**
+ * NODEALONE1: a `node --test` gate whose named tests failed beside other gates (`first`, its result), each run again once, alone,
+ * by its title, in its file's folder, into a log of its own beside the first: all passing is a FLAKE, a second failure a FAIL
+ * naming those that failed again.
+ */
+async function runNodeAgain(root, gate, dir, first, go, trees) {
+  const started = Date.now();
+  const log = join(dir, `${gate.name}.rerun.log`);
+  const failed = [];
+  const tests = first.nodes.flatMap((each) => each.tests);
+  let ended = false;
+  await withLog(log, async (fd, partial) => {
+    for (const { file, tests: titles, cwd } of first.nodes) {
+      for (const title of titles) {
+        const from = statSync(partial).size;
+        const code = await go(nodeTestRerunCommand(file, title), cwd, fd, { raise: gate.clock ? rehearsalRaise() : null });
+        if (endedBy(code, trees)) {
+          writeSync(fd, `\n(${endedNote(trees)})\n`);
+          ended = true;
+          return;
+        }
+        const output = readFileSync(partial).subarray(from).toString('utf8');
+        writeSync(fd, `\n(exited ${code})\n\n`);
+        if (code !== 0 || !/^ℹ pass [1-9]\d*\s*$/m.test(output) || !/^ℹ fail 0\s*$/m.test(output)) failed.push(title);
+      }
+    }
+  });
+  const result = { gate, code: failed.length ? 1 : 0, log: first.log, verdict: 'FAIL', note: '' };
+  if (ended) return endedResult(result, started, trees, `${first.note}; run alone, ${shown(root, log)}`);
+  const names = (list) => list.map((title) => title.length > 90 ? `${title.slice(0, 90)}…` : title).join('; ');
+  if (!failed.length) {
+    Object.assign(result, { verdict: 'FLAKE', flakes: tests, note: `${count(tests.length, 'test')} failed beside other gates and passed alone: ${names(tests)}; ${shown(root, log)}` });
+  } else {
+    result.note = `exit ${result.code}; ${count(failed.length, 'test')} failed beside other gates and failed again alone: ${names(failed)}; ${shown(root, log)}`;
   }
   result.ms = (first.ms ?? 0) + Date.now() - started;
   return result;
@@ -4253,7 +4377,7 @@ async function againOfMemory(root, gates, dir, results, { run, print, wait, hear
   if (!died.length) return;
   const failure = gates.map((gate) => results.get(gate.name)).find((result) => result && stops(result));
   const why = () => (failure ? `${failure.gate.name} failed, and the run stopped there` : 'the run was stopped');
-  const what = (gate) => (results.get(gate.name).timed ? 'whose timed specs failed' : 'which died of memory');
+  const what = (gate) => (results.get(gate.name).nodes ? 'whose node tests failed' : results.get(gate.name).timed ? 'whose timed specs failed' : 'which died of memory');
   if (!halted()) print(`  run again alone, every other gate having ended: ${died.map((gate) => `${gate.name}, ${what(gate)}`).join('; ')}`);
   for (const gate of died) {
     const first = results.get(gate.name);
