@@ -123,6 +123,30 @@ describe("a plugin's page", () => {
     expect(acts()).not.toContain('Update…');
   });
 
+  /** LANDPIN3b: an older copy edited since its install from the offer is said with both versions, and is never replaced. */
+  it('says an older copy edited since it was installed as changed, with both versions, and offers no Update…', () => {
+    const shipped = { state: 'changed', installed: '1.2.0', shipped: '1.3.0', unjudged: false } as const;
+    page({ plugin: { ...PLUGIN, source: { kind: 'offer', offer: 'acme.gate' }, shipped } });
+
+    expect(within(header()).getByText('changed here')).toBeInTheDocument();
+    expect(within(header()).queryByText('update available')).toBeNull();
+    expect(screen.getByRole('region', { name: "This install's copy" })).toHaveTextContent(
+      'This is 1.2.0, with files changed here since it was installed; this install ships 1.3.0, so Daoris leaves it as it is.');
+    expect(acts()).not.toContain('Update…');
+  });
+
+  /** LANDPIN3b: an older copy from before Daoris recorded what an install copies is said as unjudged, its update still offered. */
+  it('says of an older copy with no record of its files that whether it was changed cannot be told, and offers Update…', () => {
+    const shipped = { state: 'older', installed: '1.2.0', shipped: '1.3.0', unjudged: true } as const;
+    page({ plugin: { ...PLUGIN, source: { kind: 'none' }, shipped } });
+
+    expect(within(header()).getByText('update available')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: "This install's copy" })).toHaveTextContent(
+      'This is 1.2.0; this install ships 1.3.0. Nothing recorded the files it was installed with, so whether any was changed here '
+      + 'cannot be told: an update replaces them all.');
+    expect(acts()).toContain('Update…');
+  });
+
   it('says nothing of a copy that is the shipped one', () => {
     page({ plugin: { ...PLUGIN, shipped: null } });
 

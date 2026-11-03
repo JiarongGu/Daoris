@@ -147,8 +147,8 @@ public sealed class WorkspaceTrustTests : IDisposable
     [Fact]
     public void The_refusal_names_the_profile_the_hold_read()
     {
-        Assert.Contains("--profile work", ClaudeTrust.Refusal(@"D:\fam\engine", "work"));
-        Assert.DoesNotContain("--profile", ClaudeTrust.Refusal(@"D:\fam\engine"));
+        Assert.Contains("--account work", ClaudeTrust.Refusal(@"D:\fam\engine", "work"));
+        Assert.DoesNotContain("--account", ClaudeTrust.Refusal(@"D:\fam\engine"));
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public sealed class WorkspaceTrustTests : IDisposable
         var said = ClaudeTrust.Refusal(@"D:\fam\engine", "work");
 
         Assert.DoesNotContain("Run `claude`", said);
-        Assert.Contains("daoris agent trust claude-code \"D:\\fam\\engine\" --profile work --yes", said);
+        Assert.Contains("daoris agent trust claude-code \"D:\\fam\\engine\" --account work --yes", said);
         Assert.Contains("run `claude` there", ClaudeTrust.Refusal(@"D:\fam\engine"));
     }
 

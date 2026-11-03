@@ -119,13 +119,12 @@ public sealed class SessionChecksCommandTests : IDisposable
     [Fact]
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
-        Assert.Contains("\n  checks [<repository> [light | heavy-at-end | --clear]]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  place checks [<repository> [light | heavy-at-end | --clear]]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
         Assert.Equal("usage: daoris-driver checks [<repository> [light | heavy-at-end | --clear]]", SessionChecksCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"checks\", .. var checksArgs])", program);
         Assert.Contains("Daoris.Driver.Host.SessionChecksConsole.Run(checksArgs)", program);
-        Assert.Contains("//   checks [<repository> [light | heavy-at-end | --clear]]", program);
     }
 
     private int Run(string[] words, out string said)

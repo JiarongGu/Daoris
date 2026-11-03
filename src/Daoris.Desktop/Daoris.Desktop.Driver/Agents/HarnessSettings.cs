@@ -576,7 +576,7 @@ public sealed record HarnessSettings(
         writer.WriteEndObject();
         WriteCircles(writer, "workspaceVersions", WorkspaceVersions);
 
-        // 🔴 The orders go out too (TOOL4e), or a screen edit DELETES what `daoris agent profile order` wrote, the
+        // 🔴 The orders go out too (TOOL4e), or a screen edit DELETES what `daoris agent account order` wrote, the
         // way a save that knew only profiles once would have deleted the pins. Written only when set: absent is no
         // rotation, and a file that never chose an order should not start carrying an empty one.
         if (Rotation.Any(order => order.Value.Count > 0))
@@ -722,7 +722,7 @@ public sealed record HarnessSettings(
     /// for the agent, else the machine's, else none — and none is no rotation at all.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>The CLI writes these too</b> (<c>daoris agent profile order</c>), so <see cref="Save"/> writes them,
+    /// <para>🔴 <b>The CLI writes these too</b> (<c>daoris agent account order</c>), so <see cref="Save"/> writes them,
     /// or a screen edit would delete the person's order. <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c>
     /// hold the reading, the edits, the refusals and the file both write, row for row.</para>
     /// <para>An account the order does not list is never rotated into (§3.1): one list, not a list and a mark. A start
@@ -1141,7 +1141,7 @@ public sealed record HarnessSettings(
 
     // How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14 as §16.6 amends them; D165 point 2 and
     // docs/2026-10-02-account-use-design.md, docs/2026-10-12-account-switch-design.md §2 and §6, SWITCH1a): `rotationUse` for
-    // the machine and `workspaceRotationUse` for one workspace, per agent, beside the lists, which `daoris agent profile use` writes
+    // the machine and `workspaceRotationUse` for one workspace, per agent, beside the lists, which `daoris agent account use` writes
     // through this program (PUSH1f2e3; the CLI's rotation.ts, its twin, left with PUSH1f2e); RotationUseTwinTests reads one table,
     // fixtures/rotation-use.json among the driver's tests, row for row. The rules it keeps:
     //  - Read: an entry is an object, kept whole; `prefer` and `parallel`, which §16.6 retired, are read as nothing and said as

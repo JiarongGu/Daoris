@@ -36,11 +36,11 @@ public sealed class HelpRoomDoorsTests
             // WORKFLOWCLEAN1 1f: the one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
             "daoris-driver place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
-            "daoris agent profile order <agent> <profile>…|--clear",
-            "daoris agent profile ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
+            "daoris agent account order <agent> <profile>…|--clear",
+            "daoris agent account ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
             // TOOL6a (D130 §16.6): how a list is used, the terminal's door (on the screen since TOOL4g); its switch and the
             // person's curve since SWITCH1d.
-            "daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
+            "daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
                 + "[--curve <window>=<elapsed>:<used>,…] [--no-curve]",
             // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's, the ask page's and the gate's.
             "daoris-driver ask … --short \"…\"", "daoris-driver ask … --review rule|on|<environment>|off","daoris-driver ask --set-review <id> on|<environment>|off",
@@ -51,9 +51,9 @@ public sealed class HelpRoomDoorsTests
             "daoris-driver ask --set-workflow <id>",
             // XAGENT1f4 (D155 point 10, design §9): the person's presses at the second opinion's gate, which Ask Daoris names and
             // proposes none of.
-            "daoris-driver opinion ask <session> [--reviewer <adapter>] [--same-agent] [\"…\"]",
-            "daoris-driver opinion show <session|opinion>", "daoris-driver opinion stop <opinion>",
-            "daoris-driver opinion anyway <session> [\"…\"]", "daoris-driver opinion myself <session> [\"…\"]",
+            "daoris session opinion ask <session> [--agent <adapter>] [--same-agent] [\"…\"]",
+            "daoris session opinion show <session|opinion>", "daoris session opinion stop <opinion>",
+            "daoris session opinion anyway <session> [\"…\"]", "daoris session opinion myself <session> [\"…\"]",
         })
         {
             Assert.Contains(command, agents);
@@ -138,10 +138,12 @@ public sealed class HelpRoomDoorsTests
     public void The_room_says_ask_daoris_proposes_a_workflow_s_version_and_its_choice()
     {
         var named = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow new <id>", StringComparison.Ordinal));
-        Assert.Contains("(Ask Daoris proposes a whole version, new or after the newest, which you apply; not an import yet)", named.To);
+        Assert.Equal(("workflow", "new"), named.Ask?.Through);
+        Assert.EndsWith("(Ask Daoris proposes it, a whole version, new or after the newest, which you apply; not an import yet)", named.To);
 
         var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow use <id>", StringComparison.Ordinal));
-        Assert.Contains("(Ask Daoris proposes the choice with a version it proposes, as a repository's or a workspace's default; not a "
+        Assert.Equal(("workflow", "use"), chosen.Ask?.Through);
+        Assert.EndsWith("(Ask Daoris proposes it, the choice with a version it proposes, as a repository's or a workspace's default; not a "
             + "kind yet)", chosen.To);
     }
 
@@ -156,7 +158,8 @@ public sealed class HelpRoomDoorsTests
         var convert = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris convert --plan", StringComparison.Ordinal));
         Assert.Contains("Convert…", convert.Screen);
         Assert.Contains("Review conversion…", convert.Screen);
-        Assert.Contains("Ask Daoris opens the page and never proposes the apply", convert.To);
+        Assert.IsType<HelpDoorAsk.Never>(convert.Ask);
+        Assert.Contains("it opens the page and names the plan, and the apply is your press", convert.To);
 
         var landing = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("set how accepted work lands", StringComparison.Ordinal));
         Assert.Contains("only a place still on Current", landing.To);
@@ -247,7 +250,7 @@ public sealed class HelpRoomDoorsTests
         var keep = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver workflow keep", StringComparison.Ordinal));
         Assert.Equal("`daoris-driver workflow keep <session> [\"…\"]`", keep.Terminal);
         Assert.Equal("(no screen yet)", keep.Screen);
-        Assert.Contains("Ask Daoris never proposes it", keep.To);
+        Assert.Equal(new HelpDoorAsk.Never("it is yours alone"), keep.Ask);
         Assert.Contains("nothing switches by itself", keep.To);
     }
 
@@ -271,12 +274,12 @@ public sealed class HelpRoomDoorsTests
         Assert.DoesNotContain("declared only", rule.To, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("nothing reads it yet", room, StringComparison.Ordinal);
 
-        var ask = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver opinion ask", StringComparison.Ordinal));
-        var answer = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver opinion anyway", StringComparison.Ordinal));
-        Assert.Contains("daoris-driver opinion show", ask.Terminal);
-        Assert.Contains("daoris-driver opinion stop", ask.Terminal);
-        Assert.Contains("daoris-driver opinion myself", answer.Terminal);
-        foreach (var door in new[] { ask, answer }) Assert.Contains("Ask Daoris never proposes", door.To);
+        var ask = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris session opinion ask", StringComparison.Ordinal));
+        var answer = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris session opinion anyway", StringComparison.Ordinal));
+        Assert.Contains("daoris session opinion show", ask.Terminal);
+        Assert.Contains("daoris session opinion stop", ask.Terminal);
+        Assert.Contains("daoris session opinion myself", answer.Terminal);
+        foreach (var door in new[] { ask, answer }) Assert.IsType<HelpDoorAsk.Never>(door.Ask);
         Assert.Contains("*Go on anyway…*", answer.Screen);
         Assert.Contains("*I looked myself…*", answer.Screen);
     }
@@ -304,7 +307,7 @@ public sealed class HelpRoomDoorsTests
         foreach (var door in new[] { helpers, commits })
         {
             Assert.Contains("`--workspace <name>` for a whole workspace", door.Terminal);
-            Assert.Contains("Ask Daoris proposes it", door.To);
+            Assert.IsType<HelpDoorAsk.Proposes>(door.Ask);
         }
 
         Assert.Contains("from the repository's own instructions", commits.To);
@@ -349,7 +352,7 @@ public sealed class HelpRoomDoorsTests
             + "Pause quest…, Pause ask…, Resume quest, Resume ask",
             pause.Screen);
         Assert.Equal("Quests → the ask's page or the quest's page → Abandon…", abandon.Screen);
-        Assert.Contains("Ask Daoris never proposes it: the reason is your answer", abandon.To);
+        Assert.Equal(new HelpDoorAsk.Never("the reason is your answer"), abandon.Ask);
     }
 
     /// <summary>

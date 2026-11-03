@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -69,11 +72,6 @@ internal static class PluginFolders
     /// </summary>
     public static bool SameFiles(string left, string right)
     {
-        static List<string> Files(string root) => [.. Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
-            .Select(file => Path.GetRelativePath(root, file).Replace('\\', '/'))
-            .Where(relative => relative != PluginSource.FileName)
-            .Order(StringComparer.Ordinal)];
-
         try
         {
             var (a, b) = (Files(left), Files(right));
@@ -86,6 +84,41 @@ internal static class PluginFolders
             return false;
         }
     }
+
+    /// <summary>
+    /// A folder's files as one digest (LANDPIN3b): <c>sha256:</c> and the SHA-256, in lowercase hex, of a line per file in ordinal
+    /// order of its relative path, its own SHA-256 then the path (<c>sha256sum</c>'s shape), the install's record left out as
+    /// <see cref="SameFiles"/> leaves it out. A file that cannot be read throws.
+    /// </summary>
+    public static string Digest(string folder)
+    {
+        var lines = new StringBuilder();
+        foreach (var relative in Files(folder))
+        {
+            var bytes = File.ReadAllBytes(Path.Combine(folder, relative)); // read-shares: a plugin folder, laid whole
+            lines.Append(Convert.ToHexStringLower(SHA256.HashData(bytes))).Append("  ").Append(relative).Append('\n');
+        }
+
+        return "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(lines.ToString())));
+    }
+
+    /// <summary>Whether a folder's files are still those a <see cref="Digest"/> was taken of; one that cannot be read is not.</summary>
+    public static bool HoldsDigest(string folder, string digest)
+    {
+        try
+        {
+            return string.Equals(Digest(folder), digest, StringComparison.Ordinal);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static List<string> Files(string root) => [.. Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+        .Select(file => Path.GetRelativePath(root, file).Replace('\\', '/'))
+        .Where(relative => relative != PluginSource.FileName)
+        .Order(StringComparer.Ordinal)];
 
     /// <summary>A folder made, with every folder above it.</summary>
     public static void Make(string folder) => Directory.CreateDirectory(folder);

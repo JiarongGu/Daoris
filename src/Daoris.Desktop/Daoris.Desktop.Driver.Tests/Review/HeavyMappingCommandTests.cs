@@ -122,13 +122,12 @@ public sealed class HeavyMappingCommandTests : IDisposable
     [Fact]
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
-        Assert.Contains("\n  heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  place heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
         Assert.Equal("usage: daoris-driver heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]", HeavyMappingCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"heavy\", .. var mappingArgs])", program);
         Assert.Contains("Daoris.Driver.Host.HeavyMappingConsole.Run(mappingArgs)", program);
-        Assert.Contains("//   heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]", program);
     }
 
     private int Run(string[] words, out string said)

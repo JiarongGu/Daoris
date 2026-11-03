@@ -72,7 +72,7 @@ public sealed class CensusTraitTests
     [Fact]
     public void Every_class_of_the_two_test_projects_that_walks_sources_carries_the_trait()
     {
-        var files = new[] { SourceFiles.DriverTestsProject, "Daoris.Desktop.Modules.Tests" }
+        var files = new[] { SourceFiles.DriverTestsProject, SourceFiles.ModulesTestsProject }
             .SelectMany(project => SourceFiles.All(project, "*.cs"))
             .Select(path => (path, File.ReadAllText(path)));
 

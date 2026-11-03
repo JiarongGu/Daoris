@@ -101,14 +101,13 @@ public sealed class WorkWordsTests : IDisposable
         Assert.Contains("case [\"state\"] or [\"state\", \"--entries\"]:", console);
         Assert.True(console.IndexOf("case [\"state\"] or", StringComparison.Ordinal) < console.IndexOf("case [\"state\", var named", StringComparison.Ordinal));
         Assert.Contains("| state [--entries]", console);
-        Assert.Contains("| state [--entries]", DriverCommand.Usage);
+        Assert.Contains("tree state [--entries]", DriverCommand.Usage);
         Assert.Contains("WorkConsole.ReadAsync(home)", console);
         Assert.Contains("args is [\"work\", \"state\", ..", program);
         Assert.Contains("WorkConsole.MilestonesAsync(", program);
         // CLEANUP1: the one read gives the units and the recoveries no unit names.
         Assert.Contains("WorkInventories.ReadAsync(", work);
         Assert.Contains("work state [<unit>]", DriverCommand.Usage);
-        Assert.Contains("work state [<unit>]", program);
         // A look: no lease taken, no record written, no window told.
         Assert.DoesNotContain("Told(", work);
     }

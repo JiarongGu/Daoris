@@ -6,7 +6,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver opinion</c> (XAGENT1a; FOUNDATION1 mod-iii): the review's own verb, the settings' port
+/// <c>daoris place opinion</c> (XAGENT1a; FOUNDATION1 mod-iii): the review's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="OpinionRules"/>). The agents a reviewer is judged the
 /// working agent's family over, plugins' harnesses among them, are handed it by Loop (<paramref name="adapters"/>, by the home).
 /// </summary>
@@ -23,11 +23,11 @@ public sealed class OpinionVerb(Func<string, AdapterSet> adapters) : ChoiceVerb
     {
         var path = world.ConfigPath;
         void Say(string line) => world.Instance.Out.WriteLine(line);
-        string[] valued = ["--workspace", "--reviewers", "--on", "--minutes"];
+        string[] valued = ["--workspace", "--agents", "--on", "--minutes"];
         string[] switches = ["--required", "--not-required", "--verify", "--no-verify", "--recheck", "--no-recheck", "--clear"];
-        const string usage = "`driver opinion` needs <repository>|--workspace <name>, then --reviewers <adapter,adapter> [--on landing,steps] "
+        const string usage = "`place opinion` needs <repository>|--workspace <name>, then --agents <adapter,adapter> [--on landing,steps] "
             + "[--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck], or none, or --clear — "
-            + "e.g. `daoris driver opinion web-app --reviewers codex-acp --required`.";
+            + "e.g. `daoris place opinion web-app --agents codex-acp --required`.";
         Flags(args, valued, switches, "opinion", usage);
 
         bool? Both(string on, string off, string why)
@@ -51,7 +51,7 @@ public sealed class OpinionVerb(Func<string, AdapterSet> adapters) : ChoiceVerb
         var none = words.ElementAtOrDefault(0) == "none";
         var clear = args.Contains("--clear");
         JsonArray? Listed(string flag) => FlagValue(args, flag) is { } given ? [.. given.Split(',').Select(each => (JsonNode?)each.Trim())] : null;
-        var reviewers = Listed("--reviewers");
+        var reviewers = Listed("--agents");
         var on = Listed("--on");
         var minutes = FlagValue(args, "--minutes");
         var set = new JsonObject();
@@ -108,7 +108,7 @@ public sealed class OpinionVerb(Func<string, AdapterSet> adapters) : ChoiceVerb
 
             if (rule is { IsNone: false } && workspace is not null)
             {
-                Say("  A repository with a rule of its own keeps it — `daoris driver opinion <repository> --clear` hands it back.");
+                Say("  A repository with a rule of its own keeps it — `daoris place opinion <repository> --clear` hands it back.");
             }
 
             Say($"  Written to {path}.");
@@ -124,8 +124,8 @@ public sealed class OpinionVerb(Func<string, AdapterSet> adapters) : ChoiceVerb
         foreach (var (workspace, rule) in choices.WorkspaceOpinions) Say($"  opinion    workspace {workspace}  {OpinionListed(rule)}  (for each repository there that sets none)");
         if (choices.Opinions.Count == 0 && choices.WorkspaceOpinions.Count == 0)
         {
-            Say("  opinion    none set — no other agent reads work before it lands; `daoris driver opinion <repository> "
-                + "--reviewers <adapter>` declares one");
+            Say("  opinion    none set — no other agent reads work before it lands; `daoris place opinion <repository> "
+                + "--agents <adapter>` declares one");
         }
     }
 

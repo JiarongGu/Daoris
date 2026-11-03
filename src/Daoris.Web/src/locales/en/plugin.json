@@ -88,6 +88,8 @@
   "plugin.shipped.older": "This is {{installed}}; this install ships {{shipped}}.",
   "plugin.shipped.brings": "The newer one: {{changes}}",
   "plugin.shipped.changed": "Its files differ from the {{shipped}} this install ships, so Daoris leaves them as they are.",
+  "plugin.shipped.olderChanged": "This is {{installed}}, with files changed here since it was installed; this install ships {{shipped}}, so Daoris leaves it as it is.",
+  "plugin.shipped.unjudged": "Nothing recorded the files it was installed with, so whether any was changed here cannot be told: an update replaces them all.",
   "plugin.shipped.changedPill": "changed here",
   "plugin.icon.problem": "Its icon is not drawn: {{problem}}",
   "plugin.row.points": "{{count}} point",

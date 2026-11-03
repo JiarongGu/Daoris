@@ -1,11 +1,12 @@
 {
-  "modules": ["cli","platform","doctrine","layout","tools","service","browser"],
+  "modules": ["cli","platform","doctrine","layout","tools"],
   "entry": ["cli.ts"],
   "root": {
   },
   "tests": {
     "cli.test.ts": "cli",
     "cli-usage.test.ts": "cli",
+    "cli-tree.test.ts": "cli",
     "containment.test.ts": "cli",
     "args.test.ts": "platform",
     "casefold.test.ts": "platform",
@@ -44,11 +45,6 @@
     "layout-rooms.test.ts": "layout",
     "documents-candidates.test.ts": "layout",
     "documents-check.test.ts": "layout",
-    "documents-manifest.test.ts": "layout",
-    "connect.test.ts": "service",
-    "connect-twin.test.ts": "service",
-    "manage.test.ts": "service",
-    "remotes.test.ts": "service",
-    "browser.test.ts": "browser"
+    "documents-manifest.test.ts": "layout"
   }
 }

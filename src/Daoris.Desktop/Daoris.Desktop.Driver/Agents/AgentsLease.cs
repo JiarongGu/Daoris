@@ -11,5 +11,5 @@ namespace Daoris.Driver;
 internal static class AgentsLease
 {
     [ModuleInitializer]
-    internal static void Install() => VerbLeases.Answer("agent", new(AgentsCommand.Changes, AgentsCommand.Verbs, AgentsCommand.Isolated));
+    internal static void Install() => VerbLeases.Answer("agent", new(AgentsCommand.Changes, AgentsCommand.Isolated));
 }

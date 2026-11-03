@@ -26,7 +26,7 @@ public static class HolderTerminal
     /// The holder's initial prompt (D209 §2.2, Codex's final read, finding 12): the argument vector's last element, the harness's
     /// positional prompt and so the model's first input. Fixed text, naming no key, no appointment and no particular role.
     /// </summary>
-    public const string InitialPrompt = "You hold a role Daoris appointed. Run `daoris-driver roles brief` and do as it says.";
+    public const string InitialPrompt = "You hold a role Daoris appointed. Run `daoris role brief` and do as it says.";
 
     /// <summary>The variable naming the harness's configuration directory.</summary>
     public const string ConfigVariable = "CLAUDE_CONFIG_DIR";
@@ -42,9 +42,9 @@ public static class HolderTerminal
     public static IReadOnlyList<string> SessionArguments { get; } =
     [
         "--setting-sources", "user", "--settings", Settings, "--strict-mcp-config", "--mcp-config", "{\"mcpServers\":{}}",
-        "--allowedTools", "Read", "Grep", "Glob", "Bash(daoris-driver sessions supervise:*)", "Bash(daoris-driver steward:*)",
-        "Bash(daoris-driver roles brief)", "Bash(daoris-driver sessions --json:*)", "Bash(daoris-driver notices:*)",
-        "Bash(daoris-driver history:*)",
+        "--allowedTools", "Read", "Grep", "Glob", "Bash(daoris session supervise:*)", "Bash(daoris steward:*)",
+        "Bash(daoris role brief)", "Bash(daoris session list --json:*)", "Bash(daoris notices:*)",
+        "Bash(daoris history:*)",
         InitialPrompt,
     ];
 
@@ -152,7 +152,7 @@ public static class HolderTerminal
     /// <c>PATH</c> of the install's own <paramref name="app"/> folder and the system's folders, the home, <see cref="ConfigVariable"/>, the
     /// harness's updater off, and the key. No loader or runtime variable of Daoris's own environment (<c>NODE_OPTIONS</c> and its kind).
     /// </summary>
-    /// <param name="app">The folder Daoris's own executables are in, <c>daoris-driver</c> among them.</param>
+    /// <param name="app">The folder Daoris's own executables are in, <c>daoris</c> among them.</param>
     /// <param name="variable">This process's environment, read by name; a test hands its own.</param>
     public static IReadOnlyDictionary<string, string> Environment(
         string home, string key, string app, Func<string, string?>? variable = null)

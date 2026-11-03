@@ -464,7 +464,7 @@ public static class ContextBrief
             if (TextBounds.Fold(gate.Run) is { Length: > 0 } run && Holds(said, run)) return gate.Name;
         }
 
-        return Holds(said, "daoris-driver run-heavy") ? "run-heavy" : null;
+        return Holds(said, "daoris gate run") ? "run-heavy" : null;
     }
 
     /// <summary>Whether a command holds a gate's line whole: what follows it ends a word, so <c>npm run verify:fast</c> is not <c>npm run verify</c>.</summary>

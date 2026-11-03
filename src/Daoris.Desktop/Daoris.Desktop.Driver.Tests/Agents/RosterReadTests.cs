@@ -127,7 +127,7 @@ public sealed class RosterReadTests : IDisposable
         var wiring = await roster.WiringAsync("agent", Config, "aurora");
 
         Assert.Equal("account-1", wiring.Profile);
-        Assert.Contains("daoris agent login agent --profile account-1", wiring.Refusal);
+        Assert.Contains("daoris agent login agent --account account-1", wiring.Refusal);
         Assert.Empty(Asked);
         await Assert.ThrowsAsync<InvalidOperationException>(() => roster.SelectAsync("agent", Config, "aurora", null));
     }
@@ -184,7 +184,7 @@ public sealed class RosterReadTests : IDisposable
         var selection = await roster.SelectAsync("agent", Config, null, null);
 
         Assert.False(selection.Allowed);
-        Assert.Contains("daoris agent login agent --profile account-1", selection.Refusal);
+        Assert.Contains("daoris agent login agent --account account-1", selection.Refusal);
         Assert.Equal(NextHold.SignedOut, roster.Next("agent").Others.Single(held => held.Account == "account-1").Hold);
         Assert.Empty(Asked);
     }

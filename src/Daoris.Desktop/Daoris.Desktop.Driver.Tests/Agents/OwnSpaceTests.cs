@@ -147,8 +147,8 @@ public sealed class OwnSpaceTests : IDisposable
 
         Assert.False(selection.Allowed);
         Assert.DoesNotContain(NoAccount, selection.Refusal);
-        Assert.Contains("daoris agent login fake --profile daoris-1", selection.Refusal);
-        Assert.Contains("daoris agent login fake --profile daoris-2", selection.Refusal);
+        Assert.Contains("daoris agent login fake --account daoris-1", selection.Refusal);
+        Assert.Contains("daoris agent login fake --account daoris-2", selection.Refusal);
         Assert.Equal(["daoris-1", "daoris-2"], selection.SignedOut!.Accounts);
         Assert.False(selection.SignedOut.NoAccount);
     }

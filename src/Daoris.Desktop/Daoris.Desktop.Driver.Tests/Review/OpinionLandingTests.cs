@@ -51,7 +51,7 @@ public sealed class OpinionLandingTests : IDisposable
         var held = await PressAsync(tree);
         Assert.False(held.Landed);
         Assert.Equal(AutoLandingCode.Opinion, held.Refusal);
-        Assert.Equal("Waits for a second opinion: it is asked at the driver's next look. `daoris-driver opinion ask s1` asks it now.", held.Message);
+        Assert.Equal("Waits for a second opinion: it is asked at the driver's next look. `daoris session opinion ask s1` asks it now.", held.Message);
         Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"), "nothing is made while the opinion waits");
 
         Read("o1", tip, reading: true);

@@ -405,7 +405,10 @@ export function PluginPage({
               <span>
                 {t('plugin.shipped.older', { installed: plugin.shipped.installed, shipped: plugin.shipped.shipped })}
                 {plugin.shipped.changes && ` ${t('plugin.shipped.brings', { changes: plugin.shipped.changes })}`}
+                {plugin.shipped.unjudged && ` ${t('plugin.shipped.unjudged')}`}
               </span>
+            ) : plugin.shipped.installed !== plugin.shipped.shipped ? (
+              <span>{t('plugin.shipped.olderChanged', { installed: plugin.shipped.installed, shipped: plugin.shipped.shipped })}</span>
             ) : (
               <span>{t('plugin.shipped.changed', { shipped: plugin.shipped.shipped })}</span>
             )}
