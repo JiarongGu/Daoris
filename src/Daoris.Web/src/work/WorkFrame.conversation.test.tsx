@@ -1018,7 +1018,7 @@ describe('starting and holding a conversation', () => {
 
   /**
    * STEER2b, COWORK1a: *Now, cutting its step*, from the level menu beside *Send*, sends the typed words with `level: now`
-   * (and `now: true` for a shell from before). The answer says what came of it: taken at once in the running turn (nothing to
+   * alone (ONEWAY1l). The answer says what came of it: taken at once in the running turn (nothing to
    * say), or that the door could not, the words going at its next step or held for its turn's end, said in one line. No turn is
    * stopped for them.
    */
@@ -1038,7 +1038,7 @@ describe('starting and holding a conversation', () => {
     await userEvent.type(box, 'drop the cache');
     await sendAt(/Now, cutting its step/);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: 's1a2b3c4', text: 'drop the cache', level: 'now', now: true },
+      payload: { id: 's1a2b3c4', text: 'drop the cache', level: 'now' },
     });
     expect(box).toHaveValue('');
     expect(notify).not.toHaveBeenCalled();
@@ -1063,7 +1063,7 @@ describe('starting and holding a conversation', () => {
     await userEvent.type(box, 'and the tests');
     await sendAt(/Now, cutting its step/);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: 's1a2b3c4', text: 'and the tests', level: 'now', now: true },
+      payload: { id: 's1a2b3c4', text: 'and the tests', level: 'now' },
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Its door cannot take words in a running turn, so these are held for its turn to end.'));
@@ -1077,7 +1077,7 @@ describe('starting and holding a conversation', () => {
     await userEvent.type(box, 'idle');
     await sendAt(/Now, cutting its step/);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: 's1a2b3c4', text: 'idle', level: 'now', now: true },
+      payload: { id: 's1a2b3c4', text: 'idle', level: 'now' },
     });
     await waitFor(() => expect(box).toHaveValue(''));
     expect(notify).not.toHaveBeenCalled();

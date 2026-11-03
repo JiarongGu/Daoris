@@ -47,12 +47,9 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
     /// <summary>A say's files, each as the person named its path.</summary>
     public IReadOnlyList<string> Files { get; init; } = [];
 
-    /// <summary>A say's <c>--now</c> (STEER2c): the terminal's twin of the page's *Send now*, which <c>SESSION_INPUT</c> carries as <c>now: true</c>.</summary>
-    public bool Now { get; init; }
-
     /// <summary>
     /// A say's <c>--level</c> (COWORK1a): <c>ordinary</c>, <c>urgent</c> or <c>now</c>, which <c>SESSION_INPUT</c> carries as
-    /// <c>level</c>; <c>--now</c> is <c>now</c>. Null where none was asked, the person's default, urgent.
+    /// <c>level</c>. Null where none was asked, the person's default, urgent.
     /// </summary>
     public string? Level { get; init; }
 
@@ -236,7 +233,7 @@ public static class SessionsCommand
         usage: daoris-driver sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
                daoris-driver sessions stop <id> [--turn]  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
                daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
-               daoris-driver sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now] [--now]
+               daoris-driver sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
                daoris-driver sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
                daoris-driver sessions go-on-new <id>
                daoris-driver sessions start-from <id>
@@ -400,13 +397,13 @@ public static class SessionsCommand
     }
 
     /// <summary>
-    /// <c>say &lt;id&gt; "…" [--file &lt;path&gt;]… [--level ordinary|urgent|now] [--now]</c>: the words after the id joined by a space,
-    /// each path after its flag, and the level after its own (COWORK1a); <c>--now</c> is <c>--level now</c> (STEER2c).
+    /// <c>say &lt;id&gt; "…" [--file &lt;path&gt;]… [--level ordinary|urgent|now]</c>: the words after the id joined by a space,
+    /// each path after its flag, and the level after its own (COWORK1a). <c>--now</c> is retired (ONEWAY1l) and refused naming <c>--level now</c>.
     /// </summary>
     private static SessionsAsk? ReadSay(IReadOnlyList<string> args, out string? problem)
     {
         problem = "`say` takes one session's id, then your words, `--file <path>` for each file you give with them, and "
-            + "`--level ordinary|urgent|now` for when it reads them (`--now` is `--level now`).";
+            + "`--level ordinary|urgent|now` for when it reads them.";
         if (args.Count < 2 || !Id(args[1])) return null;
 
         var words = new List<string>();
@@ -416,8 +413,8 @@ public static class SessionsCommand
         {
             if (args[at] == "--now")
             {
-                level = MessageLevels.Now;
-                continue;
+                problem = "`--now` is no longer a flag: say `--level now` for when it reads your words.";
+                return null;
             }
 
             if (args[at] == "--level")
@@ -446,7 +443,7 @@ public static class SessionsCommand
         if (text.Length == 0) return null;
 
         problem = null;
-        return new SessionsAsk("say") { Ids = [args[1]], Text = text, Files = files, Level = level, Now = level == MessageLevels.Now };
+        return new SessionsAsk("say") { Ids = [args[1]], Text = text, Files = files, Level = level };
     }
 
     public static async Task<int> RunAsync(SessionsAsk ask, SessionsWorld world, TextWriter output, CancellationToken ct = default) =>
@@ -561,7 +558,7 @@ public static class SessionsCommand
 
         return await ThroughAsync(
             world, PersonPresses.SessionSay,
-            Body(("id", ask.Ids[0]), ("text", ask.Text ?? ""), ("paths", paths.Count > 0 ? paths : null), ("now", ask.Now ? true : null), ("level", ask.Level)),
+            Body(("id", ask.Ids[0]), ("text", ask.Text ?? ""), ("paths", paths.Count > 0 ? paths : null), ("level", ask.Level)),
             () => SayAsync(world, ask, output, ct), output, ct).ConfigureAwait(false);
     }
 
@@ -1301,11 +1298,9 @@ public static class SessionsCommand
         WordsHeld? winding = null;
         while (true)
         {
-            // The level beside `now`, which a say at now still writes for a loop from before COWORK1a.
             var request = new SessionRequest(record.Id, SessionMove.Say, DateTimeOffset.UtcNow)
             {
-                Text = text, Files = files, Key = SessionRequests.NewKey(), Now = MessageLevels.Asked(ask.Level, ask.Now) == MessageLevel.Now,
-                Level = ask.Level,
+                Text = text, Files = files, Key = SessionRequests.NewKey(), Level = ask.Level,
             };
             requests.Write(request);
 
