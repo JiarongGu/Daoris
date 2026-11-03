@@ -389,6 +389,10 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 
 The milestones were not read, so do not say where any work stands: the person may ask in the terminal, `daoris-driver work state`.
 
+## What waits on what
+
+What each line waits on was not read, so do not say what any session waits on: the person may ask in the terminal, `daoris session at-work <session>`.
+
 No repository is registered on this machine yet. The first step is `daoris connect` from inside
 one, or Repositories → Import a folder as a workspace, to register a folder of them at once
 (`daoris import <folder> --workspace <name>`).

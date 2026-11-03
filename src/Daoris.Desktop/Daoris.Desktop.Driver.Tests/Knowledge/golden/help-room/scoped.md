@@ -433,6 +433,10 @@ goes only when the person deletes it, with the line said):
 moved-aside `trees/alpha/engine/sa0-20261018`: kept until 2026-10-25 09:00 UTC
 ```
 
+## What waits on what
+
+What each line waits on was not read, so do not say what any session waits on: the person may ask in the terminal, `daoris session at-work <session>`.
+
 ### Workspace `alpha`
 
 | Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |

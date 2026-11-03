@@ -66,6 +66,21 @@ public static class HelpFacts
     public const string Sweep = "help.sweep";
 
     /// <summary>
+    /// What each line waits on (<see cref="HelpWaits"/>, COMMS1i), one subject: the exchanges' one read over the helper, piece and hand-over
+    /// files, the quests and the records, which a session's records, a quest or a word moving moves.
+    /// </summary>
+    public const string Exchanges = "help.exchanges";
+
+    /// <summary>
+    /// The exchanges' read: a few files and the service's records and quests, so a minute behind at most, as the machine's answers, and
+    /// resting a few seconds between the judgements a burst of ledger moves asks for.
+    /// </summary>
+    public static readonly FactRules ExchangesRules = new(Deadline: TimeSpan.FromMinutes(1), Bound: TimeSpan.FromSeconds(30), AtOnce: 1)
+    {
+        Rest = TimeSpan.FromSeconds(5),
+    };
+
+    /// <summary>
     /// The work's part of the repositories the trees or the records name with no checkout in the registry (FACTSPLIT1a). No
     /// repository is called it: a repository's trees are kept in a folder of its name, which cannot hold <c>&lt;</c>.
     /// </summary>
@@ -165,6 +180,8 @@ public static class HelpFacts
                     woken.AddRange(SweepSubjects(whole).Select(part => (Sweep, part)));
                 }
 
+                // COMMS1i: a request's state moves with its asker's or its taker's record, a quest, or the word that answered it.
+                if (Moved("sessions") || Moved("quests") || Moved("words")) woken.Add((Exchanges, Whole));
                 return woken;
             default:
                 return None;
@@ -201,6 +218,7 @@ public static class HelpFacts
         facts.Topic(History, WholeRules, async (_, ct) => await judges.History(ct).ConfigureAwait(false));
         facts.Topic(Work, WorkRules, (part, ct) => JudgeWorkAsync(facts, part, judges.Work, ct));
         facts.Topic(Sweep, SweepRules, (part, ct) => JudgeSweepAsync(facts, part, judges.Sweep, ct));
+        facts.Topic(Exchanges, ExchangesRules, async (_, ct) => await judges.Exchanges(ct).ConfigureAwait(false));
 
         // Once the service's answers have landed, never before: a line's and a part's judges read the checkout from them, so one
         // started first would find none and keep nothing until its deadline. The trees' parts once the look has too, which names
@@ -224,7 +242,7 @@ public static class HelpFacts
                 if (look is not null && !ReferenceEquals(lookedBefore, look)) RecordedKnown(facts, whole, lookedBefore, look);
             }
         };
-        foreach (var topic in (string[])[Machine, Sessions, History]) facts.Subject(topic, Whole);
+        foreach (var topic in (string[])[Machine, Sessions, History, Exchanges]) facts.Subject(topic, Whole);
     }
 
     /// <summary>
@@ -674,12 +692,17 @@ public static class HelpFacts
         var sessions = SessionsOf(facts, whole);
         var history = facts.Value<IReadOnlyList<HistoryReading>>(History, Whole);
         var work = WorkOf(facts, whole);
+        var waits = facts.Value<HelpWaits>(Exchanges, Whole);
         return new HelpFactsRead(whole, lines, sessions, history, work, new HelpNotReadYet(unread)
         {
             Sessions = sessions is null,
             History = history is null,
             Work = work is null,
-        });
+            Waits = waits is null,
+        })
+        {
+            Waits = waits,
+        };
     }
 
     /// <summary>
@@ -851,14 +874,21 @@ public sealed record HelpNotReadYet(IReadOnlyList<string> Repositories)
     /// <summary>Whether any part of the work was never judged (FACTSPLIT1a): the work is then read as none, as the whole was.</summary>
     public bool Work { get; init; }
 
+    /// <summary>Whether what each line waits on was never judged (COMMS1i).</summary>
+    public bool Waits { get; init; }
+
     /// <summary>Whether anything was not read yet.</summary>
-    public bool Any => Repositories.Count > 0 || Sessions || History || Work;
+    public bool Any => Repositories.Count > 0 || Sessions || History || Work || Waits;
 }
 
 /// <summary>The room's reading of the facts (<see cref="HelpFacts.Read"/>): each part as last judged, null where never.</summary>
 public sealed record HelpFactsRead(
     HelpMachineWhole Whole, IReadOnlyList<RepositoryLine> Lines, IKnowledgeSessionLook? Sessions, IReadOnlyList<HistoryReading>? History,
-    HelpWork? Work, HelpNotReadYet NotReadYet);
+    HelpWork? Work, HelpNotReadYet NotReadYet)
+{
+    /// <summary>What each line waits on (COMMS1i), as last judged; null where never.</summary>
+    public HelpWaits? Waits { get; init; }
+}
 
 /// <summary>
 /// What reads each of the room's facts, handed by the module that holds the service and the loop (PARALLEL1a): each reads afresh
@@ -885,6 +915,12 @@ public sealed record HelpFactJudges(
     /// say there is nothing to clean up.
     /// </summary>
     public Func<HelpSweepPart, CancellationToken, Task<IKnowledgeSweep?>> Sweep { get; init; } = (_, _) => Task.FromResult<IKnowledgeSweep?>(null);
+
+    /// <summary>
+    /// What each line waits on (COMMS1i): the module hands the exchanges' one read over its home's files and the service's records; none
+    /// waits where a test standing in for the records hands none, as the trees' parts.
+    /// </summary>
+    public Func<CancellationToken, Task<HelpWaits?>> Exchanges { get; init; } = _ => Task.FromResult<HelpWaits?>(HelpWaits.None);
 }
 
 /// <summary>

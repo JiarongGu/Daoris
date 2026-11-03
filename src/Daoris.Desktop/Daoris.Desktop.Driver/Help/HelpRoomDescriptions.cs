@@ -12,6 +12,8 @@ internal static class HelpRoomDescriptions
         HelpRoomMayDo => MayDo.Describe(machine, sources),
         HelpRoomOwnPlugins => OwnPlugins.Describe(machine, sources),
         HelpRoomWork => Work.Describe(machine, sources),
+        // COMMS1i: what each line waits on, as the exchanges' read was handed it.
+        HelpRoomExchanges => machine with { Waits = sources.Waits },
         HelpRoomWorkspaces => Workspaces.Describe(machine, sources),
         _ => machine,
     };

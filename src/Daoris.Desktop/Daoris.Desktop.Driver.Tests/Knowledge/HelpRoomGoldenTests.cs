@@ -42,6 +42,13 @@ public sealed class HelpRoomGoldenTests
                 [], []),
         ],
         WorkUnread = ["`reports-db` has no checkout here, so its recovery refs were not read"],
+        // COMMS1i: two lines waiting on what they asked of others, one source not read.
+        Waits = new HelpWaits(
+            [
+                new("s1c2d3e4", "console-ui", "default", "helper h7 · codex-acp · asked 16:29 · asked · delivery kept"),
+                new("s5f6a7b8", "engine", "default", "#q9 of core · asked · delivery kept"),
+            ],
+            ["piece"]),
         Repositories =
         [
             new("console-ui", "work")

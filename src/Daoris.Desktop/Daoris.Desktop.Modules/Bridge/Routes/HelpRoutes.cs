@@ -218,7 +218,28 @@ public sealed class HelpRoutes(DriverContext context)
             HelpGrants.Read(_loop.Home, plugins), read.Work?.Units, read.Work?.Unread, read.Work?.Recovery,
             read.NotReadYet,
             // ONEWAY1ad-ii: This machine's list of old records, as its page reads it.
-            kept: TransitionalRegister.List(_loop.Home, _loop.Conversion.Parts()));
+            kept: TransitionalRegister.List(_loop.Home, _loop.Conversion.Parts()),
+            // COMMS1i: what each line waits on, read from the exchanges.
+            waits: read.Waits);
+    }
+
+    /// <summary>
+    /// The exchanges' topic's judge (COMMS1i): what each line on this machine waits on, by the one read <i>At work</i> draws, over the
+    /// home's helper, piece and hand-over files and the service's records and quests. Null where the service could not be read.
+    /// </summary>
+    private async Task<HelpWaits?> ExchangesAsync(CancellationToken cancellationToken)
+    {
+        if (_loop.Service is not { } service) return null;
+        try
+        {
+            var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
+            var quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
+            return AtWorkExchangeReading.Waits(_loop.Home, records, quests);
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -369,6 +390,7 @@ public sealed class HelpRoutes(DriverContext context)
         {
             Trees = help.TreesAsync,
             Sweep = help.SweepPartAsync,
+            Exchanges = help.ExchangesAsync,
         });
         var catchUp = new HelpRoomCatchUp(help._loop.Home, () =>
         {

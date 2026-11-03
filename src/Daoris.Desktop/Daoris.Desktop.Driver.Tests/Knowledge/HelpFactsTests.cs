@@ -38,7 +38,7 @@ public sealed class HelpFactsTests : IDisposable
     internal static HelpMachine Describe(HelpFactsRead read, DriverConfig config) => HelpRoom.Describe(
         config, read.Whole.Snapshot, read.Lines, read.Whole.Roster, _ => null, asks: 0, standing: read.Whole.Standing,
         sessions: read.Sessions, history: read.History, work: read.Work?.Units, workUnread: read.Work?.Unread,
-        workRecovery: read.Work?.Recovery, notReadYet: read.NotReadYet);
+        workRecovery: read.Work?.Recovery, notReadYet: read.NotReadYet, waits: read.Waits);
 
     [Fact]
     public void A_repository_whose_line_was_not_judged_yet_is_said_not_read_yet_and_no_other()
@@ -111,7 +111,8 @@ public sealed class HelpFactsTests : IDisposable
             .With(HelpFacts.Trees, HelpFacts.NoCheckout, new JudgedFact(NoTrees, At))
             .With(HelpFacts.History, HelpFacts.Whole, new JudgedFact(new List<HistoryReading>(), At))
             .With(HelpFacts.Work, "engine", new JudgedFact(new HelpWork([], [], []), At))
-            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At));
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At))
+            .With(HelpFacts.Exchanges, HelpFacts.Whole, new JudgedFact(HelpWaits.None, At));
 
         var read = HelpFacts.Read(facts, DriverConfig.Empty)!;
         var room = HelpRoom.Render(Describe(read, DriverConfig.Empty));
@@ -140,15 +141,15 @@ public sealed class HelpFactsTests : IDisposable
             [
                 (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole),
                 (HelpFacts.Work, "engine"), (HelpFacts.Work, "site"), (HelpFacts.Work, HelpFacts.NoCheckout),
-                (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"),
+                (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"), (HelpFacts.Exchanges, HelpFacts.Whole),
             ],
             HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests", facts));
         // Before the service's answers there is no part to wake: each is judged as they land.
         Assert.Equal(
-            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole)],
+            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole), (HelpFacts.Exchanges, HelpFacts.Whole)],
             HelpFacts.Woken(ChangeTopics.Ledger, "sessions", MachineFactsSnapshot.Empty));
         Assert.Equal(
-            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole)],
+            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole), (HelpFacts.Exchanges, HelpFacts.Whole)],
             HelpFacts.Woken(ChangeTopics.Ledger, "quests", facts));
         Assert.Equal(
             [
@@ -182,20 +183,51 @@ public sealed class HelpFactsTests : IDisposable
             [
                 (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole),
                 (HelpFacts.Work, "engine"), (HelpFacts.Work, "site"), (HelpFacts.Work, HelpFacts.NoCheckout),
-                (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"),
+                (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"), (HelpFacts.Exchanges, HelpFacts.Whole),
             ],
             HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests,asks,channel,words", facts));
     }
 
-    /// <summary>PUSH1d1b: a word kept without a note wakes the machine's answers and the sessions' look, which reads the words, and no part of the work.</summary>
+    /// <summary>
+    /// PUSH1d1b: a word kept without a note wakes the machine's answers and the sessions' look, which reads the words, and no part of the
+    /// work; COMMS1i: and what each line waits on, since a word answers a request.
+    /// </summary>
     [Fact]
     public void A_word_kept_wakes_the_machine_and_the_sessions_look()
     {
         var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
 
         Assert.Equal(
-            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole)],
+            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.Exchanges, HelpFacts.Whole)],
             HelpFacts.Woken(ChangeTopics.Ledger, "words", facts));
+    }
+
+    /// <summary>
+    /// COMMS1i: what each line waits on is woken by a session's records, a quest or a word moving, and by no ask, channel post, ref or
+    /// configuration; the room's read says it not read until it was judged, and as judged once it was.
+    /// </summary>
+    [Fact]
+    public void COMMS1i_what_each_line_waits_on_is_woken_by_the_records_a_quest_or_a_word_and_read_as_judged()
+    {
+        var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
+
+        foreach (var family in new[] { "sessions", "quests", "words" })
+        {
+            Assert.Contains((HelpFacts.Exchanges, HelpFacts.Whole), HelpFacts.Woken(ChangeTopics.Ledger, family, facts));
+        }
+
+        foreach (var (topic, subject) in new[] { (ChangeTopics.Ledger, "asks"), (ChangeTopics.Ledger, "channel"), (ChangeTopics.Refs, "site"), (ChangeTopics.Config, "driver.json") })
+        {
+            Assert.DoesNotContain((HelpFacts.Exchanges, HelpFacts.Whole), HelpFacts.Woken(topic, subject, facts));
+        }
+
+        var notYet = HelpFacts.Read(facts, DriverConfig.Empty)!;
+        Assert.Null(notYet.Waits);
+        Assert.True(notYet.NotReadYet.Waits);
+        var waits = new HelpWaits([new HelpWait("s1", "site", "default", "helper h7 · codex-acp · asked")], []);
+        var judged = HelpFacts.Read(facts.With(HelpFacts.Exchanges, HelpFacts.Whole, new JudgedFact(waits, At)), DriverConfig.Empty)!;
+        Assert.Same(waits, judged.Waits);
+        Assert.False(judged.NotReadYet.Waits);
     }
 
     [Fact]
@@ -1120,7 +1152,8 @@ public sealed class HelpFactsTests : IDisposable
             .With(HelpFacts.Trees, HelpFacts.NoCheckout, new JudgedFact(NoTrees, At))
             .With(HelpFacts.History, HelpFacts.Whole, new JudgedFact(new List<HistoryReading>(), At))
             .With(HelpFacts.Work, "site", new JudgedFact(new HelpWork([], [], []), At))
-            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At));
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At))
+            .With(HelpFacts.Exchanges, HelpFacts.Whole, new JudgedFact(HelpWaits.None, At));
         var described = 0;
         var catchUp = new HelpRoomCatchUp(_home, () =>
         {

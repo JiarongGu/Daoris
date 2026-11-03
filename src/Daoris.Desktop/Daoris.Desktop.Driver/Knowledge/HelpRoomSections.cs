@@ -40,6 +40,8 @@ internal static class HelpRoomSections
         new HelpRoomMachineNow(),
         // FABRIC-MILESTONE1b: where each unit's work has got to, read beside the machine now.
         new HelpRoomWork(),
+        // COMMS1i: what each line waits on, read from the exchanges.
+        new HelpRoomExchanges(),
         new HelpRoomWorkspaces(),
         new HelpRoomAgents(),
         // STAFFPOLICY1g (D226): each role's policy and its last 7 days, beside the agents they spend.

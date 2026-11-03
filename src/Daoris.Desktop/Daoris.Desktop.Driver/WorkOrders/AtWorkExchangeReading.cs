@@ -69,6 +69,30 @@ public static class AtWorkExchangeReading
         };
     }
 
+    /// <summary>
+    /// What each line on this machine waits on, for Ask Daoris's room (COMMS1i, the comms design §7): each line's head among
+    /// <paramref name="records"/> (a record no other continues, and no helper's, partner's or reviewer's) with the requests of its line it
+    /// still waits on, in the verb's words, by the same read <i>At work</i> draws; and the sources not read.
+    /// </summary>
+    public static HelpWaits Waits(string home, IReadOnlyList<SessionRecord> records, IReadOnlyList<QuestView>? quests)
+    {
+        var look = Look(home, Priors(records), quests, Reviewers(records));
+        var continued = records.Select(record => record.From).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        var waits = new List<HelpWait>();
+        var unread = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var head in records.DistinctBy(record => record.Id, StringComparer.Ordinal)
+                     .Where(record => !continued.Contains(record.Id) && record.Serves is null && record.Opinion is null)
+                     .OrderBy(record => record.Id, StringComparer.Ordinal))
+        {
+            var read = Of(look, head.Id);
+            unread.UnionWith(read.Unread);
+            waits.AddRange(read.Rows.Where(row => row.Holds)
+                .Select(row => new HelpWait(head.Id, head.Repository, head.Workspace, AtWorkVerb.Exchange(row, head.Id))));
+        }
+
+        return new HelpWaits(waits, [.. unread]);
+    }
+
     /// <summary>The line <paramref name="attended"/> ends: its requests of others, and the sources among <see cref="Sources"/> not read.</summary>
     public static AtWorkExchanges Of(ExchangeLook look, string attended)
     {
