@@ -40,8 +40,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Review/Heavy/HeavyExecutor.cs` | The `check` node performed by Daoris, off the pass, under the heavy slots |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
-| Conversion | `Conversion/ConversionPart.cs`, `WorkflowPart.cs`, `WorkflowLegacy.cs`, `LegacyGraphs.cs`, `ConversionPlans.cs`, `ConversionApplies.cs`, `Transitional/Register.cs` | The home's one conversion door and its workflow part; the register of old ways still read |
-| Routes and page | Modules `Bridge/Routes/WorkflowRoutes.cs`, `WorkflowEditRoutes.cs`, `SetupRoutes.cs`, `ConvertRoutes.cs`, `TreesRoutes.cs`, `EntriesRoutes.cs`; web `src/workflow/` (`chart/`, `edit/`, `place/`), `src/agents/setup/` | The bridge doors; the chart, the editor, the place page and *Convert…* |
+| Conversion | `Conversion/WorkflowLegacy.cs`, `LegacyGraphs.cs`, `LegacyFacts.cs`, `ConversionPlans.cs`, `ConvertWorlds.cs`, `Transitional/Register.cs` | The old workflow records' census and planner, for the migration's workflow step; the register of old ways still read |
+| Routes and page | Modules `Bridge/Routes/WorkflowRoutes.cs`, `WorkflowEditRoutes.cs`, `SetupRoutes.cs`, `TreesRoutes.cs`, `EntriesRoutes.cs`; web `src/workflow/` (`chart/`, `edit/`, `place/`), `src/agents/setup/` | The bridge doors; the chart, the editor, the place page and *Convert…* |
 
 ## Its rules
 
@@ -144,9 +144,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     integrated. It suggests integrated where the line declares integration, a pull request where a plugin serves the remote's
     platform, else merge after accept. *Keep how it lands* writes no landing and no choice. (from D221, D227)
 43. `PLACE_APPLY` is the one adoption door. `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (from D227)
-44. Old records convert only on the person's press: `CONVERT_PLAN`, `CONVERT_APPLY {digest}`, `CONVERT_UNDO`, and
-    `daoris-driver convert`. One home-wide plan over every part; a receipt before the first effect; a changed rule is `moved`.
-    Undo puts the rules back; saved versions stay. (from D227, D228)
+44. Old workflow records convert once, at the release's first start, in the home's migration (`HomeMigration`); there is no
+    door, receipt or undo, and `ConversionPlans` plans what the workflow step writes. (from D227, D232)
 45. Under Current, a place still lands by its landing rule (`landings`, `workspaceLandings`): form, pattern, key, squash, plugin,
     `autoAccept`, tidy, cycle. `SET_LANDING` and `driver landing` refuse a place on a saved workflow. (from D87, D164, D227)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it: the steps engine,
