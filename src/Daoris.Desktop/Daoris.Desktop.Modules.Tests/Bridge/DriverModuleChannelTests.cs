@@ -49,6 +49,29 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         Assert.Equal("2026-10-14T08:00:00", read.GetProperty("mark").GetString()![..19]);
     }
 
+    /// <summary>
+    /// COMMS1k: the read carries the messages to one part each apart from the items, each with the part, its channel and its receipt in that
+    /// part's line, as the page reads them; a host from before answers none, read as an empty list.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1k_CHANNEL_READ_carries_the_messages_to_one_part_apart_from_the_items()
+    {
+        const string withAddressed = """
+            {"ask":"a1","entry":"person","items":[],"unread":0,
+             "addressed":[{"kind":"message","at":"2026-10-14T09:05:00Z","id":"p1a2b3c4d5","session":"s1","repository":"db","agent":"codex",
+              "entry":"ask:a1/db","part":"s2","channel":"ask:a1","text":"The contract changed.","receipt":"read"}]}
+            """;
+        var (module, _) = await UpAsync(new StandIn(_ => (HttpStatusCode.OK, withAddressed)));
+
+        var read = await AnswerAsync(module, "CHANNEL_READ", new { ask = "a1" });
+
+        Assert.Empty(read.GetProperty("items").EnumerateArray());
+        var addressed = Assert.Single(read.GetProperty("addressed").EnumerateArray().ToList());
+        Assert.Equal(("s2", "ask:a1", "read"), (addressed.GetProperty("part").GetString(), addressed.GetProperty("channel").GetString(), addressed.GetProperty("receipt").GetString()));
+        var (older, _) = await UpAsync(new StandIn(_ => (HttpStatusCode.OK, Channel)));
+        Assert.Empty((await AnswerAsync(older, "CHANNEL_READ", new { ask = "a1" })).GetProperty("addressed").EnumerateArray());
+    }
+
     /// <summary>KEEPSIZE1: <c>SESSION_RECORD</c> passes the service's record of a session's finished tree through, and answers none where the service keeps none.</summary>
     [Fact]
     public async Task SESSION_RECORD_passes_the_record_through_and_answers_none_where_none_is_kept()

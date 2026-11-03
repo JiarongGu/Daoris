@@ -141,6 +141,7 @@
   "notifications.steward.desk.state.open": "Waiting for the steward",
   "notifications.steward.desk.state.answered": "Done by the steward",
   "notifications.steward.desk.state.declined": "Declined by the steward",
+  "notifications.steward.desk.state.interrupted": "Interrupted when Daoris stopped",
   "notifications.steward.desk.act.drive": "Drive",
   "notifications.steward.desk.act.undrive": "Stop driving",
   "notifications.steward.desk.act.trees": "Give trees",

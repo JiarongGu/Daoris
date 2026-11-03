@@ -70,7 +70,7 @@ public static class CommandWords
             Nested = new Dictionary<string, IReadOnlyList<string>> { ["sync"] = ["status", "dismiss", "forward"] }, // optional-locks: no git runs; the remotes' sync sub-verbs
         },
         new("repository", ["connect", "register", "retire", "wire", "import"]),
-        new("role", ["set", "remove", "default", "policy", "brief"], Takes: "[<id>]"),
+        new("role", ["set", "remove", "default", "policy", "rules", "brief"], Takes: "[<id>]"),
         new("session", ["list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword", "go-on-new", "start-from",
             "hand-over", "helper", "partner", "handback", "opinion", "supervise", "at-work"])
         {

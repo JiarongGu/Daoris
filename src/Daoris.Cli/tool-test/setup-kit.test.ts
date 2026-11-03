@@ -11,7 +11,7 @@ import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
 
 /**
  * The family rehearsal's set-up phase, held where it can be without a host or a driver (LAYOUT7a): the reading
- * of what `daoris-driver place --adoption` prints, the launcher a child finds `daoris` by, and the protocol stub's set-up
+ * of what `daoris place --adoption` prints, the launcher a child finds `daoris` by, and the protocol stub's set-up
  * branch, run for real in a scratch repository against a stand-in for the service's quest door. Every turn over
  * the stub also holds how it ends, with exit 0 once its input closes (STUB1).
  *
@@ -65,7 +65,7 @@ const REFUSED = [
   CHANGE,
   'refused:',
   '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Give it trees under Repositories → the '
-    + 'repository\'s page → Setup → Driving, or with `daoris driver trees atlas on`.',
+    + 'repository\'s page → Setup → Driving, or with `daoris place trees atlas on`.',
   '--plan: nothing was written, and nothing was asked.',
   '',
 ];
@@ -105,7 +105,7 @@ for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']] as const) {
 test('a refused plan is read as its refusals, each whole', () => {
   const plan = readPlace(REFUSED.join('\r\n'));
   assert.equal(plan.refusals.length, 1);
-  assert.match(plan.refusals[0] ?? '', /`daoris driver trees atlas on`\.$/);
+  assert.match(plan.refusals[0] ?? '', /`daoris place trees atlas on`\.$/);
   assert.equal(plan.nothingWritten, true);
   assert.deepEqual(plan.quests, []);
 });
@@ -130,7 +130,7 @@ test('a set-up quest\'s title keeps its day, and the title is what the press com
 });
 
 test('what is not the command\'s output reads as nothing at all', () => {
-  const nothing = readPlace('place: name the delivery with `--preset`: `keep`.\nusage: daoris-driver place <repository> --preset <name> [--plan]\n');
+  const nothing = readPlace('place: name the delivery with `--preset`: `keep`.\nusage: daoris place <repository> --preset <name> [--plan]\n');
   assert.deepEqual(nothing.repositories, []);
   assert.deepEqual(nothing.rows, []);
   assert.deepEqual(nothing.changes, []);
@@ -182,7 +182,7 @@ for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']]) {
 }
 
 test('what is not `register`\'s report reads as no repository and no counts', () => {
-  const nothing = readRegister('register: `--repository` takes a repository\'s name.\nusage: daoris-driver register [--repository <name>]\n');
+  const nothing = readRegister('register: `--repository` takes a repository\'s name.\nusage: daoris repository register [--repository <name>]\n');
   assert.deepEqual(nothing.followed, []);
   assert.deepEqual([nothing.registered, nothing.unchanged, nothing.refused], [null, null, null]);
   const none = readRegister('register: no repository has a checkout here, so there is nothing to register.\r\n');
@@ -191,7 +191,7 @@ test('what is not `register`\'s report reads as no repository and no counts', ()
 });
 
 test('the machine log\'s `registry.followed` lines are read as a name, a word and the fields each carried, and no other event', () => {
-  // As `MachineLog` writes a line and `daoris-driver logs --json` prints it: one JSON object a line.
+  // As `MachineLog` writes a line and `daoris logs --json` prints it: one JSON object a line.
   const logged = [
     '{"time":"2026-10-01T12:00:00.000Z","source":"driver","level":"info","event":"session.started","data":{"session":"s1","repository":"atlas"}}',
     '{"time":"2026-10-01T12:00:01.000Z","source":"driver","level":"info","event":"registry.followed","data":{"repository":"atlas","outcome":"registered"}}',
@@ -231,7 +231,7 @@ const WORKSPACE_LIST = [
   `${''.padStart(3)}  ${'repository'.padEnd(10)} ${'asked'.padStart(5)}  ${'read'.padStart(4)}  ${'sessions'.padStart(8)}  now`,
   `${'1'.padStart(3)}  ${'beacon'.padEnd(10)} ${'0'.padStart(5)}  ${'0'.padStart(4)}  ${'0'.padStart(8)}  to go`,
   `${'2'.padStart(3)}  ${'quarry'.padEnd(10)} ${'3'.padStart(5)}  ${'12'.padStart(4)}  ${'1'.padStart(8)}  to go`,
-  '       refused: `quarry` is not driven here: it is not opted into driving on this machine. `daoris driver drive quarry`.',
+  '       refused: `quarry` is not driven here: it is not opted into driving on this machine. `daoris place drive quarry`.',
   '  at once   1 (at most 1 while the cap is 2, so other work keeps a slot)',
   '  pilot     2: once the first 2 have closed, the plan pauses until you resume it',
   '  agent     acp-stub',
@@ -269,7 +269,7 @@ for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']]) {
       { repository: 'beacon', asked: 0, read: 0, sessions: 0, now: 'to go', refusals: [] },
       {
         repository: 'quarry', asked: 3, read: 12, sessions: 1, now: 'to go',
-        refusals: ['`quarry` is not driven here: it is not opted into driving on this machine. `daoris driver drive quarry`.'],
+        refusals: ['`quarry` is not driven here: it is not opted into driving on this machine. `daoris place drive quarry`.'],
       },
     ]);
     assert.equal(plan.atOnce, '1 (at most 1 while the cap is 2, so other work keeps a slot)');
@@ -312,7 +312,7 @@ test('a steer is read as its message, where each repository stands, and the head
 });
 
 test('what is not a workspace plan\'s output reads as nothing at all', () => {
-  const nothing = readWorkspaceSetup('place: name the workspace: `--workspace <name>`.\nusage: daoris-driver place --workspace <name> --adoption [--plan]\n');
+  const nothing = readWorkspaceSetup('place: name the workspace: `--workspace <name>`.\nusage: daoris place --workspace <name> --adoption [--plan]\n');
   assert.equal(nothing.workspace, null);
   assert.deepEqual(nothing.rows, []);
   assert.deepEqual(nothing.standing, []);

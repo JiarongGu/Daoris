@@ -1,0 +1,228 @@
+# Knowledge, memory and records — how it works now
+
+## What it does
+
+The knowledge service reads the checkouts registered on this machine and keeps one derived index of what they wrote: rules,
+knowledge, skills, decisions and their notes, fixes, finished tasks, the router, a declared documents folder and the generated
+index of where things are. It answers searches by words, and by meaning where the deployment names a model. Every hit names its
+lines and the commit it was read at. Sessions reach it through the MCP connector, which serves each session only the tools its
+kind of work may call. The memory coordinator keeps one memory per repository, owned by that repository's sessions and changed
+only through a log of operations. A workspace may be wired to a remote: quests sync as operations, records as feeds, and nothing
+leaves the machine unless the repository's manifest says it may. This repository keeps its own records in declared files with
+one job each, checked by `verify`.
+
+## Its parts
+
+`Core/` is `src/Daoris.Service/Daoris.Service.Core/`; `Mcp/` is `src/Daoris.Service/Daoris.Service.Mcp/`.
+
+| Unit | File | Its job |
+|---|---|---|
+| `KnowledgeService` | `Core/Knowledge/KnowledgeService.cs` (130-1611) | The one face every door calls: search (230-312), standing, cite and recheck (492-576), register, feed (962-1131), refresh (1228-1381) |
+| `RepositoryScanner` | `Core/Registry/RepositoryScanner.cs` (`Scan` 94-204) | Reads one checkout into entries, in a fixed order; one file is one place |
+| `RepositoryLayout`, `RepositoryDocuments`, `DaorisLock` | `Core/Registry/` | Where a checkout keeps its doctrine, which roles `daoris.json` declares, and which files are canonical |
+| Ingest | `Core/Knowledge/Ingest/` | Splits files: `DecisionNotes`, `IndexSections`, `IndexRows`, `MarkdownSections`, `MarkdownFence`, `EntryPieces` |
+| `KnowledgeIndex`, `DisclosurePolicy` | `Core/Knowledge/` | Writes a source into the store, withholding at ingest what may not leave |
+| `SqliteKnowledgeStore` | `Core/Knowledge/Store/SqliteKnowledgeStore.cs` | `knowledge.db` with FTS5; `InMemoryKnowledgeStore` is its test twin |
+| Search | `Core/Knowledge/Search/` | `SqliteKnowledgeSearch` (BM25), `SemanticKnowledgeSearch`, `HybridKnowledgeSearch` (rank fusion), `ConvergenceDetector` |
+| Freshness | `Core/Knowledge/Store/` | `CheckoutFreshness` (watch), `RootSignature` (per root), `UncommittedRecords` (git status), `NewerIndexException` |
+| `EntryStanding`, `Citation` | `Core/Knowledge/` | The `standing:` line of a hit; a record cited by id, lines, commit and digest |
+| `Registry`, `RegistrationStore`, `RegistryImport` | `Core/Registry/` | Registrations pushed by `connect` and persisted; a folder scan only proposes |
+| `AmbientWorkspace`, `WorkspaceScope` | `Core/Registry/`, `Mcp/WorkspaceScope.cs` | Which workspace a call answers from |
+| Feed | `Core/Knowledge/Feed/` | `FeedOrder`, `FeedDigest`, `CodeMap`, `CodeMapWire`: what a remote is fed and how it is ordered |
+| Connector host | `Mcp/Program.cs`, `Mcp/KnowledgeServer.cs` | The stdio MCP server; `ToolTypes` is the one list of tool classes |
+| Knowledge tools | `Mcp/KnowledgeSearchTools.cs` | `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `registry`, `knowledge_refresh` |
+| Memory tools | `Mcp/MemoryTools.cs` | `memory_search`, `memory_get`, `memory_write`, `memory_end`, `memory_propose` |
+| `ToolClasses` | `Mcp/ToolClasses.cs` | Each tool's class: read, restricted or publish |
+| `CallTable`, `SessionWorks` | `Mcp/CallTable.cs` (`Refusal` 121-144), `Mcp/RoleFilter.cs` | What each kind of work is served; filters `tools/list` and every call |
+| Call guards | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage proof, missing arguments, the waiting line |
+| `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOps.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change |
+| `LyntaiMemory`, `MemoryEngine` | `Core/Knowledge/Memory/` | One engine per repository over `memory.db`, and its read-only view for others |
+| `MemoryApplier`, `MemoryCoordinator` | `Core/Knowledge/Memory/` | Applies released rows, recovers at start, paces the sweep |
+| `MemorySweep`, `MemoryPresenter`, `MemoryView` | `Core/Knowledge/Memory/` | Rechecks citations, shows an entry as current only when checked, reads another repository's memory |
+| `MemoryProposals`, `MemoryDesk` | `Core/Knowledge/Memory/` | A proposal as a quest to the owner; the person's approve, decline, Keep and Drop |
+| Remote | `Core/Remote/Remote.cs`, `RemoteConfig.cs`, `QuestSync.cs`, `SessionSync.cs`, `ChannelSync.cs`, `CodeMapSync.cs` | The remote's client, its configuration, and one pass per kind, run by `POST /api/sync` and ticked by the driver's `RemoteSync.cs` |
+| Record tooling | `tools/orient-index.mjs`, `index-fresh.mjs`, `index-hook.mjs`, `knowledge-server.mjs`, `doc-duplicates.mjs`, `doc-current.mjs`, `doc-system.mjs`, `merge-rows.mjs` | Writes and checks the index, builds and serves the workspace's connector, checks and merges the records |
+
+## Its rules
+
+**Knowledge**
+
+1. Local is the default and is fully useful alone: no URL means local, silently, and opens no socket. A shared host is the same
+   executable in shared mode. (from D21, D47)
+2. The index is derived from files. The files are the floor and must work with no service; the service only adds search across
+   checkouts and by meaning. (from D129, D151)
+3. The scanner reads, in order: rules and the doctrine region, knowledge, skills, rooms, the declared router, decisions, fixes and
+   archive (declared path first, else known names, first match wins), the deployment's index, the declared index, the deployment's
+   documents folder, and the README until the repository adopts. (from D122, D124, D151)
+4. One file is one place: a file already read is never read again under another kind. A link is never followed. What git ignores
+   inside a walked folder is never opened; a declared folder git ignores whole is still read. (from D117, D151)
+5. The lock decides provenance. Canonical entries are the same everywhere and never feed; local entries are what differs.
+   (from D5, D21)
+6. Kinds are rule, knowledge, skill, decision, fix, task outcome, index and record. A decision is one entry and each dated note
+   another. An index entry is a heading's prose, a table row or a list item. A record is a finished tree's, on the local host only.
+   (from D134, D151, D195)
+7. Every entry keeps its lines. A hit names `path:first-last`; `knowledge_get` reads an entry whole or a range. A search that names
+   no kinds answers at most two index entries. (from D151)
+8. Ranking is BM25 over FTS5. With an embedder, meaning is fused with words by reciprocal rank. A long entry is embedded in pieces
+   the deployment's window bounds. With no model, every answer says it matched on words only. (from D24, D123, D151)
+9. Disclosure applies at ingest. In shared mode a repository's local entries leave only when its manifest joins and shares
+   knowledge; silence keeps them local. (from D21, D47)
+10. A server over one checkout watches its refs and knowledge folders and reads again when marked stale or five minutes old (one
+    minute where nothing can be watched). A host over registered roots judges each root's signature at most once a minute and
+    reads only roots that moved. (from D151, D220)
+11. A refresh reads each repository's generation before the registry, so a write made during the refresh refuses that
+    repository's write. (from D220)
+12. Every hit and `get` carries one `standing:` line: the reading's commit, `+ uncommitted` (waited for three seconds at most,
+    else `not yet read`), a fed reading's commit, and for a decision the notes after it and its `Amended by`/`Superseded by`
+    marks. No model judges which record is current. (from D220)
+13. An index a newer build wrote is refused, never rebuilt; the store's quests, sessions and keys stay usable. (from D36)
+14. A call answers from the caller's own workspace. Naming another, or `all`, is a person's look. A session bound to its
+    workspace never looks across. (from D48, D107)
+15. The registry decides what is indexed. A registration is pushed by `daoris connect` and persisted; a folder scan proposes. A
+    root is machine-local: answered to loopback callers only and stripped from anything that syncs. (from D34, D48, D70)
+
+**The connector**
+
+16. Each session spawns its own connector over stdio; all of them share one `knowledge.db` under the Daoris home. Serving never
+    builds. A workspace's own server is built by `node tools/knowledge-server.mjs build` into `local/`, and a running session
+    moves onto a new build at its next request. (from D63, D151)
+17. Every registered tool has a class: read, restricted or publish. A tool with no class is refused to every named session.
+    (from D173)
+18. The call table serves by work. A session in a repository gets the 18 core tools (knowledge, memory, quests, its line, the
+    registry, a helper's ask, the channel, handbacks) plus its kind's own. Ask Daoris gets every tool but the brainstorm turns
+    and memory changes. A partner, a reviewer and a brainstorm voice get their handed rows. A session that cannot be placed gets
+    the reads. (from D212, D230)
+19. `tools/list` names only what the table serves, and a refused call answers a sentence and a closed code before the tool
+    runs. `McpRoleFilterTests` holds the table to `fixtures/call-table.json`. (from D212, D230)
+20. A connector that names no session (a person's own agent) is not filtered by the table. (from D212)
+21. A tool other than a read runs only for a caller whose lineage proves a root; a child may publish a plain quest and nothing
+    else. A missing argument is answered from the tool's schema; argument values are never logged. (from D173)
+22. Every answer ends with one line of what waits on the ask's channel, except `channel_read`'s own. (from D188)
+
+**Memory**
+
+23. Each registered repository has one memory, which it owns. The engine is per repository over `memory.db`, opened with
+    reinforcement off, so a read changes nothing. (from D220)
+24. Only a session of a registered repository writes or ends that repository's memory. Ask Daoris, an intake, a helper, a partner
+    and a reviewer are refused; a reader asks the owner with `memory_propose`, which travels as a quest and joins one still
+    untaken. (from D220)
+25. Every change is a `memory_ops` row: `staged` by its session, released at the session's commit point (a landing's record, or
+    a main-tree session's completion), then `ready` or `awaiting`, `applying`, and `applied`, `stale` or `held`. Nothing staged
+    applies by itself; a stopped session's rows wait for the person's Keep or Drop. (from D220)
+26. An end or a replacement waits for an approver other than its proposer. Until a second opinion may approve, that is the
+    person. (from D220)
+27. Only the service applies. A row is marked `applying` in one transaction and settled in another; a keyed receipt settles it
+    after a crash. An outcome no receipt names is held for the person, never replayed. (from D220)
+28. An entry cites records by id, lines, commit and digest. The sweep rechecks them: holding writes a confirmation, failing an
+    awaiting end. An entry is shown as current only when it was read again and every citation held. (from D220)
+29. Another repository's memory is read only through its view, the caller's workspace checked again at each read. (from D220)
+
+**The remote**
+
+30. A workspace's remote is machine configuration: the home's `remotes.json`, keyed by workspace, the environment overriding.
+    The repository's manifest says whether it may share (join, share knowledge); the machine says where. (from D47, D48)
+31. Quests: every verb commits locally and succeeds locally. Sync is fetch, rebase and push of operations. The first push wins
+    and the loser is kept as a conflict for a person. A take claims by push, waiting 15 seconds at most. (from D68, D69)
+32. Records sync, processes never. Session records, channel messages and code maps travel keyed by origin and id, a feed taken
+    whole or refused whole. Only local knowledge feeds, replacing that repository's entries. No wire carries a root, a
+    transcript or private content. (from D47)
+33. Two trust shapes: local trusts the loopback and binds nothing else; shared gates every route with minted per-person,
+    per-machine, expiring keys, stored as a hash. (from D47)
+
+**This repository's records**
+
+34. `daoris.json`'s `documents` declares each record once: router, index, decisions, backlog, archive, fixes, changelog,
+    glossary, gates, and the `present` homes. The doctrine region renders them as *Where things are*. (from D122, D151)
+35. Each decision is its own file, `docs/decisions/D<n>.md`, its heading first and its notes appended at its end. The dispatching
+    parent reserves the number. `docs/DECISIONS.md` is a fixed page with no rows. (from D106, D134)
+36. Changelog, archive, fix log and twins merge by union; decisions by the `notes` driver; the router by the `rows` driver; the
+    backlog as plain text. `npm ci` installs both drivers. (from D106, D134)
+37. `doc-duplicates` (in `verify`) refuses a decision number, heading, index row or changelog line written twice, and a decision
+    file with a heading not its own or a glued note label. (from D106, D134)
+38. The index of where things are is written in each checkout and never committed: the checkout hooks and the knowledge server
+    write it, and `orient-index --check` fails a stale file or a refused note mark. (from D151, D220)
+39. A present fact has one home and is rewritten in place; a superseded way is removed with it. History is appended and read by
+    lookup. Tests pin rules, never counts, except where the count is a budget. (from D220, D228)
+40. The backlog holds open rows of a line or two. A finished row leaves for one archive line. A regression gets a fix-log
+    entry, and a fix's commit body names the root cause. (from D127, D220)
+41. Versions and release headings are stamped by the release workflow, never by hand. The glossary is the authority for names.
+    Model choices are recorded by role, with evidence, in `docs/model-roles.md`. (from D116, D174)
+
+## Where a change goes
+
+- **A new record shape or role a checkout is read for:** the scanner (`RepositoryScanner`), with the split in `Knowledge/Ingest/`
+  and the declared path in `RepositoryDocuments` or `RepositoryLayout`.
+- **Ranking, kinds asked, standing words:** `Knowledge/Search/`, `KnowledgeQuery`, `EntryStanding`.
+- **Storage or schema:** `Knowledge/Store/`; the store's schema version moves with it (`NewerIndexException`).
+- **When a reading is taken again:** `CheckoutFreshness`, `RootSignature`, `UncommittedRecords`.
+- **A new connector tool:** its own `*Tools.cs` in `Mcp/`, one line in `KnowledgeServer.ToolTypes`, a class in `ToolClasses`,
+  its cells in `CallTable` and `fixtures/call-table.json`.
+- **Memory behaviour:** `Knowledge/Memory/`; a new state or kind goes in `MemoryOps.cs`'s tables, never as a branch elsewhere.
+- **A new kind that syncs:** a `<Kind>Sync.cs` in `Remote/`, a door on `IRemote`, and its route in the HTTP host's `PersonDoors`
+  as a shared door.
+- **Record checks and merges:** `tools/` (`orient-index`, `doc-duplicates`, `doc-current`, `merge-rows`, `index-hook`).
+
+**Tests that pin it.** `src/Daoris.Service/Daoris.Service.Tests/`: `Knowledge/` (`KnowledgeStoreContractTests`, `SearchTests`,
+`HybridSearchTests`, `RefreshTests`, `CheckoutFreshnessTests`, `IndexEntriesTests`, `DecisionNotesTests`, `KnowledgeStandingTests`,
+`CitationRecheckTests`, `DisclosureTests`, `NewerIndexTests`, `OneCheckoutTests` and the `Memory*Tests`); `Mcp/`
+(`McpRoleFilterTests`, `CoreSetTests`, `ToolClassesTests`, `McpToolRegistrationTests`, `CallLineageFilterTests`,
+`ArgumentFilterTests`, `McpMemoryToolsTests`, `McpMemoryProposalTests`); `Registry/` (`RepositoryScannerTests`,
+`RegistrationStoreTests`, `RepositoryLayoutTests`, `RepositoryDocumentsTests`); `Remote/` (`QuestSyncTests`, `SessionSyncTests`,
+`ChannelSyncTests`, `CodeMapSyncTests`, `HttpRemoteTests`, `RemoteConfigTests`). Tools: `orient-index.test.mjs`,
+`doc-current.test.mjs`, `index-hook.test.mjs`, `merge-rows.test.mjs`, and the CLI's `test/knowledge-server.test.ts`.
+The web: `src/Daoris.Web/src/knowledge/*.test.tsx`, `work/head/SessionMemory.test.tsx`.
+
+**Gates that bite** (`daoris.gates.json`): `service` (`dotnet test src/Daoris.Service`); `cli` (`npm run verify`:
+`doc-duplicates`, `doc-system`, `doc-links`, the tools' tests); `tool-tests`; `orient-index`; `code-map`; `universal` (the docs
+gate fails `src/Daoris.Service/README.md` more than seven days behind its code, and the sensitive scan); `web-unit` for the
+Knowledge view and session memory; `deployment` for the shared host.
+
+## Contradictions
+
+1. D151 points 1-2 (the index is committed files, never text-merged) vs `.gitignore:13-14` and `tools/orient-index.mjs:27-31`
+   (ignored, written per checkout). The code reads right.
+2. `.gitattributes:20-27` and `daoris.gates.json:33-35` still declare merge handling and a `generated` rewrite for `docs/index/`,
+   and `AGENTS.md:48-49` still lists it as generated output to merge: leftovers of the committed index (D228). The ignore reads
+   right.
+3. D134 point 3 (union per file, a merge driver rejected) and D151's rejected merge driver vs `.gitattributes:49` (`merge=rows`)
+   and `:55` (`merge=notes`), installed by `npm ci`. The code reads right.
+4. Two ways set apart a glued decision note: the `notes` driver (`tools/index-hook.mjs:13-15`) and `setApart` in
+   `tools/merge-branch.mjs:1838` (D106's MERGEJOIN1 note). D228 allows one; the driver is the newer.
+5. D134 point 2 (no index of the decisions, hand-kept or generated) vs the generated digest `docs/index/decisions.md` (its own
+   ORIENT1b note). The code reads right.
+6. D106 (`docs/README.md` and `docs/DECISIONS.md` merge by union) vs `.gitattributes:39-49` (the router by rows, the page not
+   union). The code reads right.
+7. D47 (a quest has one home; its verbs write through or fail) vs D68 (every verb commits locally; fetch, rebase, push) and
+   `Core/Remote/Remote.cs:10-20`. D68 reads right.
+8. D21 (the shared store a git repository first; keys read-only; access mirrors the source host) vs D47 (git as store priced and
+   declined) and `Core/Platform/ApiKeys.cs` (keyed writes at a SQLite host). D47 reads right.
+9. D21 and D47 (people sign in to a shared host with OIDC) vs the service, which has no OIDC code. The code is today's truth.
+10. D30 (the web's primary view is convergence) vs `src/Daoris.Web/src/knowledge/modes.ts:8,18-21` (Search first and default).
+    The code reads right.
+11. D212 point 3 (Ask Daoris refused `helper_ask`) and D230's CONTEXTONE1d2 note (a session is listed only what it may call) vs
+    `Mcp/CallTable.cs:68-73,137-139` and `fixtures/call-table.json:43-44`, which serve `helper_ask` to Ask Daoris and an intake
+    that `Core/Sessions/HelperBox.cs:129-140` refuses. The refusal reads right; the listing is a defect.
+12. D22 (depend on released siblings, never a working tree) vs `src/Daoris.Service/Directory.Packages.props:19-22` (a local
+    Lyntai build until its next release). The code is today's truth.
+13. D21 (`local/` a hard exclusion in shared mode) vs `Core/Knowledge/DisclosurePolicy.cs:17-25` (no path rule): `local/` stays
+    out only because the walk skips what git ignores, and a declared folder git ignores whole is read. The code holds in
+    practice.
+14. `tools/knowledge-server.mjs:22` (a reading re-read once a minute old) vs `Core/Knowledge/Store/CheckoutFreshness.cs:42` and
+    `Mcp/Program.cs` (five minutes while watched, one when not). The code reads right.
+15. The `change` skill (`.claude/skills/change/SKILL.md:13-14,25-28`: the brief names the area documents; nothing else is
+    written by hand) vs `AGENTS.md` (no area document; `docs/areas/` absent) and `docs/development.md:267-269,517-519` (archive,
+    changelog and fix-log entries per change). What main does today is the development guide; CONSOLIDATE1 settles it.
+
+## Open
+
+- **KNOWCENTRAL2i** — the installed measurement of the memory coordinator, looking also for conflicting entries about one fact
+  (PROFILEFIX1's re-open condition).
+- **KNOWCENTRAL1** (next round) — retirement through decay, which upkeep a model takes alone, a memory shared across repositories.
+- **MC8** — a second opinion as an end's approver; until then the person approves every end.
+- **KNOWFRESH1** — iv: a restatement within one repository found; b: a Lyntai release carrying MC7, MC11 and MC12 (today a local
+  build); c: the machine's memory server's half; `doc-current` is report-only and not in `verify`.
+- **D129 §6, KNOW2a** (parked) — recall by meaning pushed into a driven session's prompt.
+- **OIDC for people on a shared host** (D21, D47) — no row.
+- **CONSOLIDATE1** — area documents under `docs/areas/`, named by the brief and declared in `daoris.json`; decisions read as
+  history behind a status table.
+- **DOCSHOME1** — managed documents and skills with more than one source, given two portable homes.

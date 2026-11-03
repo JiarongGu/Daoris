@@ -28,16 +28,20 @@ public static class ChannelClaims
     /// <summary>Who wrote a message and to whom, with what it answers and whether it asks.</summary>
     internal static string Who(ChannelItemView message)
     {
-        var to = (message.To, message.Question) switch
+        var to = (message.Part, message.To, message.Question) switch
         {
-            ({ } repository, true) => $"`{repository}`",
-            ({ } repository, false) => $"to `{repository}`",
-            (null, true) => "everyone",
-            (null, false) => "to everyone",
+            // COMMS1k: a message to this part alone, from another part of its own line of work or from the person.
+            ({ }, _, true) => "you alone",
+            ({ }, _, false) => "to you alone",
+            (null, { } repository, true) => $"`{repository}`",
+            (null, { } repository, false) => $"to `{repository}`",
+            (null, null, true) => "everyone",
+            (null, null, false) => "to everyone",
         };
         var by = message.Person
             ? "The person"
-            : $"`{message.Repository ?? "another repository"}`'s session `{message.Session ?? "?"}`"
+            : (message.Part is not null ? "Your line of work's part, " : "")
+              + $"`{message.Repository ?? "another repository"}`'s session `{message.Session ?? "?"}`"
               + (message.Agent is { Length: > 0 } agent ? $" on {agent}" : "");
         var re = message.Re is { Length: > 0 } answered ? $", answering message `{answered}`" : "";
         var id = message.Id is { Length: > 0 } own ? $" (message `{own}`)" : "";

@@ -47,10 +47,11 @@ export const ROLES: readonly { role: string; binding: Binding; job: string }[] =
   // before it searches. The service reads the declared index as entries of the kind `index`, each naming
   // the lines of its file (ORIENT2e).
   { role: 'index', binding: 'path', job: 'where things are in the code and the records, generated: open it before searching' },
-  { role: 'decisions', binding: 'path', job: 'numbered decisions, with why and what each rejected' },
+  { role: 'areas', binding: 'path', job: 'how each area works now, from the code: read first, rewritten in place' },
+  { role: 'decisions', binding: 'path', job: 'history: why each rule was chosen and what it rejected, read for the reasoning only' },
   { role: 'backlog', binding: 'path', job: 'open work only' },
   { role: 'archive', binding: 'path', job: 'finished work, with its date and outcome' },
-  { role: 'fixes', binding: 'path', job: 'root cause, fix and verification per defect' },
+  { role: 'fixes', binding: 'path', job: 'regressions only: the root cause, and the commit that introduced it' },
   { role: 'changelog', binding: 'path', job: 'what a user of a release sees changed' },
   { role: 'glossary', binding: 'path', job: "the names people and code use for this repository's things" },
   { role: 'gates', binding: 'path', job: 'the checks, their commands, and what may run unasked' },

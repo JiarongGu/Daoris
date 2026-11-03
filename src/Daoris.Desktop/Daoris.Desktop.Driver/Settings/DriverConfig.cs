@@ -44,6 +44,10 @@ public sealed record DriverConfig(
     /// </summary>
     public int Strikes { get; init; } = Math.Max(0, Strikes);
 
+    /// <summary>Whether the save writes <c>strikes</c>: as the file held it or a press set it, never from the default, so the key can end.</summary>
+    // transitional: strikes-key
+    public bool StrikesHeld { get; init; } = Strikes != 3;
+
     /// <summary>
     /// Quests the person has restarted, and the failure count they were restarted at. A mark rather
     /// than an erasure: the records still say what happened, and the next three failures park it
@@ -53,7 +57,7 @@ public sealed record DriverConfig(
         Forgiven ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The <c>timeoutMinutes</c> a file holds, read only to be said (SESSWATCH1a, D200, the session-watch design §3): no session is
+    /// The <c>timeoutMinutes</c> a file holds, read only to be said: no session is
     /// limited by time any more, and nothing reads it for a bound. Never written: a loaded file's save keeps the key as stored, since
     /// this build no longer owns it (<see cref="JsonKeeping"/>), so a build before SESSWATCH1a finds the person's value after a
     /// rollback; a configuration built in memory writes none. Null where the file holds none.
@@ -97,7 +101,7 @@ public sealed record DriverConfig(
     }
 
     /// <summary>How many failures park a quest on this machine.</summary>
-    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes) };
+    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes), StrikesHeld = true };
 
     /// <summary>
     /// The quests the person released from their stop (SESSUX1b, D126 §3.4), each against the session they stopped: a
@@ -131,7 +135,7 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// The transient holds the person released with <i>Try again</i> (AGENTERRORS1a2, D210, the agent-errors design §5.1, §8), each quest
+    /// The transient holds the person released with <i>Try again</i>, each quest
     /// against the record's session and <b>the end it releases</b>: the record's <c>updated</c> as the press read it. Apart from the stop's
     /// <see cref="Released"/>, which is keyed by session alone: a released resume continues the same record, so a session-keyed release
     /// would pass its next exhaustion too, and the line would cycle with no strike. Keyed to the end, the record's next end moves past it
@@ -167,7 +171,7 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// A role's releases (STEWARDROLE1b, D209 §4.3, §5.1a, finding 7): each quest's release a role's act wrote, apart from the owner's
+    /// A role's releases: each quest's release a role's act wrote, apart from the owner's
     /// <see cref="Released"/> and <see cref="TransientReleased"/>, whose writers take no author and whose readers on a build before this
     /// one ignore any field they do not know. So an older build reading this file finds no release of the steward's to take as the
     /// owner's, and one that rewrites it without this key leaves the quest held. The planner reads an entry as a release only where this
@@ -409,7 +413,7 @@ public sealed record DriverConfig(
         new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// What a helper an agent asks for does in each repository (MIXAGENT2a-i, D163 point 5; the mixed agents design §5): a mode
+    /// What a helper an agent asks for does in each repository: a mode
     /// (<c>ask</c>, <c>on</c>, <c>off</c>) and the agents it may ask. A repository's rule replaces its workspace's whole
     /// (<see cref="HelperRules.Resolve"/>); absent is the default, <c>on</c> for the agents Daoris set up and signed in on this machine
     /// (<see cref="HelperRule.Default"/>, HELPERDEFAULT1). Edited only through <see cref="HelperRules.Apply"/>;
@@ -460,7 +464,7 @@ public sealed record DriverConfig(
         new Dictionary<string, CommitRule>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Which workflow each repository's work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1), by repository: a
+    /// Which workflow each repository's work follows, by repository: a
     /// default and a workflow for each of its workspace's kinds. A repository that names any replaces its workspace's whole
     /// (<see cref="WorkflowSelection.Resolve"/>); absent is its workspace's, then Current, which is today's behaviour. Edited only
     /// through <see cref="WorkflowSelection.Apply"/>, held to one table (<c>WorkflowSelectionTests</c>).
@@ -587,7 +591,7 @@ public sealed record DriverConfig(
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): <c>keep</c>, each kind absent meaning its default.
+    /// The person's keep rules: <c>keep</c>, each kind absent meaning its default.
     /// Read by the one effective policy (<see cref="KeepPolicy.Of"/>); edited only through <see cref="KeepRules.Apply"/>.
     /// </summary>
     public KeepChoices Keep { get; init; } = KeepChoices.None;
@@ -1044,7 +1048,7 @@ public sealed record DriverConfig(
     /// from another file over that text (<see cref="ToJson"/>).
     /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>),
     /// which the CLI's writer takes too: with none, another writer's change landing between them was lost.</para>
-    /// <para>🔴 <b>The rename is fenced</b> (FOUNDATION1w-s part 2, the design §19.15 C8-1.2): the lock is read again just before it, and the
+    /// <para>🔴 <b>The rename is fenced</b>: the lock is read again just before it, and the
     /// rename is made only while it still says this save's text. A lock a minute old is taken as stale by any other writer, so a save paused
     /// past that minute had its lock taken and its rename went over that writer's; now it is refused with nothing written, for every key, and
     /// the next read of the file finds what the other writer left. A writer that took the lock after the read and finished before the rename
@@ -1143,7 +1147,8 @@ public sealed record DriverConfig(
             if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("pollSeconds", PollSeconds);
-            writer.WriteNumber("strikes", Strikes);
+            // transitional: strikes-key
+            if (StrikesHeld) writer.WriteNumber("strikes", Strikes);
             // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
             if (CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
             writer.WriteStartObject("forgiven");
@@ -1614,6 +1619,7 @@ public sealed record DriverConfig(
         {
             // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
             Source = json,
+            StrikesHeld = root.TryGetProperty("strikes", out _),
             // Read only to be said (SESSWATCH1a): no bound is ever read from it.
             KeptTimeoutMinutes = Int(root, "timeoutMinutes"),
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
@@ -1778,7 +1784,7 @@ public sealed record DriverConfig(
 public sealed record WorkPause(DateTimeOffset? At, IReadOnlyDictionary<string, string> Stopped);
 
 /// <summary>
-/// One transient release (AGENTERRORS1a2, D210, the agent-errors design §5.1): the record's session <i>Try again</i> released, and the
+/// One transient release: the record's session <i>Try again</i> released, and the
 /// end it released, the record's <c>updated</c> as the press read it.
 /// </summary>
 public sealed record TransientRelease(string Session, DateTimeOffset Ended);

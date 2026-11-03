@@ -53,6 +53,26 @@ export const ExchangeNarrow: Story = { ...Exchange, decorators: [storyWidths.nar
 /** The exchange in dark. */
 export const ExchangeDark: Story = { ...Exchange, decorators: [dark] };
 
+/**
+ * COMMS1k: two alongside parts of the app's line of work heard each other, and the person told one part alone: each message to one
+ * part kept apart from the channel, read-only, with what it reached in that part's line.
+ */
+const ADDRESSED: ChannelItem[] = [
+  {
+    kind: 'message', at: ago(9), id: 'p1a2b3c4d5', person: false, session: '81b7d2e4', repository: 'app', agent: 'codex', entry: 'ask:c98a7e/app',
+    part: '93c1f0aa', channel: 'ask:c98a7e', urgent: true, text: "The chip's name is policyChip now; build on that.", receipt: 'taken',
+  },
+  {
+    kind: 'message', at: ago(6), id: 'p2b3c4d5e6', person: false, session: '93c1f0aa', repository: 'app', agent: 'claude-code', entry: 'ask:c98a7e/app',
+    part: '81b7d2e4', channel: 'ask:c98a7e', text: 'Store step 15 is in; nothing for the page.', receipt: 'read',
+  },
+  { kind: 'message', at: ago(3), id: 'p3c4d5e6f7', person: true, part: '93c1f0aa', channel: 'ask:c98a7e', text: "Keep the chip's label under 16 units.", receipt: 'waiting' },
+];
+export const ToOnePart: Story = { args: { channel: { ...CHANNEL, addressed: ADDRESSED } } };
+export const ToOnePartChinese: Story = { ...ToOnePart, decorators: [chinese] };
+export const ToOnePartNarrow: Story = { ...ToOnePart, decorators: [storyWidths.narrow] };
+export const ToOnePartDark: Story = { ...ToOnePart, decorators: [dark] };
+
 /** Opened with two messages past the person's mark: counted in the heading and marked new, as the mark moves. */
 export const Unread: Story = {
   args: { channel: { ...CHANNEL, unread: 3, mark: ago(20) }, onRead: () => {}, onOpenQuest: () => {} },

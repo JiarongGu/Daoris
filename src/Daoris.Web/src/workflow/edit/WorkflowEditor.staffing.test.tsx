@@ -65,7 +65,6 @@ beforeEach(() => {
       case 'ROLE_STRUCTURE': return { works: [], places: [], agents: [], roles };
       case 'ROLES': return { roles, works: ['build', 'design', 'review'], kept: true, suggested: [] };
       case 'HARNESSES': return ROSTER;
-      case 'ACTORS': return { actors: [] };
       case 'SET_ROLE': {
         if (gate) await gate;
         if (refuse) throw new Error(refuse);

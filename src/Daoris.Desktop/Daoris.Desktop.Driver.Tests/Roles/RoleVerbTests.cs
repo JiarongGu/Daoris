@@ -241,4 +241,77 @@ public sealed class RoleVerbTests : IDisposable
         Assert.DoesNotContain("intake", actors.Keys);
         Assert.Equal(2, await Run("suggested", "--now"));
     }
+
+    private SupervisorRuleStore Rules => new(_home, () => StoreSettled.Yes);
+
+    private void Reach() => Assert.Equal(1, Rules.Write("machine", 0,
+    [
+        new SupervisorRule("m-aa", "answers-alone", "in-a-row", 2, "hold", null, "machine", null),
+        new SupervisorRule("m-t", "tries", "episode", 5, "hold", null, "machine", null),
+    ], "test", new SupervisorRuleWorld(["build", "chat"])).Revision);
+
+    /// <summary>CONTEXTDRIVE1d (the context counters design §7.6): the terminal's twin of the supervisor's rules, through the role door.</summary>
+    [Fact]
+    public async Task CONTEXTDRIVE1d_role_rules_writes_a_place_s_rules_whole_and_role_supervisor_says_them_with_the_wider_place_s()
+    {
+        Reach();
+
+        Assert.Equal(0, await Run("rules", "--place", "repository:daoris", "--set", "answers-alone=3:hold", "--roles", "build"));
+
+        var set = Rules.Of("repository:daoris");
+        var rule = Assert.Single(set.Rules);
+        Assert.Equal((1L, "answers-alone", 3, "hold", "build"), (set.Revision, rule.Count, rule.At, rule.Do, rule.Roles!.Single()));
+        Assert.Contains("the supervisor's rules for repository:daoris set: answers-alone at 3: hold for build", _out.ToString());
+
+        Assert.Equal(0, await Run("rules", "--place", "repository:daoris", "--roles", "build", "--clear", "answers-alone", "--off", "answers-alone"));
+        Assert.Equal(("off", 2L), (Assert.Single(Rules.Of("repository:daoris").Rules).Do, Rules.Of("repository:daoris").Revision));
+
+        _out.GetStringBuilder().Clear();
+        Assert.Equal(0, await Run("supervisor", "--place", "repository:daoris"));
+        var said = _out.ToString();
+        Assert.Contains("supervisor  repository:daoris · rules revision 2", said);
+        Assert.Contains("tries", said);
+        Assert.Contains("machine", said);
+
+        Assert.True(DriverChoicesCommand.Changes(["role", "rules", "--place", "machine", "--set", "tries=4:hold"]));
+        Assert.False(DriverChoicesCommand.Changes(["role", "supervisor"]));
+    }
+
+    [Fact]
+    public async Task CONTEXTDRIVE1d_role_rules_is_refused_by_the_judge_s_code_with_nothing_written()
+    {
+        Assert.Equal(2, await Run("rules", "--place", "machine", "--set", "answers-alone=3:hold"));
+        Assert.Contains("(convert-first)", _error.ToString());
+
+        Reach();
+        Assert.Equal(2, await Run("rules", "--place", "repository:daoris", "--set", "quiet=1:next"));
+        Assert.Contains("(moves-unbounded)", _error.ToString());
+        Assert.Equal(2, await Run("rules", "--place", "repository:daoris", "--set", "answers-alone=three"));
+        Assert.Contains("is not `<at>:<do>[:<minutes>]`", _error.ToString());
+        Assert.Equal(0, Rules.Of("repository:daoris").Revision);
+    }
+
+    /// <summary>CONTEXTDRIVE1d (D205 point 9): a rule is a staffing-class press, so a session's terminal under full access is refused it.</summary>
+    [Fact]
+    public async Task CONTEXTDRIVE1d_role_rules_run_from_a_session_s_terminal_is_refused_to_the_person_s_apply_and_writes_nothing()
+    {
+        Reach();
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld
+            {
+                Home = _home, Out = _out, Error = _error, Verb = "daoris",
+                Environment = name => name == DriverChoicesCommand.SessionVariable ? "s1a2b3c4" : null,
+            },
+            ConfigPath = File_,
+            Folder = _home,
+        };
+
+        var exit = await DriverChoicesCommand.RunAsync(["role", "rules", "--place", "machine", "--set", "answers-alone=5:hold"], world, CancellationToken.None);
+
+        Assert.Equal(1, exit);
+        Assert.Contains(DriverChoicesCommand.SessionsTerminal, _error.ToString());
+        Assert.Equal(2, Rules.Of("machine").Rules.Single(rule => rule.Count == "answers-alone").At);
+    }
 }

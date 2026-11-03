@@ -14,7 +14,7 @@ public sealed class RoleVerb : ChoiceVerb
     public override string Word => "role";
 
     /// <summary>The words that follow <c>role</c> to change the catalogue; the CLI's usage names them (held by <c>RoleVerbUsageTests</c>).</summary>
-    internal static readonly string[] Changes = ["set", "remove", "default", "policy"];
+    internal static readonly string[] Changes = ["set", "remove", "default", "policy", "rules"];
 
     private const string Grammar =
         "`driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
@@ -95,6 +95,10 @@ public sealed class RoleVerb : ChoiceVerb
         var press = StaffPolicyFlags.Read(args.Skip(3).ToList(), choices, existing, PolicyGrammar);
         var (policy, refused) = StaffPolicyDoor.Judge(role, choices, press, existing, kept: true);
         if (refused is not null) throw new ChoiceWords($"`driver role policy`: {refused.Said}");
+        if (new SupervisorRuleStore(staffing.Ledger.Home).Reached() && RuledPolicy.On(role, press, policy).Refused is { } ruled)
+        {
+            throw new ChoiceWords($"`role policy`: {ruled.Said}");
+        }
 
         var payload = new JsonObject
         {
@@ -106,7 +110,7 @@ public sealed class RoleVerb : ChoiceVerb
                 ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
                 ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
             },
-            ["policy"] = policy is null ? null : JsonNode.Parse(policy.Write()),
+            ["policy"] = policy is null ? null : press.Preset is { } preset && new SupervisorRuleStore(staffing.Ledger.Home).Reached() ? preset : JsonNode.Parse(policy.Write()),
             ["policyRevision"] = existing.Revision,
         };
         return new(Word, ChoiceRoutes.Role, payload, _ =>
@@ -123,9 +127,148 @@ public sealed class RoleVerb : ChoiceVerb
         });
     }
 
+    private const string RulesGrammar =
+        "`role rules --place machine|workspace:<id>|repository:<id>|line:<key> [--roles <id,…>] [--set <count>=<at>:<do>[:<minutes>][,<at>:<do>…]]… "
+        + "[--off <count>]… [--clear <count>|all]` (counts: answers-alone, failures, failures-on-choice, tries, quiet, limits, moves; "
+        + "`role supervisor [--place <place>]` says them)";
+
+    /// <summary>
+    /// <c>role rules --place … --set|--off|--clear …</c> (CONTEXTDRIVE1d, the context counters design §7.6): the place's rules as stored, each
+    /// flag laid over them in order for the press's roles, judged by the rules' judge before anything is sent, then written whole through the
+    /// role door's <c>SET_ROLE</c> at the revision read.
+    /// </summary>
+    private ChoicePress RulesPlan(IReadOnlyList<string> args, DriverChoicesWorld world)
+    {
+        var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
+        string? place = null;
+        IReadOnlyList<string>? roles = null;
+        var steps = new List<(string Flag, string Value)>();
+        for (var at = 2; at < args.Count; at++)
+        {
+            string Value() => at + 1 < args.Count ? args[++at] : throw new ChoiceWords($"`{args[at]}` needs its value: {RulesGrammar}.");
+            switch (args[at])
+            {
+                case "--place": place = Value(); break;
+                case "--roles": roles = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]; break;
+                case "--set" or "--off" or "--clear": steps.Add((args[at], Value())); break;
+                default: throw new ChoiceWords($"`{args[at]}` is not a flag of `role rules`: {RulesGrammar}.");
+            }
+        }
+
+        if (place is null || steps.Count == 0) throw new ChoiceWords($"{RulesGrammar}.");
+        var home = staffing.Ledger.Home;
+        var stored = new SupervisorRuleStore(home).Of(place);
+        var rules = stored.Rules.ToList();
+        bool Same(SupervisorRule rule, string count) =>
+            rule.Count == count && (rule.Roles is null ? roles is null : roles is not null && rule.Roles.Order().SequenceEqual(roles.Order()));
+        foreach (var (flag, value) in steps)
+        {
+            if (flag == "--clear" && value == "all") { rules.Clear(); continue; }
+            var count = flag == "--set" ? value.Split('=', 2)[0] : value;
+            rules.RemoveAll(rule => Same(rule, count));
+            if (flag == "--off") rules.Add(new SupervisorRule("", count, SupervisorRules.Windows.GetValueOrDefault(count, ""), 1, SupervisorRules.Off, null, place, roles));
+            if (flag != "--set") continue;
+            var ladder = value.Split('=', 2) is [_, var spec] ? spec : throw new ChoiceWords($"`--set {value}` names no `<at>:<do>`: {RulesGrammar}.");
+            foreach (var step in ladder.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var parts = step.Split(':');
+                if (parts.Length is < 2 or > 3 || !int.TryParse(parts[0], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var threshold))
+                {
+                    throw new ChoiceWords($"`{step}` is not `<at>:<do>[:<minutes>]`: {RulesGrammar}.");
+                }
+
+                int? upTo = parts.Length == 3 && int.TryParse(parts[2], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var minutes)
+                    ? minutes
+                    : parts.Length == 3 ? throw new ChoiceWords($"`{parts[2]}` is not whole minutes: {RulesGrammar}.") : null;
+                rules.Add(new SupervisorRule("", count, SupervisorRules.Windows.GetValueOrDefault(count, ""), threshold, parts[1], upTo, place, roles));
+            }
+        }
+
+        var named = Named(rules);
+        var press = new SupervisorRulesPress(place, stored.Revision, named);
+        if (SupervisorRuleDoor.Judge(home, press) is { } refused) throw new ChoiceWords($"`role rules`: {refused.Message} ({refused.Code})");
+        var payload = new JsonObject
+        {
+            ["id"] = SupervisorRuleDoor.Id, ["place"] = place, ["rules"] = SupervisorRuleDoor.Wire(named), ["rulesRevision"] = stored.Revision,
+        };
+        return new(Word, ChoiceRoutes.Role, payload, _ =>
+        {
+            RoleDoor.Apply(staffing, RoleChange.Rules(press), door: RoleDoor.Doors.Terminal);
+            return Task.FromResult<object?>(null);
+        }, _ => null, _ =>
+        {
+            var said = world.Instance.Out;
+            said.WriteLine($"daoris: the supervisor's rules for {place} set: {(named.Count == 0 ? "none here, so this place's lines read the wider places' rules" : string.Join("; ", named.Select(SupervisorRuleDoor.Said)))}.");
+            said.WriteLine("  Every line here reads them at its next go-on or start; a line waiting now waits until you go on.");
+            return 0;
+        });
+    }
+
+    /// <summary>Each rule given an id unique in its place's set: its count and its place in the list.</summary>
+    private static IReadOnlyList<SupervisorRule> Named(IReadOnlyList<SupervisorRule> rules)
+    {
+        var used = rules.Select(rule => rule.Id).Where(id => id.Length > 0).ToHashSet(StringComparer.Ordinal);
+        var named = new List<SupervisorRule>();
+        foreach (var rule in rules)
+        {
+            if (rule.Id.Length > 0) { named.Add(rule); continue; }
+            var n = 1;
+            while (!used.Add($"{rule.Count}-{n}")) n++;
+            named.Add(rule with { Id = $"{rule.Count}-{n}" });
+        }
+
+        return named;
+    }
+
+    /// <summary>
+    /// <c>role supervisor [--place &lt;place&gt;]</c> (§7.6): the place's rules and each count's effective rules there, where each comes from;
+    /// with no place, every place that holds rules.
+    /// </summary>
+    private static int SupervisorSaid(IReadOnlyList<string> args, DriverChoicesWorld world)
+    {
+        var said = world.Instance.Out;
+        var place = args.Count > 3 && args[2] == "--place" ? args[3] : args.Count > 2 ? throw new ChoiceWords($"`role supervisor` takes `--place <place>` alone: {RulesGrammar}.") : null;
+        var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
+        var store = new SupervisorRuleStore(staffing.Ledger.Home);
+        var sets = store.All();
+        if (!store.Reached())
+        {
+            said.WriteLine("supervisor  this home's rules are not reached yet: Daoris acts on its own numbers until you convert (`daoris convert --plan`).");
+            return 0;
+        }
+
+        foreach (var set in sets.Where(set => place is null || set.Place == place))
+        {
+            said.WriteLine($"supervisor  {set.Place} · rules revision {set.Revision}");
+            foreach (var rule in set.Rules) said.WriteLine($"  {rule.Count,-20}at {rule.At,-3}{rule.Do,-10}{(rule.Roles is { } roles ? string.Join(",", roles) : "every role"),-14}here");
+        }
+
+        if (place is not null && place != SupervisorRules.Machine)
+        {
+            var chain = place.Split(':', 2) is [var kind, var id] ? kind switch
+            {
+                "line" => SupervisorRules.Chain(id, null, null),
+                "repository" => SupervisorRules.Chain(null, id, null),
+                "workspace" => SupervisorRules.Chain(null, null, id),
+                _ => [SupervisorRules.Machine],
+            } : [SupervisorRules.Machine];
+            foreach (var (count, rules) in SupervisorRules.Effective(sets, chain, null))
+            {
+                foreach (var rule in rules.Where(rule => rule.Place != place))
+                {
+                    said.WriteLine($"  {count,-20}at {rule.At,-3}{rule.Do,-10}{"every role",-14}{rule.Place}");
+                }
+            }
+        }
+
+        said.WriteLine($"  Change them: {RulesGrammar}.");
+        return 0;
+    }
+
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         if (args.Count > 1 && args[1] == "policy") return PolicyPlan(args, before, world);
+        if (args.Count > 1 && args[1] == "rules") return RulesPlan(args, world);
         if (args.Count < 3 || !Changes.Contains(args[1]) || args[1] == "policy") throw new ChoiceWords($"{Grammar}.");
         var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
         var catalogue = RoleCatalog.Read(staffing.Location);
@@ -182,6 +325,8 @@ public sealed class RoleVerb : ChoiceVerb
         var said = world.Instance.Out;
         if (args.Count > 1 && args[1] is "set" or "remove" or "default") throw new ChoiceWords($"{Grammar}.");
         if (args.Count > 1 && args[1] == "policy") throw new ChoiceWords($"{PolicyGrammar}.");
+        if (args.Count > 1 && args[1] == "rules") throw new ChoiceWords($"{RulesGrammar}.");
+        if (args.Count > 1 && args[1] == SupervisorRuleDoor.Id) return SupervisorSaid(args, world);
         var staffing = RoleStaffing.Of(world.ConfigPath);
         var catalogue = staffing is null ? RoleCatalog.Of([]) : RoleCatalog.Read(staffing.Location);
         var rows = RoleDoor.Rows(catalogue, choices).Where(row => args.Count < 2 || row.Id == args[1]).ToList();
@@ -196,7 +341,7 @@ public sealed class RoleVerb : ChoiceVerb
                 "removed" => "removed",
                 "unreadable" => $"unreadable: {row.Error}",
                 _ => $"{row.Name?.In("en")} · {Shape(row.Takes, row.ScopeKind, row.ScopeId)}"
-                    + (row.Choices is { } staffed ? $" · {(staffed.Count == 0 ? "off" : Choices(staffed))}" : row.Seeded ? " · its actor's order" : "")
+                    + (row.Choices is { } staffed ? $" · {(staffed.Count == 0 ? "off" : Choices(staffed))}" : row.Seeded ? " · its staffing's order" : "")
                     + (row.State == "seed" ? " (the seed)" : $" (revision {row.Revision})"),
             };
             said.WriteLine($"  {row.Id,-12}{shape}");
@@ -214,6 +359,7 @@ public sealed class RoleVerb : ChoiceVerb
         if (staffing is null) said.WriteLine($"  {Unkept(world)}");
         said.WriteLine($"  Change one: {Grammar}.");
         said.WriteLine($"  Set how a role's choices share new starts: {PolicyGrammar}.");
+        said.WriteLine($"  Set the supervisor's rules for a place: {RulesGrammar}.");
         return 0;
     }
 
@@ -306,5 +452,5 @@ public sealed class RoleVerb : ChoiceVerb
         string.Join(", ", choices.Select((choice, i) => $"{i + 1} {choice.Agent} · {choice.Model ?? "account default"} · {choice.Effort ?? "account default"}"));
 
     private static string Unkept(DriverChoicesWorld world) =>
-        $"{world.ConfigPath}'s actors are the file's own here (not this home's store), so its roles are not set here.";
+        $"{world.ConfigPath}'s staffing is the file's own here (not this home's store), so its roles are not set here.";
 }

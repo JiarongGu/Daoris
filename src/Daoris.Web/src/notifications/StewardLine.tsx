@@ -71,7 +71,7 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
  * *Stopped by the steward*, with its press, as *What needs you*'s `steward-stopped` row also says it. **A line, not a row**: no notice
  * per act, so it counts toward no group's count and never the bell's.
  *
- * Under it, the steward's desk (STEWARDROLE1c, §6.2): what any caller asked the steward to do this run, *n waiting*, folded until
+ * Under it, the steward's desk (STEWARDROLE1c, §6.2; kept across a restart since COMMS1l): what any caller asked the steward to do, *n waiting*, folded until
  * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press: the owner's own
  * presses are elsewhere, and a request is the steward's to answer.
  *

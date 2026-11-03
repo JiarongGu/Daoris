@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MODELROLE1c (D205 §8.2, §9.4): <c>ACTORS</c>, each actor's order as <c>daoris driver role</c> says it, and since ONEWAY1a the role
+/// Each seeded role's order as its <c>ROLES</c> row carries it, as <c>daoris role</c> says it, and the role
 /// door's <c>SET_ROLE</c> the one press that sets one, judged by the driver's one judge and written through the staffing's one write; the
 /// retired <c>SET_ACTOR</c> answers nothing. And the row's proof that a Chat started after Build changes keeps its agent: the press's
 /// adapters spawn nothing, each refusing in its own words, so the answer names which one the start took.
@@ -52,9 +52,9 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         }
     }
 
-    /// <summary>FOUNDATION1w-s part 5: <c>ACTORS</c> answers what the check kept, and the screen's *Take it* and *Dismiss* press it.</summary>
+    /// <summary>The role read answers what the copy's check kept, and the screen's *Take it* and *Dismiss* press it.</summary>
     [Fact]
-    public async Task Actors_answers_each_found_change_and_the_screens_take_it_and_dismiss_answer_it()
+    public async Task Roles_answers_each_found_change_and_the_screens_take_it_and_dismiss_answer_it()
     {
         var staffing = Wired("""{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
         try
@@ -63,7 +63,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             File.WriteAllText(DriverConfigPath, """{ "adapter": "codex-acp" }""");
             staffing.Check(StaffingCheckAt.Look);
 
-            var found = Assert.Single((await AnswerAsync(module, "ACTORS")).GetProperty("found").EnumerateArray().ToList());
+            var found = Assert.Single((await AnswerAsync(module, "ROLES")).GetProperty("found").EnumerateArray().ToList());
             var changes = found.GetProperty("changes").EnumerateArray().ToList();
             Assert.Contains(changes, change => change.GetProperty("role").GetString() == "intake" && change.GetProperty("applied").GetBoolean());
             Assert.Contains(changes, change => change.GetProperty("role").GetString() == "build"
@@ -72,7 +72,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             await AnswerAsync(module, "STAFFING_FOUND_ANSWER", new { found = found.GetProperty("id").GetInt64(), answer = "take" });
 
             Assert.Equal("codex-acp", DriverConfig.Load(DriverConfigPath).Adapter);
-            Assert.Empty((await AnswerAsync(module, "ACTORS")).GetProperty("found").EnumerateArray());
+            Assert.Empty((await AnswerAsync(module, "ROLES")).GetProperty("found").EnumerateArray());
 
             File.WriteAllText(DriverConfigPath, """{ "adapter": "other-acp" }""");
             staffing.Check(StaffingCheckAt.Look);
@@ -102,7 +102,9 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             Assert.Equal("codex-acp", config.Adapter);
             Assert.Equal([new ActorChoice("claude-code")], config.Actors["chat"]);
             Assert.Equal([new ActorChoice("claude-code")], config.Actors["brainstorm"]);
-            var actors = (await AnswerAsync(module, "ACTORS")).GetProperty("actors").EnumerateArray().ToList();
+            var rows = (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().ToList();
+            var actors = rows.Where(row => row.TryGetProperty("staffing", out var staffing) && staffing.ValueKind == System.Text.Json.JsonValueKind.Object)
+                .Select(row => row.GetProperty("staffing")).ToList();
             Assert.Equal(ActorChoices.Ids, actors.Select(actor => actor.GetProperty("id").GetString()));
             var build = actors.Single(actor => actor.GetProperty("id").GetString() == "build");
             Assert.Equal("set", build.GetProperty("state").GetString());
@@ -154,6 +156,20 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         await RefusalAsync(module, "SET_ACTOR", new { actor = "build", choices = new object[] { new { agent = "codex-acp" } } });
 
         Assert.Equal("claude-code", DriverConfig.Load(DriverConfigPath).Adapter);
+    }
+
+    /// <summary>The staffing's own read is folded into the role read: no route answers it apart.</summary>
+    [Fact]
+    public async Task The_staffing_read_is_the_role_reads_and_actors_is_no_route()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");
+        var module = Module();
+
+        await RefusalAsync(module, "ACTORS");
+
+        var rows = (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().ToList();
+        Assert.All(rows.Where(row => row.GetProperty("seeded").GetBoolean()), row => Assert.Equal(row.GetProperty("id").GetString(),
+            row.GetProperty("staffing").GetProperty("id").GetString()));
     }
 
     /// <summary>ONEWAY1b: the door's wire is Build's first agent's, read from its order rather than the old key; the pipe where it does not resolve.</summary>

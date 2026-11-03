@@ -3,7 +3,7 @@ import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } f
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
 import type {
-  ActorRow, KeepSet, PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleChangePress, RoleStructure, StaffingFound, StructurePlaceAsk,
+  KeepSet, PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleChangePress, RoleStructure, StructurePlaceAsk,
 } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
@@ -504,37 +504,12 @@ export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation:
 // The actors' wire types live in `data/wiring` so the presentational Actors card reads them without reaching the bridge.
 export type { ActorEntry, ActorRow, StaffingFound } from '../data/wiring';
 
-/**
- * Each actor's order, where it came from (MODELROLE1c): a read of the staffing, the same `daoris driver role` says. Kept
- * under the driver's key, so every press that changes the driver's state asks it again. Empty in a browser.
- */
-export const useActors = ({ enabled = true }: { enabled?: boolean } = {}) => {
-  const { isAvailable } = useShenora();
-  return useQuery({
-    queryKey: [...keys.driver, 'actors'] as const,
-    queryFn: async () => {
-      const answer = await call<{ actors?: ActorRow[] } | null>('ACTORS');
-      return Array.isArray(answer?.actors) ? answer.actors : [];
-    },
-    enabled: isAvailable && enabled,
-  });
-};
+/** Each seeded role's order as it runs: the staffing each `ROLES` row carries, read from the one role query. Empty in a browser. */
+export const useActors = ({ enabled = true }: { enabled?: boolean } = {}) =>
+  useRolesAs((catalogue) => catalogue?.roles.flatMap((row) => (row.staffing ? [row.staffing] : [])) ?? [], enabled);
 
-/**
- * The changes of driver.json's actors another program made, which the driver kept for the person (FOUNDATION1w-s, §19.15): `ACTORS`'
- * `found`, none where the home's file is not the store's. Under the driver's key, as the rows are. Empty in a browser.
- */
-export const useStaffingFound = () => {
-  const { isAvailable } = useShenora();
-  return useQuery({
-    queryKey: [...keys.driver, 'actors', 'found'] as const,
-    queryFn: async () => {
-      const answer = await call<{ found?: StaffingFound[] } | null>('ACTORS');
-      return Array.isArray(answer?.found) ? answer.found : [];
-    },
-    enabled: isAvailable,
-  });
-};
+/** The changes of driver.json's staffing another program made, kept for the person: `ROLES`' `found`. Empty in a browser. */
+export const useStaffingFound = () => useRolesAs((catalogue) => catalogue?.found ?? [], true);
 
 /**
  * A found change answered (FOUNDATION1w-s): *Take it*, the actors as that file showed them, a turn-on of Intake or Ask Daoris among them
@@ -559,20 +534,26 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
     ...(Array.isArray(answer.policyFields) ? { policyFields: answer.policyFields } : {}),
     ...(Array.isArray(answer.policyPresets) ? { policyPresets: answer.policyPresets } : {}),
     ...(Array.isArray(answer.suggestedChoices) ? { suggestedChoices: answer.suggestedChoices, suggestedChoicesDated: answer.suggestedChoicesDated } : {}),
+    ...(Array.isArray(answer.found) ? { found: answer.found } : {}),
   };
 };
 
-export const useRoles = ({ enabled = true }: { enabled?: boolean } = {}) => {
+/** The one role query, read through `select`; every reader of the roles shares its key and its one ask. */
+function useRolesAs<T>(select: (catalogue: RoleCatalogue | null) => T, enabled: boolean) {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const queryKey = [...keys.driver, 'roles'] as const;
   return useQuery({
     queryKey,
-    // Told by event (NOBLOCK1): the shell answers what it holds, and its read of the store and `driver.json` comes as `ANSWERED`.
+    // Told by event: the shell answers what it holds, and its read of the store and `driver.json` comes as `ANSWERED`.
     queryFn: () => askHeld('ROLES', client, queryKey, {}, readRoles),
+    select,
     enabled: isAvailable && enabled,
   });
-};
+}
+
+const sameCatalogue = (catalogue: RoleCatalogue | null) => catalogue;
+export const useRoles = ({ enabled = true }: { enabled?: boolean } = {}) => useRolesAs(sameCatalogue, enabled);
 
 // The structure's wire types live in `data/wiring` so the presentational sections read them without reaching the bridge.
 export type { ChoiceStateCode, RoleStructure, StructureChoice, StructurePlaceAsk, StructureWork } from '../data/wiring';

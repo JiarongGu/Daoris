@@ -33,6 +33,9 @@ public static class DeskStates
 
     /// <summary>Closed by the holder's decline, with its reason.</summary>
     public const string Declined = "declined";
+
+    /// <summary>Open when Daoris stopped (COMMS1l): its caller's run and the steward's appointment ended with it, so nothing answers it.</summary>
+    public const string Interrupted = "interrupted";
 }
 
 /// <summary>
@@ -104,15 +107,21 @@ public sealed class DeskCaller(Func<PipeClientProcess?, string?> jobOf, IProcess
 }
 
 /// <summary>
-/// The steward's desk (STEWARDROLE1c, D209 §6.2): what any caller asks the steward to do, kept in the run's memory and read by the holder as
-/// claims. <c>STEWARD_REQUEST { act, target, why }</c> files one, an <c>Open</c> route any caller may use; at most
+/// The steward's desk (STEWARDROLE1c, D209 §6.2): what any caller asks the steward to do, read by the holder as claims.
+/// <c>STEWARD_REQUEST { act, target, why }</c> files one, an <c>Open</c> route any caller may use; at most
 /// <see cref="PerCaller"/> open per caller (<see cref="IDeskCaller"/>) and <see cref="InAll"/> open in all, the per-caller bound judged
 /// first, another refused <c>desk-full</c>. <b>It grants nothing and never admits an act</b>: an act it asks for is judged by
 /// <c>ROLE_ACT</c> like any other, from the holder alone; the act that makes what a request asked (its act, on its target) closes it as
 /// answered, and the holder's <c>desk-decline</c> closes it with a reason.
 /// </summary>
-/// <remarks>Its own lock, never taken around the judge's: the judge calls in under its own, and nothing here calls out.</remarks>
-public sealed class StewardDesk(TimeProvider clock)
+/// <remarks>
+/// <para>Its own lock, never taken around the judge's: the judge calls in under its own, and nothing here calls out.</para>
+/// <para><b>Its history</b> (COMMS1l, the comms design §10 row l): every change is written to <paramref name="path"/>, and a desk read back
+/// at a restart reads each request still open <see cref="DeskStates.Interrupted"/>. The callers and the appointment were the run's, so
+/// none is revived: the file keeps no caller's key and no grant, and an interrupted request counts toward no caller's bound.</para>
+/// </remarks>
+/// <param name="path">Where its history is kept; none keeps it in the run's memory alone.</param>
+public sealed class StewardDesk(TimeProvider clock, string? path = null)
 {
     /// <summary>Open requests one caller may have on the desk.</summary>
     public const int PerCaller = 10;
@@ -146,7 +155,10 @@ public sealed class StewardDesk(TimeProvider clock)
     }
 
     private readonly Lock _gate = new();
-    private readonly List<Held> _requests = [];
+    private readonly List<Held> _requests = Restarted(path, clock);
+
+    /// <summary>Where the desk's history is kept (COMMS1l); null where the run's memory alone holds it.</summary>
+    public string? Path => path;
 
     /// <summary>
     /// A request filed by <paramref name="caller"/>: exactly <c>{ act, target, why }</c>, the act one <paramref name="acts"/> names (the
@@ -162,6 +174,7 @@ public sealed class StewardDesk(TimeProvider clock)
             if (open.Count(each => each.Caller == caller) >= PerCaller || open.Count >= InAll) return new DeskFiled(false, null, DeskWhy.Full);
             var id = "r" + Guid.NewGuid().ToString("N")[..10];
             _requests.Add(new Held(id, asked.Act, asked.Target, asked.Why, caller, clock.GetUtcNow()));
+            Keep();
             return new DeskFiled(true, id, null);
         }
     }
@@ -182,6 +195,7 @@ public sealed class StewardDesk(TimeProvider clock)
             }
 
             Trim();
+            Keep();
         }
     }
 
@@ -200,6 +214,7 @@ public sealed class StewardDesk(TimeProvider clock)
             Close(held, DeskStates.Declined);
             held.Reason = reason;
             Trim();
+            Keep();
             return true;
         }
     }
@@ -218,10 +233,93 @@ public sealed class StewardDesk(TimeProvider clock)
     }
 
     // Under the lock: the oldest closed dropped past what the desk keeps.
-    private void Trim()
+    private void Trim() => Trim(_requests);
+
+    private static void Trim(List<Held> requests)
     {
-        var closed = _requests.Where(each => each.State != DeskStates.Open).ToList();
-        foreach (var dropped in closed.Take(Math.Max(0, closed.Count - ClosedKept))) _requests.Remove(dropped);
+        var closed = requests.Where(each => each.State != DeskStates.Open).ToList();
+        foreach (var dropped in closed.Take(Math.Max(0, closed.Count - ClosedKept))) requests.Remove(dropped);
+    }
+
+    // Under the lock: the history written whole, oldest first. A write that fails leaves the run's memory as it is: the desk still
+    // answers, and the next change writes it again.
+    private void Keep() => Write(path, _requests);
+
+    private static void Write(string? path, IReadOnlyList<Held> requests)
+    {
+        if (path is null) return;
+        try
+        {
+            JsonFile.Write(path, writer =>
+            {
+                writer.WriteStartObject();
+                writer.WriteStartArray("requests");
+                foreach (var each in requests)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("id", each.Id);
+                    writer.WriteString("act", each.Act);
+                    writer.WriteString("target", each.Target);
+                    writer.WriteString("why", each.Why);
+                    writer.WriteString("filed", Moments.Write(each.Filed));
+                    writer.WriteString("state", each.State);
+                    if (each.Closed is { } closed) writer.WriteString("closed", Moments.Write(closed));
+                    if (each.AnsweredBy is { } by) writer.WriteString("answeredBy", by);
+                    if (each.Reason is { } reason) writer.WriteString("reason", reason);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+            });
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The history a restart reads (COMMS1l): each request as it was kept, one still open read <see cref="DeskStates.Interrupted"/> at
+    /// this moment and written so. A file that does not read is an empty desk; a request in another shape is passed over.
+    /// </summary>
+    private static List<Held> Restarted(string? path, TimeProvider clock)
+    {
+        var read = new List<Held>();
+        if (path is null || !System.IO.File.Exists(path)) return read;
+        try
+        {
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+            if (!document.RootElement.TryGetProperty("requests", out var requests) || requests.ValueKind != JsonValueKind.Array) return read;
+            foreach (var each in requests.EnumerateArray())
+            {
+                if (Json.Text(each, "id") is not { } id || Json.Text(each, "act") is not { } act || Json.Text(each, "target") is not { } target
+                    || Json.Text(each, "why") is not { } why || Moments.Read(Json.Text(each, "filed")) is not { } filed
+                    || Json.Text(each, "state") is not { } state)
+                {
+                    continue;
+                }
+
+                var held = new Held(id, act, target, why, "", filed)
+                {
+                    State = state, Closed = Moments.Read(Json.Text(each, "closed")), AnsweredBy = Json.Text(each, "answeredBy"), Reason = Json.Text(each, "reason"),
+                };
+                if (held.State == DeskStates.Open)
+                {
+                    held.State = DeskStates.Interrupted;
+                    held.Closed = clock.GetUtcNow();
+                }
+
+                read.Add(held);
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return [];
+        }
+
+        Trim(read);
+        Write(path, read);
+        return read;
     }
 
     private static string Plain(string target) => target.TrimStart('#');

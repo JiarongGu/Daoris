@@ -189,6 +189,8 @@ public static class PersonDoors
         new("GET", "/api/asks/{id}/channel", DoorClass.Open),
         // The asks the mirrored messages name that this machine does not hold (SESSONE2h): a read of kept messages, moving nothing.
         new("GET", "/api/channel/elsewhere", DoorClass.Open),
+        // COMMS1k: what waits for one part, the messages to it and on its line's own channel, read by the driver that runs it; moves nothing.
+        new("GET", "/api/channel/addressed", DoorClass.Open),
         new("GET", "/api/sessions", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         new("GET", "/api/sessions/{id}/record", DoorClass.Open),
@@ -264,6 +266,8 @@ public static class PersonDoors
         new("POST", "/api/sessions/{id}/restore", DoorClass.Driver, "a park the driver could not hand, put back"),
         // COWORK1d: an entry's acknowledgment of a channel message, written by the driver that hands it to a part of the entry.
         new("POST", "/api/asks/{id}/channel/ack", DoorClass.Driver, "an entry's acknowledgment of messages on an ask's channel"),
+        // COMMS1k: one part's acknowledgment of the messages to it, written by the driver that hands them to the part.
+        new("POST", "/api/channel/addressed/ack", DoorClass.Driver, "a part's acknowledgment of messages addressed to it"),
         new("POST", "/api/sync", DoorClass.Driver, "a sync pass"),
         new("DELETE", "/api/registry/retired/{repository}", DoorClass.Driver, "a retire carried to a workspace's deployment"),
         // Its root and workspace decide where sessions run and which circle sees a quest (WSP1, WSP2), so no agent sets it.

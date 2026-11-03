@@ -165,14 +165,14 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     {
         if ((Refused(answer.Reasons, answer.Choice.Length > 0, park) ?? Parked(answer.Question, park)) is { } refused) return refused;
         var filed = park.Filed!;
-        // SUPERVISOR1b (§4.1): the agent's mark, any at all, makes the question the owner's; checked again at the release.
+        // The agent's mark, any at all, makes the question the owner's; checked again at the release.
         if (filed.Owner is not null) return SupervisorWhy.OwnerQuestion;
         if (!filed.Choices.Any(choice => string.Equals(choice.Label, answer.Choice, StringComparison.Ordinal))) return SupervisorWhy.NotOfferedChoice;
         if (park.GoAheadUnread) return SupervisorWhy.GoAheadUnread;
         if (park.GoAheadOpen) return SupervisorWhy.GoAheadOpen;
         if (park.OwnerWaits) return SupervisorWhy.OwnerAnswered;
-        // SUPERVISOR1b (§4.3): a word that would go on past D188's bound is never kept only to be held behind it.
-        return park.AtBound ? SupervisorWhy.SupervisorBound : null;
+        // A word that would go on past a hold is never kept only to be held behind it.
+        return park.AtBound ? SupervisorWhy.SupervisorBound : park.RuleHolds ? SupervisorWhy.RuleHolds : null;
     }
 
     /// <summary>

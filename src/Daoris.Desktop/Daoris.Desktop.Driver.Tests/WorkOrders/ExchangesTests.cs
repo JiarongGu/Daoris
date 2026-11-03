@@ -46,6 +46,39 @@ public sealed class ExchangesTests
     }
 
     /// <summary>
+    /// COMMS1i (wave 2's rest): a reviewer's record is an opinion asked on the line it serves, read from the record alone: reading while it
+    /// runs, which the line waits on; ended or failed once it stopped, the opinion's own words the landing gate's. A record with no
+    /// <c>serves</c>, an opinion from before D203's mark, is on no line.
+    /// </summary>
+    [Fact]
+    public void COMMS1i_a_reviewer_s_record_reads_as_an_opinion_asked_on_the_line_it_serves()
+    {
+        var look = Look([]) with
+        {
+            Opinions =
+            [
+                .. new[]
+                {
+                    AtWorkExchangeReading.Reviewer("r1", "o1", "s1", "codex-acp", "working"),
+                    AtWorkExchangeReading.Reviewer("r2", "o2", "s1", "codex-acp", "completed"),
+                    AtWorkExchangeReading.Reviewer("r3", "o3", "s1", null, "failed"),
+                    AtWorkExchangeReading.Reviewer("r4", "o4", null, "codex-acp", "working"),
+                    AtWorkExchangeReading.Reviewer("r5", null, "s1", "codex-acp", "working"),
+                }.OfType<ExchangeOpinion>(),
+            ],
+        };
+
+        var read = Exchanges.Of(look, "s1").ToDictionary(exchange => exchange.Id);
+
+        Assert.Equal(["opinion:o1", "opinion:o2", "opinion:o3"], read.Keys.Order().ToArray());
+        Assert.Equal((Exchanges.Kept, "asked", true, "r1", "codex-acp"),
+            (read["opinion:o1"].Delivery, read["opinion:o1"].Outcome, read["opinion:o1"].Holds, read["opinion:o1"].By!.Session, read["opinion:o1"].By!.Agent));
+        Assert.Equal((Exchanges.Taken, "ended", false), (read["opinion:o2"].Delivery, read["opinion:o2"].Outcome, read["opinion:o2"].Holds));
+        Assert.Equal((Exchanges.NotReached, "declined", false, "reviewer"),
+            (read["opinion:o3"].Delivery, read["opinion:o3"].Outcome, read["opinion:o3"].Holds, read["opinion:o3"].To));
+    }
+
+    /// <summary>
     /// COMMS1i: a conversation's quest is the one it took through its own connector, its <c>quest</c> empty, so the question that quest
     /// asked is what the line waits on, as the strip reads its wait; a driven part's own quest is read as before.
     /// </summary>

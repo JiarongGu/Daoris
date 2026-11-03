@@ -102,6 +102,39 @@ public sealed class AtWorkReadTests
         }
     }
 
+    /// <summary>
+    /// COMMS1i (wave 2's rest): the line's reviewer is read from its record in the sessions slice, the one that serves the line, so a
+    /// reviewer appears in <i>Co-workers</i>; its record's end moves the read, so the window reads again.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1i_the_read_carries_the_line_s_reviewer_from_its_record_and_its_end_moves_it()
+    {
+        var home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "at-work-exchanges", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(home);
+            _records = new JsonObject { ["s1"] = Record("s1", "completed"), ["r1"] = Record("r1", "working", "codex-acp", "chat") };
+            _records["r1"]!["opinion"] = "o1";
+            _records["r1"]!["serves"] = "s1";
+            var (groups, sessions, quests) = await JudgedAsync();
+
+            var held = AtWorkRead.Compose("s1", groups, sessions, quests, _ => LineageReading.None, home: home);
+
+            var exchange = Assert.Single(held.Answer!.Exchanges!);
+            Assert.Equal(("opinion:o1", "s1", "opinion", true, "r1", "codex-acp"),
+                (exchange.Id, exchange.Part, exchange.Expects, exchange.Holds, exchange.Session, exchange.Agent));
+            Assert.DoesNotContain("opinion", held.Answer!.Unread ?? []);
+            var read = Assert.IsType<AtWorkDependencies>(held.Dependencies);
+            _records["r1"]!["state"] = "completed";
+            var (_, after, _) = await JudgedAsync();
+            Assert.False(AtWorkRead.SlicesStand(read, groups, after, quests));
+        }
+        finally
+        {
+            GitSeed.Discard(home);
+        }
+    }
+
     [Fact]
     public async Task It_reads_until_every_slice_judges_and_then_answers_the_entry_s_parts_with_their_records_read_fields()
     {

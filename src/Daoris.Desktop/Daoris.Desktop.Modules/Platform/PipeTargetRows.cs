@@ -312,7 +312,7 @@ internal static class PipeTargetRows
             (a, p) => Each(At(Named(At(a, "helpGrants"), "id", Text(p, "grant") ?? "housekeeping"), "chosen")).Any(each => Text(each) == Text(p, "operation"))
                 ? "true" : "false",
             p => Raw(Field(p, "chosen"))));
-        Row("STAFFING_FOUND_ANSWER", Setting("ACTORS", ["found", "answer"], _ => null, (a, _) => Fp(Raw(At(a, "found")))));
+        Row("STAFFING_FOUND_ANSWER", Setting("ROLES", ["found", "answer"], _ => null, (a, _) => Fp(Raw(At(a, "found")))));
         Row("SET_ROLE", Setting("ROLES", ["change", "id"], _ => null, (a, p) => Fp(Raw(Named(At(a, "roles"), "id", Text(p, "id"))))));
         // AGENTSPLACE1g2: the rows of every role the batch names, in the order it names them.
         Row("SET_ROLES", Setting("ROLES", ["changes"], _ => null,

@@ -176,7 +176,7 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
     const label = workName(work.work);
     const line = role ? lineOf(role.id) : null;
     const parentRole = parent?.works.find((each) => each.work === work.work)?.role;
-    const alongside = role ? withRole(work).filter((each) => each.work !== work.work).map((each) => workName(each.work)).join(t('settings.ai.actors.and')) : '';
+    const alongside = role ? withRole(work).filter((each) => each.work !== work.work).map((each) => workName(each.work)).join(t('settings.ai.role.and')) : '';
     const asking = backing === work.work && role !== undefined;
     const busy = editor.busy;
     return (
@@ -200,7 +200,7 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
             </span>
             {role && mineHere && line && mayEditLine(line, kept) && (
               <Button variant="ghost" disabled={busy || open !== null} aria-label={t('agents.setup.roles.editOf', { work: label })} onClick={() => edit(work.work, role.id)}>
-                {t('settings.ai.actors.edit')}
+                {t('settings.ai.role.edit')}
               </Button>
             )}
             {role && mineHere && kind !== 'machine' && (
@@ -242,7 +242,7 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
           <RolesCard
             editorOnly
             consequence={open.editing.isNew
-              ? t('agents.setup.roles.thenGive', { place: placeName, works: open.editing.takes.map(workName).join(t('settings.ai.actors.and')) })
+              ? t('agents.setup.roles.thenGive', { place: placeName, works: open.editing.takes.map(workName).join(t('settings.ai.role.and')) })
               : undefined}
             catalogue={catalogue} read={editor.read} staffing={staffing} agents={editor.agents} offers={editor.offers} busy={busy}
             onSet={editor.onSet}

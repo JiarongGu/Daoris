@@ -34,6 +34,12 @@ public sealed record StaffFacts
     /// </summary>
     public string? Rule { get; init; }
 
+    /// <summary>
+    /// The line's moves as its effective rules set them on a reached home (CONTEXTDRIVE1e; the context counters design §4.5's next start's walk):
+    /// whether the moved-off and not-answering passes apply is read from them. Null reads the policy's own moves, as on a home not reached.
+    /// </summary>
+    public IReadOnlyDictionary<string, StaffMove>? Moves { get; init; }
+
     /// <summary>The moment the marks and the hold are read at.</summary>
     public DateTimeOffset Now { get; init; }
 }
@@ -131,6 +137,12 @@ public static class StaffJudge
     public static StaffArrangement Arrange(StaffPolicy? policy, string work, IReadOnlyList<ActorEffective> order, StaffFacts facts)
     {
         if (policy is not null && facts.Rule is { } overriding && overriding != policy.Rule) policy = policy with { Rule = overriding };
+        // CONTEXTDRIVE1e: a reached home's moves are the line's rules', a role with no policy walking its order with their passes.
+        if (facts.Moves is { } ruled)
+        {
+            policy = policy is not null ? policy with { Moves = ruled } : ruled.Count > 0 ? new StaffPolicy(facts.Rule ?? StaffRules.Order, [], ruled) : null;
+        }
+
         if (policy is null || order.Count == 0 || !order.All(entry => Own(entry.From)))
         {
             return new StaffArrangement(

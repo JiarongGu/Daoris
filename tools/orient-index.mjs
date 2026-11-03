@@ -24,12 +24,11 @@
  * route table joins two lanes, the page's call and the module's handler. An outline is a file of its own,
  * because one large file's outline can fill a page and the driver lane alone holds two dozen large files.
  *
- * ## The check, and the merge
+ * ## Written in each checkout, never committed
  *
- * `--check` builds the index in memory and fails, naming each file, when `docs/index/` is not what the tree
- * says. A stale index is a fact, so it gates (D54); it is declared in `daoris.gates.json` and runs at every
- * merge. Line numbers move with nearly every change, so `tools/merge-branch.mjs` writes the index into each
- * merge before its gates, and a conflict in it is resolved by writing it again, never by hand.
+ * Line numbers move with nearly every change, so `docs/index/` is ignored and written where it is read:
+ * `tools/index-fresh.mjs` says when. `--check` builds the index in memory and fails, naming each file, when
+ * `docs/index/` is not what the tree says, and on each mark a decision's note carries that is refused.
  *
  * The files read are the ones `git add -A` would stage, so the index speaks for the tree as it would be
  * committed. Text is read with LF endings, sizes too, so a CRLF checkout writes the same index as the
@@ -1351,7 +1350,7 @@ function readmePage(ctx, large) {
   const out = [
     '# The orientation index',
     '',
-    `${GENERATED} Read here before searching: each row names a file and line to open, and a range to read with offset and limit. \`--check\` fails when the index is stale and runs at every merge, and the merge tool writes the index into each merge.`,
+    `${GENERATED} Read here before searching: each row names a file and line to open, and a range to read with offset and limit. It is never committed: each checkout writes its own.`,
   ];
   if (generated.length) {
     out.push('', `Listed elsewhere, by tools of their own: ${generated.join('; ')}. Open those for what they list: nothing here restates ${generated.length === 1 ? 'it' : 'them'}.`);

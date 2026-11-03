@@ -5,7 +5,7 @@ import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../..
 import { searchable } from '../../lib/searchable';
 import {
   type SessionHit, useAskLanding, useChannelUnreads, useDriver, useLandAsk, useSessionEntries, useSessionGroups, useSessionOpenings,
-  usePushedCalls, useSessionSearch, useSessionWhere, useUnderWaySubject, withCall,
+  usePushedCalls, useSessionSearch, useSessionSpent, useSessionWhere, useUnderWaySubject, withCall,
 } from '../../bridge/shell';
 import { askOfEntry, entryFacts, isIntakeEntry, listedSessions, nameOfEntry, type SessionEntry } from '../entries';
 import { EntryAccept } from '../review/EntryAccept';
@@ -21,7 +21,7 @@ import { groupHeading, useBringGroup } from '../frame/ListPane';
 import { SessionRow } from './SessionRow';
 import { Refused } from '../InlineConfirm';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
-import { askName, isHelp, isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from '../identity';
+import { askName, isHelp, isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from '../identity';
 import { byName, marked, readable } from './railSearch';
 import { type SessionDoors, useSessionActs } from '../sessionActs';
 import { useHeavySlots } from '../../bridge/driver';
@@ -238,6 +238,8 @@ export function SessionRail({
     label: (account) => nameOf(session.adapter, account),
     now: new Date(),
   })?.[0] ?? null;
+  // What each helper and each part that continues another spent, on its own row; a browser asks nothing.
+  const spent = useSessionSpent(listed.filter((session) => isHelper(session) || Boolean(session.from)).map((session) => session.id), 1);
   const rows: SessionRowFacts[] = listed.map((session) => ({
     session,
     // A line of work an ask began is named by its ask, whose page names it the same way (D167, design §1.6); an intake
@@ -253,6 +255,7 @@ export function SessionRail({
     reads: reads[session.id],
     continues: continues[session.id],
     helps: helps[session.id],
+    spent: isHelper(session) || session.from ? spent[session.id] ?? null : null,
     ...heavyOf(session),
     limitWait: live ? null : limitWaitOf(session),
   }));

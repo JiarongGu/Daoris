@@ -111,6 +111,9 @@ public static class SupervisorWhy
     /// <summary>The line's answers-alone count is at D188's bound (SUPERVISOR1b, §4.3): refused at the keeping and again at the release.</summary>
     public const string SupervisorBound = "supervisor-bound";
 
+    /// <summary>The answer would take on a line one of the person's rules holds on any count but answers alone (CONTEXTDRIVE1e, the context counters design §4.6 point 2).</summary>
+    public const string RuleHolds = "rule-holds";
+
     // Why a decision went stale (§6.1's `supervisor.stale`).
     public const string Tampered = "tampered";
     public const string Forged = "forged";
@@ -166,6 +169,10 @@ public sealed record SupervisedPark(
     /// <c>count:</c> source names one of these, and the decision keeps them. Null where none were read.
     /// </summary>
     public IReadOnlyList<CountFact>? Counts { get; init; }
+
+    /// <summary>Whether a rule of the person's holds the line now on a count other than answers alone, its count at the rule's number (CONTEXTDRIVE1e).</summary>
+    public bool RuleHolds => Counts?.Any(count => count.Count != SupervisorRules.AnswersAlone
+        && count.Watch is { Do: SupervisorRules.Hold, Place: not null } watch && count.N >= watch.At) == true;
 }
 
 /// <summary>

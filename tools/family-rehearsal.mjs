@@ -6,7 +6,7 @@
  * lifecycle across two — and the next real family (a game and its subsystems, with Daoris as their
  * centralized router) needs that to be a gate rather than a belief. This drives it end to end over
  * the tracked example family in `examples/`: current doctrine in both projects, the HTTP host over a
- * scratch store, registration through the real `daoris connect`, a quest published, refused where it
+ * scratch store, registration through the real `daoris repository connect`, a quest published, refused where it
  * should be, taken, finished, and still there after a restart — plus one project's knowledge
  * answering a search made from outside it. See docs/decisions/D39.md.
  *
@@ -45,7 +45,7 @@ const connectorProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service
 // finds a development build (ServiceHostLocator, KnowledgeConnector): the service's folders, which no Process half builds.
 const ownOutput = ownBuildRoot(repoRoot, 'family');
 const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
-// The apphost the same build writes beside the DLL (PUSH1f2a, D194 point 1): the program a checkout's `daoris driver …` is handed to.
+// The apphost the same build writes beside the DLL (PUSH1f2a, D194 point 1): the program a checkout's `daoris …` is handed to.
 const driverProgram = ownBuilt(ownOutput, driverProject, process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver');
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
@@ -69,9 +69,9 @@ const NO_HARNESS = { DAORIS_HARNESS_CONFIG: join(scratch, 'no-harness.json') };
 // inherits it; the per-file guards above still outrank it where a phase wants a file of its own.
 process.env.DAORIS_HOME = join(scratch, 'home');
 
-// PUSH1f2a (D194 point 1): a checkout's `daoris` hands `driver …` to the driver's program DAORIS_DRIVER_PROGRAM names, never one it
+// PUSH1f2a (D194 point 1): a checkout's `daoris` hands a group to the driver's program DAORIS_DRIVER_PROGRAM names, never one it
 // finds by itself: this run's own build's apphost, beside the DLL its own driver runs through `dotnet`. Set on the process, as the home
-// is, so every `daoris driver` below runs this build.
+// is, so every `daoris` group below runs this build.
 process.env.DAORIS_DRIVER_PROGRAM = driverProgram;
 
 // The person's own terminal (D194 point 5): a call this run makes as the person carries no session's marker, whatever its caller's
@@ -94,7 +94,7 @@ const run = rehearsalRun({ within: scratch });
 // FAIL, never a frozen gate — and NO_REMOTE is always underneath: a phase that wants a remote opts in
 // by env pair, which outranks the config-file lookup by the loader's own rule.
 const DRIVE_TIMEOUT = 90_000;
-// The loop by its verb (DRV8a, D104): a bare `daoris-driver` is the usage and drives nothing, so a loop
+// The loop by its verb (DRV8a, D104): a bare `daoris` is the usage and drives nothing, so a loop
 // mode (a flag) is asked for as `drive`; any other verb this helper carries (`ask`, `quest delete`) goes
 // as it is. Prefixing every mode sent `drive ask …` and failed fourteen checks.
 const verbOf = (mode) => (mode.startsWith('--') ? `drive ${mode}` : mode);
@@ -421,7 +421,7 @@ check('the game says it uses the engine, read from its manifest', usesOf(registr
 
 // -------------------------------------------------- 3. the real client registers
 
-section('3. `daoris connect` — the real client, through the real door');
+section('3. `daoris repository connect` — the real client, through the real door');
 for (const name of EXAMPLES) {
   const connect = run(`node "${cliBin}" repository connect`, join(examplesRoot, name), {
     DAORIS_SERVICE_URL: BASE,
@@ -1161,7 +1161,7 @@ check(
 // AN ASK (D65 §1a): a sentence entered at a WORKSPACE, not at a repository. With no intake harness
 // the declarations tier answers — it proposes, says that is all that ran, and publishes NOTHING. A
 // receiver named with --to is the asker deciding: published at once, asked BY the ask, carrying its
-// link and file, and driven like any quest. `daoris-driver ask` is the terminal door (D50).
+// link and file, and driven like any quest. `daoris ask` is the terminal door (D50).
 const askVerb = (args) => driver({ serviceUrl: BASE, config: driverConfig, mode: `ask ${args}` });
 const questCount = async () => ((await api('GET', '/api/quests?includeClosed=true')).json ?? []).length;
 const questsBeforeAsk = await questCount();
@@ -1174,7 +1174,7 @@ check(
 );
 check('…and publishes nothing — a proposal is a person’s to accept', (await questCount()) === questsBeforeAsk, proposedAsk.out);
 const proposedAskId = /ask\s+#([0-9a-f]{6})/.exec(proposedAsk.out)?.[1] ?? '';
-const closedAsk = askVerb(`--close ${proposedAskId} --reason "Asked again with the receiver named."`);
+const closedAsk = askVerb(`close ${proposedAskId} --reason "Asked again with the receiver named."`);
 check('a person closes their own ask, with the reason', closedAsk.code === 0 && /is closed/.test(closedAsk.out), closedAsk.out);
 const refusedAsk = askVerb('--to nobody-here "a receiver nobody registered"');
 check(
@@ -1213,7 +1213,7 @@ check(
 // everywhere here: no model, no account. The ask the refused receiver kept is closed first, so the
 // one unserved ask in the circle is the one this phase makes.
 const keptAskId = /kept as `#([0-9a-f]{6})`/.exec(refusedAsk.out)?.[1] ?? '';
-askVerb(`--close ${keptAskId} --reason "Asked again with a receiver that exists."`);
+askVerb(`close ${keptAskId} --reason "Asked again with a receiver that exists."`);
 // A home of its own, whose Intake is staffed: the scratch home's staffing is the main config's, imported at its first start.
 const intakeHome = join(scratch, 'intake-home');
 mkdirSync(intakeHome, { recursive: true });
@@ -1338,7 +1338,7 @@ const waveAfterYes = await askedByWave();
 const waveAccepted = waveAfterYes.find((q) => q.id === waveQuest?.id);
 const waveStep = waveAfterYes.find((q) => q.parent === waveQuest?.id);
 check(
-  '`daoris-driver quest accept` is the person’s yes: what the departure held goes on, its step published with the requirement it inherits',
+  '`daoris quest accept` is the person’s yes: what the departure held goes on, its step published with the requirement it inherits',
   waveYes.code === 0 && waveYes.out.includes(`Accepted the departure on quest \`#${waveQuest?.id}\``)
     && waveAccepted?.held === false && typeof waveAccepted.accepted === 'string'
     && waveStep?.status === 'Open' && waveStep.title === `Verify #${waveQuest?.id} waved`
@@ -1459,7 +1459,7 @@ const checkLateNote = (commit) =>
 const lateNoteTooEarly = checkLateNote(lateNoteBefore);
 const [lateNoteStillHeld, ...lateNoteStillMore] = lateNoteAskId === '' ? [] : await askedByNote(lateNoteAskId);
 check(
-  '`daoris-driver quest check <id> --commit <a commit before the done>` exits 1: it does not come after the done’s commit, and nothing is read',
+  '`daoris quest check <id> --commit <a commit before the done>` exits 1: it does not come after the done’s commit, and nothing is read',
   isFullId(lateNoteBefore) && lateNoteTooEarly.code === 1
     && lateNoteTooEarly.out.includes(`does not come after the done's commit \`${lateNoteDone.slice(0, 8)}\``)
     && lateNoteStillHeld?.hold === 'evidence-missing' && lateNoteStillHeld.evidence?.commit === lateNoteDone
@@ -1471,7 +1471,7 @@ const lateNoteAfter = lateNoteAskId === '' ? [] : await askedByNote(lateNoteAskI
 const lateNoteReleased = lateNoteAfter.find((q) => lateNoteQuest && q.id === lateNoteQuest.id);
 const lateNoteStep = lateNoteAfter.find((q) => lateNoteQuest && q.parent === lateNoteQuest.id);
 check(
-  '`daoris-driver quest check <id> --commit <sha>` exits 0 once the note is committed: found, how terminal, the hold lifted and the held step published',
+  '`daoris quest check <id> --commit <sha>` exits 0 once the note is committed: found, how terminal, the hold lifted and the held step published',
   isFullId(lateNoteCommitted) && lateNoteCommitted !== lateNoteDone && lateNoteFound.code === 0
     && lateNoteFound.out.includes(`evidence read at ${lateNoteCommitted} (terminal): 1 of 1 found, kept`)
     && lateNoteReleased?.held === false && (lateNoteReleased.hold ?? null) === null
@@ -1500,7 +1500,7 @@ check(
     && (await api('GET', `/api/asks/${unsettledAskId}`)).json?.quests?.length === 0,
   `${parkRun.out}\n${JSON.stringify(parkedIntake)}`,
 );
-const answeredAsk = askVerb(`--close ${unsettledAskId} --reason "Not a change after all."`);
+const answeredAsk = askVerb(`close ${unsettledAskId} --reason "Not a change after all."`);
 const endRun = intakeDrive('--once');
 const endedIntakes = await intakesOf(unsettledAskId);
 check(
@@ -1556,7 +1556,7 @@ check(
 const mistakenAsk = askVerb('--workspace default --to newcomer "an ask made by mistake, to be deleted"');
 const mistakenAskId = /ask\s+#([0-9a-f]{6})/.exec(mistakenAsk.out)?.[1] ?? '';
 const mistakenAskQuest = /quest\s+#([0-9a-f]{12})/.exec(mistakenAsk.out)?.[1] ?? '';
-const deletedAsk = askVerb(`--delete ${mistakenAskId}`);
+const deletedAsk = askVerb(`delete ${mistakenAskId}`);
 check(
   'an ask made by mistake is deleted from a terminal, with the quest it became',
   mistakenAskQuest !== '' && deletedAsk.code === 0 && /Deleted ask `#/.test(deletedAsk.out)
@@ -1873,7 +1873,7 @@ check(
 const imported = run(`node "${cliBin}" repository import "${family}"`, scratch, { DAORIS_SERVICE_URL: BASE });
 const afterImport = await api('GET', '/api/registry');
 check(
-  '`daoris import` registers the folder, uninvited included',
+  '`daoris repository import` registers the folder, uninvited included',
   imported.code === 0 && (afterImport.json ?? []).some((r) => r.repository === 'uninvited'),
   `${imported.out}\n${afterImport.text.slice(0, 300)}`,
 );
@@ -1888,7 +1888,7 @@ check(
 const retired = run(`node "${cliBin}" repository retire`, uninvited, { DAORIS_SERVICE_URL: BASE });
 const afterRetire = await api('GET', '/api/registry');
 check(
-  '`daoris retire` takes it off the map, and the sentence says nothing was deleted',
+  '`daoris repository retire` takes it off the map, and the sentence says nothing was deleted',
   retired.code === 0 && /[Nn]othing was deleted/.test(retired.out)
     && (afterRetire.json ?? []).every((r) => r.repository !== 'uninvited'),
   `${retired.out}\n${afterRetire.text.slice(0, 300)}`,
@@ -2397,12 +2397,12 @@ check(
 const downSync = syncA('--workspace default');
 const downStatus = syncA('status');
 check(
-  '`daoris-driver sync` asked with the remote down exits 2 naming the wall — a script that syncs can tell',
+  '`daoris remote sync` asked with the remote down exits 2 naming the wall — a script that syncs can tell',
   downSync.code === 2 && /^sync {2}default: \S/m.test(downSync.out),
   downSync.out,
 );
 check(
-  '`daoris-driver sync status` says where the circle stands with the remote down: ahead, and the wall as the last try',
+  '`daoris remote sync status` says where the circle stands with the remote down: ahead, and the wall as the last try',
   downStatus.code === 0 && /^default {2}[1-9]\d* ahead · \d+ behind · \d+ in conflict · synced /m.test(downStatus.out)
     && /the last try, \d\d:\d\dZ: \S/.test(downStatus.out),
   downStatus.out,
@@ -2461,7 +2461,7 @@ const syncNow = syncA('--workspace default');
 const pushedNow = ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
   .some((q) => q.id === whenAskedId);
 check(
-  '`daoris-driver sync` runs the tick’s pass when asked — the quest is at the remote before any tick, and the circle stands level',
+  '`daoris remote sync` runs the tick’s pass when asked — the quest is at the remote before any tick, and the circle stands level',
   whenAsked.status === 200 && syncNow.code === 0 && pushedNow && /^default {2}0 ahead/m.test(syncNow.out),
   syncNow.out,
 );
@@ -2812,7 +2812,7 @@ check(
 // The first press lists, and changes nothing.
 const crossingListed = clearVerb(`quest clear ${crossingId}`);
 check(
-  '`daoris-driver quest clear` lists what it would take on machine a, says the remote keeps the team’s copy, and changes nothing',
+  '`daoris quest clear` lists what it would take on machine a, says the remote keeps the team’s copy, and changes nothing',
   crossingListed.code === 0
     && crossingListed.out.includes(`clearing #${crossingId} would take 1 quest and 1 teammate's copy, with what this machine kept of them`)
     && crossingListed.out.includes("  the remote for default keeps the team's copy; this machine will not fetch it again.")
@@ -2962,7 +2962,7 @@ check(
 
 const auroraListed = clearVerb('history clear --workspace aurora');
 check(
-  '`daoris-driver history clear --workspace aurora` lists that quest to take, names no remote, and changes nothing',
+  '`daoris history clear --workspace aurora` lists that quest to take, names no remote, and changes nothing',
   auroraListed.code === 0
     && auroraListed.out.includes("daoris-driver: clearing aurora's finished history would take 1 quest, ")
     && auroraListed.out.includes(`  takes #${neverLeftId}: 1 quest, `)
@@ -3778,8 +3778,8 @@ check(
   loggedOutRun.code === 0
     && /no `stub` account this start may use is ready: /.test(loggedOutRun.out)
     && /`fresh` is not signed in/.test(loggedOutRun.out) && /`alpha` is not signed in/.test(loggedOutRun.out)
-    && /daoris agent login stub --profile fresh/.test(loggedOutRun.out)
-    && /daoris agent login stub --profile alpha/.test(loggedOutRun.out),
+    && /daoris agent login stub --account fresh/.test(loggedOutRun.out)
+    && /daoris agent login stub --account alpha/.test(loggedOutRun.out),
   loggedOutRun.out,
 );
 check(
@@ -3856,33 +3856,33 @@ check(
 );
 
 // D50, from a terminal: the same directories and the same file, through the real CLI. A machine with
-// no screen sets all of this up the same way the desktop's roster does. PUSH1f2e2: `agent profile …` is the driver's program's, which
+// no screen sets all of this up the same way the desktop's roster does. PUSH1f2e2: `agent account …` is the driver's program's, which
 // refuses a person's change from a session's terminal, so these run as the person.
 const cliHarness = (args) => run(`node "${cliBin}" agent ${args}`, scratch, { ...HARNESS_ENV, ...PERSON });
-const added = cliHarness('profile add claude-code work');
+const added = cliHarness('account add claude-code work');
 check(
-  '`daoris agent profile add` creates the directory and says it is empty until you log in',
+  '`daoris agent account add` creates the directory and says it is empty until you log in',
   added.code === 0 && existsSync(profileAt('claude-code', 'work')) && /empty until you log into it/.test(added.out),
   added.out,
 );
 // One set serves every workspace (D197): a workspace's own account, or a default beside the order, is no longer a thing to
-// write, so `profile default` refuses in the set's words (POOL1b, the account-pool design §5.1) and writes nothing, naming
-// the verb that puts an account first: `profile order`, over the agent's one order.
-cliHarness('profile add claude-code spare');
+// write, so `account default` refuses in the set's words (POOL1b, the account-pool design §5.1) and writes nothing, naming
+// the verb that puts an account first: `account order`, over the agent's one order.
+cliHarness('account add claude-code spare');
 const beforeDefault = readFileSync(harnessConfig, 'utf8');
-const defaulted = cliHarness('profile default claude-code spare --workspace aurora');
+const defaulted = cliHarness('account default claude-code spare --workspace aurora');
 check(
-  '`daoris agent profile default` is refused, since every account serves every workspace, naming `profile order` instead, and nothing is written',
+  '`daoris agent account default` is refused, since every account serves every workspace, naming `account order` instead, and nothing is written',
   defaulted.code !== 0
     && defaulted.out.includes('every account of Daoris\'s serves every workspace (D197), and the order says where starts begin')
-    && defaulted.out.includes('`daoris agent profile order claude-code spare` puts one first')
+    && defaulted.out.includes('`daoris agent account order claude-code spare` puts one first')
     && readFileSync(harnessConfig, 'utf8') === beforeDefault,
   defaulted.out,
 );
-const ordered = cliHarness('profile order claude-code spare');
+const ordered = cliHarness('account order claude-code spare');
 const afterEdit = JSON.parse(readFileSync(harnessConfig, 'utf8'));
 check(
-  '`daoris agent profile order` puts an account first in the agent’s one order, the rest after it, and names no workspace',
+  '`daoris agent account order` puts an account first in the agent’s one order, the rest after it, and names no workspace',
   ordered.code === 0
     && JSON.stringify(afterEdit.rotation?.['claude-code']) === JSON.stringify(['spare', 'work'])
     && !afterEdit.workspaces?.aurora && !afterEdit.defaults?.['claude-code'],
@@ -3898,16 +3898,16 @@ check(
     && (afterEdit.pooled?.stub ?? []).length === 0,
   readFileSync(harnessConfig, 'utf8'),
 );
-const typo = cliHarness('profile order claude-code typo');
+const typo = cliHarness('account order claude-code typo');
 check(
   'an order naming an account that does not exist is refused, naming the ones that do',
   typo.code !== 0 && /has no account `typo`/.test(typo.out) && /work/.test(typo.out) && /spare/.test(typo.out),
   typo.out,
 );
 // Removing an account removes it (D66 §3): out of the agent's order, and the directory gone with it.
-const removed = cliHarness('profile remove claude-code work');
+const removed = cliHarness('account remove claude-code work');
 check(
-  '`profile remove` takes it out of the agent’s order, and the directory goes with it',
+  '`account remove` takes it out of the agent’s order, and the directory goes with it',
   removed.code === 0 && /are gone/.test(removed.out)
     && !existsSync(profileAt('claude-code', 'work'))
     && JSON.stringify(JSON.parse(readFileSync(harnessConfig, 'utf8')).rotation?.['claude-code']) === JSON.stringify(['spare']),
@@ -3916,9 +3916,9 @@ check(
 // 🔴 A signed-in one too, sign-in and all — amending SES3's "deletes nothing", on the owner's word
 // that Forget did not delete the account: the old rule kept any directory the harness would not call
 // signed out, so a removed account stayed listed and signed in.
-cliHarness('profile add dsh signed');
+cliHarness('account add dsh signed');
 writeFileSync(join(profileAt('dsh', 'signed'), 'credentials.json'), '{}\n');
-const removedSigned = cliHarness('profile remove dsh signed');
+const removedSigned = cliHarness('account remove dsh signed');
 check(
   '…and so does one holding a sign-in — the account a person removes is not left on disk',
   removedSigned.code === 0 && /the sign-in in it are gone/.test(removedSigned.out)
@@ -4045,7 +4045,7 @@ check(
 const cliDriver = (args) => runOn(driverConfig, `node "${cliBin}" place ${args}`, PERSON);
 const held = cliDriver('hold newcomer');
 check(
-  '`daoris driver hold` pauses a repository from a terminal',
+  '`daoris place hold` pauses a repository from a terminal',
   held.code === 0 && JSON.parse(readFileSync(driverConfig, 'utf8')).holds?.includes('newcomer'),
   held.out,
 );
@@ -4068,7 +4068,7 @@ check(
 const heldBefore = readFileSync(driverConfig, 'utf8');
 const marked = runOn(driverConfig, `node "${cliBin}" place drive marked-elsewhere`, { DAORIS_SESSION_ID: 's-rehearsal' });
 check(
-  '`daoris driver` from a session\'s terminal is refused, exit 1, and the file is as it was',
+  '`daoris place` from a session\'s terminal is refused, exit 1, and the file is as it was',
   marked.code === 1 && /this terminal is a session's \(`DAORIS_SESSION_ID`\)/.test(marked.out)
     && readFileSync(driverConfig, 'utf8') === heldBefore,
   marked.out,
@@ -4076,7 +4076,7 @@ check(
 const resumed = cliDriver('resume newcomer');
 const resumedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 check(
-  '`daoris driver resume` releases it, and the quest runs',
+  '`daoris place resume` releases it, and the quest runs',
   resumed.code === 0 && resumedRun.code === 0
     && ((await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [])
       .some((q) => q.id === (holdBites.json?.quest?.id ?? '') && q.status === 'Done'),
@@ -4092,7 +4092,7 @@ section('16. The tree is the unit of exclusion (D51/SURF3)');
 // adapter command that makes the stub run must survive the edit.
 const treesOn = cliDriver('trees newcomer on');
 check(
-  '`daoris driver trees on` opts the repository in and states the price',
+  '`daoris place trees on` opts the repository in and states the price',
   treesOn.code === 0 && /nothing git does not track/.test(treesOn.out),
   treesOn.out,
 );
@@ -4145,7 +4145,7 @@ check(
 // the stub's commit is real work the canonical line has not taken — and goes when the person means it.
 const treesListed = runOn(driverConfig, `dotnet "${driverDll}" tree list`);
 check(
-  '`daoris-driver trees list` names the tree, its circle and its branch',
+  '`daoris tree list` names the tree, its circle and its branch',
   treesListed.code === 0 && /newcomer/.test(treesListed.out) && /daoris\//.test(treesListed.out),
   treesListed.out,
 );
@@ -4160,7 +4160,7 @@ check(
 // re-pointed at an ephemeral tree keeps working right up until the tree is removed.
 const fromTree = run(`node "${cliBin}" repository connect --dry-run`, treePath, { DAORIS_SERVICE_URL: BASE });
 check(
-  '`daoris connect` from a linked worktree is refused, naming the main tree',
+  '`daoris repository connect` from a linked worktree is refused, naming the main tree',
   fromTree.code === 1 && /linked worktree/.test(fromTree.out)
     && fromTree.out.replaceAll('\\', '/').includes(newcomer.replaceAll('\\', '/')),
   fromTree.out,
@@ -4186,7 +4186,7 @@ const cleanEnv = { DAORIS_HOME: dirname(driverConfig), DAORIS_SERVICE_URL: BASE 
 const cleanListed = run(`dotnet "${driverDll}" tree clean`, scratch, cleanEnv);
 const cleanKept = run(`dotnet "${driverDll}" tree clean --yes`, scratch, cleanEnv);
 check(
-  '`daoris-driver trees clean` lists the tree’s branch as kept, holding work no branch of yours holds — and --yes keeps it',
+  '`daoris tree clean` lists the tree’s branch as kept, holding work no branch of yours holds — and --yes keeps it',
   cleanListed.code === 0 && /kept\s+newcomer\s+daoris\/\S+\s+1 commit\(s\) no branch of yours holds/.test(cleanListed.out)
     && cleanKept.code === 0 && /kept\s+newcomer\s+daoris\//.test(cleanKept.out) && existsSync(treePath),
   cleanListed.out + cleanKept.out,
@@ -4197,7 +4197,7 @@ check(
 // nothing: with no rule set, a merge into the line.
 const landPlan = run(`dotnet "${driverDll}" tree land ${isolatedRecord?.id} --plan`, scratch, cleanEnv);
 check(
-  '`daoris-driver trees land <session> --plan` says where accepting its work would put it, and moves nothing',
+  '`daoris tree land <session> --plan` says where accepting its work would put it, and moves nothing',
   landPlan.code === 0 && /would merge its work into `\S+` \(default\)/.test(landPlan.out) && existsSync(treePath),
   landPlan.out,
 );
@@ -4234,7 +4234,7 @@ const branchRow = (repository) => new RegExp(`\\b${repository}\\s+daoris/`);
 const toolsListed = run(`dotnet "${driverDll}" tree clean --workspace tools`, scratch, cleanEnv);
 const defaultListed = run(`dotnet "${driverDll}" tree clean --workspace default`, scratch, cleanEnv);
 check(
-  '`daoris-driver trees clean --workspace <name>` lists that workspace’s session branches alone, and its press carries the workspace',
+  '`daoris tree clean --workspace <name>` lists that workspace’s session branches alone, and its press carries the workspace',
   toolsListed.code === 0 && /goes\s+foundry\s+daoris\/s-rehearse-tools\s+nothing beyond/.test(toolsListed.out)
     && !branchRow('newcomer').test(toolsListed.out)
     && toolsListed.out.includes('`daoris-driver trees clean --workspace tools --yes` removes them')
@@ -4253,7 +4253,7 @@ check(
 );
 const toolsSynced = run(`dotnet "${driverDll}" tree sync --workspace tools`, scratch, cleanEnv);
 check(
-  '`daoris-driver trees sync --workspace <name>` looks at that workspace’s checkouts alone, never the other’s branch',
+  '`daoris tree sync --workspace <name>` looks at that workspace’s checkouts alone, never the other’s branch',
   toolsSynced.code === 0
     && /trees: no repository of workspace `tools` with a checkout here holds a branch of Daoris's\./.test(toolsSynced.out)
     && /not looked at, since they hold no branch of Daoris's \(\d+\): [^\n]*\bfoundry\b/.test(toolsSynced.out)
@@ -4297,7 +4297,7 @@ const syncTree = syncRecord?.tree ?? '';
 const syncLanded = run(`dotnet "${driverDll}" tree land ${syncRecord?.id}`, scratch, cleanEnv);
 const landedBranch = /put the work on `([^`]+)`/.exec(syncLanded.out)?.[1] ?? '';
 check(
-  '`daoris-driver trees land` under a branch rule puts a session’s work on a branch of its own, for a pull request',
+  '`daoris tree land` under a branch rule puts a session’s work on a branch of its own, for a pull request',
   syncRule.code === 0 && syncRun.code === 0 && existsSync(syncTree) && syncLanded.code === 0
     && landedBranch.startsWith('feature/') && run(`git branch --list "${landedBranch}"`, newcomer).out.includes(landedBranch),
   syncRule.out + syncRun.out + syncLanded.out,
@@ -4322,7 +4322,7 @@ run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
 const lineBefore = run(`git rev-parse ${syncLine}`, newcomer).out.trim();
 const syncListed = run(`dotnet "${driverDll}" tree sync --repository newcomer`, scratch, cleanEnv);
 check(
-  '`daoris-driver trees sync` fetches and lists the line’s fast-forward, the session branch’s replay with what it leaves out, and the landed branch going — and moves nothing',
+  '`daoris tree sync` fetches and lists the line’s fast-forward, the session branch’s replay with what it leaves out, and the landed branch going — and moves nothing',
   syncListed.code === 0
     && new RegExp(`moves\\s+newcomer\\s+${escaped(syncLine)}\\s+fast-forwards 1 commit\\(s\\) to \`origin/${escaped(syncLine)}\``).test(syncListed.out)
     && new RegExp(`moves\\s+newcomer\\s+${escaped(sessionBranch)}\\s+replays 1 commit\\(s\\) of its own onto \`${escaped(syncLine)}\`, leaving out 1 the line holds`).test(syncListed.out)
@@ -4437,9 +4437,9 @@ check(
 );
 
 // The first press lists every piece, and what it keeps and why, and changes nothing.
-const abandonListed = askVerb(`--abandon ${abandonAskId}`);
+const abandonListed = askVerb(`abandon ${abandonAskId}`);
 check(
-  '`daoris-driver ask --abandon` lists what it would decline, discard, archive and close, and what it keeps and why — and changes nothing',
+  '`daoris ask abandon` lists what it would decline, discard, archive and close, and what it keeps and why — and changes nothing',
   abandonListed.code === 0
     && abandonListed.out.includes(`abandoning ask #${abandonAskId} would take 4 pieces and keep 4;`)
     && abandonListed.out.includes(`declines #${abandonThirdId}: it applies only while it is open.`)
@@ -4456,7 +4456,7 @@ check(
   `${abandonListed.out}\n${await abandonWork()}`,
 );
 
-const abandonNoReason = askVerb(`--abandon ${abandonAskId} --yes`);
+const abandonNoReason = askVerb(`abandon ${abandonAskId} --yes`);
 check(
   '…`--yes` without `--reason` is refused, since each declined quest keeps the reason',
   abandonNoReason.code === 1 && /abandoning needs your reason: each declined quest keeps it\./.test(abandonNoReason.out)
@@ -4480,7 +4480,7 @@ const outsideBefore = await abandonOutside();
 
 // The second press, with the person's reason.
 const ABANDON_REASON = 'The widget is not wanted after all.';
-const abandonPressed = askVerb(`--abandon ${abandonAskId} --reason "${ABANDON_REASON}" --yes`);
+const abandonPressed = askVerb(`abandon ${abandonAskId} --reason "${ABANDON_REASON}" --yes`);
 const abandonedThird = (await abandonQuests()).find((q) => q.id === abandonThirdId);
 const abandonedAsk = (await api('GET', `/api/asks/${abandonAskId}`)).json;
 const abandonAfter = await abandonWork();
@@ -4856,10 +4856,10 @@ check(
 );
 
 // ONEWAY1k: a park is answered through the say door alone, `sessions say` at the terminal.
-const portAnswer = driver({ serviceUrl: BASE, config: acpConfig, mode: `sessions say ${portPark?.id} "Port 8080."` });
+const portAnswer = driver({ serviceUrl: BASE, config: acpConfig, mode: `session say ${portPark?.id} "Port 8080."` });
 const portAnswered = (await portRecords()).find((s) => s.id === portPark?.id) ?? null;
 check(
-  '`daoris-driver sessions say` answers it, and the record stays parked with the words for the driver’s next look',
+  '`daoris session say` answers it, and the record stays parked with the words for the driver’s next look',
   portAnswer.code === 0 && portAnswered?.state === 'awaiting-person'
     && JSON.stringify((portAnswered?.said ?? []).map((word) => word.text)) === JSON.stringify(['Port 8080.']),
   `${portAnswer.out}\n${JSON.stringify(portAnswered)}`,
@@ -4914,7 +4914,7 @@ check(
 
 section('17a2. Words from a terminal reach an ended session, which goes on in its own record (D137/MSG1e)');
 
-// `daoris-driver sessions say` is the terminal's door to what the screen's box says to a session (D137 §5.2, D50). Said
+// `daoris session say` is the terminal's door to what the screen's box says to a session (D137 §5.2, D50). Said
 // before any loop drives the home, words to a session that ended are kept on its record for the next loop, whose first
 // look goes on with them: the same record reopens, the stub's own conversation resumed with the words as its next prompt.
 // Said while the headless loop runs, its request watch keeps them, shows them and nudges its look (LoopWords), and the
@@ -4940,7 +4940,7 @@ check(
 // The loop's own config: the protocol door's, and a watch whose next look is ten minutes away, on the same home.
 const sayConfig = join(acpHome, 'driver-say.json');
 writeFileSync(sayConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpConfig, 'utf8')), pollSeconds: 600 }, null, 2)}\n`);
-const sayFromTerminal = (id, words) => driver({ serviceUrl: BASE, config: sayConfig, mode: `sessions say ${id} "${words}"` });
+const sayFromTerminal = (id, words) => driver({ serviceUrl: BASE, config: sayConfig, mode: `session say ${id} "${words}"` });
 const heardTranscript = (record) => (existsSync(record?.transcript ?? '') ? readFileSync(record.transcript, 'utf8') : '');
 const heardEvents = () => {
   const path = homeEntry(acpHome, 'sessions', `${heardId}.events.jsonl`);
@@ -5137,7 +5137,7 @@ check('it is retired again, so no later phase meets it', unadoptedRetired.status
 
 section('17c. A repository nobody adopted is set up by its own session, and registered from its line (LAYOUT7, D117 §6, D124 §2–§3)');
 
-// The one adoption door (LAYOUT7, WORKFLOWCLEAN1 1f): `daoris-driver place <repository> --preset keep --adoption` plans, then
+// The one adoption door (LAYOUT7, WORKFLOWCLEAN1 1f): `daoris place <repository> --preset keep --adoption` plans, then
 // applies, the set-up press: it reads the repository's LINE as git objects, says every refusal with its door, and publishes one ask to
 // it as the person's, adding the doctrine tool's exact verbs to its rules. Its own session then takes up the doctrine with the tool
 // found by its bare name, in a tree of its own,
@@ -5198,7 +5198,7 @@ const PLACE_ATLAS = 'place atlas --preset keep --adoption';
 const unready = onSetupMachine(`${PLACE_ATLAS} --plan`, { config: unreadyConfig });
 const unreadyRead = readPlace(unready.out);
 check(
-  '`daoris-driver place --adoption --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
+  '`daoris place --adoption --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
   atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 1
     && /`daoris driver trees atlas on`/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
     && unreadyRead.nothingWritten && unreadyRead.quests.length === 0,
@@ -5305,7 +5305,7 @@ const rowBeforeLanding = await atlasRow();
 
 // Landed by the person's press, by the workspace's rule (WSR1): merged into the line. A merge commit needs an
 // identity, handed as every git call here is, since the rehearsal runs on machines with no git config.
-const landedSetup = onSetupMachine(`trees land ${setupRecord?.id}`, {
+const landedSetup = onSetupMachine(`tree land ${setupRecord?.id}`, {
   env: {
     GIT_AUTHOR_NAME: 'Family Rehearsal', GIT_AUTHOR_EMAIL: 'rehearsal@example.invalid',
     GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
@@ -5367,7 +5367,7 @@ check(
 // The terminal's door asks for it as the row's *Refresh* would (D124 §3.1).
 const DECLARATION = ['adopted', 'registered', 'summary', 'owns', 'accepts', 'uses', 'packs', 'joined', 'sharesKnowledge', 'workspace', 'root', 'lanes'];
 const declarationOf = (row) => JSON.stringify(DECLARATION.map((field) => row?.[field] ?? null));
-const followAgain = onSetupMachine('register --repository atlas');
+const followAgain = onSetupMachine('repository register --repository atlas');
 const followedAgain = readRegister(followAgain.out);
 const rowAfterAgain = await atlasRow();
 const followedTwice = atlasFollowed();
@@ -5440,7 +5440,7 @@ check(
 
 // Leave nothing for a later phase to meet: both trees go, and atlas leaves the registry, as 17b's repository did.
 const atlasTrees = [setupTree, ordinaryRecord?.tree ?? ''];
-const treesRemoved = atlasTrees.filter(Boolean).map((tree) => onSetupMachine(`trees remove "${tree}" --force`));
+const treesRemoved = atlasTrees.filter(Boolean).map((tree) => onSetupMachine(`tree remove "${tree}" --force`));
 const atlasRetired = await api('DELETE', '/api/registry/atlas');
 check(
   'atlas is retired again and both its trees removed, so no later phase meets it',
@@ -5452,7 +5452,7 @@ check(
 
 section('17d. A workspace is set up one repository at a time, pausing after its pilot (WSSETUP6, D124 §4)');
 
-// The workspace plan (WSSETUP6): `daoris-driver place --workspace <name> --adoption` writes a plan of single set-ups and adds the
+// The workspace plan (WSSETUP6): `daoris place --workspace <name> --adoption` writes a plan of single set-ups and adds the
 // doctrine tool's verbs once, at the workspace's scope; each look of the loop publishes the next to go while fewer than its
 // `atOnce` are open (never the last slot: `cap − 1`), and once its pilot has closed the plan pauses itself until the person
 // resumes it. Nothing in the plan is a count: each state is read from the registry and the quests.
@@ -5599,7 +5599,7 @@ check(
 
 // Each lands by the workspace's rule, and its line moving registers it (WSSETUP5): no `connect` anywhere in the phase.
 const rowsBeforeLanding = await plannedRows();
-const plannedLandings = [firstRecord, secondRecord].map((record) => onPlanMachine(`trees land ${record?.id}`, {
+const plannedLandings = [firstRecord, secondRecord].map((record) => onPlanMachine(`tree land ${record?.id}`, {
   GIT_AUTHOR_NAME: 'Family Rehearsal', GIT_AUTHOR_EMAIL: 'rehearsal@example.invalid',
   GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
 }));
@@ -5638,7 +5638,7 @@ check(
 // Leave nothing for a later phase to meet: the plan stopped, so no later look works it, both trees gone, both retired.
 const stoppedPlan = onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --stop`);
 const plannedTrees = [firstRecord?.tree ?? '', secondRecord?.tree ?? ''];
-const plannedTreesRemoved = plannedTrees.filter(Boolean).map((tree) => onPlanMachine(`trees remove "${tree}" --force`));
+const plannedTreesRemoved = plannedTrees.filter(Boolean).map((tree) => onPlanMachine(`tree remove "${tree}" --force`));
 const plannedRetired = [];
 for (const name of PLANNED) plannedRetired.push(await api('DELETE', `/api/registry/${name}`));
 check(
@@ -5656,7 +5656,7 @@ section('17e. Work is reviewed where it runs before it lands: a set-up said, the
 // §3). The newcomer declares where its work is shown to the person, from a terminal: the rule is this machine's (`driver.json`),
 // and the procedures it names are the newcomer's own documents, committed on its line. A stub chain does the work over the
 // protocol door, its set-up step says what it showed through the connector the door hands it, and the landing waits for the
-// person's verdict, given at `daoris-driver quest review`.
+// person's verdict, given at `daoris quest review`.
 //
 // Two environments, because the shell is not in this rehearsal. A local one is shown in Daoris's browser, which a headless loop
 // does not carry, so a local set-up step sits here saying so, and what this phase checks of it is what the record and the
@@ -5673,7 +5673,7 @@ writeFileSync(reviewConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpCo
 // reads: the driver passes these two through to it, as an install's environment does (KnowledgeConnector).
 const REVIEW_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };
 const reviewDrive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: reviewConfig, env: REVIEW_STORE, mode });
-// `daoris driver review` looks for a procedure in the checkouts the registry names, so it is handed the host to read them from.
+// `daoris place review` looks for a procedure in the checkouts the registry names, so it is handed the host to read them from.
 const reviewCli = (args) => runOn(reviewConfig, `node "${cliBin}" place ${args}`, { DAORIS_SERVICE_URL: BASE, ...PERSON });
 const reviewQuests = async () => (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const reviewRecords = async (quest) => (quest
@@ -5754,7 +5754,7 @@ check(
 );
 
 const [localWork] = await reviewRecords(localWorkId);
-const localPlan = reviewDrive(`trees land ${localWork?.id} --plan`);
+const localPlan = reviewDrive(`tree land ${localWork?.id} --plan`);
 check(
   '…and the work it follows waits at the landing door, the plan saying for what: the step that shows it there',
   localPlan.code === 0
@@ -5764,7 +5764,7 @@ check(
 // Nothing of it is carried further here: the step is declined, as the person would where no window will ever show it, and the
 // work's tree goes with its branch.
 await api('POST', `/api/quests/${localStep?.id}/respond`, { body: { action: 'decline', reason: 'This rehearsal has no window to show it in.' } });
-reviewDrive(`trees remove "${localWork?.tree}" --force`);
+reviewDrive(`tree remove "${localWork?.tree}" --force`);
 
 // The stub chain, set up in the deployed environment: its work, then its set-up step, in one run of the loop.
 const devChain = await api('POST', '/api/quests', {
@@ -5798,9 +5798,9 @@ check(
   `${shownTip} ${headOf(devWork?.tree)}\n${JSON.stringify(devStep)}`,
 );
 
-const heldLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
+const heldLanding = reviewDrive(`tree land ${devStepRecord?.id}`);
 check(
-  '`daoris-driver trees land` refuses its landing with the gate’s sentence, exit 1, and makes nothing',
+  '`daoris tree land` refuses its landing with the gate’s sentence, exit 1, and makes nothing',
   heldLanding.code === 1
     && heldLanding.out.includes(`trees: Waits for your review in \`dev\`: set-up step \`#${devStep?.id}\` showed it at \`${shownTip.slice(0, 8)}\`, `
       + `at <${REVIEW_DEV}/report>`)
@@ -5815,7 +5815,7 @@ const notYet = reviewDrive(`quest review ${devStep?.id} not-yet "${NOT_YET}"`);
 const [notYetHeld] = await reviewRecords(devStep?.id);
 const notYetKept = (await reviewQuests()).find((q) => q.id === devStep?.id)?.verdicts?.at(-1);
 check(
-  '`daoris-driver quest review … not-yet` prints what was shown, keeps the words, and holds them for the step’s session',
+  '`daoris quest review … not-yet` prints what was shown, keeps the words, and holds them for the step’s session',
   notYet.code === 0
     && notYet.out.includes(`daoris-driver: set-up step \`#${devStep?.id}\` showed it in \`dev\` at \`${shownTip.slice(0, 8)}\`, said by session ${devStepRecord?.id}`)
     && /held: the same session goes on with this when a driver next runs on this machine/.test(notYet.out)
@@ -5847,7 +5847,7 @@ check(
   `${correctedTip}\n${JSON.stringify(correctedStep)}`,
 );
 
-const stillHeld = reviewDrive(`trees land ${devStepRecord?.id}`);
+const stillHeld = reviewDrive(`tree land ${devStepRecord?.id}`);
 check(
   '…and the landing still waits, now on the new set-up',
   stillHeld.code === 1
@@ -5859,7 +5859,7 @@ check(
 const REVIEWED = 'the report reads right now';
 const reviewedSaid = reviewDrive(`quest review ${devStep?.id} reviewed "${REVIEWED}"`);
 check(
-  '`daoris-driver quest review … reviewed` answers the newest set-up, and says the work up to its commit may land',
+  '`daoris quest review … reviewed` answers the newest set-up, and says the work up to its commit may land',
   reviewedSaid.code === 0 && reviewedSaid.out.includes(`showed it in \`dev\` at \`${correctedTip.slice(0, 8)}\``)
     && reviewedSaid.out.includes(`daoris-driver: the gate: work up to \`${correctedTip.slice(0, 8)}\` in \`newcomer\` may land`),
   reviewedSaid.out,
@@ -5873,7 +5873,7 @@ if (lateTree && existsSync(lateTree)) writeFileSync(join(lateTree, 'late.md'), '
 run(`git ${GIT_ID} add -A`, lateTree);
 run(`git ${GIT_ID} commit -q -m "a change after the look"`, lateTree);
 const lateTip = headOf(lateTree);
-const lateLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
+const lateLanding = reviewDrive(`tree land ${devStepRecord?.id}`);
 check(
   'a commit after the verdict holds the landing again: what the person reviewed does not hold it, and nothing is made',
   lateTip !== correctedTip && lateLanding.code === 1
@@ -5885,7 +5885,7 @@ check(
 
 // Taken back, the tip is again the commit the person reviewed: the gate reads git at each press, never a flag the verdict set.
 run(`git reset -q --hard ${correctedTip}`, lateTree);
-const reviewedLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
+const reviewedLanding = reviewDrive(`tree land ${devStepRecord?.id}`);
 const reviewedRecord = landingOf(devStepRecord?.id);
 check(
   '…and taken back, the press lands what was reviewed, the landing record keeping the review: the environment, the set-up step, its commit, the words',
@@ -5918,7 +5918,7 @@ const noneQuest = await api('POST', '/api/quests', {
 const noneQuestId = noneQuest.json?.quest?.id ?? '';
 const noneRun = reviewDrive();
 const [noneRecord] = await reviewRecords(noneQuestId);
-const nonePlan = reviewDrive(`trees land ${noneRecord?.id} --plan`);
+const nonePlan = reviewDrive(`tree land ${noneRecord?.id} --plan`);
 check(
   'work no set-up step shows waits on its repository’s rule at the landing door, and the plan names the skip',
   workspaceRule.code === 0 && noneRun.code === 0 && noneRecord?.state === 'completed' && nonePlan.code === 0
@@ -5929,7 +5929,7 @@ check(
 
 const setNone = reviewCli('review newcomer none');
 const noneChoices = JSON.parse(readFileSync(reviewConfig, 'utf8'));
-const noneLanding = reviewDrive(`trees land ${noneRecord?.id}`);
+const noneLanding = reviewDrive(`tree land ${noneRecord?.id}`);
 const noneLanded = landingOf(noneRecord?.id);
 check(
   'a repository set to none lands at once, whatever its workspace says: no set-up step, no verdict, and no review on its landing record',
@@ -5944,7 +5944,7 @@ check(
 
 // Leave the newcomer as the phases after this one expect it: no session tree, no landed branch, the root clean.
 for (const tree of [devWork?.tree, devStepRecord?.tree, noneRecord?.tree]) {
-  if (tree && existsSync(tree)) reviewDrive(`trees remove "${tree}" --force`);
+  if (tree && existsSync(tree)) reviewDrive(`tree remove "${tree}" --force`);
 }
 for (const branch of landedBranches().split('\n').map((line) => line.replace('*', '').trim()).filter(Boolean)) {
   run(`git branch -D ${branch}`, newcomer);
@@ -6264,7 +6264,7 @@ const reopenedOf = (config, session) =>
 const takeBackHeld = async (place, id) => {
   const waiting = ((await standInRecords()).find((s) => s.id === id)?.said ?? []).map((word) => word.id);
   if (waiting.length === 0) return;
-  const taken = waiting.map((word) => driver({ serviceUrl: BASE, config: place.config(), mode: `sessions take-back ${id} ${word}` }));
+  const taken = waiting.map((word) => driver({ serviceUrl: BASE, config: place.config(), mode: `session take-back ${id} ${word}` }));
   const left = (await standInRecords()).find((s) => s.id === id)?.said ?? [];
   check(
     `${place.door.id}: …and the words it keeps for the person taken back by their press, so no other door's home goes on with them`,
@@ -6335,7 +6335,7 @@ const standInDrives = {
       return;
     }
     const words = `go on with the scenario contract on ${place.door.id}`;
-    const said = driver({ serviceUrl: BASE, config: place.config(), mode: `sessions say ${place.ended.id} "${words}"` });
+    const said = driver({ serviceUrl: BASE, config: place.config(), mode: `session say ${place.ended.id} "${words}"` });
     const ran = driver({ serviceUrl: BASE, config: place.config(), mode: '--until-idle' });
     const reopened = reopenedOf(place.config(), place.ended.id);
     const after = (await standInRecords()).find((s) => s.id === place.ended.id);
@@ -6354,7 +6354,7 @@ const standInDrives = {
     const quest = await standInAsk(`Answer the scenario contract's missing conversation on ${place.door.id}`);
     const first = driver({ serviceUrl: BASE, config: place.config(), mode: '--until-idle' });
     const record = (await standInRecords()).find((s) => s.quest === quest);
-    const said = driver({ serviceUrl: BASE, config: place.config(), mode: `sessions say ${record?.id ?? 'none'} "go on where the conversation is gone"` });
+    const said = driver({ serviceUrl: BASE, config: place.config(), mode: `session say ${record?.id ?? 'none'} "go on where the conversation is gone"` });
     const ran = driver({ serviceUrl: BASE, config: place.config('missing'), mode: '--until-idle' });
     const reopened = reopenedOf(place.config('missing'), record?.id);
     check(

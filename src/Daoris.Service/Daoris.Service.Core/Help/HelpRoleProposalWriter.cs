@@ -32,9 +32,15 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
     /// </summary>
     public (string? Id, string Message) Propose(
         string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
-        long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null)
+        long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null,
+        string? rulesPlace = null, string? rules = null, long? rulesRevision = null)
     {
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        if (Blank(id) == Supervisor || rulesPlace is not null || rules is not null || rulesRevision is not null)
+        {
+            return ProposeRules(change, id, name, nameIn, takes, scope, choices, revision, policy, policyRevision, rulesPlace, rules, rulesRevision, why, session, at);
+        }
+
         var door = Blank(change);
         var policyText = Blank(policy);
         System.Text.Json.JsonElement? record = null;
@@ -73,12 +79,7 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
 
         return file.Write(writer =>
         {
-            writer.WriteString("kind", "role");
-            writer.WriteString("door", door);
-            writer.WriteString("target", named);
-            writer.WriteNull("workspace");
-            writer.WriteNull("value");
-            writer.WriteNull("sentence");
+            Head(writer, door!, named!);
             writer.WriteStartObject("press");
             if (names.Count == 0 && Blank(name) is { } alone) writer.WriteString("name", alone);
             else if (names.Count > 0)
@@ -128,6 +129,65 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
             else if (policyText is not null) writer.WriteString("policy", policyText);
             if (policyRevision is { } policyRead) writer.WriteNumber("policyRevision", policyRead);
             if (revision is { } read) writer.WriteNumber("revision", read);
+            writer.WriteEndObject();
+        }, why, session, at);
+    }
+
+    /// <summary>The reserved id whose proposal carries a place's rules (CONTEXTDRIVE1d), as the driver's role door reads it.</summary>
+    private const string Supervisor = "supervisor";
+
+    private static void Head(System.Text.Json.Utf8JsonWriter writer, string door, string target)
+    {
+        writer.WriteString("kind", "role");
+        writer.WriteString("door", door);
+        writer.WriteString("target", target);
+        writer.WriteNull("workspace");
+        writer.WriteNull("value");
+        writer.WriteNull("sentence");
+    }
+
+    /// <summary>
+    /// CONTEXTDRIVE1d (the context counters design §7.6): a <c>set</c> of <c>supervisor</c> carries a place's rules written whole, as JSON, with
+    /// the revision of the place's rules read; nothing of a working role rides it. Shape alone is checked here; the rules' judge is the driver's.
+    /// </summary>
+    private (string? Id, string Message) ProposeRules(
+        string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
+        long? revision, string? policy, long? policyRevision, string? place, string? rules, long? rulesRevision, string why, string? session, DateTimeOffset at)
+    {
+        System.Text.Json.JsonElement? list = null;
+        if (Blank(rules) is { } text)
+        {
+            try
+            {
+                list = System.Text.Json.JsonDocument.Parse(text).RootElement.Clone();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return (null, "The rules are not JSON. Nothing was proposed.");
+            }
+        }
+
+        var where = Blank(place);
+        var refused = Blank(id) != Supervisor ? $"a place's rules are the supervisor's: their id is `{Supervisor}`."
+            : Blank(change) != "set" ? $"the supervisor's rules are a `set` of `{Supervisor}`."
+            : Blank(name) is not null || nameIn is { Count: > 0 } || takes is { Count: > 0 } || scope is not null || choices is { Count: > 0 } || revision is not null
+              || policy is not null || policyRevision is not null
+                ? $"the supervisor is an appointed role: a proposal of it carries a place, its rules and the revision read alone."
+            : where is null || !(where == "machine" || where.Split(':', 2) is [("workspace" or "repository" or "line"), { Length: > 0 }])
+                ? $"`{where}` is not a place: `machine`, `workspace:<id>`, `repository:<id>` or `line:<key>`."
+            : list is not { ValueKind: System.Text.Json.JsonValueKind.Array } ? "the rules are the place's whole list, a JSON array, `[]` for none."
+            : rulesRevision is null ? "the revision of the place's rules you read is named, so a change made since is refused rather than overwritten."
+            : null;
+        if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
+
+        return file.Write(writer =>
+        {
+            Head(writer, "set", Supervisor);
+            writer.WriteStartObject("press");
+            writer.WriteString("place", where);
+            writer.WritePropertyName("rules");
+            list!.Value.WriteTo(writer);
+            writer.WriteNumber("rulesRevision", rulesRevision!.Value);
             writer.WriteEndObject();
         }, why, session, at);
     }

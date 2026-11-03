@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "66fa7a27e2281d8809a7c7000a7eb326e2721784bb920414d4d4c68c60e2691b",
+  "canonDigest": "1068abe2df4aa7bd2309a1eda65d3a3e5634e6086aaf2590a08478e3cec23287",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -30,7 +30,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "abad3c713fc5f7f74fb9739b68036dbe14be476df51ebad654f6f1a01b72788d"
+      "sha256": "b9e90ff522751124c7da34903cc354a094eb4f8d6d46363bd19f3ee09eacb41f"
     },
     {
       "pack": "core",
@@ -48,10 +48,45 @@
     },
     {
       "pack": "core",
+      "source": "core/knowledge/no-global-memory.md",
+      "target": "knowledge/no-global-memory.md",
+      "canonVersion": "0.0.1",
+      "sha256": "8aa55a39ba3dec7069b5e3861095d1e8c10f45eea59ae6bddeece45a38bec189"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/no-tmp-for-repo-files.md",
+      "target": "knowledge/no-tmp-for-repo-files.md",
+      "canonVersion": "0.0.1",
+      "sha256": "6fbe55d672a69faa294149b3d12bb15147d38a61d6a3ddc44a37e73f2d3f0efc"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/persist-working-state.md",
+      "target": "knowledge/persist-working-state.md",
+      "canonVersion": "0.0.1",
+      "sha256": "d144df24705cb708f8a5aedee7508314ab8fa20aa2c6528d91c418c72e19caf9"
+    },
+    {
+      "pack": "core",
       "source": "core/knowledge/reaching-in.md",
       "target": "knowledge/reaching-in.md",
       "canonVersion": "0.0.1",
       "sha256": "ed1f7729783fe48b4feee772e54478262be4fe0c41eab9f5e0f62cbb52494f20"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/skills-workflow.md",
+      "target": "knowledge/skills-workflow.md",
+      "canonVersion": "0.0.1",
+      "sha256": "a600e5b44629d6209954e2552762e1ad38c6eb40b325a470750ae49df46f0aa4"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/task-lifecycle.md",
+      "target": "knowledge/task-lifecycle.md",
+      "canonVersion": "0.0.1",
+      "sha256": "a7879b6b672102d923079791380906fbe2f0a819eb7c9dc4a1ad2ada2e735116"
     },
     {
       "pack": "localized-ui",
@@ -65,31 +100,7 @@
       "source": "core/rules/file-tool-discipline.md",
       "target": "rules/file-tool-discipline.md",
       "canonVersion": "0.0.1",
-      "sha256": "50352b177527b425f15d9d08a85dd415e0d0ebafffac89c9d41365ea3f31c87c",
-      "in": "AGENTS.md"
-    },
-    {
-      "pack": "core",
-      "source": "core/rules/no-global-memory.md",
-      "target": "rules/no-global-memory.md",
-      "canonVersion": "0.0.1",
-      "sha256": "44b81a44a8923c0b5f76f7b13251cf0bbf5743424f531d69a83c9eda58f33983",
-      "in": "AGENTS.md"
-    },
-    {
-      "pack": "core",
-      "source": "core/rules/no-tmp-for-repo-files.md",
-      "target": "rules/no-tmp-for-repo-files.md",
-      "canonVersion": "0.0.1",
-      "sha256": "97e2025ff3ccd93878add9754cdca280d0b1308f01452ecee0666859bf63fc03",
-      "in": "AGENTS.md"
-    },
-    {
-      "pack": "core",
-      "source": "core/rules/persist-working-state.md",
-      "target": "rules/persist-working-state.md",
-      "canonVersion": "0.0.1",
-      "sha256": "2e517a2f46008bdf08d78f7438cd7a354e087d75291a28cebd25e0edbe180adb",
+      "sha256": "c2a4d895d800a2fa13e645fdf69e37dcd0488deb5ad29f11ac4f8c517463100f",
       "in": "AGENTS.md"
     },
     {
@@ -97,7 +108,7 @@
       "source": "core/rules/repository-owns-its-work.md",
       "target": "rules/repository-owns-its-work.md",
       "canonVersion": "0.0.1",
-      "sha256": "b66770b103aa98371bde00c4ede53b6e3e3ff570c0522e3370f38631ac7af3bd",
+      "sha256": "cc924b1c1ba6c956c03f2544244ed162e637db8bcf057026b09e970da5cd2357",
       "in": "AGENTS.md"
     },
     {
@@ -105,23 +116,7 @@
       "source": "core/rules/sensitive-info.md",
       "target": "rules/sensitive-info.md",
       "canonVersion": "0.0.1",
-      "sha256": "0966d76218c1efbeb99cf31a34d6fc1083240aaefde0f05ba8eb0075b1166bd2",
-      "in": "AGENTS.md"
-    },
-    {
-      "pack": "core",
-      "source": "core/rules/skills-workflow.md",
-      "target": "rules/skills-workflow.md",
-      "canonVersion": "0.0.1",
-      "sha256": "c3fe6c35cfbbb58b3586e24d66f9eada08d2f6a62ff6bbb20dd37d019e5d698d",
-      "in": "AGENTS.md"
-    },
-    {
-      "pack": "core",
-      "source": "core/rules/task-lifecycle.md",
-      "target": "rules/task-lifecycle.md",
-      "canonVersion": "0.0.1",
-      "sha256": "eeff04ec487cab7a579b63482eb2db27420eba0efedc9c61b3136ab02572154d",
+      "sha256": "0f3cc22db1926dffade146112ba53c6cf21fe1969254e480817e39dbae41f315",
       "in": "AGENTS.md"
     },
     {
@@ -133,73 +128,66 @@
     },
     {
       "pack": "core",
-      "source": "core/skills/co-working/SKILL.md",
+      "source": "core/skills/change/SKILL.md",
+      "target": "skills/change/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "56015ba87d43c18a74d9bbb6788f85f731e8184848921b63009f0b50d1bc24b2"
+    },
+    {
+      "pack": "co-working",
+      "source": "packs/co-working/skills/co-working/SKILL.md",
       "target": "skills/co-working/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "7bdd499db1628cd159506a6739b6c65431da74699805467b5e3b8149b541a8c2"
-    },
-    {
-      "pack": "core",
-      "source": "core/skills/doc-loader/SKILL.md",
-      "target": "skills/doc-loader/SKILL.md",
-      "canonVersion": "0.0.1",
-      "sha256": "4d74e991886ab04f3a7b405ee0449e6a37fd554d4d993880a30da9ed3665939c"
-    },
-    {
-      "pack": "core",
-      "source": "core/skills/fix-log/SKILL.md",
-      "target": "skills/fix-log/SKILL.md",
-      "canonVersion": "0.0.1",
-      "sha256": "3d31678e3ad8237a409524aa0d96b10e68b3a8935dc3a3bf443c05348d36275f"
-    },
-    {
-      "pack": "core",
-      "source": "core/skills/pattern-finder/SKILL.md",
-      "target": "skills/pattern-finder/SKILL.md",
-      "canonVersion": "0.0.1",
-      "sha256": "03156a1f6d740e54601f68f10b6b4ac72eace5d3e5c4e4801cb9475f6c202fb2"
-    },
-    {
-      "pack": "core",
-      "source": "core/skills/post-feature/SKILL.md",
-      "target": "skills/post-feature/SKILL.md",
-      "canonVersion": "0.0.1",
-      "sha256": "01448f36ee483076aacd064d063e8b45174726cf39ae3d3d8f087375c4c764b5"
+      "sha256": "393edc657742d520063ce7508a2e2a4d7b4ecd053f504df84b0258640d9fdb66"
     },
     {
       "pack": "core",
       "source": "core/skills/set-up-documents/SKILL.md",
       "target": "skills/set-up-documents/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "7b038a0770d01aef33bbabb783259ffd2687ac80a0ef2bd39964dd750b71d585"
+      "sha256": "71d1c028d5125ef7d24eb3d16a35656603fc1785712741580b3b9ef726b797a5"
     },
     {
       "pack": "core",
       "source": "core/skills/set-up-documents/templates/archive-entry.md",
       "target": "skills/set-up-documents/templates/archive-entry.md",
       "canonVersion": "0.0.1",
-      "sha256": "469ee22995ef071246de4009167345b15c9840f62453b8565f35d8a3c7352525"
+      "sha256": "83316064d524f191a65307273be8d1a62703c481208693f69b1ec8b601214ae4"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/area.md",
+      "target": "skills/set-up-documents/templates/area.md",
+      "canonVersion": "0.0.1",
+      "sha256": "e6e7d492b036455f091b4237699cba8154b976c86a6fe5efd6df28ca67992532"
     },
     {
       "pack": "core",
       "source": "core/skills/set-up-documents/templates/backlog-row.md",
       "target": "skills/set-up-documents/templates/backlog-row.md",
       "canonVersion": "0.0.1",
-      "sha256": "97293e9462e4f4a678a1865f7a25f9289d01ccd979b0197d3ab1cde4c91718ea"
+      "sha256": "3e1cf9f6dc60f7c973132897af806b459f1ee9af512b041a0df3d19d1aeff1ba"
     },
     {
       "pack": "core",
       "source": "core/skills/set-up-documents/templates/brief.md",
       "target": "skills/set-up-documents/templates/brief.md",
       "canonVersion": "0.0.1",
-      "sha256": "17a381ab89d9c12714c142c8b70cdaaa148abfb65e70617ca883048cb0eefe24"
+      "sha256": "4e73c6bc4c15441a06621251894788cc16ee0f3c0752bbfde5b7f899936cfd3c"
     },
     {
       "pack": "core",
       "source": "core/skills/set-up-documents/templates/decision.md",
       "target": "skills/set-up-documents/templates/decision.md",
       "canonVersion": "0.0.1",
-      "sha256": "618fbd12b72653025199257210d958f94a83ec070fb5845480964d7e0f299a38"
+      "sha256": "d34542fb10728aad93994d390a042f66800423a36527e5a397b145ebb3851616"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/fix-entry.md",
+      "target": "skills/set-up-documents/templates/fix-entry.md",
+      "canonVersion": "0.0.1",
+      "sha256": "53e260221f8282d91c91f2a51d74a476a44bd7d5baebc91fd662382973884c52"
     },
     {
       "pack": "core",

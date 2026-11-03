@@ -1,14 +1,26 @@
 {
   "source": "daoris@0.0.1",
-  "packs": ["localized-ui"],
+  "packs": [
+    "co-working",
+    "localized-ui"
+  ],
   "target": ".claude",
   "coreBudgetBytes": 26000,
   "documents": {
-    "brief": { "words": 1300 },
-    "router": { "path": "docs/README.md", "words": 2500 },
+    "brief": {
+      "words": 1300
+    },
+    "router": {
+      "path": "docs/README.md",
+      "words": 2500
+    },
     "index": "docs/index/README.md",
+    "areas": "docs/areas",
     "decisions": "docs/decisions",
-    "backlog": { "path": "TASKS.md", "words": 6600 },
+    "backlog": {
+      "path": "TASKS.md",
+      "words": 6600
+    },
     "archive": "docs/task-archive.md",
     "fixes": "docs/FIX-LOG.md",
     "changelog": "CHANGELOG.md",
@@ -35,10 +47,24 @@
           "src/Daoris.Web/src",
           "src/Daoris.Cli/src"
         ],
-        ".claude/knowledge/bridge-presses.md": ["src/Daoris.Web"],
-        "docs/development.md": ["src/Daoris.Web"]
+        ".claude/knowledge/bridge-presses.md": [
+          "src/Daoris.Web"
+        ],
+        "docs/development.md": [
+          "src/Daoris.Web"
+        ]
       },
-      "runtime": [".daoris/", "local/", "_fixtures/", ".git/", "bin/", "obj/", "node_modules/", "dist/", "wwwroot/"],
+      "runtime": [
+        ".daoris/",
+        "local/",
+        "_fixtures/",
+        ".git/",
+        "bin/",
+        "obj/",
+        "node_modules/",
+        "dist/",
+        "wwwroot/"
+      ],
       "allow": {
         "Host.CreateDefaultBuilder": ".NET's generic host, the framework's own name",
         "PhysicalFilesWatcher.OnRenamed": ".NET's file watcher, the framework's own name",
@@ -60,10 +86,10 @@
   "domain": {
     "summary": "Development workflow management across domain-owning repositories: a desktop that drives agent sessions, a connector that distributes engineering doctrine, and a local-first service for knowledge, quests and shared records.",
     "owns": [
-      "the canon \u2014 core rules, knowledge and skills, and the packs",
+      "the canon — core rules, knowledge and skills, and the packs",
       "the doctrine CLI: sync, check, upstream, analyze, doctor",
       "the knowledge service: indexing, search, convergence detection, the registry",
-      "quests \u2014 how one repository asks another for work",
+      "quests — how one repository asks another for work",
       "the local driver, session lifecycle, review and workflow gates",
       "the desktop and shared React platform",
       "the shared dev toolkit and its universal gates"

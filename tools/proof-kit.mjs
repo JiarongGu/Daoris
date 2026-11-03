@@ -23,12 +23,12 @@ const httpDll = join(
 const driverDll = join(
   repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host',
   'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
-// The apphost the build writes beside it, which `daoris-driver agent which` is asked through.
+// The apphost the build writes beside it, which `daoris agent which` is asked through.
 const driverExe = join(dirname(driverDll), process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver');
 
 /**
  * The program this machine would actually run for an agent (TOOL2/D57 rule 4), asked of this checkout's driver
- * (`daoris-driver agent which <agent> --json`, PUSH1f2e): the command `driver.json` names, else its pin, else `PATH`'s, so a proof
+ * (`daoris agent which <agent> --json`, PUSH1f2e): the command `driver.json` names, else its pin, else `PATH`'s, so a proof
  * cannot disagree with a start about what would run. `{ agent, run, managed, pinned, missing }`, or null where the driver is not
  * built or refuses (no home named, a wiring file that does not read), which the readiness says on its own lines; its refusal is
  * written to the error stream.
@@ -147,7 +147,7 @@ export function openProof(name, { label, port }) {
       loggedIn ? '' : 'the profile this run would use reports logged out');
     if (!loggedIn) {
       needs('a logged-in account',
-        'daoris agent login claude-code [--profile <name>]   — runs the agent\'s own flow, into a directory Daoris owns');
+        'daoris agent login claude-code [--account <name>]   — runs the agent\'s own flow, into a directory Daoris owns');
     }
 
     return { claude, adapter, loggedIn };
@@ -268,7 +268,7 @@ export function openProof(name, { label, port }) {
       // 🔴 `connect` has NO `--service` flag — the address is `DAORIS_SERVICE_URL`, and an unknown flag
       // is ignored in silence. Passing `env` is what points it at the scratch host; without it the
       // command answered "no DAORIS_SERVICE_URL" while the script had every appearance of having told it.
-      const connected = capture(`node "${cliBin}" connect`, where, { env });
+      const connected = capture(`node "${cliBin}" repository connect`, where, { env });
       // 🔴 COMMIT THE ADOPTION. `init` and `sync` leave `daoris.json`, `daoris.lock` and `.claude/`
       // uncommitted, and the driver refuses a tree with work in flight — *"somebody's work in flight;
       // the driver holds rather than entangling a session with it"*. It was right and the fixture was

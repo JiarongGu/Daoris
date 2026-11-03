@@ -69,7 +69,9 @@ public static class AtWorkVerb
             parts ?? [], id => rows.GetValueOrDefault(id), id => quests.GetValueOrDefault(id), id => published.GetValueOrDefault(id), new SliceHealth(true))
         {
             Asking = AtWorkQuests.Reading(look.Quests, look.Records, id => rows.GetValueOrDefault(id)),
-            Exchanging = home is null ? null : AtWorkExchangeReading.Reading(home, AtWorkExchangeReading.Priors(look.Records), look.Quests),
+            Exchanging = home is null
+                ? null
+                : AtWorkExchangeReading.Reading(home, AtWorkExchangeReading.Priors(look.Records), look.Quests, AtWorkExchangeReading.Reviewers(look.Records)),
         };
         return AtWork.Compose(
             session, parts?.Select(part => part.Session).ToList(),
@@ -197,7 +199,7 @@ public static class AtWorkVerb
     /// One request of the line (COMMS1i): what was asked, of whom, and where it stands, delivery and outcome apart; a predecessor's names
     /// its part.
     /// </summary>
-    internal static string Exchange(AtWorkExchange each, string attended)
+    public static string Exchange(AtWorkExchange each, string attended)
     {
         var id = each.Id[(each.Id.IndexOf(':') + 1)..];
         var lanes = each.Lanes is { Count: > 0 } named ? $" ({string.Join(", ", named)} lane)" : "";
@@ -209,6 +211,7 @@ public static class AtWorkVerb
                 "piece" => $"piece {id} · {each.Agent ?? each.To}",
                 "quest" => $"#{id} of {each.To}{lanes}",
                 "hand-over" => $"a successor · {each.Agent ?? each.To}",
+                "opinion" => $"reviewer {id} · {each.Agent ?? each.To}",
                 _ => each.Id,
             },
         ];

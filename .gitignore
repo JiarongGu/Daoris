@@ -10,6 +10,9 @@ _fixtures/
 # Agents' git worktrees — each is a checkout of its own branch, merged back by commit, never tracked.
 .claude/worktrees/
 
+# The orientation index, written in each checkout by `tools/orient-index.mjs` (`tools/index-fresh.mjs` says when).
+docs/index/
+
 # Published binaries (tools/service-publish.mjs, and the release workflow's staging dir).
 publish/
 

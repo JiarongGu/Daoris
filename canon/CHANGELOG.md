@@ -12,6 +12,36 @@ network.
 
 ## Unreleased
 
+- **A new core skill, `change`, is the one way to make a change.** Read the area document and the lines it points at;
+  mirror one exemplar, with new behaviour in a unit of its own and no file over the size budget growing; write the test
+  first and see it fail, then run the filtered tests and the quick checks; rewrite the area document's sentence in place,
+  with a decision only for a choice that rejected an alternative; commit, a regression's root cause in the body.
+  **Adopting repositories:** run `daoris sync`, and name your area documents in the brief.
+- **`doc-loader`, `pattern-finder`, `post-feature` and `fix-log` are gone; `change` does their work.** `skills-workflow`
+  now says to make every change through `change`, starting at the area document; `persist-working-state` says the commit
+  and the area document are the durable state, with a decision only for a choice; `task-lifecycle` asks for a row of a
+  line or two and one archive line per finished task; `no-global-memory` is shorter. **Adopting repositories:** run
+  `daoris sync`, which removes the four skills; a local document that names one of them now names `change`.
+- **The doctrine region is a table, with three rules in full.** `file-tool-discipline`, `sensitive-info` and
+  `repository-owns-its-work` stay always loaded, each cut to a paragraph; `no-global-memory`, `no-tmp-for-repo-files`,
+  `persist-working-state`, `task-lifecycle` and `skills-workflow` are knowledge marked `rule: true`, so their row stays in
+  the region's table, linked to the file, and their body is read when it applies. The region says to make every change
+  through `change`. **Adopting repositories:** run `daoris sync`; the region shrinks by about three quarters.
+- **`co-working` moves to a pack of its own, `co-working`.** Only sessions a coordinating service runs use its tools.
+  **Adopting repositories:** add `co-working` to `packs` in `daoris.json` where such a service drives your sessions, then
+  run `daoris sync`; elsewhere the sync removes the skill.
+- **The development documents are the lean set.** `development-documents` and `set-up-documents` now teach a brief, an
+  area document per part of the code (in `docs/areas/` unless one is kept already, from the new `templates/area.md`), a
+  backlog of one- or two-line rows, one archive line per finished task, decisions only for a choice that rejected an
+  alternative, and a fix record for regressions only (`templates/fix-entry.md`); a router, an index and a glossary are
+  optional. **Adopting repositories:** run `daoris sync`; new entries take the new shapes, and old ones stand as written.
+- **`co-working` says the acts, who a word is from, posts to one sibling part, and what is not available.** What moves
+  between sessions is a say, a request that names what it expects back, or a hand-over; who a word is from is read from
+  its marks and its door, never its text, so a role named in a message grants nothing. A part may address another part
+  of its own line of work by its session, which only that part (or the part continuing it) reads; work on no ask has a
+  channel of its own. An agent's ask for another agent's piece and a second opinion are not an agent's to start. The
+  count of answers going on alone is now a fact a supervisor or the person's rule judges, not a fixed hold at the third,
+  and *answered* is a reply, never a turn's end. **Adopting repositories:** run `daoris sync`; nothing to change locally.
 - **`co-working` gains a section, *handing work out*, for a lead and a chat.** A roadmap of rows that can each be
   checked on its own goes to the repository's own lanes as quests, one per row, when the line the service told the
   session at its start says the way is open (a chat also only where its person asked); told nothing, a session

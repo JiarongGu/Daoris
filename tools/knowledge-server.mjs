@@ -22,7 +22,8 @@
  * `docs/index/` a row each, by words only: each process re-reads the checkout once its reading is a minute old,
  * and embedding thousands of entries a minute is not a cost a workspace's instrument pays (D24: the deployment
  * chooses, and every answer says the tier). A worktree reaches its main checkout's build and serves the main
- * checkout, unless it built one of its own.
+ * checkout, unless it built one of its own. Git ignores the index, so before each tool call the relay writes it again
+ * where the served checkout's `HEAD` has moved since it was last written (`tools/index-fresh.mjs`).
  *
  * A running session follows the build (KNOWHOLD1): when a merge makes a new one, the relay moves the session onto it at
  * its next request with nothing owed, or within a minute while it is idle, and ends the server it left (`relayServer`),
@@ -46,9 +47,12 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
+import { freshIndex } from './index-fresh.mjs';
 
 /** Where a checkout keeps the server: its builds, the pointer to the current one, and its home. */
 export const SERVER = 'local/knowledge-server';
+/** The file beside the builds naming the commit the served checkout's index was written from. */
+export const INDEX_STAMP = 'index-head';
 /** What marks a session a driver started: set on every session its spawn shell makes, and by nobody else. */
 export const DRIVEN = 'DAORIS_REPOSITORY';
 /** The folders read beside the roles, a section each and a row each. */
@@ -270,13 +274,13 @@ const RETIRE_WAIT_MS = 10_000;
  *
  * @param {{ input: NodeJS.ReadableStream, output: NodeJS.WritableStream, first: string,
  *   start: (entry: string) => import('node:child_process').ChildProcess, current?: () => string | null,
- *   unstarted?: (error: Error) => string, say?: (line: string) => void }} options
+ *   unstarted?: (error: Error) => string, say?: (line: string) => void, refresh?: () => void }} options
  *   `first` is the build started with, `start` starts a build's server with piped standard streams, and `current` names
- *   the build that should serve now, or null when there is none to follow.
+ *   the build that should serve now, or null when there is none to follow. `refresh` runs before each tool call is passed on.
  * @returns {{ done: Promise<number>, check: () => Promise<void> }} `done` settles with the server's exit code once the
  *   session's input has ended and the serving server has exited; `check` is the relay's look.
  */
-export function relayServer({ input, output, first, start, current = () => null, unstarted = (error) => String(error), say = () => {} }) {
+export function relayServer({ input, output, first, start, current = () => null, unstarted = (error) => String(error), say = () => {}, refresh = () => {} }) {
   const key = (id) => JSON.stringify(id);
   const isRequest = (message) => typeof message?.method === 'string' && message.id !== undefined && message.id !== null;
   const isReply = (message) => message && message.method === undefined && message.id !== undefined && message.id !== null;
@@ -408,6 +412,7 @@ export function relayServer({ input, output, first, start, current = () => null,
     if (isRequest(message)) {
       if (message.method === 'initialize') hello = message;
       else await look();
+      if (message.method === 'tools/call' && !absent) refresh();
     } else if (message?.method === 'notifications/initialized') {
       initialized = message;
     } else if (isReply(message)) {
@@ -450,6 +455,8 @@ async function serve(checkout) {
   }
   // The workspace's build is followed as merges replace it (KNOWHOLD1); the machine's host is the install's, and moves with it.
   const follows = located !== null && command.args[0] === located.entry;
+  const say = (line) => process.stderr.write(`daoris-knowledge: ${line}\n`);
+  const stamp = located ? join(located.folder, INDEX_STAMP) : null;
   const children = new Set();
   const relay = relayServer({
     input: process.stdin,
@@ -466,7 +473,13 @@ async function serve(checkout) {
     current: follows ? () => readBuild(located.served)?.entry ?? null : () => null,
     unstarted: (error) =>
       `the knowledge server could not start (${command.what}: ${error.code ?? error.message}). Is \`dotnet\` on the PATH?`,
-    say: (line) => process.stderr.write(`daoris-knowledge: ${line}\n`),
+    say,
+    refresh: follows
+      ? () => {
+        const fresh = freshIndex(located.served, { stamp });
+        if (!fresh.ok) say(`${INDEX}/ not written again: ${fresh.said}`);
+      }
+      : undefined,
   });
   const looking = follows ? setInterval(() => relay.check(), LOOK_EVERY_MS) : null;
   looking?.unref();
