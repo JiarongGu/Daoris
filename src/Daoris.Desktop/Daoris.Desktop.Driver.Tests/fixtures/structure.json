@@ -1071,7 +1071,6 @@
   },
   "loopRules": [
     { "file": "Loop/Chat/ChatRunner.cs", "member": "ChatRunner.Isolates", "after": "Loop" },
-    { "file": "Loop/Chat/ChatRunner.cs", "member": "ChatRunner.EndedClean", "after": "Loop" },
     { "file": "Loop/Chat/ChatTurns.cs", "member": "ChatTurns.Answer", "after": "Loop" },
     { "file": "Loop/Chat/ChatTurns.cs", "member": "ChatTurns.Carries", "after": "Loop" },
     { "file": "Loop/Chat/StartRequests.cs", "member": "StartRequests.IsId", "after": "Loop" },

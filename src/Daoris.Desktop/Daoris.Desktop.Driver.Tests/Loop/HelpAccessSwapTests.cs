@@ -33,7 +33,7 @@ public sealed class HelpAccessSwapTests : IDisposable
 
         public int Finished => Volatile.Read(ref _finished);
 
-        public Task FinishAsync(Action endInput)
+        public Task FinishAsync(Func<Task> close)
         {
             Interlocked.Increment(ref _finished);
             return Task.CompletedTask;
