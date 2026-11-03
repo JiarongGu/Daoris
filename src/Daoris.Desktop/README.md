@@ -416,9 +416,8 @@ knowledge and memory tools, the checkouts it may read, its indexes and code map;
 `ISessionAdapter.LoadsTreeSkills`; past a cut `AGENTS.md`, `ISessionAdapter.InstructionFileLimit`, its rules by their knowledge ids),
 the routing for a build, design or chat (`RoutingStanding` judges, the block words it), the person's choices on this machine (the
 standing answer), the repository's and workspace's facts, and at a move the memory the line read, which the brief hands on
-(`ComposedBrief.Memory`). A kind with no repository (Ask Daoris, an intake, a brainstorm's pass) gets the workspace's part alone. The
-block replaced the routing line, the standing answer's preface and the instruction's map, look and indexes. It is handed at a start and a
-move, never at a go-on, which resumes the same conversation. It is the account's `block` section (source `machine`), and a conversation's
+(`ComposedBrief.Memory`). A kind with no repository (Ask Daoris, an intake, a brainstorm's pass) gets the workspace's part alone. It is
+the one place a session is told these; it is handed at a start and a move, never at a go-on, which resumes the same conversation. It is the account's `block` section (source `machine`), and a conversation's
 record keeps it as a `chat.told-block` note. A first prompt that would pass `StandingBlock.Budget` (30,000 characters, under the
 32,767 of the native door's single argument) hands the block through `spawn/<session>.standing/block.md` instead, named in one line,
 which the session's rules read and its record's delete takes.
