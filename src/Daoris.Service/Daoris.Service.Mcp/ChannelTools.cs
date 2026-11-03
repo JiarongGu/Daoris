@@ -87,7 +87,6 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
         if (read.Refusal != ChannelRefusal.None) return Said(read.Refusal);
 
         var items = read.Read!.Items;
-        // COMMS1k: a line on no ask reads its own line's channel.
         var named = read.Ask is { } onAsk ? $"ask `#{onAsk.Id}`'s channel" : "your line's own channel";
         var text = new StringBuilder(items.Count == 0
             ? $"Nothing new on {named}.\n"

@@ -33,7 +33,6 @@ public sealed class WaitingLine(ChannelDesk? channel, IntakeScope? intake)
 
         var urgent = waiting.Count(message => message.Urgent == true);
         var count = waiting.Count == 1 ? "1 message waits" : $"{waiting.Count} messages wait";
-        // COMMS1k: a line on no ask has its own channel, and a message to one part waits on the line's too.
         return $"Daoris: {count} for you on {(ask is null ? "your line's own channel" : $"ask `#{ask.Id}`'s channel")}"
                + (urgent > 0 ? $", {urgent} of them urgent" : "")
                + ". channel_read reads them, at a point you choose between steps.";

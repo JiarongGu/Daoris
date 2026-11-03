@@ -329,7 +329,7 @@ internal sealed record HelpMachineSources(
     /// <summary>This machine's list of old records (ONEWAY1ad-ii), as its page reads it.</summary>
     public IReadOnlyList<KeptLine> Kept { get; init; } = [];
 
-    /// <summary>What each line waits on (COMMS1i), as the exchanges' one read found it; null where it was not read.</summary>
+    /// <summary>What each line waits on, as the exchanges' one read found it; null where it was not read.</summary>
     public HelpWaits? Waits { get; init; }
 
     /// <summary>The workspace these are projected to (ASKSCOPE1b, <see cref="HelpRoomScope"/>); null for the whole machine.</summary>

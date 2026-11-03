@@ -102,7 +102,7 @@ public sealed record StandingNow(
     /// <summary>The steward's acts this run, newest first (STEWARDROLE1b, D209 §5.3), from memory alone: the line's entries.</summary>
     public IReadOnlyList<StewardActNow> StewardActs { get; init; } = [];
 
-    /// <summary>The steward's desk this run, newest first (STEWARDROLE1c, D209 §6.2), from memory alone: what the line shows under the role's acts.</summary>
+    /// <summary>The steward's desk, newest first: what the line shows under the role's acts.</summary>
     public IReadOnlyList<DeskRequestNow> StewardDesk { get; init; } = [];
 }
 
@@ -431,17 +431,16 @@ public sealed class StandingConfirmation : IDecisionAdmission
         _clock = clock ?? TimeProvider.System;
         Offered = offered ?? OfferedInThisBuild;
         _machine = machine ?? ThisMachine();
-        // D209 §2.4: each role offered by its own flag, decoupled from D201's offering, which D209 keeps off for good.
+        // Each role is offered by its own flag, apart from the grant's offering, which stays off.
         SupervisorOffered = supervisor ?? SupervisorOfferedInThisBuild;
         StewardOffered = steward ?? StewardOfferedInThisBuild;
         Walk = walk ?? HolderWalk.System;
         RunStarted = _clock.GetUtcNow();
         DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), _clock, Environment.ProcessId));
-        // COMMS1l: kept across a restart where this build offers the steward, every request left open read as interrupted.
         Desk = new StewardDesk(_clock, StewardOffered ? DaorisHome.Entry(home, HomeEntry.StewardDesk) : null);
     }
 
-    /// <summary>The steward's desk (STEWARDROLE1c, D209 §6.2): its requests, which grant nothing, kept with their history (COMMS1l).</summary>
+    /// <summary>The steward's desk (D209 §6.2): the requests, which grant nothing.</summary>
     public StewardDesk Desk { get; }
 
     /// <summary>Who a desk request is counted against.</summary>

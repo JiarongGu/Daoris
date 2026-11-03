@@ -122,11 +122,9 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// A ref moves its repository's line, its part of the work (FACTSPLIT1a) and its part of the trees (FACTSPLIT1b), never the
-    /// sessions' look, which holds no git; a session's records moving move the look and every part of the work, as they moved the
-    /// whole, and the trees' parts as the look lands (<see cref="A_session_ended_judges_its_repository_s_trees_again_as_the_look_lands_and_no_other"/>);
-    /// the configuration the look and every part of the trees, whose commits a line set holds. A part is named only once the
-    /// service's answers name it.
+    /// A ref moves its repository's line and its parts, never the sessions' look, which holds no git; a session's records move the look,
+    /// every part of the work and what each line waits on; the configuration the look and every part of the trees. A part is named only
+    /// once the service's answers name it.
     /// </summary>
     [Fact]
     public void A_ref_moved_wakes_its_repository_s_line_and_work_and_the_trees_and_a_ledger_move_the_machine()
@@ -166,10 +164,7 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Empty(HelpFacts.Woken(ChangeTopics.Focus, "window", facts));
     }
 
-    /// <summary>
-    /// PUSH1d1: an ask moved wakes the facts that read the asks, the machine's answers and the history's count of asks kept, and no
-    /// session or part of the work; a channel's post wakes the machine's answers alone, as every ledger move does.
-    /// </summary>
+    /// <summary>An ask moved wakes the machine's answers and the history; a channel's post the machine's answers alone.</summary>
     [Fact]
     public void An_ask_moved_wakes_the_machine_and_the_history_and_a_post_the_machine()
     {
@@ -188,10 +183,7 @@ public sealed class HelpFactsTests : IDisposable
             HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests,asks,channel,words", facts));
     }
 
-    /// <summary>
-    /// PUSH1d1b: a word kept without a note wakes the machine's answers and the sessions' look, which reads the words, and no part of the
-    /// work; COMMS1i: and what each line waits on, since a word answers a request.
-    /// </summary>
+    /// <summary>A word kept wakes the machine's answers, the sessions' look and what each line waits on, and no part of the work.</summary>
     [Fact]
     public void A_word_kept_wakes_the_machine_and_the_sessions_look()
     {
@@ -200,34 +192,6 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Equal(
             [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.Exchanges, HelpFacts.Whole)],
             HelpFacts.Woken(ChangeTopics.Ledger, "words", facts));
-    }
-
-    /// <summary>
-    /// COMMS1i: what each line waits on is woken by a session's records, a quest or a word moving, and by no ask, channel post, ref or
-    /// configuration; the room's read says it not read until it was judged, and as judged once it was.
-    /// </summary>
-    [Fact]
-    public void COMMS1i_what_each_line_waits_on_is_woken_by_the_records_a_quest_or_a_word_and_read_as_judged()
-    {
-        var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
-
-        foreach (var family in new[] { "sessions", "quests", "words" })
-        {
-            Assert.Contains((HelpFacts.Exchanges, HelpFacts.Whole), HelpFacts.Woken(ChangeTopics.Ledger, family, facts));
-        }
-
-        foreach (var (topic, subject) in new[] { (ChangeTopics.Ledger, "asks"), (ChangeTopics.Ledger, "channel"), (ChangeTopics.Refs, "site"), (ChangeTopics.Config, "driver.json") })
-        {
-            Assert.DoesNotContain((HelpFacts.Exchanges, HelpFacts.Whole), HelpFacts.Woken(topic, subject, facts));
-        }
-
-        var notYet = HelpFacts.Read(facts, DriverConfig.Empty)!;
-        Assert.Null(notYet.Waits);
-        Assert.True(notYet.NotReadYet.Waits);
-        var waits = new HelpWaits([new HelpWait("s1", "site", "default", "helper h7 · codex-acp · asked")], []);
-        var judged = HelpFacts.Read(facts.With(HelpFacts.Exchanges, HelpFacts.Whole, new JudgedFact(waits, At)), DriverConfig.Empty)!;
-        Assert.Same(waits, judged.Waits);
-        Assert.False(judged.NotReadYet.Waits);
     }
 
     [Fact]

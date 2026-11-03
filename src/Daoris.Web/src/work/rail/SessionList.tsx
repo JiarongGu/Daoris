@@ -36,7 +36,7 @@ export type SessionRowFacts = {
   continues?: string | null;
   /** The session a helper helps, by that session's title, where the rail joined them (MIXAGENT3a-i). */
   helps?: string | null;
-  /** What a helper or a part that continues another spent (MIXAGENT3a-iii), from this machine's record; absent where none answered. */
+  /** What a helper or a part that continues another spent, from this machine's record; absent where none answered. */
   spent?: PartSpent | null;
   /** The entry's name where it is not the record's own: the ask's (SESSONE1c, D167). Not drawn by ask, whose heading says it. */
   name?: string | null;

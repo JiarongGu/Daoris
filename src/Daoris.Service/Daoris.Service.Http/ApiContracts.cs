@@ -312,14 +312,10 @@ public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At
 public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null, bool? Urgent = null);
 // Moves an entry's read mark (the person's, `person`, when `entry` is left out) to `through`, else to the newest item.
 public sealed record ChannelReadRequest(string? Entry = null, DateTimeOffset? Through = null);
-// One item of the channel, in time order. `kind` is `message` (id, person, session, repository, agent, entry, to, re, question, open,
-// text, origin) or `line` (Daoris's, read from the ask's quests and never stored: code, quest, name, from, to). A message's `to` absent
-// is everyone; `person` true is the person's own words, and a session's are that agent's claim. `code` is `published`, `taken`, `done`,
-// `declined` or `awaiting`, which the page words in the reader's language. COWORK1d: a message's `urgent`, true or false, absent only on
-// one from before, which keeps its old reach; read for an entry, its acknowledgment `ack` (`taking`, `sent`, `taken`, `read`, `partly`)
-// with the part's `ackSession`; read for the person, `receipts`, one per repository it addresses.
-// COMMS1k: a message to one part names it in `part` (a session), on the `channel` it is kept on (`ask:<id>`, `session:<id>` or
-// `quest:<id>`), and read for the person its `receipt` in that part's line; none of the three on an ask's message to everyone.
+// One item of the channel, in time order: a `message` or one of Daoris's coded `line`s, read from the ask's quests and never stored. A
+// message's `to` absent is everyone; `person` true is the person's own words, a session's that agent's claim; `urgent` absent only on
+// one from before. Read for an entry, its `ack` and `ackSession`; for the person, `receipts`, one per repository it addresses. A message
+// to one part names its `part`, its `channel` and, for the person, its `receipt`.
 public sealed record ChannelItemResponse(
     string Kind, DateTimeOffset At, string? Id = null, bool? Person = null, string? Session = null, string? Repository = null,
     string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
@@ -337,14 +333,9 @@ public sealed record ChannelAckResponse(IReadOnlyList<string> Acknowledged);
 // person's `unread` (NOTIFY2g) counts only what an agent or a teammate wrote, never their own posts nor Daoris's lines.
 public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark)
 {
-    // COMMS1k: read for the person, the messages to one part each (absent where none), never among `items`, which an older page reads
-    // as the ask's to everyone.
+    // For the person, the messages to one part each, never among `items`, which an older page reads as to everyone.
     public IReadOnlyList<ChannelItemResponse>? Addressed { get; init; }
 }
-// COMMS1k: what waits for one part the driver runs, the messages to it and on its line's own channel, each with its line's `ack`.
-public sealed record AddressedResponse(IReadOnlyList<ChannelItemResponse> Messages);
-// COMMS1k: one part's acknowledgment of messages to it by their ids, as an entry's of an ask's: `taking`, `released`, `sent`, `taken`, `read`.
-public sealed record AddressedAckRequest(string? Session, string? State, IReadOnlyList<string>? Messages);
 public sealed record ChannelPostResponse(ChannelItemResponse Message);
 // The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. There is no ask record here,
 // so no title: `workspace` is from the messages, `origins` the machines they came from, `unread` is against the person's local mark,

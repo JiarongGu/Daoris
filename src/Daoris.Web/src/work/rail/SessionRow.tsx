@@ -93,10 +93,7 @@ export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, spent, taking, lastTurn, grouping, place, archived = false,
   selected = false, onSelect, acts = [], onAct, name, parts, heavy, heavyBehind, limitWait,
 }: {
-  /**
-   * What a helper, or a part that continues another, spent (MIXAGENT3a-iii, the mixed-agents design §4, *Cost*), from this machine's
-   * record: its turns and their tokens, *not measured* where its door said none, never zero. Absent where none answered.
-   */
+  /** What a helper, or a part that continues another, spent: never zero, and said where its door said none. Absent where none answered. */
   spent?: PartSpent | null;
   /**
    * When a line its account's limit cut off goes on by itself, and on which account (LIMITRESUME1d2, D206 §3.7): the head's first
@@ -222,7 +219,6 @@ export function SessionRow({
     // Whom it continues, and whom a helper helps (MIXAGENT3a-i): the record's own links, where the rail joined them.
     session.from && continues ? t('work.rail.continues', { title: continues }) : null,
     isHelper(session) && helps ? t('work.rail.helps', { title: helps }) : null,
-    // MIXAGENT3a-iii: a helper's and a continuing part's own cost, as the Parts strip says a part's.
     isHelper(session) || session.from ? spentLine(t, spent) : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch }) : null,
     tree ? t('work.rail.inTree', { tree }) : null,

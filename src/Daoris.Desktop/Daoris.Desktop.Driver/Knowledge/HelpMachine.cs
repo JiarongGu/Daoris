@@ -171,7 +171,7 @@ public sealed record HelpMachine
 
     // The exchanges' section's.
 
-    /// <summary>What each line waits on (COMMS1i), as the exchanges' one read found it; null where it was not read.</summary>
+    /// <summary>What each line waits on, as the exchanges' one read found it; null where it was not read.</summary>
     public HelpWaits? Waits { get; init; }
 
     // The own-plugins section's.

@@ -44,10 +44,10 @@ public interface IChannelDoors
 /// </summary>
 public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
 {
-    public Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct) => service.AddressedAsync(session, ct);
+    public Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct) => service.Addressed.WaitingAsync(session, ct);
 
     public Task<IReadOnlyList<string>> AcknowledgeAddressedAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct) =>
-        service.AddressedAckAsync(session, state, messages, ct);
+        service.Addressed.AcknowledgeAsync(session, state, messages, ct);
 
     public Task<ChannelView?> ReadAsync(string ask, string entry, CancellationToken ct) => service.ChannelAsync(ask, entry, ct);
 
@@ -187,12 +187,16 @@ public sealed class ChannelReach
         }
     }
 
+    /// <summary>A look's reach over what <paramref name="snapshot"/> holds: every line of work on an ask, and every part this loop runs alone.</summary>
+    public Task<IReadOnlyList<string>> LookAsync(IChannelDoors doors, Snapshot snapshot, SessionProcesses processes, CancellationToken ct, LookSaid? said = null) =>
+        LookAsync(doors, Parts(snapshot, processes), ct, said, Addressed(snapshot, processes));
+
     /// <summary>
     /// One look's reach over <paramref name="parts"/>: the lines it says, one for each message that reached a part, each classed as it
     /// is made (NOTIFY2h2): a channel not read the next look's, a message's reach what the ask's channel says.
     /// </summary>
     /// <param name="said">The look's classing; none classes and keeps nothing.</param>
-    /// <param name="addressed">The parts this loop runs that are handed what waits for them alone (COMMS1k, <see cref="Addressed"/>); none, none.</param>
+    /// <param name="addressed">The parts this loop runs that are handed what waits for them alone (<see cref="Addressed"/>); none, none.</param>
     /// <exception cref="OperationCanceledException">The loop is closing.</exception>
     public async Task<IReadOnlyList<string>> LookAsync(
         IChannelDoors doors, IReadOnlyList<ChannelPart> parts, CancellationToken ct, LookSaid? said = null, IReadOnlyList<AddressedPart>? addressed = null)

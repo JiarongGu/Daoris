@@ -238,8 +238,7 @@ export function SessionRail({
     label: (account) => nameOf(session.adapter, account),
     now: new Date(),
   })?.[0] ?? null;
-  // MIXAGENT3a-iii (the mixed-agents design §4, *Cost*): what each helper and each part that continues another spent, on its own
-  // row, from this machine's record; a row whose door said none is *not measured*, never zero, and a browser asks nothing.
+  // What each helper and each part that continues another spent, on its own row; a browser asks nothing.
   const spent = useSessionSpent(listed.filter((session) => isHelper(session) || Boolean(session.from)).map((session) => session.id), 1);
   const rows: SessionRowFacts[] = listed.map((session) => ({
     session,
