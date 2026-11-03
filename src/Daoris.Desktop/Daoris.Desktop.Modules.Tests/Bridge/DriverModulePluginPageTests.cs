@@ -97,7 +97,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     /// <summary>
     /// HELPPLUG1a's tightening (D170's note): <c>PLUGIN_ACTION</c>'s <c>help-approve</c>, <c>help-reads</c> and
     /// <c>help-withdraw</c> are the person's approval of the exact tools a server offers Ask Daoris, the page's half of
-    /// <c>daoris-driver plugins approve|withdraw</c>; a generic execution tool is refused with its reason.
+    /// <c>daoris plugin approve|withdraw</c>; a generic execution tool is refused with its reason.
     /// </summary>
     [Fact]
     public async Task The_page_approves_what_a_plugin_offers_ask_daoris_its_reads_only_or_withdraws_it()
@@ -134,7 +134,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// RPC1e: asked for its words (<c>said: true</c>) by <c>daoris-driver plugins approve|withdraw</c> sent over the pipe,
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>daoris plugin approve|withdraw</c> sent over the pipe,
     /// <c>PLUGIN_ACTION</c> answers the lines and the exit code the alone path prints over the same home, and writes the same approvals:
     /// an approval, its reads only, the writes named, a write the server does not declare, a generic execution tool refused, a plugin
     /// not here, and a withdrawal. A refusal is the verb's exit 2 as an answer, never thrown.

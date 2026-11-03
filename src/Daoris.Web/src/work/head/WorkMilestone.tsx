@@ -63,7 +63,7 @@ function Row({ label, tone, children }: { label: string; tone?: FactTone; childr
 /**
  * **Where this work stands** (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached and by what proof, the
  * result kept, the clean-up pending (what waits and why, a blocked entry apart) or completed (what went), and the recovery kept and
- * until when. The same facts `daoris-driver work state` prints, read from the driver's answer and said in the reader's language.
+ * until when. The same facts `daoris work state` prints, read from the driver's answer and said in the reader's language.
  *
  * @remarks
  * **The driver's clauses pass through as recorded** (`detail`, and `said` where the page has no word for a proof's code): they name

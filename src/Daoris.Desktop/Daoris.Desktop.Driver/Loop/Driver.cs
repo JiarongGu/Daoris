@@ -198,7 +198,7 @@ public sealed class Driver(
     /// <summary>
     /// The driver's file, read again at a running driven session's turn's end (ACCESSSWAP1b, D183's note): the look's config is the file
     /// as that look read it, and a session outlives its look, so a change the page's <c>SET_ACCESS</c> or the terminal's
-    /// <c>daoris-driver access</c> wrote since is seen only here. The watch's; null where nothing names it, a one-look run's and a gate's,
+    /// <c>daoris place access</c> wrote since is seen only here. The watch's; null where nothing names it, a one-look run's and a gate's,
     /// and a session there goes on under its start's setup until its next start.
     /// </summary>
     public string? ConfigPath { get; init; }

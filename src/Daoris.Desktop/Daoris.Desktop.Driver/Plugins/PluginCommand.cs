@@ -61,10 +61,10 @@ public static class PluginCommand
 
     public const string Usage =
         """
-        usage: daoris-driver plugin [list]
-               daoris-driver plugin add <folder> · add --offer <id>
-               daoris-driver plugin update <id> [--yes] · remove <id> · enable|disable <id>
-        `daoris plugin …` runs these; the kit is `daoris-driver plugins new|try`, a package `daoris-driver plugins install`.
+        usage: daoris plugin [list]
+               daoris plugin add <folder> · add --offer <id>
+               daoris plugin update <id> [--yes] · remove <id> · enable|disable <id>
+        `daoris plugin …` runs these; the kit is `daoris plugin new|try`, a package `daoris plugin install`.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
@@ -149,13 +149,13 @@ public static class PluginCommand
             // The kit a plugin is made with lives with the code that starts plugins (PLUG8, D101): asked for here, it says where it is.
             case "new" or "try":
                 throw new PluginWords(
-                    $"the plugin kit is `daoris-driver plugins {verb}`, or the Plugins place — it starts a plugin as the driver would, so it "
-                    + "lives with the driver. `daoris-driver plugins` says what each takes.");
+                    $"the plugin kit is `daoris plugin {verb}`, or the Plugins place — it starts a plugin as the driver would, so it "
+                    + "lives with the driver. `daoris plugin` says what each takes.");
 
             // A package is read by the host's `plugins install` (PLUGDIST1a, D120 §4).
             case "install":
                 throw new PluginWords(
-                    "a plugin package is installed by `daoris-driver plugins install <file.nupkg>` — the driver reads a package and checks it "
+                    "a plugin package is installed by `daoris plugin install <file.nupkg>` — the driver reads a package and checks it "
                     + "before anything is extracted. `daoris plugin add <folder>` installs a plugin's folder.");
 
             default:

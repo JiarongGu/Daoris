@@ -67,7 +67,7 @@
   "plugin.kit.ok": "ok",
   "plugin.kit.failed": "failed",
   "plugin.kit.said": "What it said on stderr",
-  "plugin.kit.terminal": "Also `daoris-driver plugins new|try` — the same kit, either door. In a plugins repository with no Daoris, `node --test` runs the wire test the kit wrote.",
+  "plugin.kit.terminal": "Also `daoris plugin new|try` — the same kit, either door. In a plugins repository with no Daoris, `node --test` runs the wire test the kit wrote.",
   "plugin.list.add": "Add a plugin",
   "plugin.list.ask": "Ask Daoris for a plugin",
   "plugin.list.make": "Make a plugin…",
@@ -177,7 +177,7 @@
   "plugin.data.body": "What it keeps. An update never touches this folder, and a removal leaves it, yours to delete.",
   "plugin.field.folder": "Folder",
   "plugin.page.terminal": "Also `daoris plugin enable|disable|update|remove {{id}}` — the same file and the same folder, either door.",
-  "plugin.page.terminalTry": "And `daoris-driver plugins try {{id}}` tries it at a terminal the same way.",
+  "plugin.page.terminalTry": "And `daoris plugin try {{id}}` tries it at a terminal the same way.",
   "plugin.offer.note": "Installing runs nothing: the driver reads it at its next look, and a plugin that lands work runs only where a landing rule names it.",
   "plugin.offer.terminal": "Also `daoris plugin add --offer {{id}}` — the same copy, either door."
 }

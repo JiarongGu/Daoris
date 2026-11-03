@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public sealed record SupervisorDraft(string Question, string Generation, string? Choice, IReadOnlyList<SupervisorReason> Reasons, string? Bound = null);
 
 /// <summary>
-/// <c>daoris-driver sessions supervise</c> (SUPERVISOR1a-ii, D208; the supervisor design §3.2, §4.4, §2.2): the supervisor's holder's
+/// <c>daoris session supervise</c> (SUPERVISOR1a-ii, D208; the supervisor design §3.2, §4.4, §2.2): the supervisor's holder's
 /// verb, run in the terminal the window started at the appointment. With no id, what waits (<c>SUPERVISOR_WAITING</c>); with an id,
 /// the fenced print of what the holder reads; with <c>--choice</c>, the answer.
 /// </summary>

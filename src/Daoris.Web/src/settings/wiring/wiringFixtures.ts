@@ -91,12 +91,10 @@ export const WIRED: SystemWiring = {
   },
   terminal: {
     launchers: [
-      { name: 'daoris', present: true }, { name: 'daoris.cmd', present: true },
-      { name: 'daoris-driver', present: true }, { name: 'daoris-driver.cmd', present: false },
+      { name: 'daoris', present: true }, { name: 'daoris.cmd', present: false },
     ],
     launchersWhy: null, onAccountPath: true, onAccountPathWhy: null, onMachinePath: false, onMachinePathWhy: null,
-    firstDaoris: { is: 'this', path: `${HOME}/app/bin/daoris.cmd` },
-    firstDriver: { is: 'another', path: 'D:/somewhere/else/bin/daoris-driver.cmd' },
+    firstDaoris: { is: 'another', path: 'D:/somewhere/else/bin/daoris.cmd' },
     address: { present: true, url: 'http://localhost:5177', pid: 4242, since: '2026-10-16T09:00:00Z', taken: true, why: null },
   },
   knowledge: {
@@ -164,7 +162,7 @@ export const DEVELOPMENT: SystemWiring = {
   },
   terminal: {
     launchers: [], launchersWhy: 'development', onAccountPath: null, onAccountPathWhy: 'development', onMachinePath: null, onMachinePathWhy: 'development',
-    firstDaoris: { is: 'none', path: null }, firstDriver: { is: 'none', path: null },
+    firstDaoris: { is: 'none', path: null },
     address: { present: true, url: 'http://localhost:5177', pid: 31, since: '2026-10-16T08:00:00Z', taken: false, why: 'ended' },
   },
   knowledge: {

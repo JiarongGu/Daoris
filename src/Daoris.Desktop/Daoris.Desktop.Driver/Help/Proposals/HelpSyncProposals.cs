@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Ask Daoris's <c>sync</c> proposal (HELP10, D109): the workspace's page → Branches → Updates → *Bring up to date*, and
-/// <c>daoris-driver trees sync</c> — each repository's line fast-forwarded from <c>origin</c>, the branches still at work
+/// <c>daoris tree sync</c> — each repository's line fast-forwarded from <c>origin</c>, the branches still at work
 /// replayed onto it, the landed branches whose work reached it deleted. Its target a repository, or none for every one
 /// with a checkout here.
 /// </summary>
@@ -96,7 +96,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
 
         var where = workspace is null ? "" : $" of workspace `{workspace}`";
         var scope = (repository is null ? "every repository with a checkout here" : $"`{repository}`") + where;
-        var terminal = "daoris-driver trees sync" + (repository is null ? "" : $" --repository {repository}")
+        var terminal = "daoris tree sync" + (repository is null ? "" : $" --repository {repository}")
             // The one spelling every shell keeps whole, as TreesCommand.Press says it (ACCTQUOTE1b).
             + (workspace is null ? "" : $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}");
         if (proposal.Listed is not { } rows)

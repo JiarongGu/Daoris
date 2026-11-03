@@ -36,38 +36,38 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "(each step shows its own command there)"),
         // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's are on its page
         // since UX6g (D150 §3.1).
-        ("drive a repository, or stop", Setup + "Driving", "`daoris driver drive|undrive <repository>`"),
+        ("drive a repository, or stop", Setup + "Driving", "`daoris place drive|undrive <repository>`"),
         // PAUSE1b (D132 §13): a repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
-        ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris driver hold|resume <repository>`"),
-        ("give its sessions their own tree", Setup + "Driving", "`daoris driver trees <repository> on|off`"),
+        ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris place hold|resume <repository>`"),
+        ("give its sessions their own tree", Setup + "Driving", "`daoris place trees <repository> on|off`"),
         // WORKFLOWCLEAN1 1f: one door adopts a repository, a place's adoption: one quest to its own session, which takes up the
         // doctrine, writes down what the repository owns and its brief on its own branch. Ask Daoris's `setup` kind proposes it
         // through its `place` door, and the page's *Set up…* applies it.
         new("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
             "Agents → Setup → *Set up…* (adoption ticked)",
-            "`daoris-driver place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply`",
+            "`daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply`",
             new HelpDoorAsk.Proposes("setup", "place")),
         // WSSETUP6: the workspace plan's terminal door; its screen and Ask Daoris's doors are WSSETUP7's, owed meanwhile.
         ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
             + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",
             "(no screen yet)",
-            "`daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, "
-            + "`daoris-driver place --workspace <name> --pause|--resume|--stop`"),
+            "`daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, "
+            + "`daoris place --workspace <name> --pause|--resume|--stop`"),
         // WSSETUP5: registration follows the line on its own (a start, a line Daoris moves); this is the person's ask. The
         // row's *Refresh* and Ask Daoris's `register` door are WSSETUP7's, owed meanwhile.
         ("register a repository from what its line declares, as `connect` would, without running it: after a set-up's "
             + "branch is merged and brought up to date, or a declaration changed outside Daoris",
-            "(no screen yet)", "`daoris-driver register [--repository <name>]`"),
+            "(no screen yet)", "`daoris repository register [--repository <name>]`"),
         ("set the line its work grows from and lands on", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → Line",
-            "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
+            "`daoris place line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
         // DOORS1a (D164's amendment point 2): the ticket's key and the squash (PROCESS1b-i, -ii), which Ask Daoris's `landing`
         // door takes too, keeping the ones set there that a card does not name.
         // WORKFLOWCLEAN1 1i: the old landing rule serves only a place still on Current; converting retires it (D227).
         ("set how accepted work lands: this serves only a place still on Current, which follows its old landing rule (a place that "
             + "follows a saved workflow lands as that workflow's `land` step says), and converting retires the rule",
             Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → How work lands",
-            "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
+            "`daoris place landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, "
             + "`--auto-accept`: a quest's done lands it with no press, `--key <shape>|--no-key`: the shape a `{ticket}` in the "
             + "pattern is found by in the title or the request, the session's id where none is, and `--squash|--no-squash`: "
@@ -78,16 +78,16 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "default), each commit waiting for your yes, or one commit when the work is done, and your words on how a commit "
             + "message is written",
             Setup + "Line and landing → Commits; a workspace's, " + Ws + "Setup → Defaults → Commits",
-            "`daoris driver commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]` "
-            + "(`--workspace <name>` for a whole workspace), `daoris driver commits <repository> --clear`",
+            "`daoris place commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]` "
+            + "(`--workspace <name>` for a whole workspace), `daoris place commits <repository> --clear`",
             new HelpDoorAsk.Proposes("setting", "commits", "and may quote the convention from the repository's own instructions for you to apply")),
         // DOORS1a (D163 point 3): what a helper an agent asks for does; Ask Daoris proposes it as the `setting` kind's `helpers`
         // door. Setup's row since DOORS1b. Before the review and the opinion, whose rows the workflow's follows.
         new("set what a helper a repository's agent asks for does, or a workspace's: wait for your yes (the default), start at once "
             + "within the limits, or not be offered, and the other agents it may ask, in the order they are tried",
             Setup + "Sessions → Helpers; a workspace's, " + Ws + "Setup → Defaults → Helpers",
-            "`daoris driver helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]` (`--workspace <name>` for a "
-            + "whole workspace), `daoris driver helpers <repository> --clear`",
+            "`daoris place helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]` (`--workspace <name>` for a "
+            + "whole workspace), `daoris place helpers <repository> --clear`",
             new HelpDoorAsk.Proposes("setting", "helpers")),
         // REVIEWENV1a (D154 point 2): where work is shown to the person before it is offered to land; Ask Daoris proposes it
         // as the `setting` kind's `review` door. The landing's gate reads it since REVIEWENV1c, and the room says what lets work
@@ -95,12 +95,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("declare where a repository's work is shown to you before it is offered to land, or a workspace's: a review "
             + "environment, local (shown in Daoris's browser at the address where the app runs) or deployed (by the "
             + "repository's documented procedure), and whether work waits for your look (work that waits lands only once you "
-            + "say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review; no set-up step is composed "
+            + "say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review; no set-up step is composed "
             + "for you yet; production is never one)",
             Setup + "Line and landing → Review before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults",
-            "`daoris driver review <repository> <environment> --kind local|deployed --procedure <path> [--address <url>] "
+            "`daoris place review <repository> <environment> --kind local|deployed --procedure <path> [--address <url>] "
             + "[--run \"<command>\"] [--required|--not-required]` (`--workspace <name>` for a whole workspace), "
-            + "`daoris driver review <repository> none|--drop <environment>|--clear`"),
+            + "`daoris place review <repository> none|--drop <environment>|--clear`"),
         // XAGENT1a (D155 point 3): which other agent reads work before it lands; Ask Daoris proposes it as the `setting` kind's
         // `opinion` door. The gate reads it since XAGENT1f, and the room says what it does in the sentences every door says after
         // a rule's own, read from the twin (XAGENT1f4), as the review's row says its gate's.
@@ -122,7 +122,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "you, automatic) and who acts, where each was set, and what Daoris cannot do of it yet; a step opens the workflow "
             + "editor, or for Current the Setup row that sets it, where a change is made",
             "Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
-            "`daoris driver workflow show --repository <name>|--workspace <name>`",
+            "`daoris workflow show --repository <name>|--workspace <name>`",
             new HelpDoorAsk.Never("it reads and changes nothing")),
         // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; its screen is WORKFLOW1g's. Ask Daoris's
         // `workflow` kind takes `new` and `edit` since WORKFLOW1h-b, a whole version; `apply` and `import` are WORKFLOW1h2's
@@ -130,8 +130,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         new("name a workflow: a graph of steps from a default Daoris ships or another saved workflow, each change saved as its next "
             + "version, never edited, said step by step with your part first; a list of steps is no longer saved",
             "(no screen yet)",
-            "`daoris driver workflow new <id> --from <default>|<id>[@<version>]`, `daoris driver workflow "
-            + "apply|export|import …`, `daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`",
+            "`daoris workflow new <id> --from <default>|<id>[@<version>]`, `daoris workflow "
+            + "apply|export|import …`, `daoris workflow list`, `daoris workflow show <id>[@<version>]`",
             new HelpDoorAsk.Proposes("workflow", "new", "a whole version, new or after the newest, which you apply; not an import yet")),
         // WORKFLOW1e (D157 point 10): which workflow work follows, by repository, workspace and kind of task, the first level
         // that names one deciding; a run binds it at its first start, and every gate reads that version (WORKFLOW1f). Ask Daoris's
@@ -142,9 +142,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "`--clear` follows this machine's default workflow). "
             + "`current` is no development route's choice any more, and is refused there; only the landed route takes it, for no verification",
             "(no screen yet)",
-            "`daoris driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]`, "
-            + "`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
-            + "`daoris driver workflow show --repository <name>|--workspace <name> [--kind <kind>]`",
+            "`daoris workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]`, "
+            + "`daoris workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
+            + "`daoris workflow show --repository <name>|--workspace <name> [--kind <kind>]`",
             new HelpDoorAsk.Proposes("workflow", "use", "the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet")),
         // ONEWAY1ae (the oneway design §1.1): the home's one conversion door over every area's part, which is the person's press over
         // the plan they read. Ask Daoris opens the page and names the plan, and never proposes the apply (HelpCoverageTests).
@@ -163,19 +163,19 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the "
             + "repositories holding Daoris's branches, and another where named or included)",
             Ws + "Branches → Updates",
-            "`daoris-driver trees sync [--repository <name>] [--workspace <name>] [--all] [--yes]`"),
+            "`daoris tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]`"),
         ("clean up session branches whose work landed, and branches a landing made whose work reached the line",
-            Ws + "Branches → Session branches", "`daoris-driver trees clean [--workspace <name>]`"),
+            Ws + "Branches → Session branches", "`daoris tree clean [--workspace <name>]`"),
         // LAND3: a failed or superseded attempt's branch holds commits on no branch of the person's, so only they discard it.
         ("discard a failed or superseded session's branch, with its tree where it is still here",
             "Sessions → the session's review → Discard, while its tree is here",
-            "`daoris-driver trees remove <session|branch> [--repository <name>] --force`"),
+            "`daoris tree remove <session|branch> [--repository <name>] --force`"),
         // WSR5b: a landed branch handed to a landing plugin after its landing.
         ("hand a branch a landing made to a landing plugin, to push it and open the pull request",
-            "Sessions → the session's review → Hand to <plugin>", "`daoris-driver trees hand <session|branch> [--plugin <id>]`"),
+            "Sessions → the session's review → Hand to <plugin>", "`daoris tree hand <session|branch> [--plugin <id>]`"),
         // PLUGHOOK1c (D148 point 2): Ask again from a terminal, exempt from Ask Daoris as a read; the review's press is PLUGHOOK1d's.
         new("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine",
-            "(no screen yet)", "`daoris-driver trees state <session|branch> [--repository <name>]`",
+            "(no screen yet)", "`daoris tree state <session|branch> [--repository <name>]`",
             new HelpDoorAsk.Never("it changes nothing of yours or on the platform, and the room already says what was last answered")),
         // ONEWAY1a (the oneway design §2 S1): a role's agents through the role door alone, Build, Intake and Ask Daoris among them;
         // `role_propose` proposes it.
@@ -185,33 +185,32 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // DEFAULTCONFIG1b: every seeded role given back its default at once, added roles kept.
         ("add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, "
             + "added roles kept", "Agents → Roles → Working roles, and its *Restore all role defaults*",
-            "`daoris driver role set|remove|default <id> …`, `daoris driver role default --all`"),
+            "`daoris role set|remove|default <id> …`, `daoris role default --all`"),
         // STAFFPOLICY1g (D226): how a role spends its choices, a policy proposed with `role_propose`'s `policy`; the terminal's twin names a choice by its number.
         ("choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget, the work a choice takes "
             + "and what a limit or a service that does not answer does", "Agents → Roles → Working roles, a role's Edit",
-            "`daoris driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--on <condition>=<action>] "
+            "`daoris role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--on <condition>=<action>] "
             + "[--most <n>] [--clear]`"),
-        ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
         // SESSUX1b: FRAME1d made the quest's drawer a page. A stop's release names its session, since the terminal cannot
         // see which hold a quest is under (D50); the page's Try again on a stopped quest is the web shell's to add.
-        ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris driver retry <quest>`"),
+        ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris quest retry <quest>`"),
         ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
-            + "whose *Sitting* names the session", "`daoris driver retry <quest> --session <id>`"),
+            + "whose *Sitting* names the session", "`daoris quest retry <quest> --session <id>`"),
         // TOOL4e: the terminal's door onto the default cool-off; TOOL4g gave it Settings → Driver's control, and TOOL4l-b
         // Ask Daoris's `setting` kind's `cooloff` (HelpCoverageTests).
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
-            "`daoris driver cooloff <minutes>`"),
+            "`daoris settings cooloff <minutes>`"),
         // GITAUTH1e (D198, the git-auth design §9): a repository's remote or a workspace's host pointed at a git identity that exists, Ask
         // Daoris's `setting` kind's `git-use` (HelpCoverageTests); never the person's own sign-ins, never an identity set up, tested or removed.
         new("point a repository's remote, or a workspace's host, at a git identity already set up",
             "Repository → Setup → Git remote → Change…, and Workspace → Setup → Git",
-            "`daoris-driver git use <repository> [--remote <name>] <identity>|--clear`, `daoris-driver git use --workspace <workspace> --host <host> <identity>|--clear`",
+            "`daoris git use <repository> [--remote <name>] <identity>|--clear`, `daoris git use --workspace <workspace> --host <host> <identity>|--clear`",
             new HelpDoorAsk.Proposes("setting", "git-use", "and never sets one up or chooses your own sign-ins")),
         // KEEP1d (D195 point 2): how long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep` (HelpCoverageTests).
         ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → This Daoris → Disk space → Change…",
-            "`daoris driver keep <kind> <rule>`"),
-        ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris driver cap <n>`"),
-        ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
+            "`daoris settings keep <kind> <rule>`"),
+        ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris settings cap <n>`"),
+        ("say so when a session parks", "Settings → Driver", "`daoris settings notify on|off`"),
         // UX6e2: the rules for every session and Daoris's defaults are the agent's page's (UX6e); a repository's are on its
         // Setup (UX6f); a workspace's are on its page (UX6g2a).
         ("allow, ask or deny what an agent may do",
@@ -219,17 +218,17 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // D107: reading other checkouts is on unless switched off; writing into one is a declared relationship.
         ("let agents read a repository's checkout, or not; let one repository's sessions write into another",
             Setup + "Reach; a workspace's reading, " + Ws + "Setup → Defaults → Read by agents outside",
-            "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
-            + "`daoris driver across <repository> write-to <other> [--clear]`"),
+            "`daoris place across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
+            + "`daoris place across <repository> write-to <other> [--clear]`"),
         // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
-            Setup + "Sessions", "`daoris driver standing <repository> \"…\"|--clear`"),
+            Setup + "Sessions", "`daoris place standing <repository> \"…\"|--clear`"),
         // LANG1c (D142 points 7–8): the work's language, apart from the window's; Ask Daoris proposes it as the `setting`
         // kind's `language` door since LANG1c2.
         ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
             Setup + "Sessions; a workspace's, " + Ws + "Setup → Defaults → Session language",
-            "`daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace)"),
+            "`daoris place language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace)"),
         // UX6e2: an agent's accounts, ways in and model are on its page in the Agents place since UX6e (D150 §5.2). ACCT1: a
         // sign-in reaches the account named, never a new folder; a new account joins the lists named at its end. CODEXLOGIN1:
         // Codex's device code, in place of its browser, by `--device-code`.
@@ -269,26 +268,26 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "starts until you resume it, which carries it on where it stood",
             "Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → "
             + "Pause quest…, Pause ask…, Resume quest, Resume ask",
-            "`daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>`"),
+            "`daoris ask pause|--resume <id>`, `daoris quest pause|resume <id>`"),
         // PAUSE1d (D132 §7.4): exempt from Ask Daoris, since its reason is the person's answer (D37), as Decline… is; the pages'
         // acts are PAUSE1e's, on the ask's and the quest's pages alone (§7.1).
         new("abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what "
             + "only Daoris holds of it is discarded and its sessions archived",
             "Quests → the ask's page or the quest's page → Abandon…",
-            "`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`, `daoris-driver quest abandon <id> [--reason \"…\" --yes]`",
+            "`daoris ask abandon <id> [--reason \"…\" --yes]`, `daoris quest abandon <id> [--reason \"…\" --yes]`",
             new HelpDoorAsk.Never("the reason is your answer")),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
-            "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
+            "`daoris quest delete <id>`, `daoris ask delete <id>`"),
         // SESSUX1h2b (D126 §5.2, §5.3, §7.3): Sessions' archive, archive what ended and unarchive, the `session` kind's doors; a
         // session's stop is its own conversation (SESSUX1h1), named on its page.
         ("archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed "
             + "first; or unarchive one (a session running, waiting on you or to review is never archived)",
             "Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived",
-            "`daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…`"),
+            "`daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…`"),
         // SESSUX1h2b (D126 §5.4): the `delete` kind's `session` door.
         ("delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its "
             + "files (one that worked on a quest is archived instead)",
-            "Sessions → a session's ⋯ → Delete…", "`daoris-driver sessions delete <id>`"),
+            "Sessions → a session's ⋯ → Delete…", "`daoris session delete <id>`"),
         // HIST1f-b (D153, design §6.1, §6.2, §6.4): the pages' clears, a workspace's reading first, and the terminal's history
         // verbs; the `clear` kind's `quest`, `ask`, `failed` (HIST1f-d) and `workspace` doors.
         ("clear finished history from this machine: a closed quest's work, an ask's with every quest it became, a closed quest's "
@@ -296,23 +295,23 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "nothing brings it back",
             "Quests → the quest's page or the ask's page → its header's ⋯ → Clear from this machine…, and the quest's Clear failed "
             + "sessions…; " + Ws + "Details → Kept on this machine → Clear history…",
-            "`daoris-driver history [--workspace <name>]`, `daoris-driver history clear --workspace <name> [--yes]`, "
-            + "`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`"),
+            "`daoris history [--workspace <name>]`, `daoris history clear --workspace <name> [--yes]`, "
+            + "`daoris quest clear <id> [--failed] [--yes]`, `daoris ask clear <id> [--yes]`"),
         // DRIFT1d: the person's yes to a done's departure, the terminal's door; DRIFT1d2 gave it the quest page's yes and
         // Ask Daoris's `accept` kind.
         new("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
-            + "waiting on it", "Quests → the quest's page → Accept the departure", "`daoris-driver quest accept <id>`",
+            + "waiting on it", "Quests → the quest's page → Accept the departure", "`daoris quest accept <id>`",
             new HelpDoorAsk.OnlyWhenAsked("accept", "accept", "the yes is yours, never its own reading of the departure")),
         // QUESTCLOSE1b3: the person's own done, with the note they give (D126's QUESTCLOSE1): the page's press is its own
         // conversation on Quests, which Ask Daoris takes the person to and never writes (D161's ENTRY1 note).
         new("mark a quest done as yours, with a note if you give one: what a finish at a checkpoint says, said on the quest itself",
-            "Quests → the quest's page → Mark done…", "`daoris-driver quest done <id> [--note \"…\"]`",
+            "Quests → the quest's page → Mark done…", "`daoris quest done <id> [--note \"…\"]`",
             new HelpDoorAsk.Never("it takes you to the quest's page, and the done is yours to write")),
         // EVID1b (D144 §5): reading a done's evidence again, the terminal's door; the quest page's *Check again* and Ask Daoris's
         // check card are EVID1c's, owed meanwhile (HelpCoverageTests).
         ("read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, "
             + "or one named after it on the same history (a done no session here ended needs the commit named)",
-            "(no screen yet)", "`daoris-driver quest check <id> [--commit <sha>]`"),
+            "(no screen yet)", "`daoris quest check <id> [--commit <sha>]`"),
         // PLUG9: the card installs one that landed; the screen switches one installed, installs one of
         // Daoris's own (d) and updates one from where it came from (c). UX6i2a: the Plugins place's since UX6j (D150 §2),
         // by its list's group and its page's presses.
@@ -326,7 +325,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("let Ask Daoris call the exact tools a plugin's server offers it, all its reads and each write outside Daoris you "
             + "accept, or take that back; an update that adds or widens a tool asks again",
             "Plugins → the plugin's page → Ask Daoris → Approve, Withdraw",
-            "`daoris-driver plugins approve <id> <server> [--reads-only | --writes <tool,…>]`, `daoris-driver plugins withdraw <id> <server>`"),
+            "`daoris plugin approve <id> <server> [--reads-only | --writes <tool,…>]`, `daoris plugin withdraw <id> <server>`"),
         ("choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites",
             "Settings → Browser",
             "`daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, "
@@ -337,17 +336,17 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "runs Daoris closes and starts again on it), now (Daoris closes at once, ending what runs as a close does), or not "
             + "now (it stays staged, for that build only); plain `update` says what is staged and how the last update ended",
             "the update banner, and Settings → Driver → Update: *Update when idle*, *Update now*, *Not now*",
-            "`daoris-driver update --when-idle|--now|--cancel`, `daoris-driver update`",
+            "`daoris update --when-idle|--now|--cancel`, `daoris update`",
             new HelpDoorAsk.Never("an update is your act on the application")),
-        ("start a task", "Quests → Ask", "`daoris-driver ask --workspace <name> \"…\"`"),
+        ("start a task", "Quests → Ask", "`daoris ask --workspace <name> \"…\"`"),
         // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's and the ask page's (REVIEWENV1g), and at a
         // done quest's gate, where `off` is the skip and an environment is *Set it up* (design §3.6).
         ("choose whether an ask's work is reviewed before it lands, and where: as each repository's rule says, in the default "
             + "environment, in one its workspace declares, or not at all; at a done quest's gate, skip the review or set it up",
             "Quests → Ask → Review before it lands, and the ask's page; the gate's *Skip the review for this work…* and "
             + "*Set it up in `<environment>`*",
-            "`daoris-driver ask … --short \"…\"`, `daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off "
-            + "[\"…\"]`, `daoris-driver quest review <quest> off [\"…\"]`, `daoris-driver quest review <quest> on|<environment>`"),
+            "`daoris ask … --short \"…\"`, `daoris ask … --review rule|on|<environment>|off`, `daoris ask review <id> on|<environment>|off "
+            + "[\"…\"]`, `daoris quest review <quest> off [\"…\"]`, `daoris quest review <quest> on|<environment>`"),
         // WORKFLOW1c4: the run (WORKFLOW1c's view, line and door; WORKFLOW1c2's verb; the workflow design §7). Exempt from Ask
         // Daoris, since it reads (D157, D110 §4); each press a waiting step needs is a row of its own owner's.
         new("see where a piece of work stands in its workflow: each step's state (waiting on you, waiting on an agent, working, "
@@ -356,7 +355,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Sessions → the session's *Workflow* view, in the right side bar beside Timeline and Review (View → Workflow); "
             + "*Workflow:* in a quest's page's head and an ask's, and *Workflow* on a row of What needs you, each attending its "
             + "session in Sessions with the view open",
-            "`daoris-driver workflow run --session|--quest|--ask <id>`",
+            "`daoris workflow run --session|--quest|--ask <id>`",
             new HelpDoorAsk.Never("it reads and changes nothing, and each press a waiting step needs is its owner's: the step's door "
                 + "opens it, or the view names its command")),
         // WORKFLOW1e (D157 point 10, D156): an ask's kind and workflow, the person's door; the composer's and the ask page's are
@@ -364,30 +363,30 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("say what kind of task an ask is and which workflow its work follows (yours alone: an agent proposes a kind and never sets "
             + "one; each run binds what is chosen at its first start)",
             "(no screen yet)",
-            "`daoris-driver ask … --kind <kind> [--workflow <id>|current]`, `daoris-driver ask --set-workflow <id> [--kind <kind>] "
+            "`daoris ask … --kind <kind> [--workflow <id>|current]`, `daoris ask workflow <id> [--kind <kind>] "
             + "[--workflow <id>|current]|--clear [\"…\"]`, and for a quest no ask published, before it starts (WORKFLOW1e2), "
-            + "`daoris-driver quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]`"),
+            + "`daoris quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]`"),
         // WORKFLOW1f (D157 point 10, the workflow design §4.4): the person's Keep where a kind's paths hold its work. Exempt from Ask
         // Daoris (HelpCoverageTests): keeping a workflow that asks less of the person is their say-so, as going on without a second
         // opinion is. The screen's press, and §4.4's other two, are the editor's row (WORKFLOW1g).
         new("keep the workflow a kind of task chose for a piece of work that changed paths outside the kind's, where that workflow "
             + "asks less of you than the one it would follow without the kind, with your words; nothing switches by itself",
             "(no screen yet)",
-            "`daoris-driver workflow keep <session> [\"…\"]`",
+            "`daoris workflow keep <session> [\"…\"]`",
             new HelpDoorAsk.Never("it is yours alone")),
         // FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2): the person's skip and stop of a node of a run bound to a graph version.
         // Exempt from Ask Daoris (HelpCoverageTests): passing a step over or stopping it is the person's word on the work, as a held attempt's is.
         new("pass a step of a run that follows a saved graph over, with your words, such as a go-ahead nobody will raise, or stop it, which "
             + "ends the run once nothing else of it can move (kept on the run's record, and Daoris's next look applies it)",
             "Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step",
-            "`daoris-driver workflow skip <run> <node> \"…\"`, `daoris-driver workflow stop <run> <node> [\"…\"]`",
+            "`daoris workflow skip <run> <node> \"…\"`, `daoris workflow stop <run> <node> [\"…\"]`",
             new HelpDoorAsk.Never("it is yours alone")),
         // DECIDE1c: the person's changes on a run's review, its rejection with their words. Exempt from Ask Daoris as skip and stop are (HelpCoverageTests).
         new("ask for changes on a run's review in place of your Accept, with your words: the work's session is told them as its next "
             + "turn, and what it commits is reviewed again before anything lands (kept on the run's record, and Daoris's next look "
             + "applies it)",
             "Sessions → the session's *Workflow* view, *Ask for changes…* under the review",
-            "`daoris-driver workflow changes <run> <node> \"…\"`",
+            "`daoris workflow changes <run> <node> \"…\"`",
             new HelpDoorAsk.Never("it is yours alone")),
         // XAGENT1f4 (D155 point 10, design §8.5, §9): the person's presses at the second opinion's gate, the terminal's
         // `daoris session opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
@@ -417,13 +416,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         new("find an earlier conversation with Ask Daoris and go on in it, start a new one from its words, or name, pin or delete "
             + "one; they are kept on this machine only",
             "Ask Daoris → History",
-            "`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`, `daoris-driver help resume <id> \"…\"`, "
-            + "`daoris-driver help rename|pin|unpin|delete <id>`",
+            "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris ask-daoris resume <id> \"…\"`, "
+            + "`daoris ask-daoris rename|pin|unpin|delete <id>`",
             new HelpDoorAsk.Never("the conversations are yours")),
         // KNOWUSE1a: a go-ahead is the person's yes or no to an act outside a repository, asked once on the ask. Ask Daoris
         // never answers one: the production acts stay the person's (D135 §2).
         ("answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on "
-            + "the ask is handed", "Quests → the ask's page → Go-aheads", "`daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]`"),
+            + "the ask is handed", "Quests → the ask's page → Go-aheads", "`daoris ask go-ahead <id> <n> approve|refuse [\"…\"]`"),
     ];
 
     public string Render(HelpMachine machine)

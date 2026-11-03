@@ -618,7 +618,7 @@ describe('QuestsView', () => {
     expect(within(questList()).queryByText('An old one')).toBeNull();
   });
 
-  // ——— Asks (INT4c): the screen twin of `daoris-driver ask`, at the head of the list that holds what
+  // ——— Asks (INT4c): the screen twin of `daoris ask`, at the head of the list that holds what
   // they become. The family here is one circle (no row names a workspace), so an ask is made there.
 
   describe('asks', () => {

@@ -13,7 +13,7 @@ import {
   BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
   KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
   RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures,
-  DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, OLD_NAME_VARIABLE, driverLaunchers, driverPublishCommand, layDriverLaunchers,
+  DRIVER_EXE, DRIVER_HOME, DRIVER_PROJECT, driverPublishCommand,
   APP_PROJECT, LAUNCHER_PROJECT, appPublishCommand, artifactsOf, launcherPublishCommand, publishStages,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
   stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged, recordStage, stageReport, stagedAdvice,
@@ -1195,19 +1195,17 @@ test('ONEWAY1ai-i daoris’s launcher for each shell runs the desktop’s progra
     assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
     assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
     // A desktop group needs no Node: the program hands the doctrine commands to the CLI the install carries itself.
-    assert.doesNotMatch(text, /\bnode\b|DAORIS_OLD_NAME/, `${name} runs the program alone`);
+    assert.doesNotMatch(text, /\bnode\b/, `${name} runs the program alone`);
   }
 });
 
 /**
  * DRIVERDOOR1, ONEWAY1ai-i: the desktop's program is published framework-dependent into `app/daoris-driver/`, which keeps its name
- * for good; `daoris-driver`'s launchers stay one release, beside `daoris`'s, for a session an older build told of them: they run the
- * program only to say what their words are now (`CommandWords.OldLauncher`), and do nothing.
+ * for good; `daoris`'s launchers run it.
  */
-test('ONEWAY1ai-iv the program is its own folder under app/, and the old name’s launchers are a refusal beside daoris’s', () => {
+test('ONEWAY1ai-iv the program is its own folder under app/', () => {
   assert.deepEqual([...DRIVER_HOME], [SHELL_HOME[0], 'daoris-driver']);
   assert.equal(DRIVER_EXE, 'daoris-driver.exe');
-  assert.deepEqual([...DRIVER_LAUNCHERS], ['daoris-driver', 'daoris-driver.cmd']);
   // PUSH1f2a (D194 point 1): the CLI finds the program its install carries where the publish lays it, two spellings held here.
   assert.deepEqual([...DRIVER_PROGRAM_HOME], [...DRIVER_HOME]);
   assert.equal(DRIVER_PROGRAM_FILE, process.platform === 'win32' ? DRIVER_EXE : DRIVER_EXE.replace(/\.exe$/, ''));
@@ -1217,55 +1215,15 @@ test('ONEWAY1ai-iv the program is its own folder under app/, and the old name’
   assert.ok(command.startsWith(`dotnet publish "${DRIVER_PROJECT}" -c Release -r win-x64 --self-contained false`), command);
   assert.ok(command.endsWith(` -o "${join(tmpdir(), 'an-install', ...DRIVER_HOME)}"`), command);
   assert.doesNotMatch(command, /PublishSingleFile/, 'a folder of its own, framework-dependent');
-
-  const launchers: Record<string, string> = driverLaunchers();
-  assert.deepEqual(Object.keys(launchers).sort(), [...DRIVER_LAUNCHERS].sort());
-  const sh = launchers['daoris-driver'] ?? '';
-  assert.ok(sh.startsWith('#!/bin/sh\n') && !sh.includes('\r'));
-  const shPath = /exec "\$basedir\/([^"]+)" "\$@"/.exec(sh)?.[1] ?? '';
-  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), shPath)), [...DRIVER_HOME, DRIVER_EXE].join('/'), `the script runs ${shPath}`);
-  const cmd = launchers['daoris-driver.cmd'] ?? '';
-  assert.ok(cmd.endsWith('\r\n') && cmd.split('\r\n').slice(0, -1).every((line) => !line.includes('\n')), 'CRLF');
-  const cmdPath = /"%~dp0([^"]+)" %\*/.exec(cmd)?.[1] ?? '';
-  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), cmdPath.replace(/\\/g, '/'))), [...DRIVER_HOME, DRIVER_EXE].join('/'), `the batch file runs ${cmdPath}`);
-  for (const [name, text] of Object.entries(launchers)) {
-    assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
-    assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
-  }
-  // The program reads the old name's mark (`CommandWords.OldNameVariable`) and refuses the words; a launcher that ran them is a second way.
-  assert.equal(OLD_NAME_VARIABLE, 'DAORIS_OLD_NAME');
-  assert.match(sh, /\nDAORIS_OLD_NAME=daoris-driver exec "\$basedir\//);
-  assert.match(cmd, /\r\nsetlocal\r\nset "DAORIS_OLD_NAME=daoris-driver"\r\n"%~dp0/);
-  const tree = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Platform', 'CommandWords.cs'), 'utf8');
-  assert.ok(tree.includes(`OldNameVariable = "${OLD_NAME_VARIABLE}"`) && tree.includes(`OldName = "${DRIVER_LAUNCHERS[0]}"`), 'the program reads the mark the launchers set');
 });
 
-test('laying the driver’s launchers adds them to app/bin and leaves the doctrine tool’s; a republish replaces them', async () => {
-  const fx = makeFixture('publish-driver-lay');
-  const install = join(fx.root, 'install');
-  await layCli(packed(fx.root, 'daoris-0.4.2', releasePackage()), install);
-  layDriverLaunchers(install);
-  const expected = [...CLI_LAUNCHERS, ...DRIVER_LAUNCHERS].sort();
-  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), expected);
-  const launchers: Record<string, string> = driverLaunchers();
-  for (const name of DRIVER_LAUNCHERS) assert.equal(readFileSync(join(install, ...CLI_BIN, name), 'utf8'), launchers[name], name);
-  // A republish lays the doctrine tool first, which replaces app/bin whole; the driver's pair goes in again.
-  await layCli(packed(fx.root, 'daoris-0.4.3', releasePackage('0.4.3')), install);
-  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort());
-  layDriverLaunchers(install);
-  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), expected);
-  fx.cleanup();
-});
-
-test('ONEWAY1ai-iv the install note says daoris runs the desktop’s program, and the old name’s launchers run nothing', () => {
+test('ONEWAY1ai-iv the install note says daoris runs the desktop’s program', () => {
   const note: string = installedNote();
   const row = note.split('\n').find((line) => line.startsWith(`| \`${SHELL_HOME[0]}/\``)) ?? '';
   assert.ok(row.includes(`\`${DRIVER_HOME.slice(1).join('/')}/\``), 'the program’s folder in the app row');
   const section = note.slice(note.indexOf('## The command')).split('\n## ')[0] ?? '';
   const prose = section.replace(/\s+/g, ' ');
   assert.ok(prose.includes(`desktop's program this install carries in \`${DRIVER_HOME.join('/')}/\`, which needs no Node`), 'daoris runs the program');
-  for (const launcher of DRIVER_LAUNCHERS) assert.ok(section.includes(`\`${launcher}\``), `names ${launcher}`);
-  assert.match(prose, /they run nothing, and say what their words are now under `daoris`/);
   assert.doesNotMatch(note, /daoris driver |`daoris-driver [a-z]/, 'the note teaches no old form');
 });
 

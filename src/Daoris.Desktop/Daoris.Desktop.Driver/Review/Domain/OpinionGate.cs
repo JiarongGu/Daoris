@@ -427,7 +427,7 @@ public static class OpinionGate
                 $"{Plural(gate.Disputes!.Count, "finding")} by {who} {(gate.Disputes.Count == 1 ? "is" : "are")} disputed: a `must` the working "
                 + "session did not fix and no recheck withdrew" + SinceSaid(gate) + $". {Verb(gate, "show")} lists them with their answers; your "
                 + $"Accept, or your Reviewed where a look is required, answers them; {anyway} lands it over them, or "
-                + $"`daoris-driver sessions say {gate.Opinion!.Working} \"…\"` sends it back.",
+                + $"`daoris session say {gate.Opinion!.Working} \"…\"` sends it back.",
             OpinionGateStates.CommitsSince =>
                 $"{Plural(gate.Since ?? 0, "commit")} since {(gate.Since == 1 ? "was" : "were")} not read by another agent: {who} read it at "
                 + $"`{Short(gate.Recheck is { Given: true } recheck ? recheck.Tip : gate.Opinion!.Tip)}`, and one pass and one recheck are "

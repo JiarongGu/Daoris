@@ -7,7 +7,7 @@ internal sealed class HelpHandProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one hand-off proposal (WSR5b): a branch a landing made, handed to a landing plugin afterwards —
-    /// the review's <i>hand it to</i> and <c>daoris-driver trees hand</c>. Whether the record holds that branch,
+    /// the review's <i>hand it to</i> and <c>daoris tree hand</c>. Whether the record holds that branch,
     /// and whether the plugin can land work there, is the driver's.
     /// </summary>
     /// <param name="target">The session that landed the branch, or the branch.</param>

@@ -13,7 +13,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>The route's own look.</b> The judge reads the service's answer for each circle the remotes map wires
-/// (<see cref="ServiceClient.SyncStandingAsync"/> over <see cref="Wired"/>, what each pass and <c>daoris-driver sync status</c> read),
+/// (<see cref="ServiceClient.SyncStandingAsync"/> over <see cref="Wired"/>, what each pass and <c>daoris remote sync status</c> read),
 /// not the pass's own result: a quest written here by any door and a conflict's press move what is ahead and in conflict too, and the
 /// passes' record stays outside the change stream, since a pass rewrites when it last tried at every tick. So a pushed standing is as
 /// fresh as the pull's. Null before the service answers, which keeps the slice not judged; a read that fails keeps what was judged, so

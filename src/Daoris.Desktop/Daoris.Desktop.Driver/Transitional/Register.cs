@@ -349,27 +349,6 @@ public static class TransitionalRegister
             Row = "WORKFLOWCLEAN1j",
             Ended = home => Read(home, HomeEntry.DriverConfig) is { } root && !Holds(root, "workCycles") && !Holds(root, "workspaceWorkCycles"),
         },
-        new()
-        {
-            Id = "roles-mode-setup",
-            Kept = "../../Daoris.Web/src/agents/modes.ts:31",
-            Reaches = "A window whose browser storage still holds the retired Roles mode: it opens on Setup, which replaced it.",
-            Ends = "One release after SETUPUX1y. The storage is the window's, so it never reads as ended here and the row deletes it.",
-            Row = "WORKFLOWCLEAN1z",
-            Ended = Never,
-        },
-        new()
-        {
-            Id = "old-command-names",
-            Kept = "Platform/CommandWords.cs:93, Platform/CommandWords.cs:214, ../Daoris.Desktop.Driver.Host/Program.cs:43",
-            Reaches = "A session an older build briefed with `daoris-driver …` or a nested family (`daoris driver …`), carried on over the update: "
-                + "each old form is refused naming its new one, and the install's `app/bin/daoris-driver` launcher, kept one release, runs nothing "
-                + "and says the same.",
-            Ends = "No open session was started before this install took the command tree's build (ONEWAY1ai), so none was briefed with an old name. "
-                + "The sessions' starts and the install's builds live in two stores, so it never reads as ended here and the row deletes it.",
-            Row = "ONEWAY1af",
-            Ended = Never,
-        },
     ];
 
     /// <summary>A condition no file of the home answers (the floor of a build no release names, a store elsewhere, the owner's word): it never reads as ended, and its row deletes it.</summary>

@@ -185,7 +185,7 @@ public static class GraphGate
         GraphGateStates.Unread =>
             $"Run {gate.Run}'s node record does not read, so its graph is judged by nobody until a person mends it, and nothing lands for it.",
         GraphGateStates.Waits => $"Run {gate.Run}'s graph waits on `{gate.Node}` ({gate.Kind}) before `{gate.Handed}`: {gate.NodeSaid}"
-            + (gate.Skippable ? $" `daoris-driver workflow skip {gate.Run} {gate.Node} \"…\"` passes it over with your words." : ""),
+            + (gate.Skippable ? $" `daoris workflow skip {gate.Run} {gate.Node} \"…\"` passes it over with your words." : ""),
         GraphGateStates.Stopped => $"You {(gate.PassedOver ? "passed over" : "stopped")} `{gate.Handed}`"
             + (gate.Words is { Length: > 0 } words ? $" with your words, \"{words}\"" : "") + $", so run {gate.Run} does not land.",
         GraphGateStates.Elsewhere =>

@@ -7,7 +7,7 @@ import { call, lookBound } from '../call';
 
 // Clearing finished history from this machine (HIST1e, D153; the history-clearing design §5, §6.1, §6.3): what a clear of a
 // workspace, a closed quest's work, its failed sessions or an ask's work would take and keep, and the clear itself. The
-// driver library's `HistoryClearing` answers both, which `daoris-driver history` and its `clear` verbs call too (D50).
+// driver library's `HistoryClearing` answers both, which `daoris history` and its `clear` verbs call too (D50).
 
 /**
  * The shapes the routes answer live with the screen's own rule (`work/history/history.ts`), since a molecule may read a shape and

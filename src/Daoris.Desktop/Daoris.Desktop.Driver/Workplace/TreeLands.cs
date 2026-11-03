@@ -249,7 +249,7 @@ internal sealed class TreeLands(
         if (line.Branch is not { } canonical)
         {
             return new(false, "this repository has no canonical line git can name, and none is set, so "
-                + "there is nowhere to merge to. Set one with `daoris driver line`.");
+                + "there is nowhere to merge to. Set one with `daoris place line`.");
         }
 
         // FABRIC-CUTOVER1d: pinned, the work merged is the commit judged, read here, as late as the root's own checks.
@@ -269,7 +269,7 @@ internal sealed class TreeLands(
         if (aheadCode != 0)
         {
             return new(false, $"git cannot compare `{branch}` with `{canonical}` here: {FirstLine(aheadErr)} "
-                + "Fetch it, or set another line with `daoris driver line`.");
+                + "Fetch it, or set another line with `daoris place line`.");
         }
 
         if (string.IsNullOrWhiteSpace(ahead))
@@ -565,7 +565,7 @@ internal sealed class TreeLands(
         var who = before.AcceptedBy == AcceptedBy.Auto ? "accepted automatically when its quest was done" : "accepted by a press of Accept";
         var plugin = before.Said is { } said ? $" {Said(said, before.Branch)}"
             : before.Unready is { } unready ? $" Its push was not tried: {Sentence(unready)}"
-            : before.Plugin is { } named ? $" Plugin `{named}` had not answered when that landing ended: `daoris-driver trees hand {session}` hands it the branch."
+            : before.Plugin is { } named ? $" Plugin `{named}` had not answered when that landing ended: `daoris tree hand {session}` hands it the branch."
             : "";
         return new(false,
             $"another landing of this session finished while this one waited for it: its work is on `{before.Branch}` at "
@@ -673,7 +673,7 @@ internal sealed class TreeLands(
         if (unready is not null && acceptedBy != AcceptedBy.Auto)
         {
             return new(false, $"{unready} Nothing was landed: the rule hands the branch to that plugin, so fix the "
-                + "plugin or the rule (`daoris driver landing`), then accept again.");
+                + "plugin or the rule (`daoris place landing`), then accept again.");
         }
 
         // LANDSYNC1 (D87's 2026-10-15 amendment): only what the line lacks lands. The person's press fetches the line once first
@@ -842,7 +842,7 @@ internal sealed class TreeLands(
                 {
                     Unready = unready,
                     Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" {Sentence(unready)} So its push was not "
-                        + $"tried: the branch stands, and `daoris-driver trees hand {subject.Session}` hands it to `{plugin}` once it can "
+                        + $"tried: the branch stands, and `daoris tree hand {subject.Session}` hands it to `{plugin}` once it can "
                         + "land work here." + TreeStays,
                 };
             }
@@ -1115,7 +1115,7 @@ internal sealed class TreeLands(
         if (logCode != 0)
         {
             return new TreeLanding(false, $"git cannot compare `{branch}` with `{line ?? "HEAD"}` here: {FirstLine(logErr)} "
-                + "Fetch it, or set another line with `daoris driver line`.");
+                + "Fetch it, or set another line with `daoris place line`.");
         }
 
         if (string.IsNullOrWhiteSpace(ahead))
@@ -1443,7 +1443,7 @@ internal sealed class TreeLands(
 
     /// <summary>What a branch name git would not take is refused with: the name the person entered, or the one the rule makes.</summary>
     internal static string Untaken(string name, bool entered) => entered ? EnteredInvalid(name)
-        : $"the landing rule names `{name}` for this session, which is not a branch name git would take. Change the pattern with `daoris driver landing`.";
+        : $"the landing rule names `{name}` for this session, which is not a branch name git would take. Change the pattern with `daoris place landing`.";
 
     /// <summary>An entered name that is already a branch Daoris did not make (LANDNAME1a): the press's refusal, which the plan says first.</summary>
     private static string EnteredStands(string name, string repository) =>
@@ -1456,7 +1456,7 @@ internal sealed class TreeLands(
         + "to enter. Leave it blank.";
 
     private const string EnteredMerge = "the rule for this repository merges the work into its line and makes no branch, so there is no "
-        + "branch name to enter. Leave it blank, or change the rule with `daoris driver landing`.";
+        + "branch name to enter. Leave it blank, or change the rule with `daoris place landing`.";
 
     /// <summary>
     /// What names the branch: the person's entered name where there is one (LANDNAME1a), else the rule's pattern expanded, its

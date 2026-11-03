@@ -504,7 +504,7 @@ public sealed class QuestShareTests : IAsyncLifetime
                 " The person chooses how its conflict ends: *Drop mine* dismisses it and leaves this machine's work where it is, or *Bring "
                 + "mine forward* takes the step afresh and goes on with that work in its kept tree"
                 + (rebound ? "" : ", once the work the step grows from is submitted again")
-                + " (on the quest's page, or `daoris-driver sync dismiss` and `sync forward`).",
+                + " (on the quest's page, or `daoris remote sync dismiss` and `sync forward`).",
                 answer.Message);
         }
 

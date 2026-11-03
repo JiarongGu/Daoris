@@ -507,7 +507,7 @@ public static partial class WorkInventory
                             ("uncommitted", keep.Uncommitted.ToString(System.Globalization.CultureInfo.InvariantCulture)),
                             ("own", keep.Own.ToString(System.Globalization.CultureInfo.InvariantCulture)), ("paths", keep.Paths)],
                         $"{said}, and the clean-up on its workspace's page keeps it too, since its tree holds {holds}; "
-                        + $"`daoris-driver trees remove {tree.Path} --force` removes it, and what it holds with it");
+                        + $"`daoris tree remove {tree.Path} --force` removes it, and what it holds with it");
             }
 
             return Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.Unfollowed, [("branch", tree.Branch)],

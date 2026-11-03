@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// An ask's own doors on the page, `bridge/asks.ts` (SESSONE2c, D167 points 6 to 8; the co-working design §2.4, D50): its
 /// channel, where its sessions and the person talk, read, posted to and marked read. The screen twin of
-/// <c>daoris-driver ask channel</c>; the service's three doors (SESSONE2a) are the same ones, through the driver library's
+/// <c>daoris ask channel</c>; the service's three doors (SESSONE2a) are the same ones, through the driver library's
 /// <see cref="ServiceClient"/>.
 /// </summary>
 /// <remarks>

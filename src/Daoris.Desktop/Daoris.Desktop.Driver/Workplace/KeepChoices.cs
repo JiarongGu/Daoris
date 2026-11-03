@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One kind's rule as the person sets it (KEEP1d): its days, <c>never</c>, <c>whole</c> or not, or back to its default. What
-/// <c>SET_KEEP</c> carries and <c>daoris driver keep</c> reads from its words; <see cref="KeepRules.Apply"/> judges it.
+/// <c>SET_KEEP</c> carries and <c>daoris settings keep</c> reads from its words; <see cref="KeepRules.Apply"/> judges it.
 /// </summary>
 /// <param name="Kind">The kind's id: <c>set-aside</c>, <c>downloads</c>, <c>logs</c> or <c>history</c>.</param>
 /// <param name="Days">Its days, where given.</param>
@@ -26,7 +26,7 @@ public sealed record KeepSet(
 
 /// <summary>
 /// The person's keep rules set (KEEP1d, D195 point 2; the cleanup design §2.2): the one judgement the window's <c>SET_KEEP</c>, the
-/// terminal's <c>daoris driver keep</c> and Ask Daoris's <c>keep</c> door make (D194 point 4), refusing a value out of its kind's bounds
+/// terminal's <c>daoris settings keep</c> and Ask Daoris's <c>keep</c> door make (D194 point 4), refusing a value out of its kind's bounds
 /// with <see cref="ChoiceCodes.KeepOutOfRange"/>.
 /// </summary>
 public static class KeepRules
@@ -132,7 +132,7 @@ public static class KeepRules
     }
 
     /// <summary>
-    /// The rule a kind's word and its value name, as <c>daoris driver keep &lt;kind&gt; &lt;rule&gt;</c> and Ask Daoris's <c>keep</c> door
+    /// The rule a kind's word and its value name, as <c>daoris settings keep &lt;kind&gt; &lt;rule&gt;</c> and Ask Daoris's <c>keep</c> door
     /// read them: a whole number of days, <c>never</c>, <c>whole</c>, <c>slim</c> or <c>default</c>. Its bounds are
     /// <see cref="Apply"/>'s to judge.
     /// </summary>
@@ -206,7 +206,7 @@ public static class KeepRules
 
     /// <summary>
     /// The floor a word names (KEEP1f): <c>&lt;n&gt;GB</c>, <c>&lt;n&gt;%</c>, <c>off</c> or <c>default</c>, as
-    /// <c>daoris driver keep floor</c> and Ask Daoris's door read it; its bounds are <see cref="Apply"/>'s to judge.
+    /// <c>daoris settings keep floor</c> and Ask Daoris's door read it; its bounds are <see cref="Apply"/>'s to judge.
     /// </summary>
     private static KeepSet FloorAsked(string value)
     {

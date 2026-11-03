@@ -256,8 +256,8 @@ public sealed class HelpCommandTests : IDisposable
         var (_, games) = await RunAsync(ledger, "list", "--workspace", "games", "--limit", "1");
         var (_, every) = await RunAsync(ledger, "list", "--all", "--limit", "1");
 
-        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --workspace games --offset 1 --limit 1` lists the next.\n", games);
-        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --all --offset 1 --limit 1` lists the next.\n", every);
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris ask-daoris list --workspace games --offset 1 --limit 1` lists the next.\n", games);
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris ask-daoris list --all --offset 1 --limit 1` lists the next.\n", every);
     }
 
     /// <summary>
@@ -277,9 +277,9 @@ public sealed class HelpCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Equal("help: the list holds 2, so none from 6 on.\n", past);
-        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --offset 1 --limit 1` lists the next.\n", first);
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris ask-daoris list --offset 1 --limit 1` lists the next.\n", first);
         Assert.EndsWith("\n2–2 of 2 are listed.\n", last);
-        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --search \"repositories\" --offset 1 --limit 1` lists the next.\n", found);
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris ask-daoris list --search \"repositories\" --offset 1 --limit 1` lists the next.\n", found);
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
         Assert.Equal(1, root.GetProperty("conversations").GetArrayLength());
@@ -335,7 +335,7 @@ public sealed class HelpCommandTests : IDisposable
 
     /// <summary>Any other session, or none, is refused, exit 1, naming the verb that acts on the others.</summary>
     [Theory]
-    [InlineData("c1", "help: c1 is no Ask Daoris conversation of this machine's; `daoris-driver sessions` acts on the others.\n")]
+    [InlineData("c1", "help: c1 is no Ask Daoris conversation of this machine's; `daoris session list` acts on the others.\n")]
     [InlineData("n0b0dy00", "help: no session here is n0b0dy00.\n")]
     public async Task Any_other_session_is_refused(string id, string why)
     {
@@ -353,7 +353,7 @@ public sealed class HelpCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Contains("deleting h1 “what is a workspace?” removes its record", said);
-        Assert.Contains("`daoris-driver help delete h1 --yes` deletes it.", said);
+        Assert.Contains("`daoris ask-daoris delete h1 --yes` deletes it.", said);
         Assert.Equal(4, ledger.Count);
         Assert.True(File.Exists(Events.PathOf("h1")));
     }

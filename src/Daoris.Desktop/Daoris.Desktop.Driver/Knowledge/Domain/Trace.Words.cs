@@ -297,16 +297,16 @@ internal static class TraceWords
     {
         EvidenceCodes.Unread =>
             $"  held: its evidence is not read yet: the driver reads it when the session that closed it ends, or "
-            + $"`daoris-driver quest check {quest.Id}` reads it; your yes takes the done as it stands (`daoris-driver quest accept {quest.Id}`)\n",
+            + $"`daoris quest check {quest.Id}` reads it; your yes takes the done as it stands (`daoris quest accept {quest.Id}`)\n",
         EvidenceCodes.MissingHold =>
             $"  held: its evidence was not found in the commit read, and waits for you: a later commit that holds it "
-            + $"(`daoris-driver quest check {quest.Id} --commit <sha>`), or your yes to the done as it stands (`daoris-driver quest accept {quest.Id}`)\n",
+            + $"(`daoris quest check {quest.Id} --commit <sha>`), or your yes to the done as it stands (`daoris quest accept {quest.Id}`)\n",
         // A set-up step's review (REVIEWENV1c, D154 point 9): the person's look lets it go, which a yes to a departure does not.
         EvidenceCodes.Unreviewed =>
-            $"  held: it waits for your review of what it showed (`daoris-driver quest review {quest.Id} reviewed`, or "
-            + $"`daoris-driver quest review {quest.Id} not-yet \"…\"`), or your skip of it (`daoris-driver quest review {quest.Id} skip`); "
+            $"  held: it waits for your review of what it showed (`daoris quest review {quest.Id} reviewed`, or "
+            + $"`daoris quest review {quest.Id} not-yet \"…\"`), or your skip of it (`daoris quest review {quest.Id} skip`); "
             + "a yes to a departure does not let it go\n",
-        _ => $"  held: its done departed from what you required, and waits for your yes (`daoris-driver quest accept {quest.Id}`)\n",
+        _ => $"  held: its done departed from what you required, and waits for your yes (`daoris quest accept {quest.Id}`)\n",
     };
 
     /// <summary>One evidence item and what was last read of it, as the record's bundle says it; or that it is not read yet.</summary>

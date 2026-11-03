@@ -63,7 +63,7 @@ export function setupSteps(machine: Machine): SetupStep[] {
       state: machineState(machine.helper !== null),
       // Ask Daoris and the intake are roles: Agents → Roles, where each work's role and its choices are set (COMPANYVIEW1g).
       doors: doors({ view: 'agents', agentsMode: 'setup', roleSection: 'working' }),
-      commands: ['daoris driver role'],
+      commands: ['daoris role'],
     },
     {
       id: 'repositories',
@@ -71,14 +71,14 @@ export function setupSteps(machine: Machine): SetupStep[] {
       state: machine.repositories.length > 0 ? 'done' : 'todo',
       // The Workspace menu's two drawers, which a browser is not offered.
       doors: doors({ view: 'projects', drawer: 'add' }, { view: 'projects', drawer: 'import' }),
-      commands: ['daoris connect', 'daoris import <folder>'],
+      commands: ['daoris repository connect', 'daoris repository import <folder>'],
     },
     {
       id: 'setUp',
       state: machineState(machine.drivable.length > 0),
       // A place's *Set up…* chooses its delivery and drives it: the Agents place's Setup, one page per place.
       doors: doors({ view: 'agents', agentsMode: 'setup' }),
-      commands: ['daoris-driver place <repository> --plan'],
+      commands: ['daoris place <repository> --plan'],
     },
     {
       id: 'rules',

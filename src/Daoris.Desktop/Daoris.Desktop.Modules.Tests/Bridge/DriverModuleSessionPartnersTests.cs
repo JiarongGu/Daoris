@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// *Ask another agent to work on a piece…* over the bridge (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1): the person's
-/// own ask of a piece for a session, the file `daoris-driver sessions partner` writes, by the one judge and writer both share
+/// own ask of a piece for a session, the file `daoris session partner` writes, by the one judge and writer both share
 /// (<see cref="PartnerPersonAsk"/>); and the session's pieces as its Pieces section lists them, each with where the driver's look left
 /// it. The lead's tree is read by a stand-in, so nothing starts a process (MOD8).
 /// </summary>

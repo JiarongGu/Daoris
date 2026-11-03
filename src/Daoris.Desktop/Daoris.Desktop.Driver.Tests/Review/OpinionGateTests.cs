@@ -299,7 +299,7 @@ public sealed class OpinionGateTests
 
         Assert.Equal((OpinionGateStates.Disputed, false, true), (gate.State, gate.LetsGo, gate.PressAnswers));
         Assert.StartsWith("1 finding by Codex (OpenAI) is disputed: a `must` the working session did not fix and no recheck withdrew.", gate.Says);
-        Assert.Contains("`daoris-driver sessions say s1 \"…\"` sends it back", gate.Says);
+        Assert.Contains("`daoris session say s1 \"…\"` sends it back", gate.Says);
     }
 
     [Fact]

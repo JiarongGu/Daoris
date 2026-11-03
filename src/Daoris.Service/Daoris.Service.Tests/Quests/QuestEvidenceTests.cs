@@ -294,8 +294,8 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
         Assert.Equal("uncommitted", Assert.Single(held.Evidence!.Items).Result);
         Assert.Empty(await FollowUps(ask, quest));
         Assert.Contains("`docs/report-bridge.md`", missing.Message);
-        Assert.Contains($"`daoris-driver quest accept {quest.Id}`", missing.Message);
-        Assert.Contains($"`daoris-driver quest check {quest.Id} --commit <sha>`", missing.Message);
+        Assert.Contains($"`daoris quest accept {quest.Id}`", missing.Message);
+        Assert.Contains($"`daoris quest check {quest.Id} --commit <sha>`", missing.Message);
 
         var found = await _exchange.EvidenceAsync(quest.Id, Read(commit: Later, how: "terminal") with { Session = null }, Now.AddMinutes(9));
 

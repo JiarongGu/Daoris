@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// <c>codex</c> door to declare them (D23) and the door runs <c>codex</c> with no sign-in of its own (ACP3).
 /// </summary>
 /// <remarks>
-/// <para><b>One declaration</b>: <c>daoris agent login codex --new</c> is <c>daoris-driver agent login</c> (PUSH1f2e), so it and the
+/// <para><b>One declaration</b>: <c>daoris agent login codex --new</c> is <c>daoris agent login</c> (PUSH1f2e), so it and the
 /// window's <i>Add an account…</i> run one sign-in into one folder and ask one question. The CLI's <c>codex</c> entry in
 /// <c>toolchain.ts</c> was its twin until <c>TOOLCHAINS</c> left (PUSH1f2f).</para>
 /// <para><b>Measured on the install with Codex 0.160.0, 2026-10-08</b>: <c>codex login status</c> prints <c>Logged in

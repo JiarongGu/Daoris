@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The words of the <c>trees</c> presses, one function per press, shared by the alone path and the routes (RPC1b3). Each takes the
-/// record the press's core returns and says what <c>daoris-driver trees</c> prints; nothing here runs git or asks the service.
+/// record the press's core returns and says what <c>daoris tree list</c> prints; nothing here runs git or asks the service.
 /// </summary>
 public static class TreesWords
 {

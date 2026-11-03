@@ -330,7 +330,7 @@ public static class AccountNames
             ? "(none)"
             : string.Join(", ", accounts.Select(account => names.TryGetValue(account, out var name) ? $"{name} ({account})" : account));
 
-    /// <summary>A refused name in a person's words, which <c>daoris-driver agent profile rename</c> says before it acts (PUSH1f2e).</summary>
+    /// <summary>A refused name in a person's words, which <c>daoris agent account rename</c> says before it acts (PUSH1f2e).</summary>
     internal static string Sentence(
         string agent, AccountNameProblem problem, string account, string? name, IReadOnlyCollection<string> accounts,
         IReadOnlyDictionary<string, string> names) => problem.Kind switch
@@ -350,7 +350,7 @@ public static class AccountNames
     /// <summary>
     /// The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once; where the email is another sign-in's, the
     /// organisation (else the plan) is said after it (ACCOUNTID1c), and a name that is the email with it beside is "that name". The window's
-    /// sign-in and <c>daoris-driver agent login</c> both say it (PUSH1f2e6).
+    /// sign-in and <c>daoris agent login</c> both say it (PUSH1f2e6).
     /// </summary>
     public static string SignedInSentence(string? account, string owner, string? called, string fresh, string? apart = null)
     {

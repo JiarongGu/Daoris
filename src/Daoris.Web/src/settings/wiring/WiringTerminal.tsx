@@ -31,7 +31,7 @@ function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
 
 /**
  * Terminal (the this-Daoris design §3.7), read-only: whether each launcher is there (a development run has none, and says
- * so), which `PATH` holds them, what a new terminal runs for `daoris` and `daoris-driver`, the address file a terminal reads
+ * so), which `PATH` holds them, what a new terminal runs for `daoris`, the address file a terminal reads
  * to find the service and whether it takes it, and the account's `DAORIS_HOME` and `DAORIS_SERVICE_URL`, which a terminal
  * reads first. Only whether `PATH` holds the install's folder is shown, never the whole of it (§5).
  *
@@ -74,7 +74,6 @@ export function WiringTerminal({ terminal, variables, standing }: {
           : <Unread why={terminal.onAccountPathWhy ?? terminal.onMachinePathWhy} />}
       />
       <SettingRow label={t('settings.daoris.label.firstDaoris')} control={<Found found={terminal.firstDaoris} />} />
-      <SettingRow label={t('settings.daoris.label.firstDriver')} control={<Found found={terminal.firstDriver} />} />
       <SettingRow
         label={t('settings.daoris.label.addressFile')}
         hint={address.present && address.pid !== null && address.since

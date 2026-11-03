@@ -39,7 +39,7 @@ export const LOG_LINES = 200;
 
 /**
  * The machine log read back (LOG1c, D94): the newest lines with the terminal's filters, applied by the
- * shell — the reading `daoris-driver logs` prints. Desktop only: no HTTP route serves the log, and a
+ * shell — the reading `daoris logs` prints. Desktop only: no HTTP route serves the log, and a
  * browser has no bridge to ask (D47 §4).
  */
 export const useMachineLog = (filters: LogFilters) => {

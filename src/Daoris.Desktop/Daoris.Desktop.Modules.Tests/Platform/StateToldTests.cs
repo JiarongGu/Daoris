@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A press from the terminal reaches an open window (STATEHUB1e, D169 point 8): `daoris-driver trees …` runs in another process with
+/// A press from the terminal reaches an open window (STATEHUB1e, D169 point 8): `daoris tree …` runs in another process with
 /// no bus, tells its press in the request folder, and the shell's loop, hearing it at its watch's next look, publishes the same
 /// <c>STATE_CHANGED</c> the window's press of that route publishes.
 /// </summary>
@@ -35,7 +35,7 @@ public sealed class StateToldTests : DriverModuleBridge
     [Fact]
     public async Task A_landing_recorded_by_another_process_publishes_landing()
     {
-        // As `daoris-driver trees land s1a2b3c4` does in its own process, once it has landed.
+        // As `daoris tree land s1a2b3c4` does in its own process, once it has landed.
         Assert.True(new PressesTold(Home).Tell(new PressTold(PressesTold.Land, "s1a2b3c4", DateTimeOffset.UtcNow)));
         await using var watch = Watch();
 

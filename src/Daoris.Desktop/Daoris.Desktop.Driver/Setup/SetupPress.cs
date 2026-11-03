@@ -188,7 +188,7 @@ public static class SetupPress
     public static SetupRefusal NotOnRegistry(string repository) =>
         new(SetupRefusals.NotOnRegistry,
             $"`{repository}` is not on this machine's registry. Add it on Repositories → *Add a repository*, or with "
-            + "`daoris import <folder> --workspace <name>`, then press again.");
+            + "`daoris repository import <folder> --workspace <name>`, then press again.");
 
     /// <summary>
     /// The refusals the configuration and the registry's row alone say, in the press's order (D124 §2.1): no checkout here, no door that
@@ -224,7 +224,7 @@ public static class SetupPress
             refusals.Add(new(SetupRefusals.NoOwnTree,
                 $"`{row.Repository}`'s sessions run in its checkout, not a tree of their own, and a set-up rewrites what "
                 + "every later session there reads, so it lands on a branch of its own. Give it trees under Repositories → "
-                + $"the repository's page → Setup → Driving, or with `daoris driver trees {row.Repository} on`."));
+                + $"the repository's page → Setup → Driving, or with `daoris place trees {row.Repository} on`."));
         }
 
         return refusals;

@@ -823,7 +823,7 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         Assert.True(kept.Failed);
         Assert.Equal(HeldResolutions.Failure, kept.Words);
         Assert.Contains("failed (broken), and Daoris does not try it again by itself", HeldAttempts.WhySaid(kept), StringComparison.Ordinal);
-        Assert.Contains($"say: daoris-driver work held {Unit} deploy 1 again", HeldAttempts.Lines([kept])[1], StringComparison.Ordinal);
+        Assert.Contains($"say: daoris work held {Unit} deploy 1 again", HeldAttempts.Lines([kept])[1], StringComparison.Ordinal);
         Assert.Single(_port.Sent);
 
         Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.Again).What);

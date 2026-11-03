@@ -24,7 +24,7 @@ describe('Ask Daoris', () => {
     const panel = screen.getByRole('complementary', { name: 'Ask Daoris' });
     expect(within(panel).getByText('1 session is waiting on you.')).toBeInTheDocument();
     expect(within(panel).getByText(/No repository is driven on this machine/)).toBeInTheDocument();
-    expect(within(panel).getByText(code('daoris driver drive <repository>'))).toBeInTheDocument();
+    expect(within(panel).getByText(code('daoris place drive <repository>'))).toBeInTheDocument();
     expect(within(panel).getByText(/Name an agent under AI features/)).toBeInTheDocument();
   });
 

@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver agent unpin</c> and <c>agent profile list|add|remove|default|order|ready|use|rename|join</c> (PUSH1f2e2, PUSH1f2e3, D194, the
+/// <c>daoris agent unpin</c> and <c>agent profile list|add|remove|default|order|ready|use|rename|join</c> (PUSH1f2e2, PUSH1f2e3, D194, the
 /// alone-path design §5): a pin taken back and an agent's accounts from a terminal, the words <c>daoris agent …</c> hands this program.
 /// Each change is the Agents or Accounts place's own press while Daoris runs (<c>HARNESS_ACTION</c>'s <c>unpin</c> and
 /// <c>profile-*</c>, <c>ACCOUNT_USE</c>'s <c>order</c>, <c>ready</c> and <c>use</c>), else the same write on the terminal's word; a workspace's

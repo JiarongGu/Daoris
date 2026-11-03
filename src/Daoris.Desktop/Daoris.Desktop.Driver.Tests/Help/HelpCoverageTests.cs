@@ -79,7 +79,7 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// *Heavy gates* on a repository's Setup (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): this machine's list for a repository whose own
-    /// <c>daoris.gates.json</c> marks none, the twin of <c>daoris-driver heavy</c>.
+    /// <c>daoris.gates.json</c> marks none, the twin of <c>daoris place heavy</c>.
     /// </summary>
     private const string HeavyGates =
         "the list is shell commands this machine runs for a repository, which the person writes themselves: no proposal names "
@@ -99,17 +99,17 @@ public sealed partial class HelpCoverageTests
     /// for the <c>integration</c> object of its <c>daoris.gates.json</c>, by the blob the person read.
     /// </summary>
     /// <summary>
-    /// <i>Verify…</i> on a repository's Workflow tab (FABRIC-PIPELINE1d part 5, D192), <c>daoris-driver verify</c>'s twin: a person's verification of a
+    /// <i>Verify…</i> on a repository's Workflow tab (FABRIC-PIPELINE1d part 5, D192), <c>daoris gate verify</c>'s twin: a person's verification of a
     /// branch or a commit under the gates they accepted.
     /// </summary>
     private const string VerifyRun =
         "a verification runs the repository's own accepted gates on this machine, beside its sessions, which spends the person's machine "
-        + "and is the person's own press (D192): no proposal names `WORKFLOW_VERIFY`; Ask Daoris can name `daoris-driver verify` and the "
+        + "and is the person's own press (D192): no proposal names `WORKFLOW_VERIFY`; Ask Daoris can name `daoris gate verify` and the "
         + "run's Workflow view, where the verdict shows.";
 
     private const string IntegrationActs =
         "an integration's request, drop and recheck are the owner's cards (D156): they admit or drop a request the line's run then moves, "
-        + "which no proposal names (`INTEGRATE` is a Person route); Ask Daoris can name `daoris-driver integrate` and the repository's "
+        + "which no proposal names (`INTEGRATE` is a Person route); Ask Daoris can name `daoris integrate` and the repository's "
         + "Integration tab, where each act shows.";
 
     private const string IntegrationDeclaration =
@@ -119,7 +119,7 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// *Sessions' checks* on a repository's Setup (FABRIC-PIPELINE1b, D192 point 4): which checks its sessions run, the twin of
-    /// <c>daoris-driver checks</c>.
+    /// <c>daoris place checks</c>.
     /// </summary>
     private const string ChecksOfSessions =
         "which checks a repository's sessions run is the person's standing choice, and light lowers their part by leaving the heavy gates "
@@ -146,18 +146,18 @@ public sealed partial class HelpCoverageTests
     /// The driver lock's <c>--share</c> (DRV8, D104), decided: a flag on the start of a headless loop, not a setting.
     /// </summary>
     private static readonly Exempt Share = new(
-        "`daoris-driver drive --share` starts a headless loop beside a live one; it is a process a person runs at a "
+        "`daoris drive --share` starts a headless loop beside a live one; it is a process a person runs at a "
         + "terminal, not a setting: nothing is stored to apply, Ask Daoris starts no loop, and the desktop's own loop "
         + "waits on the lock instead (D104).");
 
     /// <summary>
-    /// WSSETUP5's <c>daoris-driver register</c> (D124 §3.1), a verb of the headless host: a door Ask Daoris owes, until WSSETUP7
+    /// WSSETUP5's <c>daoris repository register</c> (D124 §3.1), a verb of the headless host: a door Ask Daoris owes, until WSSETUP7
     /// gives LAYOUT8's <c>setup</c> kind its <c>register</c> door (§4.5).
     /// </summary>
     private static readonly Owed RegisterDoor = new(HelpRoomOwed.Register);
 
     /// <summary>
-    /// PAUSE1d's <c>daoris-driver ask --abandon</c> and <c>quest abandon</c> (D132 §7.2), verbs of the headless host: exempt, since
+    /// PAUSE1d's <c>daoris ask abandon</c> and <c>quest abandon</c> (D132 §7.2), verbs of the headless host: exempt, since
     /// an abandon declines quests with the person's reason, which is their answer (D37), as D126 §7.3 exempted *Decline…*.
     /// </summary>
     private static readonly Exempt AbandonDoor = new(
@@ -188,26 +188,26 @@ public sealed partial class HelpCoverageTests
     private static readonly Door SessionDeleteDoor = new("delete", "session");
 
     /// <summary>
-    /// SESSUX1h1: the terminal's <c>daoris-driver sessions stop</c> answers as the page's <c>useStopSession</c> does (D161's
+    /// SESSUX1h1: the terminal's <c>daoris session stop</c> answers as the page's <c>useStopSession</c> does (D161's
     /// ENTRY1 note): a session keeps its own conversation, so Ask Daoris takes the person to Sessions with a go and names
     /// the line, and builds no <c>stop</c> door.
     /// </summary>
     private static readonly Conversation SessionsStopVerb = Own("sessions",
-        "stopping a session, which the terminal's `daoris-driver sessions stop` does as the page does, ends its process and "
+        "stopping a session, which the terminal's `daoris session stop` does as the page does, ends its process and "
         + "holds its quest until the person tries again");
 
     /// <summary>
-    /// HIST1e's <c>useClearHistory</c> and HIST1d's <c>daoris-driver history clear --workspace</c> (D153 point 7, the
+    /// HIST1e's <c>useClearHistory</c> and HIST1d's <c>daoris history clear --workspace</c> (D153 point 7, the
     /// history-clearing design §6.4): the <c>clear</c> kind's <c>workspace</c> door since HIST1f-b, its card the first press and
     /// its Apply the second. The same hook's quest and ask clears are its <c>quest</c> and <c>ask</c> doors
     /// (<see cref="ClearQuestDoor"/>, <see cref="ClearAskDoor"/>), carried as the payload's scope rather than an action.
     /// </summary>
     private static readonly Door ClearWorkspaceDoor = new("clear", "workspace");
 
-    /// <summary>A quest's page's *Clear from this machine…* and <c>daoris-driver quest clear</c>: the <c>clear</c> kind's <c>quest</c> door.</summary>
+    /// <summary>A quest's page's *Clear from this machine…* and <c>daoris quest clear</c>: the <c>clear</c> kind's <c>quest</c> door.</summary>
     private static readonly Door ClearQuestDoor = new("clear", "quest");
 
-    /// <summary>An ask's page's *Clear from this machine…* and <c>daoris-driver ask --clear</c>: the <c>clear</c> kind's <c>ask</c> door.</summary>
+    /// <summary>An ask's page's *Clear from this machine…* and <c>daoris ask clear</c>: the <c>clear</c> kind's <c>ask</c> door.</summary>
     private static readonly Door ClearAskDoor = new("clear", "ask");
 
     /// <summary>
@@ -217,29 +217,29 @@ public sealed partial class HelpCoverageTests
     private static readonly Door ClearFailedDoor = new("clear", "failed");
 
     /// <summary>
-    /// MSG1e's <c>daoris-driver sessions say</c> (D137 §5.4), a verb of the headless host: exempt, since the words said to a
+    /// MSG1e's <c>daoris session say</c> (D137 §5.4), a verb of the headless host: exempt, since the words said to a
     /// session are the person's (D133 §1). The room says where the box is and names the command, so the helper points there.
     /// </summary>
     private static readonly Exempt SayDoor = new(
         "the words said to a session are the person's own (D133 §1), so Ask Daoris composes none in their name; the room says "
-        + "where the box is and names `daoris-driver sessions say` (D137 §5.4).");
+        + "where the box is and names `daoris session say` (D137 §5.4).");
 
     /// <summary>
-    /// SAIDBACK1a's <c>daoris-driver sessions take-back</c> and <c>sessions reword</c> (D137 §2.4), verbs of the headless host:
+    /// SAIDBACK1a's <c>daoris session take-back</c> and <c>sessions reword</c> (D137 §2.4), verbs of the headless host:
     /// exempt, since the words taken back or put in their place are the person's own (D133 §1), as saying them is.
     /// </summary>
     private static readonly Exempt TakeBackDoor = new(
         "taking back or rewording words a session has not taken yet moves the person's own words (D133 §1), as saying them does, "
-        + "so Ask Daoris proposes none; it can name `daoris-driver sessions take-back` and `sessions reword` (D137 §2.4).");
+        + "so Ask Daoris proposes none; it can name `daoris session take-back` and `sessions reword` (D137 §2.4).");
 
     /// <summary>
-    /// SESSONE2c's <c>daoris-driver ask channel</c> post and the page's <c>CHANNEL_POST</c> (D167 points 6 to 8): exempt, since the
+    /// SESSONE2c's <c>daoris ask channel</c> post and the page's <c>CHANNEL_POST</c> (D167 points 6 to 8): exempt, since the
     /// words posted are the person's own, which every session on the ask then reads as theirs (D133 §1). <c>CHANNEL_READ</c> is
     /// no press: a read of the records that changes nothing.
     /// </summary>
     private static readonly Exempt ChannelPostDoor = new(
         "the words posted on an ask's channel are the person's own and every session on the ask reads them as theirs (D133 §1, "
-        + "D167 point 7), so Ask Daoris composes none in their name; `daoris-driver ask channel` and the ask page's composer are "
+        + "D167 point 7), so Ask Daoris composes none in their name; `daoris ask channel` and the ask page's composer are "
         + "the doors.");
 
     /// <summary>
@@ -252,13 +252,13 @@ public sealed partial class HelpCoverageTests
         + "*Send to its session* on the ask's channel and the session's panel is the door.");
 
     /// <summary>
-    /// MSG1g's <c>daoris-driver sessions go-on-new</c> (D137 §2.2), a verb of the headless host: exempt, since it moves the
+    /// MSG1g's <c>daoris session go-on-new</c> (D137 §2.2), a verb of the headless host: exempt, since it moves the
     /// person's words and trades their conversation's context for time, both the person's to choose (D133 §1, D143 point 4).
     /// </summary>
     private static readonly Exempt GoOnNewDoor = new(
         "going on in a new session moves the person's own words (D133 §1) and gives up their session's conversation for time, "
         + "a choice that stays the person's (D143 point 4), so Ask Daoris proposes none; it can name "
-        + "`daoris-driver sessions go-on-new` and the screen's press once the page has it (D137 §2.2).");
+        + "`daoris session go-on-new` and the screen's press once the page has it (D137 §2.2).");
 
     /// <summary>
     /// LIMITRESUME1d2's <c>SESSION_STOP_WAITING</c> (D206 §3.7): exempt, since telling a conversation its limit holds to wait no more
@@ -270,13 +270,13 @@ public sealed partial class HelpCoverageTests
         + "so Ask Daoris proposes none; *Stop waiting* beside the conversation's wait is the door.");
 
     /// <summary>
-    /// MSG1f3's <c>daoris-driver sessions start-from</c> (D137 §2.2, D50), a verb of the headless host: exempt, since it moves
+    /// MSG1f3's <c>daoris session start-from</c> (D137 §2.2, D50), a verb of the headless host: exempt, since it moves
     /// the person's words into a conversation of their own, the person's press as the screen's is (D133 §1).
     /// </summary>
     private static readonly Exempt StartFromDoor = new(
         "starting a conversation with words a session could not go on with moves the person's own words (D133 §1) into a "
         + "conversation with none of that session's context, a press that stays the person's (D137 §2.2), so Ask Daoris "
-        + "proposes none; it can name `daoris-driver sessions start-from` and the screen's press.");
+        + "proposes none; it can name `daoris session start-from` and the screen's press.");
 
     /// <summary>
     /// SESSCTX1c part B's *Go on with Daoris's brief* (D189 point 3), the page's press beside *Start a conversation with these words*:
@@ -289,7 +289,7 @@ public sealed partial class HelpCoverageTests
         + "Daoris proposes none; it can name the screen's press.");
 
     /// <summary>
-    /// MIXAGENT1a-i's <c>daoris-driver sessions hand-over</c> (D163, D50), a verb of the headless host, and MIXAGENT1b-i's page press
+    /// MIXAGENT1a-i's <c>daoris session hand-over</c> (D163, D50), a verb of the headless host, and MIXAGENT1b-i's page press
     /// (<c>useHandOver</c>, *Go on with another agent…*): exempt, since it ends the person's conversation to go on with another
     /// agent's, an exchange of their agent and their allowance that stays theirs. Daoris's own offer when an account is near or cut
     /// is MIXAGENT1b-ii's row.
@@ -297,10 +297,10 @@ public sealed partial class HelpCoverageTests
     private static readonly Exempt HandOverDoor = new(
         "handing a conversation to another agent ends it and goes on with an agent and an account the person did not choose it on "
         + "(D163), a choice that stays the person's (D133 §1), so Ask Daoris proposes none; it can name "
-        + "`daoris-driver sessions hand-over` and the page's *Go on with another agent…* (its head's ⋯, which asks under the head).");
+        + "`daoris session hand-over` and the page's *Go on with another agent…* (its head's ⋯, which asks under the head).");
 
     /// <summary>
-    /// MIXAGENT2a-ii's <c>daoris-driver sessions helper</c> (D163 point 2), a verb of the headless host, and MIXAGENT2b's page press
+    /// MIXAGENT2a-ii's <c>daoris session helper</c> (D163 point 2), a verb of the headless host, and MIXAGENT2b's page press
     /// (<c>useAskHelper</c>, *Ask another agent…*): exempt, since it is the person's own ask of another agent, which spends that
     /// agent's allowance on a question about their work; whether an agent may ask for one is the person's rule (<c>helpers</c>),
     /// set elsewhere.
@@ -308,55 +308,55 @@ public sealed partial class HelpCoverageTests
     private static readonly Exempt HelperAskDoor = new(
         "asking another agent to read a session's work and answer a question spends that agent's allowance on the person's own "
         + "question (D163), which stays the person's to ask (D133 §1), so Ask Daoris proposes none; it can name "
-        + "`daoris-driver sessions helper` and the page's *Ask another agent…* (its head's ⋯, which asks under the head).");
+        + "`daoris session helper` and the page's *Ask another agent…* (its head's ⋯, which asks under the head).");
 
     /// <summary>
-    /// COAGENT1b's <c>daoris-driver sessions partner</c> (D199 point 2), a verb of the headless host, and the page's press in the Pieces
+    /// COAGENT1b's <c>daoris session partner</c> (D199 point 2), a verb of the headless host, and the page's press in the Pieces
     /// section (<c>useAskPartner</c>, *Ask another agent to work on a piece…*): exempt, as a helper's ask is, since it is the person's own
     /// ask of another agent to write a piece of their work, which spends that agent's allowance; whether a lead may ask for one is
     /// COAGENT1d's rule, set elsewhere.
     /// </summary>
     private static readonly Exempt PartnerAskDoor = new(
         "asking another agent to write a piece of a session's work spends that agent's allowance on the person's own piece (D199), "
-        + "which stays the person's to ask (D133 §1), so Ask Daoris proposes none; it can name `daoris-driver sessions partner` and the "
+        + "which stays the person's to ask (D133 §1), so Ask Daoris proposes none; it can name `daoris session partner` and the "
         + "page's *Ask another agent to work on a piece…* (the session's Pieces section).");
 
     /// <summary>
     /// MIXAGENT2b's *Let it ask* (<c>useApproveHelper</c>) and HELPERNO1's *Not now* (<c>useDeclineHelper</c>): the person's yes
     /// or no to an agent's ask for a helper that waits on it under the <c>helpers</c> rule's <c>ask</c> (D163 point 3). Exempt,
     /// since it is their word on that one ask, given where it waits; what an agent's ask does at all is the rule, a door already.
-    /// HELPERTERM1's <c>daoris-driver sessions helper --approve|--decline</c> is the same word at a terminal.
+    /// HELPERTERM1's <c>daoris session helper --approve|--decline</c> is the same word at a terminal.
     /// </summary>
     private static readonly Exempt HelperAnswerDoor = new(
         "a yes or a no to an agent's ask for a helper is the person's word on that one ask, which spends another agent's "
         + "allowance or does not (D163 point 3), given where it waits, on the session's page or What needs you, or at a terminal "
-        + "with `daoris-driver sessions helper --approve|--decline`; what an agent's ask "
+        + "with `daoris session helper --approve|--decline`; what an agent's ask "
         + "does at all is the person's `helpers` rule, the `setting` kind's `helpers` door, so Ask Daoris proposes no single answer.");
 
     /// <summary>
     /// MIXAGENT1c's *Hand over to …* and *Not now* (<c>useApproveHandOver</c>, <c>useDeclineHandOver</c>) and the terminal's
-    /// <c>daoris-driver sessions hand-over &lt;id&gt; --approve|--decline</c>: the person's yes or no to a session's agent's own ask to hand
+    /// <c>daoris session hand-over &lt;id&gt; --approve|--decline</c>: the person's yes or no to a session's agent's own ask to hand
     /// it over that waits on them under the <c>handOver</c> rule's <c>ask</c> (D163 point 3), on its session's foot and its row of
     /// <i>What needs you</i> (NOTIFY2e). Exempt, as a helper's yes and no are.
     /// </summary>
     private static readonly Exempt HandOverAnswerDoor = new(
         "a yes or a no to a session's agent's own ask to hand it over is the person's word on that one ask, which ends the session on "
         + "its agent and goes on with another or does not (D163 point 3), given where it waits, at the foot of the session's page, in What needs you "
-        + "(NOTIFY2e) or at a terminal with `daoris-driver sessions hand-over <id> --approve|--decline`; what an agent's ask does at all is the "
+        + "(NOTIFY2e) or at a terminal with `daoris session hand-over <id> --approve|--decline`; what an agent's ask does at all is the "
         + "person's `handOver` rule, so Ask Daoris proposes no single answer.");
 
     /// <summary>
     /// MIXAGENT1c's *Hand-over* row (<c>useSetHandOver</c>) on a repository's Setup and a workspace's Defaults: the person's rule for an
     /// agent's ask to hand its session over. Exempt for now: the steward's settling of the row (D191) keeps it out of Ask Daoris's
-    /// <c>setting_propose</c> doors, and `daoris driver handover` is its terminal twin.
+    /// <c>setting_propose</c> doors, and `daoris settings handover` is its terminal twin.
     /// </summary>
     private static readonly Exempt HandOverRuleDoor = new(
         "the hand-over rule says whether an agent may end its session and go on with another agent on the person's accounts without "
-        + "their yes (D163 point 3); it is set on a repository's Setup or a workspace's Defaults, or with `daoris driver handover`, and "
+        + "their yes (D163 point 3); it is set on a repository's Setup or a workspace's Defaults, or with `daoris settings handover`, and "
         + "is not yet one of Ask Daoris's `setting` doors, by the row that built it (MIXAGENT1c, D191's settling).");
 
     /// <summary>
-    /// AGENTSPLACE1a2's <c>daoris-driver place … --plan</c>, a verb of the headless host, is the <c>setup</c> kind's <c>place</c> door
+    /// AGENTSPLACE1a2's <c>daoris place … --plan</c>, a verb of the headless host, is the <c>setup</c> kind's <c>place</c> door
     /// (AGENTSPLACE1k): the plan as a card, whose Apply opens the place's Setup with <i>Set up…</i> seeded and presses nothing.
     /// </summary>
     private static readonly Door PlaceDoor = new("setup", "place");
@@ -369,7 +369,7 @@ public sealed partial class HelpCoverageTests
     private static readonly Door DraftDoor = new("workflow", "draft");
 
     /// <summary>
-    /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
+    /// TRACE1's <c>daoris trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
     private static readonly Exempt TraceDoor = new(
@@ -377,7 +377,7 @@ public sealed partial class HelpCoverageTests
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
 
     /// <summary>
-    /// WORKFLOW1c2's <c>daoris-driver workflow run</c> (D157, the workflow design §5.2, §7), a verb of the headless host: exempt,
+    /// WORKFLOW1c2's <c>daoris workflow run</c> (D157, the workflow design §5.2, §7), a verb of the headless host: exempt,
     /// since it reads where a piece of work stands in its workflow and changes nothing, as <c>trace</c> is. The session's
     /// <i>Workflow</i> view is the screen's door to the same read, and its presses are their owners'.
     /// </summary>
@@ -386,7 +386,7 @@ public sealed partial class HelpCoverageTests
         + "is exempt (D157, D110 §4); each press a waiting step needs is its owner's door, never this read's.");
 
     /// <summary>
-    /// WIRING1b's <c>daoris-driver wiring</c> (D171's WIRING1b note, the this-Daoris design §6), a verb of the headless host:
+    /// WIRING1b's <c>daoris wiring</c> (D171's WIRING1b note, the this-Daoris design §6), a verb of the headless host:
     /// exempt, since it reads how this Daoris is wired and changes nothing, as <c>trace</c> is; its <c>--measure</c> counts sizes.
     /// Settings → This Daoris is the screen's door to the same read, and each setting it shows is changed at its own door.
     /// </summary>
@@ -395,7 +395,7 @@ public sealed partial class HelpCoverageTests
         + "nothing to propose, as `trace` is exempt (D171, D110 §4); each setting it shows is changed at its own door.");
 
     /// <summary>
-    /// KEEP1c's <c>daoris-driver space</c> (D195 point 5, the cleanup design §4.4), a verb of the headless host: exempt, since it reads
+    /// KEEP1c's <c>daoris space</c> (D195 point 5, the cleanup design §4.4), a verb of the headless host: exempt, since it reads
     /// each kind's size, rule, next and last clean and changes nothing, as <c>wiring</c> is; its <c>--measure</c> counts sizes.
     /// </summary>
     private static readonly Exempt SpaceDoor = new(
@@ -403,7 +403,7 @@ public sealed partial class HelpCoverageTests
         + "nothing to propose, as `wiring` is exempt (D195, D110 §4); each rule is set at its own door once it may be.");
 
     /// <summary>
-    /// KEEP1e's <i>Free up space…</i> and <c>daoris-driver space free</c> (D195 point 4, the cleanup design §4.4): exempt, in CACHECLEAR1's
+    /// KEEP1e's <i>Free up space…</i> and <c>daoris space free</c> (D195 point 4, the cleanup design §4.4): exempt, in CACHECLEAR1's
     /// words, since it is a discard that stays the person's own press, listed first, nothing in use removed.
     /// </summary>
     private static readonly Exempt SpaceFreeDoor = new(
@@ -412,17 +412,17 @@ public sealed partial class HelpCoverageTests
         + "Settings → This Daoris.");
 
     /// <summary>
-    /// WORKFLOW1f's <c>daoris-driver workflow keep</c> (D157 point 10, the workflow design §4.4), a verb of the headless host:
+    /// WORKFLOW1f's <c>daoris workflow keep</c> (D157 point 10, the workflow design §4.4), a verb of the headless host:
     /// exempt, since keeping a workflow that asks less of the person for work outside its kind's paths is their say-so, as going
     /// on without a second opinion is. The screen's press is the editor's row (WORKFLOW1g).
     /// </summary>
     private static readonly Exempt WorkflowKeepDoor = new(
         "keeping a workflow that asks less of you for work that changed paths outside its kind's is your say-so on that work, a "
         + "judgement Ask Daoris cannot have made (D157 point 10, D110), as going on without a second opinion is; it can name "
-        + "`daoris-driver workflow keep`.");
+        + "`daoris workflow keep`.");
 
     /// <summary>
-    /// FABRIC-CUTOVER1f's <c>daoris-driver workflow skip|stop</c> (D190 point 6, the cutover design §5.2), a verb of the headless host, and the
+    /// FABRIC-CUTOVER1f's <c>daoris workflow skip|stop</c> (D190 point 6, the cutover design §5.2), a verb of the headless host, and the
     /// run's view's <i>Pass over…</i> and <i>Stop…</i> (<c>useRunNodeWord</c>), and the same <i>Pass over…</i> on <i>What needs you</i>'s row for a run
     /// held at a declined request (INTEGRATE1o part o3): exempt, since passing a step over or stopping it is the person's word on the work, as their
     /// word on a held attempt is.
@@ -430,12 +430,12 @@ public sealed partial class HelpCoverageTests
     private static readonly Exempt WorkflowNodeDoor = new(
         "passing a step of a run over, with your words, or stopping it is your word on that work, standing in for a go-ahead or a step's "
         + "proof nobody gave (D190 point 6), a judgement Ask Daoris cannot have made, as the word on a held attempt is, and so is asking for "
-        + "changes on its review in place of your Accept (DECIDE1c); it can name `daoris-driver workflow skip`, `stop` and `changes`, and the "
+        + "changes on its review in place of your Accept (DECIDE1c); it can name `daoris workflow skip`, `stop` and `changes`, and the "
         + "run's Workflow view; the row for a run held at a request the receiver declined (\"What needs you\") presses the same word, so it is "
         + "the person's too.");
 
     /// <summary>
-    /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
+    /// EVID1b's <c>daoris quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
     /// builds the check card beside the quest page's <i>Check again</i>.
     /// </summary>
     private static readonly Owed CheckDoor = new(HelpRoomOwed.Check);
@@ -461,7 +461,7 @@ public sealed partial class HelpCoverageTests
         + "`daoris session opinion anyway` and `opinion myself`.");
 
     /// <summary>
-    /// GIT1c's <c>daoris-driver git branches</c> (D147 §3.3), a verb of the headless host: exempt, since it reads each
+    /// GIT1c's <c>daoris git branches</c> (D147 §3.3), a verb of the headless host: exempt, since it reads each
     /// repository's branches and changes nothing, as <c>trace</c> is. The acts (fetch, branch, push, delete) are owed to a
     /// <c>git</c> kind, GIT1k's, once GIT1g and GIT1h build them.
     /// </summary>
@@ -470,7 +470,7 @@ public sealed partial class HelpCoverageTests
         + "exempt (D147 §3.3, D110 §4); the acts it will sit beside are owed to GIT1k's `git` kind.");
 
     /// <summary>
-    /// GITAPP1a-i's <c>daoris-driver git review</c> (D202 point 2), a verb of the headless host: exempt, since it reads a session's
+    /// GITAPP1a-i's <c>daoris git review</c> (D202 point 2), a verb of the headless host: exempt, since it reads a session's
     /// review as its page does and changes nothing but one log line, as <c>git branches</c> is.
     /// </summary>
     private static readonly Exempt GitReviewDoor = new(
@@ -478,7 +478,7 @@ public sealed partial class HelpCoverageTests
         + "`git branches` is exempt (D202, D110 §4).");
 
     /// <summary>
-    /// PLUGHOOK1c's <c>daoris-driver trees state</c> (D148 point 2, design §2.5), a verb of the headless host: exempt, since it
+    /// PLUGHOOK1c's <c>daoris tree state</c> (D148 point 2, design §2.5), a verb of the headless host: exempt, since it
     /// asks a landed branch's plugin about its pull request and keeps the answer, changing nothing of the person's and nothing on
     /// the platform (D110 §4). The room names it, so the helper can point the person at it.
     /// </summary>
@@ -488,13 +488,13 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// The install's update (D139): *Update when idle*, *Update now* and *Not now* on the banner and Settings → Driver
-    /// (UPDATE1e's <c>useSayUpdate</c>), and the headless host's <c>daoris-driver update</c> (UPDATE1f). Exempt, since it is
+    /// (UPDATE1e's <c>useSayUpdate</c>), and the headless host's <c>daoris update</c> (UPDATE1f). Exempt, since it is
     /// the person's act on the application; the room names both doors, so the helper points there.
     /// </summary>
     private static readonly Exempt UpdateDoor = new(
         "an update is the person's act on the application, not on the work it drives (D139): *Update now* closes Daoris, "
         + "Ask Daoris's window with it, and *Not now* keeps a build from installing, so each stays their own press on the "
-        + "banner, Settings → Driver or `daoris-driver update --when-idle|--now|--cancel`.");
+        + "banner, Settings → Driver or `daoris update --when-idle|--now|--cancel`.");
 
     /// <summary>
     /// ASKHIST1's history of Ask Daoris's own conversations: the panel's rename, pin and new conversation from an earlier one,
@@ -504,7 +504,7 @@ public sealed partial class HelpCoverageTests
     private static readonly Exempt HistoryDoor = new(
         "Ask Daoris's conversations are the person's own words and knowledge, kept on this machine only (ASKHIST1): going on in "
         + "one is their words (D133 §1), and naming, pinning, starting from or deleting one is their tidy of their own history, so "
-        + "Ask Daoris proposes none; the room names the panel's History and `daoris-driver help`.");
+        + "Ask Daoris proposes none; the room names the panel's History and `daoris ask-daoris list`.");
 
     /// <summary>
     /// The page's bridge hooks that change something and that no Settings domain presses, answered one by one wherever they
@@ -517,7 +517,7 @@ public sealed partial class HelpCoverageTests
         // UPDATE1: the banner's *Dismiss*, once an update installed or rolled back; since UPDATE1d the last update outlives it.
         ("useDismissUpdate", new Exempt(
             "it puts away an update's outcome once said, the banner's *Dismiss*, and changes nothing about the install or its "
-            + "work: the last update still reads on Settings → Driver and from plain `daoris-driver update` (D139), so there "
+            + "work: the last update still reads on Settings → Driver and from plain `daoris update` (D139), so there "
             + "is nothing to propose.")),
         // BRW7: a link pressed on the page, opened in Daoris's browser where the links setting says so.
         ("useLinkOpener", new Exempt(
@@ -652,10 +652,10 @@ public sealed partial class HelpCoverageTests
         // FABRIC-CLOSE1c3 (D173's CLOSE1c note, D156): a person-only door each, which no agent's call may reach.
         ("quests", "useReopenQuest", null, Own("quests",
             "reopening a sealed submission is the person's word that its work is not what they will close on (FABRIC-CLOSE1c), a "
-            + "person-only door pressed on the quest's page, and `daoris-driver quest reopen` at a terminal")),
+            + "person-only door pressed on the quest's page, and `daoris quest reopen` at a terminal")),
         ("quests", "useContinueQuest", null, Own("quests",
             "going on with a step its source's reopen held is the person's choice, which Daoris never makes (FABRIC-CLOSE1c's choice "
-            + "2), pressed on the step's page beside its abandon, and `daoris-driver quest go-on` at a terminal")),
+            + "2), pressed on the step's page beside its abandon, and `daoris quest go-on` at a terminal")),
         ("quests", "useTrustFolder", null, TrustFolder),
         ("quests", "useDismissConflict", null, new Exempt(
             "it puts away a conflict the person has read, an operation that travels and changes no status of the quest or its "
@@ -663,7 +663,7 @@ public sealed partial class HelpCoverageTests
         // SYNCMERGE1c2 (D178 point 3): a person-only door, which no agent's call may reach.
         ("quests", "useForwardConflict", null, Own("quests",
             "bringing this machine's lost take forward is the person's choice, made on the machine whose take lost (D178 point 3), a "
-            + "person-only door pressed on the quest's conflict beside its *Drop mine*, and `daoris-driver sync forward <quest> "
+            + "person-only door pressed on the quest's conflict beside its *Drop mine*, and `daoris remote sync forward <quest> "
             + "<machine> <sequence>` at a terminal")),
 
         // Asks, on Quests: the composer and an ask's page.
@@ -818,7 +818,7 @@ public sealed partial class HelpCoverageTests
         ("app", "useMarkChannel", null, new Exempt(
             "it moves the person's own read mark on an ask's channel to the newest message Notifications showed them, and changes "
             + "nothing of the work or the machine's settings, as reading is exempt, so there is nothing to propose (D167 point 7).")),
-        // FABRIC-PERFORM1g (D173's note): What needs you's word on a plugin step's attempt held for the person, `daoris-driver work held`'s twin.
+        // FABRIC-PERFORM1g (D173's note): What needs you's word on a plugin step's attempt held for the person, `daoris work held`'s twin.
         // FABRIC-CLOSE1q: the same press carries the person's recovery of Daoris's own close held for them, whose answer is its door's.
         ("work", "useResolveHeld", null, new Exempt(
             "it records the person's own word on what became of a plugin step's attempt nothing else can establish, or on how a held "
@@ -886,17 +886,10 @@ public sealed partial class HelpCoverageTests
         ("workflow use", new Door("workflow", "use")),
         ("workflow kind", WorkflowOwed),
         ("notify", new Door("setting", "notify")),
-        // ONEWAY1a (the oneway design §2 S1): `intake`, `helper` and `adapter` are gone from the family, a role's agents the role door's
-        // alone, `role` below.
         ("actor", new Exempt(
-            "it is retired and changes nothing: a role's agents are the role door's, `daoris role set`, which Ask Daoris proposes through "
-            + "`role_propose`; its `export`, `import` and `found` are the staffing copy's, the person's own, which ONEWAY1c-ii retires.")),
-        ("strikes", new Door("setting", "strikes")),
+            "its `found` is the staffing copy's, the person's own to take or dismiss: a role's agents are the role door's, `daoris role set`, "
+            + "which Ask Daoris proposes through `role_propose`.")),
         ("retry", new Door("setting", "retry")),
-        // SESSWATCH1a (D200, the session-watch design §3): retired; the door is kept only to refuse a helper reading an older room.
-        ("timeout", new Exempt(
-            "it is retired and changes nothing: sessions are no longer limited by time, so the verb, its door and its tool answer why, "
-            + "and the room no longer offers it.")),
         // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, TOOL4l-b its Ask Daoris door.
         ("cooloff", new Door("setting", "cooloff")),
         // KEEP1d (D195 point 2): each kind's keep rule, the Disk space card's Change… and Ask Daoris's `keep` door.
@@ -941,7 +934,6 @@ public sealed partial class HelpCoverageTests
             + "helper can never grant itself housekeeping or a setting, nor take back what the person granted.")),
 
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
-        ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Door("setting", "cooloff")),
         // CAPSET1: the cap of sessions Daoris starts at once, set from the card as `setting cap` already proposes it.
         ("driver", "useSetCap", null, new Door("setting", "cap")),
@@ -1122,14 +1114,14 @@ public sealed partial class HelpCoverageTests
         // HIST1e (D153): a workspace's *Clear history…*, and a quest's and an ask's clears pressed through the same owner; the
         // `clear` kind's doors since HIST1f-b, the hook's scope telling them apart (The_history_clear_is_the_clear_kinds_door…).
         ("projects", "useClearHistory", null, ClearWorkspaceDoor),
-        // RECOVERYDROP1 (D102's CLEANUP1 note): the Branches' *Delete the ones nothing holds*, `daoris-driver work recovery drop`'s twin.
+        // RECOVERYDROP1 (D102's CLEANUP1 note): the Branches' *Delete the ones nothing holds*, `daoris work recovery drop`'s twin.
         ("projects", "useDropRecoveries", null, new Exempt(
             "it deletes the recovery refs nothing holds, whose commits may then be lost from this machine, a discard, which stays the "
             + "person's own press (D89), as the clean-up beside it does.")),
         ("projects", "useDiscardSessionBranch", null, new Exempt(
             "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
             + "(D89), as the clean-up beside it does.")),
-        // LANDRETIRE1 (D102's note): the Branches' *Withdraw…*, `daoris-driver trees remove <landing branch> --why`'s twin.
+        // LANDRETIRE1 (D102's note): the Branches' *Withdraw…*, `daoris tree remove <landing branch> --why`'s twin.
         ("projects", "useWithdrawLandingBranch", null, new Exempt(
             "it deletes a landing's branch the line has not taken, on the person's own reason (its commits stay on a recovery ref), a "
             + "discard, which stays the person's own press (D89), as the clean-up beside it does.")),
@@ -1382,7 +1374,7 @@ public sealed partial class HelpCoverageTests
             .Append(RenameDoor);
 
     /// <summary>
-    /// HELP10: WSR6's <c>daoris-driver trees sync</c> (D109), a verb of the headless host rather than the CLI's table, is
+    /// HELP10: WSR6's <c>daoris tree sync</c> (D109), a verb of the headless host rather than the CLI's table, is
     /// the <c>sync</c> kind's door while the host's usage still spells it (with WSR7's `--all`, D112).
     /// </summary>
     [Fact]
@@ -1401,7 +1393,7 @@ public sealed partial class HelpCoverageTests
     {
         Assert.DoesNotContain("\n  setup ", DriverCommand.Usage);
         Assert.Equal(["place"], HelpProposalKinds.Find("setup")!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset keep --adoption", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris place <repository>… --preset keep --adoption", StringComparison.Ordinal)
             && door.Screen.Contains("Set up…", StringComparison.Ordinal));
     }
 
@@ -1414,7 +1406,7 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("register [--repository <name>]", DriverCommand.Usage);
         Assert.DoesNotContain("register", HelpProposalKinds.Find("setup")!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver register [--repository <name>]`", StringComparison.Ordinal));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris repository register [--repository <name>]`", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", RegisterDoor.Reason);
     }
 
@@ -1429,7 +1421,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("place --workspace <name> --adoption [--plan]", DriverCommand.Usage);
         Assert.Contains("place --workspace <name> --pause | --resume | --stop", DriverCommand.Usage);
         Assert.Empty(HelpProposalKinds.Find("setup")!.Doors.Intersect(["workspace", "pause", "resume", "stop"]));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place --workspace <name> --adoption [--plan]", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris place --workspace <name> --adoption [--plan]", StringComparison.Ordinal)
             && door.Terminal.Contains("--pause|--resume|--stop", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", WorkspaceDoor.Reason);
     }
@@ -1443,7 +1435,7 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("quest accept <id>", DriverCommand.Usage);
         Assert.Contains("accept", HelpProposalKinds.Find("accept")!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris quest accept <id>`", StringComparison.Ordinal)
             && door.Screen.Contains("Accept the departure", StringComparison.Ordinal));
     }
 
@@ -1468,7 +1460,7 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("quest check <id> [--commit <sha>]", DriverCommand.Usage);
         Assert.DoesNotContain("check", HelpProposalKinds.Find("accept")!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest check <id> [--commit <sha>]`", StringComparison.Ordinal));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris quest check <id> [--commit <sha>]`", StringComparison.Ordinal));
         Assert.Contains("EVID1c", CheckDoor.Reason);
     }
 
@@ -1481,7 +1473,7 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("quest done <id> [--note \"…\"]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("done"));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest done <id> [--note \"…\"]`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris quest done <id> [--note \"…\"]`", StringComparison.Ordinal)
             && door.Screen.Contains("Mark done…", StringComparison.Ordinal));
         Assert.Contains("QUESTCLOSE1", PersonDone.Reason);
     }
@@ -1496,8 +1488,8 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("ask pause <id>  ·  ask resume <id>", DriverCommand.Usage);
         Assert.Contains("quest pause <id>  ·  quest resume <id>", DriverCommand.Usage);
         Assert.Equal(["pause", "resume"], HelpProposalKinds.Find("pause")!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --pause|--resume <id>`", StringComparison.Ordinal)
-            && door.Terminal.Contains("`daoris-driver quest pause|resume <id>`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris ask pause|--resume <id>`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris quest pause|resume <id>`", StringComparison.Ordinal)
             && door.Screen.Contains("Pause ask…", StringComparison.Ordinal));
     }
 
@@ -1511,8 +1503,8 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("ask abandon <id> [--reason \"…\" --yes]", DriverCommand.Usage);
         Assert.Contains("quest abandon <id> [--reason \"…\" --yes]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("abandon"));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
-            && door.Terminal.Contains("`daoris-driver quest abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris ask abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris quest abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
             && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D37", AbandonDoor.Reason);
     }
@@ -1557,8 +1549,8 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("ask-daoris rename <id> \"…\" | --clear", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("help"));
         // ASKSCOPE1e: the list's door names its workspace flags, as the usage above spells them.
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`", StringComparison.Ordinal)
-            && door.Terminal.Contains("`daoris-driver help rename|pin|unpin|delete <id>`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris ask-daoris rename|pin|unpin|delete <id>`", StringComparison.Ordinal)
             && door.Screen.Contains("History", StringComparison.Ordinal)
             && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("ASKHIST1", HistoryDoor.Reason);
@@ -1629,7 +1621,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("session hand-over <id> --approve|--decline", DriverCommand.Usage);
         Assert.Contains("sessions hand-over <id> --approve|--decline", HandOverAnswerDoor.Reason);
         Assert.Contains("D163", HandOverAnswerDoor.Reason);
-        Assert.Contains("daoris driver handover", HandOverRuleDoor.Reason);
+        Assert.Contains("daoris settings handover", HandOverRuleDoor.Reason);
     }
 
     [Fact]
@@ -1650,8 +1642,8 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("update"));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver update --when-idle|--now|--cancel`", StringComparison.Ordinal)
-            && door.Terminal.Contains("`daoris-driver update`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris update --when-idle|--now|--cancel`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris update`", StringComparison.Ordinal)
             && new[] { "Settings → Driver", "*Update when idle*", "*Update now*", "*Not now*" }.All(word => door.Screen.Contains(word, StringComparison.Ordinal))
             && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("D139", UpdateDoor.Reason);
@@ -1777,7 +1769,7 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply)", DriverCommand.Usage);
         Assert.Contains(PlaceDoor.Name, HelpProposalKinds.Find(PlaceDoor.Kind)!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset keep --adoption", StringComparison.Ordinal));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris place <repository>… --preset keep --adoption", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -1855,7 +1847,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("workflow keep <session> [\"…\"]", DriverCommand.Usage);
         Assert.DoesNotContain("keep", HelpProposalKinds.Find("workflow")?.Doors ?? []);
         Assert.Contains("say-so", WorkflowKeepDoor.Reason);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow keep <session> [\"…\"]`", StringComparison.Ordinal));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris workflow keep <session> [\"…\"]`", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -1869,7 +1861,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("workflow stop <run> <node> [\"…\"]", DriverCommand.Usage);
         Assert.DoesNotContain("skip", HelpProposalKinds.Find("workflow")?.Doors ?? []);
         Assert.Contains("your word", WorkflowNodeDoor.Reason);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow skip <run> <node> \"…\"`", StringComparison.Ordinal));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris workflow skip <run> <node> \"…\"`", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -1882,7 +1874,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("workflow changes <run> <node> \"…\"", DriverCommand.Usage);
         Assert.DoesNotContain("changes", HelpProposalKinds.Find("workflow")?.Doors ?? []);
         Assert.Contains("asking for changes", WorkflowNodeDoor.Reason);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow changes <run> <node> \"…\"`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris workflow changes <run> <node> \"…\"`", StringComparison.Ordinal)
             && door.Screen.Contains("*Ask for changes…*", StringComparison.Ordinal));
     }
 
@@ -1894,7 +1886,7 @@ public sealed partial class HelpCoverageTests
     public void The_role_verbs_restore_of_every_default_is_named_by_the_room()
     {
         Assert.Contains(Verbs, row => row.Verb == "role" && row.Answer is Door { Kind: "role" });
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris driver role default --all`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris role default --all`", StringComparison.Ordinal)
             && door.Screen.Contains("*Restore all role defaults*", StringComparison.Ordinal));
     }
 
@@ -1906,7 +1898,7 @@ public sealed partial class HelpCoverageTests
     public void The_role_verbs_policy_is_named_by_the_room_and_proposed_by_the_role_kind()
     {
         Assert.Contains(Verbs, row => row.Verb == "role" && row.Answer is Door { Kind: "role", Name: "set" });
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris driver role policy <id>", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris role policy <id>", StringComparison.Ordinal)
             && door.Screen.Contains("Working roles", StringComparison.Ordinal));
         Assert.Contains("A `set` may add `policy`", HelpRoom.Render(new HelpMachine()));
     }
@@ -1948,7 +1940,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("state <session|branch> [--repository <name>]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("state"));
         Assert.DoesNotContain("state", HelpProposalKinds.Find("sync")!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver trees state <session|branch> [--repository <name>]`", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris tree state <session|branch> [--repository <name>]`", StringComparison.Ordinal)
             && door.Ask is HelpDoorAsk.Never);
         Assert.Contains("changes nothing", TreesStateDoor.Reason);
         Assert.Contains("D148", TreesStateDoor.Reason);
@@ -2014,8 +2006,8 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>", DriverCommand.Usage);
         Assert.Equal(["archive", "unarchive"], HelpProposalKinds.Find("session")!.Doors);
         Assert.Contains("session", HelpProposalKinds.Find("delete")!.Doors);
-        Assert.Contains("`daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…`", room);
-        Assert.Contains("`daoris-driver sessions delete <id>`", room);
+        Assert.Contains("`daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…`", room);
+        Assert.Contains("`daoris session delete <id>`", room);
     }
 
     /// <summary>
@@ -2028,7 +2020,7 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("session stop <id>", DriverCommand.Usage);
         Assert.Equal("sessions", SessionsStopVerb.Place);
         Assert.True(HelpPlaces.Views.Any(view => view.Id == SessionsStopVerb.Place));
-        Assert.Contains("daoris-driver sessions stop", SessionsStopVerb.Reason);
+        Assert.Contains("daoris session stop", SessionsStopVerb.Reason);
         Assert.DoesNotContain("stop", HelpProposalKinds.Find("session")!.Doors);
     }
 
@@ -2051,8 +2043,8 @@ public sealed partial class HelpCoverageTests
         Assert.Equal(ClearWorkspaceDoor.Kind, ClearQuestDoor.Kind);
         Assert.Equal(ClearWorkspaceDoor.Kind, ClearAskDoor.Kind);
         Assert.Equal(ClearWorkspaceDoor.Kind, ClearFailedDoor.Kind);
-        Assert.Contains("`daoris-driver history clear --workspace <name> [--yes]`", room);
-        Assert.Contains("`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`", room);
+        Assert.Contains("`daoris history clear --workspace <name> [--yes]`", room);
+        Assert.Contains("`daoris quest clear <id> [--failed] [--yes]`, `daoris ask clear <id> [--yes]`", room);
     }
 
     /// <summary>

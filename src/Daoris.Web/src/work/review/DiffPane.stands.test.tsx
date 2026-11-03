@@ -103,7 +103,7 @@ describe.each(['en', 'zh'] as const)('where the review says Accept puts the work
   it('says the refusal a standing branch would meet before the press, and holds Accept', async () => {
     await i18n.changeLanguage(language);
     const refusal = '`feature/0fda18-fix-the-gap` is already a branch in `engine`, and Daoris does not move a branch it did not make. '
-      + 'Rename or delete it there, or change the pattern with `daoris driver landing`.';
+      + 'Rename or delete it there, or change the pattern with `daoris place landing`.';
     answer({ ...PLAN, stands: true, problem: refusal });
     pane();
 

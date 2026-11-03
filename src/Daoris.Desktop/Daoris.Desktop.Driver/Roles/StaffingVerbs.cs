@@ -5,8 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// <c>daoris settings actor found</c> (FOUNDATION1w-s part 5, the design §19.15's "Its own verbs"): the found changes of the staffing's copy,
 /// listed, taken or dismissed, on a home the copy still reaches (the register's <c>staffing-copy</c>). It acts alone: the staffing's lock
-/// serializes it with the window's <i>Take it</i> and <i>Dismiss</i>. Its <c>export</c> and <c>import</c> are retired (ONEWAY1c-ii): the role
-/// door sets and says the roles.
+/// serializes it with the window's <i>Take it</i> and <i>Dismiss</i>.
 /// </summary>
 internal static class StaffingVerbs
 {

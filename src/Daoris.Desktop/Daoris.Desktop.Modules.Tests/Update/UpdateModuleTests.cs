@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// UPDATE1 (D139 §3, D50): the screen's door to an install's update, <c>DAORIS.UPDATE</c> — <c>STATE</c> for the banner,
-/// <c>SET</c> for *Update when idle*, *Update now* and *Not now*, written to the request `daoris-driver update` writes, and
+/// <c>SET</c> for *Update when idle*, *Update now* and *Not now*, written to the request `daoris update` writes, and
 /// <c>DISMISS</c> for an outcome already said.
 /// </summary>
 public sealed class UpdateModuleTests : Bridge
@@ -100,7 +100,7 @@ public sealed class UpdateModuleTests : Bridge
 
     /// <summary>
     /// UPDATE1d (D139's UPDATE1b note, D50): after *Dismiss*, <c>STATE</c> still answers the last swap as <c>last</c>, the
-    /// journal's record, so Settings → Driver says what the terminal's plain <c>daoris-driver update</c> says.
+    /// journal's record, so Settings → Driver says what the terminal's plain <c>daoris update</c> says.
     /// </summary>
     [Fact]
     public async Task State_after_Dismiss_still_answers_the_last_swap()

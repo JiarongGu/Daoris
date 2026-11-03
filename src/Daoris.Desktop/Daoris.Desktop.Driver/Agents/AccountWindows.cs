@@ -28,7 +28,7 @@ namespace Daoris.Driver;
 /// <para><b>Missing or unreadable is nothing known</b> (D21's reading): nothing stands in for it, never spent and never
 /// fresh (D57). Names, numbers, times and a session id only — never the agent's words, a key or who signed in. Written by
 /// the driver alone, atomically, LF, keeping what it has no field for; read by the driver alone since the CLI's
-/// <c>windows.ts</c> left with <c>daoris agent list</c> (PUSH1f2e4), which is <c>daoris-driver agent list</c> now;
+/// <c>windows.ts</c> left with <c>daoris agent list</c> (PUSH1f2e4), which is <c>daoris agent list</c> now;
 /// <c>WindowsTwinTests</c> keeps the table the two held. No HTTP route reaches it (D47 §4).</para>
 ///
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "&lt;account&gt;": { "weekly": { "reset": "…Z", "used": 0.14, "seen": "…Z",

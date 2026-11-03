@@ -4,7 +4,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { LineField } from './Lines';
 
-// WSR2: a line's field, set as `daoris driver line` sets it from a terminal (D50). One field, on a workspace's Setup and a
+// WSR2: a line's field, set as `daoris place line` sets it from a terminal (D50). One field, on a workspace's Setup and a
 // repository's (UX6f, UX6g; D150 §4.2, §4.3), so its behaviour is held here.
 
 const draw = (set: string | undefined, onSave = vi.fn(), clearable = true) => {

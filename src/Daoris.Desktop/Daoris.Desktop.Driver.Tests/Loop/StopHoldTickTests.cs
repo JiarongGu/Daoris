@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <para>The stop is <see cref="SessionProcesses.Stop"/>, the call <c>STOP_SESSION</c> makes, so the record ends as the
-/// person's stop does. *Try again* is the release <c>RETRY_QUEST</c> and <c>daoris driver retry --session</c> write, read
+/// person's stop does. *Try again* is the release <c>RETRY_QUEST</c> and <c>daoris quest retry --session</c> write, read
 /// by a driver built for the next look, as the watch builds one per look with the same processes.</para>
 ///
 /// <para>🔴 The stand-in opens a session on any quest it is asked about. The service's ledger does not: it opens one on a
@@ -72,7 +72,7 @@ public sealed class StopHoldTickTests : IDisposable
 
             var sitting = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Stopped, sitting.Verdict);
-            Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris driver retry q1 --session s1`.", sitting.Reason);
+            Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris quest retry q1 --session s1`.", sitting.Reason);
             Assert.Equal(1, service.SessionCount);
         }
 

@@ -327,7 +327,7 @@ public sealed record HelpMachineFacts(
 
     /// <summary>
     /// A place's plan for each <c>place</c> proposal (AGENTSPLACE1k), by the proposal's id: <see cref="PlacePlans.PlanAsync"/> over its ask,
-    /// as <c>daoris-driver place … --plan</c> prints it. Read only for one; nothing is written.
+    /// as <c>daoris place … --plan</c> prints it. Read only for one; nothing is written.
     /// </summary>
     public IReadOnlyDictionary<string, PlacePlanned> Places { get; init; } = new Dictionary<string, PlacePlanned>();
 

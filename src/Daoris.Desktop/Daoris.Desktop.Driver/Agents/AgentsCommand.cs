@@ -244,7 +244,7 @@ public static class AgentsCommand
         var verb = args.Count > 0 ? args[0] : "list";
         if (!Verbs.Contains(verb, StringComparer.Ordinal))
         {
-            await error.WriteLineAsync($"daoris-driver agent: `{verb}` is not a verb of this program's.").ConfigureAwait(false);
+            await error.WriteLineAsync($"daoris agent: `{verb}` is not a verb of this program's.").ConfigureAwait(false);
             await error.WriteLineAsync(Usage).ConfigureAwait(false);
             return 2;
         }

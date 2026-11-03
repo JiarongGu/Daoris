@@ -71,7 +71,7 @@ public static class HelperRules
 
     /// <summary>
     /// What the terminal and Ask Daoris's card say of a mode as it is set (TWINWORDS1, <c>landing-says.json</c>'s <c>helpers</c>): one
-    /// function, <c>daoris-driver driver helpers</c>' and the card's.
+    /// function, <c>daoris place helpers</c>' and the card's.
     /// </summary>
     public static string Says(string mode) => mode switch
     {

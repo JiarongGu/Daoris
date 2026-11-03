@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver sync forward</c> was asked: the quest, and the machine and sequence of the side brought forward.</summary>
+/// <summary>What <c>daoris remote sync forward</c> was asked: the quest, and the machine and sequence of the side brought forward.</summary>
 public sealed record SyncForwardAsk(string Quest, string Machine, long Sequence);
 
 /// <summary>
 /// The terminal's door to the person's bring-forward of one side of two machines' work on a quest (SYNCMERGE1c3; D178 points 2, 7, 8):
-/// <c>daoris-driver sync forward &lt;quest&gt; &lt;machine&gt; &lt;sequence&gt;</c>, through the service's person door
+/// <c>daoris remote sync forward &lt;quest&gt; &lt;machine&gt; &lt;sequence&gt;</c>, through the service's person door
 /// <c>POST /api/quests/{id}/conflicts/forward</c>, printing the service's sentence.
 /// </summary>
 /// <remarks>
@@ -15,7 +15,7 @@ public sealed record SyncForwardAsk(string Quest, string Machine, long Sequence)
 public static class SyncForwardCommand
 {
     public const string Usage =
-        "usage: daoris-driver sync forward <quest> <machine> <sequence>\n"
+        "usage: daoris remote sync forward <quest> <machine> <sequence>\n"
         + "       bring forward one side of two machines' work on a quest: the machine and sequence its conflict names.";
 
     /// <summary>Whether a <c>sync</c> line asks for a bring-forward.</summary>

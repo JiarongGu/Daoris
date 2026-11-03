@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Ask Daoris's <c>hand</c> proposal (WSR5b): a branch a landing made and recorded, handed to a landing
-/// plugin afterwards — the review's own <i>hand it to</i>, and <c>daoris-driver trees hand</c> at a terminal.
+/// plugin afterwards — the review's own <i>hand it to</i>, and <c>daoris tree hand</c> at a terminal.
 /// Its door is <c>hand</c>; its target the session that landed the branch, or the branch; its value the
 /// plugin, where the repository's rule names none; and the proposal's <c>repository</c> the one it is in,
 /// where a name alone is in several.
@@ -66,13 +66,13 @@ internal sealed class HelpHandProposals : IHelpProposalKind
         }
 
         var entry = found[0];
-        var terminal = $"daoris-driver trees hand {entry.Branch} --repository {entry.Repository}" + (plugin is null ? "" : $" --plugin {plugin}");
+        var terminal = $"daoris tree hand {entry.Branch} --repository {entry.Repository}" + (plugin is null ? "" : $" --plugin {plugin}");
         var rule = LandingRules.Choose(config, entry.Repository, entry.Workspace).Rule;
         var to = plugin ?? (rule.Form == LandingForm.Branch ? rule.Plugin : null);
         if (to is null)
         {
             return Refused($"no plugin is named to hand `{entry.Branch}` to: `{entry.Repository}`'s landing rule names none. "
-                + "Name one on the card, or on the rule (`daoris driver landing … --plugin <id>`).", terminal);
+                + "Name one on the card, or on the rule (`daoris place landing … --plugin <id>`).", terminal);
         }
 
         if (LandingRules.PluginProblem(to, facts.Plugins) is { } unready) return Refused(unready, terminal);

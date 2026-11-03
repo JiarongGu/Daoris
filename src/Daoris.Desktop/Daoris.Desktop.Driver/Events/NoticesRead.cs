@@ -23,7 +23,7 @@ public sealed record NeedWaiting(string Group, string Kind, string Subject, stri
 public sealed record AskUnread(string Ask, string? Workspace, bool Teammate, int Unread, string? Who, string? Line, DateTimeOffset? At);
 
 /// <summary>
-/// What came to the person, as <c>daoris-driver notices</c> reads it (NOTIFY2i): the running Daoris's presses, rows and messages where it
+/// What came to the person, as <c>daoris notices</c> reads it (NOTIFY2i): the running Daoris's presses, rows and messages where it
 /// answered, null where they were not read; and the notices of the record either way.
 /// </summary>
 public sealed record NoticesLook(
@@ -34,7 +34,7 @@ public sealed record NoticesLook(
 }
 
 /// <summary>
-/// <c>daoris-driver notices</c> (NOTIFY2i, D196 point 8, the notification design §9): what came to the person, read and never changed — what
+/// <c>daoris notices</c> (NOTIFY2i, D196 point 8, the notification design §9): what came to the person, read and never changed — what
 /// waits for their confirmation, what needs them by group, unread messages by ask, and <i>Done and failed</i>, as text or <c>--json</c>.
 /// </summary>
 /// <remarks>
@@ -47,7 +47,7 @@ public sealed record NoticesLook(
 public static class NoticesRead
 {
     /// <summary>The verb's usage line.</summary>
-    public const string Usage = "usage: daoris-driver notices [--json]";
+    public const string Usage = "usage: daoris notices [--json]";
 
     /// <summary>The groups of <i>What needs you</i> in the order the view shows them, with their words.</summary>
     public static IReadOnlyList<(string Group, string Words)> Groups { get; } =

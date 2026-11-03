@@ -183,7 +183,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         if (declared.Review is not { Rule.IsNone: false } reviews)
         {
             return new WorkflowLook(asked, $"its look `{id}` reads the work in {(asked is null ? "an environment" : $"`{asked}`")}, and "
-                + $"`{repository}` declares no review environment: `daoris driver review {repository} {asked ?? "<environment>"} --kind "
+                + $"`{repository}` declares no review environment: `daoris place review {repository} {asked ?? "<environment>"} --kind "
                 + "local|deployed --procedure <path>` declares one.");
         }
 
@@ -191,7 +191,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         return reviews.Rule.Environments.Any(each => each.Name == environment)
             ? new WorkflowLook(environment, null)
             : new WorkflowLook(environment, $"its look `{id}` reads the work in `{environment}`, which `{repository}` does not declare (it declares "
-                + $"{And(reviews.Rule.Environments.Select(each => each.Name))}): `daoris driver review {repository} {environment} --kind "
+                + $"{And(reviews.Rule.Environments.Select(each => each.Name))}): `daoris place review {repository} {environment} --kind "
                 + "local|deployed --procedure <path>` declares it.");
     }
 
@@ -489,11 +489,11 @@ public static class WorkflowGate
                 + (binding?.Kept?.Words is { Length: > 0 } words ? $", saying: \"{words}\"" : "") + ".",
             WorkflowGateStates.CannotStart =>
                 $"Its run was bound to {process.Name}{why}, which cannot start it here: {process.Problem} Nothing lands until it can be read "
-                + $"(`daoris driver workflow show {binding!.Workflow}` says what is wrong with it), and no other workflow is followed in its place.",
+                + $"(`daoris workflow show {binding!.Workflow}` says what is wrong with it), and no other workflow is followed in its place.",
             WorkflowGateStates.KindPaths =>
                 $"Holds: this work changed {Plural(gate.Outside.Count, "path")} outside {Kind(binding!)}'s ({WorkflowProcess.And(binding!.Paths)}): "
                 + $"{Listed(gate.Outside)}; and {process.Name}, chosen for it, asks less of you than {gate.Otherwise} would without the kind "
-                + $"({string.Join("; ", gate.Lowered)}). `daoris-driver workflow keep {gate.Session ?? "<session>"} \"…\"` keeps {process.Name} for "
+                + $"({string.Join("; ", gate.Lowered)}). `daoris workflow keep {gate.Session ?? "<session>"} \"…\"` keeps {process.Name} for "
                 + "this work with your words; nothing switches by itself.",
             _ => $"Whether this work's workflow holds it could not be read: {gate.Problem} Nothing lands until it can be.",
         };

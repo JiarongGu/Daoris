@@ -31,21 +31,21 @@ import type { GitAccessSetup } from './RepositorySetup';
  * save would be refused.
  */
 export type WorkspaceDefaults = {
-  /** Its line (WSR2): `daoris driver line --workspace`. */
+  /** Its line (WSR2): `daoris place line --workspace`. */
   line?: { set?: string; onSet: (branch: string | undefined) => void } | null;
-  /** The language its sessions write in (LANG1c), by the driver's table: `daoris driver language --workspace`. */
+  /** The language its sessions write in (LANG1c), by the driver's table: `daoris place language --workspace`. */
   language?: { set?: string; table: LanguageOption[]; onSet: (code: string | undefined) => void } | null;
-  /** Whether agents outside its repositories read their checkouts (READ1, D107): `daoris driver across --workspace`. */
+  /** Whether agents outside its repositories read their checkouts (READ1, D107): `daoris place across --workspace`. */
   read?: { set?: boolean; onSet: (read: boolean | undefined) => void } | null;
-  /** Where its repositories' work is reviewed before it lands (REVIEWENV1a): `daoris driver review --workspace`. */
+  /** Where its repositories' work is reviewed before it lands (REVIEWENV1a): `daoris place review --workspace`. */
   review?: { set?: ReviewRule; onChange: (edit: ReviewEdit) => void } | null;
-  /** Which other agent reads its repositories' work before it lands (XAGENT1a): `daoris driver opinion --workspace`. */
+  /** Which other agent reads its repositories' work before it lands (XAGENT1a): `daoris place opinion --workspace`. */
   opinion?: { set?: OpinionRule; onChange: (edit: OpinionEdit) => void } | null;
-  /** How its repositories' work is committed (DOORS1b, D164's amendment point 1): `daoris driver commits --workspace`. */
+  /** How its repositories' work is committed (DOORS1b, D164's amendment point 1): `daoris place commits --workspace`. */
   commits?: { set?: CommitRule; onChange: (edit: CommitEdit) => void } | null;
-  /** What a helper its repositories' agents ask for does (DOORS1b, D163 point 3): `daoris driver helpers --workspace`. */
+  /** What a helper its repositories' agents ask for does (DOORS1b, D163 point 3): `daoris place helpers --workspace`. */
   helpers?: { set?: HelperRule; onChange: (edit: HelperEdit) => void } | null;
-  /** What an agent's ask to hand its session over does in its repositories (MIXAGENT1c, D163 point 3): `daoris driver handover --workspace`. */
+  /** What an agent's ask to hand its session over does in its repositories (MIXAGENT1c, D163 point 3): `daoris settings handover --workspace`. */
   handOver?: { set?: HandOverRule; onChange: (edit: HandOverEdit) => void } | null;
 };
 

@@ -13,7 +13,7 @@ internal sealed class HelpAskProposalWriter(HelpProposalFile file)
 
     /// <summary>Write one ask proposal — something to start, which becomes an ask when the person applies it.</summary>
     /// <param name="review">
-    /// ENTRY1c: the person's review choice for the ask's work, as the composer and <c>daoris-driver ask --review</c> take it:
+    /// ENTRY1c: the person's review choice for the ask's work, as the composer and <c>daoris ask --review</c> take it:
     /// <c>on</c>, an environment's name or <c>off</c>; null, blank or <c>rule</c> writes none, and each repository's rule decides.
     /// </param>
     /// <param name="reviewWords">The person's words with the choice, written only with one.</param>

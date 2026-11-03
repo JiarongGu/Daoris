@@ -113,7 +113,7 @@ public sealed class WorkOrdersPortsTests : IDisposable
     [Fact]
     public void The_installed_workflows_say_a_workflow_not_saved_here_as_the_door_did_and_a_home_with_no_records_owes_nothing()
     {
-        Assert.Equal("No workflow `docs-to-pr` is saved here: `daoris driver workflow list` names them. Nothing was kept.",
+        Assert.Equal("No workflow `docs-to-pr` is saved here: `daoris workflow list` names them. Nothing was kept.",
             WorkOrdersWorkflows.Current.Unusable(_home, "docs-to-pr"));
         Assert.Empty(WorkOrdersWorkflows.Current.Obligations(_home, DateTimeOffset.UnixEpoch));
         Assert.Empty(WorkOrdersWorkflows.Current.Owing(_home));

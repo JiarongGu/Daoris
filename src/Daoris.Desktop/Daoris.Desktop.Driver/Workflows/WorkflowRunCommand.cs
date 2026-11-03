@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver workflow run --session|--quest|--ask &lt;id&gt;</c> (WORKFLOW1c2; D157's WORKFLOW1c2 note, the workflow design
+/// <c>daoris workflow run --session|--quest|--ask &lt;id&gt;</c> (WORKFLOW1c2; D157's WORKFLOW1c2 note, the workflow design
 /// §5.2, §7, D50): where a piece of work stands in the workflow it follows, the terminal's twin of the session's <i>Workflow</i>
 /// view. It prints what <see cref="WorkflowRunReader"/> reads, the screen's read too, in <see cref="WorkflowRunWords"/>. In the
 /// library, so its words are held by a test.
@@ -17,7 +17,7 @@ public static class WorkflowRunCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver workflow run --session <id> | --quest <id> | --ask <id>
+        usage: daoris workflow run --session <id> | --quest <id> | --ask <id>
                where a piece of work stands in the workflow it follows, as the session's Workflow view draws it: each step of
                its repository's workflow with its state and what that state says, the step the run stands at marked ●. A
                session's run is its quest's; an ask's, each repository its chains reach. Reads only.

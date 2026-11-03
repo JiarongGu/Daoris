@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// Each seeded role's order as its <c>ROLES</c> row carries it, as <c>daoris role</c> says it, and the role
-/// door's <c>SET_ROLE</c> the one press that sets one, judged by the driver's one judge and written through the staffing's one write; the
-/// retired <c>SET_ACTOR</c> answers nothing. And the row's proof that a Chat started after Build changes keeps its agent: the press's
+/// door's <c>SET_ROLE</c> the one press that sets one, judged by the driver's one judge and written through the staffing's one write.
+/// And the row's proof that a Chat started after Build changes keeps its agent: the press's
 /// adapters spawn nothing, each refusing in its own words, so the answer names which one the start took.
 /// </summary>
 public sealed class DriverModuleActorTests : DriverModuleBridge
@@ -144,18 +144,6 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         {
             RoleStaffingPort.Unwire(DriverConfigPath);
         }
-    }
-
-    /// <summary>ONEWAY1a: the retired route answers nothing and writes nothing.</summary>
-    [Fact]
-    public async Task ONEWAY1a_set_actor_is_no_route()
-    {
-        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");
-        var module = Module();
-
-        await RefusalAsync(module, "SET_ACTOR", new { actor = "build", choices = new object[] { new { agent = "codex-acp" } } });
-
-        Assert.Equal("claude-code", DriverConfig.Load(DriverConfigPath).Adapter);
     }
 
     /// <summary>The staffing's own read is folded into the role read: no route answers it apart.</summary>

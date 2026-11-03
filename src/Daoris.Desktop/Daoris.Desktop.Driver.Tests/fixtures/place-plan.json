@@ -1,5 +1,5 @@
 {
-  "about": "AGENTSPLACE1a2 (the Agents-place design §4): `daoris-driver place … --plan`'s words, case by case, over PlacePlanTests' stand-in world (solo on its own, engine declaring integration, web on github.com with a landing plugin, docs on gitlab.com with none, atlas not adopted with two queued quests). Each case is the verb's words, its exit code and the lines it prints, PLACE_PLAN's plan said in English from the same code.",
+  "about": "AGENTSPLACE1a2 (the Agents-place design §4): `daoris place … --plan`'s words, case by case, over PlacePlanTests' stand-in world (solo on its own, engine declaring integration, web on github.com with a landing plugin, docs on gitlab.com with none, atlas not adopted with two queued quests). Each case is the verb's words, its exit code and the lines it prints, PLACE_PLAN's plan said in English from the same code.",
   "cases": [
     {
       "name": "a repository on its own, merged after you accept, with general driving",
@@ -91,9 +91,9 @@
       "exit": 2,
       "lines": [
         "place: name `--plan` to read the plan, or `--apply` to apply it.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
-        "       daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
-        "       daoris-driver place --workspace <name> --pause | --resume | --stop"
+        "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
+        "       daoris place --workspace <name> --pause | --resume | --stop"
       ]
     },
     {
@@ -115,9 +115,9 @@
       "exit": 2,
       "lines": [
         "place: `opinions` is not something `--with` takes — `opinion` or `look`; adoption is `--adoption`.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
-        "       daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
-        "       daoris-driver place --workspace <name> --pause | --resume | --stop"
+        "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
+        "       daoris place --workspace <name> --pause | --resume | --stop"
       ]
     }
   ]

@@ -30,7 +30,7 @@ given; write into another repository. It acts with its own authority, on its own
 ### The stand-in world
 
 `DAORIS_PLUGIN_WORLD`, when it is set, names a JSON file that answers in the platform's place: `act()`, `check()` and
-`remove()` are not called, so a test or a trial reaches nothing. The kit's tests and `daoris-driver plugins try` set it,
+`remove()` are not called, so a test or a trial reaches nothing. The kit's tests and `daoris plugin try` set it,
 and nothing is sent to a plugin that does not take it. `work.mjs` says what the file may script.
 
 ## Its contract test
@@ -46,7 +46,7 @@ and nothing is sent to a plugin that does not take it. `work.mjs` says what the 
 It checks the protocol, not the code's honesty: what `act()` really does on its platform is for a test of your own, with
 a fake of that platform.
 
-`daoris-driver plugins try <this folder> --cycle cycle.json` drives the same plugin through the driver itself: a step
+`daoris plugin try <this folder> --cycle cycle.json` drives the same plugin through the driver itself: a step
 made due, its attempt delivered twice, a failure, a timeout, a restart and a new revision's attempt, then its resource
 removed twice. `cycle.json` names the step and what each attempt is given.
 

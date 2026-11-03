@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>The words of <c>daoris-driver work recovery drop</c> (RECOVERYDROP1): what it takes, and what it refuses in a sentence.</summary>
+/// <summary>The words of <c>daoris work recovery drop</c> (RECOVERYDROP1): what it takes, and what it refuses in a sentence.</summary>
 public sealed class RecoveryCommandTests
 {
     private const string Ref = "refs/daoris/discarded/daoris/s-1";
@@ -39,7 +39,7 @@ public sealed class RecoveryCommandTests
     {
         Assert.Null(RecoveryCommand.Read(args, out var problem));
         Assert.Equal(said, problem);
-        Assert.StartsWith("usage: daoris-driver work recovery drop", RecoveryCommand.Usage);
+        Assert.StartsWith("usage: daoris work recovery drop", RecoveryCommand.Usage);
     }
 
     [Theory]

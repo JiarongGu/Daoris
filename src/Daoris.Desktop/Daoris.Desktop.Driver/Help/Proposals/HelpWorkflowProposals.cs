@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// file names no door: one with no <c>base</c> is a <c>new</c> workflow, one with a base an <c>edit</c>, and <c>choose</c> is the
 /// <c>use</c> door. It is judged as the editor judges a version (<see cref="WorkflowNamed"/>, §2.5, §3.9), and applied by saving
 /// it through <see cref="WorkflowStore.Add"/> with the door <c>ask-daoris:&lt;proposal&gt;</c>, then the choice through the
-/// driver's file, as <c>daoris driver workflow use</c> makes it.
+/// driver's file, as <c>daoris workflow use</c> makes it.
 /// </summary>
 /// <remarks>
 /// <para><b>Stale is refused, never applied over</b> (§8.1, §2.6): a new workflow takes an id no workflow here has, and an edit's
@@ -105,7 +105,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         if (repository is not null && workspace is not null)
         {
             return Refused($"`{scope}` names both a repository and a workspace on this machine, and a workflow proposal does not say "
-                + $"which: `daoris driver workflow use {id} --repository|--workspace {scope}` chooses it for either.");
+                + $"which: `daoris workflow use {id} --repository|--workspace {scope}` chooses it for either.");
         }
 
         var found = facts.Workflows.FirstOrDefault(each => each.Id == id);
@@ -262,15 +262,15 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var terminals = new List<string>();
         if (!unchanged)
         {
-            terminals.Add(before is null ? "daoris driver workflow import <file>" : $"daoris driver workflow apply {id} <file> --base {before.Version}");
+            terminals.Add(before is null ? "daoris workflow import <file>" : $"daoris workflow apply {id} <file> --base {before.Version}");
         }
 
         if (use is not null)
         {
             var flag = use.Landed ? " --landed" : use.Kind is { } kind ? $" --kind {kind}" : "";
             terminals.Add(repository is not null
-                ? $"daoris driver workflow use {id} --repository {repository}{flag}"
-                : $"daoris driver workflow use {id} --workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}{flag}");
+                ? $"daoris workflow use {id} --repository {repository}{flag}"
+                : $"daoris workflow use {id} --workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}{flag}");
         }
 
         var card = new HelpWorkflowCard(
@@ -286,7 +286,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             Lowers = judged.Lowered,
             NoGates = noGates,
         };
-        return new HelpPlan(null, string.Join('\n', said), terminals.Count > 0 ? string.Join(" && ", terminals) : $"daoris driver workflow show {id}", null)
+        return new HelpPlan(null, string.Join('\n', said), terminals.Count > 0 ? string.Join(" && ", terminals) : $"daoris workflow show {id}", null)
         {
             Workflow = card,
         };
@@ -502,7 +502,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         if (found is null) return $"there is no workflow `{id}` on this machine: a new workflow names no base.";
         if (found.Read.Problem is { } unread) return $"`{id}`'s file cannot be read here, and nothing is saved over it: {unread}";
         return newest == number ? null
-            : $"`{id}` is at v{newest} now, not v{number}: read it again (`daoris driver workflow show {id}`) and make the change against v{newest}.";
+            : $"`{id}` is at v{newest} now, not v{number}: read it again (`daoris workflow show {id}`) and make the change against v{newest}.";
     }
 
 

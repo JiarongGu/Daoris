@@ -51,7 +51,7 @@ export function useWorkflowTab({ repository, enabled, ready = true, notify, rout
         onError: (error) => answered.refused(sentence(error)),
       }) : undefined,
       accepting: setLanded.isPending,
-      // FABRIC-PIPELINE1d: *Verify…* of a branch or a commit under the accepted gates, `daoris-driver verify`'s twin; a refusal is an answer.
+      // FABRIC-PIPELINE1d: *Verify…* of a branch or a commit under the accepted gates, `daoris gate verify`'s twin; a refusal is an answer.
       onVerify: (ask, answered) => verify.mutate({ repository: registration.repository, ...ask }, {
         onSuccess: (answer) => {
           if (answer.done) {

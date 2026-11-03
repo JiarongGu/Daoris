@@ -45,7 +45,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
 
         Assert.Null(plan.Refusal);
         Assert.Contains("Set the role `designer` (Designer · 设计师): it takes design on this machine, on claude-code · opus · high.", plan.Describe);
-        Assert.Equal("daoris driver role set designer --name \"Designer\" --name-in zh=\"设计师\" --takes design --scope machine \"claude-code opus high\"", plan.Terminal);
+        Assert.Equal("daoris role set designer --name \"Designer\" --name-in zh=\"设计师\" --takes design --scope machine \"claude-code opus high\"", plan.Terminal);
         Assert.Equal(RoleSuggestion.Designer.Role.Json(), Assert.IsType<RoleChange.SetRole>(plan.Role!.Change).Role.Json());
     }
 
@@ -56,12 +56,12 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         var one = HelpProposals.Plan(Role("set", "designer", """{ "name": "Designer", "takes": ["design"], "choices": [{ "agent": "claude-code", "model": "opus", "effort": "high" }] }"""), DriverConfig.Empty, Machine);
         Assert.Null(one.Refusal);
         Assert.Contains("Set the role `designer` (Designer): it takes design on this machine", one.Describe);
-        Assert.Equal("daoris driver role set designer --name \"Designer\" --takes design --scope machine \"claude-code opus high\"", one.Terminal);
+        Assert.Equal("daoris role set designer --name \"Designer\" --takes design --scope machine \"claude-code opus high\"", one.Terminal);
 
         var third = HelpProposals.Plan(Role("set", "designer", """{ "name": { "fr": "Concepteur" }, "takes": ["design"], "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, Machine);
         Assert.Null(third.Refusal);
         Assert.Contains("(Concepteur)", third.Describe);
-        Assert.StartsWith("daoris driver role set designer --name-in fr=\"Concepteur\" --takes design", third.Terminal);
+        Assert.StartsWith("daoris role set designer --name-in fr=\"Concepteur\" --takes design", third.Terminal);
         Assert.Equal("""{"fr":"Concepteur"}""", Assert.IsType<RoleChange.SetRole>(third.Role!.Change).Role.Name.Json());
 
         Assert.NotNull(HelpProposals.Plan(Role("set", "designer", """{ "name": " ", "takes": ["design"], "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, Machine).Refusal);
@@ -92,7 +92,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Null(preset.Refusal);
         Assert.Contains("Policy, Build: First that can run → Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day.", preset.Describe);
         Assert.Contains("This can spend differently.", preset.Describe);
-        Assert.Contains("&& daoris driver role policy build --preset first --rule weight", preset.Terminal);
+        Assert.Contains("&& daoris role policy build --preset first --rule weight", preset.Terminal);
         Assert.Equal(StaffPolicy.Code, Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(Preset: "cheapest"))).Code);
 
         Assert.Null(Staffing.Policy("build").Policy);
@@ -184,7 +184,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Null(plan.Refusal);
         Assert.IsType<RoleChange.DefaultAllRoles>(plan.Role!.Change);
         Assert.Null(plan.Role.Read);
-        Assert.Equal("daoris driver role default --all", plan.Terminal);
+        Assert.Equal("daoris role default --all", plan.Terminal);
         Assert.Contains("Give every seeded role back its seed", plan.Describe);
         Assert.Contains("added roles are kept", plan.Describe);
     }

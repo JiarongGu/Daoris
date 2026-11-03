@@ -30,7 +30,7 @@ const data = process.env.DAORIS_PLUGIN_DATA;
 
 // The work points (README.md, "Working"): the kit's work.mjs keeps the journal, answers each point, and sends each outcome at
 // `work/step`. These are the external calls it makes, the only part to write. Under the kit's stand-in world, which its tests
-// and `daoris-driver plugins try` set, none of them is called.
+// and `daoris plugin try` set, none of them is called.
 const kit = work({
   data,
   send,

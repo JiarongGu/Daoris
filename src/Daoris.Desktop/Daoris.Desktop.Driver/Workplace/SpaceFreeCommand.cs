@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris-driver space free [--kind &lt;id&gt;]... [--early &lt;group&gt;]... [--yes]` (KEEP1e, the cleanup design §3.3, §4.4, D50): the
+/// `daoris space free [--kind &lt;id&gt;]... [--early &lt;group&gt;]... [--yes]` (KEEP1e, the cleanup design §3.3, §4.4, D50): the
 /// terminal's twin of This Daoris's <i>Free up space…</i>. Without <c>--yes</c> it lists, per kind, what its rule takes now and what could go
 /// early, and changes nothing; the list runs anywhere. With <c>--yes</c> it removes what the rules take (the kinds <c>--kind</c> names, or
 /// every kind), and each group <c>--early</c> names, then reads the run to its end, a line per kind as it ends.
@@ -23,12 +23,12 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class SpaceFreeCommand
 {
-    public const string Usage = "usage: daoris-driver space free [--kind <id>]... [--early <group>]... [--yes]";
+    public const string Usage = "usage: daoris space free [--kind <id>]... [--early <group>]... [--yes]";
 
     /// <summary>The kinds a rule takes now, which <c>--kind</c> names.</summary>
     public static IReadOnlyList<string> NowKinds { get; } = ["set-aside", "downloads", "logs"];
 
-    private const string Prefix = "daoris-driver space free";
+    private const string Prefix = "daoris space free";
 
     /// <summary>How often the run is read again over the pipe while it runs.</summary>
     internal static TimeSpan Every { get; set; } = TimeSpan.FromSeconds(1);
@@ -142,7 +142,7 @@ public static class SpaceFreeCommand
             if (read is null || run is not { } current)
             {
                 await instance.Error.WriteLineAsync(
-                    $"{Prefix}: Daoris stopped while the run was under way, so how it ended is not known; `daoris-driver space` says what remains.")
+                    $"{Prefix}: Daoris stopped while the run was under way, so how it ended is not known; `daoris space` says what remains.")
                     .ConfigureAwait(false);
                 return 2;
             }
@@ -162,7 +162,7 @@ public static class SpaceFreeCommand
             catch (OperationCanceledException)
             {
                 await instance.Error.WriteLineAsync(
-                    $"{Prefix}: stopped following run {id}; it goes on in Daoris, and `daoris-driver space` says how it ended.").ConfigureAwait(false);
+                    $"{Prefix}: stopped following run {id}; it goes on in Daoris, and `daoris space` says how it ended.").ConfigureAwait(false);
                 return 2;
             }
         }
@@ -217,7 +217,7 @@ public static class SpaceFreeCommand
                 instance.Out.WriteLine("done: something named was kept, each said above with why.");
                 return 1;
             default:
-                instance.Error.WriteLine($"{Prefix}: the run stopped before its end; `daoris-driver space` says what remains.");
+                instance.Error.WriteLine($"{Prefix}: the run stopped before its end; `daoris space` says what remains.");
                 return 2;
         }
     }
@@ -256,8 +256,8 @@ public static class SpaceFreeCommand
         }
 
         foreach (var (kind, why) in plan.Unread) text.Append("  ").Append(kind).Append(": not read (").Append(why).Append(")\n");
-        text.Append("with their own press: `daoris-driver history clear` (Clear history… on a workspace's page), ")
-            .Append("`daoris-driver trees clean` (Clean up… on its Branches)\n");
+        text.Append("with their own press: `daoris history clear` (Clear history… on a workspace's page), ")
+            .Append("`daoris tree clean` (Clean up… on its Branches)\n");
         text.Append("nothing was removed: --yes removes what the rules take, and --early <group> that group too.\n");
         return text.ToString();
     }

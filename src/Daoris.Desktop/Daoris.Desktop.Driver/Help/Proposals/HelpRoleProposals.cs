@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// changed (<c>set</c>), removed (<c>remove</c>) or given back its seed (<c>default</c>), or every seeded role at once (<c>default-all</c>,
 /// DEFAULTCONFIG1b's <i>Restore all role defaults</i>, naming no one role), by the role's id, its file's own <c>press</c>
 /// carrying the record's fields, the choices and the revision Ask Daoris read. It is judged by the role door's judge, the one
-/// <c>SET_ROLE</c> and <c>daoris driver role</c> answer, and applied only by the person's press, through that door, in both modes: no
+/// <c>SET_ROLE</c> and <c>daoris role</c> answer, and applied only by the person's press, through that door, in both modes: no
 /// <c>settings_*</c> grant reaches a role (D205 point 9). It extends what MODELROLE1h's <c>actor_propose</c> would be: a <c>set</c> of a
 /// seeded role naming its choices sets that actor's order.
 /// </summary>
@@ -223,7 +223,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     }
 
     private static string PolicyTerminal(string id, StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices) =>
-        $" && daoris driver role policy {id} " + (policy is null ? "--clear" : StaffPolicyFlags.Terminal(policy, choices ?? []));
+        $" && daoris role policy {id} " + (policy is null ? "--clear" : StaffPolicyFlags.Terminal(policy, choices ?? []));
 
     public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
@@ -248,12 +248,12 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     private static string Terminal(RoleChange change, IReadOnlyList<ActorChoice>? choices) => change switch
     {
         RoleChange.SetRole { Role: var role } =>
-            $"daoris driver role set {role.Id} {NameFlags(role.Name)} --takes {string.Join(",", role.Takes)} "
+            $"daoris role set {role.Id} {NameFlags(role.Name)} --takes {string.Join(",", role.Takes)} "
             + $"--scope {(role.Scope.Kind == RoleScope.Machine ? RoleScope.Machine : $"{role.Scope.Kind}:{role.Scope.Id}")}"
             + string.Concat((choices ?? []).Select(choice => $" \"{choice.Agent} {choice.Model ?? "-"} {choice.Effort ?? "-"}\"")),
-        RoleChange.RemoveRole => $"daoris driver role remove {change.Id}",
-        RoleChange.DefaultAllRoles => "daoris driver role default --all",
-        _ => $"daoris driver role default {change.Id}",
+        RoleChange.RemoveRole => $"daoris role remove {change.Id}",
+        RoleChange.DefaultAllRoles => "daoris role default --all",
+        _ => $"daoris role default {change.Id}",
     };
 
     /// <summary>The name a press carries: authored text, where a proposal written before (<c>{ "en": null, "zh": "…" }</c>) leaves a language out as null.</summary>

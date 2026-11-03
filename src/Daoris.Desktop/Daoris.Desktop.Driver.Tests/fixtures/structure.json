@@ -1478,7 +1478,7 @@
     "SessionProcessesTests.cs": "Agents",
     "SessionProcessesProcessTests.cs": "Agents",
     "TaskStopsTests.cs": "Agents",
-    "RotationTwinTests.cs": "Agents",
+    "RotationOrderTests.cs": "Agents",
     "TranscriptAsSaidTests.cs": "Agents",
     "SpawnSkillsTests.cs": "Agents",
     "TargetPromptGoldenTests.cs": "Agents",

@@ -236,7 +236,7 @@ describe('how this came to be', () => {
 
     expect(section()).toHaveTextContent('The service\'s session records could not be read, so no session is read here.');
     expect(section()).toHaveTextContent('Its session records could not be read.');
-    expect(section()).toHaveTextContent('A terminal reads the same chain with daoris-driver trace quest q1');
+    expect(section()).toHaveTextContent('A terminal reads the same chain with daoris trace quest q1');
   });
 
   it('says nothing names it, reading while it reads, and the route’s refusal in its own words', () => {

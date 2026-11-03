@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1j (D154 point 3; the review environment design §1.4–§1.6, §3.6, D50): <c>daoris-driver quest review &lt;id&gt;
+/// REVIEWENV1j (D154 point 3; the review environment design §1.4–§1.6, §3.6, D50): <c>daoris quest review &lt;id&gt;
 /// off|on|&lt;environment&gt;</c>, the terminal's twin of the chain's choice at the gate. <c>off</c> is the skip, through the verdict's
 /// door; <c>on</c> or an environment's name is <i>Set it up</i>, through the set-up step's door, in the environment the
 /// repository's rule declares. Each answers in the service's sentence, a refusal included. A service stood in: the fast half (MOD8).
@@ -87,7 +87,7 @@ public sealed class QuestReviewChoiceTests
         Assert.Equal(
             $"daoris-driver: {Published}\n"
             + "daoris-driver: the gate: `web-app`'s work waits for set-up step `#q3` to show it in `local`, then for your look: "
-            + "`daoris-driver quest review q3 reviewed` once you have looked.\n",
+            + "`daoris quest review q3 reviewed` once you have looked.\n",
             output.ToString().ReplaceLineEndings("\n"));
     }
 
@@ -119,7 +119,7 @@ public sealed class QuestReviewChoiceTests
         var (none, _) = Service(Work() with { To = "notes" }, (_, _) => null);
         Assert.Equal(1, await QuestReviewCommand.RunAsync(Choice("on"), World(none), output));
         Assert.Contains("`notes` declares no review environment", output.ToString());
-        Assert.Contains("`daoris driver review notes <environment> --kind local|deployed --procedure <path>`", output.ToString());
+        Assert.Contains("`daoris place review notes <environment> --kind local|deployed --procedure <path>`", output.ToString());
 
         Assert.DoesNotContain(heard, each => each.Method == "POST");
     }
@@ -168,8 +168,8 @@ public sealed class QuestReviewChoiceTests
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  quest review <id> off [\"…\"]  ·  quest review <id> on|<environment>\n", usage);
-        Assert.Contains("daoris-driver quest review <id> off [\"…\"]", QuestReviewCommand.Usage);
-        Assert.Contains("daoris-driver quest review <id> on|<environment>", QuestReviewCommand.Usage);
+        Assert.Contains("daoris quest review <id> off [\"…\"]", QuestReviewCommand.Usage);
+        Assert.Contains("daoris quest review <id> on|<environment>", QuestReviewCommand.Usage);
     }
 
     /// <summary>The host's fallback <c>quest</c> usage names the choice beside the verdicts (REVIEWENV1j2); the host is read as text.</summary>

@@ -219,7 +219,7 @@ public sealed class LandingChainTests : IDisposable
 
         Assert.Contains("already reads on `origin/main`", refused.Message);
         Assert.Contains("would ride no pull request", refused.Message);
-        Assert.Contains("daoris-driver trees sync", refused.Message);
+        Assert.Contains("daoris tree sync", refused.Message);
         Assert.Contains("a fresh `feature/q1-fix-the-gap`", refused.Message);
     }
 
@@ -235,7 +235,7 @@ public sealed class LandingChainTests : IDisposable
             new AdvanceFacts(integrated, Tip, null, Descends: true, Ahead: 2, Completed: "main"))!;
 
         Assert.Contains("integrated into `main`", told.Message);
-        Assert.Contains("daoris-driver trees sync", told.Message);
+        Assert.Contains("daoris tree sync", told.Message);
         Assert.Contains("a fresh `feature/q1-fix-the-gap`", told.Message);
         Assert.DoesNotContain("pull request", told.Message);
         Assert.DoesNotContain("plugin", told.Message);

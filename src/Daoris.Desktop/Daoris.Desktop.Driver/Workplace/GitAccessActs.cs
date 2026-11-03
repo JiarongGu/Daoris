@@ -23,7 +23,7 @@ public sealed record GitAccessEdit
 
 /// <summary>
 /// The edits of git access (GITAUTH1f, D198 points 8, 10 and 12; the git-auth design §6.2, §6.4 and §8): one typed operation called by
-/// <c>SET_GIT_ACCESS</c> and by <c>daoris-driver git access</c> alone, writing only the key paths it changes in <c>driver.json</c>, so
+/// <c>SET_GIT_ACCESS</c> and by <c>daoris git access</c> alone, writing only the key paths it changes in <c>driver.json</c>, so
 /// every other key, a key this build does not know included, is kept as written.
 /// </summary>
 public static class GitAccessActs

@@ -571,7 +571,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
 
         Assert.Equal(
             "`staffed` v1's step `second` names the role `security`, which cannot take it: The role `security` does not take `review`, so the starts "
-            + "naming it hold until it does: Agents → Roles, or `daoris driver role`.",
+            + "naming it hold until it does: Agents → Roles, or `daoris role`.",
             planned.Problem);
         Assert.Equal("security", planned.RoleOf(NodeKinds.Opinion)?.Role);
 

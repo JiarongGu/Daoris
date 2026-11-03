@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2): the person's skip and stop of a graph run's node, the page's half of
-// `daoris-driver workflow skip|stop`. Seen failing first.
+// `daoris workflow skip|stop`. Seen failing first.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async (): Promise<unknown> => null) }));
 
@@ -42,7 +42,7 @@ describe("a repository's Current asked for a route", () => {
   });
 });
 
-// FABRIC-PIPELINE1d part 5: *Verify…*, `daoris-driver verify`'s twin, binds a person's verification of a branch or a commit.
+// FABRIC-PIPELINE1d part 5: *Verify…*, `daoris gate verify`'s twin, binds a person's verification of a branch or a commit.
 describe("the person's verification of a branch or a commit", () => {
   afterEach(() => invoke.mockReset());
   const wrapper = ({ children }: { children: React.ReactNode }) => (

@@ -7,7 +7,7 @@ internal sealed class HelpAcceptProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to accept a departure (DRIFT1d2, D133 §4): a quest a done's departure holds, by its id, for the
-    /// person to apply — the quest page's yes and <c>daoris-driver quest accept</c>. Whether a departure holds it is the
+    /// person to apply — the quest page's yes and <c>daoris quest accept</c>. Whether a departure holds it is the
     /// driver's to judge against the quest as the service answers it; the yes stays the person's press, never the tool's.
     /// </summary>
     public (string? Id, string Message) Propose(string quest, string why, string? session, DateTimeOffset at)

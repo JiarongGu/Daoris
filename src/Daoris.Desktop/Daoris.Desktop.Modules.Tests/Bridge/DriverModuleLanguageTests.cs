@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The session language over the bridge (LANG1c, D142 point 7): the screens' half of `daoris driver language`, over the same
+/// The session language over the bridge (LANG1c, D142 point 7): the screens' half of `daoris place language`, over the same
 /// file, for a repository or a workspace; the state answering what is set as rows, so no key policy on the bridge respells a
 /// name, and the closed table each option is named from; and the lines answering what each repository resolves to and from
 /// where, which only the driver resolves.

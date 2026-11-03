@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver register [--repository &lt;name&gt;]</c> (WSSETUP5, D124 §3.1, §4.5): the terminal's door to following a
+/// <c>daoris repository register [--repository &lt;name&gt;]</c> (WSSETUP5, D124 §3.1, §4.5): the terminal's door to following a
 /// line when the person asks, every repository with a checkout here or the one named. The row's <i>Refresh</i> is the
 /// screen's door to the same follow (D50). In the library rather than the host, so its words are held by a test, as the
 /// set-up press's are.
@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class RegisterCommand
 {
-    public const string Usage = "usage: daoris-driver register [--repository <name>]";
+    public const string Usage = "usage: daoris repository register [--repository <name>]";
 
     public static Task<int> RunAsync(IReadOnlyList<string> args, TextWriter output, IRegistrationWorld world, CancellationToken ct = default) =>
         RunAsync(args, output, world, instance: null, ct);

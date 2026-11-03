@@ -87,7 +87,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
 
         bool Marked(SessionRecord record) => placed.GetValueOrDefault(record.Id)?.Archived == true;
         var (acts, stays) = (records.Where(record => Marked(record) != archive).ToList(), records.Where(record => Marked(record) == archive).ToList());
-        var terminal = $"daoris-driver sessions {proposal.Door} {string.Join(' ', records.Select(record => record.Id))}";
+        var terminal = $"daoris session {proposal.Door} {string.Join(' ', records.Select(record => record.Id))}";
         var stand = archive ? "archived already" : "not archived";
         if (acts.Count == 0)
         {
@@ -155,7 +155,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
             ? $"Nothing that ended is left to archive, so applying changes nothing.{stays}"
             : $"Archives {ended.Count} session{(ended.Count == 1 ? "" : "s")} that ended.{stays} Each is judged again as Apply archives it, "
               + $"and Show archived, in the list's ⋯, brings {(ended.Count == 1 ? "it" : "them")} back.";
-        return new HelpPlan(null, said, "daoris-driver sessions archive --ended --yes", null) { Sessions = ended };
+        return new HelpPlan(null, said, "daoris session archive --ended --yes", null) { Sessions = ended };
     }
 
     /// <summary>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1c (D147 §3.3, D50): <c>daoris-driver git branches</c>, the terminal's read door to the branch list: its words, its
+/// GIT1c (D147 §3.3, D50): <c>daoris git branches</c>, the terminal's read door to the branch list: its words, its
 /// scope (D112) and its written form, from lists built here. The read itself is <c>GitBranchesTests</c>'.
 /// </summary>
 public sealed class GitBranchesCommandTests

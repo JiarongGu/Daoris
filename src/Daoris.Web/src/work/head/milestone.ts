@@ -1,6 +1,6 @@
 // The milestone of a unit of work (FABRIC-MILESTONE1b; the fabric events design §D0): whether its end was reached, the result kept,
 // its cleanup (pending, with what waits and why, or completed, with what went) and the recovery retained and until when. The
-// driver derives it at each read from the records it keeps (`WORK_STATE`, `daoris-driver work state`); the page stores nothing.
+// driver derives it at each read from the records it keeps (`WORK_STATE`, `daoris work state`); the page stores nothing.
 import type { TFunction } from 'i18next';
 import { treeName } from '../identity';
 
@@ -269,7 +269,7 @@ function unfollowedKept(t: TFunction, facts: Record<string, string>): string {
     Number(facts.own) > 0 ? t('work.milestone.code.keptOwn', { count: Number(facts.own), paths: facts.paths ?? '' }) : null,
   ].filter((part): part is string => part !== null);
   const holds = parts.length === 2 ? t('work.milestone.code.keptAnd', { first: parts[0], second: parts[1] }) : parts[0] ?? facts.keeps;
-  return t('work.milestone.code.unfollowedKept', { branch, holds, remove: `\`daoris-driver trees remove ${facts.tree ?? ''} --force\`` });
+  return t('work.milestone.code.unfollowedKept', { branch, holds, remove: `\`daoris tree remove ${facts.tree ?? ''} --force\`` });
 }
 
 /**

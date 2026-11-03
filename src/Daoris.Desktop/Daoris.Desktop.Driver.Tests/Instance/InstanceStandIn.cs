@@ -291,8 +291,8 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// </summary>
     public static string Waiting(string verb) =>
         System.Text.RegularExpressions.Regex.Escape(verb)
-        + @": waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris-driver result \k<id>` says how it "
-        + @"ended, and `daoris-driver withdraw \k<id>` takes it back…";
+        + @": waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris press result \k<id>` says how it "
+        + @"ended, and `daoris press withdraw \k<id>` takes it back…";
 
     /// <summary><see cref="Waiting"/> as the whole of what was said: that one line.</summary>
     public static string WaitingAlone(string verb) => @"\A" + Waiting(verb) + @"\r?\n\z";

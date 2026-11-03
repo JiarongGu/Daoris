@@ -114,7 +114,7 @@ describe('sittingSentence', () => {
    * named (a shell older than the fact), the driver's words stand.
    */
   it('says a stop’s hold in 中文, naming the session the tick says holds it', async () => {
-    const reason = 'you stopped session `s1a2b3c4`; Try again carries it on — `daoris driver retry 9a9492 --session s1a2b3c4`.';
+    const reason = 'you stopped session `s1a2b3c4`; Try again carries it on — `daoris quest retry 9a9492 --session s1a2b3c4`.';
     const held: Consideration = { ...sits('Stopped', reason), heldBy: 's1a2b3c4' };
 
     await i18n.changeLanguage('en');
@@ -124,7 +124,7 @@ describe('sittingSentence', () => {
     const said = sittingSentence(held);
     expect(said).toMatch(/你停止了会话 `s1a2b3c4`/);
     expect(said).toMatch(/重试/);
-    expect(said).toContain('`daoris driver retry 9a9492 --session s1a2b3c4`');
+    expect(said).toContain('`daoris quest retry 9a9492 --session s1a2b3c4`');
     expect(sittingSentence(sits('Stopped', reason))).toBe(reason);
   });
 
@@ -135,7 +135,7 @@ describe('sittingSentence', () => {
    */
   it('says a set-up step that cannot be shown here from the tick’s fact in each language, and the driver’s sentence without it', async () => {
     const reason = "set-up step `#9a9492` shows its chain's work in `dev`, and no review rule here names `dev` for `engine`: "
-      + '`daoris driver review engine dev --kind local|deployed --procedure <path>` declares it.';
+      + '`daoris place review engine dev --kind local|deployed --procedure <path>` declares it.';
     const withFact = (code: string, address: string | null): Consideration => ({
       ...sits('CannotShow', reason), cannotShow: { code, environment: 'dev', address },
     } as Consideration);
@@ -175,7 +175,7 @@ describe('sittingSentence', () => {
 
     await i18n.changeLanguage('zh');
     expect(sittingSentence(held)).toMatch(/更新/);
-    expect(sittingSentence(held)).toContain('`daoris-driver update --cancel`');
+    expect(sittingSentence(held)).toContain('`daoris update --cancel`');
     const plugin = sits('Blocked', 'held by plugin `hold-by-title`.');
     expect(sittingSentence(plugin)).toBe(plugin.reason);
   });
@@ -186,7 +186,7 @@ describe('sittingSentence', () => {
    * door. With no number (a shell older than the fact, or a park not read yet), the driver's words stand.
    */
   it('says a park in 中文, with the number the tick says failed', async () => {
-    const reason = '3 session(s) have failed on `#9a9492` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 9a9492` starts it again once you know why.';
+    const reason = '3 session(s) have failed on `#9a9492` without landing anything — parked, because trying again spends an account rather than making progress. `daoris quest retry 9a9492` starts it again once you know why.';
     const parked: Consideration = { ...sits('Exhausted', reason), strikes: 3 };
 
     await i18n.changeLanguage('en');
@@ -196,7 +196,7 @@ describe('sittingSentence', () => {
     const said = sittingSentence(parked);
     expect(said).toMatch(/3 个会话/);
     expect(said).toMatch(/挂起/);
-    expect(said).toContain('`daoris driver retry 9a9492`');
+    expect(said).toContain('`daoris quest retry 9a9492`');
     expect(sittingSentence(sits('Exhausted', reason))).toBe(reason);
   });
 
@@ -322,9 +322,9 @@ describe('sittingSentence', () => {
    * fact), the driver's words stand.
    */
   it('says a pause in 中文, naming the ask or the quest whose pause the tick says holds it', async () => {
-    const asks = 'paused with ask `#a1`; Resume starts it — `daoris-driver ask --resume a1`.';
+    const asks = 'paused with ask `#a1`; Resume starts it — `daoris ask resume a1`.';
     const byAsk: Consideration = { ...sits('Paused', asks), pausedBy: { scope: 'ask', id: 'a1' } };
-    const own = 'you paused `#9a9492`; Resume carries it on — `daoris-driver quest resume 9a9492`.';
+    const own = 'you paused `#9a9492`; Resume carries it on — `daoris quest resume 9a9492`.';
     const byQuest: Consideration = { ...sits('Paused', own), pausedBy: { scope: 'quest', id: '9a9492' } };
 
     await i18n.changeLanguage('en');
@@ -333,8 +333,8 @@ describe('sittingSentence', () => {
 
     await i18n.changeLanguage('zh');
     expect(sittingSentence(byAsk)).toContain('已随需求 `#a1` 暂缓');
-    expect(sittingSentence(byAsk)).toContain('`daoris-driver ask --resume a1`');
-    expect(sittingSentence(byQuest)).toContain('`daoris-driver quest resume 9a9492`');
+    expect(sittingSentence(byAsk)).toContain('`daoris ask resume a1`');
+    expect(sittingSentence(byQuest)).toContain('`daoris quest resume 9a9492`');
     expect(sittingSentence(byQuest)).not.toContain('需求');
     expect(sittingSentence(sits('Paused', asks))).toBe(asks);
   });
@@ -411,12 +411,12 @@ describe('sittingSentence', () => {
       ['RepositoryBusy', { code: 'overlaps', quest: 'q7', paths: ['src/frame/**', 'docs/cap.md'] }, 'Waits for quest `#q7`: both touch `src/frame/**` · `docs/cap.md`. It starts once that work is integrated.', /等待委托 `#q7`：两者都涉及 `src\/frame\/\*\*` · `docs\/cap.md`/],
       ['Waiting', { code: 'asked', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, asked of `Backend` — it goes on, in the same tree, once that is answered.', /在等 `#q2`（已向 `Backend` 提出）/],
       ['Waiting', { code: 'unreadRunning', quest: 'q2', repository: 'Backend', session: 's9' }, 'Waits on `#q2`, which `Backend` closed done: its evidence is read when session `s9` ends — it goes on, in the same tree, once that evidence is found.', /会话 `s9` 停下时读取/],
-      ['Waiting', { code: 'unread', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it goes on, in the same tree, once the evidence is found, `daoris-driver quest check q2`, or once you accept the done as it stands, your yes: `daoris-driver quest accept q2`.', /`daoris-driver quest check q2`）.*`daoris-driver quest accept q2`/],
-      ['Waiting', { code: 'unreadAtCommit', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it goes on, in the same tree, once the evidence is found, `daoris-driver quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: `daoris-driver quest accept q2`.', /`daoris-driver quest check q2 --commit <sha>`/],
-      ['Waiting', { code: 'missing', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done without the evidence it names — it goes on, in the same tree, once a later commit holds it, `daoris-driver quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: `daoris-driver quest accept q2`.', /却没有它所指明的证据/],
-      ['Waiting', { code: 'unreviewed', quest: 'q2', repository: 'Backend', environment: 'local' }, 'Waits on `#q2`, which `Backend` closed done: it waits for your review in `local` — it goes on, in the same tree, once you say it is reviewed, `daoris-driver quest review q2 reviewed`, or skip the review, `daoris-driver quest review q2 skip`.', /正等你在 `local` 中审阅/],
-      ['Waiting', { code: 'unreviewed', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done: it waits for your review — it goes on, in the same tree, once you say it is reviewed, `daoris-driver quest review q2 reviewed`, or skip the review, `daoris-driver quest review q2 skip`.', /正等你审阅——/],
-      ['Waiting', { code: 'departed', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done departing from what you required — it goes on, in the same tree, once you accept that, your yes: `daoris-driver quest accept q2`.', /偏离了你的要求/],
+      ['Waiting', { code: 'unread', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it goes on, in the same tree, once the evidence is found, `daoris quest check q2`, or once you accept the done as it stands, your yes: `daoris quest accept q2`.', /`daoris quest check q2`）.*`daoris quest accept q2`/],
+      ['Waiting', { code: 'unreadAtCommit', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it goes on, in the same tree, once the evidence is found, `daoris quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: `daoris quest accept q2`.', /`daoris quest check q2 --commit <sha>`/],
+      ['Waiting', { code: 'missing', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done without the evidence it names — it goes on, in the same tree, once a later commit holds it, `daoris quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: `daoris quest accept q2`.', /却没有它所指明的证据/],
+      ['Waiting', { code: 'unreviewed', quest: 'q2', repository: 'Backend', environment: 'local' }, 'Waits on `#q2`, which `Backend` closed done: it waits for your review in `local` — it goes on, in the same tree, once you say it is reviewed, `daoris quest review q2 reviewed`, or skip the review, `daoris quest review q2 skip`.', /正等你在 `local` 中审阅/],
+      ['Waiting', { code: 'unreviewed', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done: it waits for your review — it goes on, in the same tree, once you say it is reviewed, `daoris quest review q2 reviewed`, or skip the review, `daoris quest review q2 skip`.', /正等你审阅——/],
+      ['Waiting', { code: 'departed', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, which `Backend` closed done departing from what you required — it goes on, in the same tree, once you accept that, your yes: `daoris quest accept q2`.', /偏离了你的要求/],
       ['NotAdopted', { code: 'unregistered' }, 'The receiver is not registered on this machine, so there is nowhere to start it.', /受托方没有在本机注册/],
       ['NotAdopted', { code: 'noRoot' }, 'The receiver has not adopted Daoris and no root is known for it on this machine, so there is nothing to start and nothing there to see the quest.', /本机也不知道它的根目录/],
       ['NotAdopted', { code: 'noConnector' }, 'The receiver has not adopted Daoris, so a session there would have no connector to take the quest with — only the protocol door hands it one. Drive with an ACP agent, or adopt it.', /没有连接器/],

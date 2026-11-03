@@ -11,7 +11,7 @@ import { call } from '../call';
 
 // An ask's own doors (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): its channel, where its sessions and the person
 // talk, read, posted to and marked read. The driver's `AsksRoutes` answers all three over the service's doors, which
-// `daoris-driver ask channel` reads the same way (D50). Shell-only: a browser has no driver, and no channel is asked there.
+// `daoris ask channel` reads the same way (D50). Shell-only: a browser has no driver, and no channel is asked there.
 
 /** The shapes the routes answer live with the screen's own rule (`work/channel.ts`), since a molecule may read a shape and never a bridge domain. */
 export type { Channel, ChannelForwarded, ChannelItem, ChannelPost, ChannelPosted, ChannelReceipt, ElsewhereAsk } from '../../work/channel';

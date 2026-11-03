@@ -76,10 +76,10 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     }
 
     [Theory]
-    [InlineData("line", "my team", "main", "daoris driver line --workspace \"my team\" main")]
-    [InlineData("landing", "my team", "merge", "daoris driver landing --workspace \"my team\" merge")]
-    [InlineData("language", "R&D", "zh", "daoris driver language --workspace <workspace> zh")]
-    [InlineData("across", "my team", "read off", "daoris driver across --workspace \"my team\" read off")]
+    [InlineData("line", "my team", "main", "daoris place line --workspace \"my team\" main")]
+    [InlineData("landing", "my team", "merge", "daoris place landing --workspace \"my team\" merge")]
+    [InlineData("language", "R&D", "zh", "daoris place language --workspace <workspace> zh")]
+    [InlineData("across", "my team", "read off", "daoris place across --workspace \"my team\" read off")]
     public void A_workspace_setting_s_terminal_spells_its_workspace(string door, string workspace, string value, string terminal)
     {
         var plan = Plan(Setting(door, workspace: workspace, value: value));
@@ -90,8 +90,8 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 
     /// <summary>WORKFLOW1h-b: a workflow card's choice for a workspace spells the workspace for any shell; the workflow's id is an id.</summary>
     [Theory]
-    [InlineData("my team", "daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --workspace \"my team\"")]
-    [InlineData("R&D", "daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --workspace <workspace>")]
+    [InlineData("my team", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace \"my team\"")]
+    [InlineData("R&D", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace <workspace>")]
     public void A_workflow_s_choice_spells_its_workspace(string workspace, string terminal)
     {
         // A list of steps is refused at the save now (WORKFLOWCLEAN1 1b), so the card carries a shipped graph.
@@ -106,8 +106,8 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     }
 
     [Theory]
-    [InlineData("my team", "daoris-driver ask --workspace \"my team\" \"fix the stall\"")]
-    [InlineData("R&D", "daoris-driver ask --workspace <workspace> \"fix the stall\"")]
+    [InlineData("my team", "daoris ask --workspace \"my team\" \"fix the stall\"")]
+    [InlineData("R&D", "daoris ask --workspace <workspace> \"fix the stall\"")]
     public void An_ask_s_terminal_spells_its_workspace(string workspace, string terminal)
     {
         var plan = Plan(new HelpProposal("p2", "ask", "ask", null, workspace, null, "fix the stall", "why", "h1", "proposed"));

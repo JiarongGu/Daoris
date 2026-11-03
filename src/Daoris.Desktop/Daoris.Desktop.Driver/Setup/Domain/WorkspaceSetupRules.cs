@@ -66,13 +66,13 @@ public static class WorkspaceSetupRules
                     var declined = mine ?? setups.Last();
                     return new(repository, SetupState.Declined, declined.Id,
                         $"its set-up #{declined.Id} was declined{(declined.Note is { Length: > 0 } note ? $": {note.Trim()}" : ".")} "
-                        + $"The plan does not ask it again; `daoris-driver place {repository} --preset keep --adoption` asks it alone.");
+                        + $"The plan does not ask it again; `daoris place {repository} --preset keep --adoption` asks it alone.");
             }
 
             if (published is not null)
             {
                 return new(repository, SetupState.Deleted, published,
-                    $"its set-up #{published} was deleted. The plan does not ask it again; `daoris-driver place {repository} --preset keep --adoption` asks it alone.");
+                    $"its set-up #{published} was deleted. The plan does not ask it again; `daoris place {repository} --preset keep --adoption` asks it alone.");
             }
 
             return plan.Skipped.TryGetValue(repository, out var skipped)
@@ -87,7 +87,7 @@ public static class WorkspaceSetupRules
             var failed = (strikes.TryGetValue(active.Id, out var count) ? count : 0) - config.ForgivenAt(active.Id);
             return config.Strikes > 0 && failed >= config.Strikes
                 ? new(repository, SetupState.Parked, active.Id,
-                    $"its {what} #{active.Id} is parked: {failed} session(s) failed on it. `daoris driver retry {active.Id}` "
+                    $"its {what} #{active.Id} is parked: {failed} session(s) failed on it. `daoris quest retry {active.Id}` "
                     + "starts it again once you know why.")
                 : new(repository, SetupState.Open, active.Id, $"its {what} #{active.Id} is {active.Status.ToLowerInvariant()}.");
         }
@@ -111,13 +111,13 @@ public static class WorkspaceSetupRules
                 case "Declined":
                     return new(repository, SetupState.Declined, last.Id,
                         $"its index #{last.Id} was declined{(last.Note is { Length: > 0 } note ? $": {note.Trim()}" : ".")} "
-                        + $"The plan does not ask it again; `daoris-driver place {repository} --preset keep --adoption` asks it alone.");
+                        + $"The plan does not ask it again; `daoris place {repository} --preset keep --adoption` asks it alone.");
             }
 
             if (published is not null)
             {
                 return new(repository, SetupState.Deleted, published,
-                    $"its index #{published} was deleted. The plan does not ask it again; `daoris-driver place {repository} --preset keep --adoption` asks it alone.");
+                    $"its index #{published} was deleted. The plan does not ask it again; `daoris place {repository} --preset keep --adoption` asks it alone.");
             }
 
             if (plan.Skipped.TryGetValue(repository, out var skipped))

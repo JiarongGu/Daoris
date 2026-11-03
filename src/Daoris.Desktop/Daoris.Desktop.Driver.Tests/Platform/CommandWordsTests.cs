@@ -32,25 +32,7 @@ public sealed class CommandWordsTests
             Assert.Equal(nested.Select(pair => pair.Key).Order(), group.Nested.Keys.Order());
             foreach (var (verb, under) in nested) Assert.Equal(Strings(under), group.Nested[verb]);
         }
-
-        var moved = ((JsonArray)fixture["moved"]!).Select(node => new TreeMove(
-            (string)node!["from"]!, (string)node["to"]!, (string?)node["bare"], (string?)node["append"], (bool?)node["launcher"] ?? false));
-        Assert.Equal(moved, CommandWords.Moved);
-
-        var flags = ((JsonArray)fixture["flags"]!).Select(node => new TreeFlag((string)node!["verb"]!, (string)node["from"]!, (string)node["to"]!));
-        Assert.Equal(flags, CommandWords.Flags);
     }
-
-    /// <summary>The old launcher runs nothing and names what its words are now.</summary>
-    [Theory]
-    [InlineData("sessions say s-1 hi", "`daoris-driver sessions` is `daoris session` now")]
-    [InlineData("sync status", "`daoris-driver sync` is `daoris remote sync` now")]
-    [InlineData("driver drive engine", "`daoris-driver driver drive` is `daoris place drive` now")]
-    [InlineData("chat --repository engine", "`daoris-driver chat` is `daoris chat` now")]
-    [InlineData("roles brief", "`daoris-driver roles brief` is `daoris role brief` now")]
-    [InlineData("", "`daoris-driver` is `daoris` now")]
-    public void ONEWAY1ai_i_the_old_launcher_names_the_new_form(string typed, string said) =>
-        Assert.Contains(said, CommandWords.OldLauncher(typed.Length == 0 ? [] : typed.Split(' ')));
 
     /// <summary>A lease names a command by its group and sub-verb as the person typed them, never an argument.</summary>
     [Theory]

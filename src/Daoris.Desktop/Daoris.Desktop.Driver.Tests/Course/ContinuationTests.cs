@@ -396,7 +396,7 @@ public sealed class ContinuationTests : IDisposable
 
         Assert.Equal(
             "It does not go on yet: `retired-agent` is no longer an agent on this machine, so its words cannot go on with it. They wait "
-            + "on it: hand it over to another agent to go on with them, `daoris-driver sessions hand-over s1 --agent <agent>`.",
+            + "on it: hand it over to another agent to go on with them, `daoris session hand-over s1 --agent <agent>`.",
             gone.Note);
         Assert.Equal(["held.agent-gone"], NoteAssert.Codes(gone.Parts));
         Assert.Equal("retired-agent", gone.Parts[0].Value("agent"));

@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A place's quick set-up planned or applied from a terminal (AGENTSPLACE1a2, AGENTSPLACE1b3): <c>daoris-driver place &lt;repository&gt;… --preset &lt;id&gt; …
+/// A place's quick set-up planned or applied from a terminal (AGENTSPLACE1a2, AGENTSPLACE1b3): <c>daoris place &lt;repository&gt;… --preset &lt;id&gt; …
 /// (--plan | --apply)</c>, <c>PLACE_PLAN</c>'s and <c>PLACE_APPLY</c>'s twin. The words are the library's (<see cref="PlaceCommand"/>); this wires the real world: the service, the home's
 /// choices and plugins, and each repository's line.
 /// </summary>

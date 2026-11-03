@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver steward …</c> (STEWARDROLE1b, D209 §3.3): each act's words make its route's exact form and nothing else; a verb with
+/// <c>daoris steward …</c> (STEWARDROLE1b, D209 §3.3): each act's words make its route's exact form and nothing else; a verb with
 /// no role's key sends nothing; and with no Daoris running the role does not exist, so every form answers <c>no-instance</c>, exit 2, and
 /// nothing acts alone. The proof over a served pipe is the modules' <c>RoleActTests</c>; no test here starts a window or an agent.
 /// </summary>

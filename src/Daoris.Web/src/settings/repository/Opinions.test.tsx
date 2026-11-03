@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import { OpinionField, type OpinionRule, opinionGate, opinionRowSays, opinionSays, opinionSummary, opinionToast } from './Opinions';
 
 // XAGENT1a (D155 point 3, the second-agent design §2.5–§2.6): which other agent reads a repository's work before it lands,
-// set on a repository's Setup and a workspace's Defaults as `daoris driver opinion` sets it from a terminal (D50). The words
+// set on a repository's Setup and a workspace's Defaults as `daoris place opinion` sets it from a terminal (D50). The words
 // each door says are the twins' (`opinions.ts`, `OpinionRules.cs`), held here in English to rows of their one table (the
 // driver suite's `fixtures/opinion-rules.json`, `says` and `gate`), copied with the rule as the bridge carries it, and the
 // field sends the twins' edit, which the driver judges.
@@ -71,7 +71,7 @@ const SAYS: SaysRow[] = [
  * (XAGENT1f), at landing, before a chain's next step, and with `verify`. None here says nothing after.
  */
 const WAITING = "Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go "
-  + 'on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, `daoris-driver opinion myself <session>`.';
+  + 'on without it, `daoris session opinion anyway <session>`, or say you looked yourself, `daoris session opinion myself <session>`.';
 const STEP_WAITING = "Where a chain's next step here waits for another agent's reading of the step before it, it starts only "
   + 'once that reading is settled.';
 const SAFE_NOT_HANDED = 'What this repository declares safe is not handed to a reviewer yet.';
@@ -143,24 +143,24 @@ describe('what a second-opinion rule says', () => {
     // The Setup row's sentences after the rule's (XAGENT1f4): what the gate does, its doors as written, nothing after none.
     const gate = opinionGate(t, SET);
     expect(gate).toHaveLength(3);
-    expect(gate[0]).toContain('`daoris-driver opinion anyway <session>`');
-    expect(gate[0]).toContain('`daoris-driver opinion myself <session>`');
+    expect(gate[0]).toContain('`daoris session opinion anyway <session>`');
+    expect(gate[0]).toContain('`daoris session opinion myself <session>`');
     expect(opinionRowSays(t, SET, { source: 'repository' })).toBe([
       ...opinionSays(t, SET),
-      '这里等待另一个智能体阅读的工作，要等那次阅读有了定论，或者你不等它继续（`daoris-driver opinion anyway <session>`），'
-        + '或者说明你自己看过了（`daoris-driver opinion myself <session>`），才会落地。',
+      '这里等待另一个智能体阅读的工作，要等那次阅读有了定论，或者你不等它继续（`daoris session opinion anyway <session>`），'
+        + '或者说明你自己看过了（`daoris session opinion myself <session>`），才会落地。',
       '委托链在这里的下一步若在等另一个智能体阅读上一步的工作，要等那次阅读有了定论才会开始。',
       '这个仓库声明为安全的内容目前还不会交给阅读者。',
       '为这个仓库设定。',
     ].join(t('projects.setup.sentenceJoin')));
-    expect(opinionRowSays(t, { none: true, on: [], reviewers: [] })).not.toContain('daoris-driver opinion');
+    expect(opinionRowSays(t, { none: true, on: [], reviewers: [] })).not.toContain('daoris session opinion');
     expect(opinionToast(t, 'web-app', { set: { reviewers: ['codex-acp'] } }))
       .toBe('web-app 有了来自 codex-acp 的第二意见。那里等它阅读的工作，要等阅读有了定论或你不等它继续，才会往下走。');
   });
 
   /**
    * OPINIONTWIN1: the Setup row's terminal twin joins its alternatives with `|` inside its one command, as the review row's
-   * does (REVIEWENV1g) and its neighbours' (`daoris driver line … <branch>|--clear`), in both languages; a command is code,
+   * does (REVIEWENV1g) and its neighbours' (`daoris place line … <branch>|--clear`), in both languages; a command is code,
    * never translated, so 中文 says it as English does, never with 、 between spans.
    */
   it('says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages', () => {
@@ -174,9 +174,9 @@ describe('what a second-opinion rule says', () => {
       expect(english).toMatch(/--reviewers <adapter,adapter>\|(none\|)?--clear`$/);
     }
     expect(i18n.getFixedT('en')('settings.opinion.twin.repository', { repository: 'engine' }))
-      .toBe('`daoris driver opinion engine --reviewers <adapter,adapter>|none|--clear`');
+      .toBe('`daoris place opinion engine --reviewers <adapter,adapter>|none|--clear`');
     expect(i18n.getFixedT('en')('settings.opinion.twin.workspace', { workspace: 'aurora' }))
-      .toBe('`daoris driver opinion --workspace aurora --reviewers <adapter,adapter>|--clear`');
+      .toBe('`daoris place opinion --workspace aurora --reviewers <adapter,adapter>|--clear`');
   });
 
   it('toasts what a change did', () => {

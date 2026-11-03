@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>INTEGRATE1h (the integration design §5.8): <c>daoris-driver integrate</c>'s words, and the owner's acts left to the window.</summary>
+/// <summary>INTEGRATE1h (the integration design §5.8): <c>daoris integrate</c>'s words, and the owner's acts left to the window.</summary>
 public sealed class IntegrateCommandTests
 {
     [Theory]

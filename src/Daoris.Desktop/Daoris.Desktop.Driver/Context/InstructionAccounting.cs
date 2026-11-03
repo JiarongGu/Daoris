@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <see cref="GoAheadsText.Shown"/>), so the account cannot disagree with what was handed.
 /// </summary>
 /// <remarks>
-/// The English here is the driver's sentence for a terminal (<c>daoris-driver trace</c>); the page words each section by its
+/// The English here is the driver's sentence for a terminal (<c>daoris trace</c>); the page words each section by its
 /// codes. A section that could have been handed and was not is said, with why (D143 point 3): the ones a person looks for
 /// when a session seems not to know something.
 /// </remarks>

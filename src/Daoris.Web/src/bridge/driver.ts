@@ -431,29 +431,23 @@ export function useDriverChange<TVariables extends Record<string, unknown>>(type
  * Whether this machine says so when a session parks or ends unasked (SURF5b).
  *
  * @remarks
- * The same `driver.json` field `daoris driver notify on|off` edits — D50's two doors onto one
+ * The same `driver.json` field `daoris settings notify on|off` edits — D50's two doors onto one
  * truth, like every other control here. It governs the JUDGEMENT rather than the toast, which is
  * why a headless machine honours it too.
  */
 export const useSetNotify = () => useDriverChange<{ notify: boolean }>('SET_NOTIFY');
 
 /**
- * How many failed sessions park a quest (D58) — `0` never parks, which is how every machine behaved
- * before it existed. The same field `daoris driver strikes <n>` edits.
- */
-export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STRIKES');
-
-/**
  * How long an account cools when its agent names no time (TOOL4g, D125 §2.2): whole minutes, at least one, the same
- * `cooloff` `daoris driver cooloff <minutes>` edits; less than one is the driver's refusal.
+ * `cooloff` `daoris settings cooloff <minutes>` edits; less than one is the driver's refusal.
  */
 export const useSetCoolOff = () => useDriverChange<{ minutes: number }>('SET_COOLOFF');
 
-/** How many sessions Daoris starts at once (CAPSET1): the same `cap` `daoris driver cap <n>` edits; less than one is refused. */
+/** How many sessions Daoris starts at once (CAPSET1): the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange<{ cap: number }>('SET_CAP');
 
 /**
- * One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2): the same `keep` `daoris driver keep` edits. A value out of its
+ * One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2): the same `keep` `daoris settings keep` edits. A value out of its
  * kind's bounds is the driver's `KEEP_OUT_OF_RANGE`, said under the row's editor. It declares the wiring with the state, so the card
  * reads its rules again.
  */
@@ -488,7 +482,7 @@ export const retryNotice = (quest: string, state: DriverState): [string, Record<
 
 /**
  * Ask Daoris's access mode, `restricted` or `full` (HELPMODE1b, D183 point 2): the person's press alone, from the panel's chip or
- * Settings, over the key `daoris-driver help mode` sets (D50). It takes each conversation's next turn: one running under another
+ * Settings, over the key `daoris ask-daoris mode` sets (D50). It takes each conversation's next turn: one running under another
  * ends at its turn's end, and its next words resume it under this one (ACCESSSWAP1). No proposal names it, so it is no door of Ask
  * Daoris's.
  */
@@ -513,7 +507,7 @@ export const useStaffingFound = () => useRolesAs((catalogue) => catalogue?.found
 
 /**
  * A found change answered (FOUNDATION1w-s): *Take it*, the actors as that file showed them, a turn-on of Intake or Ask Daoris among them
- * by this press, or *Dismiss*. `daoris driver actor found take|dismiss <n>` is its terminal twin (D50).
+ * by this press, or *Dismiss*. `daoris settings actor found take|dismiss <n>` is its terminal twin (D50).
  */
 export const useAnswerStaffingFound = () => useDriverChange<{ found: number; answer: 'take' | 'dismiss' }>('STAFFING_FOUND_ANSWER');
 
@@ -521,7 +515,7 @@ export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../
 
 /**
  * The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role with its work, place and choices, the works a role may
- * take, whether this home keeps the catalogue, and the roles Daoris suggests. `daoris driver role` says the same. Under the driver's
+ * take, whether this home keeps the catalogue, and the roles Daoris suggests. `daoris role` says the same. Under the driver's
  * key, so every press that changes the driver's state asks it again. Null in a browser and from an older shell, which answers no roles.
  */
 const readRoles = (raw: unknown): RoleCatalogue | null => {
@@ -640,7 +634,7 @@ export const usePlaces = (ask: PlacesAsk = {}, { enabled = true }: { enabled?: b
 
 /**
  * A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press through the driver's role door,
- * whose judge refuses with nothing written. `daoris driver role` is its terminal twin (D50), and Ask Daoris's `role_propose` is applied
+ * whose judge refuses with nothing written. `daoris role` is its terminal twin (D50), and Ask Daoris's `role_propose` is applied
  * by the person's press on its card. What starts may move with it, so the route publishes the roster's key too.
  */
 export const useSetRole = () => useDriverChange<RoleChangePress>('SET_ROLE');
@@ -672,7 +666,7 @@ export type SyncNowReport = { workspace: string; problem?: string | null; notes:
 
 /**
  * *Sync now* (SYNC6b): the tick's own pass for one circle, through the shell's own driver loop —
- * `daoris-driver sync --workspace <name>` is the other door to the same pass (D50). Shell-only,
+ * `daoris remote sync --workspace <name>` is the other door to the same pass (D50). Shell-only,
  * because the pass that feeds a checkout's registration and knowledge asks git, and only the machine
  * with the checkout can.
  *
@@ -697,7 +691,7 @@ export const useSyncNow = () => {
 
 export const useSetDrivable = () => useDriverChange<{ repository: string; drivable: boolean }>('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
-/** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */
+/** Session trees (D51): the same file `daoris place trees <repo> on|off` edits — two editors, one truth. */
 export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: boolean }>('SET_TREES');
 /** The switch *Daoris may change this checkout's files* (GITAPP2b): off by default, writes nothing to the repository itself. */
 export const useSetCheckoutWrites = () => useDriverChange<{ repository: string; allow: boolean }>('SET_CHECKOUT_WRITES');
@@ -708,14 +702,14 @@ export const useSetCheckoutWrites = () => useDriverChange<{ repository: string; 
 export const useSetStanding = () => useDriverChange<{ repository: string; says?: string }>('SET_STANDING');
 /**
  * This machine's heavy gates for a repository (HEAVYRUN1b2b): the whole list in the order its gates run, or null to clear it — the
- * same `heavyGates` `daoris-driver heavy <repo> <name>=<command>…|--clear` edits. A list the mapping would not read (a gate with no
+ * same `heavyGates` `daoris place heavy <repo> <name>=<command>…|--clear` edits. A list the mapping would not read (a gate with no
  * name or no command, a name twice, a folder not under the checkout) is the driver's refusal, its sentence verbatim, nothing written.
  */
 export const useSetHeavyGates = () =>
   useDriverChange<{ repository: string; gates: HeavyGate[] | null }>('SET_HEAVY_GATES');
 /**
  * Which checks a repository's sessions run (FABRIC-PIPELINE1b, D192 point 4): `light`, `heavy-at-end`, or null for as before — the same
- * `sessionChecks` `daoris-driver checks <repo> light|heavy-at-end|--clear` edits. A value that is no choice is the driver's refusal, its
+ * `sessionChecks` `daoris place checks <repo> light|heavy-at-end|--clear` edits. A value that is no choice is the driver's refusal, its
  * sentence verbatim, nothing written. The person's choice alone: no proposal names it.
  */
 export const useSetSessionChecks = () =>

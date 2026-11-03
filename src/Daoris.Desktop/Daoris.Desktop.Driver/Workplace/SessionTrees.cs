@@ -286,7 +286,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         // repository by walking UP from wherever it is asked, so a root that is not one (a
         // mis-registered path, a folder inside some other checkout) would silently grow worktrees and
         // branches on whatever repository CONTAINS it. The first run of this class's own test suite
-        // did exactly that, to this repository — which is why this check exists and refuses loudly.
+        // did exactly that, to this repository: this check refuses loudly.
         // TREEOPENERR1: asked so that a git that fails and says nothing is reported by what it did (code, time, folder, arguments).
         var top = await AskAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
         if (top.Code != 0)
@@ -301,7 +301,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
             throw new DriverException(
                 $"`{repository}`'s registered root {root} is INSIDE the repository at {top.Stdout.Trim()} "
                 + "rather than being one — refusing to grow a tree on a repository the registration "
-                + "does not name. Re-run `daoris connect` from the actual root.");
+                + "does not name. Re-run `daoris repository connect` from the actual root.");
         }
 
         // The repository's line (WSR2): what the person set for it or its workspace, else the
@@ -631,7 +631,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
         throw new DriverException(
             $"{CanonicalLine.Describe(line)} is `{repository}`'s line, and its checkout has no such branch, here "
-            + $"or on origin. Fetch it, or set another with `daoris driver line {repository} <branch>`.");
+            + $"or on origin. Fetch it, or set another with `daoris place line {repository} <branch>`.");
     }
 
     // The callers' calls, one line each (PART10j–l): each part's doc is on its class.

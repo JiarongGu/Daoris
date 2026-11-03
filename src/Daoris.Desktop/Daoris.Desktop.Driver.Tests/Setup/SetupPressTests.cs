@@ -241,7 +241,7 @@ public sealed class SetupPressTests : IDisposable
         var plan = await PlanAsync(new World(), "nobody");
 
         Refused(plan, SetupRefusals.NotOnRegistry, "Repositories → *Add a repository*");
-        Assert.Contains("`daoris import <folder> --workspace <name>`", plan.Refusals[0].Sentence);
+        Assert.Contains("`daoris repository import <folder> --workspace <name>`", plan.Refusals[0].Sentence);
         Assert.Single(plan.Refusals);
     }
 
@@ -335,7 +335,7 @@ public sealed class SetupPressTests : IDisposable
     {
         var plan = await PlanAsync(new World(), config: Driven.WithTrees("reports", false));
 
-        Refused(plan, SetupRefusals.NoOwnTree, "`daoris driver trees reports on`");
+        Refused(plan, SetupRefusals.NoOwnTree, "`daoris place trees reports on`");
         // HELPSETUP1: a tree per session is on the repository's Setup (UX6f).
         Assert.Contains("Repositories → the repository's page → Setup → Driving", Find(plan, SetupRefusals.NoOwnTree).Sentence);
     }
@@ -505,7 +505,7 @@ public sealed class SetupPressTests : IDisposable
         var plan = await PlanAsync(new World(), config: Driven.WithTrees("reports", false));
 
         Assert.False(plan.Pressable);
-        Assert.Contains("`daoris driver trees reports on`", plan.Refusals[0].Sentence);
+        Assert.Contains("`daoris place trees reports on`", plan.Refusals[0].Sentence);
     }
 
     private Task<SetupPlan> PlanAsync(

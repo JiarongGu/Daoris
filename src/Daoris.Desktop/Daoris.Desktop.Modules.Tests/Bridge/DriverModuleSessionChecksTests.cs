@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// Which checks a repository's sessions run under Current, over the bridge (FABRIC-PIPELINE1b, D192 point 4): <c>SET_SESSION_CHECKS</c>,
-/// Setup's half of <c>daoris-driver checks</c>, over the same key in the same file (D50); the state answering each repository's rule as
+/// Setup's half of <c>daoris place checks</c>, over the same key in the same file (D50); the state answering each repository's rule as
 /// a row, so no key policy on the bridge respells a repository's name; a value that is no choice refused in
 /// <see cref="SessionChecks"/>'s words with nothing written. Edits to <c>driver.json</c> only.
 /// </summary>

@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class DriverModuleLinesTests : DriverModuleBridge
 {
     /// <summary>
-    /// A repository's line (WSR2): the screen's half of `daoris driver line`, over the same file. The
+    /// A repository's line (WSR2): the screen's half of `daoris place line`, over the same file. The
     /// names ride as rows, not as an object's keys, so no key policy on the bridge can respell one.
     /// </summary>
     [Fact]
@@ -41,7 +41,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).Lines.Count > 0);
     }
 
-    /// <summary>How work lands (WSR1, D87): the screen's half of `daoris driver landing`, over the same file.</summary>
+    /// <summary>How work lands (WSR1, D87): the screen's half of `daoris place landing`, over the same file.</summary>
     [Fact]
     public async Task Setting_a_landing_rule_writes_the_same_file_the_terminal_edits()
     {
