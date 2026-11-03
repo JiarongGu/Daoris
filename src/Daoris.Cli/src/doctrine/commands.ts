@@ -204,7 +204,7 @@ export function commandStatus(
   // status may reach the canon; `check` deliberately may not (D8), which is why
   // "a newer canon exists" is reported here and never gates a build.
   //
-  // The sync's own plan runs whatever the versions say (CONTEXTONE1a): the stamp stays at 0.0.1 through every 0.0.x
+  // The sync's own plan runs whatever the versions say: the stamp stays at 0.0.1 through every 0.0.x
   // build, and gating on it hid every update from every adopter. Only the version orders two canons, so files are
   // behind only under an older lock; an equal version over another canon is a difference whose side cannot be told,
   // and sync is never offered for it, since from an older daoris it would write the older text back (WSSETUP4).

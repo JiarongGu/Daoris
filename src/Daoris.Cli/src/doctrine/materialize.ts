@@ -693,7 +693,7 @@ export function applySync(
   const layout = layoutFields(manifest.harnessDescriptor ?? resolveHarness(manifest.harness), to);
   const lock: Lock = {
     canonVersion,
-    // Which canon of that version (CONTEXTONE1a): `status` tells two apart by it, and never orders them by it.
+    // Which canon of that version: `status` tells two apart by it, and never orders them by it.
     ...(canonDigest !== undefined ? { canonDigest } : {}),
     source: manifest.source,
     entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within }) => ({
