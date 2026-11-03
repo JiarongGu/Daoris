@@ -72,7 +72,10 @@ choice, under the name its callers use. The supervisor's quarantine reads and re
 bounds, is Roles', and `QuestionFiles` keeps the file and aliases the bounds. `sessions supervise` reads its world and ask through
 `ISupervisorWorld` and `ISupervisorAsk`, which `SessionsWorld` and `SessionsAsk` implement, and builds the ask it returns with the factory
 the sessions verb hands it; the question file and the ask's words come from `IRolesWorkOrders`, which
-`WorkOrders/Work/RolesWorkOrdersWiring.cs` installs. The supervisor's proof, the holder key and the decisions' memory are unchanged.
+`WorkOrders/Work/RolesWorkOrdersWiring.cs` installs. Its print also fences the line's course as Daoris's facts (CONTEXTDRIVE1i, D229:
+`CountTexts.Print` over `ILineFactsReads`), each count cited as a reason's source names it (`count:answers-alone=2 (exact)`); the
+keeping refuses a `count:` source naming none of the counts the park read (`no-source`) and the decision's file keeps them as `counts`.
+The supervisor's proof, the holder key and the decisions' memory are unchanged.
 Context owns instruction accounting and session-part composition (`Context/InstructionAccounting.cs`, `SessionPartsText.cs`), and supplies the required `AgentContext` operations (`Context/AgentContextWiring.cs`). Agents owns the composed brief and part carriers; Events owns handed codes and stream shapes. Event history, console output and streams are supplied through lower interfaces while Context retains storage, buffering and lifecycle.
 The driver's `Context/` owns the context's own files (FOUNDATION1 mod-xiii, D212): the briefs (`Domain/ContextBrief.cs`, `Events/ContextBriefs.cs`), the session event record with its reads and last words (`Events/SessionEventLog.cs`, `SessionEventReads.cs`, `SessionLastWords.cs`), the console output window (`Domain/SessionOutput.cs`), the transcript file (`TranscriptFile.cs`), the instruction accounting, the session parts' text and the agent context's wiring, with `WorkplaceEventRecordsWiring.cs`. The files kept their sub-folders below the old `Accounts/`, `Conversations/` or `Sessions/` (`Domain/`, `Events/`); tests are mirrored under `Driver.Tests/Context/`. Namespaces remain `Daoris.Driver`, and the files moved byte-identically.
 
@@ -715,7 +718,13 @@ five reasons, and `resume` for SESSCTX1c; no box takes those three), each part's
 and the entry's other parts. It carries every word the session took once by its id (a word taken back left out, a channel's
 message by its event's own `channel` mark, another agent's findings by `opinion`, each as that agent's claim), each turn's last
 message and what it did, the plan with its turn, the last check each part ran by a declared gate and the last failed one's kept
-output, under a 40,000 bound with a Han character weighing three, every cut said and accounted in its `brief-*` sections. A
+output, and the line's course as Daoris counts it (CONTEXTDRIVE1b, D229: each count of `LineCounts` that is not zero or that Daoris
+acts on, with the number it acts at, worded by `Roles/Domain/CountTexts.cs` from codes and numbers alone, under its own 1,000 cap),
+under a 40,000 bound with a Han character weighing three, every cut said and accounted in its `brief-*` sections. A start with no
+brief carries that item where any count of its line is not zero (`SessionTarget.Course`), and a go-on's words end with one line of
+the count a go-on moves or one near what Daoris does on it (`CountTexts.GoOn`). The counts, the parts and the go-ons are read once by
+`LineCountsRead.FactsOf`, which Context and Roles reach through `ILineFactsReads` (`Roles/LineFactsReads.cs`, installed by
+`Course/LineFactsWiring.cs`). A
 hand-over's new conversation keeps it as its first prompt (`origin: target`, its account, `continues`), never read as its
 opening; a driven carry-on carries it as part of its instruction, accounted within it. The new part reads its line's kept folders.
 Every start's instruction also says how its agent signs its commits (MAKERTRAIL1, `CommitTrailers.For`): an agent of another
