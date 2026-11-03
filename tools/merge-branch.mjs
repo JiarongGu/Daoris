@@ -1430,6 +1430,11 @@ export const REACH = Object.freeze([
     why: 'written into every merge by tools/orient-index.mjs and held by its check, which every merge runs; no suite reads it',
   },
   {
+    paths: ['docs/code-map.json'],
+    gates: ['service', 'web-unit'],
+    why: "the service's scan, and the page's codeClusters vitest lays out this repository's own map (CANVAS1f)",
+  },
+  {
     paths: ['docs/model-roles.md'],
     gates: ['service', 'driver'],
     why: "the service's scan, and the driver's RoleDoorTests holds the Designer suggestion to its build-judgement row (FOUNDATION1y-i)",

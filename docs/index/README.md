@@ -144,7 +144,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs` | 72 | 1451 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs` | 41 | 848 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 66 | 1294 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Store/DesktopStoreTests.cs` | 61 | 1198 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Store/DesktopStoreTests.cs` | 62 | 1224 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs` | 58 | 971 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/AbandonTests.cs` | 46 | 827 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/IntakeTests.cs` | 62 | 1257 |
@@ -208,7 +208,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 198 | 3455 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 860 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs` | 107 | 1792 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStore.cs` | 50 | 1026 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStore.cs` | 51 | 1053 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/Planner.cs` | 105 | 1652 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Inventory/WorkInventory.cs` | 42 | 673 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/SessionGroups.cs` | 63 | 1079 |
@@ -322,7 +322,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1098 |
 | `tools/family-rehearsal.mjs` | 371 | 6431 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 505 | 8484 |
+| `tools/merge-branch.mjs` | 505 | 8489 |
 | `tools/merge-queue.mjs` | 66 | 1039 |
 | `tools/orient-index.mjs` | 70 | 1505 |
 | `tools/process-reach.mjs` | 43 | 907 |
@@ -445,7 +445,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-11-02-staff-policy-proposal-codex.md` | 44 | 469 |
 | `docs/2026-11-02-staff-policy-proposal-opus.md` | 47 | 542 |
 | `docs/2026-11-02-workflow-cleanup-design.md` | 54 | 501 |
-| `docs/2026-11-03-context-counters-design.md` | 48 | 532 |
+| `docs/2026-11-03-context-counters-design.md` | 72 | 686 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 91 | 556 |
 | `docs/development.md` | 56 | 607 |

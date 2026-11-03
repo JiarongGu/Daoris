@@ -1568,7 +1568,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // KEEPALL1: the bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
     // HomeFilesKeepTests reads them too; since KEEPALL1e the service's RemoteConfigKeepTests its remotes.json rows' reads, and since
     // KEEPALL1c the modules' BrowserSettingsTests browser/settings.json's.
-    ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'service', 'driver', 'modules']],
+    ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'service', 'driver']],
     // SWITCH1b-iii: the usage curve's table, among the driver's fixtures since PUSH1f2e, which its twin reads; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],

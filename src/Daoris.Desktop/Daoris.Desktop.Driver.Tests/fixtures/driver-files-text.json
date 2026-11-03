@@ -1,5 +1,5 @@
 {
-  "note": "ONEWAY1u (D194 point 6): what `daoris remote` and `daoris browser` said for each case of their tests, run once through the CLI's TypeScript verbs before they retire, on a home of their own (`<home>`; the map at `<home>/remotes.json`, the browser's files where the home puts them). Each row: the words, the operation the command makes of them (`op` and `args`; a row of the `command` door is the verb's own grammar, held for the command tree's table), the files before (`remotes`, `favorites`, `settings`; null: none), the environment, the exit, the lines on each stream and the files after. A file that does not parse says the parser's own words, `<parse error>`. `DriverFilesTextTests` reads it row for row; a sentence the port changes on purpose says why under `changed`.",
+  "note": "ONEWAY1u (D194 point 6): what `daoris remote` and `daoris browser` said for each case of their tests, run once through the CLI's TypeScript verbs before they retire, on a home of their own (`<home>`; the map at `<home>/profiles/remotes.json`, the browser's files where the home puts them). Each row: the words, the operation the command makes of them (`op` and `args`; a row of the `command` door is the verb's own grammar, held for the command tree's table), the files before (`remotes`, `favorites`, `settings`; null: none), the environment, the exit, the lines on each stream and the files after. A file that does not parse says the parser's own words, `<parse error>`. `DriverFilesTextTests` reads it row for row; a sentence the port changes on purpose says why under `changed`.",
   "rows": [
     {
       "name": "remote list, a machine with no remote",
@@ -13,7 +13,7 @@
       "exit": 0,
       "out": [
         "daoris: no remote on this machine — every workspace stays local, which is the default (D21).",
-        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/remotes.json)."
+        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/profiles/remotes.json)."
       ],
       "err": [],
       "after": {}
@@ -47,7 +47,7 @@
       "exit": 0,
       "out": [
         "daoris: no remote on this machine — every workspace stays local, which is the default (D21).",
-        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/remotes.json)."
+        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/profiles/remotes.json)."
       ],
       "err": [],
       "after": {}
@@ -76,7 +76,7 @@
       "out": [
         "daoris: wiring `aurora` on this machine",
         "  aurora  https://aurora.example.com  dk_abcd1234…",
-        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  written to <home>/profiles/remotes.json — machine-local, tracked by nothing (D47 §7).",
         "  Repositories feed it where their own manifest says they may; the map only says where."
       ],
       "err": [],
@@ -110,7 +110,7 @@
       "out": [
         "daoris: wiring `tools` on this machine",
         "  tools  https://tools.example.com  dk_toolskey…",
-        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  written to <home>/profiles/remotes.json — machine-local, tracked by nothing (D47 §7).",
         "  Repositories feed it where their own manifest says they may; the map only says where."
       ],
       "err": [],
@@ -144,7 +144,7 @@
         "daoris: wiring `aurora` on this machine",
         "  key from DAORIS_REMOTE_KEY",
         "  aurora  https://aurora.example.com  dk_abcd1234…",
-        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  written to <home>/profiles/remotes.json — machine-local, tracked by nothing (D47 §7).",
         "  Repositories feed it where their own manifest says they may; the map only says where."
       ],
       "err": [],
@@ -179,7 +179,7 @@
         "daoris: wiring `aurora` on this machine",
         "  aurora  https://new.example.com  dk_abcd1234…",
         "  (replacing https://aurora.example.com — the previous key is untouched at its deployment)",
-        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  written to <home>/profiles/remotes.json — machine-local, tracked by nothing (D47 §7).",
         "  Repositories feed it where their own manifest says they may; the map only says where."
       ],
       "err": [],
@@ -213,7 +213,7 @@
       "out": [
         "daoris: wiring `i̇zmir` on this machine",
         "  i̇zmir  https://other.example.com  dk_abcd1234…",
-        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  written to <home>/profiles/remotes.json — machine-local, tracked by nothing (D47 §7).",
         "  Repositories feed it where their own manifest says they may; the map only says where."
       ],
       "err": [],
@@ -248,7 +248,7 @@
         "daoris: wiring `aurora` on this machine",
         "  aurora  https://aurora.example.com  dk_abcd1234…",
         "  (replacing https://old.example.com — the previous key is untouched at its deployment)",
-        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  written to <home>/profiles/remotes.json — machine-local, tracked by nothing (D47 §7).",
         "  Repositories feed it where their own manifest says they may; the map only says where."
       ],
       "err": [],
@@ -369,7 +369,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: <home>/remotes.json",
+        "daoris: <home>/profiles/remotes.json",
         "  aurora           https://aurora.example.com  dk_abcd1234…",
         "  tools            https://tools.example.com  dk_toolskey…"
       ],
@@ -396,7 +396,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: the environment names this machine's remote, whole — <home>/remotes.json is not read.",
+        "daoris: the environment names this machine's remote, whole — <home>/profiles/remotes.json is not read.",
         "  (DAORIS_REMOTE_URL / DAORIS_REMOTE_KEY, for the workspace DAORIS_REMOTE_WORKSPACE names.)",
         "  tools            https://env.example.com  dk_envkey00…"
       ],
@@ -421,10 +421,10 @@
       },
       "exit": 0,
       "out": [
-        "daoris: the environment names this machine's remote, whole — <home>/remotes.json is not read.",
+        "daoris: the environment names this machine's remote, whole — <home>/profiles/remotes.json is not read.",
         "  (DAORIS_REMOTE_URL / DAORIS_REMOTE_KEY, for the workspace DAORIS_REMOTE_WORKSPACE names.)",
         "daoris: no remote on this machine — every workspace stays local, which is the default (D21).",
-        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/remotes.json)."
+        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/profiles/remotes.json)."
       ],
       "err": [],
       "after": {
