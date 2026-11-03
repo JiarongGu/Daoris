@@ -298,7 +298,7 @@ public static class TransitionalRegister
         new()
         {
             Id = "old-command-names",
-            Kept = "Loop/CommandTree.cs:113, Loop/CommandTree.cs:324, ../Daoris.Desktop.Driver.Host/Program.cs:42",
+            Kept = "Platform/CommandWords.cs:93, Platform/CommandWords.cs:214, ../Daoris.Desktop.Driver.Host/Program.cs:43",
             Reaches = "A session an older build briefed with `daoris-driver …` or a nested family (`daoris driver …`), carried on over the update: "
                 + "each old form is refused naming its new one, and the install's `app/bin/daoris-driver` launcher, kept one release, runs nothing "
                 + "and says the same.",

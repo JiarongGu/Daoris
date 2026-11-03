@@ -347,7 +347,7 @@ export const DRIVER_HOME = Object.freeze(['app', 'daoris-driver']);
 export const DRIVER_EXE = 'daoris-driver.exe';
 export const DRIVER_LAUNCHERS = Object.freeze(['daoris-driver', 'daoris-driver.cmd']);
 
-/** The variable the old name's launchers set, which makes the program refuse their words naming the new form (`CommandTree.OldNameVariable`). */
+/** The variable the old name's launchers set, which makes the program refuse their words naming the new form (`CommandWords.OldNameVariable`). */
 export const OLD_NAME_VARIABLE = 'DAORIS_OLD_NAME';
 
 /** Each shell's launcher of the program, by the names given; `oldName` set, the program is told the words are that name's. */

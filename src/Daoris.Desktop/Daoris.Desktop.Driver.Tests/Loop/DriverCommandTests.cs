@@ -106,7 +106,7 @@ public sealed class DriverCommandTests
         Assert.True(verbs.Count >= 8, $"expected the host's verbs, found {string.Join(", ", verbs)}");
 
         HashSet<string> reached = ["drive"];
-        foreach (var group in CommandTree.Groups)
+        foreach (var group in CommandWords.Groups)
         {
             foreach (var verb in group.Verbs.Prepend("x"))
             {
@@ -121,7 +121,7 @@ public sealed class DriverCommandTests
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         // CONFIRMWAIT1b (the confirm-wait design §4.1, §4.3): how long a press waits.
         Assert.Contains("\n  --wait <minutes> | --no-wait\n", usage);
-        foreach (var group in CommandTree.Groups)
+        foreach (var group in CommandWords.Groups)
         {
             var lines = DriverCommand.UsageOf(group.Name);
             Assert.True(lines is not null, $"the usage has no line for `{group.Name}`");

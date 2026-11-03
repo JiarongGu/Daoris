@@ -8,7 +8,7 @@ import { COMMANDS, HANDED_VARIABLE, runCli } from '../../src/cli.ts';
 /**
  * ONEWAY1ai-i (D228; the oneway design §11): one name, `daoris`, one tree. The CLI owns the doctrine commands, offline, at the root;
  * every other word is the desktop's program's, handed to it whole, and a word handed once is never handed back. The tree is declared
- * once, in the driver tests' `fixtures/command-tree.json`, which the driver's router is held to as well (`CommandTreeTests`).
+ * once, in the driver tests' `fixtures/command-tree.json`, which the driver's table is held to as well (`CommandWordsTests`).
  */
 const repository = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const TREE = JSON.parse(readFileSync(

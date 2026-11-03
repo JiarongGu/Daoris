@@ -40,15 +40,15 @@ if (OperatingSystem.IsWindows())
 
 // ONEWAY1ai-i (the oneway design §11): the old launcher runs nothing, and says what its words are now.
 // transitional: old-command-names
-if (Environment.GetEnvironmentVariable(CommandTree.OldNameVariable) == CommandTree.OldName)
+if (Environment.GetEnvironmentVariable(CommandWords.OldNameVariable) == CommandWords.OldName)
 {
-    Console.Error.WriteLine($"daoris: {CommandTree.OldLauncher(args)}");
+    Console.Error.WriteLine($"daoris: {CommandWords.OldLauncher(args)}");
     return 2;
 }
 
 // A word handed once is never handed back: who handed these words is read, and taken out of what this process passes on.
-var handedBy = Environment.GetEnvironmentVariable(CommandTree.HandedVariable);
-Environment.SetEnvironmentVariable(CommandTree.HandedVariable, null);
+var handedBy = Environment.GetEnvironmentVariable(CommandWords.HandedVariable);
+Environment.SetEnvironmentVariable(CommandWords.HandedVariable, null);
 
 // CONFIRMWAIT1b (the confirm-wait design §4.1): how long a press waits on its Confirm, taken from the words before any verb, lease or
 // family reads them, and set once on every world a verb is given (`InstanceHost.World`).
@@ -113,7 +113,7 @@ if (VerbLeases.HoldsHere(args, Environment.GetEnvironmentVariable) && DriverConf
 {
     try
     {
-        verbLease = HomeLease.ForVerb(leaseHome, CommandTree.Named(typed), out var leaseRefused);
+        verbLease = HomeLease.ForVerb(leaseHome, CommandWords.Named(typed), out var leaseRefused);
         if (verbLease is null)
         {
             Console.Error.WriteLine($"daoris: {leaseRefused}");

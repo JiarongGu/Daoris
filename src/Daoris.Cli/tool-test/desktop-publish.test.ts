@@ -1202,7 +1202,7 @@ test('ONEWAY1ai-i daoris’s launcher for each shell runs the desktop’s progra
 /**
  * DRIVERDOOR1, ONEWAY1ai-i: the desktop's program is published framework-dependent into `app/daoris-driver/`, which keeps its name
  * for good; `daoris-driver`'s launchers stay one release, beside `daoris`'s, for a session an older build told of them: they run the
- * program only to say what their words are now (`CommandTree.OldLauncher`), and do nothing.
+ * program only to say what their words are now (`CommandWords.OldLauncher`), and do nothing.
  */
 test('ONEWAY1ai-iv the program is its own folder under app/, and the old name’s launchers are a refusal beside daoris’s', () => {
   assert.deepEqual([...DRIVER_HOME], [SHELL_HOME[0], 'daoris-driver']);
@@ -1232,11 +1232,11 @@ test('ONEWAY1ai-iv the program is its own folder under app/, and the old name’
     assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
     assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
   }
-  // The program reads the old name's mark (`CommandTree.OldNameVariable`) and refuses the words; a launcher that ran them is a second way.
+  // The program reads the old name's mark (`CommandWords.OldNameVariable`) and refuses the words; a launcher that ran them is a second way.
   assert.equal(OLD_NAME_VARIABLE, 'DAORIS_OLD_NAME');
   assert.match(sh, /\nDAORIS_OLD_NAME=daoris-driver exec "\$basedir\//);
   assert.match(cmd, /\r\nsetlocal\r\nset "DAORIS_OLD_NAME=daoris-driver"\r\n"%~dp0/);
-  const tree = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Loop', 'CommandTree.cs'), 'utf8');
+  const tree = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Platform', 'CommandWords.cs'), 'utf8');
   assert.ok(tree.includes(`OldNameVariable = "${OLD_NAME_VARIABLE}"`) && tree.includes(`OldName = "${DRIVER_LAUNCHERS[0]}"`), 'the program reads the mark the launchers set');
 });
 

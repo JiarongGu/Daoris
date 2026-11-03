@@ -19,7 +19,7 @@ public sealed record VerbLeaseReading(
 /// <summary>
 /// Which of the desktop program's commands hold the home's lease while they act alone (HOMELEASE1, the terminal RPC design §5,
 /// §7.1): a command's mutation does, for its run; a read never does. Read off the words the tree routes them into (ONEWAY1ai-i), the
-/// commands' own; a lease names the command as the person typed it (<see cref="CommandTree.Named"/>). The host takes it in
+/// commands' own; a lease names the command as the person typed it (<see cref="CommandWords.Named"/>). The host takes it in
 /// the home the loop drives and holds, the folder the driver's config is in (<see cref="DriverConfig.FindHome(Func{string, string?})"/>,
 /// LEASEHOME2).
 /// </summary>
