@@ -32,8 +32,8 @@
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
  *    their `merge=union` attribute (D106), and the backlog by its merge base: a line a side added is kept,
  *    one a side removed is dropped, one line both changed is left (`mergeByBase`, MERGETASKS1), one line
- *    said either way. The orientation index is written from the merged tree and
- *    staged before the gates choose (`readGenerated`, ORIENT1a), so a conflict in it alone does not stop the
+ *    said either way. A folder `daoris.gates.json` declares generated is written from the merged tree and
+ *    staged before the gates choose (`readGenerated`), so a conflict in it alone does not stop the
  *    merge, and one beside others is written once they are resolved. Before it, each decision file the merge
  *    changed has a blank line set before a note's label union left under another note, one line said per
  *    note (`setApart`, MERGEJOIN1); and each other union record it changed, before a heading union left under
@@ -46,7 +46,7 @@
  *    long-lived build server carried a broken environment into a publish, so that rehearsal started after
  *    `dotnet build-server shutdown`; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
  *    GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
- *    orientation index's check), and each path check one of its paths reaches (`PATH_CHECKS`: MERGETSC1's web
+ *    census of test units), and each path check one of its paths reaches (`PATH_CHECKS`: MERGETSC1's web
  *    `tsc --noEmit` and MERGEWEBRULES1's design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside" (`--ci`, CI1).
  *    `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  *    merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
@@ -1014,20 +1014,20 @@ export function readPlan(root) {
 
 /**
  * The gates every merge runs, whatever it changed: the universal gates scan every file, the code map
- * maps all the code, the orientation index reads every lane (ORIENT1a), the census of test units reads every suite's
+ * maps all the code, the census of test units reads every suite's
  * sources (CISCOPE1c), and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
  */
-export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 'test-map', 'cli']);
+export const BASELINE = Object.freeze(['universal', 'code-map', 'test-map', 'cli']);
 
 /**
  * GATESLIM1: what a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
- * commit), the code map and the orientation index's check. Every other gate is listed and skipped, "in the CI beside"
+ * commit) and the code map. Every other gate is listed and skipped, "in the CI beside"
  * (`--ci`, CI1); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
  *
  * CISCOPE1c (D207): and the census of test units' check (`tools/test-map.mjs check`, about 20 s), which reads every suite's
  * sources and holds the hand rows of `REACH` below, the whole-suite files and the skips to them.
  */
-export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index', 'test-map']);
+export const BLOCKING = Object.freeze(['universal', 'code-map', 'test-map']);
 
 /**
  * MERGETSC1: the light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
@@ -1430,11 +1430,6 @@ export const REACH = Object.freeze([
   { paths: ['examples/**'], gates: ['service', 'rehearse-family', 'web'], why: 'the example family the family rehearsal and the end-to-end suite run on' },
   { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse', 'cli'], why: 'staged into the package the release rehearsal packs, and read by tools/doc-links.mjs, which verify runs' },
   { paths: ['llms.txt', 'context7.json'], gates: ['cli'], why: "tools/doc-links.mjs, which verify runs, holds their agent rules equal to the README's" },
-  {
-    paths: ['docs/index/**'],
-    gates: [],
-    why: 'written into every merge by tools/orient-index.mjs and held by its check, which every merge runs; no suite reads it',
-  },
   {
     paths: ['docs/code-map.json'],
     gates: ['service', 'web-unit'],
@@ -2253,7 +2248,7 @@ export function recordMatcher({ lanes = [], union = [] } = {}) {
   const steward = lanes.find((lane) => lane.steward);
   const stewardOwns = steward ? laneMatcher(steward.paths) : () => false;
   const unionPatterns = union.map((pattern) => globToRegExp(pattern.replace(/^\//, '')));
-  const known = new Set(['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/FIX-LOG.md', 'docs/README.md', '.claude/knowledge/twins.md']);
+  const known = new Set(['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/FIX-LOG.md', 'docs/README.md']);
   const safe = (path) => known.has(path) || /^docs\/decisions\/D\d+\.md$/.test(path);
   return (path) => safe(path) && (stewardOwns(path) || unionPatterns.some((pattern) => pattern.test(path)));
 }

@@ -32,6 +32,6 @@ matches.
 | 7 | The lease | `VerbLeases.Holds` reads the routed words; `CommandWords.Named` names the command by group and sub-verb | `VerbLeasesTests`, `CommandWordsTests`' name rows |
 | 8 | The host | a thin console, dispatched in `Program.cs` after the route, under the one Ctrl+C handler | `DriverHostTests` (Process) |
 | 9 | Ask Daoris | each control's door or exemption; each command the room's lines name is one the tree runs | `HelpCoverageTests`, `HelpRoomOwedTests` |
-| 10 | The records | the guide's command table; D228's dated note; the READMEs; the changelog; `docs/index/` regenerated | `version.test.ts` holds the table to the tree; `doc-shapes`, `orient-index --check` |
+| 10 | The records | the guide's command table; D228's dated note; the READMEs; the changelog | `version.test.ts` holds the table to the tree; `doc-shapes` |
 
 A new test class's scratch goes under `_fixtures/` and is removed by `GitSeed.Discard`, never `Directory.Delete`.

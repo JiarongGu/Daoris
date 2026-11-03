@@ -1,7 +1,7 @@
 # Developing Daoris
 
 Read [AGENTS.md](../AGENTS.md), the [document router](README.md), the
-[orientation index](index/README.md) and the relevant contract before exploring code, and make
+orientation index (`docs/index/README.md`, written in each checkout) and the relevant contract before exploring code, and make
 every change through the `change` skill; `.claude/INDEX.md` lists the on-demand knowledge. [TASKS.md](../TASKS.md)
 holds acceptance criteria and dependencies; [ROADMAP.md](../ROADMAP.md) gives the sequence.
 
@@ -67,7 +67,9 @@ same review path. Do not substitute another deletion API, wrapper or shell to ev
 
 `npm run verify` is the baseline check, not a substitute for testing a component you changed. Its
 exact steps are in `package.json`; the component gates are in `daoris.gates.json`. Run focused checks
-during the task and the complete reached set before recording completion.
+during the task and the complete reached set before recording completion. `npm run quick` is a builder's
+fast set before a hand-back: the index written, the CLI's types, the doctrine check and the size, partial,
+transitional-marker and optional-lock censuses.
 
 | Change | Additional verification |
 |---|---|
@@ -77,7 +79,7 @@ during the task and the complete reached set before recording completion.
 | Web UI | `npm run test:web`: unit tests, production build, HTTP build and Playwright; stories and installed-window proof where the contract calls for them |
 | Desktop/modules | Fast suites below; `npm run rehearse:deploy` at the full integration boundary |
 | Canon | Sync root and both examples in the same change, then doctrine checks and family rehearsal |
-| Documentation/tooling | `npm run verify`, orientation freshness and relevant tooling tests; manually check behavioral prose against source |
+| Documentation/tooling | `npm run verify` and relevant tooling tests; manually check behavioral prose against source |
 
 The desktop fast loops are:
 
@@ -302,7 +304,7 @@ reached. Browser specs and rehearsals are deferred to the background run. A gate
 kept. Each verdict is recorded as `scoped`, and each run is a line in `local/scope-runs.jsonl`. On green, main fast-forwards
 to the candidate. That happens only when the main checkout is clean (no tracked change, no merge open, on `main`); otherwise the
 candidate is held, said, and tried each tick. If main moved meanwhile by a direct commit, the candidate is formed again on it
-from the same frozen requests. A move by records only (the records lane, `docs/**`, `docs/index/**`) defers `service`.
+from the same frozen requests. A move by records only (the records lane, `docs/**`) defers `service`.
 
 On red, each failure is judged by its signature (`tools/test-failures.mjs`). A failing test still known red on the base is
 inherited with no run. Every other failure first meets its gate's **confirm run** (INTEGRATE1b, D215's note): the gate runs once
@@ -572,14 +574,14 @@ node tools/partials.mjs --write
 dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 ```
 
-`npm ci` installs a pre-commit hook (`tools/index-hook.mjs`) that runs the `orient-index` write and stages `docs/index/` in any commit that stages other paths; `DAORIS_INDEX_HOOK=0` skips it, and it skips a commit with a file staged in part. The same tool puts a blank line before a `**Note, ` line glued to the line above in a staged decision file, and its `notes` merge driver (set by `npm ci`, named in `.gitattributes`) does the same inside the merge of two branches' notes; a clone without the driver conflicts there rather than gluing.
+`docs/index/` is ignored and never committed. `npm ci` installs `post-checkout` and `post-merge` hooks (`tools/index-hook.mjs`) that write it after git moves a branch's work tree, a new worktree included, and writes it where none stands; `DAORIS_INDEX_HOOK=0` skips them, and a detached checkout is skipped. The knowledge server writes the served checkout's again before a tool call once its `HEAD` has moved (`tools/index-fresh.mjs`). The same `npm ci` sets the `notes` merge driver (named in `.gitattributes`), which puts a blank line before a `**Note, ` line glued to the line above inside the merge of two branches' notes; a clone without the driver conflicts there rather than gluing.
 
 Moving files: `node tools/move-files.mjs [--plan] from=to ... --expect-moved N --expect-rewritten N` (or `--moves file.json`)
 runs `git mv`, respells every relative import of the moved files and in them, and checks that each still resolves.
 
 Only run `map` when project metadata changed; `map --check` verifies freshness. `sync` preserves the
 local brief outside the doctrine region. Canon edits also require syncing both example adopters.
-`docs/index/` is checked with `--check`; a conflict in generated output is resolved by regeneration.
+A conflict in generated output is resolved by regeneration.
 
 ## Packaging, service and desktop loops
 

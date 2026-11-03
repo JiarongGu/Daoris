@@ -87,7 +87,7 @@ check(
   'a licence declared but not distributed leaves recipients without the terms',
 );
 check('the canon ships', [...shipped].some((p) => p.startsWith('canon/core/rules/')));
-check('canon skills ship as nested directories', shipped.has('canon/core/skills/doc-loader/SKILL.md'));
+check('canon skills ship as nested directories', shipped.has('canon/core/skills/change/SKILL.md'));
 check('the canon changelog ships', shipped.has('canon/CHANGELOG.md'));
 check('private material does not ship', ![...shipped].some((p) => p.startsWith('local/')));
 check('test fixtures do not ship', ![...shipped].some((p) => p.startsWith('_fixtures/')));
@@ -163,10 +163,10 @@ check('...and the pointer to the index above them',
     .test(read('AGENTS.md')) && !/house-deploy|## Invoke by name/.test(read('AGENTS.md')));
 check('the pointer is written', /@AGENTS\.md/.test(read('CLAUDE.md')));
 check('on-demand knowledge is still a file', has('.claude/knowledge/reaching-in.md'));
-check('skills survive packing as directories', has('.claude/skills/doc-loader/SKILL.md'));
+check('skills survive packing as directories', has('.claude/skills/change/SKILL.md'));
 check('the lock is written', has('daoris.lock'));
 
-const skill = read('.claude/skills/doc-loader/SKILL.md');
+const skill = read('.claude/skills/change/SKILL.md');
 check('a skill still starts with its frontmatter', skill.startsWith('---\n'), skill.slice(0, 60));
 check('...with the provenance header beneath it', /---\n<!-- daoris: /.test(skill));
 
@@ -177,7 +177,7 @@ const roster = has('.claude/INDEX.md') ? read('.claude/INDEX.md') : '';
 check('the index is written beside the tiers, and the lock names it',
   roster.startsWith('# Index\n') && /"index": "\.claude\/INDEX\.md"/.test(read('daoris.lock')));
 check("the index marks the repo's own skill local", /`\.claude\/skills\/house-deploy\/SKILL\.md` _\(local\)_/.test(roster));
-check('the index lists canonical skills unmarked', /\| `\.claude\/skills\/doc-loader\/SKILL\.md` \|/.test(roster));
+check('the index lists canonical skills unmarked', /\| `\.claude\/skills\/change\/SKILL\.md` \|/.test(roster));
 
 const checkRun = daoris('check');
 check('`check` exits 0 on a freshly synced repo', checkRun.code === 0, checkRun.out);
@@ -194,11 +194,12 @@ section('4. Drift, and the return path');
 const regionFile = join(consumer, 'AGENTS.md');
 const editRule = (from, to) =>
   writeFileSync(regionFile, readFileSync(regionFile, 'utf8').replace(from, to));
-editRule('# Task lifecycle', '# Task lifecycle\n\nA local improvement.');
+const ruleHeading = '# Never write into another repository';
+editRule(ruleHeading, `${ruleHeading}\n\nA local improvement.`);
 
 const drifted = daoris('check');
 check('`check` catches a local edit', drifted.code === 1, drifted.out);
-check('...naming the file', /task-lifecycle/.test(drifted.out), drifted.out);
+check('...naming the file', /repository-owns-its-work/.test(drifted.out), drifted.out);
 
 const refused = daoris('sync');
 check('`sync` refuses rather than discarding the edit', refused.code === 1, refused.out);
@@ -208,17 +209,17 @@ check('...and points at `upstream`', /upstream/.test(refused.out), refused.out);
 // writes nothing (D230). Point at a writable copy, which plays the canon's repository, and take the request there as its
 // maintainer would.
 copyTree(join(consumer, 'node_modules', 'daoris', 'canon'), canonV2);
-const lifecycle = join(canonV2, 'core/rules/task-lifecycle.md');
-const upstreamed = withV2('upstream task-lifecycle.md');
+const edited = join(canonV2, 'core/rules/repository-owns-its-work.md');
+const upstreamed = withV2('upstream repository-owns-its-work.md');
 check('`upstream` composes the request, carrying the edit', upstreamed.code === 0
   && /nothing was written; the request below is for the repository that keeps the shared doctrine/.test(upstreamed.out)
   && upstreamed.out.includes('A local improvement.'), upstreamed.out);
-check('...and writes nothing into the canon', !readFileSync(lifecycle, 'utf8').includes('A local improvement.'));
-writeFileSync(lifecycle, readFileSync(lifecycle, 'utf8').replace('# Task lifecycle', '# Task lifecycle\n\nA local improvement.'));
+check('...and writes nothing into the canon', !readFileSync(edited, 'utf8').includes('A local improvement.'));
+writeFileSync(edited, readFileSync(edited, 'utf8').replace(ruleHeading, `${ruleHeading}\n\nA local improvement.`));
 check(
   '...which the canon\'s repository takes, without the provenance header',
   (() => {
-    const promoted = readFileSync(lifecycle, 'utf8');
+    const promoted = readFileSync(edited, 'utf8');
     return promoted.includes('A local improvement.') && !promoted.includes('<!-- daoris:');
   })(),
 );
@@ -294,7 +295,7 @@ writeFileSync(join(canonV2, 'packs/checkpointing/pack.json'), `${JSON.stringify(
   name: 'checkpointing',
   apiVersion: 1,
   description: 'A rehearsal pack whose own rule replaces a core one.',
-  switchesOff: { 'rules/persist-working-state.md': 'its own checkpoints rule replaces it' },
+  switchesOff: { 'knowledge/persist-working-state.md': 'its own checkpoints rule replaces it' },
 }, null, 2)}\n`);
 writeFileSync(
   join(canonV2, 'packs/checkpointing/rules/checkpoints.md'),
@@ -306,19 +307,21 @@ const writeManifest = (change) => {
   change(current);
   writeFileSync(join(consumer, 'daoris.json'), `${JSON.stringify(current, null, 2)}\n`);
 };
-const coreRow = /core\/rules\/persist-working-state\.md @/;
+// A rule read on demand: its row in the region links its file.
+const coreRow = /\[`persist-working-state`\]\(\.claude\/knowledge\/persist-working-state\.md\)/;
 
 writeManifest((m) => { m.packs = [...m.packs, 'checkpointing']; });
 const offered = withV2('sync');
 check('a pack offering to switch a core row off installs, and the offer is named', offered.code === 0
-  && /offered\s+rules\/persist-working-state\.md/.test(offered.out), offered.out);
+  && /offered\s+knowledge\/persist-working-state\.md/.test(offered.out), offered.out);
 check('...while the core row stays on until the repository confirms it', coreRow.test(read('AGENTS.md')));
 
-writeManifest((m) => { m.switchedOff = { 'rules/persist-working-state.md': 'checkpointing' }; });
+writeManifest((m) => { m.switchedOff = { 'knowledge/persist-working-state.md': 'checkpointing' }; });
 const switched = withV2('sync');
 check('a confirmed switch takes the core row out, and sync names it', switched.code === 0
-  && /off\s+rules\/persist-working-state\.md/.test(switched.out), switched.out);
-check('...the rule is gone from the region', !coreRow.test(read('AGENTS.md')));
+  && /off\s+knowledge\/persist-working-state\.md/.test(switched.out), switched.out);
+check('...the rule is gone from the region and its file with it',
+  !coreRow.test(read('AGENTS.md')) && !has('.claude/knowledge/persist-working-state.md'));
 check(
   '...and the roster says so, naming the pack',
   /Switched off here[^\n]*`persist-working-state` \(by `checkpointing`\)/.test(read('AGENTS.md')),
@@ -326,10 +329,10 @@ check(
 check('...the lock records it', /"switchedOff"/.test(read('daoris.lock')));
 const offCheck = withV2('check');
 check('`check` stays clean and names the row it switched off', offCheck.code === 0
-  && /off\s+rules\/persist-working-state\.md/.test(offCheck.out), offCheck.out);
+  && /off\s+knowledge\/persist-working-state\.md/.test(offCheck.out), offCheck.out);
 const offStatus = withV2('status');
 check('`status` names it with its pack and reason',
-  /switched off\s+rules\/persist-working-state\.md.*checkpointing.*replaces it/.test(offStatus.out), offStatus.out);
+  /switched off\s+knowledge\/persist-working-state\.md.*checkpointing.*replaces it/.test(offStatus.out), offStatus.out);
 
 writeManifest((m) => { delete m.switchedOff; });
 const withdrawn = withV2('sync');
@@ -398,36 +401,36 @@ renameSync(join(consumer, '.claude/skills/house-deploy'), join(consumer, '.agent
 
 const moved = withV2('sync');
 check('`sync` moves the canonical files once the repository has moved its own', moved.code === 0
-  && has('.agents/knowledge/reaching-in.md') && has('.agents/skills/doc-loader/SKILL.md'), moved.out);
+  && has('.agents/knowledge/reaching-in.md') && has('.agents/skills/change/SKILL.md'), moved.out);
 check('...removes the folder the move emptied', !has('.claude/knowledge'));
 check('...writes a mirror of every skill for Claude Code, its frontmatter still first',
-  read('.claude/skills/doc-loader/SKILL.md').startsWith('---\n')
-  && /mirror of \.agents\/skills\/doc-loader\/SKILL\.md/.test(read('.claude/skills/doc-loader/SKILL.md'))
+  read('.claude/skills/change/SKILL.md').startsWith('---\n')
+  && /mirror of \.agents\/skills\/change\/SKILL\.md/.test(read('.claude/skills/change/SKILL.md'))
   && /mirror of \.agents\/skills\/house-deploy\/SKILL\.md/.test(read('.claude/skills/house-deploy/SKILL.md')));
 check('...re-roots the lock and records the mirrors',
   /"harness": "agents"/.test(read('daoris.lock')) && /"target": "\.agents"/.test(read('daoris.lock'))
   && /"mirrors"/.test(read('daoris.lock')));
 check('...and the index moves to .agents, listing the skills there, and the region says the mirror sentence',
   !has('.claude/INDEX.md') && has('.agents/INDEX.md')
-  && /\| `\.agents\/skills\/doc-loader\/SKILL\.md` \|/.test(read('.agents/INDEX.md'))
+  && /\| `\.agents\/skills\/change\/SKILL\.md` \|/.test(read('.agents/INDEX.md'))
   && /\[\.agents\/INDEX\.md\]\(\.agents\/INDEX\.md\)/.test(read('AGENTS.md')) && /mirrors them/.test(read('AGENTS.md')));
 const movedCheck = withV2('check');
 check('`check` is clean after the move', movedCheck.code === 0, movedCheck.out);
 
 // A mirror edited: named with its source, refused, promoted from the copy, and closed by the next sync.
-const mirrorFile = join(consumer, '.claude/skills/doc-loader/SKILL.md');
+const mirrorFile = join(consumer, '.claude/skills/change/SKILL.md');
 writeFileSync(mirrorFile, `${readFileSync(mirrorFile, 'utf8')}\nA local improvement, made in the mirror.\n`);
 const mirrorDrift = withV2('check');
 check('`check` fails on an edited mirror, naming its source', mirrorDrift.code === 1
-  && /a mirror of \.agents\/skills\/doc-loader\/SKILL\.md, edited here/.test(mirrorDrift.out), mirrorDrift.out);
+  && /a mirror of \.agents\/skills\/change\/SKILL\.md, edited here/.test(mirrorDrift.out), mirrorDrift.out);
 const mirrorRefused = withV2('sync');
 check('`sync` refuses, pointing at upstream from the mirror', mirrorRefused.code === 1
-  && /daoris upstream \.claude\/skills\/doc-loader\/SKILL\.md/.test(mirrorRefused.out), mirrorRefused.out);
-const mirrorUp = withV2('upstream .claude/skills/doc-loader/SKILL.md');
+  && /daoris upstream \.claude\/skills\/change\/SKILL\.md/.test(mirrorRefused.out), mirrorRefused.out);
+const mirrorUp = withV2('upstream .claude/skills/change/SKILL.md');
 check('`upstream` takes the mirror\'s path, its request carrying the edit', mirrorUp.code === 0
   && mirrorUp.out.includes('made in the mirror') && !mirrorUp.out.includes('<!-- daoris:'), mirrorUp.out);
 // The canon's repository takes the request (D230): the mirror's text without its header, which is the canon's file and the edit.
-const loader = join(canonV2, 'core/skills/doc-loader/SKILL.md');
+const loader = join(canonV2, 'core/skills/change/SKILL.md');
 writeFileSync(loader, `${readFileSync(loader, 'utf8')}\nA local improvement, made in the mirror.\n`);
 check('...and the canon carries the edit without either header', (() => {
   const promoted = readFileSync(loader, 'utf8');
@@ -435,7 +438,7 @@ check('...and the canon carries the edit without either header', (() => {
 })());
 const mirrorClosed = withV2('sync');
 check('the next `sync` is clean, and the source carries the edit', mirrorClosed.code === 0
-  && read('.agents/skills/doc-loader/SKILL.md').includes('made in the mirror'), mirrorClosed.out);
+  && read('.agents/skills/change/SKILL.md').includes('made in the mirror'), mirrorClosed.out);
 check('`check` is clean again', withV2('check').code === 0);
 
 // A room: declared, it gains its pointer and a row; undeclared, it loses the pointer and keeps its words.

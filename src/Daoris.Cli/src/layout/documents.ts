@@ -50,7 +50,7 @@ export const ROLES: readonly { role: string; binding: Binding; job: string }[] =
   { role: 'decisions', binding: 'path', job: 'numbered decisions, with why and what each rejected' },
   { role: 'backlog', binding: 'path', job: 'open work only' },
   { role: 'archive', binding: 'path', job: 'finished work, with its date and outcome' },
-  { role: 'fixes', binding: 'path', job: 'root cause, fix and verification per defect' },
+  { role: 'fixes', binding: 'path', job: 'regressions only: the root cause, and the commit that introduced it' },
   { role: 'changelog', binding: 'path', job: 'what a user of a release sees changed' },
   { role: 'glossary', binding: 'path', job: "the names people and code use for this repository's things" },
   { role: 'gates', binding: 'path', job: 'the checks, their commands, and what may run unasked' },

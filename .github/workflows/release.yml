@@ -234,11 +234,10 @@ jobs:
       - name: Code map gate
         run: dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check
 
-      # The orientation index is what the code and the decisions say (ORIENT1a): the routes, verbs, catalogue
-      # areas, fixtures, large files' outlines and the decisions digest under docs/index/. A fact, so it gates
-      # (D54); the merge tool writes it into every merge, so a stale one here is a commit made beside the tool.
+      # The orientation index (docs/index/) is ignored and written in each checkout, so it is written here first;
+      # the check then holds the marks the decisions' notes carry.
       - name: Orientation index gate
-        run: node tools/orient-index.mjs --check
+        run: node tools/orient-index.mjs && node tools/orient-index.mjs --check
 
       # The census of test units (CISCOPE1c, D207): every suite's units, their reach read from the sources, held to the
       # lane table's fixture rows, the whole-suite files and the open rows a skip names. Reads files only; about 20 s.
