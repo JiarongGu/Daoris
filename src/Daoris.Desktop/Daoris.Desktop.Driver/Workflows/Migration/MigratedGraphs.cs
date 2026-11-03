@@ -3,8 +3,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How the old rules stood where a <c>handed</c> left its form or press open (the cleanup design §4.2): the form and press as
-/// <c>GateSteps</c> read them over the place's effective rule, and the rule's ticket key and squash, which the lifted <c>land</c> writes.
+/// How the old rules stood where a <c>handed</c> left its form or press open: the form and press over the place's rule, and the rule's ticket key
+/// and squash, which the lifted <c>land</c> writes.
 /// </summary>
 public sealed record HandedResolution(string Form, bool AutoAccept, string? Key, bool Squash)
 {
@@ -12,26 +12,31 @@ public sealed record HandedResolution(string Form, bool AutoAccept, string? Key,
     public static HandedResolution Default { get; } = new(LandingForm.Merge, false, null, false);
 
     /// <summary>The resolution a place's facts give: its rule, with the composed switch where the access setup made one.</summary>
-    public static HandedResolution Of(LegacyFacts? facts) =>
-        facts?.Rule is { } rule ? new(rule.Form, rule.AutoAccept || facts.Composed, rule.Key, rule.Squash) : Default;
+    public static HandedResolution Of(MigratedPlace? place) =>
+        place?.Rule is { } rule ? new(rule.Form, rule.AutoAccept || place.Composed, rule.Key, rule.Squash) : Default;
 }
 
 /// <summary>
-/// The translations of the old shapes into graphs (WORKFLOWCLEAN1 1e; the cleanup design §4.2). Pure: a graph in, a graph or a refusal out,
-/// the rules handed in as facts. A refusal names why the old version is kept as it is.
+/// The old shapes translated into graphs for the migration (D232 point 2). Pure: a graph in, a graph or a refusal out, the rules handed in as facts.
+/// A refusal names why the old version is left as it is.
 /// </summary>
-// transitional: conversion-readers
-public static class LegacyGraphs
+public static class MigratedGraphs
 {
+    /// <summary>The old landing step's kind, which a graph no longer holds.</summary>
+    public const string Handed = "handed";
+
+    /// <summary>The old <c>land</c> option that held the landing for a press.</summary>
+    public const string Accept = "accept";
+
     private const string Review = "review";
 
-    /// <summary>The graph a place's old rules draw, as the shipped defaults draw theirs: the chain, the landing's tail, the gates the rules ask for.</summary>
-    /// <param name="keepReview">The row's choice <i>Keep a review</i>: a place whose access setup composed the switch keeps the person's Accept.</param>
-    public static JsonObject OfCurrent(LegacyFacts facts, bool keepReview)
+    /// <summary>The graph a place's old rules drew, as the shipped defaults draw theirs: the chain, the landing's tail, the gates the rules asked for.</summary>
+    public static JsonObject OfRules(MigratedPlace place)
     {
-        var rule = facts.Rule;
+        var rule = place.Rule;
         var form = rule?.Form ?? LandingForm.Merge;
-        var reviewed = !(rule?.AutoAccept == true || (facts.Composed && !keepReview));
+        // A place whose access setup composed the switch landed with no press, and keeps landing so.
+        var reviewed = !(rule?.AutoAccept == true || place.Composed);
         var method = form != LandingForm.Branch ? LandNodes.Merge
             : rule!.Plugin is not null ? LandNodes.PullRequest
             : rule is { Integrate: not null, Squash: false } ? LandNodes.Integrate
@@ -46,7 +51,7 @@ public static class LegacyGraphs
         if (rule?.Squash == true && method is LandNodes.Branch or LandNodes.PullRequest) land["squash"] = true;
 
         var work = new JsonObject();
-        if (facts.Checks is { } checks) work["checks"] = checks;
+        if (place.Checks is { } checks) work["checks"] = checks;
         var nodes = new JsonArray(
             Node("work", NodeKinds.Claimed, "observed", work), Node("requests", NodeKinds.WorkRequests, "observed"),
             Node("holds", NodeKinds.QuestHolds, "observed"), Node("content", NodeKinds.ContentHolds, "observed"));
@@ -81,7 +86,7 @@ public static class LegacyGraphs
                 break;
         }
 
-        // A cycle's wires leave the landing or `line`, which every rule's graph drew; a branch or a pull request ends where the shipped ones do otherwise.
+        // A cycle's wires leave the landing or `line`, which every rule's graph drew.
         if (rule?.Cycle is not null && end != "line")
         {
             nodes.Add(Node("line", NodeKinds.Line, "observed"));
@@ -91,13 +96,13 @@ public static class LegacyGraphs
         var wires = new JsonArray();
         for (var at = 1; at < chain.Count; at++) wires.Add(new JsonObject { ["id"] = $"w{at}", ["kind"] = "after", ["from"] = chain[at - 1], ["to"] = chain[at] });
         var graph = new JsonObject { ["schemaVersion"] = 2, ["entries"] = new JsonArray("work"), ["end"] = end, ["nodes"] = nodes, ["wires"] = wires };
-        if (facts.Opinion || facts.Look) graph = WorkflowPresets.WithGraphGates(graph, facts.Opinion, facts.Look);
+        if (place.Opinion || place.Look) graph = WorkflowPresets.WithGraphGates(graph, place.Opinion, place.Look);
         return rule?.Cycle is { } cycle ? Folded(graph, cycle) : graph;
     }
 
     /// <summary>
-    /// A rule's <c>cycle</c> folded after the <c>land</c> (the design §4.2): its nodes and wires added, a wire that left <c>handed</c>, the id Current
-    /// gave the landing, re-aimed at the land's own id, its entries beside the graph's, its end and cleanup the graph's.
+    /// A rule's <c>cycle</c> folded after the <c>land</c>: its nodes and wires added, a wire that left <c>handed</c>, the id the rules gave the landing,
+    /// re-aimed at the land's own id, its entries beside the graph's, its end and cleanup the graph's.
     /// </summary>
     private static JsonObject Folded(JsonObject graph, string cycle)
     {
@@ -107,8 +112,8 @@ public static class LegacyGraphs
         foreach (var wire in fragment["wires"] as JsonArray ?? [])
         {
             var copy = wire!.DeepClone().AsObject();
-            if (copy["from"] is JsonValue from && from.TryGetValue<string>(out var leaving) && leaving == NodeKinds.Handed) copy["from"] = land;
-            else if (copy["from"] is JsonObject end && (string?)end["node"] == NodeKinds.Handed) end["node"] = land;
+            if (copy["from"] is JsonValue from && from.TryGetValue<string>(out var leaving) && leaving == Handed) copy["from"] = land;
+            else if (copy["from"] is JsonObject end && (string?)end["node"] == Handed) end["node"] = land;
             graph["wires"]!.AsArray().Add(copy);
         }
 
@@ -127,7 +132,7 @@ public static class LegacyGraphs
 
     /// <summary>
     /// A graph's shape, by what a person means by it: its nodes' kinds with their written options, its wires between kinds, its entries' kinds.
-    /// Node ids, wire ids, reach and the end are no part of it, so a drawn graph matches the shipped copy that says the same (the design §13 point 4).
+    /// Node ids, wire ids, reach and the end are no part of it, so a drawn graph matches the shipped copy that says the same.
     /// </summary>
     public static string Shape(JsonObject graph)
     {
@@ -149,17 +154,17 @@ public static class LegacyGraphs
     }
 
     /// <summary>
-    /// A graph holding a <c>handed</c> lifted to a <c>land</c> (the design §4.2, §13 point 4): the form and press as <c>GateSteps</c> read them over
-    /// <paramref name="resolution"/>, the method from them and the tail the graph already holds, the pattern kept, the key written where the pattern
-    /// says <c>{ticket}</c>, a <c>review</c> before it where the press was the person's. Ids are kept.
+    /// A graph holding a <c>handed</c> lifted to a <c>land</c>: the form and press over <paramref name="resolution"/>, the method from them and the
+    /// tail the graph already holds, the pattern kept, the key written where the pattern says <c>{ticket}</c>, a <c>review</c> before it where the
+    /// press was the person's. Ids are kept.
     /// </summary>
-    /// <returns>The graph, or null with why the version is kept.</returns>
+    /// <returns>The graph, or null with why the version is left.</returns>
     public static JsonObject? LiftHanded(JsonObject source, HandedResolution resolution, out string? refusal)
     {
         refusal = null;
         var graph = (JsonObject)source.DeepClone();
         var nodes = graph["nodes"]!.AsArray();
-        var handed = nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Handed)?.AsObject();
+        var handed = nodes.FirstOrDefault(node => (string?)node!["kind"] == Handed)?.AsObject();
         if (handed is null)
         {
             refusal = "it holds no landing step to lift.";
@@ -174,7 +179,7 @@ public static class LegacyGraphs
         var pattern = Written("pattern");
         if (form == LandingForm.Merge && (accept == "automatic" || pattern is not null || plugin is not null))
         {
-            refusal = "its landing merges with no press or names a branch or a plugin, which the old engine never ran; choose its landing in the editor.";
+            refusal = "its landing merges with no press or names a branch or a plugin, which never ran; choose its landing in the editor.";
             return null;
         }
 
@@ -195,14 +200,13 @@ public static class LegacyGraphs
         return graph;
     }
 
-    /// <summary>A <c>land</c> saved with an <c>accept</c> (held, never landing): the option taken off, and a <c>review</c> before it where it said <c>you</c>.</summary>
-    /// <param name="reviewAutomatic">The row's choice for an <c>accept</c> of <c>automatic</c>: <c>true</c> adds the person's review, which is how it ran.</param>
-    public static JsonObject? LiftLandAccept(JsonObject source, bool reviewAutomatic, out string? refusal)
+    /// <summary>A <c>land</c> saved with an <c>accept</c> (held, never landing): the option taken off, and the person's <c>review</c> before it.</summary>
+    public static JsonObject? LiftLandAccept(JsonObject source, out string? refusal)
     {
         refusal = null;
         var graph = (JsonObject)source.DeepClone();
         var land = graph["nodes"]!.AsArray().FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Land)?.AsObject();
-        if (land?["options"] is not JsonObject options || options["accept"] is null)
+        if (land?["options"] is not JsonObject options || options[Accept] is null)
         {
             refusal = "it holds no `land` with an `accept`.";
             return null;
@@ -214,9 +218,9 @@ public static class LegacyGraphs
             return null;
         }
 
-        var accept = options["accept"] is JsonValue value && value.TryGetValue<string>(out var said) ? said : "you";
-        options.Remove("accept");
-        if (accept == "you" || reviewAutomatic) WithReview(graph, (string)land["id"]!);
+        // An `automatic` one never landed, so the person's review lowers nothing.
+        options.Remove(Accept);
+        WithReview(graph, (string)land["id"]!);
         return graph;
     }
 

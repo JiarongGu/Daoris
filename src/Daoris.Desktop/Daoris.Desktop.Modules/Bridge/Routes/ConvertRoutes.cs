@@ -45,8 +45,7 @@ public sealed class ConvertRoutes(DriverContext context)
     [Publishes("CONVERT_APPLY", StateScopes.Driver | StateScopes.Rules | StateScopes.Lines)]
     private async Task<object?> ApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var read = DateTimeOffset.UtcNow;
-        var doors = ConversionDoors.Of(_loop, _context.Change, await QuestsAsync(cancellationToken).ConfigureAwait(false), read);
+        var doors = ConversionDoors.Of(_loop, _context.Change);
         var digest = Optional(request, "digest") ?? "";
         var result = Optional(request, "leave") is { } leave
             ? ConversionApplies.Leave(doors, digest, leave)
@@ -64,20 +63,6 @@ public sealed class ConvertRoutes(DriverContext context)
         var result = ConversionApplies.Undo(ConversionDoors.Of(_loop, _context.Change), Optional(request, "digest") ?? "");
         _loop.Nudge();
         return Flag(request, "said") ? Said(ConvertCommand.Lines(result), result.Done ? 0 : 1) : Answer(result);
-    }
-
-    /// <summary>The quests now, for the Current units open at the press; null where the service does not answer, so every Current run counts open.</summary>
-    private async Task<IReadOnlyList<QuestView>?> QuestsAsync(CancellationToken ct)
-    {
-        if (_loop.Service is not { } service) return null;
-        try
-        {
-            return await service.EveryQuestAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is HttpRequestException || (error is TaskCanceledException && !ct.IsCancellationRequested))
-        {
-            return null;
-        }
     }
 
     private static ConversionChoices ChoicesOf(IpcRequest request) =>
@@ -114,28 +99,7 @@ public sealed class ConvertRoutes(DriverContext context)
             each.Census.Ended,
             each.Lines,
             Clears = each.Clears.Select(clear => new { clear.Said, clear.Count, clear.From, clear.To, clear.Bytes }).ToArray(),
-            Workflows = each.Detail is WorkflowPartPlan workflows ? Answer(workflows.Plan) : null,
         }).ToArray(),
         Unread = plan.Unread.Select(each => new { each.Part, each.Said }).ToArray(),
-    };
-
-    /// <summary>The workflow part's own plan, as its review draws it.</summary>
-    private static object Answer(ConversionPlan plan) => new
-    {
-        Saves = plan.Saves.Select(each => new { each.Id, each.Name, each.Mode, each.Shape, each.Said, each.Base, each.Places }).ToArray(),
-        Uses = plan.Uses.Select(each => new { each.Place, each.IsWorkspace, each.Workflow, each.Kind, each.Said }).ToArray(),
-        plan.DefaultWorkflow,
-        Policies = plan.Policies.Select(each => new { each.Place, each.IsWorkspace }).ToArray(),
-        Removals = plan.Removals.Select(each => new { each.Place, each.IsWorkspace, each.Keys }).ToArray(),
-        Kept = plan.Kept.Select(each => new { each.Code, each.Subject, each.Said }).ToArray(),
-        plan.Lowers,
-        Census = new
-        {
-            Ended = plan.Census.Ended,
-            Versions = plan.Census.Versions.Select(each => new { each.Workflow, each.Version, each.Shape }).ToArray(),
-            Places = plan.Census.Places.Select(each => new { each.Place, each.IsWorkspace, each.Workspace, each.Shapes, each.WorkCycle, each.OpenUnits }).ToArray(),
-            Runs = plan.Census.Runs.Select(each => new { each.Run, each.Repository, each.Workflow, each.Version, each.Engine, each.Door }).ToArray(),
-            Leftovers = plan.Census.Leftovers.Select(each => new { each.Place, each.IsWorkspace, each.Keys, each.Why }).ToArray(),
-        },
     };
 }

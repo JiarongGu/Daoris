@@ -361,15 +361,6 @@ public static class TransitionalRegister
         },
         new()
         {
-            Id = "conversion-readers",
-            Kept = "Conversion/WorkflowLegacy.cs:44, Conversion/LegacyGraphs.cs:23",
-            Reaches = "A home updated across WORKFLOWCLEAN1z whose old workflow records were never converted: the conversion's census and translator still read them.",
-            Ends = "The owner says no older home remains, which no file of the home says, so it never reads as ended here and the row deletes it.",
-            Row = "ONEWAY1ag",
-            Ended = Never,
-        },
-        new()
-        {
             Id = "roles-mode-setup",
             Kept = "../../Daoris.Web/src/agents/modes.ts:31",
             Reaches = "A window whose browser storage still holds the retired Roles mode: it opens on Setup, which replaced it.",

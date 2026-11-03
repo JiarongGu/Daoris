@@ -40,7 +40,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Review/Heavy/HeavyExecutor.cs` | The `check` node performed by Daoris, off the pass, under the heavy slots |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
-| Conversion | `Conversion/ConversionPart.cs`, `WorkflowPart.cs`, `WorkflowLegacy.cs`, `LegacyGraphs.cs`, `ConversionPlans.cs`, `ConversionApplies.cs`, `Transitional/Register.cs` | The home's one conversion door and its workflow part; the register of old ways still read |
+| Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
 | Routes and page | Modules `Bridge/Routes/WorkflowRoutes.cs`, `WorkflowEditRoutes.cs`, `SetupRoutes.cs`, `ConvertRoutes.cs`, `TreesRoutes.cs`, `EntriesRoutes.cs`; web `src/workflow/` (`chart/`, `edit/`, `place/`), `src/agents/setup/` | The bridge doors; the chart, the editor, the place page and *Convert…* |
 
 ## Its rules
