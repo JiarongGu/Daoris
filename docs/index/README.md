@@ -77,7 +77,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 44 | 932 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 72 | 1365 |
 | `src/Daoris.Web/src/work/head/SessionHead.tsx` | 41 | 716 |
-| `src/Daoris.Web/src/work/noteLines.test.ts` | 106 | 1518 |
+| `src/Daoris.Web/src/work/noteLines.test.ts` | 107 | 1530 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 60 | 1011 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |

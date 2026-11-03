@@ -5,8 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2f (the memory coordinator design §6, at presentation): a hand-over's brief shows the memory its line read as the service
-/// answers it when the brief is composed, an entry ended since its read shown ended; a service with no such door leaves the brief as it was.
+/// KNOWCENTRAL2f (the memory coordinator design §6, at presentation) as CONTEXTONE1c places it: a hand-over's brief reads the memory its
+/// line read as the service answers it when the brief is composed, an entry ended since its read shown ended, and hands it on to the
+/// standing block that rides with it, never saying it itself; a service with no such door hands none on.
 /// </summary>
 public sealed class BriefMemoryTests : IDisposable
 {
@@ -49,7 +50,9 @@ public sealed class BriefMemoryTests : IDisposable
         var brief = await ContextBriefs.ComposeAsync(service, Events(), _home, "c0nv0001", HandOverWhy.Press, conversation: true, config: DriverConfig.Empty);
 
         Assert.Equal(["POST /api/sessions/c0nv0001/memory/read"], asked);
-        Assert.Contains("Memory this line read, as it stands now: " + Ended, brief.Text);
+        Assert.Equal([Ended], brief.Memory);
+        Assert.DoesNotContain("Memory this line read", brief.Text);
+        Assert.Contains("Memory this line read, as it stands now:\n- " + Ended, StandingBlock.Compose(new StandingFacts { Repository = "Owner", Memory = brief.Memory }).Text);
     }
 
     /// <summary>🔴 A service with no such door, or an answer that does not read, leaves the brief without memory and composes it still.</summary>
@@ -64,7 +67,7 @@ public sealed class BriefMemoryTests : IDisposable
         {
             var brief = await ContextBriefs.ComposeAsync(service, Events(), _home, "c0nv0001", HandOverWhy.Press, conversation: true, config: DriverConfig.Empty);
             Assert.Contains("Draw the map.", brief.Text);
-            Assert.DoesNotContain("Memory this line read", brief.Text);
+            Assert.Empty(brief.Memory);
         }
     }
 }

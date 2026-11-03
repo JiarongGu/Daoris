@@ -594,8 +594,8 @@ public sealed class TurnStopTests : IDisposable
                 }
                 return;
               }
-              // The routing standing line Daoris appends after the words is not the person's (StubFile.WithoutRouting).
-              const said = frame.message.content[0].text.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
+              // The standing block Daoris appends after the words is not the person's (StubFile.WithoutBlock).
+              const said = frame.message.content[0].text.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
               note('user: ' + said);
               if (said === 'hold') { holding = said; words('holding'); return; }
               setTimeout(() => {
@@ -639,7 +639,7 @@ public sealed class TurnStopTests : IDisposable
                 note('session/new');
                 setTimeout(() => send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-turns' } }), slow ? 800 : 0);
               } else if (frame.method === 'session/prompt') {
-                const said = frame.params.prompt[0].text.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
+                const said = frame.params.prompt[0].text.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
                 note('prompt: ' + said);
                 if (said === 'hold') { holding = frame.id; words('holding'); return; }
                 setTimeout(() => {

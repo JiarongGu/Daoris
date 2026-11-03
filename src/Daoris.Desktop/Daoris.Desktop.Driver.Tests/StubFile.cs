@@ -22,16 +22,16 @@ internal static class StubFile
         return reader.ReadToEnd();
     }
 
-    /// <summary>The start of the routing standing line a prompt for a build, design or chat record ends with (COWORKVIEW1e-i).</summary>
-    public const string RoutingLead = "Routing standing here: ";
+    /// <summary>The start of the standing block a conversation's first prompt ends with (CONTEXTONE1c), its routing standing among it.</summary>
+    public const string BlockLead = "Daoris's standing block for this session: ";
 
     /// <summary>
-    /// A prompt as a stand-in logged it, without the routing standing line Daoris appends after the person's words and its own lines: the
-    /// person's words and Daoris's other lines, exactly. A prompt carrying no such line is returned as it was.
+    /// A prompt as a stand-in logged it, without the standing block Daoris appends after the person's words and its own lines: the
+    /// person's words and Daoris's other lines, exactly. A prompt carrying no block is returned as it was.
     /// </summary>
-    public static string WithoutRouting(string prompt)
+    public static string WithoutBlock(string prompt)
     {
-        var at = prompt.IndexOf(RoutingLead, StringComparison.Ordinal);
+        var at = prompt.IndexOf(BlockLead, StringComparison.Ordinal);
         if (at < 0) return prompt;
         var before = prompt[..at];
         foreach (var joint in new[] { " | ", "\\n\\n", "\n\n" })
@@ -43,8 +43,8 @@ internal static class StubFile
     }
 
     /// <summary>
-    /// The standings (<c>not driven</c>, <c>open</c>, ...) a stand-in set apart from the prompts it logged, one per prompt that carried the
-    /// routing line, in the order heard: its <c>&lt;heard&gt;.routing</c> file.
+    /// The standings (<c>not driven</c>, <c>open</c>, ...) a stand-in set apart from the prompts it logged, one per prompt whose standing
+    /// block carried the routing, in the order heard: its <c>&lt;heard&gt;.routing</c> file.
     /// </summary>
     public static string[] Routings(string heardPath) => Lines(heardPath + ".routing");
 

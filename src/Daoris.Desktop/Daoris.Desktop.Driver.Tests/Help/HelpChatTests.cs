@@ -124,12 +124,18 @@ public sealed class HelpChatTests : IDisposable
             // Noted as JSON, so the blank line between the preface and the words is spelled `\n\n`.
             ["prompt: \"Where the person is now: the Sessions view.\\n\\nwhy is this parked?\"", "prompt: \"and now?\""],
             StubFile.Lines(Heard).Where(line => line.StartsWith("prompt: ", StringComparison.Ordinal)));
+        // CONTEXTONE1c: its standing block after the first message's words alone, the workspace's part, with no routing.
+        var block = Assert.Single(StubFile.Lines(Heard), line => line.StartsWith("block: ", StringComparison.Ordinal));
+        Assert.Contains("this session works for this machine's workspaces, in no repository.", block, StringComparison.Ordinal);
+        Assert.DoesNotContain("Routing standing", block, StringComparison.Ordinal);
         var kept = events.Page(id).Events
             .Where(e => e.Kind is SessionEventKind.User or SessionEventKind.Note)
+            .Where(e => e.Parts?.Any(part => part.Code == "chat.told-block") != true)
             .Select(e => $"{e.Kind}: {e.Text}");
         Assert.Equal(
             ["note: told where the person is: Where the person is now: the Sessions view.", "user: why is this parked?", "user: and now?"],
             kept);
+        Assert.Single(events.Page(id).Events, e => e.Parts?.Any(part => part.Code == "chat.told-block") == true);
     }
 
     /// <summary>
@@ -330,7 +336,10 @@ public sealed class HelpChatTests : IDisposable
                 note('session/set_mode ' + frame.params.modeId);
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               } else if (frame.method === 'session/prompt') {
-                const said = frame.params.prompt[0].text;
+                // The standing block Daoris appends after the first message's words is noted apart (CONTEXTONE1c, StubFile.WithoutBlock).
+                const raw = frame.params.prompt[0].text;
+                const said = raw.replace(/\n\nDaoris's standing block for this session: [\s\S]*$/, '');
+                if (said !== raw) note('block: ' + JSON.stringify(raw.slice(said.length + 2)));
                 note('prompt: ' + JSON.stringify(said));
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-help',
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'heard ' + said } } } });
