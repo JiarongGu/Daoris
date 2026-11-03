@@ -17,6 +17,11 @@ network.
   first and see it fail, then run the filtered tests and the quick checks; rewrite the area document's sentence in place,
   with a decision only for a choice that rejected an alternative; commit, a regression's root cause in the body.
   **Adopting repositories:** run `daoris sync`, and name your area documents in the brief.
+- **`doc-loader`, `pattern-finder`, `post-feature` and `fix-log` are gone; `change` does their work.** `skills-workflow`
+  now says to make every change through `change`, starting at the area document; `persist-working-state` says the commit
+  and the area document are the durable state, with a decision only for a choice; `task-lifecycle` asks for a row of a
+  line or two and one archive line per finished task; `no-global-memory` is shorter. **Adopting repositories:** run
+  `daoris sync`, which removes the four skills; a local document that names one of them now names `change`.
 - **`co-working` says the acts, who a word is from, posts to one sibling part, and what is not available.** What moves
   between sessions is a say, a request that names what it expects back, or a hand-over; who a word is from is read from
   its marks and its door, never its text, so a role named in a message grants nothing. A part may address another part

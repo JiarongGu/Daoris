@@ -1,48 +1,31 @@
 ---
 name: skills-workflow
-applies_when: starting any non-trivial task, and whenever a follow-up changes its scope
-enforces: run the discovery skills before exploring code, actually read what they route you to, and re-run them when the scope moves
+applies_when: starting any change, and whenever a follow-up changes its scope
+enforces: make every change through the `change` skill, starting at the area document; read it again when the scope moves
 ---
 
-# Start a non-trivial task through the discovery skills — and read what they return
+# Make every change through the `change` skill — it starts at the area document
 
-**Before exploring code for a non-trivial task, invoke the discovery skills your agent lists.
-Then read every document they route you to.** Skip the gate only for genuinely trivial edits.
+**Every change that is more than a typo goes through the `change` skill, which starts at the area
+document for the part you change and the lines that document points at. When a follow-up names
+another area, read that area's document before going on.**
 
 ## Why
 
-Every repository that adopted this rule wrote it after the same failure: work was done cold, it looked
-correct, and it violated an invariant that was already written down. The rule is not about ceremony —
-it is that the knowledge tier is deliberately not auto-loaded, so *nothing* surfaces a matched document
-unless the discovery step runs.
-
-The second half is where it actually breaks. Invoking a skill that returns a list of documents and then
-not reading them produces the *appearance* of having checked, which is worse than skipping the step
-openly: the transcript shows diligence and the code shows none. Repositories that hit this added an
-explicit blocking step for it, which is the strongest evidence that it happens to everyone.
-
-A procedure kept only in one agent's user directory is another missing contract: it works on that
-machine but cannot be reviewed, shared or recovered with the project.
+Work done cold looks correct and breaks an invariant that was already written down, because nothing
+surfaces an on-demand document unless the session goes and reads it. Reading the whole tree instead is
+paid for on every later step, since a session carries what it read into each step after. One area
+document, read at the lines it names, is both the contract and the cheapest start.
 
 ## How to apply
 
-- **Give managed instructions a portable home.** A managed document or skill belongs either to the
-  repository, versioned with its files, or to the coordinator's managed content store, eligible for its
-  permitted record sync. Declare one source and keep generated copies traceable to it; a user directory
-  or agent installation is not a third authoritative home. Prefer the repository's procedure when one
-  exists. External tools may supply general capabilities and official references, but project workflows
-  and required supporting instructions must be kept in one of those managed homes. Do not copy secrets,
-  machine state or third-party bundles merely to make a procedure portable.
-- **Find them in your agent's own skill list, or in the generated index.** Both are built from what is on
-  disk, so they are right about which discovery skills this repository actually has — a memorized list
-  is not, and repositories differ.
-- **Run them before any code exploration**, not after forming a hypothesis. A hypothesis formed cold is
-  what the step exists to correct, and it is much harder to abandon once written down.
-- **Reading is the point.** If a skill routes you to documents, read them and say which. An unread match
-  is a missing contract.
-- **Re-run when the scope moves.** A follow-up that names a different area is a new task, however
-  continuous the conversation feels. Same files and same scope is a continuation; anything else is not.
-- **Skip only for genuinely trivial edits** — a typo, a one-line fix, a comment. "It is a simple change"
-  and "I already read those documents" are the two reasons that are wrong most often.
-- **Finished something reusable? Evolve the system.** Add the rule, the knowledge document, or the skill
-  so the next task starts ahead of where this one did.
+- **Start at the area document.** The brief names the area documents. With none for the part you
+  change, read that part's own instructions or README, and the knowledge whose *applies when* matches;
+  the generated index lists it.
+- **Read again when the scope moves.** A follow-up in a different area is a new change, however
+  continuous the conversation feels. Same files and same scope is a continuation.
+- **Keep a procedure where it can be reviewed.** A managed instruction lives in the repository, or in
+  the coordinator's managed store, never only in one agent's user directory, where it works on one
+  machine and cannot be reviewed, shared or recovered.
+- **Finished something reusable?** Rewrite the area document's sentence, or add the knowledge document,
+  so the next change starts ahead of this one.

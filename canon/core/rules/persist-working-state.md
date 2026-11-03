@@ -1,35 +1,30 @@
 ---
 name: persist-working-state
-applies_when: any multi-step task — at each decision, finding, or milestone
-enforces: checkpoint in-progress state to its durable home in the repository as you go, not at the end
+applies_when: any multi-step task, at each decision, finding or milestone
+enforces: the commit and the area document are the durable state, written as each piece lands; a decision entry only for a choice that rejected an alternative
 ---
 
 # Persist working state as you go — context is not durable
 
-**Working context is ephemeral. The moment a decision is made, a finding is confirmed, or a milestone is
-reached, write it to its durable home in the repository — not at the end of the task, and never only to a
-scratch area.**
+**Working context is ephemeral. Commit each piece that passes its tests, and rewrite the area
+document's sentence when what it describes changes, as each one lands rather than at the end. A choice
+that rejected an alternative gets a decision entry, with what it rejected.**
 
 ## Why
 
-A long task's context does not survive intact: it gets summarized, truncated, or simply ends. Anything
-held only in working memory — the reason a approach was rejected, the measurement that justified a
-constant, the half-finished plan — is gone at exactly the moment the next person or session needs it, and
-what remains is code whose motivation nobody can reconstruct.
-
-Writing at the end is the same failure with extra steps. The end is where interruptions land.
+A long task's context is summarized, truncated, or simply ends. What was held only there (why an
+approach was rejected, the measurement behind a constant, the half-finished plan) is gone exactly when
+the next session needs it, and what remains is code whose motivation nobody can reconstruct. Writing at
+the end is the same failure with extra steps: the end is where interruptions land.
 
 ## How to apply
 
-- **A decision with a reason → the decisions record.** Especially a decision that was *considered and
-  rejected*: without the reason, someone will reverse it later and rediscover the problem.
-- **A finding or a trap that survives the task → the knowledge or conventions record**, so it is not
-  re-derived next time.
-- **In-progress plan state → the plan or backlog file**, updated as steps land rather than after all of
-  them do.
-- **Write it when it happens.** A note recorded at the moment of the decision costs a sentence; the same
-  note reconstructed later costs an investigation, and is usually wrong.
-- **When a fact changes, rewrite its home.** Replace the sentence or entry that is now wrong; never add a
-  newer one beside it. Record only what the code cannot say, sized by what was decided.
-- Durable means *in the repository*, tracked and reviewable — not a scratch directory and not a
+- **The commit is the progress.** A piece that passes its tests is committed before the next begins; its
+  message says what changed, and a regression fix's says the root cause.
+- **The area document is the present fact.** Rewrite the sentence that is now wrong, in place; never add
+  a newer one beside it, and write no history or status words into it.
+- **A decision is for a choice.** Record one only where an alternative was weighed and rejected, with
+  the reason: without it, someone reverses the choice and rediscovers the problem.
+- **An unfinished plan is the backlog row's,** a line or two, updated as its steps land.
+- Durable means in the repository, tracked and reviewable: not a scratch directory, and not a
   conversation.
