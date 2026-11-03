@@ -110,26 +110,25 @@ session reported (D165). Two sign-ins of one email in different organisations li
 (D125). `agent profile use` says what passes an account at a start, its limit reached, usage credits or
 its use over its curve, and marks a reading over the scope's curve with the curve's value now (D165).
 
-**Git identities of Daoris's own** (D198). `daoris-driver git identity add-ssh <host>` makes an SSH key in
+**Git identities of Daoris's own** (D198). `daoris git identity add-ssh <host>` makes an SSH key in
 `profiles/git/keys/`, its folder limited to your account before a key byte is written; `git identity test` reads the host's
 greeting and a host key is trusted only at your press; `git use <repository> <identity>` points a repository at one. The list
 (`data/git-identities.json`) holds no secret. They take effect only on an install published with Daoris's git doors, which
 are left out until their measurements pass on an install; until then a remote keeps your own git as it was.
 `docs/2026-09-22-toolchain-design.md` is the contract.
 
-**`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
-no gate ever runs them; `brainstorm` too, to this machine's own service only. `remote`, `agent`, `driver`, `plugin`, `browser` and `tool` are management too; they edit files under
+**`repository connect`, `repository retire` and `repository import` are management commands** — opt-in, they talk to a
+service, and no gate ever runs them; `brainstorm` too, to this machine's own service only. Every group the desktop's program
+runs is management (`remote`, `agent`, `place`, `settings`, `plugin`, `browser` and `tool` among them); they edit files under
 **the Daoris home** (`DAORIS_HOME` — the installed application's own `data/`, set once for your
 account, never your profile; D63), refusing with none set. A `daoris` the install carries needs neither that nor
 `DAORIS_SERVICE_URL`: it takes its install's `data/`, and the service the running Daoris holds (D171). A service that is busy and answers late is said as busy (SERVICESTALL1): the status door, and a read the command makes, are asked a second time after a second, and a refusal names the address it tried, the bound (two seconds for the status door, sixty for a request) and that it asked twice, and says `DAORIS_SERVICE_URL` is not the cause where the address came from the home's own record; a press that changes the registry is never asked again blindly and says what to look at. While Daoris runs on that
-home, `agent`, `driver`, `plugin` and `tool` send what they change to it over its own pipe, where its window asks you to confirm it
-and every window shows it at once; with none running they edit the files themselves, holding the home's lease (D171's PUSH1f note).
-The CLI's table of the home's entries (`home.ts`, a twin of the driver's and the service's) names the desktop's own store, `data/desktop.db` (FOUNDATION1 z-i, D212), as it names every place a home holds, and never opens it: the driver library alone does, so these verbs reach it through `daoris-driver` as they reach the rest.
-`driver`, `tool` and most of `agent` (its rules, trust, settings, tools and accounts: D194's PUSH1f2d and PUSH1f2e notes) are run by
-Daoris's own driver program, with the same words (`daoris-driver driver …`, `daoris-driver tool …`, `daoris-driver agent …`,
-D194), `driver`'s standing choices, its workflows, its cycles and its brainstorm policy alike: the one the install carries in
-`app/daoris-driver/`, or the build `DAORIS_DRIVER_PROGRAM` names; a `daoris` with neither, a checkout's among them, says so and does
-nothing. A tool's download holds nothing while it fetches, and is
+home, the program sends what a command changes to it over its own pipe, where its window asks you to confirm it and every
+window shows it at once; with none running it edits the files itself, holding the home's lease (D171's PUSH1f note).
+The CLI's table of the home's entries (`home.ts`, a twin of the driver's and the service's) names the desktop's own store, `data/desktop.db` (FOUNDATION1 z-i, D212), as it names every place a home holds, and never opens it: the driver library alone does, so these commands reach it through the desktop's program as they reach the rest.
+A place's standing choices, the settings, the workflows, the cycles and the brainstorm policy alike are that program's: the one
+the install carries in `app/daoris-driver/`, or the build `DAORIS_DRIVER_PROGRAM` names; a `daoris` with neither, a checkout's
+among them, says so and does nothing. A tool's download holds nothing while it fetches, and is
 made the version under the home's lease, which it waits for. From a terminal Daoris started for a session (`DAORIS_SESSION_ID`), a change no window confirms is
 refused: it is yours to make, in the window or in your own terminal. The home's `notices.json` is what Notifications keeps of
 what ended, failed or went unanswered (NOTIFY2f), and of each conversation that answered you (NOTIFY2g); no command writes it.
@@ -248,7 +247,7 @@ What lanes do for the work, on a machine where the person has opted the reposito
 
 - A session of the repository can publish a quest to one of its own lanes, and the driver starts it as a further part of that
   session's line of work. Without lanes there is nothing to publish to, and a session works its rows itself.
-- **Trees.** A repository that opens a tree for each session (`daoris-driver trees <repository> on`) can run such a part beside the
+- **Trees.** A repository that opens a tree for each session (`daoris place trees <repository> on`) can run such a part beside the
   session that published it. One that does not runs it only after the publishing session ends, so a quest to its lanes waits.
 - **Not driven here.** A repository the person has not opted in on this machine starts nothing, lanes or not.
 
