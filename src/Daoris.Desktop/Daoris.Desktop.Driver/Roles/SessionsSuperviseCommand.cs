@@ -195,7 +195,8 @@ public static class SessionsSuperviseCommand
 
     /// <summary>
     /// The fenced print (§3.2, §4.4): the question and its choices, the go-aheads on its ask, the work order with the owner's words and the
-    /// standing answer, the branch's commits since its base, each fenced and labelled; then the generation the answer must carry.
+    /// standing answer, the line's course as Daoris counts it (CONTEXTDRIVE1i), the branch's commits since its base, each fenced and
+    /// labelled; then the generation the answer must carry.
     /// </summary>
     private static async Task<int> PrintAsync(ISupervisorWorld world, InstanceWorld instance, string id, TextWriter output, CancellationToken ct)
     {
@@ -241,6 +242,9 @@ public static class SessionsSuperviseCommand
             Part(print, fence, "the standing answer for the repository, the owner's", StandingText.Beneath(standing, repository).Trim());
         }
 
+        // CONTEXTDRIVE1i (the context-counters design §5): the line's course, Daoris's own facts from its records, fenced as every part is.
+        var course = await LineFactsReads.Current.OfAsync(world.Service, world.Home, id, ct).ConfigureAwait(false);
+        Part(print, fence, "the line's course: Daoris's count from its records, not the asking agent's", CountTexts.Print(course));
         Part(print, fence, "the branch's commits since its base: the asking agent's", await CommitsAsync(record, ct).ConfigureAwait(false));
         print.Append($"generation: {Text(listed, "generation")}\n");
         print.Append($"answer: daoris-driver sessions supervise {id} --question {asked.Id} --generation {Text(listed, "generation")} "

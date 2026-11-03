@@ -52,7 +52,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         {
             var json = request.RequestUri!.AbsolutePath switch
             {
-                "/api/sessions" => """[{"id":"s1","repository":"engine","state":"awaiting-person","quest":"q1","kind":"driven","created":"2026-10-22T08:00:00Z"}]""",
+                "/api/sessions" => """[{"id":"s1","repository":"engine","state":"awaiting-person","quest":"q1","kind":"driven","entry":"ask:a1/report","created":"2026-10-22T08:00:00Z"}]""",
                 "/api/quests" => """[{"id":"q1","from":"ask #a1","to":"engine","title":"Report","body":"Write the report.","status":"taken"}]""",
                 "/api/asks/a1" => """{"id":"a1","workspace":"w","sentence":"Write the report","state":"open","tier":"t","words":[],"goAheads":[{"number":1,"kind":"production","on":"engine","act":"push to origin","asked":[],"answer":{"approved":false,"at":"2026-10-24T08:00:00Z"}}]}""",
                 _ => null,
@@ -311,5 +311,43 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
 
         var none = await RunAsync(["supervise", "s2"], Instance());
         Assert.Equal(1, none.Exit);
+    }
+
+    /// <summary>
+    /// CONTEXTDRIVE1i (the context-counters design §5): the print hands the line's course as Daoris's facts, fenced as every part is, each
+    /// count cited as a reason's source names it, with its parts.
+    /// </summary>
+    [Fact]
+    public async Task CONTEXTDRIVE1i_the_print_hands_the_line_s_course_fenced_as_Daoris_s_facts()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1" + QuestionFiles.Suffix), """
+            {"id":"q-1","session":"s1","question":"Which report?","choices":[{"label":"Monthly","does":"I write it."}],"at":"2026-10-24T08:00:00Z"}
+            """);
+        _standIn = new InstanceStandIn(_pipe, _id)
+        {
+            Respond = (type, _) => type == SupervisorRoutes.Waiting
+                ? new { waiting = new[] { new { session = "s1", repository = "engine", question = "q-1", asked = "2026-10-24T08:00:00Z", generation = "g-1" } } }
+                : null,
+        };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(["supervise", "s1"], Instance());
+
+        Assert.Equal(0, exit);
+        var lines = said.Split('\n');
+        var at = Array.FindIndex(lines, line => line.StartsWith("<<< the line's course: Daoris's count from its records, not the asking agent's · ", StringComparison.Ordinal));
+        Assert.True(at > 0, said);
+        var fence = lines[at][(lines[at].LastIndexOf('·') + 2)..^4];
+        var end = Array.IndexOf(lines, $"<<< end {fence} >>>", at);
+        Assert.Equal(
+            [
+                "Every count of this line as Daoris read it; a reason names one by its first words here.",
+                "- count:answers-alone=0 (exact): answers alone in a row, from its events; Daoris's own number: it waits for the person after 2",
+                "- count:failures=0 (exact): failed sessions on this quest, from the service's records; Daoris's own number: it waits for the person after 3",
+            ],
+            lines[(at + 1)..(at + 4)]);
+        Assert.Contains("- session s1: opened", lines[at..end]);
+        Assert.True(Array.FindIndex(lines, line => line.StartsWith("<<< the branch's commits", StringComparison.Ordinal)) > end);
     }
 }

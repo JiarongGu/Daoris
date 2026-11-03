@@ -147,7 +147,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             {
                 Id = id, Session = answer.Session, Repository = park.Repository, Question = park.Filed!, Choice = answer.Choice,
                 Reasons = answer.Reasons, Holder = answer.Holder, Generation = generation, KeptAt = now, GoesOnAt = goesOnAt,
-                Written = DecisionJson(id, answer.Session, answer.Choice, null, answer.Reasons, answer.Holder, park.Filed!, generation, now, goesOnAt),
+                Written = DecisionJson(id, answer.Session, answer.Choice, null, answer.Reasons, answer.Holder, park.Filed!, generation, now, goesOnAt, park.Counts),
                 StateAt = now,
             };
             Directory.CreateDirectory(FolderOf(answer.Session));
@@ -163,7 +163,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     /// <summary>§3.1's refusals the park and the form answer, before memory is read; null where none applies.</summary>
     private static string? Judge(SupervisorAnswer answer, SupervisedPark park)
     {
-        if ((Refused(answer.Reasons, answer.Choice.Length > 0) ?? Parked(answer.Question, park)) is { } refused) return refused;
+        if ((Refused(answer.Reasons, answer.Choice.Length > 0, park) ?? Parked(answer.Question, park)) is { } refused) return refused;
         var filed = park.Filed!;
         // SUPERVISOR1b (§4.1): the agent's mark, any at all, makes the question the owner's; checked again at the release.
         if (filed.Owner is not null) return SupervisorWhy.OwnerQuestion;
@@ -175,11 +175,14 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         return park.AtBound ? SupervisorWhy.SupervisorBound : null;
     }
 
-    /// <summary>The form's refusals both acts share: every reason naming its source, and their count and bounds.</summary>
-    private static string? Refused(IReadOnlyList<SupervisorReason> reasons, bool named)
+    /// <summary>
+    /// The form's refusals both acts share: every reason naming its source, a count it cites one of those the park read (CONTEXTDRIVE1i),
+    /// and their count and bounds.
+    /// </summary>
+    private static string? Refused(IReadOnlyList<SupervisorReason> reasons, bool named, SupervisedPark park)
     {
         // D135 point 4: a reason with no source is refused by name; Daoris checks that one is named, never what it says.
-        if (reasons.Any(reason => string.IsNullOrWhiteSpace(reason.Source))) return SupervisorWhy.NoSource;
+        if (reasons.Any(reason => string.IsNullOrWhiteSpace(reason.Source) || CountTexts.NamesNone(reason.Source, park.Counts))) return SupervisorWhy.NoSource;
         return reasons.Count is 0 or > MostReasons || !named
                || reasons.Any(reason => reason.Says.Trim().Length is 0 or > MaxSays || reason.Source.Length > MaxSource)
             ? SupervisorWhy.Form
@@ -214,7 +217,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     public Task<SupervisorKept> LeaveAsync(SupervisorDefer defer, SupervisedPark park, DateTimeOffset now, CancellationToken ct = default) =>
         UnderAsync(defer.Session, () =>
         {
-            var refused = Refused(defer.Reasons, SupervisorBounds.Known(defer.Bound)) ?? Parked(defer.Question, park);
+            var refused = Refused(defer.Reasons, SupervisorBounds.Known(defer.Bound), park) ?? Parked(defer.Question, park);
             if (refused is null && _live.Values.FirstOrDefault(each => each.Session == defer.Session && each.Question.Id == defer.Question) is { } held)
             {
                 if (held.State == SupervisorState.Left && held.Bound == defer.Bound && held.Generation == defer.Generation
@@ -243,7 +246,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             {
                 Id = id, Session = defer.Session, Repository = park.Repository, Question = park.Filed!, Choice = "", Bound = defer.Bound,
                 Reasons = defer.Reasons, Holder = defer.Holder, Generation = defer.Generation, KeptAt = now, GoesOnAt = now,
-                Written = DecisionJson(id, defer.Session, null, defer.Bound, defer.Reasons, defer.Holder, park.Filed!, defer.Generation, now, now),
+                Written = DecisionJson(id, defer.Session, null, defer.Bound, defer.Reasons, defer.Holder, park.Filed!, defer.Generation, now, now, park.Counts),
                 StateAt = now,
             };
             Directory.CreateDirectory(FolderOf(defer.Session));
@@ -799,10 +802,13 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         writer.WriteString("decision", decision);
     }) + "\n";
 
-    /// <summary>A decision's file: an answer's names its <paramref name="choice"/>, a defer's its <paramref name="bound"/> (SUPERVISOR1b).</summary>
+    /// <summary>
+    /// A decision's file: an answer's names its <paramref name="choice"/>, a defer's its <paramref name="bound"/> (SUPERVISOR1b); the counts
+    /// its holder was handed beside the question's snapshot, where the keeping read them (CONTEXTDRIVE1i).
+    /// </summary>
     private static string DecisionJson(
         string id, string session, string? choice, string? bound, IReadOnlyList<SupervisorReason> reasons, SupervisorHolder holder,
-        ParkQuestion question, string generation, DateTimeOffset kept, DateTimeOffset goesOn) => Written(writer =>
+        ParkQuestion question, string generation, DateTimeOffset kept, DateTimeOffset goesOn, IReadOnlyList<CountFact>? counts) => Written(writer =>
     {
         writer.WriteString("decision", id);
         writer.WriteString("session", session);
@@ -837,6 +843,23 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         }
 
         writer.WriteEndArray();
+        if (counts is not null)
+        {
+            writer.WriteStartArray("counts");
+            foreach (var count in counts)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("count", count.Count);
+                if (count.N is { } n) writer.WriteNumber("n", n);
+                writer.WriteString("known", count.Known);
+                if (count.Why is not null) writer.WriteString("why", count.Why);
+                writer.WriteString("from", count.From);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteStartObject("holder");
         writer.WriteString("kind", holder.Kind);
         if (holder.Parent is not null) writer.WriteString("parent", holder.Parent);
