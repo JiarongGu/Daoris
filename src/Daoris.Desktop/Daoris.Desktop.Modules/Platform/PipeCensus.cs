@@ -330,6 +330,8 @@ public sealed class PipeCensus
             "PLACES",
             // AGENTSPLACE1a2: a place's quick set-up planned on a copy of the configuration, written nowhere.
             "PLACE_PLAN",
+            // D230: a repository's reconcile planned from the registry, its line and the doctrine tool's status for its checkout, written nowhere.
+            "RECONCILE_PLAN",
             // WORKFLOWCLEAN1 1e: the conversion's plan (or the undo's) read from the file, the saved workflows, the bound runs and the registry, written nowhere.
             "CONVERT_PLAN",
             // ONEWAY1ad-ii: This machine's list of old records, read from the home's files and the census as last read, written nowhere.
@@ -414,6 +416,8 @@ public sealed class PipeCensus
             "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND",
             // AGENTSPLACE1b2: a place's plan applied, by its digest: the configuration's changes and acceptances, and each adoption quest.
             "PLACE_APPLY",
+            // D230: a repository's reconcile asked of its own session, as the person's, its rule added to the repository's scope.
+            "RECONCILE_APPLY",
             // WORKFLOWCLEAN1 1e: the old records converted to saved graph workflows, and the conversion taken back, each by its plan's digest.
             "CONVERT_APPLY", "CONVERT_UNDO",
             // INTEGRATE1d: a repository's integration declaration, what integration runs and a tidy removes, accepted by its blob (D215 point 10).
@@ -524,7 +528,7 @@ public sealed class PipeCensus
             // hold a start.
             "SET_HELPERS", "SET_CAP", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
             "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "PLACE_APPLY", "CONVERT_APPLY", "CONVERT_UNDO", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            "PLACE_APPLY", "RECONCILE_APPLY", "CONVERT_APPLY", "CONVERT_UNDO", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
             "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",

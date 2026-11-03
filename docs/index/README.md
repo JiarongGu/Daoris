@@ -32,7 +32,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/README.md` | 50 | 449 |
+| `src/Daoris.Web/README.md` | 51 | 449 |
 | `src/Daoris.Web/e2e/platform.spec.ts` | 57 | 968 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 925 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs` | 59 | 819 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs` | 44 | 828 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 157 | 2372 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 157 | 2376 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 57 | 833 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs` | 41 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
@@ -257,7 +257,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs` | 85 | 1568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 49 | 915 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StandingConfirmationTests.cs` | 59 | 1078 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 886 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 888 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs` | 42 | 640 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 61 | 951 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/GitRoutes.cs` | 46 | 697 |
@@ -270,8 +270,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 59 | 966 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 71 | 1340 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1995 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 43 | 581 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 41 | 536 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 44 | 585 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 42 | 541 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 93 | 1710 |
 
 ### Service (`service`)
@@ -455,4 +455,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 91 | 556 |
 | `docs/development.md` | 56 | 607 |
-| `src/Daoris.Desktop/README.md` | 291 | 1333 |
+| `src/Daoris.Desktop/README.md` | 292 | 1333 |

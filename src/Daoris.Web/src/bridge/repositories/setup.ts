@@ -1,7 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import type { PlaceApplied, PlaceApplyAsk, PlaceAsk, PlacePlanned } from '../../agents/setup/placePlan';
+import { type ReconcileApplied, readReconcilePlan } from '../../agents/setup/reconcilePlan';
 import { call } from '../call';
+import { askHeld } from '../state/held';
+
+export type { ReconcileApplied, ReconcilePlanned } from '../../agents/setup/reconcilePlan';
 
 // A place's quick set-up, the one door that adopts a repository (WORKFLOWCLEAN1 1f): the plan, the twin of
 // `daoris-driver place … --plan`, and the apply, the twin of `--apply`. The driver library's `PlacePlans` and `PlaceApplies` answer both,
@@ -52,5 +56,38 @@ export const usePlaceApply = () => {
   return useMutation({
     mutationFn: (ask: PlaceApplyAsk) => call<PlaceApplied>('PLACE_APPLY', ask, { timeoutMs: SETUP_BOUND }),
     onSettled: () => client.invalidateQueries({ queryKey: ['place-plan'] }),
+  });
+};
+
+/** Under its own root, as a place's plan is: a reconcile's plan changes by its press or the repository's own sync, never by a tick. */
+export const reconcilePlanKey = (repository: string) => ['reconcile-plan', repository] as const;
+
+/**
+ * A repository's reconcile planned (`RECONCILE_PLAN`, D230 point 2): what the doctrine tool's status said of its checkout, whether that offers
+ * the press, and the set-up press's own refusals. Told by event (NOBLOCK1), since it runs the doctrine tool; read each time the place's page
+ * shows it, an older shell's none read as nothing offered. Shell-only.
+ */
+export const useReconcilePlan = (repository: string | null, { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  return useQuery({
+    queryKey: repository ? reconcilePlanKey(repository) : ['reconcile-plan', 'none'],
+    queryFn: () => askHeld('RECONCILE_PLAN', client, reconcilePlanKey(repository!), { repository: repository! }, readReconcilePlan),
+    enabled: isAvailable && enabled && repository !== null && repository !== '',
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+    retry: false,
+  });
+};
+
+/**
+ * The reconcile's press (`RECONCILE_APPLY`, the person's own): the repository's own session asked to reconcile it, its rule added first. A
+ * refusal is an answer with nothing asked. The plan is read again after it; what it moved, the route's `STATE_CHANGED` asks again (D169).
+ */
+export const useReconcileApply = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (repository: string) => call<ReconcileApplied>('RECONCILE_APPLY', { repository }, { timeoutMs: SETUP_BOUND }),
+    onSettled: () => client.invalidateQueries({ queryKey: ['reconcile-plan'] }),
   });
 };

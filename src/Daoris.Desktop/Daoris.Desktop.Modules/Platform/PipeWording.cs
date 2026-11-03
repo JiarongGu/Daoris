@@ -183,6 +183,8 @@ public static class PipeWording
         Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
         // AGENTSPLACE1b2: a place's apply names the repositories, the delivery and what it builds; the digest and the chosen acceptances are listed under it.
         Row("PLACE_APPLY", W("repositories", PipeRole.Repository), W("preset", PipeRole.Form), W("builds", PipeRole.Form));
+        // D230: a reconcile names the repository whose own session is asked.
+        Row("RECONCILE_APPLY", W("repository", PipeRole.Repository));
         // WORKFLOWCLEAN1 1e: the conversion's presses; the apply names the two choices of its plan, the undo names nothing.
         Row("CONVERT_APPLY", W("composed", PipeRole.Form), W("landAutomatic", PipeRole.Form));
         Row("CONVERT_UNDO");

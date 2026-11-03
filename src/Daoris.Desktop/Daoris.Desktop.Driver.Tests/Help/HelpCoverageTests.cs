@@ -918,6 +918,10 @@ public sealed partial class HelpCoverageTests
         ("agents", "useAnswerStaffingFound", null, new Exempt(
             "A change of driver.json's actors another program made is the person's to take or dismiss (the foundation design §19.15): "
             + "a take may turn Intake or Ask Daoris on, so no proposal names it, and a helper never answers what another program wrote.")),
+        // D230 point 2: an adopted repository's *Reconcile…* on its place's page (`agents/setup/ReconcileNote.tsx`), over RECONCILE_APPLY.
+        ("agents", "useReconcileApply", null, new Exempt(
+            "asking a repository's own session to reconcile it with the canon is the person's own press (D230 point 2), offered where the "
+            + "doctrine tool's status says the canon moved and confirmed on the page; Ask Daoris names the page and never proposes the press.")),
         // HELPMODE1b: Ask Daoris's access, pressed from Settings → AI features and from the panel's own chip.
         ("ai", "useSetHelpMode", null, new Exempt(
             "Ask Daoris's access mode is the person's choice alone, never made for them (D183 point 2): no proposal names it, so "

@@ -604,6 +604,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("PLACES", "", null)]
     [InlineData("PLACE_PLAN", "", null)]
     [InlineData("PLACE_APPLY", "quests,asks,driver,rules", null)]
+    [InlineData("RECONCILE_PLAN", "", null)]
+    [InlineData("RECONCILE_APPLY", "quests,asks,driver,rules", null)]
     [InlineData("SET_HELP_MODE", "driver", null)]
     [InlineData("SET_HELP_GRANT", "driver", null)]
     [InlineData("TRUST_FOLDER", "driver", null)]

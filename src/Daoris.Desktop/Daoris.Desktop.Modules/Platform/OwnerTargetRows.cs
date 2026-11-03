@@ -88,6 +88,8 @@ internal static class OwnerTargetRows
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
         // AGENTSPLACE1b2: a place's apply acts on every repository its plan names.
         rows.Add("PLACE_APPLY", OwnerTarget.Of(new OwnerField("repositories", OwnerKinds.Repository, Many: true)));
+        // D230: a reconcile asks one repository's own session.
+        Row("RECONCILE_APPLY", Repository());
         // GITAPP2h, GITAPP2i, GITAPP2j, GITAPP2k, GITAPP2l: the Changes tab's acts on one repository's checkout.
         foreach (var route in new[] { "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO", "GIT_MAKE_COMMIT", "GIT_AMEND", "GIT_RESOLVE", "GIT_MARK_RESOLVED", "GIT_SWITCH", "GIT_STASH", "GIT_STASH_APPLY" })
         {
