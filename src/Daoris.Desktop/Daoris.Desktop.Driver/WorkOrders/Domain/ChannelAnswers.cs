@@ -10,18 +10,25 @@ public sealed record ChannelForwarded(bool Sent, string? Code, string? Session);
 
 /// <summary>
 /// One item of an ask's channel as the page reads it (SESSONE2c): a message's words, or one of Daoris's coded lines. COWORK1d: a message's
-/// level (null for one from before) and what it reached in each repository it addresses.
+/// level (null for one from before) and what it reached in each repository it addresses. COMMS1k: a message to one part names it, the
+/// channel it is kept on, and what it reached in that part's line.
 /// </summary>
 public sealed record ChannelItemAnswer(
     string Kind, DateTimeOffset At, string? Id, bool Person, string? Session, string? Repository, string? Agent, string? Entry, string? To,
     string? Re, bool Question, bool Open, string? Text, string? Code, string? Quest, string? Name, string? From, bool? Urgent = null,
-    IReadOnlyList<ChannelReceiptView>? Receipts = null);
+    IReadOnlyList<ChannelReceiptView>? Receipts = null, string? Part = null, string? Channel = null, string? Receipt = null);
 
 /// <summary>The person's <i>Send to its session</i> (COWORK1d): sent, to which session, or the code that says why not.</summary>
 public sealed record ChannelForwardAnswer(bool Sent, string? Code, string? Session);
 
-/// <summary>An ask's channel as the person reads it: its items in time order, how many are past their mark, and the mark.</summary>
-public sealed record ChannelAnswer(string Ask, string Entry, IReadOnlyList<ChannelItemAnswer> Items, int Unread, DateTimeOffset? Mark);
+/// <summary>
+/// An ask's channel as the person reads it: its items in time order, how many are past their mark, and the mark; and the messages to one
+/// part each (COMMS1k), apart from the items.
+/// </summary>
+public sealed record ChannelAnswer(string Ask, string Entry, IReadOnlyList<ChannelItemAnswer> Items, int Unread, DateTimeOffset? Mark)
+{
+    public IReadOnlyList<ChannelItemAnswer> Addressed { get; init; } = [];
+}
 
 /// <summary>The person's post: the message kept, or the service's code where it refused, which the page words (<see cref="ChannelPosted"/>).</summary>
 public sealed record ChannelPostAnswer(bool Posted, string? Code, ChannelItemAnswer? Message);
@@ -38,7 +45,7 @@ public static class ChannelAnswers
 {
     /// <summary>The channel as the page reads it.</summary>
     public static ChannelAnswer Read(ChannelView view) =>
-        new(view.Ask, view.Entry, [.. view.Items.Select(Item)], view.Unread, view.Mark);
+        new(view.Ask, view.Entry, [.. view.Items.Select(Item)], view.Unread, view.Mark) { Addressed = [.. view.Addressed.Select(Item)] };
 
     /// <summary>A channel nothing is on: an ask the host does not hold, or a host from before the channel.</summary>
     public static ChannelAnswer Empty(string ask) => new(ask.TrimStart('#'), "person", [], 0, null);
@@ -52,5 +59,5 @@ public static class ChannelAnswers
 
     private static ChannelItemAnswer Item(ChannelItemView item) => new(
         item.Kind, item.At, item.Id, item.Person, item.Session, item.Repository, item.Agent, item.Entry, item.To, item.Re,
-        item.Question, item.Open, item.Text, item.Code, item.Quest, item.Name, item.From, item.Urgent, item.Receipts);
+        item.Question, item.Open, item.Text, item.Code, item.Quest, item.Name, item.From, item.Urgent, item.Receipts, item.Part, item.Channel, item.Receipt);
 }

@@ -32,7 +32,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/README.md` | 50 | 449 |
+| `src/Daoris.Web/README.md` | 51 | 450 |
 | `src/Daoris.Web/e2e/platform.spec.ts` | 57 | 968 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 925 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
@@ -305,7 +305,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SaidSettledTests.cs` | 61 | 1142 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 120 | 2286 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 47 | 924 |
-| `src/Daoris.Service/README.md` | 137 | 961 |
+| `src/Daoris.Service/README.md` | 138 | 962 |
 
 ### CLI (`cli`)
 
@@ -456,4 +456,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 91 | 556 |
 | `docs/development.md` | 56 | 607 |
-| `src/Daoris.Desktop/README.md` | 291 | 1335 |
+| `src/Daoris.Desktop/README.md` | 292 | 1335 |

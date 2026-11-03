@@ -41,7 +41,7 @@ public enum ChannelRefusal
     /// <summary>The connector names no session this machine holds.</summary>
     NoSession,
 
-    /// <summary>The session is on no ask, so it has no channel: work or a request goes in a quest.</summary>
+    /// <summary>The session's ask is not held on this machine, so its channel is not here (since COMMS1k a line on no ask has its own).</summary>
     NoAsk,
 
     /// <summary>A helper or a reviewer: each answers one question, and neither posts nor reads (D155, D163).</summary>
