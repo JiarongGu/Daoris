@@ -95,6 +95,47 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
         Assert.Contains(said, message, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>CONTEXTDRIVE1d: the supervisor's rules, a set of `supervisor` naming the place, its whole list and the revision read, alone.</summary>
+    [Fact]
+    public void CONTEXTDRIVE1d_the_supervisor_s_rules_are_written_with_the_place_and_the_revision_read()
+    {
+        var (id, message) = Box().ProposeRole(
+            "set", "supervisor", null, null, null, null, null, null, "the person wants a third go-on alone", "h1", Now,
+            place: "repository:daoris", rules: """[{ "count": "answers-alone", "at": 3, "do": "hold" }]""", rulesRevision: 4);
+
+        var written = Written(id!);
+        Assert.Equal(("role", "set", "supervisor"), (written.GetProperty("kind").GetString(), written.GetProperty("door").GetString(), written.GetProperty("target").GetString()));
+        var press = written.GetProperty("press");
+        Assert.Equal(("repository:daoris", 4L, 3), (press.GetProperty("place").GetString(), press.GetProperty("rulesRevision").GetInt64(), press.GetProperty("rules")[0].GetProperty("at").GetInt32()));
+        Assert.Equal(["place", "rules", "rulesRevision"], press.EnumerateObject().Select(each => each.Name));
+        Assert.Contains($"Proposed `#{id}`", message);
+    }
+
+    [Theory]
+    [InlineData("set", "build", "machine", "[]", 0L, "their id is `supervisor`")]
+    [InlineData("remove", "supervisor", "machine", "[]", 0L, "are a `set` of `supervisor`")]
+    [InlineData("set", "supervisor", "planet:x", "[]", 0L, "is not a place")]
+    [InlineData("set", "supervisor", "machine", "{ not json", 0L, "not JSON")]
+    [InlineData("set", "supervisor", "machine", "{}", 0L, "a JSON array")]
+    [InlineData("set", "supervisor", "machine", "[]", null, "the revision of the place's rules")]
+    public void CONTEXTDRIVE1d_the_supervisor_s_rules_of_the_wrong_shape_are_refused_and_nothing_proposed(string change, string role, string place, string rules, long? revision, string said)
+    {
+        var (id, message) = Box().ProposeRole(change, role, null, null, null, null, null, null, "why", "h1", Now, place: place, rules: rules, rulesRevision: revision);
+
+        Assert.Null(id);
+        Assert.Contains(said, message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Nothing was proposed.", message);
+    }
+
+    [Fact]
+    public void CONTEXTDRIVE1d_a_supervisor_s_proposal_carrying_a_working_role_s_field_is_refused()
+    {
+        var (id, message) = Box().ProposeRole("set", "supervisor", "Supervisor", null, ["build"], null, null, null, "why", "h1", Now, place: "machine", rules: "[]", rulesRevision: 0);
+
+        Assert.Null(id);
+        Assert.Contains("appointed role", message);
+    }
+
     [Theory]
     [InlineData("rename", "night", null, null, "a role's change is `set`, `remove`, `default` or `default-all`.")]
     [InlineData("default-all", "night", null, null, "is the id of `default-all` alone")]

@@ -96,10 +96,14 @@ internal sealed class ChatHelperWords(ChatContext context)
         if (answer.Helped is not { } word) return false;
         var json = await context.Service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false);
         if (ServiceClient.ReadRecord(json, sessionId) is not { } record) return false;
-        if (!new AnswersAloneHold(context.Events, context.Marks, new ContinuationAdmissions(context.Home)).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow, [word]))
+        var lines = ServiceClient.ReadRecords(json);
+        var hold = AnswersAloneHold.For(context.Events, context.Marks, context.Home);
+        if (!hold.Holds(record, lines, DateTimeOffset.UtcNow, [word]))
         {
             return false;
         }
+
+        var at = hold.HeldAt(sessionId, lines);
 
         // FOUNDATION1h branch 7 (the foundation design §3.1): the helper's answer at the bound is the course's hold for an answer, the count
         // `AnswersAloneHold` read being the fact; a live conversation's own turn takes the word, so the hold is the one answer it can have.
@@ -109,7 +113,7 @@ internal sealed class ChatHelperWords(ChatContext context)
                 new CourseFacts(
                     new CourseHead(
                         record.State, Conversation: true, Waiting: [new CourseWord(word.Id ?? "", CourseAuthor.Helper, word.Key)], Session: sessionId),
-                    CourseBoundary.TurnRunning, Alone: new CourseAlone(AnswersAlone.Bound)),
+                    CourseBoundary.TurnRunning, Alone: new CourseAlone(at, at)),
                 CourseTrigger.Answer));
 
         if (word.Id is { } id) _helperSaying.TryRemove(id, out _);

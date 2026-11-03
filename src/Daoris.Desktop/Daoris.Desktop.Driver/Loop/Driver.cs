@@ -921,8 +921,8 @@ public sealed class Driver(
             Log = Log,
             Gate = Gate,
             Staff = Context.Harnesses.StaffFor(home),
-            // The choices this quest's line moved off in the last 30 minutes are passed (STAFFPOLICY1e2).
-            LineFacts = LineMovedOff(quest.Id),
+            // The choices this quest's line moved off in the last 30 minutes are passed.
+            LineFacts = StaffCourse.LineFacts(Context.Harnesses.StaffFor(home), quest, start.Workspace, role),
         };
     }
 
@@ -934,12 +934,11 @@ public sealed class Driver(
         ServiceClient service, string sessionId, string role, string line, StaffMoving moving, PriorSession left, string? to)
     {
         var staff = Context.Harnesses.StaffFor(home);
-        var policy = staff.Policy(role);
         var read = staff.Moves.Of(line);
-        var said = StaffCourse.MovedSaid(moving.Condition, policy.Applied, read.Moves, ActorWords.Name(role));
-        ActorMoves.Write(Log, role, line, left.Choice, to, moving.Condition, StaffCourse.ActionOf(policy.Applied, moving.Condition), read.Moves);
+        var (policy, said) = StaffCourse.MoveSaid(staff, role, line, left, moving.Condition, read.Moves);
+        ActorMoves.Write(Log, role, line, left.Choice, to, moving.Condition, StaffCourse.ActionOf(policy, moving.Condition), read.Moves);
         await service.TryKeepActorAsync(
-                sessionId, Log, chosen: new ActorChosen(policy.Applied?.Rule ?? StaffRules.Order, StaffBy.Moved, moving.Condition, left.Choice))
+                sessionId, Log, chosen: new ActorChosen(policy?.Rule ?? StaffRules.Order, StaffBy.Moved, moving.Condition, left.Choice))
             .ConfigureAwait(false);
         RotatedOpening.SayMovedChoice(Context.Events, sessionId, StaffCourse.ChoiceOf(left)?.Said ?? left.Adapter ?? "", said);
     }
@@ -957,18 +956,6 @@ public sealed class Driver(
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {
             Log?.Write("warn", "actor.moves-unkept", [("line", line), ("why", error.Message)]);
-        }
-    }
-
-    private StaffFacts? LineMovedOff(string line)
-    {
-        try
-        {
-            return Context.Harnesses.StaffFor(home).Moves.LineFacts(line);
-        }
-        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
-        {
-            return null;
         }
     }
 
@@ -1152,7 +1139,7 @@ public sealed class Driver(
             (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
         var undecided = snapshot;
         // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
-        var alone = new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home));
+        var alone = AnswersAloneHold.For(Context.Events, Context.Marks, home);
         IReadOnlyDictionary<string, PriorSession>? lines = null;
         SupervisorBound bound = async (session, token) =>
             alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
@@ -1181,6 +1168,7 @@ public sealed class Driver(
         snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
         // STAFFPOLICY1e: a quest whose last session ended past its transient bound under a role that moves on it: the course decides once, and
         // the move is written down before the planner reads it, so a restart or a second look reads the one decision.
+        snapshot = snapshot with { FailuresAt = StaffCourse.FailuresAt(Context.Harnesses.StaffFor(home), snapshot) };
         var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, Context.Harnesses.Clock());
         var limitHolds = StaffCourse.LimitHolds(Context.Harnesses.StaffFor(home), snapshot);
         snapshot = snapshot with { PolicyMoving = policyMoving, PolicyHolds = limitHolds.Count == 0 ? policyHolds : policyHolds.Concat(limitHolds).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
@@ -2361,7 +2349,7 @@ public sealed class Driver(
                     // STAFFPOLICY1e: a role that waits on a limit keeps the choice and waits for its accounts' reset (D197's walk of its
                     // accounts stays inside the choice), until its `upTo` has passed.
                     if (limitWalks && policyMove is null && cut.Limit
-                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), policyRole, cut, Context.Harnesses.Clock()) is LineCourse.Wait)
+                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), policyRole, cut, Context.Harnesses.Clock(), new StaffPlace(quest.To, start.Workspace, quest.Id)) is LineCourse.Wait)
                     {
                         limitWalks = false;
                     }
@@ -4565,7 +4553,7 @@ public sealed class Driver(
                 Context.Adapters, adapter, Context.Harnesses, service, Context.Events, output, Watch, Log, sessionId, retried,
                 prior?.Profile, RetryClock, transientWanted,
                 // STAFFPOLICY1e: a driven run's bound is its role's `after` where the role moves on `transient`, else D210's five.
-                tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), Context.Conversations.RoleOf(sessionId)?.Role ?? actor))
+                tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), Context.Conversations.RoleOf(sessionId)?.Role ?? actor, new StaffPlace(target.Repository, prior?.Workspace, retried)))
             : null;
         var protocol = adapter.Wire == SessionWire.Acp;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).

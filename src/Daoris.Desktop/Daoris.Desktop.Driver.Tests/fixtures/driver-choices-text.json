@@ -2837,7 +2837,8 @@
         "  chat        Chat · takes chat on the machine · its staffing's order (the seed)",
         "  <config>'s staffing is the file's own here (not this home's store), so its roles are not set here.",
         "  Change one: `driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] [\"<agent> [<model>|-] [<effort>|-]\" … | off]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`.",
-        "  Set how a role's choices share new starts: `driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>]… [--share <n>=<1-99>]… [--budget <n>=<starts>/day]… [--takes <n>=<work,…>]… [--on <condition>=<action>[:<after>|:<minutes>]]… [--most <1-8>] [--clear]` (<n> is a choice's number in the role's staffing)."
+        "  Set how a role's choices share new starts: `driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>]… [--share <n>=<1-99>]… [--budget <n>=<starts>/day]… [--takes <n>=<work,…>]… [--on <condition>=<action>[:<after>|:<minutes>]]… [--most <1-8>] [--clear]` (<n> is a choice's number in the role's staffing).",
+        "  Set the supervisor's rules for a place: `role rules --place machine|workspace:<id>|repository:<id>|line:<key> [--roles <id,…>] [--set <count>=<at>:<do>[:<minutes>][,<at>:<do>…]]… [--off <count>]… [--clear <count>|all]` (counts: answers-alone, failures, failures-on-choice, tries, quiet, limits, moves; `role supervisor [--place <place>]` says them)."
       ],
       "err": [],
       "after": null

@@ -54,8 +54,16 @@ public static class RoleDoor
     /// <returns>The id's new revision.</returns>
     /// <exception cref="RoleRefusedException">The judge's refusal; nothing written.</exception>
     /// <exception cref="DriverException">The role moved since <paramref name="read"/>, or a write refused; said.</exception>
-    public static long Apply(RoleStaffing staffing, RoleChange change, IReadOnlyList<ActorChoice>? choices = null, long? read = null, RolePolicyPress? policy = null) =>
-        Publish(staffing, [new RolePress(change, choices, read, policy)])[0];
+    public static long Apply(RoleStaffing staffing, RoleChange change, IReadOnlyList<ActorChoice>? choices = null, long? read = null, RolePolicyPress? policy = null, string door = Doors.Window) =>
+        Publish(staffing, [new RolePress(change, choices, read, policy)], door)[0];
+
+    /// <summary>The doors a press comes through, as a place's rules revision keeps it.</summary>
+    public static class Doors
+    {
+        public const string Window = "window";
+        public const string Terminal = "terminal";
+        public const string Proposal = "proposal";
+    }
 
     /// <summary>
     /// Several changes made as one (AGENTSPLACE1g2, the Agents-place design §4): each judged in order against the roles the ones before it
@@ -67,10 +75,10 @@ public static class RoleDoor
     /// <exception cref="RoleRefusedException">The first judge's refusal; nothing written.</exception>
     /// <exception cref="DriverException">The batch is empty or names a role twice, a role moved since it was read, or a write refused; said.</exception>
     public static IReadOnlyList<long> ApplyAll(RoleStaffing staffing, IReadOnlyList<(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read)> batch) =>
-        Publish(staffing, [.. batch.Select(each => new RolePress(each.Change, each.Choices, each.Read))]);
+        Publish(staffing, [.. batch.Select(each => new RolePress(each.Change, each.Choices, each.Read))], Doors.Window);
 
-    /// <summary><see cref="ApplyAll(RoleStaffing, IReadOnlyList{ValueTuple{RoleChange, IReadOnlyList{ActorChoice}, Nullable{long}}})"/> for presses that may carry a policy.</summary>
-    public static IReadOnlyList<long> ApplyAll(RoleStaffing staffing, IReadOnlyList<RolePress> batch) => Publish(staffing, batch);
+    /// <summary><see cref="ApplyAll(RoleStaffing, IReadOnlyList{ValueTuple{RoleChange, IReadOnlyList{ActorChoice}, Nullable{long}}})"/> for presses that may carry a policy or a place's rules.</summary>
+    public static IReadOnlyList<long> ApplyAll(RoleStaffing staffing, IReadOnlyList<RolePress> batch, string door = Doors.Window) => Publish(staffing, batch, door);
 
     /// <summary>
     /// The one publication (STAFFPOLICY1b, the staff policy design §11 point 2): every change judged in order, its staffing by its work and
@@ -78,10 +86,11 @@ public static class RoleDoor
     /// rows and the policies in one store transaction, so none of the three lands without the others. A seeded role's staffing is also
     /// projected onto <c>driver.json</c> first, as any write of it is; the staffing's check runs once after.
     /// </summary>
-    private static IReadOnlyList<long> Publish(RoleStaffing staffing, IReadOnlyList<RolePress> batch)
+    private static IReadOnlyList<long> Publish(RoleStaffing staffing, IReadOnlyList<RolePress> batch, string door)
     {
         if (batch.Count == 0) throw new DriverException("the press named no role change.");
-        if (batch.GroupBy(each => each.Change.Id, StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1) is { } twice)
+        static string Key(RoleChange change) => change is RoleChange.SetRules { Press: var rules } ? $"{change.Id} at {rules.Place}" : change.Id;
+        if (batch.GroupBy(each => Key(each.Change), StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1) is { } twice)
         {
             throw new DriverException($"the press changes the role `{twice.Key}` more than once, so nothing was written.");
         }
@@ -93,9 +102,20 @@ public static class RoleDoor
         var rows = new List<(string Role, IReadOnlyList<ActorChoice>? Choices)>();
         var saves = new List<(string Role, StaffPolicy? Policy, IReadOnlyList<ActorChoice>? Choices, long Read)>();
         var cleared = new List<string>();
+        var ruled = new List<SupervisorRulesPress>();
+        var presetRules = new List<(string Place, IReadOnlyList<SupervisorRule> Rules)>();
+        var reached = new SupervisorRuleStore(staffing.Ledger.Home).Reached();
         foreach (var press in batch)
         {
             var (change, choices, read, policy) = (press.Change, press.Choices, press.Read, press.Policy);
+            // A place's rules are judged by their own judge inside the one transaction below.
+            if (change is RoleChange.SetRules { Press: var rules })
+            {
+                if (choices is not null || policy is not null) throw new ArgumentException("a place's rules carry no staffing and no policy", nameof(batch));
+                ruled.Add(rules);
+                continue;
+            }
+
             if (read is { } seen && catalogue.RevisionOf(change.Id) != seen)
             {
                 throw new DriverException(
@@ -116,6 +136,14 @@ public static class RoleDoor
                     var existing = staffing.Policy(role.Id);
                     var (resolved, refusedPolicy) = StaffPolicyDoor.Judge(role, effective, policy, existing, held is not null);
                     if (refusedPolicy is not null) throw new RoleRefusedException(refusedPolicy);
+                    if (reached)
+                    {
+                        var (kept, brought, notSaved) = RuledPolicy.On(role, policy, resolved);
+                        if (notSaved is not null) throw new RoleRefusedException(notSaved);
+                        resolved = kept;
+                        if (brought.Count > 0) presetRules.Add((RuledPolicy.PlaceOf(role.Scope), brought));
+                    }
+
                     saves.Add((role.Id, resolved, effective, policy.Read ?? existing.Revision));
                 }
             }
@@ -133,10 +161,16 @@ public static class RoleDoor
 
         if (rows.Count > 0 && held is null) throw RoleStaffing.NotInStore();
         IReadOnlyList<long> revisions = [];
+        var changes = batch.Select(each => each.Change).Where(change => change is not RoleChange.SetRules).ToList();
+        var world = ruled.Count > 0 || presetRules.Count > 0 ? SupervisorRuleDoor.World(staffing.Ledger.Home) : null;
         void Also(DesktopWrite write)
         {
-            revisions = RoleCatalog.WriteIn(write, [.. batch.Select(each => each.Change)]);
-            write.Moved("roles");
+            var written = new Queue<long>(RoleCatalog.WriteIn(write, changes));
+            if (changes.Count > 0) write.Moved("roles");
+            var rulesWritten = new Queue<long>(ruled.Select(rules => SupervisorRuleStore.WriteIn(write, rules.Place, rules.Read, rules.Rules, door, world!)));
+            revisions = [.. batch.Select(each => each.Change is RoleChange.SetRules ? rulesWritten.Dequeue() : written.Dequeue())];
+            // A preset's limit move and bound, written as rules naming the role in the press that writes its policy.
+            foreach (var (place, rules) in presetRules) SupervisorRuleStore.MergeIn(write, place, rules, door, world!);
             if (!StaffPolicies.Has(write))
             {
                 if (saves.Count > 0) throw new DriverException("this home's store is not yet at the version that keeps policies, so nothing was saved; try again after the next start.");
@@ -169,6 +203,8 @@ public static class RoleDoor
     /// </summary>
     public static RoleRefusal? Judge(RoleCatalog catalogue, RoleChange change, IReadOnlyList<ActorChoice>? choices)
     {
+        // A place's rules are the rules' judge's, against the store (SupervisorRuleDoor.Judge), never the catalogue's.
+        if (change is RoleChange.SetRules) return null;
         if (catalogue.Judge(change) is { } refused) return refused;
         return change is RoleChange.SetRole { Role: var role } && Staffed(catalogue, role.Id, choices) is { } staffed ? RoleCatalog.Judge(role, staffed) : null;
     }
@@ -195,6 +231,7 @@ public static class RoleDoor
     public static RolePress ReadPress(System.Text.Json.JsonElement? payload)
     {
         if (payload is not { ValueKind: System.Text.Json.JsonValueKind.Object } press) throw new DriverException("the press named no role change.");
+        if (SupervisorRuleDoor.Names(press)) return new RolePress(RoleChange.Rules(SupervisorRuleDoor.Read(press)));
         if (Text(press, "change") == "default-all") return new RolePress(RoleChange.DefaultAll());
         var id = Text(press, "id") ?? throw new DriverException("the press named no role.");
         long? read = press.TryGetProperty("revision", out var revision) && revision.TryGetInt64(out var number) ? number : null;

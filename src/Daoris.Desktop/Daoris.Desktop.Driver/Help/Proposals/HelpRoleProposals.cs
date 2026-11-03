@@ -32,6 +32,12 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     {
         if (proposal.Door == "default-all") return new([null], [null]) { Every = true };
         var scopes = new List<(string? Kind, string? Id)>();
+        // CONTEXTDRIVE1d: the supervisor's rules name the place they are for.
+        if (proposal.Target?.Trim() == SupervisorRuleDoor.Id && proposal.RolePress is { } rules && Text(rules, "place")?.Split(':', 2) is [var kind, var id])
+        {
+            scopes.Add((kind, id));
+        }
+
         if (proposal.RolePress is { } press && press.TryGetProperty("scope", out var scope) && scope.ValueKind == JsonValueKind.Object)
         {
             scopes.Add((Text(scope, "kind"), Text(scope, "id")));
@@ -61,6 +67,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         var all = proposal.Door == "default-all";
         if ((all ? RoleChange.DefaultAll().Id : proposal.Target?.Trim()) is not { Length: > 0 } id) return Refused("a role's change names the role, as the role catalogue lists it.");
         if (facts.Home is not { } home) return Refused("this machine's role catalogue was not read, so nothing is proposed.");
+        if (id == SupervisorRuleDoor.Id) return RulesPlan(proposal, home);
 
         RoleCatalog catalogue;
         try
@@ -118,7 +125,10 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
             var existing = staffing.Policy(id);
             var (resolved, notTaken) = StaffPolicyDoor.Judge(set, effective, policy, existing, staffing.InUse());
             if (notTaken is not null) return Refused(notTaken.Said);
-            policy = policy with { Policy = resolved, Preset = null, Clear = resolved is null };
+            var reached = new SupervisorRuleStore(home).Reached();
+            if (reached && RuledPolicy.On(set, policy, resolved).Refused is { } ruled) return Refused(ruled.Said);
+            // On a reached home a preset is carried as its name, so the door writes its moves as rules beside the policy.
+            policy = reached && policy.Preset is not null ? policy : policy with { Policy = resolved, Preset = null, Clear = resolved is null };
             var before = (existing.Applied, config.Actors.TryGetValue(id, out var held) ? held : []);
             return new HelpPlan(null, Describe(change, choices) + PolicyDescribe(set.Name.Texts.FirstOrDefault() ?? set.Id, before, existing, resolved, effective), Terminal(change, choices) + PolicyTerminal(id, resolved, effective), null)
             {
@@ -130,6 +140,44 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         {
             Role = new HelpRoleChange(change, choices, read),
         };
+    }
+
+    /// <summary>
+    /// CONTEXTDRIVE1d (the context counters design §7.6): a <c>set</c> of the supervisor carries a place's rules and the revision read, judged by
+    /// the rules' judge against the store now; the card says the place's rules before and after, and the terminal's twin.
+    /// </summary>
+    private static HelpPlan RulesPlan(HelpProposal proposal, string home)
+    {
+        static HelpPlan Refused(string why) => new(why, "", "", null);
+        if (proposal.Door != "set") return Refused($"the supervisor's rules are a `set` of `{SupervisorRuleDoor.Id}`: its place, its rules written whole and the revision read.");
+        if (proposal.RolePress is not { } given) return Refused("the supervisor's rules name their place, the rules and the revision read.");
+        SupervisorRulesPress press;
+        try
+        {
+            press = SupervisorRuleDoor.Read(given);
+        }
+        catch (Exception error) when (error is RuleRefusedException or RoleRefusedException)
+        {
+            return Refused(error.Message);
+        }
+
+        if (SupervisorRuleDoor.Judge(home, press) is { } refused) return Refused($"{refused.Message} ({refused.Code})");
+        var before = new SupervisorRuleStore(home).Of(press.Place).Rules;
+        static string Rules(IReadOnlyList<SupervisorRule> rules) => rules.Count == 0 ? "none here" : string.Join("; ", rules.Select(SupervisorRuleDoor.Said));
+        var describe = $"Supervisor, {press.Place}: {Rules(before)} → {Rules(press.Rules)}. Lines here read it at their next go-on or start.";
+        return new HelpPlan(null, describe, RulesTerminal(press), null) { Role = new HelpRoleChange(RoleChange.Rules(press), null, null) };
+    }
+
+    /// <summary>The terminal's twin of a place's rules: the place cleared and each count's ladder set, one command per set of roles.</summary>
+    private static string RulesTerminal(SupervisorRulesPress press)
+    {
+        var groups = press.Rules.GroupBy(rule => rule.Roles is { } roles ? string.Join(",", roles) : "").ToList();
+        if (groups.Count == 0) return $"daoris role rules --place {press.Place} --clear all";
+        return string.Join(" && ", groups.Select((group, index) =>
+            $"daoris role rules --place {press.Place}" + (group.Key.Length > 0 ? $" --roles {group.Key}" : "") + (index == 0 ? " --clear all" : "")
+            + string.Concat(group.GroupBy(rule => rule.Count).Select(count => count.All(rule => rule.Do == SupervisorRules.Off)
+                ? $" --off {count.Key}"
+                : $" --set {count.Key}=" + string.Join(",", count.Select(rule => $"{rule.At}:{rule.Do}" + (rule.UpTo is { } upTo ? $":{upTo}" : "")))))));
     }
 
     /// <summary>
@@ -182,7 +230,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         var role = applying.Plan.Role!;
         var staffing = RoleStaffing.Of(DaorisHome.Entry(applying.Home, HomeEntry.DriverConfig))
             ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
-        RoleDoor.Apply(staffing, role.Change, role.Choices, role.Read, role.Policy);
+        RoleDoor.Apply(staffing, role.Change, role.Choices, role.Read, role.Policy, RoleDoor.Doors.Proposal);
         return Task.FromResult(applying.Settled(true, $"Applied: `#{applying.Id}` — {applying.Plan.Describe} (`{applying.Plan.Terminal}`)", null));
     }
 
