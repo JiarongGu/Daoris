@@ -66,6 +66,21 @@ public static class HelpFacts
     public const string Sweep = "help.sweep";
 
     /// <summary>
+    /// What each line waits on (<see cref="HelpWaits"/>), one subject: the exchanges' one read over the helper, piece and hand-over
+    /// files, the quests and the records, which a session's records, a quest or a word moving moves.
+    /// </summary>
+    public const string Exchanges = "help.exchanges";
+
+    /// <summary>
+    /// The exchanges' read: a few files and the service's records and quests, so a minute behind at most, as the machine's answers, and
+    /// resting a few seconds between the judgements a burst of ledger moves asks for.
+    /// </summary>
+    public static readonly FactRules ExchangesRules = new(Deadline: TimeSpan.FromMinutes(1), Bound: TimeSpan.FromSeconds(30), AtOnce: 1)
+    {
+        Rest = TimeSpan.FromSeconds(5),
+    };
+
+    /// <summary>
     /// The work's part of the repositories the trees or the records name with no checkout in the registry (FACTSPLIT1a). No
     /// repository is called it: a repository's trees are kept in a folder of its name, which cannot hold <c>&lt;</c>.
     /// </summary>
@@ -165,6 +180,8 @@ public static class HelpFacts
                     woken.AddRange(SweepSubjects(whole).Select(part => (Sweep, part)));
                 }
 
+                // A request's state moves with its asker's or its taker's record, a quest, or the word that answered it.
+                if (Moved("sessions") || Moved("quests") || Moved("words")) woken.Add((Exchanges, Whole));
                 return woken;
             default:
                 return None;
@@ -201,6 +218,7 @@ public static class HelpFacts
         facts.Topic(History, WholeRules, async (_, ct) => await judges.History(ct).ConfigureAwait(false));
         facts.Topic(Work, WorkRules, (part, ct) => JudgeWorkAsync(facts, part, judges.Work, ct));
         facts.Topic(Sweep, SweepRules, (part, ct) => JudgeSweepAsync(facts, part, judges.Sweep, ct));
+        facts.Topic(Exchanges, ExchangesRules, async (_, ct) => await judges.Exchanges(ct).ConfigureAwait(false));
 
         // Once the service's answers have landed, never before: a line's and a part's judges read the checkout from them, so one
         // started first would find none and keep nothing until its deadline. The trees' parts once the look has too, which names
@@ -224,7 +242,7 @@ public static class HelpFacts
                 if (look is not null && !ReferenceEquals(lookedBefore, look)) RecordedKnown(facts, whole, lookedBefore, look);
             }
         };
-        foreach (var topic in (string[])[Machine, Sessions, History]) facts.Subject(topic, Whole);
+        foreach (var topic in (string[])[Machine, Sessions, History, Exchanges]) facts.Subject(topic, Whole);
     }
 
     /// <summary>
@@ -674,12 +692,17 @@ public static class HelpFacts
         var sessions = SessionsOf(facts, whole);
         var history = facts.Value<IReadOnlyList<HistoryReading>>(History, Whole);
         var work = WorkOf(facts, whole);
+        var waits = facts.Value<HelpWaits>(Exchanges, Whole);
         return new HelpFactsRead(whole, lines, sessions, history, work, new HelpNotReadYet(unread)
         {
             Sessions = sessions is null,
             History = history is null,
             Work = work is null,
-        });
+            Waits = waits is null,
+        })
+        {
+            Waits = waits,
+        };
     }
 
     /// <summary>
@@ -835,57 +858,6 @@ public sealed record HelpTreesPart(string? Repository, IReadOnlySet<string> Chec
     public IReadOnlyList<string> Sessions => [.. Look.Records.Where(record => Holds(record.Repository)).Select(record => record.Id)];
 }
 
-/// <summary>
-/// What was not read yet when the room was written (PARALLEL1a): the repositories whose line was not judged, and whether the
-/// sessions, the history and the work were not. Said <i>not read yet</i> where each is said, never a guess and never a wait.
-/// </summary>
-public sealed record HelpNotReadYet(IReadOnlyList<string> Repositories)
-{
-    /// <summary>Everything read.</summary>
-    public static HelpNotReadYet None { get; } = new([]);
-
-    public bool Sessions { get; init; }
-
-    public bool History { get; init; }
-
-    /// <summary>Whether any part of the work was never judged (FACTSPLIT1a): the work is then read as none, as the whole was.</summary>
-    public bool Work { get; init; }
-
-    /// <summary>Whether anything was not read yet.</summary>
-    public bool Any => Repositories.Count > 0 || Sessions || History || Work;
-}
-
-/// <summary>The room's reading of the facts (<see cref="HelpFacts.Read"/>): each part as last judged, null where never.</summary>
-public sealed record HelpFactsRead(
-    HelpMachineWhole Whole, IReadOnlyList<RepositoryLine> Lines, IKnowledgeSessionLook? Sessions, IReadOnlyList<HistoryReading>? History,
-    HelpWork? Work, HelpNotReadYet NotReadYet);
-
-/// <summary>
-/// What reads each of the room's facts, handed by the module that holds the service and the loop (PARALLEL1a): each reads afresh
-/// and answers its value, or null where it could not. The work's reads one part (FACTSPLIT1a, <see cref="HelpFacts.ReadWorkAsync"/>).
-/// </summary>
-public sealed record HelpFactJudges(
-    Func<CancellationToken, Task<HelpMachineWhole?>> Machine,
-    Func<CancellationToken, Task<IKnowledgeSessionLook?>> Sessions,
-    Func<CancellationToken, Task<IReadOnlyList<HistoryReading>?>> History,
-    Func<HelpWorkPart, CancellationToken, Task<HelpWork?>> Work)
-{
-    /// <summary>A checkout's guess at its line, by its root: git's, asked once while its files stand, unless a test hands its own.</summary>
-    public Func<string, CancellationToken, Task<string?>> Guess { get; init; } = KnowledgeWorkplace.Current.GuessAsync;
-
-    /// <summary>
-    /// One part of the sessions' trees (FACTSPLIT1b): the module hands git's judgement of its home's trees
-    /// (<see cref="HelpFacts.ReadTreesAsync"/>); none judged where a test standing in for the look hands none.
-    /// </summary>
-    public Func<HelpTreesPart, CancellationToken, Task<HelpTrees?>> Trees { get; init; } = (_, _) => Task.FromResult<HelpTrees?>(HelpTrees.None);
-
-    /// <summary>
-    /// One part of the clean-up's list (PUSH1c4a): the module hands git's judgement of its home's branches by the kept answers
-    /// (<see cref="HelpFacts.ReadSweepAsync"/>). None kept where a test hands none, so a slice over it stays not judged rather than
-    /// say there is nothing to clean up.
-    /// </summary>
-    public Func<HelpSweepPart, CancellationToken, Task<IKnowledgeSweep?>> Sweep { get; init; } = (_, _) => Task.FromResult<IKnowledgeSweep?>(null);
-}
 
 /// <summary>
 /// Ask Daoris's rooms written again as the facts they said were not read yet land (PARALLEL1a, D181 point 2): only a room that said

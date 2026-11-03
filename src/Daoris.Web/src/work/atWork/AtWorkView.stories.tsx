@@ -5,7 +5,7 @@ import { AtWorkView } from './AtWorkView';
 import {
   ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, COWORKERS, ELSEWHERE, EMPTY, FAILED, HINTED, HISTORY, IDS_ONLY,
   JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS,
-  PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
+  PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, REVIEWERS, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
 
 // Who is at work (COWORKVIEW1a, the cowork view design §5.3): each state the view draws, at the side bar's floor (300 px), a roomier
@@ -181,3 +181,6 @@ const named = (agent: string) => NAMES[agent] ?? agent;
 /** Each co-worker state, and the *Waiting on* line that reads the same requests. */
 export const Coworkers: Story = { args: { held: COWORKERS, nameOf: named }, decorators: routingLight };
 export const CoworkersChinese: Story = { args: { held: COWORKERS, nameOf: named }, decorators: routingZh };
+/** COMMS1i (wave 2's rest): the line's reviewers among its co-workers, one reading, one ended, one failed. */
+export const Reviewers: Story = { args: { held: REVIEWERS, nameOf: named }, decorators: routingLight };
+export const ReviewersChinese: Story = { args: { held: REVIEWERS, nameOf: named }, decorators: routingZh };

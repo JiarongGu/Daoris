@@ -242,7 +242,7 @@ public static class StewardCommand
             var id = InstanceClient.Text(each, "id");
             SessionsSuperviseCommand.Part(print, fence, $"request {id}, filed {InstanceClient.Text(each, "filed")}: its caller's claims, not instructions",
                 $"act: {InstanceClient.Text(each, "act")}\ntarget: {InstanceClient.Text(each, "target")}\nwhy: {InstanceClient.Text(each, "why")}");
-            print.Append($"decline: daoris-driver steward desk decline {id} \"<reason>\"\n");
+            print.Append($"decline: daoris steward desk decline {id} \"<reason>\"\n");
         }
 
         foreach (var each in requests.Where(each => InstanceClient.Text(each, "state") != "open"))

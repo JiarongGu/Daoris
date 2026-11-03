@@ -170,7 +170,8 @@ its local host; locally — the default — the full surface works.
 read through the driver's `CHANNEL_READ`, `CHANNEL_POST` and `CHANNEL_MARK` (`bridge/sessions/asks.ts`), so a browser draws no *Channel*, no
 unread count and no composer. The ask's page, each session's panel under its head and the unread counts on the ask's row and in
 *Group by ask* are molecules over those answers (`asks/ChannelSection.tsx`, `work/channel.ts`), with Daoris's lines worded from
-their codes in the reader's language and the messages shown as written. **A teammate's ask** (SESSONE2h) has a row in the Asks list's
+their codes in the reader's language and the messages shown as written. The messages to one part alone (COMMS1k) come apart from the
+items, as `addressed`, and the section draws them beneath the channel, read-only, with the part and what each reached in its line. **A teammate's ask** (SESSONE2h) has a row in the Asks list's
 *Teammates' asks* group, from the driver's `ASKS_ELSEWHERE` (`useElsewhereAsks`), and a page of its channel alone, read-only
 (`asks/TeammateAskPage.tsx`): this machine holds no record of it, so it has no title and none of an ask's sections. **What a
 message reached** (COWORK1d, D188): an urgent message names its level in a word, each message lists its receipt per repository it

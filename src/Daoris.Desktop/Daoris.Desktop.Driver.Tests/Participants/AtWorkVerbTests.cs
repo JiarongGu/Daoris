@@ -152,6 +152,26 @@ public sealed class AtWorkVerbTests : IDisposable
         Assert.All(exchanges.EnumerateArray(), each => Assert.True(each.GetProperty("holds").GetBoolean()));
     }
 
+    /// <summary>
+    /// COMMS1i (wave 2's rest): a reviewer reading the line's work is one of its co-workers, the line waiting on it while it reads, read
+    /// from the reviewer's record that serves the line.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1i_the_verb_lists_the_line_s_reviewer_among_its_co_workers()
+    {
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "s-1");
+        Directory.CreateDirectory(tree);
+        _ledger.Driven("s1", "q1", tree, state: "completed");
+        _ledger.Working("r1", "engine", tree, serves: "s1", opinion: "o1");
+        var text = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1"), World(), text));
+
+        var said = text.ToString().ReplaceLineEndings("\n");
+        Assert.Contains("waiting on: reviewer o1 · stub · asked · delivery kept · by r1", said, StringComparison.Ordinal);
+        Assert.Contains("co-workers:\n  reviewer o1 · stub", said, StringComparison.Ordinal);
+    }
+
     /// <summary>COMMS1i: the composition takes the exchanges from its port, a quest's worded with its lanes, and says a source not read.</summary>
     [Fact]
     public void COMMS1i_the_composition_carries_the_line_s_exchanges_and_its_unread_sources()

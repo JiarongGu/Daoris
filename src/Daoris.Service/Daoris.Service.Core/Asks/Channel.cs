@@ -2,64 +2,6 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Knowledge;
 
-/// <summary>
-/// The channel's bounds (SESSONE2a; the co-working design §2.6). First values, read again at the canary: a message's text, how many
-/// messages one part posts, and how many of the newest a next part is handed.
-/// </summary>
-public static class ChannelBounds
-{
-    /// <summary>The most characters one message holds. A link travels as text, a file not at all in this version.</summary>
-    public const int MaxText = 4000;
-
-    /// <summary>The most messages one part (one session record) posts.</summary>
-    public const int MaxPerPart = 10;
-
-    /// <summary>The most messages a next part is handed on starting: the newest, within the instruction's share (SESSONE2b).</summary>
-    public const int HandedNewest = 20;
-
-    /// <summary>
-    /// The most of one part's posts kept urgent (COWORK1d, D188 point 2; the message-urgency design §2.2, trap 10): a first value, a
-    /// judgement, within the part's <see cref="MaxPerPart"/>. A further urgent post is kept ordinary, and its poster told so.
-    /// </summary>
-    public const int UrgentPerPart = 3;
-}
-
-/// <summary>Why the channel did not do what was asked of it, by a code: a tool says it in a sentence, a door answers the code.</summary>
-public enum ChannelRefusal
-{
-    None,
-
-    /// <summary>No words, or only whitespace.</summary>
-    Empty,
-
-    /// <summary>Words past <see cref="ChannelBounds.MaxText"/> characters.</summary>
-    TooLong,
-
-    /// <summary>No ask under that id on this machine.</summary>
-    NotFound,
-
-    /// <summary>The connector names no session this machine holds.</summary>
-    NoSession,
-
-    /// <summary>The session is on no ask, so it has no channel: work or a request goes in a quest.</summary>
-    NoAsk,
-
-    /// <summary>A helper or a reviewer: each answers one question, and neither posts nor reads (D155, D163).</summary>
-    Helper,
-
-    /// <summary>A <c>to</c> that is not one of the ask's repositories.</summary>
-    BadTo,
-
-    /// <summary>A <c>re</c> the ask's channel does not hold.</summary>
-    BadRe,
-
-    /// <summary>The part has posted <see cref="ChannelBounds.MaxPerPart"/> messages already.</summary>
-    TooMany,
-
-    /// <summary>The ask is a teammate's, held on another machine and only read here (SESSONE2g): a post to it is theirs to take.</summary>
-    HeldElsewhere,
-}
-
 /// <summary>What the channel shows in time order: a message, or one of Daoris's lines.</summary>
 public interface IChannelItem
 {
@@ -101,6 +43,12 @@ public sealed record ChannelMessage(
     /// before, or from an older teammate's machine, which keeps its old reach; null never means ordinary.
     /// </summary>
     public bool? Urgent { get; init; }
+
+    /// <summary>The origin of a message kept in <c>channel_addressed</c> (<see cref="ChannelAddressedStore"/>); null for an ask's.</summary>
+    public string? Channel { get; init; }
+
+    /// <summary>The one part it is to, a session whose line's head takes it; null for every part.</summary>
+    public string? Part { get; init; }
 }
 
 /// <summary>
@@ -142,70 +90,13 @@ public sealed record ChannelRead(
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<ChannelReceipt>> Receipts { get; init; } =
         new Dictionary<string, IReadOnlyList<ChannelReceipt>>();
+
+    /// <summary>For the person's read: the messages to one part each, never among <see cref="Messages"/>, which an older build reads as to everyone.</summary>
+    public IReadOnlyList<ChannelMessage> Addressed { get; init; } = [];
+
+    /// <summary>For the person's read: each of <see cref="Addressed"/>'s receipts in its part's line.</summary>
+    public IReadOnlyDictionary<string, string> AddressedReceipts { get; init; } = new Dictionary<string, string>();
 }
-
-/// <summary>
-/// What an entry acknowledged of a channel message (COWORK1d, D188 point 6; the message-urgency design §6), one row per ask, entry and
-/// message, ranked so none moves back: <see cref="Partly"/>, <see cref="Taking"/>, <see cref="Sent"/>, <see cref="Read"/>,
-/// <see cref="Taken"/>.
-/// </summary>
-public static class ChannelAcks
-{
-    /// <summary>A part of the entry claimed it and holds it for its door: one part takes a message.</summary>
-    public const string Taking = "taking";
-
-    /// <summary>Written to the part's harness: the write returned.</summary>
-    public const string Sent = "sent";
-
-    /// <summary>The door confirmed the part took it, or a start's packet carried it whole.</summary>
-    public const string Taken = "taken";
-
-    /// <summary>The agent's own <c>channel_read</c> returned it whole.</summary>
-    public const string Read = "read";
-
-    /// <summary>A start's packet carried it cut, or counted it among the older ones left out: a new part is handed it again.</summary>
-    public const string Partly = "partly";
-
-    /// <summary>A part let its claim go unsent (its run ended with nothing else to say): never kept, the claim's row leaves.</summary>
-    public const string Released = "released";
-
-    /// <summary>Whether a door names a state this build keeps or lets go.</summary>
-    public static bool Known(string? state) => state is Taking or Sent or Taken or Read or Partly or Released;
-
-    /// <summary>Whether the entry has the message: sent, taken or read. A claim and a partial hand are not yet.</summary>
-    public static bool Settles(string? state) => state is Sent or Taken or Read;
-}
-
-/// <summary>One entry's acknowledgment of one message: its state, the part's session where one wrote it, and when.</summary>
-public sealed record ChannelAck(string State, string? Session, DateTimeOffset At);
-
-/// <summary>
-/// What a message reached in one repository's line of work, as the person reads it (COWORK1d, the design §7, §8.4): never more than
-/// was observed. Answered is a reply from that repository, never obeyed.
-/// </summary>
-public static class ChannelReceipts
-{
-    public const string Waiting = "waiting";
-
-    /// <summary>A running part claimed it and holds it for its door.</summary>
-    public const string Held = "held";
-
-    public const string Sent = "sent";
-
-    public const string Taken = "taken";
-
-    public const string Read = "read";
-
-    public const string Partly = "partly";
-
-    public const string Answered = "answered";
-
-    /// <summary>Its ask has no quest open and no part of the entry runs here: no part will come (the design §4.2).</summary>
-    public const string NotReached = "not-reached";
-}
-
-/// <summary>A message's receipt in one repository it addresses.</summary>
-public sealed record ChannelReceipt(string Repository, string State);
 
 /// <summary>An ask the mirrored messages name and this machine does not hold (SESSONE2h): all this machine knows of it.</summary>
 /// <param name="Id">The ask's id.</param>
@@ -220,7 +111,11 @@ public sealed record ElsewhereAsk(string Id, string Workspace, IReadOnlyList<str
 public sealed record ChannelOutcome(ChannelRefusal Refusal, ChannelMessage? Message);
 
 /// <summary>What a session's read did: its refusal, or the ask it read and what it read, and the entry it read as (COWORK1d).</summary>
-public sealed record ChannelReadOutcome(ChannelRefusal Refusal, Ask? Ask, ChannelRead? Read, string? Entry = null);
+public sealed record ChannelReadOutcome(ChannelRefusal Refusal, Ask? Ask, ChannelRead? Read, string? Entry = null)
+{
+    /// <summary>The origin whose channel was read; a line on no ask has no <see cref="Ask"/>.</summary>
+    public string? Origin { get; init; }
+}
 
 /// <summary>
 /// The messages of every ask's channel, and each entry's read mark (SESSONE2a; design §2.5). Machine-local service records beside the
@@ -230,7 +125,14 @@ public sealed class ChannelStore
 {
     private readonly ConnectionGate _db;
 
-    private ChannelStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
+    private ChannelStore(SqliteConnection connection)
+    {
+        _db = ConnectionGate.For(connection);
+        Addressed = new(_db);
+    }
+
+    /// <summary>A line's own channel and the messages to one part, kept apart from this store's.</summary>
+    public ChannelAddressedStore Addressed { get; }
 
     public static Task<ChannelStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
         ConnectionGate.For(connection).RunAsync(() => new ChannelStore(connection).EnsureSchemaAsync(ct), ct);
@@ -337,6 +239,8 @@ public sealed class ChannelStore
             """;
         await acks.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         if (!had) await AcknowledgedByMarksAsync(ct).ConfigureAwait(false);
+
+        await ChannelAddressedStore.EnsureSchemaAsync(_db, ct).ConfigureAwait(false);
         return this;
     }
 
@@ -386,7 +290,7 @@ public sealed class ChannelStore
     }
 
     /// <summary>An acknowledgment's rank, in SQL: a state never moves back to a lower one (<see cref="ChannelAcks"/>).</summary>
-    private static string Rank(string state) =>
+    internal static string Rank(string state) =>
         $"CASE {state} WHEN 'partly' THEN 0 WHEN 'taking' THEN 1 WHEN 'sent' THEN 2 WHEN 'read' THEN 3 WHEN 'taken' THEN 4 ELSE -1 END";
 
     /// <summary>
@@ -490,9 +394,11 @@ public sealed class ChannelStore
             INSERT INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin, urgent)
             SELECT $id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin,
               CASE WHEN $urgent = 1 AND $session IS NOT NULL
-                        AND (SELECT COUNT(*) FROM channel WHERE session = $session AND urgent = 1) >= $urgentCap THEN 0
+                        AND (SELECT COUNT(*) FROM channel WHERE session = $session AND urgent = 1)
+                          + (SELECT COUNT(*) FROM channel_addressed WHERE session = $session AND urgent = 1) >= $urgentCap THEN 0
                    ELSE $urgent END
-            WHERE $session IS NULL OR (SELECT COUNT(*) FROM channel WHERE session = $session) < $cap
+            WHERE $session IS NULL
+               OR (SELECT COUNT(*) FROM channel WHERE session = $session) + (SELECT COUNT(*) FROM channel_addressed WHERE session = $session) < $cap
             RETURNING urgent
             """;
         command.Parameters.AddWithValue("$id", message.Id);
@@ -634,7 +540,7 @@ public sealed class ChannelStore
     }, ct);
 
     /// <summary>A message's level as its column keeps it: 1 urgent, 0 ordinary, null for one from before.</summary>
-    private static object Level(bool? urgent) => urgent is { } said ? said ? 1 : 0 : DBNull.Value;
+    internal static object Level(bool? urgent) => urgent is { } said ? said ? 1 : 0 : DBNull.Value;
 
     private static ChannelMessage Read(SqliteDataReader reader)
     {
@@ -727,24 +633,33 @@ public sealed class ChannelDesk(
     /// <summary>The address that means every repository, said the way a person or an agent may say it.</summary>
     private const string Everyone = "everyone";
 
+    private ChannelParts? _parts;
+
+    /// <summary>A line's own channel and the messages to one part.</summary>
+    public ChannelParts Parts => _parts ??= new(this, store, ledger, facts);
+
     /// <summary>Post as the session the connector names: its record gives the ask (through its entry), its repository and its adapter.</summary>
     /// <param name="urgent">
     /// The poster's level (COWORK1d, D188 point 2): urgent asks the session's next step, ordinary (the default) a natural point. Kept
     /// urgent for at most <see cref="ChannelBounds.UrgentPerPart"/> of the part's posts; the outcome's message says what was kept.
     /// </param>
+    /// <remarks>A line on no ask posts on its own channel, and a <paramref name="to"/> naming a session is to that part alone (<see cref="ChannelParts"/>).</remarks>
     public async Task<ChannelOutcome> PostAsSessionAsync(
         string? sessionId, string? text, string? to, string? re, bool question, DateTimeOffset now, bool urgent = false,
         CancellationToken ct = default)
     {
-        var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
+        var (refusal, ask, session, entry, origin) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
         if (refusal != ChannelRefusal.None) return new(refusal, null);
 
-        var judged = await JudgeAsync(ask!, text, to, re, ct).ConfigureAwait(false);
+        var (part, partRefusal) = await Parts.NamedAsync(to, entry, session, ct).ConfigureAwait(false);
+        if (partRefusal != ChannelRefusal.None) return new(partRefusal, null);
+        if (part is not null || ask is null) return await Parts.PostAsync(session!, entry!, origin!, ask, part, text, to, re, question, urgent, now, ct).ConfigureAwait(false);
+
+        var judged = await JudgeAsync(ask, text, to, re, ct).ConfigureAwait(false);
         if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
 
-        var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry;
         var message = new ChannelMessage(
-            NewId(), ask!.Id, ask.Workspace, now, session!.Id, session.Repository, session.Adapter, entry,
+            NewId(), ask.Id, ask.Workspace, now, session!.Id, session.Repository, session.Adapter, entry,
             judged.To, judged.Re, question, judged.Text!) { Urgent = urgent };
         return await store.KeepAsync(message, ChannelBounds.MaxPerPart, ct).ConfigureAwait(false) is { } kept
             ? new(ChannelRefusal.None, kept)
@@ -763,6 +678,10 @@ public sealed class ChannelDesk(
         {
             return new(await IsMirroredAsync(askId, ct).ConfigureAwait(false) ? ChannelRefusal.HeldElsewhere : ChannelRefusal.NotFound, null);
         }
+
+        var (part, partRefusal) = await Parts.NamedAsync(to, null, null, ct, SessionEntries.AskOrigin(ask.Id)).ConfigureAwait(false);
+        if (partRefusal != ChannelRefusal.None) return new(partRefusal, null);
+        if (part is not null) return await Parts.PostAsPersonAsync(ask, part, text, re, urgent, now, ct).ConfigureAwait(false);
 
         var judged = await JudgeAsync(ask, text, to, re, ct).ConfigureAwait(false);
         if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
@@ -848,11 +767,14 @@ public sealed class ChannelDesk(
     public async Task<ChannelReadOutcome> ReadAsSessionAsync(
         string? sessionId, DateTimeOffset? since, CancellationToken ct = default, DateTimeOffset? now = null)
     {
-        var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
+        var (refusal, ask, session, speaking, origin) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
         if (refusal != ChannelRefusal.None) return new(refusal, null, null);
+        var entry = speaking!;
 
-        var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry!;
-        var mark = await store.MarkAsync(ask!.Id, entry, ct).ConfigureAwait(false);
+        var mine = await Parts.ReadAsync(session!, entry, origin!, since, now ?? DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        if (ask is null) return new(ChannelRefusal.None, null, new ChannelRead(mine, [], mine.Count), entry) { Origin = origin };
+
+        var mark = await store.MarkAsync(ask.Id, entry, ct).ConfigureAwait(false);
         var from = since ?? mark;
         var messages = await store.OfAsync(ask.Id, ct).ConfigureAwait(false);
         var lines = await LinesAsync(ask, ct).ConfigureAwait(false);
@@ -868,11 +790,11 @@ public sealed class ChannelDesk(
         }
 
         await MoveEntryMarkAsync(ask, entry, messages, lines, ct).ConfigureAwait(false);
-        var read = new ChannelRead(returned, [.. lines.Where(l => from is null || l.At > from)], unread, mark)
+        var read = new ChannelRead([.. returned.Concat(mine).OrderBy(m => m.At)], [.. lines.Where(l => from is null || l.At > from)], unread + mine.Count, mark)
         {
             Acknowledged = await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false),
         };
-        return new(ChannelRefusal.None, ask, read, entry);
+        return new(ChannelRefusal.None, ask, read, entry) { Origin = origin };
     }
 
     /// <summary>
@@ -922,18 +844,21 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>
-    /// The messages waiting for a session's entry (COWORK1d, the design §4.2): for it, and neither sent, taken nor read by it, with
-    /// the ask they are on. What the connector's answers name; empty for a session on no ask, a helper and a reviewer.
+    /// The messages waiting for a session (COWORK1d, the design §4.2): for its entry on its ask's channel, and neither sent, taken nor read
+    /// by it, with the ask they are on; and those to it, or on its line's own channel, its line has not settled. What the connector's
+    /// answers name; none for a helper and a reviewer.
     /// </summary>
-    public async Task<(Ask? Ask, IReadOnlyList<ChannelMessage> Waiting)> WaitingForAsync(string? sessionId, CancellationToken ct = default)
+    public async Task<ChannelWaiting> WaitingForAsync(string? sessionId, CancellationToken ct = default)
     {
-        var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
-        if (refusal != ChannelRefusal.None) return (null, []);
+        var (refusal, ask, session, entry, origin) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
+        if (refusal != ChannelRefusal.None) return ChannelWaiting.None;
 
-        var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry!;
-        var acknowledged = await AcknowledgedAsync(ask!.Id, entry, ct).ConfigureAwait(false);
+        var addressed = await Parts.UnsettledAsync(session!, entry!, origin!, ct).ConfigureAwait(false);
+        if (ask is null) return new(null, origin, addressed);
+        var acknowledged = await AcknowledgedAsync(ask.Id, entry!, ct).ConfigureAwait(false);
         var messages = await store.OfAsync(ask.Id, ct).ConfigureAwait(false);
-        return (ask, [.. messages.Where(m => IsFor(m, entry) && !ChannelAcks.Settles(acknowledged.GetValueOrDefault(m.Id)?.State))]);
+        return new(ask, origin,
+            [.. messages.Where(m => IsFor(m, entry!) && !ChannelAcks.Settles(acknowledged.GetValueOrDefault(m.Id)?.State)).Concat(addressed).OrderBy(m => m.At)]);
     }
 
     /// <summary>
@@ -990,8 +915,12 @@ public sealed class ChannelDesk(
         return receipts;
     }
 
-    /// <summary>Remove an ask's channel with the ask (D95).</summary>
-    public Task ForgetAsync(string askId, CancellationToken ct = default) => store.ForgetAsync(askId.TrimStart('#'), ct);
+    /// <summary>Remove an ask's channel with the ask (D95), and the messages to one part on its origin.</summary>
+    public async Task ForgetAsync(string askId, CancellationToken ct = default)
+    {
+        await store.ForgetAsync(askId.TrimStart('#'), ct).ConfigureAwait(false);
+        await store.Addressed.ForgetAsync(SessionEntries.AskOrigin(askId.TrimStart('#')), ct).ConfigureAwait(false);
+    }
 
     private async Task<ChannelRead> ReadOfAsync(Ask ask, string entry, DateTimeOffset? from, bool moveMark, CancellationToken ct)
     {
@@ -1008,10 +937,20 @@ public sealed class ChannelDesk(
         var read = new ChannelRead(
             [.. messages.Where(m => from is null || m.At > from)], [.. lines.Where(l => from is null || l.At > from)], unread, mark);
         // COWORK1d: the person reads what each message reached; an entry reads what it acknowledged, by message id, a claim whose part
-        // no longer runs read as none, so the entry's next part is handed it.
-        return entry == PersonEntry
-            ? read with { Receipts = await ReceiptsAsync(ask, messages, ct).ConfigureAwait(false) }
-            : read with { Acknowledged = await LiveAsync(await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false), ct).ConfigureAwait(false) };
+        // no longer runs read as none, so the entry's next part is handed it. The person reads the messages to one part each beside them.
+        if (entry != PersonEntry)
+        {
+            return read with { Acknowledged = await LiveAsync(await AcknowledgedAsync(ask.Id, entry, ct).ConfigureAwait(false), ct).ConfigureAwait(false) };
+        }
+
+        var origin = SessionEntries.AskOrigin(ask.Id);
+        var addressed = await store.Addressed.OfAsync(origin, ct).ConfigureAwait(false);
+        return read with
+        {
+            Receipts = await ReceiptsAsync(ask, messages, ct).ConfigureAwait(false),
+            Addressed = [.. addressed.Where(m => from is null || m.At > from)],
+            AddressedReceipts = await Parts.ReceiptsAsync(origin, addressed, ct).ConfigureAwait(false),
+        };
     }
 
     /// <summary>The acknowledgments with each claim whose holder no longer runs left out (the design §6: a restart's claim is the next part's).</summary>
@@ -1061,7 +1000,7 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>Whether a claim's holder no longer runs: its record ended or parked, its inbox gone with its run.</summary>
-    private async Task<bool> StaleAsync(string holder, CancellationToken ct) =>
+    internal async Task<bool> StaleAsync(string holder, CancellationToken ct) =>
         await ledger.FindAsync(holder, ct).ConfigureAwait(false) is { } record
         && record.State is not (SessionState.Queued or SessionState.Starting or SessionState.Working);
 
@@ -1117,6 +1056,8 @@ public sealed class ChannelDesk(
         ChannelRefusal.BadRe => "bad-re",
         ChannelRefusal.TooMany => "too-many",
         ChannelRefusal.HeldElsewhere => "held-elsewhere",
+        ChannelRefusal.BadPart => "bad-part",
+        ChannelRefusal.PartElsewhere => "part-elsewhere",
         _ => refusal.ToString().ToLowerInvariant(),
     };
 
@@ -1161,26 +1102,33 @@ public sealed class ChannelDesk(
         return held;
     }
 
-    /// <summary>The session that speaks and the ask its entry names, or why it may not.</summary>
-    private async Task<(ChannelRefusal Refusal, Ask? Ask, Session? Session)> SpeakerAsync(string? sessionId, CancellationToken ct)
+    /// <summary>
+    /// The session that speaks, its entry, the origin whose channel it speaks on, and the ask that origin names where it names one; or why it
+    /// may not. Every origin has a channel: only a helper and a reviewer have none, and one whose ask is not held here is refused.
+    /// </summary>
+    internal async Task<(ChannelRefusal Refusal, Ask? Ask, Session? Session, string? Entry, string? Origin)> SpeakerAsync(string? sessionId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(sessionId) || await ledger.FindAsync(sessionId.Trim(), ct).ConfigureAwait(false) is not { } session)
         {
-            return (ChannelRefusal.NoSession, null, null);
+            return (ChannelRefusal.NoSession, null, null, null, null);
         }
 
-        if (session.Serves is not null || session.Opinion is not null) return (ChannelRefusal.Helper, null, null);
+        if (session.Serves is not null || session.Opinion is not null) return (ChannelRefusal.Helper, null, null, null, null);
 
         var key = (await ledger.WithEntryAsync(session, ct).ConfigureAwait(false)).Entry ?? "";
         var origin = key.IndexOf('/') is > 0 and var slash ? key[..slash] : key;
-        var prefix = SessionEntries.AskOrigin("");
-        if (!origin.StartsWith(prefix, StringComparison.Ordinal) || origin.Length == prefix.Length
-            || await asks.FindAsync(origin[prefix.Length..], ct).ConfigureAwait(false) is not { } ask)
-        {
-            return (ChannelRefusal.NoAsk, null, null);
-        }
+        if (origin.Length == 0) return (ChannelRefusal.NoAsk, null, session, key, null);
+        if (AskOfOrigin(origin) is not { } askId) return (ChannelRefusal.None, null, session, key, origin);
+        return await asks.FindAsync(askId, ct).ConfigureAwait(false) is { } ask
+            ? (ChannelRefusal.None, ask, session, key, origin)
+            : (ChannelRefusal.NoAsk, null, session, key, origin);
+    }
 
-        return (ChannelRefusal.None, ask, session);
+    /// <summary>The ask an origin names (<c>ask:&lt;id&gt;</c>), or null for any other origin.</summary>
+    public static string? AskOfOrigin(string origin)
+    {
+        var prefix = SessionEntries.AskOrigin("");
+        return origin.StartsWith(prefix, StringComparison.Ordinal) && origin.Length > prefix.Length ? origin[prefix.Length..] : null;
     }
 
     /// <summary>The words trimmed and bounded, and where they are addressed and what they answer, each as the ask's channel holds it.</summary>

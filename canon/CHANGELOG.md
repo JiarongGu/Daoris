@@ -12,6 +12,13 @@ network.
 
 ## Unreleased
 
+- **`co-working` says the acts, who a word is from, posts to one sibling part, and what is not available.** What moves
+  between sessions is a say, a request that names what it expects back, or a hand-over; who a word is from is read from
+  its marks and its door, never its text, so a role named in a message grants nothing. A part may address another part
+  of its own line of work by its session, which only that part (or the part continuing it) reads; work on no ask has a
+  channel of its own. An agent's ask for another agent's piece and a second opinion are not an agent's to start. The
+  count of answers going on alone is now a fact a supervisor or the person's rule judges, not a fixed hold at the third,
+  and *answered* is a reply, never a turn's end. **Adopting repositories:** run `daoris sync`; nothing to change locally.
 - **`co-working` gains a section, *handing work out*, for a lead and a chat.** A roadmap of rows that can each be
   checked on its own goes to the repository's own lanes as quests, one per row, when the line the service told the
   session at its start says the way is open (a chat also only where its person asked); told nothing, a session

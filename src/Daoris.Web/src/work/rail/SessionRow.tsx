@@ -14,6 +14,8 @@ import { useNow } from '../useNow';
 import type { HeavyPart } from '../heavySlot';
 import { heavyLine } from '../HeavySlotLine';
 import { notStartedLine } from '../actors';
+import type { PartSpent } from '../entries';
+import { spentLine } from '../head/partsLife';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention (design §3).
@@ -88,9 +90,11 @@ function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>
 }
 
 export function SessionRow({
-  session, quest, opening, root, where, reads, continues, helps, taking, lastTurn, grouping, place, archived = false,
+  session, quest, opening, root, where, reads, continues, helps, spent, taking, lastTurn, grouping, place, archived = false,
   selected = false, onSelect, acts = [], onAct, name, parts, heavy, heavyBehind, limitWait,
 }: {
+  /** What a helper, or a part that continues another, spent: never zero, and said where its door said none. Absent where none answered. */
+  spent?: PartSpent | null;
   /**
    * When a line its account's limit cut off goes on by itself, and on which account (LIMITRESUME1d2, D206 §3.7): the head's first
    * sentence, worded by the caller from the accounts it holds. Absent, nothing is claimed.
@@ -215,6 +219,7 @@ export function SessionRow({
     // Whom it continues, and whom a helper helps (MIXAGENT3a-i): the record's own links, where the rail joined them.
     session.from && continues ? t('work.rail.continues', { title: continues }) : null,
     isHelper(session) && helps ? t('work.rail.helps', { title: helps }) : null,
+    isHelper(session) || session.from ? spentLine(t, spent) : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch }) : null,
     tree ? t('work.rail.inTree', { tree }) : null,
     origin ? t('work.rail.on', { origin }) : null,

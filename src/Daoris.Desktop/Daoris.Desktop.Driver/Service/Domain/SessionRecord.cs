@@ -111,6 +111,9 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public string? Serves { get; init; }
 
+    /// <summary>The second opinion a reviewer's record reads for (COMMS1i, where <i>At work</i> lists it by the line it serves); null for every other.</summary>
+    public string? Opinion { get; init; }
+
     /// <summary>
     /// The piece a partner's record writes, the ask's id (COAGENT1b, the co-agent design §7.3), kept only beside <see cref="Serves"/>;
     /// null for every other record. What the landing's eligibility refuses at every door (§2.4).

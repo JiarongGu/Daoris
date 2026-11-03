@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Hosting;
 using Daoris.Knowledge.Http;
+using static Daoris.Knowledge.Http.ChannelRoutes;
 
 // The browser's half of the service. The MCP host serves an agent over stdio; a browser cannot speak
 // that, so this exists — the same composed service behind a read-only JSON surface.
@@ -1217,6 +1218,8 @@ if (mode == ServiceMode.Local)
             ? Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)))
             : Results.Ok(new ChannelAckResponse(changed));
     });
+
+    app.MapChannelParts();
 
     // An entry's read mark, moved: the person's, or a part's that a driver handed the channel to (SESSONE2b). Answers the channel as it then reads.
     // NOTIFY2g (D196 point 6; the notification design §2.4): the person's is kept on a teammate's ask the sync mirrored too, on this machine
@@ -3010,24 +3013,6 @@ static async Task<IResult> DeletedWithChannelAsync(ComposedService s, string id,
     return Results.Ok(new DeletedResponse(id.TrimStart('#'), message));
 }
 
-// One message or line of an ask's channel as the page and the driver read it (SESSONE2a): a message's poster is named by its session,
-// repository and agent, and the person's by `person`; Daoris's lines are coded and carry no sentence. COWORK1d: its level, and the
-// reader's acknowledgment of it or, for the person, what it reached in each repository it addresses.
-static ChannelItemResponse ToChannelItem(IChannelItem item, ChannelRead? read = null) => item switch
-{
-    ChannelMessage m => new ChannelItemResponse(
-        "message", m.At, Id: m.Id, Person: m.ByPerson, Session: m.Session, Repository: m.Repository, Agent: m.Agent, Entry: m.Entry,
-        To: m.To, Re: m.Re, Question: m.Question, Open: m.Open, Text: m.Text, Origin: m.Origin, Urgent: m.Urgent,
-        Ack: read?.Acknowledged.GetValueOrDefault(m.Id)?.State, AckSession: read?.Acknowledged.GetValueOrDefault(m.Id)?.Session,
-        Receipts: read?.Receipts.GetValueOrDefault(m.Id) is { } receipts
-            ? [.. receipts.Select(r => new ChannelReceiptResponse(r.Repository, r.State))]
-            : null),
-    ChannelLine l => new ChannelItemResponse("line", l.At, From: l.From, To: l.To, Code: l.Code, Quest: l.Quest, Name: l.Name),
-    _ => throw new InvalidOperationException("an item of the channel is a message or a line"),
-};
-
-static ChannelResponse ToChannel(string ask, string entry, ChannelRead read) =>
-    new(ask.TrimStart('#'), entry, [.. read.Items.Select(item => ToChannelItem(item, read))], read.Unread, read.Mark);
 
 static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
 {

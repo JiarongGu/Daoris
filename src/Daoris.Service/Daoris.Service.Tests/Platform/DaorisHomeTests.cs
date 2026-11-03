@@ -332,6 +332,14 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/place-receipts"), (HomeEntry.PlaceReceipts.Category, HomeEntry.PlaceReceipts.New));
     }
 
+    /// <summary>COMMS1l: the steward desk's history, a data file the service's table names as its twins do, and never reads.</summary>
+    [Fact]
+    public void COMMS1l_the_steward_desk_is_a_data_file()
+    {
+        Assert.Same(HomeEntry.StewardDesk, HomeEntry.Named("steward-desk"));
+        Assert.Equal((HomeCategory.Data, "data/steward-desk.json"), (HomeEntry.StewardDesk.Category, HomeEntry.StewardDesk.New));
+    }
+
     /// <summary>
     /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, a profiles folder the service's table names
     /// as its twins do, and never reads; a sign-in's place, never under <c>run/</c>.
