@@ -159,7 +159,14 @@ public sealed record SupervisorDefer(
 /// </summary>
 public sealed record SupervisedPark(
     string Repository, bool Parked, bool HoldsQuest, ParkQuestion? Filed, bool OwnerWaits, bool GoAheadOpen, bool GoAheadUnread,
-    bool AtBound = false);
+    bool AtBound = false)
+{
+    /// <summary>
+    /// The line's counts as the keeping read them (CONTEXTDRIVE1i; the context-counters design §5), as the print hands them: a reason's
+    /// <c>count:</c> source names one of these, and the decision keeps them. Null where none were read.
+    /// </summary>
+    public IReadOnlyList<CountFact>? Counts { get; init; }
+}
 
 /// <summary>
 /// Whether <paramref name="session"/>'s line is at D188's answers-alone bound now (SUPERVISOR1b, §4.3), asked by the release under the

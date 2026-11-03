@@ -87,7 +87,7 @@ public abstract class GoAheadFixture : IAsyncLifetime
     protected async Task<Session> CarriedOn(Session parked, Quest quest)
     {
         await _ledger.AdvanceAsync(parked.Id, "awaiting-person", "It needs the production write.", null, null, Now);
-        await _ledger.AnswerAsync(parked.Id, "carry on", Now.AddMinutes(1));
+        await _ledger.SayAsync(parked.Id, "carry on", null, Now.AddMinutes(1));
         await _ledger.AdvanceAsync(parked.Id, "completed", "The answer is carried on in a new session.", null, null, Now.AddMinutes(2));
         var next = (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(3), tree: Tree("carry"))).Session!;
         Assert.NotNull(next);

@@ -467,7 +467,7 @@ internal static class TraceWords
         switch (rules.Missing)
         {
             case TraceRuleGaps.NoneWhileRunning:
-                text.Append("  rules handed: no file under the home while it runs: its agent takes no rules file, or there was nothing to hand\n");
+                text.Append("  rules handed: no file under the home while it runs: its agent takes no rules file\n");
                 return;
             case TraceRuleGaps.GoneWithRun:
                 text.Append("  rules handed: not on this machine: the file goes when its session ends, and a parked session's when its run does\n");

@@ -178,8 +178,8 @@ public sealed class StartInSyncTickTests : IDisposable
         var parked = service.Session("s1");
         Assert.Equal("awaiting-person", parked["state"]!.GetValue<string>());
         SquashOntoLine(parked["tree"]!.GetValue<string>());
-        var (answered, message) = await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
-        Assert.True(answered, message);
+        var answered = await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
+        Assert.True(answered.Kept, answered.Message);
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var prompt = Runs().Last(line => line["method"]!.GetValue<string>() == "session/prompt");

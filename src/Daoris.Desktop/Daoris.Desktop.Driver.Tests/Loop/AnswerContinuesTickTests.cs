@@ -47,6 +47,10 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
+    /// <summary>The words waiting on a record as the stand-in keeps them, joined, or null where none wait.</summary>
+    private static string? SaidText(JsonObject record) =>
+        record["said"] is JsonArray { Count: > 0 } said ? string.Join("\n\n", said.Select(word => word!["text"]!.GetValue<string>())) : null;
+
     private Daoris.Driver.Driver Driver(ParkStandIn service, string mode, HarnessRoster? roster = null, ServiceClient? client = null, AdapterSet? set = null)
     {
         var adapters = set ?? AdapterSet.Built();
@@ -87,12 +91,12 @@ public sealed class AnswerContinuesTickTests : IDisposable
         var driver = Driver(service, "resumes");
         await ParkedAsync(service, driver);
 
-        var (answered, message) = await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
-        Assert.True(answered, message);
+        var answered = await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
+        Assert.True(answered.Kept, answered.Message);
         // The precondition the next look plans from: the park, still parked, with the answer on it.
         var park = service.Session("s1");
         Assert.True(
-            park["state"]!.GetValue<string>() == "awaiting-person" && park["answer"]?.GetValue<string>() == "Port 8080.",
+            park["state"]!.GetValue<string>() == "awaiting-person" && SaidText(park) == "Port 8080.",
             $"the answered park before the next look: {park.ToJsonString()}");
 
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
@@ -135,7 +139,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         await using var service = ParkStandIn.Start(_repository);
         var driver = Driver(service, "gone");
         await ParkedAsync(service, driver);
-        await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
+        await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
@@ -173,7 +177,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         client.AccountLined += line => { lock (lines) lines.Add(line); };
         var driver = Driver(service, "refuses", client: client);
         await ParkedAsync(service, driver);
-        await client.AnswerSessionAsync("s1", "Port 8080.");
+        await client.SayAsync("s1", "Port 8080.");
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
@@ -210,7 +214,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
     {
         await using var service = ParkStandIn.Start(_repository);
         await ParkedAsync(service, Driver(service, "resumes"));
-        await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
+        await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
         var built = AdapterSet.Built();
         var without = new AdapterSet(
             built.Names.Where(name => name != "acp-stub").ToDictionary(name => name, built.Resolve, StringComparer.OrdinalIgnoreCase));
@@ -222,7 +226,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         var park = service.Session("s1");
         var seen = $"plan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}\nafter: {park.ToJsonString()}";
         Assert.True(service.SessionCount == 1, seen);
-        Assert.True((park["state"]!.GetValue<string>(), park["answer"]?.GetValue<string>()) == ("awaiting-person", "Port 8080."), seen);
+        Assert.True((park["state"]!.GetValue<string>(), SaidText(park)) == ("awaiting-person", "Port 8080."), seen);
         Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal(heard, Heard().Length);
         var held = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.HeldAgentGone.Code) == true).Parts![0];
@@ -258,7 +262,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.True(HarnessSettings.RemoveProfile(_home, "stub", "account-1"));
         HarnessSettings.Change(
             settings, read => read.WithoutAccount("stub", "account-1"), account: new AccountChange("stub", "account-1", Added: false));
-        await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
+        await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
 
         await Driver(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
 
@@ -290,7 +294,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Equal("default", Heard().Single(line => line["method"]!.GetValue<string>() == "session/set_mode")["mode"]!.GetValue<string>());
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.Note, Text: { } text } && text.Contains("Permission prompts: asking on `acp-stub`"));
 
-        await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
+        await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
         await Postured(service, AccessRules.Unrestricted).RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(1, service.SessionCount);
@@ -475,6 +479,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         private readonly string _root;
         private readonly List<JsonObject> _sessions = [];
         private readonly Dictionary<string, List<string>> _moves = [];
+        private readonly HashSet<string> _answered = [];
         private readonly Dictionary<string, string> _startNotes = [];
         private readonly List<JsonObject> _quests;
 
@@ -633,8 +638,13 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         if (body["noteParts"] is { } parts) session["noteParts"] = parts.DeepClone();
                         if (to == "starting") _startNotes[id] = session["note"]?.GetValue<string>() ?? "";
                         // ANSWER1b: a session that parks again asks anew.
-                        if (to == "awaiting-person") session.Remove("answer");
-                        if (session["answer"] is not null) _moves[id + "/answered"].Add(to);
+                        if (to == "awaiting-person")
+                        {
+                            session.Remove("said");
+                            _answered.Remove(id);
+                        }
+
+                        if (_answered.Contains(id)) _moves[id + "/answered"].Add(to);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 
@@ -647,25 +657,60 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                     }
 
-                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/answer", StringComparison.Ordinal):
+                    // ONEWAY1k: a park is answered through the say door alone; its word is kept on `said` and the record stays parked,
+                    // for the driver's next look (ANSWER1b).
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
                     {
-                        var id = path["/api/sessions/".Length..^"/answer".Length];
-                        var said = Body()["answer"]?.GetValue<string>() ?? "carry on.";
+                        var id = path["/api/sessions/".Length..^"/say".Length];
+                        var said = Body()["text"]!.GetValue<string>();
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         if (session["state"]!.GetValue<string>() != "awaiting-person")
                         {
-                            return (409, $$"""{"error":"Session `{{id}}` is not waiting on you."}""");
+                            return (409, $$"""{"error":"Session `{{id}}` is not waiting on you.","refusal":"running"}""");
                         }
 
-                        // ANSWER1b: the answer is kept and the record stays parked, for the driver's next look.
-                        session["answer"] = said;
+                        var word = new JsonObject
+                        {
+                            ["id"] = $"w{id}", ["text"] = said, ["at"] = DateTimeOffset.UtcNow.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = false,
+                        };
+                        session["said"] = new JsonArray(word);
                         session["note"] = $"{session["note"]?.GetValue<string>()}\n\nAnswered: {said}";
+                        _answered.Add(id);
                         _moves[id + "/answered"] = [];
                         return (200, new JsonObject
                         {
                             ["session"] = session.DeepClone(),
-                            ["message"] = $"Answered session `{id}`: it carries on at the driver's next look.",
+                            ["message"] = $"Kept for session `{id}`: it carries on at the driver's next look.",
+                            ["said"] = word.DeepClone(),
                         }.ToJsonString());
+                    }
+
+                    // COWORK1c: a word's attempt is marked before its dispatcher writes it, so a restart never writes it twice.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
+                    {
+                        var id = path["/api/sessions/".Length..^"/attempt".Length];
+                        var named = Body()["said"]?.AsArray().Select(each => each?.GetValue<string>()).ToHashSet() ?? [];
+                        var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                        foreach (var word in (session["said"] as JsonArray ?? []).OfType<JsonObject>())
+                        {
+                            if (named.Contains(word["id"]!.GetValue<string>()) && word["attempt"] is null) word["attempt"] = DateTimeOffset.UtcNow.ToString("O");
+                        }
+
+                        return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "marked", ["unmarked"] = new JsonArray() }.ToJsonString());
+                    }
+
+                    // MSG1a: the words a session took come off its record by their ids.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
+                    {
+                        var id = path["/api/sessions/".Length..^"/taken".Length];
+                        var taken = Body()["said"]?.AsArray().Select(each => each?.GetValue<string>()).ToHashSet() ?? [];
+                        var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                        if (session["said"] is JsonArray words)
+                        {
+                            session["said"] = new JsonArray([.. words.Where(word => !taken.Contains(word!["id"]!.GetValue<string>())).Select(word => word!.DeepClone())]);
+                        }
+
+                        return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" }.ToJsonString());
                     }
 
                     case ("POST", "/api/quests/q1/respond"):

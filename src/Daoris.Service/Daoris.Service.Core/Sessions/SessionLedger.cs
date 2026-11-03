@@ -928,52 +928,7 @@ public sealed class SessionLedger(
             sessionId, session.Quest is null ? questId.TrimStart('#') : null, ct, bind).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The person answers a driven session that parked to ask them (STANDDOWN2): the record stays
-    /// `awaiting-person` with their words kept and said on its note, and the driver goes on with it at
-    /// its next look (ANSWER1b, D131) — the session's own conversation resumed with the answer where it
-    /// can, else the park ended and its quest carried on in a new session in the same tree, handed what
-    /// they said. A second answer before then joins the first (MSG1a, D137 §2.4). An intake is answered
-    /// through its ask. This is the parked case of <see cref="SayAsync"/>, kept for its door and its words.
-    /// </summary>
-    /// <remarks>
-    /// <b>The answer keeps the park</b> because one record stands for one harness conversation (D131 §3).
-    /// </remarks>
-    /// <returns>The session as it now stands, or a refusal in words a person can act on.</returns>
-    public async Task<SessionAdvanceOutcome> AnswerAsync(
-        string id, string? answer, DateTimeOffset now, CancellationToken ct = default)
-    {
-        var said = string.IsNullOrWhiteSpace(answer) ? CarryOn : answer.Trim();
-
-        // Read, judged and written as one step (REV3): the driver taking the park up and a second answer,
-        // arriving from two hosts, could both read it parked, and the answer land on a record going on.
-        return await sessions.ExclusiveAsync(async inside =>
-        {
-            var session = await sessions.FindAsync(id, inside).ConfigureAwait(false);
-            if (session is null || session.Origin is not null)
-            {
-                return new SessionAdvanceOutcome(SessionAdvanceRefusal.NotFound, $"No session `{id}` of this machine's.", Session: null);
-            }
-
-            if (session.State != SessionState.AwaitingPerson || session.Quest is null)
-            {
-                return new SessionAdvanceOutcome(
-                    SessionAdvanceRefusal.InvalidMove,
-                    session.Ask is not null
-                        ? IntakeRefusal(id, session.Ask)
-                        : $"Session `{id}` is {Session.Spell(session.State)}, not waiting on you — there is nothing to answer.",
-                    Session: null);
-            }
-
-            var answered = await KeepAnswerAsync(session, said, now, inside).ConfigureAwait(false);
-            return new SessionAdvanceOutcome(
-                SessionAdvanceRefusal.None,
-                $"Answered session `{id}`: it carries on with `#{session.Quest}` at the driver's next look.",
-                answered);
-        }, ct).ConfigureAwait(false);
-    }
-
-    /// <summary>The answer a park keeps where the person gave no words of their own (ANSWER1b): what it goes on with.</summary>
+    /// <summary>The answer a park keeps where its go-aheads sent it on with no words of the person's (GOAHEAD2): what it goes on with.</summary>
     private const string CarryOn = "carry on.";
 
     /// <summary>
@@ -1857,8 +1812,8 @@ public sealed class SessionLedger(
 
     /// <summary>
     /// Keep what the person said to a session on the ask its work is for (DRIFT1a, D133 §1): verbatim, with
-    /// when, the session it was said to and the quest that session works. Beside <see cref="AnswerAsync"/>,
-    /// never inside it: the answer door calls both, and what an answer does to a parked session is not this
+    /// when, the session it was said to and the quest that session works. Beside <see cref="SayAsync"/>,
+    /// never inside it: the say door calls both, and what an answer does to a parked session is not this
     /// method's to decide.
     /// </summary>
     /// <remarks>
@@ -2661,7 +2616,7 @@ public sealed class SessionLedger(
 
     /// <summary>
     /// The person's answers to the go-aheads a parked session asked are its answer (GOAHEAD2): the answer that leaves none of
-    /// them waiting keeps the park's blank answer, as the answer door keeps one given no words (ANSWER1b), so the driver's
+    /// them waiting keeps the park's blank answer, <c>carry on.</c>, so the driver's
     /// next look goes on with that same session, its own conversation resumed and handed the go-aheads' answers after it
     /// (ANSWER1a, KNOWUSE1a's resumed prompt). One of its go-aheads still waiting keeps it parked, and is named.
     /// </summary>
@@ -2675,8 +2630,8 @@ public sealed class SessionLedger(
     /// is kept twice. Judged and kept under the store's lock, as an answer is (REV3), so the driver taking the park up and
     /// a second door never both read it waiting.</para>
     ///
-    /// <para><b>The answers are not written as the person's words</b> (KNOWUSE1a2): the record keeps what the answer door
-    /// keeps for none, and the go-aheads' answers reach the session beneath it, quoted as the person gave them.</para>
+    /// <para><b>The answers are not written as the person's words</b> (KNOWUSE1a2): the record keeps the blank answer, and the
+    /// go-aheads' answers reach the session beneath it, quoted as the person gave them.</para>
     /// </remarks>
     /// <param name="answered">What the ask's go-ahead door kept: the go-ahead as it now stands, and the ask with every other.</param>
     public async Task<GoAheadParks> GoOnWithGoAheadsAsync(GoAheadAnswerOutcome answered, DateTimeOffset now, CancellationToken ct = default)

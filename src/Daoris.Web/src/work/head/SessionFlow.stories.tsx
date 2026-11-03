@@ -42,7 +42,7 @@ export const WaitingOnYou: Story = { args: { session: session('awaiting-person')
 /** The same in 中文. */
 export const WaitingOnYouChinese: Story = { args: { session: session('awaiting-person') }, decorators: [chinese, atWidths(), inLight] };
 /** A park the person answered: still the record's awaiting-person, the page says answered. */
-export const Answered: Story = { args: { session: session('awaiting-person', { answer: 'Go ahead.' }), shown: 'answered' }, decorators: light };
+export const Answered: Story = { args: { session: session('awaiting-person', { said: [{ id: 'w1', text: 'Go ahead.', at: '2026-10-03T08:00:00Z', files: [] }] }), shown: 'answered' }, decorators: light };
 /** Completed: the outcomes lit with *completed*, the one that may go on, a stand-down said never to. */
 export const Completed: Story = { args: { session: session('completed') }, decorators: light };
 /** Failed on a quest the reader parked: the record failed, the page says parked, in open's hue. */

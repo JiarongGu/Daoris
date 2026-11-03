@@ -195,7 +195,7 @@ export const OneGroup: Story = {
  */
 export const AnsweredGoesOn: Story = {
   args: {
-    sessions: SESSIONS.map((row) => (row.id === 'p4rk3d00' ? { ...row, answer: 'The second: cap it on the chunk API.' } : row)),
+    sessions: SESSIONS.map((row) => (row.id === 'p4rk3d00' ? { ...row, said: [{ id: 'w1', text: 'The second: cap it on the chunk API.', at: '2026-10-03T08:00:00Z', files: [] }] } : row)),
     groupings: [
       GROUPINGS[0]!,
       GROUPINGS[2]!,

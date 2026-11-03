@@ -60,8 +60,9 @@ internal static class ContextBriefs
         ServiceClient service, SessionEvents events, string home, string session, string why, bool conversation, string? note = null,
         DriverConfig? config = null, string? tree = null, CancellationToken ct = default, bool noteAsked = false, int? before = null)
     {
-        // Records that could not be read leave a line of the one part moved from: its own words, never nothing.
-        var json = await RecordsAsync(service, ct).ConfigureAwait(false);
+        // Records that could not be read leave a line of the one part moved from: its own words, never nothing; and its counts from them unknown.
+        var answered = await RecordsAsync(service, ct).ConfigureAwait(false);
+        var json = answered ?? "[]";
         var records = ServiceClient.ReadRecords(json);
         var line = LineOf(records, session);
         IReadOnlyList<SessionEvent> Read(string part)
@@ -92,6 +93,7 @@ internal static class ContextBriefs
             Others = Others(json, line),
             Open = await WaitsAsync(service, home, json, session, ct).ConfigureAwait(false),
             Memory = await MemoryAsync(service, session, ct).ConfigureAwait(false),
+            Counts = LineFactsReads.Current.Of(home, session, answered).Counts,
         });
     }
 
@@ -111,10 +113,10 @@ internal static class ContextBriefs
 
     /// <summary>The ids of the parts a new part's line continues, for the reads its rules allow (design §3.1 item 5); none read, none.</summary>
     internal static async Task<IReadOnlyList<string>> LineIdsAsync(ServiceClient service, string session, CancellationToken ct) =>
-        [.. LineOf(ServiceClient.ReadRecords(await RecordsAsync(service, ct).ConfigureAwait(false)), session).Select(part => part.Session)];
+        [.. LineOf(ServiceClient.ReadRecords(await RecordsAsync(service, ct).ConfigureAwait(false) ?? "[]"), session).Select(part => part.Session)];
 
-    /// <summary>The service's records, closed ones included; an answer that could not be had or read is none.</summary>
-    private static async Task<string> RecordsAsync(ServiceClient service, CancellationToken ct)
+    /// <summary>The service's records, closed ones included; null for an answer that could not be had or read.</summary>
+    private static async Task<string?> RecordsAsync(ServiceClient service, CancellationToken ct)
     {
         try
         {
@@ -125,7 +127,7 @@ internal static class ContextBriefs
         catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            return "[]";
+            return null;
         }
     }
 

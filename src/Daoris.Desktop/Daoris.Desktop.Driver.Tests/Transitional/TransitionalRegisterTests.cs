@@ -90,6 +90,43 @@ public sealed class TransitionalRegisterTests : IDisposable
         Assert.True(Entry("harness-old-names").Ended(_home));
     }
 
+    /// <summary>
+    /// ONEWAY1o (the oneway design §4 M5): COMMS1's and D226's kept paths are each an entry with the row that deletes it, those ended by
+    /// the floor or by a row's build never reading as ended from a home.
+    /// </summary>
+    [Fact]
+    public void The_kept_paths_of_COMMS1_and_D226_are_registered_with_their_rows()
+    {
+        foreach (var (id, row) in new[]
+        {
+            ("solicited-older-host", "ONEWAY1af"), ("solicited-old-files", "ONEWAY1af"), ("solicited-old-guards", "ONEWAY1af"),
+            ("opinion-handed-guard", "ONEWAY1af"), ("answers-alone-events", "ONEWAY1af"), ("presses-older-host", "ONEWAY1af"),
+            ("held-press-unasked", "ONEWAY1af"), ("staffing-copy", "ONEWAY1af"), ("conversation-moves-refused", "CONTEXTDRIVE1n"),
+        })
+        {
+            Assert.Equal(row, Entry(id).Row);
+        }
+
+        Put(HomeEntry.DriverConfig, "{}");
+        foreach (var id in new[] { "presses-older-host", "staffing-copy", "conversation-moves-refused" }) Assert.False(Entry(id).Ended(_home), id);
+    }
+
+    /// <summary>ONEWAY1o: a press held before COMMS1e names its choice and no question; the read ends when no held word is such a press.</summary>
+    [Fact]
+    public void The_held_press_ends_when_no_held_word_names_a_choice_without_its_question()
+    {
+        Put(HomeEntry.DriverConfig, "{}");
+        Assert.True(Entry("held-press-unasked").Ended(_home));
+        var held = HeldWordsFile.PathOf(_home);
+        Directory.CreateDirectory(Path.GetDirectoryName(held)!);
+        File.WriteAllText(held, """{"held":[{"session":"s1","text":"The monthly one","door":"screen","choice":"The monthly one"}]}""");
+        Assert.False(Entry("held-press-unasked").Ended(_home));
+        File.WriteAllText(held, """{"held":[{"session":"s1","text":"The monthly one","door":"screen","choice":"The monthly one","question":"q-1"},{"session":"s1","text":"words","door":"screen"}]}""");
+        Assert.True(Entry("held-press-unasked").Ended(_home));
+        File.WriteAllText(held, "not json");
+        Assert.False(Entry("held-press-unasked").Ended(_home));
+    }
+
     [Fact]
     public void The_fold_ends_when_the_file_holds_one_set_per_agent()
     {

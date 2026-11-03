@@ -389,6 +389,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
             // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
             var after = await ResumedAfterAsync(service, sessionId, target.Language, ct).ConfigureAwait(false);
+            // CONTEXTDRIVE1b (§3 point 2): Daoris's count for its line, where one moved or stands near what Daoris does on it, last.
+            var counted = CountTexts.GoOn((await LineCountsRead.FactsAsync(service, home, sessionId, ct).ConfigureAwait(false)).Counts);
             resume = new ResumeAsk(
                 kept.Conversation, words,
                 // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
@@ -397,8 +399,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     helper || words.Any(word => word.Helper is not null), daoris, words.Any(word => word.Supervisors)),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
-                    Continuations.AfterWords(inSync, after),
-                    Continuations.GoAheadsChanged(park, AccessRules.Resolve(config, quest.To, start.Workspace))),
+                    Continuations.AfterWords(
+                        Continuations.AfterWords(inSync, after),
+                        Continuations.GoAheadsChanged(park, AccessRules.Resolve(config, quest.To, start.Workspace))),
+                    counted),
                 files: word => ChatFiles.Kept(home, sessionId, word.Files));
 
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the

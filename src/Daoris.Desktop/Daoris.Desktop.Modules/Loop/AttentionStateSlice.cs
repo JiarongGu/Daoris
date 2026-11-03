@@ -496,7 +496,8 @@ public static class AttentionStateSlice
     ];
 
     /// <summary>
-    /// What the judge reads of the session records, as one string (PUSH1d4): each record's id, state, answer, repository and workspace,
+    /// What the judge reads of the session records, as one string (PUSH1d4): each record's id, state, the person's words waiting (its
+    /// keyed <c>said</c>, ONEWAY1m), repository and workspace,
     /// its kind and the marks the cap's count reads (SESSBADGE1), and, where it is not busy working, when it moved and its note. A working
     /// session's record is written at each word and moves its time alone, which no row reads; its park moves its state.
     /// </summary>
@@ -506,7 +507,7 @@ public static class AttentionStateSlice
             var state = Json.Text(record, "state");
             var busy = state is "queued" or "starting" or "working";
             return string.Join("\t",
-                Json.Text(record, "id"), state, Json.Text(record, "answer"), Json.Text(record, "repository"), Json.Text(record, "workspace"),
+                Json.Text(record, "id"), state, SessionRecords.PersonsSaid(record), Json.Text(record, "repository"), Json.Text(record, "workspace"),
                 Json.Text(record, "kind"), Json.Text(record, "ask"), Json.Text(record, "serves"), Json.Text(record, "opinion"),
                 busy ? "" : Json.Text(record, "updated"), busy ? "" : record["note"]?.ToJsonString(), busy ? "" : record["noteParts"]?.ToJsonString());
         }));
