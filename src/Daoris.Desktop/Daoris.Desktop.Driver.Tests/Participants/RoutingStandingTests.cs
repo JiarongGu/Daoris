@@ -95,6 +95,35 @@ public sealed class RoutingStandingTests
     }
 
     [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public void Every_case_names_the_quest_route_to_another_repository_and_the_helper_for_a_question_about_this_one(bool driven, bool lanes, bool trees)
+    {
+        var words = RoutingStanding.Of(Config(driven, trees), Repository(lanes ? Lanes : [])).Words;
+
+        Assert.Contains("goes to that repository as a quest (`quest_publish`", words, StringComparison.Ordinal);
+        Assert.Contains("registry or this repository's `uses`", words, StringComparison.Ordinal);
+        Assert.Contains("`helper_ask`", words, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Yourself_is_kept_to_this_repository_s_own_rows_where_no_lane_can_start_a_quest()
+    {
+        foreach (var words in new[]
+                 {
+                     RoutingStanding.Of(Config(true, true), Repository()).Words,
+                     RoutingStanding.Of(Config(false, true), Repository(Lanes)).Words,
+                 })
+        {
+            Assert.Contains("Work this repository's own rows yourself.", words, StringComparison.Ordinal);
+            Assert.DoesNotContain("Work your rows yourself", words, StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
     [InlineData(ParticipantWork.Build, true)]
     [InlineData(ParticipantWork.Design, true)]
     [InlineData(ParticipantWork.Chat, true)]

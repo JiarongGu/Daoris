@@ -11,7 +11,7 @@ repository under its own doctrine and gates, then close it: `done` when it has l
 `decline` with the reason — the reason is the part the asker can act on. If the quest is already
 taken or closed, stand down and finish without changing anything.
 
-Routing standing here: one at a time. This repository is driven on this machine and declares the lanes `console-ui:core`, `console-ui:web`, but opens no trees of its own, so a quest published to one of them starts only after your work ends.
+Routing standing here: one at a time. This repository is driven on this machine and declares the lanes `console-ui:core`, `console-ui:web`, but opens no trees of its own, so a quest published to one of them starts only after your work ends. Work another repository owns goes to that repository as a quest (`quest_publish`, naming the repository from the registry or this repository's `uses`), and a question about this repository goes to a helper (`helper_ask`).
 
 Look before you ask. The quest, its links and its files; this repository's own documents, code and
 history (its log, and the commits that last changed what you are changing); the workspace's

@@ -1,5 +1,5 @@
 {
-  "chars": 5043,
+  "chars": 5265,
   "sections": [
     {
       "name": "quest",
@@ -11,8 +11,8 @@
     {
       "name": "close",
       "source": "driver",
-      "said": "how to take it and close it: 596 characters, the driver's own words",
-      "chars": 596
+      "said": "how to take it and close it: 818 characters, the driver's own words",
+      "chars": 818
     },
     {
       "name": "look",
