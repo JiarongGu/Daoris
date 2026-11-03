@@ -1,6 +1,6 @@
 ---
 name: file-tool-discipline
-applies_when: inspecting or editing files, or running a destructive or irreversible command
+applies_when: inspecting or editing files, or running a destructive command
 enforces: read, search and edit with the dedicated tools, not the shell or a script; never route a command around an approval
 ---
 

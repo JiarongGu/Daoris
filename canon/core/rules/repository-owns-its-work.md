@@ -1,7 +1,7 @@
 ---
 name: repository-owns-its-work
-applies_when: a change you need lives in a different repository, or you are tempted to edit one from here
-enforces: never write into another repository; send the request to whoever works there; writing across is the user's explicit call
+applies_when: a change you need lives in another repository
+enforces: never write into another repository; send the request to whoever works there
 ---
 
 # Never write into another repository

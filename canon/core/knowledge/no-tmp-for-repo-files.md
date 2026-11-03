@@ -1,7 +1,7 @@
 ---
 name: no-tmp-for-repo-files
-applies_when: composing a repository file, or needing a scratch, probe, or dump file
-enforces: write a final file directly, never through console redirection; scratch goes in a gitignored repository directory, never OS temp
+applies_when: composing a repository file, or needing a scratch file
+enforces: write a final file directly, never through console redirection; scratch goes in a gitignored folder of the repository, never OS temp
 rule: true
 ---
 

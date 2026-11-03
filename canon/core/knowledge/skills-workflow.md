@@ -1,7 +1,7 @@
 ---
 name: skills-workflow
 applies_when: starting any change, and whenever a follow-up changes its scope
-enforces: make every change through the `change` skill, starting at the area document; read it again when the scope moves
+enforces: start at the area document of the part you change, and read again when the scope moves
 rule: true
 ---
 
