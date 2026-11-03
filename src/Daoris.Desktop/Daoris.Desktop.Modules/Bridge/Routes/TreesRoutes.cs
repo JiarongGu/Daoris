@@ -555,7 +555,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
         // CHATFLOW1c (the chat-flow design §4.2, §4.3): a chat in a tree of its own is gated by its chat run's process. A press on a run
         // not bound yet binds it first; one the home cannot keep refuses the press (`bind-failed`), never falling back to Current. A graph
-        // choice binds nothing and is gated as before; a plan binds nothing.
+        // choice binds its version (WORKFLOWCLEAN1 row 1d); a plan binds nothing.
         var chatRun = questId is null ? ChatRuns.ChatOf(id, recordsJson, trees.Holds) : null;
         if (press && chatRun is not null && ChatRunBound(chatRun, tree) is { Failed: { } failed }) return Refused(id, TreesWords.BindFailed(id, failed));
         // CHATFLOW1d (the chat-flow design §5.2): a chat run's press is the driver's one operation, which reserves the conversation, judges
