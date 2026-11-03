@@ -203,7 +203,6 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D227's 1e note (`daoris-driver workflow convert`) vs `Driver.Host/Program.cs:150` (`daoris-driver convert`): the code reads right.
 - D157 and D223 (no zoom, no minimap) vs D224 and `workflow/chart/FlowChart.tsx:62`: D224 reads right; `WorkflowChart.tsx:353` still says "no zoom".
 - D186 point 3 (a flow placed left to right where it fits) vs D221/D223 (a workflow always top to bottom, `flowLayout.ts:291`): both right, each for its flows.
-- D228 (one way) vs `Workflows/Domain/WorkflowChanges.cs:26`: the steps change language has no caller left. It is dead code.
 - `NodeContract.cs:49-53` (`check` started by nothing) vs `Loop/DriverWatch.cs:627` (the check's executor wired): the code reads right.
 
 ## Open
