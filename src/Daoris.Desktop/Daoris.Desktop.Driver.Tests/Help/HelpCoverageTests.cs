@@ -790,6 +790,10 @@ public sealed partial class HelpCoverageTests
         ("work", "useGitTryAgain", null, new Exempt(
             "it lifts Daoris's own hold on git remotes that could not authenticate, so their next fetch tries once (the git-auth design "
             + "§5.2): the person's word that something changed on the host, which no proposal could know, and it widens nothing.")),
+        // GITAUTH1e (§7.4): *Mark read only on the host* on a held remote's row whose push the host refused.
+        ("work", "useGitIdentity", null, new Exempt(
+            "it marks the git identity a host refused a push with read only, the person's word on what the host lets that identity do; an "
+            + "identity's life is the person's own, and Ask Daoris never changes one (D198, the design §9).")),
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),

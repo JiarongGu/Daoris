@@ -608,28 +608,58 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // A git remote that cannot authenticate, held (GITAUTH1a,the git-auth design §5.2 and §7.4): one row per held group, its host,
-        // class and what it holds in a workspace, the repositories in it named on the row. Said once here; a session's and a press's
-        // words name this row rather than repeat it. Its one act, Try again, is on the row. It holds no work yet: a session goes on
-        // from the line it has, and the landing's push is its plugin's.
-        foreach (var group in facts.Git
+        // A git remote that cannot authenticate, held (GITAUTH1a, the git-auth design §5.2 and §7.4): one row per held group, its host,
+        // class, what it holds and the identity that serves it in a workspace, the repositories in it named on the row. Said once here; a
+        // session's and a press's words name this row rather than repeat it. Its acts are its class's (§7.4), Try again among them.
+        // The move (GITAUTH1e, §6.8): every remote nothing serves in a workspace is one row, whatever its host, its repositories counted
+        // and those whose own configuration names authentication listed apart. Either holds work where a session of one of its
+        // repositories runs or waits on the person.
+        var moved = facts.Git.Where(held => Text(held, "class") == "no-identity").ToList();
+        foreach (var group in moved.GroupBy(held => Text(held, "workspace") ?? "default").OrderBy(group => group.Key, StringComparer.Ordinal))
+        {
+            var held = group.OrderBy(each => Text(each, "since"), StringComparer.Ordinal).ToList();
+            var row = Row("git-held", $"{group.Key}|no-identity", Text(held[0], "since"), group.Key);
+            var own = facts.Git.Where(each => Text(each, "class") == "own-input" && (Text(each, "workspace") ?? "default") == group.Key).ToList();
+            row["git"] = new JsonObject
+            {
+                ["host"] = Text(held[0], "host"),
+                ["hosts"] = Names(held.Select(each => Text(each, "host"))),
+                ["class"] = "no-identity",
+                ["holds"] = GitHolds.All,
+                ["remote"] = Text(held[0], "remote"),
+                ["repositories"] = Names(held.Select(each => Text(each, "repository"))),
+                ["ownInput"] = Names(own.Select(each => Text(each, "repository"))),
+                ["words"] = "",
+            };
+            if (GitWorkWaits(facts, group.Key, held)) row["stands"] = true;
+            rows.Add(row);
+        }
+
+        foreach (var group in facts.Git.Except(moved)
             .GroupBy(held => (Workspace: Text(held, "workspace") ?? "default", Host: Text(held, "host") ?? "", Class: Text(held, "class") ?? "",
-                Holds: Text(held, "holds") ?? ""))
+                Holds: Text(held, "holds") ?? "", Identity: Text(held, "identityId")))
             .OrderBy(group => group.Key.Workspace, StringComparer.Ordinal).ThenBy(group => group.Key.Host, StringComparer.Ordinal))
         {
             var held = group.OrderBy(each => Text(each, "since"), StringComparer.Ordinal).ToList();
             var key = group.Key;
-            var row = Row("git-held", $"{key.Workspace}|{key.Host}|{key.Class}|{key.Holds}", Text(held[0], "since"), key.Workspace);
-            row["git"] = new JsonObject
+            var id = $"{key.Workspace}|{key.Host}|{key.Class}|{key.Holds}" + (key.Identity is null ? "" : $"|{key.Identity}");
+            var row = Row("git-held", id, Text(held[0], "since"), key.Workspace);
+            var git = new JsonObject
             {
                 ["host"] = key.Host,
                 ["class"] = key.Class,
                 ["holds"] = key.Holds,
                 ["remote"] = Text(held[0], "remote"),
-                ["repositories"] = new JsonArray([.. held.Select(each => Text(each, "repository")).Distinct(StringComparer.OrdinalIgnoreCase)
-                    .Order(StringComparer.OrdinalIgnoreCase).Select(name => (JsonNode?)JsonValue.Create(name))]),
+                ["repositories"] = Names(held.Select(each => Text(each, "repository"))),
                 ["words"] = Text(held[0], "words"),
             };
+            foreach (var field in (string[])["way", "served", "identity", "identityId", "keyPage"])
+            {
+                if (Text(held[0], field) is { } value) git[field] = value;
+            }
+
+            row["git"] = git;
+            if (GitWorkWaits(facts, key.Workspace, held)) row["stands"] = true;
             rows.Add(row);
         }
 
@@ -924,6 +954,23 @@ public static class NeedsAPerson
     private static IEnumerable<JsonObject> Objects(JsonNode? node) => node is JsonArray items ? items.OfType<JsonObject>() : [];
 
     private static JsonArray Strings(IEnumerable<string?> values) => new([.. values.Select(value => (JsonNode?)value)]);
+
+    /// <summary>Names said once each, in the order a person reads them, none empty.</summary>
+    private static JsonArray Names(IEnumerable<string?> values) =>
+        Strings(values.OfType<string>().Where(name => name.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Whether a held git group holds work (GITAUTH1e, the git-auth design §6.8): a session of one of its repositories in its workspace
+    /// runs a turn or waits on the person, so its next remote act waits on this row.
+    /// </summary>
+    private static bool GitWorkWaits(AttentionFacts facts, string workspace, IReadOnlyList<JsonObject> held)
+    {
+        var repositories = held.Select(each => Text(each, "repository")).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return facts.Sessions.Any(session =>
+            Text(session, "repository") is { } repository && repositories.Contains(repository)
+            && (Text(session, "workspace") ?? "default") == workspace
+            && (TurnRuns.Contains(Text(session, "state") ?? "") || SessionStates.IsParked(Text(session, "state"))));
+    }
 
     private static string? Text(JsonObject? record, string field) =>
         record?[field] is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;

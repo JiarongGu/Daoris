@@ -116,7 +116,7 @@ const everyAct = (): Required<AttentionActs> => ({
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
   opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
-  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(), gitSetUp: vi.fn(), quiet: vi.fn(), passOver: vi.fn(),
+  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(), gitSetUp: vi.fn(), gitChoose: vi.fn(), gitKeyPage: vi.fn(), gitReadOnly: vi.fn(), quiet: vi.fn(), passOver: vi.fn(),
 });
 
 describe('a row in what needs you', () => {

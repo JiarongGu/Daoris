@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import i18n from '../../locales/i18n';
 import { elapsed, size } from '../../locales/format';
 import type { Ask, GoAhead, Quest, SetUpRef, Session } from '../../data/api';
@@ -115,7 +116,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
  * row is counted in the group it is listed in.
  */
 export function attentionGroup(row: { kind: AttentionKind; stands?: boolean; stale?: StaleSince | null }): AttentionGroup {
-  if ((row.kind === 'hand-over' || row.kind === 'integration') && row.stands) return 'holding';
+  // GITAUTH1e (§6.8): a held git remote holds work where a session of one of its repositories runs or waits on the person.
+  if ((row.kind === 'hand-over' || row.kind === 'integration' || row.kind === 'git-held') && row.stands) return 'holding';
   if (row.kind === 'go-ahead' && row.stale) return 'word';
   return ATTENTION_GROUP[row.kind] ?? 'word';
 }
@@ -298,6 +300,9 @@ export type AttentionActId =
   | 'git-try-again'
   // GITAUTH1e: a remote nothing serves, led to Settings → Git to set an identity up or to keep the person's own sign-ins.
   | 'git-set-up' | 'git-keep-own'
+  // GITAUTH1e (§7.4): what mends a held remote by its class: Settings → Git on its host (the key to copy, a sign-in again, a host to
+  // compare and trust, the person's own sign-ins), the host's key page, the repository's git remote row, and the identity marked read only.
+  | 'git-copy-key' | 'git-key-page' | 'git-sign-in' | 'git-open' | 'git-compare' | 'git-choose' | 'git-use-own' | 'git-read-only'
   // SESSWATCH1a: a quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
   | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave'
   // INTEGRATE1o part o3: the run's own skip of its `work.requests` node, with the person's words.
@@ -443,8 +448,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'signed-out': return accountOffers(item);
     // A held git remote (GITAUTH1a, the git auth design §5.2): *Try again*, one press, which lifts its holds and connects nothing itself.
     // GITAUTH1e (§6.8): a remote nothing serves once the home has moved is set up in Settings → Git, or kept on the person's own sign-ins
-    // there, confirmed in place; *Try again* would change nothing until one of them is done.
-    case 'git-held': return !item.git ? [] : item.git.class === 'no-identity' ? plain('git-set-up', 'git-keep-own') : plain('git-try-again');
+    // there, confirmed in place; *Try again* would change nothing until one of them is done. Every other class offers what mends it
+    // (§7.4), then *Try again*.
+    case 'git-held': return item.git ? plain(...gitHeldOffers(item.git)) : [];
     // SESSWATCH1a (the session-watch design §2.3, §5.2): *End and carry on* for a quiet quest session alone, never a busy one; *Hand
     // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
     case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];
@@ -637,17 +643,28 @@ export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-
 
 /**
  * The detail's key for a held group: an `own-input` hold is lifted by removing the repository's setting, not by a retry, and git said
- * nothing, since nothing failed (GITAUTH1b).
+ * nothing, since nothing failed (GITAUTH1b); one that names a setting says its name (GITAUTH1d's certificate hold).
  */
-export function gitHeldDetailKey(held: Pick<GitHeld, 'class'>): string {
-  return held.class === 'own-input' ? 'work.attention.gitHeld.detailOwnInput'
-    : held.class === 'no-identity' ? 'work.attention.gitHeld.detailNoIdentity' : 'work.attention.gitHeld.detail';
+function gitHeldDetailKey(held: Pick<GitHeld, 'class' | 'words'>): string {
+  if (held.class === 'own-input') return ownSetting(held) ? 'work.attention.gitHeld.detailOwnSetting' : 'work.attention.gitHeld.detailOwnInput';
+  return 'work.attention.gitHeld.detail';
 }
 
 /**
+ * The setting an `own-input` hold names (GITAUTH1d's certificate hold, REVIEW2's scoped header or cookie file): its words are the
+ * setting's name (`http.sslCert`, `http.<url>.extraHeader`), never its value; an ssh command's hold says none.
+ */
+const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === 'own-input' && held.words?.startsWith('http.') ? held.words : null);
+
+/** What serves a held group's remote now, as the doors resolve it (GITAUTH1e, §7.4): an identity, the person's own sign-ins, or nothing. */
+export type GitServed = 'identity' | 'own' | 'none';
+
+/**
  * A held group of git remotes (GITAUTH1a, D198; the git auth design §5.2): the host, why, what it holds (reads and writes, or writes
- * alone), the remote, the repositories held in this group, and git's or ssh's own last line, already redacted. The host, the remote,
- * the repositories and git's words are content, shown as written.
+ * alone), the remote, the repositories held in this group, and git's or ssh's own last line, already redacted. GITAUTH1e (§7.4): its
+ * way and what serves it, the identity by label and id where one does; the move's row (`no-identity`) names every host it covers and
+ * the repositories whose own configuration names authentication. The host, the remote, the repositories, the label and git's words
+ * are content, shown as written.
  */
 export type GitHeld = {
   host: string;
@@ -656,6 +673,14 @@ export type GitHeld = {
   remote: string;
   repositories: string[];
   words: string;
+  way?: 'ssh' | 'https' | null;
+  served?: GitServed | null;
+  identity?: string | null;
+  identityId?: string | null;
+  /** The host's own page for SSH keys, where Daoris knows it (github.com, gitlab.com, Azure DevOps). */
+  keyPage?: string | null;
+  hosts?: readonly string[] | null;
+  ownInput?: readonly string[] | null;
 };
 
 /**
@@ -1099,11 +1124,60 @@ function spaceWorded(low: NonNullable<PushedAttention['space']>): Pick<Attention
  * it holds, that Daoris does not try it again until *Try again* or a change, and git's own last line. The host, the repositories and git's
  * words are content.
  */
-function gitHeldWorded(held: GitHeld): Pick<Attention, 'title' | 'detail'> {
+export function gitHeldWorded(held: GitHeld, t: TFunction = i18n.t.bind(i18n)): Pick<Attention, 'title' | 'detail'> {
+  const repositories = held.repositories ?? [];
+  // The move (§6.8): one row for every remote nothing serves, counted, its hosts named, and the repositories whose own configuration
+  // names authentication listed apart.
+  if (held.class === 'no-identity') {
+    const hosts = (held.hosts?.length ? held.hosts : [held.host]).join(', ');
+    const own = held.ownInput ?? [];
+    return {
+      title: t('settings.git.moved.title'),
+      detail: [
+        t('settings.git.moved.says', { count: repositories.length, hosts }),
+        t('settings.git.moved.repositories', { repositories: repositories.join(', ') }),
+        ...(own.length ? [t('settings.git.moved.own', { repositories: own.join(', ') })] : []),
+      ].join(' '),
+    };
+  }
+  const setting = ownSetting(held);
+  const identity = held.served === 'identity' && held.identity ? held.identity : null;
+  // §7.4's titles: a refusal names the identity the host refused, a push refused the identity it let read, a host's key the identity's
+  // or the person's own ssh; an own-input hold that names a setting names the repository's own authentication.
+  const title = setting ? t('work.attention.gitHeld.title.own-setting', { host: held.host, repository: repositories[0] ?? '' })
+    : identity && (held.class === 'refused' || held.class === 'write-refused')
+      ? t(`work.attention.gitHeld.titleOf.${held.class}`, { host: held.host, identity, remote: held.remote })
+      : held.served === 'own' && (held.class === 'host-unknown' || held.class === 'host-changed')
+        ? t(`work.attention.gitHeld.titleOwn.${held.class}`, { host: held.host })
+        : t(`work.attention.gitHeld.title.${held.class}`, { host: held.host });
   return {
-    title: i18n.t(`work.attention.gitHeld.title.${held.class}`, { host: held.host }),
-    detail: i18n.t(gitHeldDetailKey(held), { repositories: (held.repositories ?? []).join(', '), words: held.words ?? '' }),
+    title,
+    detail: t(gitHeldDetailKey(held), { repositories: repositories.join(', '), words: held.words ?? '', setting: setting ?? '', host: held.host }),
   };
+}
+
+/**
+ * What mends a held group, by its class and what serves it (GITAUTH1e, the git auth design §7.4), then *Try again*: a refusal of an SSH
+ * identity its public key and its host's key page, of an HTTPS one a sign-in again, under the person's own sign-ins Settings → Git; a
+ * push refused another identity or the identity marked read only; an own-input hold the person's own sign-ins for it; a host's key under
+ * an identity its comparison and trust. The move's row is §6.8's two presses alone.
+ */
+export function gitHeldOffers(held: GitHeld): AttentionActId[] {
+  if (held.class === 'no-identity') return ['git-set-up', 'git-keep-own'];
+  const identity = held.served === 'identity' && held.identityId ? held.identityId : null;
+  const mends: AttentionActId[] = [];
+  if (held.class === 'refused') {
+    if (identity && held.way === 'https') mends.push('git-sign-in');
+    else if (identity) mends.push('git-copy-key', ...(held.keyPage ? ['git-key-page' as const] : []));
+    else if (held.served === 'own') mends.push('git-open');
+  } else if (held.class === 'write-refused') {
+    mends.push('git-choose', ...(identity ? ['git-read-only' as const] : []));
+  } else if (held.class === 'own-input') {
+    mends.push('git-use-own');
+  } else if ((held.class === 'host-unknown' || held.class === 'host-changed') && identity) {
+    mends.push('git-compare');
+  }
+  return [...mends, 'git-try-again'];
 }
 
 /**

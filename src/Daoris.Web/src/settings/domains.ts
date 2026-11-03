@@ -27,6 +27,9 @@ export type SettingsDomainProps = {
   drivers: readonly BrowserDriver[];
   /** Open a session in Sessions — only a shell has it. */
   onAttend?: (session: string) => void;
+  /** The host a door named (GITAUTH1e): Settings → Git opens its add form filled with it, and is told when that form closes. */
+  host?: string;
+  onClosed?: () => void;
 };
 
 type SettingsDomain = {

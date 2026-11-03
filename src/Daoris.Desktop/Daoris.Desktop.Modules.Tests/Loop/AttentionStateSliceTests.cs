@@ -1958,6 +1958,48 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Git = [] }));
     }
 
+    /// <summary>
+    /// GITAUTH1e (the git-auth design §6.8, §7.4): a refusal names the identity that serves its group, and a group served by another is a
+    /// row of its own; the move is one row for a workspace however many hosts its remotes nothing serves are on, naming each host and the
+    /// repositories, listing apart those whose own configuration names authentication; a row holds work where a session of one of its
+    /// repositories runs or waits on the person, and none where every one has ended.
+    /// </summary>
+    [Fact]
+    public void A_refusal_names_its_identity_and_the_move_is_one_row_holding_work_where_a_session_waits()
+    {
+        var rows = Rows(new()
+        {
+            Git =
+            [
+                GitHeld("""{"served":"identity","identity":"Work","identityId":"gi-000000000001","way":"ssh"}"""),
+                GitHeld("""{"repository":"tools","served":"identity","identity":"Org","identityId":"gi-000000000002","way":"ssh"}"""),
+                GitHeld("""{"repository":"site","class":"no-identity","host":"github.com","served":"none","way":"https","words":"","since":"2026-10-22T09:01:00Z"}"""),
+                GitHeld("""{"repository":"web","class":"no-identity","host":"gitlab.com","served":"none","way":"ssh","words":"","since":"2026-10-22T09:02:00Z"}"""),
+                GitHeld("""{"repository":"lib","class":"own-input","host":"github.com","served":"none","way":"ssh","words":""}"""),
+            ],
+            Sessions =
+            [
+                JsonNode.Parse("""{"id":"s1","repository":"web","workspace":"aurora","state":"working"}""")!.AsObject(),
+                JsonNode.Parse("""{"id":"s2","repository":"engine","workspace":"aurora","state":"landed"}""")!.AsObject(),
+            ],
+        });
+
+        var refused = rows.Where(row => row["git"]?["class"]?.GetValue<string>() == "refused").ToList();
+        Assert.Equal(2, refused.Count);
+        var work = refused.Single(row => row["git"]!["identityId"]!.GetValue<string>() == "gi-000000000001");
+        Assert.Equal("Work", work["git"]!["identity"]!.GetValue<string>());
+        Assert.Equal(["engine"], work["git"]!["repositories"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Null(work["stands"]);
+
+        var moved = Assert.Single(rows, row => row["git"]?["class"]?.GetValue<string>() == "no-identity");
+        Assert.Equal("aurora|no-identity", moved["id"]!.GetValue<string>());
+        Assert.Equal("2026-10-22T09:01:00Z", moved["since"]!.GetValue<string>());
+        Assert.Equal(["github.com", "gitlab.com"], moved["git"]!["hosts"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Equal(["site", "web"], moved["git"]!["repositories"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Equal(["lib"], moved["git"]!["ownInput"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.True(moved["stands"]!.GetValue<bool>());
+    }
+
     /// <summary>GITAUTH1a: the slice reads the home's holds with no machine path, and hears a hold kept or lifted.</summary>
     [Fact]
     public void The_slice_reads_the_homes_holds_and_hears_them_move()

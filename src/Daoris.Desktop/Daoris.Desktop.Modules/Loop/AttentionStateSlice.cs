@@ -120,8 +120,9 @@ public static class AttentionStateSlice
         ["space"] = ["root", "free", "total", "floor", "freed", "could"],
         // ONEWAY1ae: the old records every part's kept census holds, and their count by part.
         ["convert"] = ["records", "parts"],
-        // GITAUTH1a: a held group of git remotes that cannot authenticate.
-        ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
+        // GITAUTH1a: a held group of git remotes that cannot authenticate. GITAUTH1e: its way and what serves it (§7.4); the move's row
+        // (`no-identity`) names every host and lists apart the repositories whose own configuration names authentication.
+        ["git"] = ["host", "class", "holds", "remote", "repositories", "words", "way", "served", "identity", "identityId", "keyPage", "hosts", "ownInput"],
         // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
         // INTEGRATE1o part o3: a run held at a declined request, its node and the quest declined.
@@ -564,21 +565,40 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// Each remote the home holds since it could not authenticate (GITAUTH1a, the git-auth design §5.2), oldest first: its repository,
-    /// workspace, remote, host, class, what it holds, what the transport said (redacted when it was kept) and since when. No machine path:
-    /// the checkout it is keyed by stays in the file.
+    /// workspace, remote, host, class, what it holds, what the transport said (redacted when it was kept) and since when; its way, and what
+    /// serves it now as the doors resolve it (GITAUTH1e, §7.4: the identity a refusal names, or <c>own</c>). No machine path: the checkout
+    /// it is keyed by stays in the file.
     /// </summary>
-    public static IReadOnlyList<object> GitWaits(string home) =>
-    [
-        .. GitHolds.Read(home)
-            .OrderBy(each => each.Since).ThenBy(each => each.Repository, StringComparer.Ordinal)
-            .Select(each => (object)new
-            {
-                each.Repository,
-                Workspace = each.Workspace ?? RemoteTarget.DefaultWorkspace,
-                each.Remote, each.Host, each.Class, each.Holds, each.Words,
-                Since = Moments.Write(each.Since),
-            }),
-    ];
+    public static IReadOnlyList<object> GitWaits(string home)
+    {
+        var holds = GitHolds.Read(home);
+        if (holds.Count == 0) return [];
+        var identities = GitIdentities.Read(home);
+        var pointers = GitIdentityUse.Read(home);
+        return
+        [
+            .. holds
+                .OrderBy(each => each.Since).ThenBy(each => each.Repository, StringComparer.Ordinal)
+                .Select(each =>
+                {
+                    var way = each.Address.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? GitIdentity.Https : GitIdentity.Ssh;
+                    var workspace = each.Workspace ?? RemoteTarget.DefaultWorkspace;
+                    var serves = each.Host is { Length: > 0 } host
+                        ? GitIdentityUse.Resolve(identities, pointers, each.Repository, workspace, [each.Remote], GitHosts.Canonical(host), way)
+                        : GitServes.Nothing([]);
+                    return (object)new
+                    {
+                        each.Repository, Workspace = workspace, each.Remote, each.Host, each.Class, each.Holds, each.Words,
+                        Since = Moments.Write(each.Since),
+                        Way = way,
+                        Served = serves.Kind switch { GitServeKind.Identity => "identity", GitServeKind.Own => GitIdentityUse.Own, _ => "none" },
+                        Identity = serves.Identity?.Label,
+                        IdentityId = serves.Identity?.Id,
+                        KeyPage = serves.Identity is { Way: GitIdentity.Ssh } ssh && GitHosts.Known.TryGetValue(ssh.Host, out var known) ? known.KeyPage : null,
+                    };
+                }),
+        ];
+    }
 
     /// <summary>
     /// The integration's waits on the owner (INTEGRATE1h; the integration design §5.8, §17.4), oldest first by kind: each standing candidate

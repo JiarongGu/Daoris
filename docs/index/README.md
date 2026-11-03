@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (388)
+## Files over 40 KB (389)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -38,7 +38,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 42 | 730 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 98 | 1678 |
+| `src/Daoris.Web/src/app/App.tsx` | 99 | 1693 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 69 | 1463 |
 | `src/Daoris.Web/src/bridge/driver.ts` | 44 | 801 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
@@ -66,10 +66,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 952 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 54 | 879 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 47 | 900 |
-| `src/Daoris.Web/src/work/attention/AttentionRow.tsx` | 43 | 736 |
-| `src/Daoris.Web/src/work/attention/attention.stories.tsx` | 45 | 1009 |
-| `src/Daoris.Web/src/work/attention/attention.test.ts` | 84 | 1385 |
-| `src/Daoris.Web/src/work/attention/attention.ts` | 64 | 1168 |
+| `src/Daoris.Web/src/work/attention/AttentionRow.tsx` | 44 | 766 |
+| `src/Daoris.Web/src/work/attention/attention.stories.tsx` | 46 | 1011 |
+| `src/Daoris.Web/src/work/attention/attention.test.ts` | 87 | 1426 |
+| `src/Daoris.Web/src/work/attention/attention.ts` | 69 | 1242 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 77 | 1440 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 45 | 915 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 75 | 1391 |
@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs` | 59 | 819 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs` | 44 | 828 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 156 | 2361 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 157 | 2365 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 57 | 833 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs` | 41 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
@@ -251,7 +251,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleLinesTests.cs` | 50 | 821 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 73 | 1223 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleWorkflowRunTests.cs` | 42 | 636 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 126 | 2179 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 129 | 2221 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 44 | 825 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs` | 85 | 1568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 49 | 915 |
@@ -265,8 +265,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 78 | 1222 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 78 | 1250 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/WorkflowRoutes.cs` | 46 | 750 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/AttentionStateSlice.cs` | 41 | 746 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 99 | 1691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 58 | 943 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 61 | 990 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 71 | 1340 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1995 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 43 | 581 |

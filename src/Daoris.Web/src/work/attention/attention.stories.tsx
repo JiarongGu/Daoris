@@ -5,7 +5,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese, readerIn } from '../../design/storyLanguage';
 import { AnsweredPark } from '../waits/AnsweredPark';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
-import { gitHeldDetailKey } from './attention';
+import { gitHeldWorded } from './attention';
 import { AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
 import { AwaitingIntake } from '../waits/AwaitingIntake';
 import { RunningIntake } from '../head/RunningIntake';
@@ -33,6 +33,9 @@ const ACTS: Required<AttentionActs> = {
   handOver: () => {},
   gitTryAgain: () => {},
   gitSetUp: () => {},
+  gitChoose: () => {},
+  gitKeyPage: () => {},
+  gitReadOnly: () => {},
   quiet: () => {},
   passOver: () => {},
 };
@@ -626,27 +629,26 @@ export const AccountRowsNarrowChinese: StoryObj = {
  * each worded by the reader's language from its host, its repositories and git's own last line, which stay as written; *Try again* its
  * one act. A host key changed since ssh trusted it wears danger's ink.
  */
+const WORK_SSH = { way: 'ssh', served: 'identity', identity: 'Work', identityId: 'gi-000000000001', keyPage: 'https://github.com/settings/keys' } as const;
 const GIT_HELD: Attention[] = ([
-  ['refused', 'github.com', ['engine', 'game'], 'git@github.com: Permission denied (publickey).'],
-  ['write-refused', 'dev.azure.com', ['reports'], "remote: TF401027: You need the Git 'GenericContribute' permission to perform this action."],
-  ['host-unknown', 'git.example.org', ['tools'], 'Host key verification failed.'],
-  ['host-changed', 'gitlab.com', ['engine', 'game', 'tools'], 'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!'],
-  ['own-input', 'ssh.dev.azure.com', ['site'], ''],
-  ['no-identity', 'github.com', ['engine', 'tools'], ''],
-] as const).map(([held, host, repositories, words], index): Attention => ({
-  id: `default|${host}|${held}|all`, kind: 'git-held', where: 'origin', since: at(15 + index * 20), workspace: 'default',
-  title: '', git: { host, class: held, holds: held === 'write-refused' ? 'writes' : 'all', remote: 'origin', repositories: [...repositories], words },
+  ['refused', 'github.com', ['engine', 'game'], 'git@github.com: Permission denied (publickey).', WORK_SSH],
+  ['refused', 'github.com', ['site'], 'remote: Invalid username or token.', { ...WORK_SSH, way: 'https', identity: 'Personal', identityId: 'gi-000000000002', keyPage: null }],
+  ['write-refused', 'dev.azure.com', ['reports'], "remote: TF401027: You need the Git 'GenericContribute' permission to perform this action.", { ...WORK_SSH, identity: 'Org A deploy', keyPage: null }],
+  ['host-unknown', 'git.example.org', ['tools'], 'Host key verification failed.', { served: 'own' }],
+  ['host-changed', 'gitlab.com', ['engine', 'game', 'tools'], 'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!', WORK_SSH],
+  ['own-input', 'ssh.dev.azure.com', ['site'], '', {}],
+  ['own-input', 'github.com', ['engine'], 'http.sslCert', {}],
+  ['no-identity', 'github.com', ['engine', 'tools'], '', { hosts: ['github.com', 'gitlab.com'], ownInput: ['site'] }],
+] as const).map(([held, host, repositories, words, served], index): Attention => ({
+  id: `default|${host}|${held}|${index}`, kind: 'git-held', where: 'origin', since: at(15 + index * 20), workspace: 'default',
+  title: '',
+  git: { host, class: held, holds: held === 'write-refused' ? 'writes' : 'all', remote: 'origin', repositories: [...repositories], words, ...served },
 }));
 
 /** The held git remotes, each worded by a reader of `language`, as `attentionWorded` words them. */
 function gitHeldRows(language: 'en' | 'zh'): Attention[] {
   const reader = readerIn(language);
-  const t = reader.t.bind(reader);
-  return GIT_HELD.map((item) => ({
-    ...item,
-    title: t(`work.attention.gitHeld.title.${item.git!.class}`, { host: item.git!.host }),
-    detail: t(gitHeldDetailKey(item.git!), { repositories: item.git!.repositories.join(', '), words: item.git!.words }),
-  }));
+  return GIT_HELD.map((item) => ({ ...item, ...gitHeldWorded(item.git!, reader.t.bind(reader)) }));
 }
 
 export const GitHeldRows: StoryObj = {
