@@ -656,6 +656,57 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.Equal(SupervisorWhy.Answered, (await restarted.KeepAsync(Answer(), Park(), Kept.AddMinutes(2))).Why);
     }
 
+    /// <summary>
+    /// CONTEXTDRIVE1i (the context-counters design §5): a reason may cite a count the holder was handed; one naming none of the counts the
+    /// keeping read, or cited where none were read, is refused <c>no-source</c> for an answer and a defer, keeping nothing.
+    /// </summary>
+    [Fact]
+    public async Task CONTEXTDRIVE1i_a_count_source_handed_is_kept_and_one_not_handed_is_refused_at_the_keeping()
+    {
+        var handed = Park() with { Counts = CountTextsTests.Handed };
+        var refused = Decisions();
+        var cases = new (SupervisedPark Park, string Source)[]
+        {
+            (handed, "count:answers-alone=3 (exact)"),
+            (handed, "count:tries=1 (exact)"),
+            (Park(), "count:answers-alone=2 (exact)"),
+        };
+        foreach (var (park, source) in cases)
+        {
+            var kept = await refused.KeepAsync(Answer(source: source), park, Kept);
+            var left = await refused.LeaveAsync(Defer(source: source), park, Kept);
+            Assert.Equal((false, SupervisorWhy.NoSource, false, SupervisorWhy.NoSource), (kept.Kept, kept.Why, left.Kept, left.Why));
+        }
+
+        Assert.Empty(refused.LiveOf(Session));
+        Assert.False(Directory.Exists(Folder));
+        Assert.True((await Decisions().KeepAsync(Answer(source: "count:answers-alone=2 (exact)"), handed, Kept)).Kept);
+        Assert.True((await Decisions().LeaveAsync(Defer(source: "count:moves (unknown)"), handed, Kept)).Kept);
+    }
+
+    /// <summary>CONTEXTDRIVE1i (§5): the decision keeps the counts its holder was handed beside the question's snapshot, written once.</summary>
+    [Fact]
+    public async Task CONTEXTDRIVE1i_the_decision_keeps_the_counts_it_was_handed()
+    {
+        var kept = await Decisions().KeepAsync(Answer(source: "count:failures=1 (exact)"), Park() with { Counts = CountTextsTests.Handed }, Kept);
+        using var written = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(Folder, kept.Decision + ".json")));
+
+        Assert.Equal(
+            [
+                "answers-alone|2|exact||admission",
+                "failures|1|exact||records",
+                "quiet|0|at-least|walk-cut|ended.quiet",
+                "moves||unknown|store-unreadable|role_moves",
+            ],
+            written.RootElement.GetProperty("counts").EnumerateArray().Select(count =>
+                $"{count.GetProperty("count").GetString()}|{(count.TryGetProperty("n", out var n) ? n.GetInt32().ToString() : "")}|"
+                + $"{count.GetProperty("known").GetString()}|{(count.TryGetProperty("why", out var why) ? why.GetString() : "")}|{count.GetProperty("from").GetString()}"));
+
+        // A park with no counts read keeps none: an older reader of the file finds it as before.
+        var none = await Decisions().LeaveAsync(Defer(), Park(), Kept);
+        Assert.DoesNotContain("\"counts\"", File.ReadAllText(Path.Combine(Folder, none.Decision + ".json")), StringComparison.Ordinal);
+    }
+
     /// <summary>The handed text's twin: the driver hands exactly the service's paragraph, which grants nothing.</summary>
     [Fact]
     public void The_handed_text_is_the_services_twin_and_grants_nothing()

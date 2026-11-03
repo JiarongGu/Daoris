@@ -363,6 +363,11 @@ export interface Lock {
   /** Stamped by the writer, so a caller hands over entries and provenance without inventing it. */
   version?: number;
   canonVersion: string;
+  /**
+   * The digest of the canon `sync` wrote from (`canonDigest`), which tells two canons of one version apart. Absent in a
+   * lock written before it, which reads as not known.
+   */
+  canonDigest?: string;
   source: string;
   entries: LockEntry[];
   /**

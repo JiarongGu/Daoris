@@ -3143,6 +3143,9 @@ public sealed class Driver(
                     service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
             if (prior is not null && continues is not null && brief is not null) SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
+            // CONTEXTDRIVE1b (§3 point 2): a start with no brief carries its line's course where any count is not zero, a quest that failed here
+            // before among them; a carry-on's brief carries it among its own.
+            var course = brief is null ? ContextBrief.Counted((await LineCountsRead.FactsAsync(service, home, sessionId, ct).ConfigureAwait(false)).Counts) : null;
             var elsewhere = prior is not null && AccountIdentity.OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -3285,6 +3288,7 @@ public sealed class Driver(
                 BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
                 Brief = brief,
+                Course = course,
                 // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim; the brief carries it.
                 HandedNote = handedNote,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
@@ -3669,16 +3673,7 @@ public sealed class Driver(
     {
         target = TargetPrompt.ForStart(target, adapter);
         var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(Variable) }, config.Commands.GetValueOrDefault(adapter.Name));
-
-        // The environment seam every harness already carries for exactly this (D49 §4). Applied
-        // by the driver rather than inside the adapter's Prepare, so one line governs both doors
-        // and no adapter can forget it.
-        if (adapter.Toolchain is { } toolchain)
-        {
-            HarnessProbe.Apply(
-                info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
-                selection.Environment);
-        }
+        Equip(adapter, info, selection);
 
         // What daoris writes into a dsh home it owns (ACP3): the two rows that send session
         // material off this machine, off — and its own skills reachable. Only where daoris made
@@ -3698,6 +3693,25 @@ public sealed class Driver(
         }
 
         return (info, harnessNotice);
+    }
+
+    /// <summary>
+    /// What every session's process carries on its environment, a driven one's and a conversation's alike: its toolchain's account,
+    /// binary and pin (D49 §4), then its tools at the start by the adapter's own switch (HELP5; CONTEXTONE1d, D230 point 3), so its
+    /// connector's tools come with its first request rather than behind a search step. Applied by the driver rather than inside each
+    /// adapter's spawn, so one line governs every door and kind and no adapter can forget it; the switch is set last, so an account's
+    /// own variables cannot defer the tools again.
+    /// </summary>
+    internal static void Equip(ISessionAdapter adapter, ProcessStartInfo info, HarnessSelection selection)
+    {
+        if (adapter.Toolchain is { } toolchain)
+        {
+            HarnessProbe.Apply(
+                info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
+                selection.Environment);
+        }
+
+        foreach (var (name, value) in adapter.ToolsUpFront) info.Environment[name] = value;
     }
 
     /// <inheritdoc cref="DownloadKeeping.KeepHandedAsync"/>

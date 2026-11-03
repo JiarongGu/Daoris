@@ -499,6 +499,11 @@
       "row": "1q",
       "note": "the ledger's own guards by the marks (what a helper, a reviewer or an intake may open or be moved to) and Ask Daoris's one-running rule; the start layer's (§2.3)"
     },
+    "Core/Sessions/SolicitedAnswers.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "the one door for solicited answers (COMMS1b) refuses an answer to an intake, a second opinion or a helper by the head's marks, the desks' guard taken in (§2.3)"
+    },
     "Core/Sessions/Sessions.cs": {
       "reads": "other",
       "note": "writes the marks at the open and reads Ask Daoris's mode for its default; it tells no work"

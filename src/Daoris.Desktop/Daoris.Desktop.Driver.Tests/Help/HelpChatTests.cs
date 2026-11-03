@@ -201,39 +201,19 @@ public sealed class HelpChatTests : IDisposable
     }
 
     /// <summary>
-    /// HELP5: Claude Code defers every MCP tool behind a search step unless its environment says otherwise,
-    /// so the helper paid a model round trip to find its own tools. The switch is the adapter's to name,
-    /// since it is a fact about that harness; both Claude Code doors name it, and nothing else does.
-    /// </summary>
-    [Theory]
-    [InlineData("claude-code", true)]
-    [InlineData("claude-code-acp", true)]
-    [InlineData("stub", false)]
-    [InlineData("acp-stub", false)]
-    [InlineData("dsh", false)]
-    [InlineData("codex-acp", false)]
-    public void Only_the_claude_code_doors_say_how_their_tools_load_up_front(string adapter, bool says)
-    {
-        var upFront = AdapterSet.Built().Resolve(adapter).ToolsUpFront;
-
-        if (says) Assert.Equal(new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" }, upFront);
-        else Assert.Empty(upFront);
-    }
-
-    /// <summary>
-    /// HELP5: the help room's spawn carries the adapter's switch on both doors, so its knowledge tools come
-    /// with the first request. A repository's conversation keeps the harness's own default, and an adapter
-    /// that declares no switch has nothing added.
+    /// HELP5, then CONTEXTONE1d (D230 point 3): a conversation's spawn carries the adapter's switch on both doors, Ask Daoris's and a
+    /// repository's alike, so its connector's tools come with the first request. An adapter that declares no switch has nothing added.
+    /// Which doors declare it is <see cref="ToolsAtTheStartTests"/>' census.
     /// </summary>
     /// <remarks>The harness behind each door is a script that writes down what its environment said.</remarks>
     [Theory]
     [InlineData("claude-code", true, true)]
     [InlineData("claude-code-acp", true, true)]
-    [InlineData("claude-code", false, false)]
-    [InlineData("claude-code-acp", false, false)]
+    [InlineData("claude-code", false, true)]
+    [InlineData("claude-code-acp", false, true)]
     [InlineData("stub", true, false)]
     [InlineData("acp-stub", true, false)]
-    public async Task Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how(
+    public async Task Every_conversation_loads_its_tools_up_front_where_the_harness_says_how(
         string adapter, bool help, bool upFront)
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));

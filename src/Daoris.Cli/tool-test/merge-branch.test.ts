@@ -4513,7 +4513,7 @@ test('NODEALONE1: a test is named for node by its own title, anchored, with ever
   const fx = makeFixture('merge-branch-node-pattern');
   fx.write('n.test.mjs', "import { test, describe } from 'node:test';\ndescribe('outer', () => {\n  test('inner one; a+b', () => { console.log('RAN one'); });\n  test('inner two', () => { console.log('RAN two'); });\n});\ntest('top', () => { console.log('RAN top'); });\n");
   const { NODE_TEST_CONTEXT: _inherited, ...env } = process.env;
-  const ran = spawnSync(tool.nodeTestRerunCommand('n.test.mjs', 'inner one; a+b'), { cwd: fx.root, shell: true, encoding: 'utf8', env });
+  const ran = spawnSync(tool.nodeTestRerunCommand('n.test.mjs', 'inner one; a+b'), { cwd: fx.root, shell: true, encoding: 'utf8', env, windowsHide: true });
   assert.equal(ran.status, 0, ran.stdout + ran.stderr);
   assert.match(ran.stdout, /RAN one/);
   assert.doesNotMatch(ran.stdout, /RAN two|RAN top/);

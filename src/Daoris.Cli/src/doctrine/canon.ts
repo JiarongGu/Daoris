@@ -1,6 +1,6 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { listFiles, listMarkdown, readText } from '../platform/fsx.ts';
+import { digestBytes, listFiles, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { DaorisError } from '../platform/errors.ts';
 import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from './records.ts';
 
@@ -136,6 +136,16 @@ export function readCanon(canonRoot: string): Canon {
     }
   }
   return { version, root: canonRoot, packs };
+}
+
+/**
+ * The canon's identity beside its stamp: every document of every pack, by path and content, hashed as the lock hashes
+ * a file. The stamp stays `0.0.1` through every 0.0.x build (D124 §1.4), so two canons with one version are told apart
+ * by this, and never ordered by it: which of two is newer only a version can say.
+ */
+export function canonDigest(canon: Canon): string {
+  const sources = [...canon.packs.values()].flatMap((pack) => pack.files.map((file) => file.source)).sort();
+  return sha256(sources.map((source) => `${source} ${digestBytes(readFileSync(join(canon.root, source)))}\n`).join(''));
 }
 
 /** Whether a switch's key covers a core file: a document by its target, a skill by its directory. */

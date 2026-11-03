@@ -98,6 +98,9 @@ public static class HandedSections
     /// <summary>The session's other parts, beside its line.</summary>
     public const string BriefParts = "brief-parts";
 
+    /// <summary>The line's course as Daoris counts it (CONTEXTDRIVE1b): a brief's item, or a start's where its line counted something.</summary>
+    public const string BriefCourse = "brief-course";
+
     /// <summary>What the brief's bound left out, by count.</summary>
     public const string BriefLeft = "brief-left";
 }
@@ -218,6 +221,9 @@ public static class HandedCuts
     /// <summary>The session's other parts past the bound on them (SESSCTX1b).</summary>
     public const string BriefPartsBound = "brief-parts-bound";
 
+    /// <summary>A line's counts past the bound on the course's item (CONTEXTDRIVE1b).</summary>
+    public const string BriefCourseBound = "brief-course-bound";
+
     /// <summary>The values each cut's entry says, by name: <c>n</c> and <c>limit</c> numbers, <c>from</c> and <c>to</c> moments.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> Values { get; } = new Dictionary<string, IReadOnlyList<string>>
     {
@@ -238,5 +244,6 @@ public static class HandedCuts
         [BriefClipped] = ["n"],
         [BriefList] = ["n"],
         [BriefPartsBound] = ["n", "limit"],
+        [BriefCourseBound] = ["n", "limit"],
     };
 }

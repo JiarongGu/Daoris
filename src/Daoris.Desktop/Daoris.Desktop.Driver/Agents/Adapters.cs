@@ -277,6 +277,12 @@ public sealed record SessionTarget(
     public ComposedBrief? Brief { get; init; }
 
     /// <summary>
+    /// For a start that holds no brief (CONTEXTDRIVE1b; the context-counters design §3 point 2): its line's course as Daoris counts it,
+    /// the brief's item and its account, where any count of its line is not zero. Null where none is, and the instruction reads as before.
+    /// </summary>
+    public ComposedBrief? Course { get; init; }
+
+    /// <summary>
     /// For a carry-on after an account's limit (TOOL4f, D125 §3.5): the cut-off session ran on another account, which is
     /// now cooling, so nothing of its own conversation carries over. Names no account: the instruction is the agent's.
     /// </summary>
@@ -496,6 +502,8 @@ public static class TargetPrompt
         // What waited on the ask's channel for this line of work (SESSONE2b), counted with what the sessions before it left, as the
         // parts before it are (SESSONE1d), so no page catalogue changed.
         new(HandedSections.CarryOn, AgentWorkWords.Current.Channel(target.Channel)),
+        // CONTEXTDRIVE1b: a start's line's course, counted in the brief's own section; a carry-on's brief carries it among its own.
+        .. (target.Course?.Pieces ?? []).Select(piece => new Piece(piece.Section, piece.Text)),
     ];
 
     /// <summary>
@@ -1476,9 +1484,9 @@ public interface ISessionAdapter
     /// or nobody has read one in its binary.
     /// </summary>
     /// <remarks>
-    /// <para>Asked for by a conversation whose few tools are needed at once, which is Ask Daoris's: every
-    /// answer it gives reads the family. A repository's sessions never ask, and keep the harness's own
-    /// default, which is that harness's to change.</para>
+    /// <para>Every session Daoris runs carries it, a driven one's and a conversation's of every kind
+    /// (CONTEXTONE1d, D230 point 3), through <see cref="Driver.Equip"/>: its connector's tools are the ones it
+    /// is told to use, so they are in hand from the first request.</para>
     ///
     /// <para>Default empty, the silence-preserves rule every adapter default follows: an adapter opts in
     /// when the switch is read in the binary it runs, like every other claim about somebody else's tool.</para>
@@ -2485,6 +2493,11 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// MCP tool waits behind a <c>ToolSearch</c> step, a whole model round trip before the agent's first real
     /// move; a value its parser reads as false loads every tool with the first request instead.
     /// </summary>
+    /// <remarks>
+    /// It loads every server's tools, not only the connector's (CONTEXTONE1d). Claude Code 2.1.314 also reads a server entry's
+    /// <c>alwaysLoad</c> and a tool's <c>_meta</c> <c>anthropic/alwaysLoad</c>, but the protocol door's servers are composed by its
+    /// adapter, not shown to carry the key, and a tool's mark does not hold the first request for a server still starting.
+    /// </remarks>
     internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront =
         new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
 
