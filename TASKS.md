@@ -170,7 +170,7 @@ holds the detail. The structural changes come first, so the features built after
 
 **Defects, built next** (the owner's rule of 2026-11-01, applied in the triage of 2026-11-02):
 
-- [ ] **SCOPEVERIFY1 — the scope's one verification, when its development is done** (all lanes; D180's note of 2026-11-04). The full CI on main's tip, its reds fixed together, then the install staged from the green run. Known before it runs, from builders' focused runs: the modules' `DriverChoicesBothWaysTests` (four `intake …`/`helper …` cases: "`intake` is not a standing choice") and `DriverModuleHelpHistoryTests` (still expects "Settings → AI features"), both after ONEWAY1a; the page's `i18n.test.ts` and `names.test.ts` on `work.atWork.source.quest`, `agents.convert.removedLead:zh` and `work.atWork.coworker.anySuccessor:zh` (the first two with ONEWAY1c-ii's builder); `large/Hundred`'s p95 frame (CI 45); the family and deployment rehearsals over the command tree's words. Proof: a green CI and the install staged, *not now*.
+- [ ] **SCOPEVERIFY1 — the scope's one verification, when its development is done** (all lanes; D180's note of 2026-11-04). The full CI on main's tip, its reds fixed together, then the install staged from the green run. Known before it runs, from builders' focused runs: the modules' `DriverChoicesBothWaysTests` (four `intake …`/`helper …` cases: "`intake` is not a standing choice") and `DriverModuleHelpHistoryTests` (still expects "Settings → AI features"), both after ONEWAY1a; the page's `i18n.test.ts` and `names.test.ts` words (fixed with ONEWAY1c-ii, run then); `large/Hundred`'s p95 frame (CI 45); the family and deployment rehearsals over the command tree's words. Proof: a green CI and the install staged, *not now*.
 
 
 ## UI/UX first
