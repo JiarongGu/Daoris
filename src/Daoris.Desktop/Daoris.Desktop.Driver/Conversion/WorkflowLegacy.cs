@@ -41,6 +41,7 @@ public sealed record LegacyCensus(
 }
 
 /// <summary>The census, pure: it reads the world and writes nothing.</summary>
+// transitional: conversion-readers
 public static class WorkflowLegacy
 {
     /// <summary>The terminal word that ends an open unit, which a run's row carries as its door.</summary>

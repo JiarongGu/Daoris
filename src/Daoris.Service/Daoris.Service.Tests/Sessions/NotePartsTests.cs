@@ -194,7 +194,7 @@ public sealed class NotePartsTests : IAsyncLifetime
         const string Note = "It stopped with its quest still taken, to ask you:\n\nWhich port?";
         await _ledger.AdvanceAsync(session.Id, "awaiting-person", Note, null, null, Now, noteParts: Coded);
 
-        var answered = (await _ledger.AnswerAsync(session.Id, "8080", Now.AddMinutes(1))).Session!;
+        var answered = (await _ledger.SayAsync(session.Id, "8080", null, Now.AddMinutes(1))).Session!;
 
         Assert.Equal(Note + "\n\nAnswered: 8080", answered.Note);
         Holds(answered.Note, answered.NoteParts);
@@ -209,7 +209,7 @@ public sealed class NotePartsTests : IAsyncLifetime
     {
         var silent = await WorkingSession();
         await _ledger.AdvanceAsync(silent.Id, "awaiting-person", null, null, null, Now);
-        var answered = (await _ledger.AnswerAsync(silent.Id, null, Now.AddMinutes(1))).Session!;
+        var answered = (await _ledger.SayAsync(silent.Id, "carry on.", null, Now.AddMinutes(1))).Session!;
         Assert.Equal("It stopped to ask the person; its question is in its transcript.\n\nAnswered: carry on.", answered.Note);
         Holds(answered.Note, answered.NoteParts);
         Assert.Equal(["ledger.parked", "ledger.answered", null], Parts(answered.NoteParts).Select(part => part.Code));

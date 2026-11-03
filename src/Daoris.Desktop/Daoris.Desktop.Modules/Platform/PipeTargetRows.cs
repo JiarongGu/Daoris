@@ -241,9 +241,10 @@ internal static class PipeTargetRows
             },
             (a, _) => Fp(Text(At(a, "digest"))),
             TimeSpan.FromMinutes(2)));
-        // WORKFLOWCLEAN1 1e: the conversion plan the person read, by its digest, which pins every operation, the census inputs and the row's choices;
-        // one that moved between the ask and the Confirm is refused. The undo is pinned the same, by its own plan's digest.
-        Row("CONVERT_APPLY", Plan("CONVERT_PLAN", ["digest", "composed", "landAutomatic"],
+        // WORKFLOWCLEAN1 1e, ONEWAY1ae: the conversion plan the person read, by its digest, which pins every part's operations, the census inputs and
+        // the row's choices; one that moved between the ask and the Confirm is refused. A failed part's Leave it rides the same press, its receipt
+        // named by the digest. The undo is pinned the same, by its own plan's digest.
+        Row("CONVERT_APPLY", Plan("CONVERT_PLAN", ["digest", "composed", "landAutomatic", "leave"],
             p => new { composed = Text(p, "composed"), landAutomatic = Text(p, "landAutomatic") },
             (a, _) => Fp(Text(At(a, "digest"))),
             TimeSpan.FromMinutes(2)));

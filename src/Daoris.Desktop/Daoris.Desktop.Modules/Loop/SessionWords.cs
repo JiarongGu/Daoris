@@ -1216,6 +1216,7 @@ public sealed class SessionWords : IDisposable
             IReadOnlyList<string> files = entry.TryGetProperty("files", out var named) && named.ValueKind == JsonValueKind.Array
                 ? [.. named.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                 : [];
+            // transitional: held-press-unasked (a press held before COMMS1e names its choice and no question, forwarded unchecked)
             words.Add((session, new Word(
                 text, files, door, Choice: Text(entry, "choice") is { Length: > 0 } choice ? choice : null,
                 Key: Text(entry, "key") is { Length: > 0 } key ? key : null,

@@ -30,7 +30,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
         var ledger = new Ledger
         {
             Records = Records(Record("s1", "awaiting-person")),
-            AfterGoAhead = Records(Record("s1", "awaiting-person", answer: "carry on.")),
+            AfterGoAhead = Records(Record("s1", "awaiting-person", said: "carry on.")),
         };
         var (loop, module) = await UpAsync(ledger);
 
@@ -64,7 +64,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
         var ledger = new Ledger
         {
             Records = Records(Record("s1", "awaiting-person")),
-            AfterGoAhead = Records(Record("s1", "awaiting-person", answer: "carry on.")),
+            AfterGoAhead = Records(Record("s1", "awaiting-person", said: "carry on.")),
         };
         var (loop, module) = await UpAsync(ledger);
 
@@ -119,7 +119,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
         var ledger = new Ledger
         {
             Records = Records(Record("s1", "awaiting-person")),
-            AfterGoAhead = last ? Records(Record("s1", "awaiting-person", answer: "carry on.")) : null,
+            AfterGoAhead = last ? Records(Record("s1", "awaiting-person", said: "carry on.")) : null,
         };
         var (loop, module) = await UpAsync(ledger);
 
@@ -145,7 +145,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
     [Fact]
     public async Task A_park_already_answered_goes_on_with_what_it_holds()
     {
-        var ledger = new Ledger { Records = Records(Record("s1", "awaiting-person", answer: "carry on.")) };
+        var ledger = new Ledger { Records = Records(Record("s1", "awaiting-person", said: "carry on.")) };
         var (loop, module) = await UpAsync(ledger);
 
         var answered = await AnswerAsync(module, "SESSION_GO_AHEAD", new { id = "s1", ask = "a1", number = 2, approved = false });
@@ -256,8 +256,9 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
 
     private static string Records(params string[] records) => $"[{string.Join(",", records)}]";
 
-    private static string Record(string id, string state, string? answer = null, string created = "2026-10-03T08:00:00Z") =>
-        $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"q1","kind":"driven","created":"{{created}}"{{(answer is null ? "" : $",\"answer\":\"{answer}\"")}}}""";
+    /// <summary>A record as the service answers it to this machine; <paramref name="said"/> the park's answer, kept as a keyed word (ONEWAY1m).</summary>
+    private static string Record(string id, string state, string? said = null, string created = "2026-10-03T08:00:00Z") =>
+        $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"q1","kind":"driven","created":"{{created}}"{{(said is null ? "" : $$""","said":[{"id":"w1","text":"{{said}}","at":"2026-10-03T08:05:00Z","files":[],"reopens":false}]""")}}}""";
 
     /// <summary>
     /// A local host standing in: the records as given; the go-ahead door, which approves or refuses as asked by default and,

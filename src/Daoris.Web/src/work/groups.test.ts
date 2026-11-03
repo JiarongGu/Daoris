@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../data/api';
+import { said } from '../test/said';
 import {
   CALL_HEAD, callHead, cutEnded, endedToArchive, GROUP_ORDER, keptSessionFilters, type NestedRow, nestServing, sessionFilters, type SessionGrouping,
   sessionsByRepository, sessionsByState, shownOf, stripSessions, waitsOnYou,
@@ -116,7 +117,7 @@ describe('the list by state', () => {
       session({ id: 'n2', state: 'awaiting-person' }),
       session({ id: 'n3', state: 'failed' }),
       session({ id: 'team/n4', state: 'awaiting-person' }),
-      session({ id: 'n5', state: 'awaiting-person', answer: 'Use the second.' }),
+      session({ id: 'n5', state: 'awaiting-person', said: said('Use the second.') }),
     ];
     const groups = sessionsByState(fresh, groupings, { selected: null, archived: false });
     const of = (name: string) => ids(groups.find((group) => group.group === name)!.sessions);
@@ -359,7 +360,7 @@ describe('a row as the list shows it', () => {
    * answered for it, by its own record, which holds the answer.
    */
   it('shows a park the person answered as answered, by the reader or by its record', () => {
-    const answered = session({ id: 'p1', state: 'awaiting-person', answer: 'Use the second.' });
+    const answered = session({ id: 'p1', state: 'awaiting-person', said: said('Use the second.') });
     expect(shownOf(answered, grouping({ session: 'p1', group: 'working', shown: 'answered' }), undefined)).toBe('answered');
     expect(shownOf(answered, null, undefined)).toBe('answered');
     expect(shownOf(session({ id: 'p2', state: 'awaiting-person' }), null, undefined)).toBe('awaiting-person');
@@ -370,10 +371,10 @@ describe('a row as the list shows it', () => {
    * whose words it will take up, which only the reader can say) or, while its run opens, by its own record.
    */
   it('shows a record going on with the person\'s words as going on, by the reader or by its record', () => {
-    const ended = session({ id: 'e1', state: 'completed', answer: 'also cap it' });
+    const ended = session({ id: 'e1', state: 'completed', said: said('also cap it') });
     expect(shownOf(ended, grouping({ session: 'e1', group: 'working', shown: 'going-on' }), undefined)).toBe('going-on');
     expect(shownOf(ended, null, undefined)).toBe('completed');
-    expect(shownOf(session({ id: 'w1', state: 'working', answer: 'also cap it' }), null, undefined)).toBe('going-on');
+    expect(shownOf(session({ id: 'w1', state: 'working', said: said('also cap it') }), null, undefined)).toBe('going-on');
   });
 
   /**
@@ -403,6 +404,6 @@ describe('a row as the list shows it', () => {
     expect(waitsOnYou(session({ id: 'f1', state: 'failed' }), grouping({ session: 'f1', group: 'you', shown: 'parked' }))).toBe(true);
     expect(waitsOnYou(session({ id: 'w1', state: 'working' }), null)).toBe(false);
     // ANSWER1c: answered, it goes on at the driver's next look, and nothing about it waits on the person.
-    expect(waitsOnYou(session({ id: 'p2', state: 'awaiting-person', answer: 'carry on.' }), null)).toBe(false);
+    expect(waitsOnYou(session({ id: 'p2', state: 'awaiting-person', said: said('carry on.') }), null)).toBe(false);
   });
 });

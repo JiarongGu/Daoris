@@ -125,7 +125,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
         Assert.Equal(SessionSayRefusal.NotOfferedChoice, (await Release(parked.Id, choice: "the monthly one")).Refusal);
         Assert.Equal(SessionSayRefusal.NotOfferedChoice, (await Release(parked.Id, choice: "The monthly one ")).Refusal);
 
-        await _ledger.AnswerAsync(parked.Id, "the weekly one, please", Now);
+        await _ledger.SayAsync(parked.Id, "the weekly one, please", null, Now);
         Assert.Equal(SessionSayRefusal.OwnerAnswered, (await Release(parked.Id)).Refusal);
 
         var asking = await ParkedOnAQuestion("second");
@@ -189,8 +189,9 @@ public sealed class SupervisorWordTests : GoAheadFixture
     }
 
     /// <summary>
-    /// §6.3: the owner's words win at every door that keeps them, in one step. The say, the answer with words and blank, and a reword
-    /// each take a waiting supervisor's word back as they keep the owner's, so no read sees both; another agent's word takes none.
+    /// §6.3: the owner's words win at every door that keeps them, in one step. The say (the one door a park is answered by since
+    /// ONEWAY1k) and a reword each take a waiting supervisor's word back as they keep the owner's, so no read sees both; another agent's
+    /// word takes none.
     /// </summary>
     [Fact]
     public async Task The_owners_word_at_every_door_takes_the_supervisors_word_back_in_the_same_step()
@@ -205,14 +206,6 @@ public sealed class SupervisorWordTests : GoAheadFixture
         var said = await Released("say");
         await Ledger.SayAsync(said.Id, "the weekly one", null, Now);
         Assert.Equal(["the weekly one"], (await Record(said.Id)).Said.Select(word => word.Text));
-
-        var answered = await Released("answer");
-        await Ledger.AnswerAsync(answered.Id, "the weekly one", Now);
-        Assert.Equal(["the weekly one"], (await Record(answered.Id)).Said.Select(word => word.Text));
-
-        var blank = await Released("blank");
-        await Ledger.AnswerAsync(blank.Id, "  ", Now);
-        Assert.Equal(["carry on."], (await Record(blank.Id)).Said.Select(word => word.Text));
 
         var reworded = await Released("reword");
         var daoris = await Ledger.SayAsync(reworded.Id, "Daoris carried it on.", null, Now, from: SaidFrom.Daoris);

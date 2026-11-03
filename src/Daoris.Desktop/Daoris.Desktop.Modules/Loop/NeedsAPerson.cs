@@ -605,12 +605,12 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // Places still follow old workflow shapes (WORKFLOWCLEAN1g-ii, the cleanup design §4.3): one row for the home while its census has
-        // not ended; its door opens the home-wide review.
+        // Old records wait for the conversion (ONEWAY1ae; the oneway design §1.1): one row for the home while any part's census has not
+        // ended, its stored kind kept, the count by part in its detail; its door opens the home-wide review.
         if (facts.Conversion is { } conversion)
         {
             var row = Row("workflow-convert", "home", Text(conversion, "since"));
-            row["convert"] = new JsonObject { ["places"] = conversion["places"]?.DeepClone() };
+            row["convert"] = new JsonObject { ["records"] = conversion["records"]?.DeepClone(), ["parts"] = conversion["parts"]?.DeepClone() };
             rows.Add(row);
         }
 
@@ -879,11 +879,11 @@ public static class NeedsAPerson
             .Select(path => path.Replace('\\', '/').TrimEnd('/').Split('/')[^1]).FirstOrDefault(name => name.Length > 0);
 
     /// <summary>
-    /// A session parked to ask that nobody answered yet (ANSWER1c): the person's answer goes on at the driver's next look. Never Ask
-    /// Daoris's conversation, which is answered in its own panel (ASKRAIL1).
+    /// A session parked to ask that nobody answered yet (ANSWER1c): the person's answer, read from its keyed words (ONEWAY1m), goes on at
+    /// the driver's next look. Never Ask Daoris's conversation, which is answered in its own panel (ASKRAIL1).
     /// </summary>
     private static bool Parks(JsonObject session) =>
-        Text(session, "state") == "awaiting-person" && Truthy(session, "answer") is null && !AskDaoris(session);
+        Text(session, "state") == "awaiting-person" && SessionRecords.PersonsSaid(session) is null && !AskDaoris(session);
 
     /// <summary>Ask Daoris's conversation (HELP1a, D89), by the repository it is recorded in: no session row of Sessions' (ASKRAIL1).</summary>
     private static bool AskDaoris(JsonObject? session) => Text(session, "repository") == HelpRoom.Repository;

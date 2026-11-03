@@ -876,11 +876,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     if (!_moves.TryGetValue(id, out var moves)) _moves[id] = moves = [];
                     moves.Add(to);
                     // A session that parks again asks anew (ANSWER1b): a move into a park clears the words waiting (MSG1a).
-                    if (to == "awaiting-person" && session["said"] is not null)
-                    {
-                        session["said"] = new JsonArray();
-                        session.Remove("answer");
-                    }
+                    if (to == "awaiting-person" && session["said"] is not null) session["said"] = new JsonArray();
                     if (body["note"] is { } note)
                     {
                         session["note"] = note.GetValue<string>();
@@ -896,7 +892,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 }
 
                 // The say door (MSG1a), the one the screen's answer and a terminal's words reach through `ServiceClient.SayAsync`:
-                // words kept on a parked or ended record, verbatim and in order, `answer` their join; a running record is
+                // words kept on a parked or ended record, verbatim and in order, as the keyed words alone (ONEWAY1m); a running record is
                 // refused `running`, since its words reach it through the driver that runs it.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
                 {
@@ -935,8 +931,6 @@ internal sealed class StandInLedger : HttpMessageHandler
                     if (key is not null) word["key"] = key;
                     if (body!["level"]?.GetValue<string>() is { } level) word["level"] = level;
                     said.Add(word);
-                    var persons = said.Where(each => each!["from"] is null).Select(each => each!["text"]!.GetValue<string>()).ToList();
-                    if (persons.Count > 0) session["answer"] = string.Join("\n\n", persons);
                     return Answer(HttpStatusCode.OK, new JsonObject
                     {
                         ["session"] = session.DeepClone(), ["message"] = $"Kept for session `{id}` to go on with.", ["said"] = word.DeepClone(),
@@ -983,9 +977,6 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var left = (session["said"] as JsonArray ?? []).Where(word => !taken.Contains(word!["id"]!.GetValue<string>()))
                         .Select(word => word!.DeepClone()).ToList();
                     session["said"] = new JsonArray([.. left]);
-                    var persons = left.Where(word => word["from"] is null).Select(word => word["text"]!.GetValue<string>()).ToList();
-                    if (persons.Count == 0) session.Remove("answer");
-                    else session["answer"] = string.Join("\n\n", persons);
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" });
                 }
 
@@ -1116,7 +1107,6 @@ internal sealed class StandInLedger : HttpMessageHandler
                             {
                                 ["id"] = $"w-{asker}", ["text"] = "carry on.", ["at"] = _clock.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = false,
                             });
-                            parked["answer"] = "carry on.";
                         }
                     }
 

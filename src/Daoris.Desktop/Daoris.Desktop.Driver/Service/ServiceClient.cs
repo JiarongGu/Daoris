@@ -388,30 +388,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
-    /// Answer a driven session that parked to ask the person (STANDDOWN2) — the terminal's form of the
-    /// page's box. The service's sentence comes back verbatim, and a refusal is an answer too.
-    /// </summary>
-    public async Task<(bool Ok, string Message)> AnswerSessionAsync(string id, string? answer, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            if (answer is not null) writer.WriteString("answer", answer);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/answer", body, ct)
-            .ConfigureAwait(false);
-        if (root is not { } answered) return (false, $"the service at {_base} has no answer door ({status}) — is it older than this driver?");
-        if (!ok) return (false, Text(answered, "error") ?? payload);
-
-        // An answer ends the parked record `completed` (STANDDOWN2), which is a move like any other. Once it keeps the
-        // record parked for the driver's next look (ANSWER1b, D131 §5) nothing moved, and a watcher is told nothing.
-        var state = StateOf(answered) ?? "completed";
-        if (!SessionStates.IsParked(state)) Raise(Moved, new SessionMoved(id, state));
-        return (true, Text(answered, "message") ?? "");
-    }
-
-    /// <summary>
     /// Tell the service what the person added to a running session (DRIFT1a2, D133 §1), which keeps it on the ask that
     /// session's work is for: the words verbatim, by the session's own id. Whether it was kept is an answer, never an
     /// exception: <c>kept: false</c> is a session on no ask, with the service's sentence, and a refusal or a host without
@@ -468,6 +444,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         (string Decision, string Question, string Choice)? supervised = null, bool ending = false, string? question = null)
     {
         // COMMS1e: the person's press names its question only to a host that checks it (the `presses` mark); an older host refuses the field.
+        // transitional: presses-older-host
         var presses = question is { Length: > 0 } && supervised is null && await Opens.PressesAsync(ct).ConfigureAwait(false);
         var body = WriteJson(writer =>
         {

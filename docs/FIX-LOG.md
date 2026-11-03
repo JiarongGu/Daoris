@@ -5,6 +5,39 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-04 - A chat's press under a graph choice was held "not judged yet" where its test wanted it landed as before (CHATGRAPH1)
+
+- **Symptom:** CI 45 on main, and alone: `ReviewLandingTests.A_chat_s_press_under_a_graph_choice_lands_as_before_and_is_never_refused_bind_failed` got "Daoris has not judged run chat-c1a2b3c4's graph at `<sha>` yet: its next look does, and this asks for it now." where it wanted the press landed and the run left unbound.
+- **Root cause:** the test pinned CHATFLOW1c's contract, in which a graph choice bound nothing and the press was gated by Current. WORKFLOWCLEAN1 row 1d (e01d2112f) made `ChatRuns.Bind` (`Driver/Workflows/ChatRuns.cs:146-162`) bind the graph version, so the gate's graph part judges by the run, and before any pass it holds the press (`GraphGate.cs:193`); the route's press asks that pass (`GraphPasses.PressAsync`), the test's helper asks none. The code is right by the cleanup design §2.7 and D227's 1d note; the test, a `Process` class 1d's branch did not run, kept the old contract. Two comments still said a graph choice binds nothing (`TreesRoutes.cs`, `ChatRunBinds.cs`).
+- **Fix:** the test, renamed to 1d's contract, asserts that the press's bind-first binds `web-graph` v1 with no problem, is never refused `bind-failed`, and is held unjudged with the press waiting on the pass, nothing landed; the landing after a pass stays `ChatGraphRunTests`'. The two comments say the graph binds.
+- **Verify:** `ReviewLandingTests` alone, its old test failing first with the words above, then 17 of 17.
+## 2026-11-04 - The staffing judge passed a marked agent before the choice its line had just left (REVIEW2 L4)
+
+- **Symptom:** of two choices, one this line moved off within the 30-minute hold and one on an agent marked not answering, the walk kept the one it had just left and passed the other.
+- **Root cause:** `StaffJudge.Arrange` ran the not-answering pass before the moved-off one, and each passes only while another entry remains, so the first pass took the last spare; the design's §8 codes put `moved-off` first.
+- **Fix:** the moved-off pass runs first (D226's note of 2026-11-04; the design's §3.1 says so).
+- **Verify:** `StaffJudgeTests`' arrangements table, its new row seen failing first (walk 1, passed 2 `not-answering`).
+
+## 2026-11-04 - A layout change on a place's page lost the step editor's selection and closed its drawer (REVIEW2 P5's rest)
+
+- **Symptom:** with the step editor open on a place's page, the page crossing 64 rem (or its column arriving one render after the width) drew the editor again from nothing: the selected step and its open drawer were gone, the draft alone kept by P5's hold.
+- **Root cause:** `PlaceWorkflowView` drew the chart at two tree positions, inline below the routes or portalled into the page's column, so React unmounted one and mounted the other.
+- **Fix:** the chart is portalled into one element of its own at one tree position, and `Placed` moves that element into the inline slot, the section's own column or the page's.
+- **Verify:** `PlaceWorkflowView.test.tsx` ("keep the editor's selected step and its open drawer…"), seen failing first with the drawer gone after the move.
+
+## 2026-11-04 - The room said by hand which doors Ask Daoris proposes and never proposes (REVIEW2 T12's first part)
+
+- **Symptom:** each door row's "(Ask Daoris proposes it)" or "(Ask Daoris never proposes it: …)" was typed into its words, in eight spellings, and tests held those words; nothing held a row that said proposed to a door any proposal kind takes (T7 found such words false), and the accept row did not say it is proposed only on the person's ask.
+- **Root cause:** the row was a tuple of three strings, so how Ask Daoris meets the act could only be words.
+- **Fix:** a row is a `HelpDoor` whose `HelpDoorAsk` (`Proposes`, `OnlyWhenAsked`, `Never`) builds the words; a proposing row names its kind and door, and `HelpRoomDoorAsksTests` holds each to `HelpProposals.DoorsOf`, no row's own words saying it, and no owed door said to be proposed. The coverage and door tests read the answer, not the words.
+- **Verify:** `HelpRoomDoorAsksTests` (three seen failing first), `HelpRoomDoorsTests`, `HelpCoverageTests`, the room's goldens rewritten.
+
+## 2026-11-04 - Four modules test classes removed their scratch homes by hand (REVIEW2-LEFT1)
+
+- **Symptom:** `DriverLoopSendsBackTests`, `StewardDeskTests`, `RoleActTests` and `OwnerSetTests` rooted a home under `_fixtures` and deleted it with `Directory.Delete`, swallowing a refusal, so a held file left the folder behind; the scratch census read the driver tests alone.
+- **Fix:** the modules tests compile `GitSeed` (with `GitFixture` and `FixtureSpawns`) as they compile `TestGit`, the four dispose through `GitSeed.Discard`, `Bridge` and `DriverLoopSendsBackTests` find the checkout through `GitSeed.RepoRoot()` in place of a walk of their own, and the census reads the modules tests' sources too (`SourceFiles.ModulesTestsProject`, now also the other censuses' name for them).
+- **Verify:** `GitSeedTests`' census, seen failing first on the four deletes and the two walks; the four classes, two bridge classes and the modules censuses (325).
+
 ## 2026-11-03 - A press on a card or line partly out of view moved it from under the pointer, and its click was lost (CANVAS1e)
 
 - **Symptom:** CI on main: `measured/map.spec.ts` "a line is pressed through its stroke" left the line `aria-pressed="false"`, and `e2e/platform.spec.ts` "a repository opens its own code map" never showed "game keeps no code map": the press on game's card did not choose it, so the engine's code map stayed.

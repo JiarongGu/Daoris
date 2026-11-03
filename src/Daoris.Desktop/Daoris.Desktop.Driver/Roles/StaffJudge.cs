@@ -102,8 +102,8 @@ public static class StaffPasses
 /// </summary>
 /// <remarks>
 /// <para><b>The arrangement</b> (§3.1), in order: an entry whose works leave out the start's work leaves the walk; an entry over today's
-/// budget is passed <c>over-budget</c>; where the role moves on <c>transient</c>, an entry on an agent marked not answering is passed
-/// <c>not-answering</c> and one this line moved off within <see cref="Hold"/> <c>moved-off</c>, each in the stored order and only while
+/// budget is passed <c>over-budget</c>; where the role moves on <c>transient</c>, an entry this line moved off within <see cref="Hold"/> is
+/// passed <c>moved-off</c>, then one on an agent marked not answering <c>not-answering</c>, each in the stored order and only while
 /// another entry remains; then the rule orders the rest. A design start whose role names design for no choice is served by the choices
 /// taking build, as a design step falls to build's role.</para>
 /// <para><b>The weighted pick</b> (§3.2, amended by §11 point 9): each entry above weight 0 holds a balance, replayed from the starts since
@@ -167,15 +167,7 @@ public static class StaffJudge
         var movesOnTransient = MovesOn(policy, StaffConditions.Transient);
         if (movesOnTransient || MovesOn(policy, StaffConditions.Failed) || MovesOn(policy, StaffConditions.Quiet))
         {
-            foreach (var each in remaining.ToList())
-            {
-                if (movesOnTransient && remaining.Count > 1 && facts.NotAnswering.Any(mark => string.Equals(mark.Key, each.Effective.Agent, StringComparison.OrdinalIgnoreCase) && mark.Value > facts.Now))
-                {
-                    remaining.Remove(each);
-                    passed.Add((each, StaffPasses.NotAnswering, "its agent's service did not answer: it is passed until its mark ends or a prompt on it answers"));
-                }
-            }
-
+            // The moved-off pass first (§8's codes): where one choice is left of the two, it is the one this line did not just leave.
             foreach (var each in remaining.ToList())
             {
                 if (remaining.Count > 1 && facts.MovedOff.TryGetValue(each.Key, out var at) && at <= facts.Now && facts.Now - at < Hold)
@@ -183,6 +175,15 @@ public static class StaffJudge
                     remaining.Remove(each);
                     var minutes = (int)(facts.Now - at).TotalMinutes;
                     passed.Add((each, StaffPasses.MovedOff, $"this line moved off it {minutes} minute{(minutes == 1 ? "" : "s")} ago, within the {(int)Hold.TotalMinutes}-minute hold"));
+                }
+            }
+
+            foreach (var each in remaining.ToList())
+            {
+                if (movesOnTransient && remaining.Count > 1 && facts.NotAnswering.Any(mark => string.Equals(mark.Key, each.Effective.Agent, StringComparison.OrdinalIgnoreCase) && mark.Value > facts.Now))
+                {
+                    remaining.Remove(each);
+                    passed.Add((each, StaffPasses.NotAnswering, "its agent's service did not answer: it is passed until its mark ends or a prompt on it answers"));
                 }
             }
         }

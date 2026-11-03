@@ -595,8 +595,8 @@ export type PushedAttention = {
    * bytes as read when it was said, what the floor freed in this stretch, and what *Free up space…* could free (null where none was read).
    */
   space?: { root: string | null; free: number; total: number; floor: number | null; freed: number; could?: number | null };
-  /** The places the home's census lists while it has not ended (WORKFLOWCLEAN1g-ii). */
-  convert?: { places: number };
+  /** The old records every part's census holds while one has not ended, and their count by part (ONEWAY1ae). */
+  convert?: { records: number; parts?: Record<string, number> };
   /** A git remote held because it could not authenticate (GITAUTH1a): one row per held group, as .NET groups them. */
   git?: GitHeld;
   /** A session the watcher brings to the person (SESSWATCH1a): its watch, which its words and its presses read. */
@@ -1066,9 +1066,15 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.git ? { git: row.git } : {}),
         ...(row.workspace ? { workspace: row.workspace } : {}),
       };
-    // WORKFLOWCLEAN1g-ii: the places the census lists, said as a count.
+    // ONEWAY1ae: the old records every part holds, said as a count, and the count by part in its detail.
     case 'workflow-convert':
-      return { ...base, title: i18n.t('work.attention.convertTitle', { count: row.convert?.places ?? 0 }) };
+      return {
+        ...base,
+        title: i18n.t('work.attention.convertTitle', { count: row.convert?.records ?? 0 }),
+        detail: Object.entries(row.convert?.parts ?? {})
+          .map(([part, count]) => i18n.t('work.attention.convertPart', { part: i18n.t(`agents.convert.part.${part}`, { defaultValue: part }), count }))
+          .join(' · ') || null,
+      };
     default:
       return { ...base, title: row.title ?? row.id };
   }

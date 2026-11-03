@@ -261,7 +261,7 @@ public sealed class PipeCensusTests
         string[] off =
         [
             "chat", "help resume <id>", "drive", "update",
-            "quest delete|accept|done|reopen|go-on|check|review", "answer", "ask \"…\"", "sync status", "ask channel <id>",
+            "quest delete|accept|done|reopen|go-on|check|review", "ask \"…\"", "sync status", "ask channel <id>",
             "trace", "git branches", "workflow", "logs",
             // GITAPP1a-i: the bench's verb times the git its own process starts.
             "git review <session>",

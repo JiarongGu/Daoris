@@ -429,11 +429,9 @@ public sealed record SessionResponse(
     string? BaseCommit = null,
     // D65 §1b: the ask an intake answers — null for every other session.
     string? Ask = null,
-    // STANDDOWN2: whether it took its own quest, through its own connector; and the person's answer to
-    // one that parked to ask them — since MSG1a the words waiting in `Said`, joined by a blank line, for a client
-    // from before.
+    // STANDDOWN2: whether it took its own quest, through its own connector. The person's answer to one that parked to ask them is
+    // read from `Said` alone (ONEWAY1m).
     bool Took = false,
-    string? Answer = null,
     // D104: a stop that was not the person's — the sweep's, or a shutdown's — which the driver carries on.
     bool Interrupted = false,
     // TOOL4c (D125 §5.2): a failure an account's limit made. It names no account, so every caller is told.
@@ -442,7 +440,7 @@ public sealed record SessionResponse(
     // where it would be taken. False at a shared deployment, which has no delete door.
     bool Deletable = false,
     // MSG1a (D137 §2.4): the person's words waiting for it to go on with them, in order. Their own words, which may name
-    // anything on this machine: answered to it only, like `Answer` and the transcript.
+    // anything on this machine: answered to it only, like the transcript.
     IReadOnlyList<SaidWordResponse>? Said = null,
     // LANG1a (D142 point 2): the note's lines, each a code with its values or someone's words, beside `note`, which stays as it
     // always read. Null for a record from before parts. To another machine, every string in them cleaned as the note is.
@@ -662,8 +660,6 @@ public sealed record HistoryClearRequest(IReadOnlyList<HistoryUnitRequest?>? Uni
 public sealed record HistoryClearedResponse(HistoryUnitResponse Unit, bool Cleared, string Message, HistoryFailedResponse? Failed = null);
 public sealed record HistoryFailedResponse(IReadOnlyList<string> Quests, IReadOnlyList<string> Asks);
 public sealed record HistoryClearResponse(IReadOnlyList<HistoryClearedResponse> Units);
-// STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
-public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
 // look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
 // MIXAGENT1a-iii: `from`, `fromWhy` and `fromBy` name the session the new one continues, as the driver knows it: a conversation

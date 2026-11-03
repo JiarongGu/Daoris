@@ -104,6 +104,30 @@ test('isOpen matches whole ids: a longer id or a letter inside a word does not o
   assert.equal(isOpen('ONEWAY1ad-ii', tasks, '## ONEWAY1 — x (2026-11-09)\n'), false);
 });
 
+test('ONEWAY1ad-ii: a row of another entry is open while that open entry names it in bold or as `row <letters>`', () => {
+  const tasks = '- [ ] **WORKFLOWCLEAN1 — wave** then **1z** the paths deleted, **1j** only if found.\n'
+    + '- [ ] **FOUNDATION1 — one foundation** all built but two: row v, records last, waits.\n';
+  assert.equal(isOpen('WORKFLOWCLEAN1z', tasks, ''), true);
+  assert.equal(isOpen('WORKFLOWCLEAN1j', tasks, ''), true);
+  assert.equal(isOpen('WORKFLOWCLEAN1y', tasks, ''), false);
+  assert.equal(isOpen('FOUNDATION1v', tasks, ''), true);
+  assert.equal(isOpen('FOUNDATION1w', tasks, ''), false);
+  assert.equal(isOpen('WORKFLOWCLEAN1z', tasks, '## WORKFLOWCLEAN1z — the paths deleted (2026-12-01)\n'), false);
+  assert.equal(isOpen('WORKFLOWCLEAN1z', tasks, '## WORKFLOWCLEAN1 — the cleanup (2026-12-01)\n'), false);
+  assert.equal(isOpen('WORKFLOWCLEAN1z', tasks.replace('- [ ] **WORKFLOWCLEAN1', '- [x] **WORKFLOWCLEAN1'), ''), false);
+});
+
+test('ONEWAY1ad-ii: a marker in the web\'s TypeScript is read, and one in its tests or stories is not', () => {
+  const ts = "export function read(kept: string) {\n  // transitional: one\n  return kept === 'roles' ? 'setup' : kept;\n}\n";
+  const dir = tree({
+    entries: [['one', 'ROWA1']],
+    sources: { 'Daoris.Web/src/a.ts': ts, 'Daoris.Web/src/a.test.ts': "// transitional: stray\n", 'Daoris.Web/src/A.stories.tsx': "// transitional: stray2\n" },
+  });
+  const { problems, markers } = checkTransitional(dir);
+  assert.deepEqual(problems, []);
+  assert.equal(markers, 1);
+});
+
 test('a marker inside a string, or in a block comment, is not read; one in a trailing comment is', () => {
   const src = 'class A\n{\n    string s = "// transitional: stray";\n    /* // transitional: also */\n    int x; // transitional: one\n}\n';
   const dir = tree({ entries: [['one', 'ROWA1']], sources: { 'D/A.cs': src } });
@@ -124,19 +148,6 @@ test('tests and build output are not read; the register itself holds no marker',
     sources: { 'D/A.cs': site('one'), 'D.Tests/T.cs': site('stray'), 'D/obj/G.cs': site('stray2') },
   });
   assert.deepEqual(checkTransitional(dir).problems, []);
-});
-
-test('COMMS1h: a page source’s marker is a line comment of its own; a test, a story or one after code is not read', () => {
-  const page = "const a = 1;\n  // transitional: one\nconst s = '// transitional: stray';\nconst b = 2; // transitional: stray2\n";
-  const dir = tree({
-    entries: [['one', 'ROWA1']],
-    sources: { 'Web/src/a.ts': page, 'Web/src/a.test.ts': site('stray3'), 'Web/src/A.stories.tsx': site('stray4'), 'Web/node_modules/x.ts': site('stray5') },
-  });
-  const { problems, markers } = checkTransitional(dir);
-  assert.deepEqual(problems, []);
-  assert.equal(markers, 1);
-  const unmarked = tree({ entries: [['one', 'ROWA1']], sources: { 'Web/src/a.tsx': 'export const a = 1;\n' } });
-  assert.match(checkTransitional(unmarked).problems[0], /one.*no marker/);
 });
 
 test('an id twice in the register is refused', () => {

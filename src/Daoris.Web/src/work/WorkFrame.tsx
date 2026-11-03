@@ -4,7 +4,7 @@ import { SessionConsole } from './console/SessionConsole';
 import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../app/opener';
-import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
+import { SESSIONS_SLICE, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
 import { usePushedResyncing } from '../bridge/state/slices';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useMoveQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
@@ -451,7 +451,6 @@ export function WorkFrame({
   const resolve = useResolveSession();
   // The person's done on the quest a finish at a checkpoint leaves (QUESTCLOSE1): the service's own door for it.
   const personDone = usePersonDone();
-  const answer = useAnswerSession();
   const send = useSendMessage();
   const end = useEndChat();
   const cancelTurn = useCancelTurn();
@@ -1019,24 +1018,8 @@ export function WorkFrame({
     });
   };
 
-  // The answer to a driven session that parked to ask the person (STANDDOWN2): the record stays parked
-  // with their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131).
-  // The sessions are read again, so until then the frame shows it going on, not waiting (ANSWER1c).
-  // PARKANSWER1: answered from its card, which keeps the words until it is told they arrived, and says a refusal itself.
-  const onAnswerSession = (words: string | null) => new Promise<string | null>((settle) => {
-    if (!attended) { settle(null); return; }
-    answer.mutate({ id: attended.id, answer: words }, {
-      onSuccess: () => {
-        notify(t('work.awaiting.answered'));
-        settle(null);
-      },
-      onError: (error) => settle(sentence(error)),
-    });
-  });
-
-  // PARKANSWER1 (the owner report, 2026-10-23): where the box below answers the park, its card answers it too, through the box's
-  // own say door (MSG1f) and as the box would (its refusals, a question changed under the page, words on their way): the card was
-  // handed no answer there, and a park whose box the person did not have before them could only be finished or declined. A choice
+  // PARKANSWER1 (the owner report, 2026-10-23): a park's card answers it through the box's own say door (MSG1f), the one door that
+  // answers a park (ONEWAY1k), and as the box would (its refusals, a question changed under the page, words on their way). A choice
   // names its question (PARKVIEW1). Settles with the sentence a refusal is said in, for the card to say beside its words.
   const sayFromCard = (text: string, choice?: { label: string; question: string }) => new Promise<string | null>((settle) => {
     if (!attended) { settle(null); return; }
@@ -1059,7 +1042,7 @@ export function WorkFrame({
       onError: (error: unknown) => settle(stillTaking(n, error) ? null : sentence(error)),
     });
   });
-  const answerFromCard = (words: string | null) => (words ? sayFromCard(words) : onAnswerSession(null));
+  const answerFromCard = (words: string) => sayFromCard(words);
   const choiceFromCard = (label: string, words: string) =>
     (question ? sayFromCard(choiceWords(label, words), { label, question: question.id }) : Promise.resolve(null));
 
@@ -1935,10 +1918,10 @@ export function WorkFrame({
   // a press in either place is the same press with the same pending, and its answer, the record read again, settles both.
   const waits: WaitProps | null = attended ? {
     session: attended,
-    resolving: resolve.isPending || answer.isPending || parkGoAhead.isPending || personDone.isPending,
+    resolving: resolve.isPending || parkGoAhead.isPending || personDone.isPending,
     onResolve: here ? onResolve : undefined,
-    // Its card's answer (PARKANSWER1): through the box's say door where the box answers the park too, else the park's answer door.
-    onAnswerSession: here ? (answering ? answerFromCard : onAnswerSession) : undefined,
+    // Its card's answer (PARKANSWER1): through the box's say door, the one door that answers a park (ONEWAY1k).
+    onAnswerSession: here ? answerFromCard : undefined,
     onAnswerChoice: here && answering && question ? choiceFromCard : undefined,
     // QUESTIONUI1a (the design §8.4): the head's card's rows are the frame's selection too, so a row chosen there is chosen below.
     answerPick: here && answering && question ? { selected: parkPicked, onSelect: onParkPick } : undefined,

@@ -1390,16 +1390,19 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         public List<string> Faults { get; } = [];
 
         /// <summary>
-        /// A record as the wire answers it to this machine: its words waiting, and the person's joined as `answer` (a helper's answer is
-        /// never the person's, as the service's <c>Answer</c> reads it).
+        /// A record as the wire answers it to this machine: its words waiting, keyed (ONEWAY1m: no joined `answer`); and, where the stand-in
+        /// keeps the quest's ask, the entry its line is keyed by, which names that ask (COMMS1c), as the service keys a quest's sessions.
         /// </summary>
-        private static JsonObject Wire(JsonObject session)
+        private JsonObject Wire(JsonObject session)
         {
             var copy = (JsonObject)session.DeepClone();
-            var persons = copy["said"]!.AsArray().Where(word => word!["helper"] is null && word["from"] is null).ToList();
-            copy["answer"] = persons.Count == 0 ? null : string.Join("\n\n", persons.Select(word => word!["text"]!.GetValue<string>()));
+            if (Asks) copy["entry"] = "ask:a1/engine";
             return copy;
         }
+
+        /// <summary>The person's words waiting on a record: neither a helper's answer nor Daoris's own, as the service's sender rule reads them.</summary>
+        private static List<JsonNode?> Persons(JsonObject session) =>
+            [.. session["said"]!.AsArray().Where(word => word!["helper"] is null && word["from"] is null)];
 
         /// <summary>A driven record opened as the open door asks it, under the stand-in's lock.</summary>
         private JsonObject NewSession(JsonObject body)
@@ -1637,7 +1640,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                         var asker = Find(served);
                         var state = asker["state"]!.GetValue<string>();
                         // A park the person answered takes it beside their answer (HELPERWAIT1), as the desk lets it; any other live record waits.
-                        var answeredPark = state == "awaiting-person" && Wire(asker)["answer"] is not null;
+                        var answeredPark = state == "awaiting-person" && Persons(asker).Count > 0;
                         if (Live.Contains(state) && !answeredPark) return (409, $$"""{"error":"Session `{{served}}` is {{state}}. Nothing was kept."}""");
                         if (asker["said"]!.AsArray().Any(word => word!["helper"]?.GetValue<string>() == id)) return (409, """{"error":"it goes once"}""");
 

@@ -227,7 +227,7 @@ export function AttendedSession({
   /** Passed straight through too: where an intake's answer is, its ask (INT4g). */
   onAnswerAsk?: (ask: string) => void;
   /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */
-  onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
+  onAnswerSession?: (answer: string) => Promise<string | null> | void;
   /** And a press of its park's question's answer from its card, with the card's words (PARKANSWER1). */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
   /** And the answer selected in its question, the frame's, shared with the box (QUESTIONUI1a). */
