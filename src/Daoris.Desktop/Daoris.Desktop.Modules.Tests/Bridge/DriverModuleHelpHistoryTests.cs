@@ -239,7 +239,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     {
         var (loop, module, _) = await UpAsync(Record("h1"), Record("c1", repository: "engine"));
 
-        Assert.Contains("Settings → AI features", await RefusalAsync(module, "HELP_START_FROM", new { id = "h1" }));
+        Assert.Contains("Agents → Roles, Ask Daoris", await RefusalAsync(module, "HELP_START_FROM", new { id = "h1" }));
 
         File.WriteAllText(loop.ConfigPath, """{ "helperAdapter": "claude-code-acp" }""");
         Assert.Contains("is no Ask Daoris conversation of this machine's", await RefusalAsync(module, "HELP_START_FROM", new { id = "c1" }));

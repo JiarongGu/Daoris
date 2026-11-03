@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1w-s part 5 (the design §19.15, "Its own verbs"): <c>daoris driver actor export</c> writes the seeded eight's staffing in D205's
-/// shape, <c>import</c> reads one back as one write, and <c>found</c> lists what the check kept, <c>found take|dismiss &lt;n&gt;</c> pressing it.
+/// FOUNDATION1w-s part 5 (the design §19.15, "Its own verbs"): <c>found</c> lists what the check kept, <c>found take|dismiss &lt;n&gt;</c>
+/// pressing it, on a home the copy still reaches. <c>export</c> and <c>import</c> are retired (ONEWAY1c-ii): the role door sets and says the roles.
 /// </summary>
 public sealed class StaffingVerbsTests : IDisposable
 {
@@ -40,42 +40,21 @@ public sealed class StaffingVerbsTests : IDisposable
         Folder = _home,
     }, CancellationToken.None);
 
-    [Fact]
-    public async Task Export_writes_the_staffing_as_actors_and_import_reads_it_back_as_one_write_each_actor_it_names_the_rest_as_before()
+    [Theory]
+    [InlineData("export")]
+    [InlineData("export", "staffing.json")]
+    [InlineData("import", "staffing.json")]
+    public async Task ONEWAY1c_ii_actor_export_and_import_are_retired_naming_the_role_door_and_write_nothing(params string[] args)
     {
-        Staffing.Set("build", [new ActorChoice("codex-acp", "o3"), new ActorChoice("claude-code-acp")]);
-        Staffing.Set("intake", []);
-
-        Assert.Equal(0, await Run("export", "staffing.json"));
-        using (var exported = JsonDocument.Parse(File.ReadAllText(Path.Combine(_home, "staffing.json"))))
-        {
-            var actors = exported.RootElement.GetProperty("actors");
-            Assert.Equal(["build", "intake", "brainstorm", "chat"], actors.EnumerateObject().Select(each => each.Name));
-        }
-
-        Staffing.Set("build", [new ActorChoice("other-acp")]);
-        Staffing.Set("intake", [new ActorChoice("codex-acp")]);
-        Staffing.Set("helper", [new ActorChoice("codex-acp")]);
-
-        Assert.Equal(0, await Run("import", "staffing.json"));
-
-        var loaded = DriverConfig.Load(File_);
-        Assert.Equal(["codex-acp", "claude-code-acp"], loaded.Actors["build"].Select(each => each.Agent));
-        Assert.Empty(loaded.Actors["intake"]);
-        Assert.False(loaded.Actors.ContainsKey("helper"));
-        Assert.Equal("codex-acp", DriverConfig.Parse(File.ReadAllText(File_)).Adapter);
-    }
-
-    [Fact]
-    public async Task An_import_naming_an_entry_the_judge_refuses_writes_nothing_and_says_why()
-    {
-        File.WriteAllText(Path.Combine(_home, "bad.json"), """{ "actors": { "build": [] } }""");
+        File.WriteAllText(Path.Combine(_home, "staffing.json"), """{ "actors": { "build": [{ "agent": "other-acp" }] } }""");
         var before = File.ReadAllText(File_);
 
-        Assert.Equal(2, await Run("import", "bad.json"));
+        Assert.Equal(2, await Run(args));
 
-        Assert.Contains("build cannot be off", _error.ToString());
+        Assert.Contains("daoris role set", _error.ToString());
         Assert.Equal(before, File.ReadAllText(File_));
+        Assert.Equal("claude-code-acp", DriverConfig.Load(File_).Adapter);
+        Assert.Equal("""{ "actors": { "build": [{ "agent": "other-acp" }] } }""", File.ReadAllText(Path.Combine(_home, "staffing.json")));
     }
 
     [Fact]

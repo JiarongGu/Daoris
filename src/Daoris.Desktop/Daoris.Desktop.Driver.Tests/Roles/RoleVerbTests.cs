@@ -119,8 +119,9 @@ public sealed class RoleVerbTests : IDisposable
 
         Assert.Equal(0, await Run("default", "build"));
 
-        Assert.False(DriverConfig.Load(File_).Actors.ContainsKey("build"));
-        Assert.Equal(DriverConfig.Load(File_).Adapter, ActorChoices.FirstAgent("build", DriverConfig.Load(File_)));
+        // ONEWAY1b: the default is the seed's written order, never as before.
+        Assert.Equal([new ActorChoice("claude-code")], DriverConfig.Load(File_).Actors["build"]);
+        Assert.Equal("claude-code", ActorChoices.FirstAgent("build", DriverConfig.Load(File_)));
     }
 
     /// <summary>STAFFPOLICY1b (the staff policy design §6.4): the terminal's twin of the editor, under the same judge and the same door.</summary>

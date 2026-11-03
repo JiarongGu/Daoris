@@ -750,7 +750,8 @@ public sealed class Driver(
     /// The door this machine's starts ride — the protocol door where any entry of Build's order rides it, else the first entry's wire
     /// (MODELROLE1c, D205 §4.1's <c>no-connector</c>: the planner asks whether any entry can drive a repository that has not adopted
     /// Daoris, and the start passes each entry that cannot), read against this tick's adapters so a plugin's harness counts. An adapter
-    /// nobody knows is the pipe: the stricter door plans nothing more than it should, and the spawn names the unknown adapter itself.
+    /// nobody knows is the pipe: the stricter door plans nothing more than it should, and the spawn names the unknown adapter itself. An
+    /// order that does not read is the pipe too, as the start that reads it holds.
     /// </summary>
     private SessionWire Door()
     {
@@ -761,7 +762,7 @@ public sealed class Driver(
         }
         catch (DriverException)
         {
-            order = [new ActorEffective(config.Adapter, null, null, "before")];
+            order = [];
         }
 
         SessionWire? first = null;

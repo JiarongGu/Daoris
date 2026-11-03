@@ -38,10 +38,16 @@ public sealed record TransitionalEntry
     public string? Part { get; init; }
 }
 
+/// <summary>The copy's end handed to the staffing below, which names nothing of the register's, as the driver loads.</summary>
+internal static class StaffingCopyWiring
+{
+    [System.Runtime.CompilerServices.ModuleInitializer]
+    internal static void Install() => RoleStaffing.CopyEnded = TransitionalRegister.StaffingCopyEnded;
+}
+
 /// <summary>Every transitional read the driver keeps, in one plain list (oneway design §1.3), and This machine's list of them.</summary>
 public static class TransitionalRegister
 {
-    private static readonly string[] Actors = ["build", "chat", "brainstorm", "intake", "ask-daoris"];
     private static readonly string[] OldNames = ["early", "near", "prefer", "parallel"];
     private static readonly string[] PooledSections = ["defaults", "workspaces", "workspaceVersions", "workspaceRotation", "workspaceRotationUse"];
 
@@ -57,8 +63,16 @@ public static class TransitionalRegister
     /// <summary>The builds before COMMS1e's, whose host sends no `presses` mark. No release names COMMS1e's yet.</summary>
     private static readonly OlderBuild BeforeComms1e = new("the builds before COMMS1e's, whose host sends no `presses` mark");
 
-    /// <summary>The builds before the staffing part's w-s, which read the staffing keys from driver.json. No release names it yet.</summary>
-    private static readonly OlderBuild BeforeStaffingStore = new("the builds before the staffing part's w-s, which read the staffing keys from driver.json");
+    /// <summary>The builds before the staffing part's w-s, which read the staffing keys from driver.json: older than any build that stamps a receipt.</summary>
+    private static readonly OlderBuild BeforeStaffingStore = new("the builds before the staffing part's w-s, which read the staffing keys from driver.json") { BeforeStamps = true };
+
+    /// <summary>
+    /// Whether no older build reads <paramref name="home"/>'s staffing from driver.json any more (ONEWAY1c-ii): the floor passes the w-s build,
+    /// which a standing conversion's receipt makes so; a conversion not undone took the keys out; or the home was seeded fresh and its file
+    /// never held the staffing. The copy's writer and its found check skip such a home.
+    /// </summary>
+    public static bool StaffingCopyEnded(string home) =>
+        HomeFloor.Of(home).Passes(BeforeStaffingStore) || StaffingPart.KeysTakenOut(home) || new RoleStaffing(home).Seeded();
 
     /// <summary>The builds before CONTEXTONE1c's, which handed the map, the look, the indexes and the standing answer as sections and told a chat its routing. No release names CONTEXTONE1c's yet.</summary>
     private static readonly OlderBuild BeforeContextOne1c = new("the builds before CONTEXTONE1c's, which handed the map, the look, the indexes and the standing answer as sections of their own and told a chat its routing in a note");
@@ -95,10 +109,11 @@ public static class TransitionalRegister
         {
             Id = "actor-key-before",
             Kept = "Settings/ActorKey.cs:32-49",
-            Reaches = "A role with no stored staffing on a home no conversion has reached starts as its single-agent key says, shown as before.",
-            Ends = "Every role holds a stored entry, which the staffing part's conversion writes.",
+            Reaches = "A role of the five with an order of its own and no stored staffing, on a home no conversion has reached: it starts as its single-agent key says, shown as before.",
+            Ends = "The staffing part's census has ended: each of the five holds a written order in the store, which the staffing part's conversion writes.",
             Row = "ONEWAY1af",
-            Ended = home => Read(home, HomeEntry.DriverConfig) is { } root && root["actors"] is JsonObject stored && Actors.All(stored.ContainsKey),
+            Part = StaffingPart.Part,
+            Ended = StaffingPart.EveryOrderWritten,
         },
         new()
         {
@@ -251,12 +266,12 @@ public static class TransitionalRegister
         new()
         {
             Id = "staffing-copy",
-            Kept = "Roles/RoleStaffing.cs:578",
-            Reaches = "A home an older build may still open (D226): each staffing write is copied onto driver.json's staffing keys, and the found check compares the file with what the store wrote.",
-            Ends = "The floor passes the w-s build on the home, which the staffing part's first Apply makes so; ONEWAY1c-ii makes the writer skip such a home first.",
+            Kept = "Roles/RoleStaffing.cs:664, Roles/StaffingVerbs.cs:14, ../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:357",
+            Reaches = "A home an older build may still open (D226): each staffing write is copied onto driver.json's staffing keys, the found check compares the file with what the store wrote, and a found change waits for Take it or Dismiss.",
+            Ends = "The floor passes the w-s build on the home, which the conversion's first Apply makes so, or the home was seeded fresh: the writer and the check skip such a home (ONEWAY1c-ii), and the staffing part clears its found changes.",
             Row = "ONEWAY1af",
             Waits = BeforeStaffingStore,
-            Ended = home => HomeFloor.Of(home).Passes(BeforeStaffingStore),
+            Ended = StaffingCopyEnded,
         },
         new()
         {
