@@ -131,8 +131,10 @@ CREATE TABLE role_starts (session TEXT PRIMARY KEY, role TEXT NOT NULL, choice T
 - Its facts: the window's starts by choice and this look's reservations; today's starts and reported tokens by choice; the agents
   marked not answering (§4.2); the choices this line moved off within 30 minutes; now.
 - In order: entries whose `takes` excludes the work leave; entries over today's budget are passed `over-budget`; where the role moves
-  on `transient`, an agent marked not answering is passed `not-answering` and a choice moved off within 30 minutes `moved-off`, each
+  on `transient`, a choice moved off within 30 minutes is passed `moved-off`, then an agent marked not answering `not-answering`, each
   while another entry remains (`SwitchDecision.Hold`'s 30 minutes, `Agents/Domain/SwitchDecision.cs:68`); then the rule orders the rest.
+  The moved-off pass is first (§8's codes, REVIEW2 L4): where one choice is left of the two, the line does not walk back onto the one
+  it has just left.
 - Only the role's own entries (`From` 1 to 4) are arranged; a pick, a handed agent, *as before* and `rule-default` walk as given;
   `StaffJudge.OnCondition(policy, condition, facts)` answers a met condition's action (§4), pure, for the course decision.
 

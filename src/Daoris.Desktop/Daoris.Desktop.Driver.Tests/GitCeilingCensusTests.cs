@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Census)]
 public sealed class GitCeilingCensusTests
 {
-    private static readonly string[] Projects = [SourceFiles.DriverTestsProject, "Daoris.Desktop.Modules.Tests"];
+    private static readonly string[] Projects = [SourceFiles.DriverTestsProject, SourceFiles.ModulesTestsProject];
 
     private static readonly Regex Starts = new(@"ProcessStartInfo\s*\(\s*""git""|\bFileName\s*=\s*""git""|\bGitStart\s*\(");
 
