@@ -1123,7 +1123,6 @@
     "CanonicalLineTests.cs": "Workplace",
     "CleanupGitTests.cs": "Workplace",
     "CommitRulesTests.cs": "Workplace",
-    "ConfigSeamLandingTests.cs": "Workplace",
     "ContentHeldTests.cs": "Workplace",
     "ContentHoldsUnreadTests.cs": "Workplace",
     "ContentHoldWordsTests.cs": "Workplace",

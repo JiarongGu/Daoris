@@ -1,6 +1,6 @@
 using Xunit;
 
-// These modules resolve every path they touch from the ENVIRONMENT — `DAORIS_DRIVER_CONFIG`,
+// These modules resolve every path they touch from the ENVIRONMENT — `DAORIS_HOME`,
 // `DAORIS_REMOTE_CONFIG`, `DAORIS_HARNESS_CONFIG` and the remote env pair — because that is how a
 // person redirects them and how every gate in this repository stays hermetic. Environment variables
 // are process-global, so two test classes running at once overwrite each other's redirection and the

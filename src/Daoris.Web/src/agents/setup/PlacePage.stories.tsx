@@ -35,7 +35,7 @@ const DRIVING: PlaceDriving = {
   onDrive: nothing, onHold: nothing, onTrees: nothing, onOpenAppointed: nothing, onOpenRepositories: nothing,
 };
 
-const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue: CATALOGUE, read: 'ok' as const, busy: false, onSet: nothing, onSetActor: nothing };
+const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue: CATALOGUE, read: 'ok' as const, busy: false, onSet: nothing };
 
 const WORKFLOW_EDITOR = {
   list: LIST, palette: PALETTE, error: null, roles: [], shown: null, onShow: nothing, judged: null, judging: false, onJudge: nothing,

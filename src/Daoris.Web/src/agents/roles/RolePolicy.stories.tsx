@@ -12,7 +12,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const OFFERS = { 'agent-a': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] } };
 
 const BASE: Editing = {
-  id: 'build', mode: 'role', isNew: false, revision: 0, name: 'Build', nameIn: [['zh', '开发']], takes: ['build'], work: 'build', place: 'machine', placeId: '',
+  id: 'build', isNew: false, revision: 0, name: 'Build', nameIn: [['zh', '开发']], takes: ['build'], work: 'build', place: 'machine', placeId: '',
   drafts: [
     { key: 1, agent: 'agent-a', model: 'sonnet', effort: 'high', weight: '3' },
     { key: 2, agent: 'agent-a', model: 'opus', effort: 'high', weight: '1', budgetKind: 'starts', budget: '6', works: ['design'] },
@@ -71,14 +71,6 @@ export const StaleHalf: Story = { args: { editing: STALE }, decorators: [storyWi
 export const StaleNarrow: Story = { args: { editing: STALE }, decorators: [storyWidths.narrow] };
 export const StaleChinese: Story = { args: { editing: STALE }, decorators: [chinese] };
 export const StaleDark: Story = { args: { editing: STALE }, decorators: [dark] };
-
-/** A home whose staffing is not in the store: the sentence, and no policy controls. */
-const NO_STORE = { editing: { ...BASE, mode: 'staffing' as const, policy: null }, noStore: true, next: null };
-export const NoStore: Story = { args: NO_STORE };
-export const NoStoreHalf: Story = { args: NO_STORE, decorators: [storyWidths.half] };
-export const NoStoreNarrow: Story = { args: NO_STORE, decorators: [storyWidths.narrow] };
-export const NoStoreChinese: Story = { args: NO_STORE, decorators: [chinese] };
-export const NoStoreDark: Story = { args: NO_STORE, decorators: [dark] };
 
 /** The policy changed since it was read: the driver's sentence under Save, the draft kept. */
 const REFUSED = { refused: 'the policy changed since you read it' };

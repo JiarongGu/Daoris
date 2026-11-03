@@ -47,7 +47,7 @@ function Page({ chosen = null, large = false, appointed = null, filters = NO_FIL
   const detail = selected && (
     <DiagramDetail
       structure={structure} id={selected} open={open} onToggle={toggle} doors={DOORS}
-      working={<RolesCard catalogue={CATALOGUE} agents={AGENTS} onSet={nothing} onSetActor={nothing} only={selected.slice('role:'.length)} />}
+      working={<RolesCard catalogue={CATALOGUE} agents={AGENTS} onSet={nothing} only={selected.slice('role:'.length)} />}
     />
   );
   return (

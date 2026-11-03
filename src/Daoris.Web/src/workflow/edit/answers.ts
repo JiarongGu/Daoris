@@ -6,9 +6,6 @@ import type { SettingsChoices } from '../../agents/tools';
 import type { ActorRow, RoleCatalogue, RoleChangePress } from '../../data/wiring';
 import type { Authored } from '../../locales/authored';
 
-/** A role's order entry as `SET_ACTOR` takes it. */
-type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
-
 /** A place that chooses a saved workflow: `repository` or `workspace`, its name, and the role it holds there. */
 export type WorkflowChosen = { level: 'repository' | 'workspace'; name: string; role: 'default' | 'kind' | 'landed'; kind: string | null };
 
@@ -143,7 +140,7 @@ export type RoleAnswered = { done: () => void; refused: (sentence: string) => vo
 
 /**
  * What a step's *Taken by* needs to open the one role editor beside the step (SETUPUX1t): the catalogue and the order of each role, the agents
- * this machine has and what each offers, and the two presses over `SET_ROLE` and `SET_ACTOR`. Read only once the editor shows (D150).
+ * this machine has and what each offers, and the press over `SET_ROLE`. Read only once the editor shows (D150).
  */
 export type StepStaffing = {
   catalogue: RoleCatalogue | null;
@@ -153,5 +150,4 @@ export type StepStaffing = {
   offers: Readonly<Record<string, SettingsChoices | null | undefined>>;
   busy: boolean;
   onSet: (press: RoleChangePress, answered: RoleAnswered) => void;
-  onSetActor: (actor: string, choices: ActorChoice[] | null, answered: RoleAnswered) => void;
 };

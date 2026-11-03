@@ -324,7 +324,7 @@ public static class AgentsCommand
         var settings = HarnessSettings.Load(path);
         if (settings.Problem is { } problem) throw new AgentWords(problem);
 
-        var named = DriverConfig.Load(DriverConfig.ResolvePath(world.Instance.Environment, home)).Commands.GetValueOrDefault(name);
+        var named = DriverConfig.Load(DriverConfig.ResolvePath(home)).Commands.GetValueOrDefault(name);
         var run = HarnessProbe.CommandOf(name, toolchain, named, settings, home, FlagValue(args, "--workspace"));
         if (args.Contains("--json"))
         {

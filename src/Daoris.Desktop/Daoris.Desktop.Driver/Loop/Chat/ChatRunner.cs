@@ -939,8 +939,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             return new(
                 null,
                 $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
-                + "takes its target once and runs to completion. Name another under Settings → AI features, "
-                + "or `daoris driver helper <agent>`.");
+                + "takes its target once and runs to completion. Name another under Agents → Roles, Ask Daoris, "
+                + "or `daoris role set ask-daoris \"<agent>\"`.");
         }
 
         // HELPMODE1a1 (D183 point 3): full access on an agent with no mode that asks nothing is refused before anything is opened.
