@@ -13,7 +13,7 @@ import { type Editing, RoleEditor } from './RoleEditor';
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
 const EDITING: Editing = {
-  id: 'engine-build', mode: 'role', isNew: false, revision: 3, name: 'Engine build', nameIn: [['zh', '引擎开发']], takes: ['build'], work: 'build',
+  id: 'engine-build', isNew: false, revision: 3, name: 'Engine build', nameIn: [['zh', '引擎开发']], takes: ['build'], work: 'build',
   place: 'repository', placeId: 'engine', drafts: [{ key: 1, agent: 'claude-code', model: 'sonnet', effort: 'high' }],
 };
 

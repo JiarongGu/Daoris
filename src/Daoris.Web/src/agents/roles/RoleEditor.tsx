@@ -16,11 +16,11 @@ const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raise
 export type Draft = { key: number; agent: string; model: string; effort: string } & PolicyFields;
 
 /**
- * `role` is the catalogue's editor over `SET_ROLE`; `staffing` holds a role's order alone, over `SET_ACTOR`. `policy` is the role's staffing
- * policy (STAFFPOLICY1f), absent where the role keeps none: a new role, a brainstorm, a `staffing` editor or a driver before policies.
+ * A role in the catalogue's one editor, over `SET_ROLE` (ONEWAY1a: its record and its choices together). `policy` is the role's staffing
+ * policy (STAFFPOLICY1f), absent where the role keeps none: a new role, a brainstorm or a driver before policies.
  */
 export type Editing = {
-  id: string; mode: 'role' | 'staffing'; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;
+  id: string; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;
   place: string; placeId: string; drafts: Draft[]; policy?: PolicyDraft | null;
 };
 
@@ -46,13 +46,12 @@ export type RoleEditorProps = {
   conversing: boolean;
   mayOff: boolean;
   isOff: boolean;
+  /** *Use the default*: a seeded role given its seed over `SET_ROLE`'s `default`, record and choices both. */
   mayClear: boolean;
   /** The driver's sentence for a refused press. */
   refused: string | null;
   /** The role's next new start as its saved policy would take it (a probe); null or absent, none is said. */
   next?: RoleNext | null;
-  /** This home keeps no policies in the store yet: the editor says so and offers none. */
-  noStore?: boolean;
   /** The policy fields this build enforces (`ROLES`' `policyFields`); absent, every move the editor knows. */
   fields?: readonly string[];
   onSave: (off: boolean) => void;
@@ -70,7 +69,7 @@ const MOVE_FIELDS = ['moves.limit', 'moves.transient', 'moves.failed', 'moves.qu
  * A molecule shared by All roles, a place's Roles and, later, a step's: it reads no bridge, and every press goes out.
  */
 export function RoleEditor({
-  editing: now, onEditing, title, agents, offers, works, busy, held, placed, consequence, conversing, mayOff, isOff, mayClear, refused, next, noStore, fields = MOVE_FIELDS,
+  editing: now, onEditing, title, agents, offers, works, busy, held, placed, consequence, conversing, mayOff, isOff, mayClear, refused, next, fields = MOVE_FIELDS,
   onSave, onClear, onCancel,
 }: RoleEditorProps) {
   const { t } = useTranslation();
@@ -81,7 +80,7 @@ export function RoleEditor({
   const rule = policy && policy.preset !== 'first' ? 'weight' : 'order';
   const roleWorks = now.takes.length > 0 ? now.takes : [now.work];
   const conversation = conversational(roleWorks);
-  const policyLocked = busy || (now.mode === 'role' && held);
+  const policyLocked = busy || held;
   const patchDraft = (key: number, patch: Partial<PolicyFields>) =>
     onEditing((was) => ({ ...was, drafts: was.drafts.map((draft) => (draft.key === key ? { ...draft, ...patch } : draft)) }));
   const patchPolicy = (patch: (was: PolicyDraft) => Partial<PolicyDraft>) => onEditing((was) => (was.policy ? { ...was, policy: { ...was.policy, ...patch(was.policy) } } : was));
@@ -104,7 +103,7 @@ export function RoleEditor({
   const add = () => onEditing((was) => ({
     ...was, drafts: [...was.drafts, { key: Math.max(0, ...was.drafts.map((draft) => draft.key)) + 1, agent: agents[0]?.value ?? '', model: '', effort: '', weight: '1' }],
   }));
-  const locked = busy || (now.mode === 'role' && held);
+  const locked = busy || held;
   const shared = now.takes.length > 1;
   const labelOf = (work: string) => works.find((each) => each.value === work)?.label ?? work;
   const moving = policy !== null && Object.keys({ ...policy.moves, ...policy.carried }).length > 0;
@@ -128,7 +127,6 @@ export function RoleEditor({
       }}
     >
       <p className="m-0 text-small font-medium text-ink">{title}</p>
-      {noStore && <p className="m-0 text-small text-ink-soft">{t('settings.ai.policy.noStore')}</p>}
       {policy?.state === 'stale' && <p role="status" className="m-0 text-small text-ink-soft">{t('settings.ai.policy.stale')}</p>}
       {policy && (
         <HowItChooses
@@ -239,51 +237,50 @@ export function RoleEditor({
         </p>
       )}
       {policy && <p className="m-0 text-meta text-ink-faint">{t('settings.ai.policy.older')}</p>}
-      {now.mode === 'role' && (
-        <details open={now.isNew} className="grid gap-2">
-          <summary className="cursor-pointer text-small font-medium text-ink-soft">{t('settings.ai.roles.editRole')}</summary>
-          <p className="m-0 mb-2 text-small text-ink-soft">{placed}</p>
-          <FormGrid columns={['name', 'name']}>
-            <FormField label={t('settings.ai.roles.field.name')}>
-              <input aria-label={t('settings.ai.roles.field.name')} value={now.name} onChange={(event) => set({ name: event.target.value })} className={FIELD} />
+      <details open={now.isNew} className="grid gap-2">
+        <summary className="cursor-pointer text-small font-medium text-ink-soft">{t('settings.ai.roles.editRole')}</summary>
+        <p className="m-0 mb-2 text-small text-ink-soft">{placed}</p>
+        <FormGrid columns={['name', 'name']}>
+          <FormField label={t('settings.ai.roles.field.name')}>
+            <input aria-label={t('settings.ai.roles.field.name')} value={now.name} onChange={(event) => set({ name: event.target.value })} className={FIELD} />
+          </FormField>
+          {now.nameIn.map(([tag, text], at) => (
+            <FormField key={at} label={t('settings.ai.roles.field.nameIn')}>
+              <span className="flex min-w-0 gap-1.5">
+                <input
+                  aria-label={t('settings.ai.roles.field.nameInTag')} value={tag} placeholder="fr" className={`${FIELD} !w-20 shrink-0`}
+                  onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [event.target.value, each[1]] : each)) })}
+                />
+                <input
+                  aria-label={t('settings.ai.roles.field.nameInText')} value={text} className={FIELD}
+                  onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [each[0], event.target.value] : each)) })}
+                />
+                <Button variant="ghost" onClick={() => set({ nameIn: now.nameIn.filter((_, i) => i !== at) })}>{t('settings.ai.roles.field.nameInRemove')}</Button>
+              </span>
             </FormField>
-            {now.nameIn.map(([tag, text], at) => (
-              <FormField key={at} label={t('settings.ai.roles.field.nameIn')}>
-                <span className="flex min-w-0 gap-1.5">
-                  <input
-                    aria-label={t('settings.ai.roles.field.nameInTag')} value={tag} placeholder="fr" className={`${FIELD} !w-20 shrink-0`}
-                    onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [event.target.value, each[1]] : each)) })}
-                  />
-                  <input
-                    aria-label={t('settings.ai.roles.field.nameInText')} value={text} className={FIELD}
-                    onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [each[0], event.target.value] : each)) })}
-                  />
-                  <Button variant="ghost" onClick={() => set({ nameIn: now.nameIn.filter((_, i) => i !== at) })}>{t('settings.ai.roles.field.nameInRemove')}</Button>
-                </span>
-              </FormField>
-            ))}
-            <Button variant="ghost" onClick={() => set({ nameIn: [...now.nameIn, ['', '']] })}>{t('settings.ai.roles.field.nameInAdd')}</Button>
-            {shared ? (
-              <p className="m-0 text-small text-ink-soft">
-                {t('settings.ai.roles.field.takesAll', { works: now.takes.map(labelOf).join(t('settings.ai.actors.and')) })}
-              </p>
-            ) : (
-              <FormField label={t('settings.ai.roles.field.work')}>
-                <SelectField value={now.work} onChange={(value) => set({ work: value })} options={[...works]} ariaLabel={t('settings.ai.roles.field.work')} />
-              </FormField>
-            )}
-          </FormGrid>
-        </details>
-      )}
+          ))}
+          <Button variant="ghost" onClick={() => set({ nameIn: [...now.nameIn, ['', '']] })}>{t('settings.ai.roles.field.nameInAdd')}</Button>
+          {shared ? (
+            <p className="m-0 text-small text-ink-soft">
+              {t('settings.ai.roles.field.takesAll', { works: now.takes.map(labelOf).join(t('settings.ai.actors.and')) })}
+            </p>
+          ) : (
+            <FormField label={t('settings.ai.roles.field.work')}>
+              <SelectField value={now.work} onChange={(value) => set({ work: value })} options={[...works]} ariaLabel={t('settings.ai.roles.field.work')} />
+            </FormField>
+          )}
+        </FormGrid>
+      </details>
       <p className="m-0 text-small text-ink-soft">{consequence}</p>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={locked}>{t('settings.ai.actors.save')}</Button>
         {mayOff && !isOff && !now.isNew && (
           <Button variant="ghost" disabled={locked} onClick={() => onSave(true)}>{t('settings.ai.actors.off')}</Button>
         )}
-        {mayClear && <Button variant="ghost" disabled={busy} onClick={onClear}>{t('settings.ai.roles.clear')}</Button>}
+        {mayClear && <Button variant="ghost" disabled={locked} onClick={onClear}>{t('settings.ai.roles.useDefault')}</Button>}
         <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
       </div>
+      {mayClear && <p className="m-0 text-small text-ink-soft">{t('settings.ai.roles.useDefaultSays')}</p>}
       {refused && <Refused sentence={refused} />}
     </form>
   );

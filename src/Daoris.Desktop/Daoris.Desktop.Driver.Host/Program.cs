@@ -14,7 +14,6 @@ using Daoris.Driver;
 //   DAORIS_SERVICE_URL     where the service is                (the driver is its client: a host the install
 //                          carries finds the running desktop's from its home when none is named, D171)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set     (absent: local trust, D21)
-//   DAORIS_DRIVER_CONFIG   the person's standing choices       (default: $DAORIS_HOME/driver.json)
 //   DAORIS_REMOTE_URL      one workspace's remote, with its key (or $DAORIS_HOME/remotes.json — D48 §5;
 //   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole,
 //   DAORIS_REMOTE_WORKSPACE  for the workspace named here — absent: `default`)
@@ -97,17 +96,15 @@ if (args is ["roles", "brief"])
 // running desktop left in this home. A workspace build is no install, and keeps needing both named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
 
-// FOUNDATION1w-s (the foundation design §19.15): the home's own driver.json reads its staffing from the store, wired before any door or the
-// loop loads it; a file DAORIS_DRIVER_CONFIG names is read and written as today, with no store.
+// FOUNDATION1w-s (the foundation design §19.15): the home's driver.json reads its staffing from the store, wired before any door or the
+// loop loads it.
 RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
 
 // One writer per home (HOMELEASE1, the terminal RPC design §5): a verb acting alone holds the home's lease for its mutation,
 // never for a read (`VerbLeases` says which). Beside a running instance it acts as it always did, holding nothing, until RPC1's
 // pipe makes it that instance's client; where another verb, the first-start move or the launcher's swap holds the home, it
 // waits up to thirty seconds and is then refused, exit 1, naming which. A home named nowhere takes none: the verb refuses as
-// it always did. The lease is let go as the verb ends. It is taken in the home the loop drives and holds (LEASEHOME2): the folder
-// the driver's config is in, `DAORIS_HOME` unless DAORIS_DRIVER_CONFIG names a file elsewhere, so a verb meets the loop's lease
-// wherever the config is.
+// it always did. The lease is let go as the verb ends. It is taken in the home the loop drives and holds (LEASEHOME2), `DAORIS_HOME`.
 HomeLease? verbLease = null;
 if (VerbLeases.HoldsHere(args, Environment.GetEnvironmentVariable) && DriverConfig.FindHome() is { } leaseHome)
 {

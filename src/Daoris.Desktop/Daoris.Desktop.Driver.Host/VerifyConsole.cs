@@ -31,7 +31,7 @@ internal static class VerifyConsole
 
         try
         {
-            var config = DriverConfig.Load(DriverConfig.ResolvePath(Environment.GetEnvironmentVariable, home));
+            var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
             var route = WorkflowSelection.ResolveLanded(config, ask.Repository, null);
             return await VerifyCommand.BindAsync(home, checkout, ask, route, null, Console.Out, CancellationToken.None).ConfigureAwait(false);
         }

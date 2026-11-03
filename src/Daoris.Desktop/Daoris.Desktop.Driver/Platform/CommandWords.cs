@@ -76,7 +76,7 @@ public static class CommandWords
         {
             Nested = new Dictionary<string, IReadOnlyList<string>> { ["opinion"] = ["ask", "show", "stop", "anyway", "myself"] },
         },
-        new("settings", ["notify", "strikes", "cooloff", "keep", "cap", "handover", "brainstorms", "timeout", "adapter", "intake", "helper", "actor"]),
+        new("settings", ["notify", "strikes", "cooloff", "keep", "cap", "handover", "brainstorms", "timeout", "actor"]),
         new("space", ["free"], Takes: "(read)", Whole: true),
         new("steward", ["acts", "drive", "undrive", "hold", "resume", "trees", "stop", "finish", "retry", "desk", "request"], Whole: true),
         new("tool", ["list", "path", "use", "download", "update", "delete", "locations", "look", "git"], Whole: true),
@@ -94,8 +94,11 @@ public static class CommandWords
     [
         .. new[] { "list", "drive", "undrive", "hold", "resume", "trees", "line", "landing", "work-cycle", "across", "standing", "language", "review",
             "opinion", "helpers", "commits" }.Select(verb => new TreeMove($"driver {verb}", $"place {verb}")),
-        .. new[] { "notify", "strikes", "cooloff", "keep", "cap", "handover", "brainstorms", "timeout", "adapter", "intake", "helper", "actor" }
+        .. new[] { "notify", "strikes", "cooloff", "keep", "cap", "handover", "brainstorms", "timeout", "actor" }
             .Select(verb => new TreeMove($"driver {verb}", $"settings {verb}")),
+        // ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's alone.
+        .. new[] { ("adapter", "build"), ("intake", "intake"), ("helper", "ask-daoris") }
+            .SelectMany(each => new[] { new TreeMove($"driver {each.Item1}", $"role set {each.Item2}"), new TreeMove($"settings {each.Item1}", $"role set {each.Item2}") }),
         new("driver retry", "quest retry"),
         new("driver role", "role"),
         new("driver workflow", "workflow"),

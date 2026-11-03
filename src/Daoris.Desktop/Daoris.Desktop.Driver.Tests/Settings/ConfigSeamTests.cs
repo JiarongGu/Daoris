@@ -4,11 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONFIGSEAM1 (D63's per-file override): the driver's config is resolved once, by <see cref="DriverConfig"/>, for every door.
-/// The loop, the planner and the terminal read the file <c>DAORIS_DRIVER_CONFIG</c> names, while the trees joined their home to
-/// <c>driver.json</c> themselves, so a landing and the review's press ignored an override's landing and review rules: the planner sat
-/// a review step that the landing never asked for, and the work merged into the line. A door that holds its home reads the
-/// override where it is a file in that home, since every home is the folder its config sits in, and never another home's file.
+/// CONFIGSEAM1: the driver's config is resolved once, by <see cref="DriverConfig"/>, for every door. Since ONEWAY1c-i the one file is
+/// the home's <c>driver.json</c>: the variable that once named another file is read nowhere, so a run that wants other choices runs on a
+/// home of its own.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class ConfigSeamTests
@@ -16,88 +14,69 @@ public sealed partial class ConfigSeamTests
     private static Func<string, string?> Env(params (string Name, string? Value)[] pairs) =>
         name => pairs.FirstOrDefault(p => p.Name == name).Value;
 
+    /// <summary>The variable ONEWAY1c-i retired, spelled here alone so a test can name it to the resolution.</summary>
+    private const string Retired = "DAORIS_DRIVER_CONFIG";
+
     /// <summary>A home that need not exist: the resolution is a question about paths, never about the disk.</summary>
     private static readonly string Home = Path.Combine(AppContext.BaseDirectory, "seam", "data");
 
     private static readonly string Elsewhere = Path.Combine(AppContext.BaseDirectory, "seam", "other");
 
     [Fact]
-    public void An_override_of_another_name_in_the_home_is_the_file_a_door_holding_the_home_reads()
+    public void A_door_holding_a_home_reads_that_homes_driver_json()
     {
-        var chosen = Path.Combine(Home, "landing.json");
-
-        Assert.Equal(chosen, DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, chosen)), Home));
-        // The home as a door may hold it: a trailing separator is the same folder.
-        Assert.Equal(chosen, DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, chosen)), Home + Path.DirectorySeparatorChar));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Home));
     }
 
-    /// <summary>
-    /// 🔴 Another home's file is never this home's choices: an override is what the machine's home was derived from, so one that
-    /// names a file elsewhere is another machine's, or another test's, and a door holding this home reads its own.
-    /// </summary>
+    /// <summary>🔴 ONEWAY1c-i: the retired variable names nothing the resolution reads, with a home or without one.</summary>
     [Fact]
-    public void An_override_in_another_home_is_never_this_homes_file()
+    public void ONEWAY1c_i_the_retired_variable_is_read_nowhere()
     {
-        Assert.Equal(
-            DaorisHome.Entry(Home, HomeEntry.DriverConfig),
-            DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, Path.Combine(Elsewhere, "driver.json"))), Home));
+        var named = Path.Combine(Elsewhere, "landing.json");
+
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.FindPath(Env((Retired, named), (DaorisHome.Variable, Home))));
+        Assert.Null(DriverConfig.FindPath(Env((Retired, named))));
+        Assert.Equal(Home, DriverConfig.FindHome(Env((Retired, named), (DaorisHome.Variable, Home))));
+        Assert.Null(DriverConfig.FindHome(Env((Retired, named))));
     }
 
+    /// <summary>The one resolution, for a door with no home in hand: the home's file, then nothing to read.</summary>
     [Fact]
-    public void With_no_override_a_home_reads_its_own_driver_json()
+    public void The_machines_file_is_the_homes_then_none()
     {
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Env(), Home));
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Env((DaorisHome.Variable, Elsewhere)), Home));
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, "")), Home));
-    }
-
-    /// <summary>The one resolution, for a door with no home in hand: the override, then the home's file, then nothing to read.</summary>
-    [Fact]
-    public void The_machines_file_is_the_override_then_the_homes_then_none()
-    {
-        var chosen = Path.Combine(Elsewhere, "landing.json");
-
-        Assert.Equal(chosen, DriverConfig.FindPath(Env((DriverConfig.PathVariable, chosen), (DaorisHome.Variable, Home))));
         Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.FindPath(Env((DaorisHome.Variable, Home))));
         Assert.Null(DriverConfig.FindPath(Env()));
     }
 
     /// <summary>
     /// 🔴 LEASEHOME2 (the terminal RPC design §5): the home a verb takes the lease in is the home the loop drives, the folder the machine's
-    /// file is in, found without reading or making anything. The loop holds <c>HomeOf(FindPath())</c>'s lease, so each environment here
-    /// names that lease's own file; a verb that took <c>DAORIS_HOME</c>'s while the override named a file elsewhere never met the loop.
+    /// file is in, found without reading or making anything.
     /// </summary>
     [Fact]
     public void The_home_a_verb_takes_the_lease_in_is_the_one_the_loop_drives()
     {
-        var chosen = Path.Combine(Elsewhere, "landing.json");
         Func<string, string?>[] environments =
         [
-            Env((DriverConfig.PathVariable, chosen), (DaorisHome.Variable, Home)),
-            Env((DriverConfig.PathVariable, DaorisHome.Entry(Home, HomeEntry.DriverConfig)), (DaorisHome.Variable, Elsewhere)),
             Env((DaorisHome.Variable, Home)),
             Env((DaorisHome.Variable, Home + Path.DirectorySeparatorChar)),
         ];
 
-        Assert.Equal(Elsewhere, DriverConfig.FindHome(environments[0]));
-        Assert.Equal(Home, DriverConfig.FindHome(environments[1]));
-        Assert.Equal(Home, DriverConfig.FindHome(environments[2]));
+        Assert.Equal(Home, DriverConfig.FindHome(environments[0]));
         foreach (var environment in environments)
         {
             Assert.Equal(HomeLease.PathIn(DriverConfig.HomeOf(DriverConfig.FindPath(environment)!)), HomeLease.PathIn(DriverConfig.FindHome(environment)!));
         }
 
-        // Blank is none, as a blank home is: the home's own file, and with no home, nothing to hold.
-        Assert.Equal(Home, DriverConfig.FindHome(Env((DriverConfig.PathVariable, " "), (DaorisHome.Variable, Home))));
+        // Blank is none: with no home, nothing to hold.
         Assert.Null(DriverConfig.FindHome(Env()));
         Assert.Null(DriverConfig.FindHome(Env((DaorisHome.Variable, "  "))));
     }
 
     /// <summary>
     /// The seam held by a scan, as the spawn sites' are (<see cref="NoConsoleWindowTests"/>): the property is one every reader must
-    /// carry, and the next reader written will not know to. Outside <c>DriverConfig.cs</c> no source names the file, the variable,
-    /// or the default path, so a reader can only come through the one resolution; inside it, the variable is read once. The home's
-    /// table (<c>DaorisHome.cs</c>, HOMELAYOUT2) names the file as its <c>driver</c> entry's place, which only DriverConfig asks for.
+    /// carry, and the next reader written will not know to. Outside <c>DriverConfig.cs</c> no source names the file or the default
+    /// path, so a reader can only come through the one resolution; and no source at all spells the retired variable (ONEWAY1c-i). The
+    /// home's table (<c>DaorisHome.cs</c>, HOMELAYOUT2) names the file as its <c>driver</c> entry's place, which only DriverConfig asks for.
     /// </summary>
     [Fact]
     public void Every_reader_of_the_drivers_config_resolves_it_through_the_one_function()
@@ -133,10 +112,6 @@ public sealed partial class ConfigSeamTests
                 // The home's table, the driver's one copy of D172's (HOMELAYOUT2), names the file as an entry's place.
                 if (project == "Daoris.Desktop.Driver" && Path.GetFileName(file) == "DaorisHome.cs") continue;
 
-                // The list of every variable Daoris reads (WIRING1b) names the variable to show it, and This Daoris's reader
-                // finds the file through FindPath like every other door.
-                if (project == "Daoris.Desktop.Driver" && Path.GetFileName(file) == "WiringVariables.cs") continue;
-
                 foreach (Match bypass in Bypass().Matches(source))
                 {
                     var line = source[..bypass.Index].Count(c => c == '\n') + 1;
@@ -148,17 +123,17 @@ public sealed partial class ConfigSeamTests
         Assert.True(scanned >= 200, $"expected to scan the desktop's sources, scanned {scanned}");
         Assert.NotNull(owner);
         Assert.True(bypasses.Count == 0,
-            "a reader of the driver's config resolved it itself, so an override's rules never reach it; "
-            + "ask DriverConfig.ResolvePath() (or ResolvePath(home), FindPath()) instead:\n" + string.Join('\n', bypasses));
-        Assert.Single(Regex.Matches(owner!, @"\(PathVariable\)"));
+            "a reader of the driver's config resolved it itself; ask DriverConfig.ResolvePath() (or ResolvePath(home), FindPath()) instead:\n"
+            + string.Join('\n', bypasses));
+        Assert.DoesNotContain(Retired, owner!, StringComparison.Ordinal);
     }
 
     /// <summary>Every project that can reach the config: the launcher references nothing but the staged build's one file (D93).</summary>
     private static readonly string[] Projects =
         ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 
-    /// <summary>The file's name, the override's variable and the default path, each the start of a resolution of its own.</summary>
-    [GeneratedRegex(@"""driver\.json""|""DAORIS_DRIVER_CONFIG""|DriverConfig\.PathVariable\b|DriverConfig\.DefaultPath\b")]
+    /// <summary>The file's name, the retired variable and the default path, each the start of a resolution of its own.</summary>
+    [GeneratedRegex(@"""driver\.json""|DAORIS_DRIVER_CONFIG|DriverConfig\.DefaultPath\b")]
     private static partial Regex Bypass();
 
     private static string SourceRoot()

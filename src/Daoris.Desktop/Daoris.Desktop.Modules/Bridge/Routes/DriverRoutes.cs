@@ -328,7 +328,7 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver actor`
+    // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver role`
     // says. An actor whose stored entry does not read says why.
     // FOUNDATION1w-s (the design §19.15): beside them, each change of driver.json's actors another program made that the check kept, with
     // what it changed, none where the home's file is not the store's.
@@ -368,20 +368,6 @@ public sealed class DriverRoutes(DriverContext context)
         }
 
         _loop.Nudge();
-        return State(_loop);
-    }
-
-    // One actor's order set, made off, or back to as before (MODELROLE1c, D205 §8.2, §9.4): the person's press, the same `actors` key
-    // `daoris driver actor` edits: one truth, two doors (D50). Judged by `ActorChoices.Judge` before anything is written, and written
-    // through `adapter`, `intakeAdapter` and `helperAdapter`, Chat and Brainstorm made explicit where a change of `adapter` would move
-    // them (§4.0). `choices` absent or null is as before; an empty list is off. What an intake runs on may move with Intake's order.
-    [DriverRoute("SET_ACTOR")]
-    [Publishes("SET_ACTOR", StateScopes.Driver | StateScopes.Harnesses)]
-    private object? SetActor(IpcRequest request)
-    {
-        var actor = Optional(request, "actor") ?? throw new DriverException("the press named no actor.");
-        var choices = ActorChoices.Payload(request.Payload);
-        _context.SetActor(actor, choices);
         return State(_loop);
     }
 

@@ -408,9 +408,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     // The setting kind's.
 
-    /// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s), applied through the staffing's one write; null for every other plan.</summary>
-    public HelpStaffing? Staffing { get; init; }
-
     /// <summary>A git identity a setting proposal points a repository's remote or a workspace's host at (GITAUTH1e), applied through the pointer's own write; null for every other plan.</summary>
     public HelpGitUse? GitUse { get; init; }
 

@@ -18,7 +18,7 @@ const state = (fold: string | null): SetupState => ({
   onMore: nothing, read: PLACES(fold ? { fold } : {}), status: 'ok',
 });
 
-const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue: CATALOGUE, read: 'ok' as const, busy: false, onSet: nothing, onSetActor: nothing };
+const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue: CATALOGUE, read: 'ok' as const, busy: false, onSet: nothing };
 
 function Place({ chosen = repositoryId('aurora', 'engine'), fold = null }: { chosen?: string; fold?: string | null }) {
   const now = state(fold);

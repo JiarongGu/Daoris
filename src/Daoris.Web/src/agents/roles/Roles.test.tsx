@@ -8,9 +8,9 @@ import i18n from '../../locales/i18n';
 import { RolesCard, roleIdFor, roleName } from './Roles';
 
 // FOUNDATION1y-i (the foundation design §2.7), COMPANYVIEW1a (the company-view design §3.1): the roles on AI features, one row each. The
-// person adds, changes and removes a working role (its names, work, place and choices), turns it off, puts its order back to as before,
-// gives a seeded one back its seed, and takes the Designer Daoris suggests. Each press goes by its door: Save and Off over `SET_ROLE`,
-// Clear order over `SET_ACTOR` only; the page judges nothing, and a refusal is the driver's sentence under its press.
+// person adds, changes and removes a working role (its names, work, place and choices), turns it off, gives a seeded one back its seed,
+// and takes the Designer Daoris suggests. Every press goes by the one door, `SET_ROLE` (ONEWAY1a): Save, Off and Use the default; the
+// page judges nothing, and a refusal is the driver's sentence under its press.
 
 // The editor's ⓘ is a tip, which needs the provider the application mounts.
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -54,9 +54,8 @@ type Props = Partial<Parameters<typeof RolesCard>[0]>;
 const card = (props: Props = {}) => {
   // A press the driver took: its answer lands, so the editor closes as it does on the page.
   const onSet = vi.fn((_press, answered) => answered.done());
-  const onSetActor = vi.fn((_actor, _choices, answered) => answered.done());
-  render(<RolesCard catalogue={CATALOGUE} staffing={STAFFING} agents={AGENTS} onSet={onSet} onSetActor={onSetActor} {...props} />);
-  return { onSet, onSetActor };
+  render(<RolesCard catalogue={CATALOGUE} staffing={STAFFING} agents={AGENTS} onSet={onSet} {...props} />);
+  return { onSet };
 };
 
 describe('The roles', () => {
@@ -232,7 +231,7 @@ describe('The roles', () => {
 
   describe('the doors, per press', () => {
     it("saves a seeded role's order by SET_ROLE, the editor starting from its staffing and reordering it", () => {
-      const { onSet, onSetActor } = card();
+      const { onSet } = card();
       fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
       const form = within(screen.getByRole('form', { name: 'Build' }));
 
@@ -245,7 +244,7 @@ describe('The roles', () => {
         role: { name: { en: 'Build', zh: '开发' }, takes: ['build'], scope: { kind: 'machine', id: null } },
         choices: [{ agent: 'codex-acp', model: null, effort: null }, { agent: 'claude-code', model: null, effort: null }],
       }, expect.anything());
-      expect(onSetActor).not.toHaveBeenCalled();
+      expect(onSet).toHaveBeenCalledTimes(1);
     });
 
     it('turns a role that takes intake off by SET_ROLE with no choices, and offers Off to no other', () => {
@@ -278,97 +277,73 @@ describe('The roles', () => {
       expect(onSet).toHaveBeenCalledWith(expect.objectContaining({ change: 'set', id: 'desk', revision: 4, choices: [] }), expect.anything());
     });
 
-    it("clears a seeded role's staffing by SET_ACTOR only, and offers Clear staffing to an added role never", () => {
-      const { onSet, onSetActor } = card();
+    it("ONEWAY1a: gives a seeded role its default by SET_ROLE's default, the one door, and says what it writes", () => {
+      const { onSet } = card();
       fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
-      fireEvent.click(within(screen.getByRole('form', { name: 'Build' })).getByRole('button', { name: 'Clear staffing' }));
+      const form = within(screen.getByRole('form', { name: 'Build' }));
+      expect(form.getByText(i18n.t('settings.ai.roles.useDefaultSays'))).toBeTruthy();
+      fireEvent.click(form.getByRole('button', { name: 'Use the default' }));
 
-      expect(onSetActor).toHaveBeenCalledWith('build', null, expect.anything());
-      expect(onSet).not.toHaveBeenCalled();
+      expect(onSet).toHaveBeenCalledWith({ change: 'default', id: 'build', revision: 0 }, expect.anything());
+      expect(onSet).toHaveBeenCalledTimes(1);
     });
 
-    it('offers an added role no Clear staffing', () => {
+    it('ONEWAY1a: offers an added role no Use the default', () => {
       card({ only: 'night' });
       fireEvent.click(screen.getByRole('button', { name: 'Edit Night shift' }));
-      expect(within(screen.getByRole('form', { name: 'Night shift' })).queryByRole('button', { name: 'Clear staffing' })).toBeNull();
+      expect(within(screen.getByRole('form', { name: 'Night shift' })).queryByRole('button', { name: 'Use the default' })).toBeNull();
     });
 
-    it('offers no Clear to a role already as before, and words the three acts apart', () => {
+    it('ONEWAY1a: offers no Use the default to a seeded role already at its default, and words the acts apart', () => {
       card();
       fireEvent.click(screen.getByRole('button', { name: 'Edit Intake' }));
 
-      expect(within(screen.getByRole('form', { name: 'Intake' })).queryByRole('button', { name: 'Clear staffing' })).toBeNull();
-      expect(new Set([i18n.t('settings.ai.actors.off'), i18n.t('settings.ai.roles.clear'), i18n.t('settings.ai.roles.default')]).size).toBe(3);
-      expect(i18n.t('settings.ai.roles.clear')).not.toBe(i18n.t('settings.ai.roles.default'));
+      expect(within(screen.getByRole('form', { name: 'Intake' })).queryByRole('button', { name: 'Use the default' })).toBeNull();
+      expect(new Set([i18n.t('settings.ai.actors.off'), i18n.t('settings.ai.roles.useDefault'), i18n.t('settings.ai.actors.save')]).size).toBe(3);
     });
 
-    it('says a refusal of Off or Clear under the editor, the editor still open', () => {
-      card({ onSetActor: vi.fn((_actor, _choices, answered) => answered.refused('`build` has nothing to clear.')) });
+    it('says a refusal of Use the default under the editor, the editor still open', () => {
+      card({ onSet: vi.fn((_press, answered) => answered.refused('`build` has nothing to give back.')) });
       fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
       const form = within(screen.getByRole('form', { name: 'Build' }));
-      fireEvent.click(form.getByRole('button', { name: 'Clear staffing' }));
+      fireEvent.click(form.getByRole('button', { name: 'Use the default' }));
 
-      expect(form.getByText(/nothing to clear/)).toBeTruthy();
+      expect(form.getByText(/nothing to give back/)).toBeTruthy();
     });
   });
 
-  describe("a home whose driver.json is the file's own", () => {
+  describe('a home that keeps no catalogue yet', () => {
     const unkept = { catalogue: { ...CATALOGUE, kept: false, suggested: [] } };
 
-    it("keeps each seeded role's staffing editor over SET_ACTOR, and holds Add a role, Remove and the place", () => {
-      const { onSet, onSetActor } = card(unkept);
+    it('ONEWAY1a: holds every press, editing none, and says why', () => {
+      const { onSet } = card(unkept);
 
-      expect(screen.getByText(/driver\.json is the file's own/)).toBeTruthy();
+      expect(screen.getByText(/keeps no role catalogue yet/)).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Add a role' })).toBeDisabled();
       expect(screen.getByRole('button', { name: 'Remove Build' })).toBeDisabled();
-
-      fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
-      const form = within(screen.getByRole('form', { name: 'Build: your order' }));
-      expect(form.queryByLabelText('Name')).toBeNull();
-      expect(form.queryByLabelText('Where')).toBeNull();
-      fireEvent.click(form.getByRole('button', { name: 'Save' }));
-
-      expect(onSetActor).toHaveBeenCalledWith('build', [
-        { agent: 'claude-code', model: null, effort: null }, { agent: 'codex-acp', model: null, effort: null },
-      ], expect.anything());
-      expect(onSet).not.toHaveBeenCalled();
-    });
-
-    it('turns Intake off and clears Build by SET_ACTOR there', () => {
-      const { onSet, onSetActor } = card(unkept);
-      fireEvent.click(screen.getByRole('button', { name: 'Edit Intake' }));
-      fireEvent.click(within(screen.getByRole('form', { name: 'Intake: your order' })).getByRole('button', { name: 'Off' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
-      fireEvent.click(within(screen.getByRole('form', { name: 'Build: your order' })).getByRole('button', { name: 'Clear staffing' }));
-
-      expect(onSetActor).toHaveBeenNthCalledWith(1, 'intake', [], expect.anything());
-      expect(onSetActor).toHaveBeenNthCalledWith(2, 'build', null, expect.anything());
+      expect(screen.queryByRole('button', { name: 'Edit Build' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Edit Intake' })).toBeNull();
       expect(onSet).not.toHaveBeenCalled();
     });
   });
 
   describe('a shell that answers the actors and not the roles', () => {
-    it('keeps one staffing editor over SET_ACTOR, and says the catalogue is not offered by this shell', () => {
-      const { onSet, onSetActor } = card({ catalogue: null, read: 'notOffered' });
+    it('ONEWAY1a: shows each order, edits none, and says the catalogue is not offered by this shell', () => {
+      card({ catalogue: null, read: 'notOffered' });
 
       expect(screen.getByText(/Not offered by this shell/)).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Add a role' })).toBeNull();
       expect(screen.getAllByText('Build')).toHaveLength(1);
-
-      fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
-      fireEvent.click(within(screen.getByRole('form', { name: 'Build: your order' })).getByRole('button', { name: 'Save' }));
-
-      expect(onSetActor).toHaveBeenCalledWith('build', expect.any(Array), expect.anything());
-      expect(onSet).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: 'Edit Build' })).toBeNull();
     });
 
     it('tells a failed read from a shell that does not offer it, and from an empty catalogue', () => {
-      const { unmount } = render(<RolesCard catalogue={null} read="failed" staffing={STAFFING} agents={AGENTS} onSet={() => {}} onSetActor={() => {}} />);
+      const { unmount } = render(<RolesCard catalogue={null} read="failed" staffing={STAFFING} agents={AGENTS} onSet={() => {}} />);
       expect(screen.getByText(/could not be read/)).toBeTruthy();
       expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
       unmount();
 
-      render(<RolesCard catalogue={{ ...CATALOGUE, roles: [], suggested: [] }} staffing={[]} agents={AGENTS} onSet={() => {}} onSetActor={() => {}} />);
+      render(<RolesCard catalogue={{ ...CATALOGUE, roles: [], suggested: [] }} staffing={[]} agents={AGENTS} onSet={() => {}} />);
       expect(screen.getByText('No role is set yet.')).toBeTruthy();
       expect(screen.queryByText(/could not be read/)).toBeNull();
       expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
@@ -420,7 +395,7 @@ describe('The roles', () => {
 
   it('says the span a young log holds, and says nothing of a role without a start or of no history', () => {
     const { unmount } = render(
-      <RolesCard catalogue={{ ...CATALOGUE, use: { days: 3, roles: [USE.roles[1]!] } }} staffing={STAFFING} agents={AGENTS} onSet={vi.fn()} onSetActor={vi.fn()} />,
+      <RolesCard catalogue={{ ...CATALOGUE, use: { days: 3, roles: [USE.roles[1]!] } }} staffing={STAFFING} agents={AGENTS} onSet={vi.fn()} />,
     );
     expect(screen.getByText('Over the 3 days the log holds: 1 start · as before ×1')).toBeTruthy();
     unmount();
