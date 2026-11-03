@@ -19,7 +19,14 @@ public sealed class ConversionCensus(IEventBus? bus, MachineLog? log = null)
     private Task _last = Task.CompletedTask;
     private Task? _queued;
     private SortedDictionary<string, int>? _parts;
+    private IReadOnlyList<PartCensus>? _read;
     private string? _since;
+
+    /// <summary>Every part's census as last read, ended ones too: This machine's list of old records (ONEWAY1ad-ii); null before a reading.</summary>
+    public IReadOnlyList<PartCensus>? Parts()
+    {
+        lock (_gate) return _read;
+    }
 
     /// <summary>The plans this Daoris answered, by digest, read by a press.</summary>
     public AnsweredPlans Answered { get; } = new();
@@ -44,6 +51,7 @@ public sealed class ConversionCensus(IEventBus? bus, MachineLog? log = null)
     {
         lock (_gate)
         {
+            _read = parts;
             var holding = parts.Where(each => !each.Ended).ToList();
             SortedDictionary<string, int>? next = holding.Count == 0 ? null : new(holding.ToDictionary(each => each.Part, each => each.Count), StringComparer.Ordinal);
             if (next is null ? _parts is null : _parts is not null && next.SequenceEqual(_parts)) return false;
