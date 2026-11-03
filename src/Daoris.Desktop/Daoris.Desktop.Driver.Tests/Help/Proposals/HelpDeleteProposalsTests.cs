@@ -11,7 +11,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Of("delete", "quest", "q1a2b3c4"), DriverConfig.Empty, Machine);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver quest delete q1a2b3c4", plan.Terminal);
+        Assert.Equal("daoris quest delete q1a2b3c4", plan.Terminal);
         Assert.Contains("Delete quest `#q1a2b3c4`", plan.Describe);
         Assert.Contains("Cap the chunk budget", plan.Describe);
     }
@@ -42,7 +42,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
         var kept = HelpProposals.Plan(Of("delete", "ask", "a3kept00"), DriverConfig.Empty, Machine);
 
         Assert.Null(with.Refusal);
-        Assert.Equal("daoris-driver ask --delete a1b2c3d4", with.Terminal);
+        Assert.Equal("daoris ask delete a1b2c3d4", with.Terminal);
         Assert.Contains("with the quest it became: `#q1a2b3c4` “Cap the chunk budget”", with.Describe);
         Assert.Contains("goes alone", alone.Describe);
         Assert.Contains("must stay", kept.Refusal);
@@ -64,7 +64,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
             "Delete session `c1chat00`, a conversation in `engine`: its record goes, with what this machine kept of it (its "
             + "words, its transcript and its files), and nothing brings it back.",
             plan.Describe);
-        Assert.Equal("daoris-driver sessions delete c1chat00", plan.Terminal);
+        Assert.Equal("daoris session delete c1chat00", plan.Terminal);
         Assert.Equal(["c1chat00"], plan.Sessions);
     }
 
@@ -75,7 +75,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
     [Theory]
     [InlineData("zz000000", "there is no session `zz000000` on this machine.")]
     [InlineData("north/s7team0", "Session `north/s7team0` ran on `north`; its record is theirs — archive it here instead.")]
-    [InlineData("h1helper", "`h1helper` is Ask Daoris's own conversation: Ask Daoris → History deletes it, as `daoris-driver help delete h1helper` does.")]
+    [InlineData("h1helper", "`h1helper` is Ask Daoris's own conversation: Ask Daoris → History deletes it, as `daoris ask-daoris delete h1helper` does.")]
     [InlineData("s3live00", "Session `s3live00` is still running; stop it first.")]
     [InlineData("c3named0", "Session `c3named0` is named by ask `#a1b2c3d4` as its intake.")]
     [InlineData("s2ended0", "Session `s2ended0` worked on `#q3done00`, and its record is that work's; archive it instead.")]
@@ -105,7 +105,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
 
         Assert.True(applied.Applied);
         Assert.Equal(["SESSION_DELETE c1chat00"], doors.Calls);
-        Assert.Equal("Applied: `#p6` (`daoris-driver sessions delete c1chat00`) — Deleted it.", applied.Told);
+        Assert.Equal("Applied: `#p6` (`daoris session delete c1chat00`) — Deleted it.", applied.Told);
     }
 
     [Fact]

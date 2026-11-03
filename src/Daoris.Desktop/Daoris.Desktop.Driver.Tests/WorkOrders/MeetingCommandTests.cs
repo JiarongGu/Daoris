@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTROOM1a (D177 points 1, 2 and 7), ONEWAY1t: <c>daoris-driver meeting</c> at the terminal. <c>ask</c>, <c>send</c>, <c>stop</c> and
+/// AGENTROOM1a (D177 points 1, 2 and 7), ONEWAY1t: <c>daoris brainstorm --kind meeting</c> at the terminal. <c>ask</c>, <c>send</c>, <c>stop</c> and
 /// <c>clear</c> are presses of the running service's brainstorm desk, its meeting kind, which writes the records and says the sentence
 /// the verb prints; <c>show</c> prints the round's packet whole, what a refreshed packet adds and the transcript, and <c>list</c> names
 /// each, read here. The records sit under the brainstorms' entry, apart from them, and the brainstorm's verb never takes them for one.
@@ -133,7 +133,7 @@ public sealed class MeetingCommandTests : IDisposable
         var (code, said) = Run(args);
 
         Assert.Equal(2, code);
-        Assert.Contains("usage: daoris-driver meeting ask", said, StringComparison.Ordinal);
+        Assert.Contains("usage: daoris brainstorm \"<question>\" --kind meeting", said, StringComparison.Ordinal);
         Assert.Empty(_service.Sent);
     }
 
@@ -168,7 +168,7 @@ public sealed class MeetingCommandTests : IDisposable
         Assert.Contains("Participants, in their order: a1 `claude` (maker anthropic), a2 `codex` (maker openai).", printed, StringComparison.Ordinal);
         Assert.Contains("S1  decision  docs/decisions/D7.md:3-9", printed, StringComparison.Ordinal);
         Assert.Contains("    The window is exclusive of its end.", printed, StringComparison.Ordinal);
-        Assert.Contains($"Nothing has gone to any agent. Send it with `daoris-driver meeting send {id}`", printed, StringComparison.Ordinal);
+        Assert.Contains($"Nothing has gone to any agent. Send it with `daoris brainstorm send {id} --kind meeting`", printed, StringComparison.Ordinal);
         Assert.Equal(1, Run("show", "nothing-here").Code);
         Assert.Empty(_service.Sent);
     }
@@ -182,7 +182,7 @@ public sealed class MeetingCommandTests : IDisposable
         Assert.Contains("Sent: round 1 goes at Daoris's next look.", Run("show", id).Out, StringComparison.Ordinal);
 
         SecondRound(id, first);
-        Assert.Contains($"Round 2 has not gone to any agent. Send it with `daoris-driver meeting send {id} --round 2`", Run("show", id).Out, StringComparison.Ordinal);
+        Assert.Contains($"Round 2 has not gone to any agent. Send it with `daoris brainstorm send {id} --kind meeting --round 2`", Run("show", id).Out, StringComparison.Ordinal);
 
         Files.WriteStop(id, At);
         Assert.Contains("Stopped: nothing more goes to any agent", Run("show", id).Out, StringComparison.Ordinal);
@@ -202,7 +202,7 @@ public sealed class MeetingCommandTests : IDisposable
             + "that did not say them. Its question, its sources and its participants are as they were.", printed, StringComparison.Ordinal);
         Assert.Contains("[round 1] a1 `claude` (maker anthropic):\n    Make the window inclusive of its end.", printed.ReplaceLineEndings("\n"), StringComparison.Ordinal);
         Assert.Contains("[round 1] a2 `codex` (maker openai):\n    Cache the report, and read the window once.", printed.ReplaceLineEndings("\n"), StringComparison.Ordinal);
-        Assert.Contains($"Send it with `daoris-driver meeting send {id} --round 2`", printed, StringComparison.Ordinal);
+        Assert.Contains($"Send it with `daoris brainstorm send {id} --kind meeting --round 2`", printed, StringComparison.Ordinal);
     }
 
     [Fact]

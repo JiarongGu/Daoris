@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver agent pin</c> and <c>update</c> (PUSH1f2e, D194, the alone-path design §1.4): the managed toolchain (TOOL2, D57) from a
+/// <c>daoris agent pin</c> and <c>update</c> (PUSH1f2e, D194, the alone-path design §1.4): the managed toolchain (TOOL2, D57) from a
 /// terminal, the words <c>daoris agent pin|update …</c> hands this program. No route takes either (§2): each acts on the terminal's word,
 /// refused from a session's terminal (D194 point 5), and holds no lease at its top. A pin from a maker's channel (AGT2b) is staged under
 /// its process's name while it downloads and published under the home's lease, the one folder move and the pin's write (§1.4); a pin
@@ -136,7 +136,7 @@ internal static class AgentPinCommand
         var named = workspace?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
         try
         {
-            using (await HomeLease.ForPublicationAsync(home, "daoris-driver agent pin",
+            using (await HomeLease.ForPublicationAsync(home, "daoris agent pin",
                 holder => error.WriteLine($"{Prefix}: waiting for {holder.Named} to let this home go; the pin is written then, and Ctrl+C stops."),
                 ct, world.Waiting, world.Now).ConfigureAwait(false))
             {

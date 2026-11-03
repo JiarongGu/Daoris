@@ -20,18 +20,16 @@ public sealed record AcceptedGates(IReadOnlyList<string>? Names, string? Unread 
 /// </summary>
 public static class IntegrateCarry
 {
-    private const string LandingRow = "Repositories → the repository's page → Setup → Line and landing → How work lands";
-
     private const string DeclarationRow = "Repositories → the repository's page → Setup → Line and landing → Integration declaration";
 
     /// <summary>
     /// Why the repository's declarations cannot carry the graph's <c>integrate</c>, <c>pushed</c> or <c>pull-request</c>, one sentence each;
     /// empty where they can, and for a graph holding none of them or no landing.
     /// </summary>
-    /// <param name="rule">The repository's own landing rule: its <c>integrate</c> is the line's declaration (§17.7).</param>
-    /// <param name="landing">The landing the version makes of it (<see cref="WorkflowProcess.Of"/>): its form, pattern, plugin and press.</param>
+    /// <param name="policy">The line's policy (<see cref="DriverConfig.LinePolicyOf"/>): its gates are the line's declaration (§17.7).</param>
+    /// <param name="landing">The landing the version makes (<see cref="WorkflowProcess.Of"/>): its form, pattern, plugin and press.</param>
     /// <param name="accepted">What the door read of the accepted declaration; null where it did not ask, so that fact is not judged here.</param>
-    public static IReadOnlyList<string> Cannots(string repository, NodeGraph graph, LandingRule rule, LandingRule landing, AcceptedGates? accepted)
+    public static IReadOnlyList<string> Cannots(string repository, NodeGraph graph, LandingIntegrate? policy, LandingRule landing, AcceptedGates? accepted)
     {
         var integrate = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate);
         var pushes = graph.Nodes.Where(node => node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest).ToList();
@@ -44,23 +42,22 @@ public static class IntegrateCarry
             var step = $"its `{integrate.Id}` (`{NodeKinds.Integrate}`)";
             if (landing.Form == LandingForm.Merge || landing.Pattern is null)
             {
-                said.Add($"{step} integrates the branch the landing `{land.Id}` makes, and neither the step nor `{repository}`'s landing rule names a pattern "
-                    + $"for one (a merge rule names none): `daoris driver landing {repository} branch <pattern>` declares it ({LandingRow}).");
+                said.Add($"{step} integrates the branch the landing `{land.Id}` makes, and the landing names no pattern for one (a merge makes none): "
+                    + "the workflow's `land` names one.");
             }
 
             if (landing.Plugin is { } plugin)
             {
-                var whose = !string.IsNullOrEmpty(NodeOptions.Text(land, "plugin")) ? "the step names" : $"`{repository}`'s landing rule names";
-                said.Add($"{step} integrates a branch no plugin lands, and the landing `{land.Id}` is landed by the plugin `{plugin}`, which {whose}: that "
-                    + $"repository's platform integrates its work, so it chooses a pull-request version, or its landing rule drops the plugin ({LandingRow}).");
+                said.Add($"{step} integrates a branch no plugin lands, and the landing `{land.Id}` is landed by the plugin `{plugin}`: that "
+                    + "repository's platform integrates its work, so it chooses a pull-request version.");
             }
 
             if (request is LandingIntegrate.Done or LandingIntegrate.Steward)
             {
-                if (rule.Integrate?.Gates != LandingIntegrate.Declared)
+                if (policy?.Gates != LandingIntegrate.Declared)
                 {
-                    said.Add($"{step} asks with `{request}`, which needs the line's gates, and `{repository}`'s landing rule does not set `integrate.gates` to "
-                        + $"`declared` (an accepted declaration alone is not gates turned on): it integrates with no gates, so the request is the owner's ({LandingRow}).");
+                    said.Add($"{step} asks with `{request}`, which needs the line's gates, and `{repository}`'s line policy does not set `gates` to "
+                        + "`declared` (an accepted declaration alone is not gates turned on): it integrates with no gates, so the request is the owner's.");
                 }
 
                 if (accepted?.Unread is { } why)
@@ -77,8 +74,8 @@ public static class IntegrateCarry
 
             if (request == LandingIntegrate.Done && !landing.AutoAccept)
             {
-                said.Add($"{step} asks with `done`, which a landing accepted automatically starts, and the landing `{land.Id}` accepts on your press (its `accept` is "
-                    + $"`you`, and `{repository}`'s landing rule's *Accept automatically* is off): the version says `accept: automatic`, or the rule's switch is on ({LandingRow}).");
+                said.Add($"{step} asks with `done`, which a landing with no press starts, and the landing `{land.Id}` waits for your Accept (a `review` "
+                    + "stands before it): a version with no `review` lands with no press.");
             }
         }
 
@@ -86,21 +83,21 @@ public static class IntegrateCarry
         {
             foreach (var push in pushes)
             {
-                said.Add($"its `{push.Id}` (`{push.Kind}`) pushes the landing's branch through a plugin, and neither the landing `{land.Id}` nor `{repository}`'s "
-                    + $"landing rule names one: `daoris driver landing {repository} branch <pattern> --plugin <id>` declares one ({LandingRow}).");
+                said.Add($"its `{push.Id}` (`{push.Kind}`) pushes the landing's branch through a plugin, and the landing `{land.Id}` names none: "
+                    + "the workflow's `land` names one.");
             }
         }
 
         return said;
     }
 
-    /// <summary>Whether the line integrates with no gates under the rule: its <c>integrate.gates</c> is absent or <c>none</c> (§17.7, F42).</summary>
-    public static bool NoGates(LandingRule rule) => rule.Integrate?.Gates != LandingIntegrate.Declared;
+    /// <summary>Whether the line integrates with no gates under its policy: its <c>gates</c> is absent or <c>none</c> (§17.7, F42).</summary>
+    public static bool NoGates(LandingIntegrate? policy) => policy?.Gates != LandingIntegrate.Declared;
 
     /// <summary>
     /// What a door says of a repository a choice reaches whose line integrates with no gates (§17.7, F42): the person's Accept moves the
-    /// line, as today's merge rule lands on a press, and a version that asks with the unit's done is refused there.
+    /// line, and a version that asks with the unit's done is refused there.
     /// </summary>
     public static string NoGatesSaid(string repository) =>
-        $"`{repository}` integrates with no gates: its landing rule declares none, so the line moves on your Accept as a merge does today, and a version with no press is refused there.";
+        $"`{repository}` integrates with no gates: its line policy declares none, so the line moves on your Accept, and a version with no press is refused there.";
 }

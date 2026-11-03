@@ -88,7 +88,7 @@ public sealed class PluginsBoundaryTests : IDisposable
         Install("acme.idle", """{ "id": "acme.idle" }""");
         Install("acme.refused", """{ "id": "acme.refused", "hooks": { "command": ["node", "x.mjs"] } }""");
 
-        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(_home));
+        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_home));
 
         Assert.Equal(["acme.deploy", "acme.idle"], plugins.Select(plugin => plugin.Id));
         Assert.Equal(["work/perform", "work/reconcile"], plugins[0].Points);

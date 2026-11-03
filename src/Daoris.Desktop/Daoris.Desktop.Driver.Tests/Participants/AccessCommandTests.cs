@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1a (D184 point 1): <c>daoris-driver access</c>, the terminal's door to a repository's session access setup, its workspace's
+/// AUTONOMY1a (D184 point 1): <c>daoris place access</c>, the terminal's door to a repository's session access setup, its workspace's
 /// and this machine's. It reads and writes the driver's file alone, through <see cref="AccessRules"/>, so it refuses what the screen's
 /// <c>SET_ACCESS</c> refuses, in the same words, with nothing written.
 /// </summary>

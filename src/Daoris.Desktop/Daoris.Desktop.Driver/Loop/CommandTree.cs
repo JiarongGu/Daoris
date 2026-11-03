@@ -12,7 +12,7 @@ public enum TreeRouteKind
     /// <summary>The usage, the tree's or a group's (<see cref="TreeRoute.Group"/>); exit 0 where it was asked for, else 2.</summary>
     Usage,
 
-    /// <summary>An old form, or a word handed back: refused, exit 2, saying <see cref="TreeRoute.Said"/>; nothing is done.</summary>
+    /// <summary>A word handed back: refused, exit 2, saying <see cref="TreeRoute.Said"/>; nothing is done.</summary>
     Refused,
 }
 
@@ -21,13 +21,13 @@ public sealed record TreeRoute(TreeRouteKind Kind, IReadOnlyList<string> Words, 
 
 /// <summary>
 /// The one command tree's router (ONEWAY1ai-i, D228; the oneway design §11), by <see cref="CommandWords"/>' table: the host routes a
-/// person's words once, at its entry, into the words its commands read, so an old form never reaches one.
+/// person's words once, at its entry, into the words its commands read.
 /// </summary>
 public static class CommandTree
 {
     /// <summary>
     /// A person's words at <c>daoris</c>, routed once: the host's own words for a group's command, the CLI's for a doctrine command, the
-    /// usage, or a refusal naming the new form. <paramref name="handedBy"/> is the program that handed them here, if one did.
+    /// usage, or a refusal. <paramref name="handedBy"/> is the program that handed them here, if one did.
     /// </summary>
     public static TreeRoute Route(IReadOnlyList<string> args, string? handedBy = null)
     {
@@ -42,7 +42,6 @@ public static class CommandTree
                 : new(TreeRouteKind.Doctrine, args);
         }
 
-        if (CommandWords.MovedTo(args, launcher: false) is { } moved) return new(TreeRouteKind.Refused, args, moved);
         if (first == "help")
         {
             if (args.Count == 1) return new(TreeRouteKind.Usage, args, Asked: true);
@@ -52,7 +51,6 @@ public static class CommandTree
         }
 
         if (CommandWords.Group(first) is not { } group) return new(TreeRouteKind.Usage, args, $"no command `{first}`.");
-        if (CommandWords.FlagMoved(args) is { } flag) return new(TreeRouteKind.Refused, args, flag);
 
         var rest = args.Skip(1).ToList();
         var verb = rest.Count > 0 ? rest[0] : null;
@@ -64,8 +62,9 @@ public static class CommandTree
         var acts = CommandWords.AskActs;
         return group.Name switch
         {
+            // The ask command's own words for its acts are no words of the tree's.
             "ask" when rest.FirstOrDefault(word => acts.Values.Contains(word, StringComparer.Ordinal)) is { } act =>
-                new(TreeRouteKind.Refused, args, $"`ask {act}` is `daoris ask {acts.First(pair => pair.Value == act).Key}` now; nothing was done."),
+                new(TreeRouteKind.Usage, args, $"no `{act}` in `daoris ask`.", group.Name),
             "brainstorm" => Brainstorm(args, rest),
             _ => new(TreeRouteKind.Run, Inward(group.Name, rest), Group: group.Name),
         };

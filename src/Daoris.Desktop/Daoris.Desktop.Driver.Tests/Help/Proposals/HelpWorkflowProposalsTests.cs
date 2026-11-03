@@ -233,7 +233,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.StartsWith(
             "Choose `docs-to-pr` (Documentation to a pull request) for `engine`; no version is saved, and it follows its newest, v1.",
             plan.Describe, StringComparison.Ordinal);
-        Assert.Equal("daoris driver workflow use docs-to-pr --repository engine", plan.Terminal);
+        Assert.Equal("daoris workflow use docs-to-pr --repository engine", plan.Terminal);
         Assert.Equal("New work only, in `engine`.", card.AppliesTo);
 
         var doors = new HelpStandInDoors();
@@ -338,7 +338,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
 
         Assert.StartsWith(
             "Choose `docs-to-pr` (Documentation to a pull request) for the workspace `work`'s kind `docs`;", plan.Describe, StringComparison.Ordinal);
-        Assert.Equal("daoris driver workflow use docs-to-pr --workspace work --kind docs", plan.Terminal);
+        Assert.Equal("daoris workflow use docs-to-pr --workspace work --kind docs", plan.Terminal);
         Assert.Equal(Id, WorkflowSelection.Apply(config, Card(plan).Use!).WorkspaceWorkflows["work"].KindOf("docs")!.Workflow);
 
         var chosen = WorkflowSelection.Apply(config, Card(plan).Use!);
@@ -382,7 +382,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.StartsWith(
             "Save a new verification pipeline `docs-to-pr` as v1, and choose it for the work that lands in `engine`.", plan.Describe, StringComparison.Ordinal);
         Assert.Contains("Its gates wait for your *Accept the gates* on `engine`'s Workflow tab", plan.Describe, StringComparison.Ordinal);
-        Assert.Equal("daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --repository engine --landed", plan.Terminal);
+        Assert.Equal("daoris workflow import <file> && daoris workflow use docs-to-pr --repository engine --landed", plan.Terminal);
         Assert.Equal("New work only, in `engine`.", card.AppliesTo);
 
         var doors = new HelpStandInDoors();
@@ -479,7 +479,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.NotEmpty(card.Diff);
         Assert.Empty(card.Needs);
         Assert.Equal("New work only, once a repository or a workspace chooses `docs-to-pr`: nothing does now.", card.AppliesTo);
-        Assert.Equal("daoris driver workflow import <file>", plan.Terminal);
+        Assert.Equal("daoris workflow import <file>", plan.Terminal);
         Assert.StartsWith("Save a new workflow `docs-to-pr` as v1.", plan.Describe, StringComparison.Ordinal);
     }
 
@@ -522,7 +522,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
 
         Assert.Equal(("Documentation to a pull request", (int?)1, 2), (card.Name, card.Base, card.Version));
         Assert.Equal("New work only, in `engine`; 1 run keeps the version it started on.", card.AppliesTo);
-        Assert.Equal("daoris driver workflow apply docs-to-pr <file> --base 1", plan.Terminal);
+        Assert.Equal("daoris workflow apply docs-to-pr <file> --base 1", plan.Terminal);
         Assert.StartsWith("Save `docs-to-pr` v1 → v2 (Documentation to a pull request).", plan.Describe, StringComparison.Ordinal);
     }
 
@@ -534,7 +534,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Saved(LookThenBranch);
 
         Assert.Equal(
-            "`docs-to-pr` is at v2 now, not v1: read it again (`daoris driver workflow show docs-to-pr`) and make the change against v2.",
+            "`docs-to-pr` is at v2 now, not v1: read it again (`daoris workflow show docs-to-pr`) and make the change against v2.",
             HelpProposals.Plan(Propose(Merge, @base: 1), Chosen, Here()).Refusal);
     }
 
@@ -599,7 +599,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     {
         var proposal = Propose(null, graph: Preset("merge-after-accept"), choose: true);
         var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Here());
-        Assert.Equal("daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --repository engine", plan.Terminal);
+        Assert.Equal("daoris workflow import <file> && daoris workflow use docs-to-pr --repository engine", plan.Terminal);
         Assert.Equal("New work only, in `engine`.", Card(plan).AppliesTo);
 
         var doors = new HelpStandInDoors();
@@ -629,7 +629,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
 
         Assert.False(applied.Applied);
         Assert.Equal(
-            "Not applied: `#p6` — `docs-to-pr` is at v2 now, not v1: read it again (`daoris driver workflow show docs-to-pr`) and make "
+            "Not applied: `#p6` — `docs-to-pr` is at v2 now, not v1: read it again (`daoris workflow show docs-to-pr`) and make "
             + "the change against v2.",
             applied.Told);
         Assert.Equal(2, WorkflowStore.Load(_home, Id)!.Read.Versions.Count);

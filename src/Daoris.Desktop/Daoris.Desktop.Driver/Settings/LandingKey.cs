@@ -675,7 +675,7 @@ public static class LandingKey
     /// A landing rule as the file holds it, read as <see cref="RuleMap"/> reads it, or null where it is none or does not read: then
     /// <paramref name="unread"/> says why (FABRIC-GRAPH1d) — no object, no <c>form</c>, or a rule <see cref="LandingRules.Problem"/> refuses
     /// — and is null for a rule written null, which is none. Both readers skip such a rule, and <see cref="NodeGraphHomes.Strays"/> says it;
-    /// <c>daoris-driver driver list</c> says it too.
+    /// <c>daoris place list</c> says it too.
     /// </summary>
     internal static LandingRule? RuleOf(JsonElement value, out string? unread) => Read(value, out unread, out _);
 

@@ -35,7 +35,7 @@ const HEAD: PlaceHeadProps = {
 };
 
 const DRIVING = (patch: Partial<PlaceDriving> = {}): PlaceDriving => ({
-  drivable: true, held: false, ownTree: true, busy: false, terminal: 'daoris driver drive|undrive engine',
+  drivable: true, held: false, ownTree: true, busy: false, terminal: 'daoris place drive|undrive engine',
   onDrive: vi.fn(), onHold: vi.fn(), onTrees: vi.fn(), ...patch,
 });
 

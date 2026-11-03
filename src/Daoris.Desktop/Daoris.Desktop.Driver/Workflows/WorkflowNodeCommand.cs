@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver workflow skip|stop</c> was asked (FABRIC-CUTOVER1f): the act, the run, its node and the person's words.</summary>
+/// <summary>What <c>daoris workflow skip|stop</c> was asked (FABRIC-CUTOVER1f): the act, the run, its node and the person's words.</summary>
 /// <param name="Act">One of <see cref="NodeWordActs"/>.</param>
 /// <param name="Run">The run, as its binding names it and <c>workflow run</c> prints it.</param>
 /// <param name="Node">The node's id in the run's graph.</param>
@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string? Words);
 
 /// <summary>
-/// <c>daoris-driver workflow skip &lt;run&gt; &lt;node&gt; "…"</c> and <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c> (FABRIC-CUTOVER1f; D190
+/// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c> and <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c> (FABRIC-CUTOVER1f; D190
 /// point 6, the cutover design §5.2, D50): the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
 /// version, kept on the run's record by <see cref="RunNodeWords.Word"/>, which the page's <c>WORKFLOW_NODE</c> calls too, and applied by
 /// Daoris's next look.

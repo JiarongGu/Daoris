@@ -183,7 +183,7 @@ public sealed class PressedResultTests
         Assert.NotNull(held);
         Assert.StartsWith(char.ToUpperInvariant(why[0]) + why[1..] + " before its plugin was told", held);
         Assert.Contains("its push was not tried", held);
-        Assert.Contains("`daoris-driver trees hand s1`", held);
+        Assert.Contains("`daoris tree hand s1`", held);
     }
 
     /// <summary>Decision 1: a hold that comes while the press waits is the quest's, not the press's, and stops neither stage.</summary>
@@ -244,7 +244,7 @@ public sealed class PressedResultTests
         Assert.NotNull(withheld);
         Assert.StartsWith($"Session s1's quest #q1, whose work this push carries, {why} before its plugin was told", withheld);
         Assert.Contains("its push was not tried", withheld);
-        Assert.Contains("`daoris-driver trees hand s2`", withheld);
+        Assert.Contains("`daoris tree hand s2`", withheld);
     }
 
     // ——— a person's hand-off (FABRIC-CLOSE1h8)
@@ -284,7 +284,7 @@ public sealed class PressedResultTests
         Assert.Equal(quest, handed.Pressed.Pressed.Id);
         Assert.Equal(1, service.Reads);
         service.Quests[quest] = Submitted(sequence: 2) with { Id = quest };
-        Assert.Contains($"`daoris-driver trees hand {session}`", await handed.BeforePush(Landed(advancedBy), true, default));
+        Assert.Contains($"`daoris tree hand {session}`", await handed.BeforePush(Landed(advancedBy), true, default));
     }
 
     /// <summary>
@@ -351,7 +351,7 @@ public sealed class PressedResultTests
         Assert.NotNull(withheld);
         Assert.Contains("its quest was taken back", withheld, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("its push was not tried", withheld);
-        Assert.Contains("`daoris-driver trees hand s2`", withheld);
+        Assert.Contains("`daoris tree hand s2`", withheld);
     }
 
     /// <summary>
@@ -414,6 +414,6 @@ public sealed class PressedResultTests
 
         Assert.NotNull(withheld);
         Assert.StartsWith(char.ToUpperInvariant(why[0]) + why[1..] + " before its plugin was told", withheld);
-        Assert.Contains("`daoris-driver trees hand s2`", withheld);
+        Assert.Contains("`daoris tree hand s2`", withheld);
     }
 }

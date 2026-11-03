@@ -7,8 +7,8 @@
   "workflow.head.workspace": "{{workspace}} 中每个没有自有规则的仓库，工作如何推进：读自工作区的规则在每道关口时的样子。",
   "workflow.version": "版本 {{version}}",
   "workflow.versionTip": "这里所画内容的摘要：规则一变它就变，所以版本相同的两页遵循同一个工作流。",
-  "workflow.twin.repository": "在终端中：`daoris driver workflow show --repository {{repository}}`",
-  "workflow.twin.workspace": "在终端中：`daoris driver workflow show --workspace {{workspace}}`",
+  "workflow.twin.repository": "在终端中：`daoris workflow show --repository {{repository}}`",
+  "workflow.twin.workspace": "在终端中：`daoris workflow show --workspace {{workspace}}`",
   "workflow.part.says": "你的部分：{{parts}}。",
   "workflow.part.none": "你的部分：无。这里没有什么等你按下按钮。",
   "workflow.part.reviewed": "你在 `{{environment}}` 中看过它并确认已审阅",
@@ -106,7 +106,7 @@
   "workflow.runtimeTip.built": "Daoris 现在完整地运行这一步。",
   "workflow.runtimeTip.partial": "Daoris 现在只运行这一步的一部分；没有做到的写在它下面。",
   "workflow.runtimeTip.declared": "规则已设定并保存，但还没有东西依据它行动。",
-  "workflow.limit.opinion-partial": "只有在另一个智能体对它的阅读了结之后，或者你通过 `daoris-driver opinion` 不等它继续时，这里的工作才会落地；审阅还没有画出它，也还没有任务能选自己的阅读者。",
+  "workflow.limit.opinion-partial": "只有在另一个智能体对它的阅读了结之后，或者你通过 `daoris session opinion` 不等它继续时，这里的工作才会落地；审阅还没有画出它，也还没有任务能选自己的阅读者。",
   "workflow.limit.look-partial": "落地会一直等到你确认已审阅或跳过审阅；在那之前，准备步骤的构建从它的会话结束起在 Daoris 的浏览器中展示。目前还不会为你编排准备步骤，也没有为它单独运行的进程。",
   "workflow.limit.plugin-unready": "它的插件现在无法在本机落地工作：它没有安装、已停用、什么都不提供，或者不在 `work/land` 挂点上说话。`daoris plugin list` 会说明是哪一种。",
   "workflow.limit.pull-request-unread": "它的插件不回答 `work/state`，所以 Daoris 从不读取这个拉取请求是被合并还是被放弃。",
@@ -188,7 +188,7 @@
   "workflow.compose.title": "你自己的工作流",
   "workflow.compose.body": "从 Daoris 的某个默认工作流或此处保存的某个版本编排它的步骤，边编排边判定，然后保存并在此使用。",
   "workflow.compose.open": "编排步骤…",
-  "workflow.compose.twin": "在终端中：`daoris driver workflow new <id> --from <default>`",
+  "workflow.compose.twin": "在终端中：`daoris workflow new <id> --from <default>`",
   "workflow.canvas.fit": "显示整个工作流",
   "workflow.canvas.moves": "工作流图：拖动或滚轮移动，Ctrl+滚轮缩放"
 }

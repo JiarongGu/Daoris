@@ -24,7 +24,7 @@ public sealed class HelpPluginApprovalDoorTests : DriverModuleBridge
         var card = Assert.Single((await AnswerAsync(module, "HELP_PROPOSALS", new { session = "h1" })).GetProperty("proposals").EnumerateArray());
 
         Assert.Equal("plugin", card.GetProperty("kind").GetString());
-        Assert.Equal("daoris-driver plugins approve in-app-browser browser --writes browser_click", card.GetProperty("terminal").GetString());
+        Assert.Equal("daoris plugin approve in-app-browser browser --writes browser_click", card.GetProperty("terminal").GetString());
         var grant = card.GetProperty("grant");
         Assert.Equal(("in-app-browser", "browser"), (grant.GetProperty("plugin").GetString(), grant.GetProperty("server").GetString()));
         Assert.Equal(["browser_navigate", "browser_snapshot"], Strings(grant.GetProperty("reads")));

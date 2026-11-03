@@ -29,32 +29,22 @@ public static class IntegrateChoice
     internal static Reach Of(
         DriverConfig config, string workflow, int version, NodeGraph graph, string repository, string? workspace, AcceptedGates? accepted)
     {
-        var declared = WorkflowProcess.Current(config, repository, workspace);
-        var landNode = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
+        var declared = WorkflowProcess.Declared(config, repository, workspace);
         var binding = new WorkflowRunBinding("", repository, RemoteTarget.Workspace(workspace), workflow, WorkflowLevels.Repository, DateTimeOffset.MinValue)
         {
             Version = version,
         };
         // WORKFLOWCLEAN1 1c: a `land` is judged as the intent it binds, with the derived defaults where it leaves options open, its gates
         // read from the options; a version that does not read here has its own refusal, and a graph with no landing integrates nothing.
-        LandingRule landing;
-        if (landNode is not null)
-        {
-            var gates = GraphGates.Of(graph, declared);
-            if (gates.Problem is not null) return new(repository, [], false);
-            landing = WorkflowProcess.Of(
-                config, repository, workspace, binding, gates,
-                LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode, platformPlugin: null), declared.Landing.Rule)).Landing.Rule;
-        }
-        else
-        {
-            var (steps, _) = WorkflowNamed.GateSteps(graph, version, declared.Landing.Rule);
-            if (steps is null || !steps.Any(step => step.Kind == WorkflowKinds.Landing)) return new(repository, [], false);
-            landing = WorkflowProcess.Of(config, repository, workspace, binding, steps).Landing.Rule;
-        }
-
+        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } landNode) return new(repository, [], false);
+        var gates = GraphGates.Of(graph, declared);
+        if (gates.Problem is not null) return new(repository, [], false);
+        var landing = WorkflowProcess.Of(
+            config, repository, workspace, binding, gates,
+            LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode, platformPlugin: null))).Landing.Rule;
+        var policy = config.LinePolicyOf(repository, workspace);
         var integrates = graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate);
-        return new(repository, IntegrateCarry.Cannots(repository, graph, declared.Landing.Rule, landing, accepted), integrates && IntegrateCarry.NoGates(declared.Landing.Rule));
+        return new(repository, IntegrateCarry.Cannots(repository, graph, policy, landing, accepted), integrates && IntegrateCarry.NoGates(policy));
     }
 
     /// <summary>
@@ -87,8 +77,7 @@ public static class IntegrateChoice
         if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return AcceptedGates.NotRead($"`{repository}` has no checkout here to read its line from");
         try
         {
-            var rule = WorkflowProcess.Current(config, repository, workspace).Landing.Rule;
-            var line = rule.Integrate?.Line ?? (await CanonicalLine.ResolveAsync(root, repository, workspace, config, ct).ConfigureAwait(false)).Branch;
+            var line = config.LinePolicyOf(repository, workspace)?.Line ?? (await CanonicalLine.ResolveAsync(root, repository, workspace, config, ct).ConfigureAwait(false)).Branch;
             if (line is null || !BranchName.IsValid(line)) return AcceptedGates.NotRead($"`{repository}` has no line to read the declaration at");
             var text = await IntegrationAcceptance.AcceptedTextAsync(config, root, repository, $"refs/heads/{line}", ct).ConfigureAwait(false);
             return new(text is null ? [] : IntegrationDeclaration.Declared(text));

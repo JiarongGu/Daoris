@@ -44,7 +44,7 @@ public sealed record PartReceipt(string Part, string Digest, string Outcome, IRe
 /// </summary>
 public sealed record HomeReceipt(string Digest, DateTimeOffset At, ConversionChoices Choices, IReadOnlyList<PartReceipt> Parts)
 {
-    /// <summary>The version of the build that applied it, as stamped; null on a receipt written before parts, which gives no floor.</summary>
+    /// <summary>The version of the build that applied it, as stamped.</summary>
     public string? Build { get; init; }
 
     /// <summary>Set when <i>Undo</i> put its parts back: it no longer stands.</summary>
@@ -85,9 +85,7 @@ public sealed class HomeReceipts(string home)
         try
         {
             if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root) throw new JsonException("not an object");
-            if (root.ContainsKey("parts")) return root.Deserialize<HomeReceipt>(Format) ?? throw new JsonException("empty");
-            // transitional: conversion-receipt-before-parts
-            return WorkflowPart.Wrapped(root.Deserialize<ConversionReceipt>(Format) ?? throw new JsonException("empty"));
+            return root.Deserialize<HomeReceipt>(Format) ?? throw new JsonException("empty");
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException)
         {
@@ -131,24 +129,4 @@ public sealed class HomeReceipts(string home)
 
     /// <summary>The home's latest conversion, undone or not; null where none was applied.</summary>
     public HomeReceipt? Latest() => All().LastOrDefault();
-
-    /// <summary>Whether a receipt on <paramref name="home"/> was written before parts, which only the old reader reads (the register's end check).</summary>
-    public static bool AnyBeforeParts(string home)
-    {
-        var folder = DaorisHome.Entry(home, HomeEntry.PlaceReceipts);
-        if (!Directory.Exists(folder)) return false;
-        foreach (var file in Directory.EnumerateFiles(folder, "conversion-*.json"))
-        {
-            try
-            {
-                if (JsonNode.Parse(AtomicFile.ReadText(file)) is JsonObject root && !root.ContainsKey("parts")) return true;
-            }
-            catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

@@ -21,7 +21,7 @@ public sealed record UpdateOutcome(string Phase, string? Build, string? Version,
 /// <param name="Outcome">The last swap, said once at the start after it and kept until the banner's *Dismiss*.</param>
 /// <param name="Last">
 /// The last swap as the journal records it, told or not, on every state (UPDATE1d): what Settings → Driver's row says
-/// and the terminal's plain <c>daoris-driver update</c> says (D50). Null with no journal, and while a swap is under way.
+/// and the terminal's plain <c>daoris update</c> says (D50). Null with no journal, and while a swap is under way.
 /// </param>
 /// <param name="Since">
 /// When the drain for the staged build began (DRAINHOLD1), while it drains and as it applies: beside <paramref name="Driven"/> and

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver place &lt;repository&gt;… --preset &lt;id&gt; [--with opinion,look,adoption] [--what-it-builds &lt;kind&gt;] [--drive] (--plan | --apply
+/// <c>daoris place &lt;repository&gt;… --preset &lt;id&gt; [--with opinion,look,adoption] [--what-it-builds &lt;kind&gt;] [--drive] (--plan | --apply
 /// [--accept &lt;repository&gt;:landed|integration,…])</c> (AGENTSPLACE1a2, AGENTSPLACE1b3; the Agents-place design §4): <c>PLACE_PLAN</c>'s and
 /// <c>PLACE_APPLY</c>'s terminal twin, the same plan and the same apply from the same code in English. Through the running Daoris where one answers,
 /// alone otherwise. <c>--plan</c> reads and writes nothing. <c>--apply</c> is the person's press: through a running Daoris it waits for their Confirm on
@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 public static class PlaceCommand
 {
     public const string Usage =
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] "
+        "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] "
         + "(--plan | --apply [--accept <repository>:landed|integration,…])\n"
         + "       " + WorkspaceSetupCommand.Forms;
 

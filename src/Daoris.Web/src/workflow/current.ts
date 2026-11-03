@@ -1,6 +1,6 @@
 // A repository's or a workspace's Current workflow as the shell answers it (WORKFLOW1b; D157 point 7, the workflow design
 // §2.7, §3.2): the driver's `WorkflowCurrent.Derive`, read from the machine's driver file, plugins and registry exactly as
-// `daoris driver workflow show` reads them. The page draws it and derives nothing: what a step is, who takes part, who acts,
+// `daoris workflow show` reads them. The page draws it and derives nothing: what a step is, who takes part, who acts,
 // where it was read and what it cannot do yet are the driver's, and only the words are the page's.
 
 /** The person's part in a step (design §3.1), said apart from who acts in it. */

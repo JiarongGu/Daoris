@@ -494,7 +494,7 @@ export function WorkFrame({
     ? sweep.data.branches.find((row) => row.repository === attended.repository
       && row.branch === `daoris/${attended.tree!.split(/[\\/]/).filter(Boolean).pop()}`) ?? null
     : null;
-  // That branch discarded once its tree is gone, a failed attempt's (LAND3b): `daoris-driver trees remove … --force`.
+  // That branch discarded once its tree is gone, a failed attempt's (LAND3b): `daoris tree remove … --force`.
   const discardBranch = useDiscardSessionBranch();
 
   // What the session runs beside itself, a tab each in the panel (CONSOLE2c). The panel shows the

@@ -128,7 +128,7 @@ public sealed record WordsHold(string Why, string Reason)
     {
         { Why: Paused, PausedBy: { } pause } => $"it goes on with this once you resume its work: {pause.Door}",
         { Why: Hold, Repository: { } repository } =>
-            $"it goes on with this once {repository} is no longer held: daoris driver resume {repository}",
+            $"it goes on with this once {repository} is no longer held: daoris place resume {repository}",
         { Why: Cap } => "it goes on with this when a running session here ends.",
         _ => $"it waits: {Reason}",
     };

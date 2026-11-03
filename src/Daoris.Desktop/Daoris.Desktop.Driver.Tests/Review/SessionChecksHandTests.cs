@@ -245,7 +245,7 @@ public sealed class SessionChecksHandTests : IDisposable
     public void A_run_takes_the_repository_s_rule_under_current_and_its_version_s_under_a_named_workflow()
     {
         var config = DriverConfig.Empty.WithSessionChecks("engine", SessionChecks.Light);
-        var current = WorkflowProcess.Current(config, "engine", null);
+        var current = WorkflowProcess.Declared(config, "engine", null);
         var named = current with { Binding = new WorkflowRunBinding("q1", "engine", "default", "docs", "repository", DateTimeOffset.UnixEpoch) { Version = 1 } };
         NamedStep Work(string? checks) => new("work", WorkflowKinds.Work, [new("checks", checks)]);
 

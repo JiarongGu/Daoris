@@ -23,7 +23,7 @@ public static class ChoiceArgs
         }
     }
 
-    /// <summary>Each word that is a flag must be one the verb takes, a valued flag's value skipped.</summary>
+    /// <summary>Each word that is a flag must be one the verb takes, a valued flag's value skipped; <paramref name="verb"/> is the tree's group and sub-verb.</summary>
     public static void Flags(IReadOnlyList<string> args, string[] valued, string[] switches, string verb, string usage)
     {
         for (var at = 1; at < args.Count; at++)
@@ -32,7 +32,7 @@ public static class ChoiceArgs
             if (valued.Contains(token)) at++;
             else if (token.StartsWith("--", StringComparison.Ordinal) && !switches.Contains(token))
             {
-                throw new ChoiceWords($"`{token}` is not a flag `{CommandWords.Now($"driver {verb}")}` takes — {usage}");
+                throw new ChoiceWords($"`{token}` is not a flag `{verb}` takes — {usage}");
             }
         }
     }
@@ -58,7 +58,13 @@ public static class ChoiceArgs
     /// <summary>The verb's name, the first operand after it: a flag's value is never the name (REV3).</summary>
     public static string Named(IReadOnlyList<string> args, string verb) =>
         Operands(args, ["--at", "--session"]).ElementAtOrDefault(1)
-        ?? throw new ChoiceWords($"`driver {verb}` needs a name — e.g. `daoris driver {verb} aurora-engine`.");
+        ?? throw new ChoiceWords($"`driver {verb}` needs a name — e.g. `daoris {Tree(verb)} aurora-engine`.");
+
+    /// <summary>A verb of these words as the tree spells it: <c>quest retry</c>, a machine setting's, or a place's.</summary>
+    private static string Tree(string verb) =>
+        verb == "retry" ? "quest retry"
+        : CommandWords.Group("settings")!.Verbs.Contains(verb, StringComparer.Ordinal) ? $"settings {verb}"
+        : $"place {verb}";
 
     /// <summary>The positional operands, in order: every token that is neither a flag nor the value of one (the CLI's <c>operands</c>).</summary>
     public static List<string> Operands(IReadOnlyList<string> args, string[] valued)

@@ -18,7 +18,7 @@ public sealed class SetupRoutes(DriverContext context)
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
 
-    // A place's quick set-up (AGENTSPLACE1a2, the Agents-place design §4), `daoris-driver place … --plan`'s twin: {repositories, preset,
+    // A place's quick set-up (AGENTSPLACE1a2, the Agents-place design §4), `daoris place … --plan`'s twin: {repositories, preset,
     // opinion, look, adoption, builds, drive}. The parts are applied to a copy of driver.json through the doors' own edits and read before and
     // after through the start's resolvers; every refusal at once, what lowers the person's part, the reach, the work driving releases and each
     // declaration with its acceptances. It reads the registry, the quests and each line's tip as git objects, and writes and probes nothing.
@@ -61,7 +61,7 @@ public sealed class SetupRoutes(DriverContext context)
         var doors = new PlaceApplyDoors(
             new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), _context.Door(config),
             () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
-        // AGENTSPLACE1b3: `daoris-driver place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
+        // AGENTSPLACE1b3: `daoris place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
         // on the window's card has already pinned the plan between the terminal's ask and here (`PipeGrounds`).
         if (Flag(request, "said"))
         {

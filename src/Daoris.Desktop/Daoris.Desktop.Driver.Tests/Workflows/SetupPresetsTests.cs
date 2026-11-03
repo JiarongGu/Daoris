@@ -12,9 +12,6 @@ public sealed class SetupPresetsTests
 {
     private const string Plugin = "example.github-pull-request";
 
-    private static SetupLand Current(DriverConfig config, string repository = "engine") =>
-        SetupPresets.LandOf(Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, "aurora", [])));
-
     [Fact]
     public void The_five_presets_are_the_land_node_designs_table()
     {
@@ -38,19 +35,6 @@ public sealed class SetupPresetsTests
             SetupPresets.Table.Skip(1).Select(preset => (preset.Id, preset.Name, preset.Land)));
         Assert.All([SetupPresets.Merge, SetupPresets.Branch, SetupPresets.PullRequest, SetupPresets.Integrated],
             id => Assert.True(WorkflowDefaults.Of(id)?.SetUp, id));
-    }
-
-    [Fact]
-    public void Current_s_land_is_read_from_its_rule_as_the_land_node_design_derives_it()
-    {
-        var config = DriverConfig.Empty;
-        Assert.Equal(new SetupLand("merge", "you"), Current(config));
-        Assert.Equal(new SetupLand("branch", "you", "none"), Current(config.WithLanding("engine", new LandingRule(LandingForm.Branch, "f/{quest}"))));
-        Assert.Equal(new SetupLand("branch", "automatic", "none"),
-            Current(config.WithLanding("engine", new LandingRule(LandingForm.Branch, "f/{quest}", AutoAccept: true))));
-        Assert.Equal(new SetupLand("pull-request", "you", Plugin), Current(config.WithLanding("engine", new LandingRule(LandingForm.Branch, "f/{quest}", Plugin: Plugin))));
-        Assert.Equal(new SetupLand("integrate", "you", "none", "owner"),
-            Current(config.WithLanding("engine", new LandingRule(LandingForm.Branch, "f/{quest}") { Integrate = new LandingIntegrate() })));
     }
 
     [Fact]

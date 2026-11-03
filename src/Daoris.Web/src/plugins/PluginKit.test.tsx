@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PluginKitCard, TrialReport, type KitPoint, type PluginTrialResult } from './PluginKit';
 
 // PLUG8 (D101): the kit a plugin is made with, on the screen — New writes a plugin's folder where the
-// person names, Try starts one as the driver would. `daoris-driver plugins new|try` is the other door.
+// person names, Try starts one as the driver would. `daoris plugin new|try` is the other door.
 
 const POINTS: KitPoint[] = [
   { name: 'quest/consider', kind: 'decision' },

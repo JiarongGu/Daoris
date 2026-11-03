@@ -120,7 +120,7 @@ public static class PluginPackage
 }
 
 /// <summary>
-/// `daoris-driver plugins install &lt;file.nupkg&gt;` (PLUGDIST1a, the distribution design §6.4): a package file's plugin
+/// `daoris plugin install &lt;file.nupkg&gt;` (PLUGDIST1a, the distribution design §6.4): a package file's plugin
 /// installed from a terminal, through <see cref="PluginPackage.Install"/>. A package source's <c>install &lt;Id&gt;</c>
 /// is PLUGDIST1c's.
 /// </summary>
@@ -133,7 +133,7 @@ public static class PluginPackage
 /// </remarks>
 public static class PluginPackageCommand
 {
-    public const string Usage = "usage: daoris-driver plugins install <file.nupkg>";
+    public const string Usage = "usage: daoris plugin install <file.nupkg>";
 
     /// <param name="reservedHarnesses">The harnesses this build carries; null is <see cref="AdapterSet.Built"/>'s.</param>
     public static int Install(string[] args, TextWriter output, string? home, IEnumerable<string>? reservedHarnesses = null)
@@ -153,7 +153,7 @@ public static class PluginPackageCommand
 
             if (file is null)
             {
-                throw new DriverException($"`plugins install` needs a package file — e.g. `daoris-driver plugins install ./Acme.Gate.1.0.0{PluginPackageRules.Extension}`.\n{Usage}");
+                throw new DriverException($"`plugins install` needs a package file — e.g. `daoris plugin install ./Acme.Gate.1.0.0{PluginPackageRules.Extension}`.\n{Usage}");
             }
 
             if (!file.EndsWith(PluginPackageRules.Extension, StringComparison.OrdinalIgnoreCase) && !PluginFolders.HasFile(file))

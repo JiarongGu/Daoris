@@ -13,7 +13,7 @@ public sealed class HelpRoomWorkspacesTests
         var agents = HelpRoom.Render(new HelpMachine());
 
         Assert.Contains("No repository is registered on this machine", agents);
-        Assert.Contains("daoris connect", agents);
+        Assert.Contains("daoris repository connect", agents);
         Assert.Contains("no agent answers asks", agents);
     }
 
@@ -45,7 +45,7 @@ public sealed class HelpRoomWorkspacesTests
             Assert.Contains("| Current (the default) |\n", room);
             Assert.Contains("| `gone-flow`, not saved here (set for it) |\n", room);
             Assert.Contains(
-                "Kinds of work `work` declares (`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths …]`):\n\n"
+                "Kinds of work `work` declares (`daoris workflow kind <workspace> <kind> --label \"…\" [--paths …]`):\n\n"
                 + "- `docs` (Documentation), paths `docs/**`, `**/*.md`: `docs-to-pr`\n"
                 + "- `feature` (Feature): the level's default\n",
                 room);

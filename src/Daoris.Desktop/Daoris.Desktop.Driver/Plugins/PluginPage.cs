@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// A plugin's page (PLUGUI1d, D119 §3.2 and §4.1): what it declares, as written; each point's kind, wait and whether the
 /// running process listens; a landing plugin's rules and readiness; its source and whether an update waits; when it
 /// was installed; its data folder counted up to a bound; the tests its folder carries; and its health. One reader for
-/// both doors: the page's <c>PLUGIN</c> and <c>daoris-driver plugins show</c>.
+/// both doors: the page's <c>PLUGIN</c> and <c>daoris plugin show</c>.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>An environment variable's value never leaves the reader</b> (D119 §4.1): a server's <c>env</c> is

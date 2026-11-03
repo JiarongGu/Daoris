@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The page's terminal twins (PLUGUI1d, D119 §4.4, D50): <c>daoris-driver plugins show &lt;id&gt; [--json]</c> and
+/// The page's terminal twins (PLUGUI1d, D119 §4.4, D50): <c>daoris plugin show &lt;id&gt; [--json]</c> and
 /// <c>plugins activity &lt;id&gt; [--since &lt;span&gt;] [--json]</c>, run whole in-process, with their exits:
 /// 0 shown, 2 could not do what was asked.
 /// </summary>
@@ -224,7 +224,7 @@ public sealed class PluginsCommandTests : IDisposable
     [InlineData(new[] { "show", "acme.nobody" }, "no plugin `acme.nobody` on this machine")]
     [InlineData(new[] { "show", "acme.gate", "--loud" }, "`--loud` is not an option of `plugins show`")]
     [InlineData(new[] { "activity", "acme.gate", "--since", "soon" }, "`--since` takes a span such as 30m, 2h or 3d")]
-    [InlineData(new[] { "explode" }, "usage: daoris-driver plugins new")]
+    [InlineData(new[] { "explode" }, "usage: daoris plugin new")]
     public async Task What_the_verbs_cannot_do_is_a_sentence_and_exit_2(string[] args, string sentence)
     {
         var (exit, said) = await Run(args);

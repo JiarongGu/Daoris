@@ -20,9 +20,9 @@ public static class GitAccessCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver git access [<repository>|--workspace <workspace>|--machine] [read=<v>] [write=<v>] [--one-value <v>] [--clear] [--json]
-               daoris-driver git asks [--json]
-               daoris-driver git answer <ask> allow|refuse
+        usage: daoris git access [<repository>|--workspace <workspace>|--machine] [read=<v>] [write=<v>] [--one-value <v>] [--clear] [--json]
+               daoris git asks [--json]
+               daoris git answer <ask> allow|refuse
         """;
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

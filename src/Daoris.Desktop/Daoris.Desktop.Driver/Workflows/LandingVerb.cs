@@ -5,7 +5,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver landing</c> (WSR1, D87, D100, LAND2a, PROCESS1b, FABRIC-GRAPH1c; FOUNDATION1 mod-iii): the settings' port
+/// <c>daoris place landing</c> (WSR1, D87, D100, LAND2a, PROCESS1b, FABRIC-GRAPH1c; FOUNDATION1 mod-iii): the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented where the rule's plugin and the cycle after it are both known, the workflows': it sets the
 /// workplace's landing rule (<see cref="LandingRules"/>) with the plugin that lands by it and the graph that follows, and says what the
 /// file keeps that no unit reads.
@@ -17,7 +17,7 @@ public sealed class LandingVerb : ChoiceVerb
     /// <summary>What the verb tells whoever presses it for a place that follows a saved workflow.</summary>
     public const string Retired =
         "retired here: a place that follows a saved workflow lands as that workflow says, and `driver landing` no longer writes a rule for it. "
-        + "`daoris driver workflow use <id>` chooses a workflow, and the line's policy is set on the place's page (Line). Nothing was written.";
+        + "`daoris workflow use <id>` chooses a workflow, and the line's policy is set on the place's page (Line). Nothing was written.";
 
     /// <summary>
     /// <c>landing</c> (WSR1, D87, D100, LAND2a, PROCESS1b): a rule replaced whole, or cleared; its plugin asked by the operation
@@ -52,7 +52,7 @@ public sealed class LandingVerb : ChoiceVerb
         if (string.IsNullOrEmpty(name) || (!clear && string.IsNullOrEmpty(form)))
         {
             throw new ChoiceWords("`driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — "
-                + "e.g. `daoris driver landing --workspace aurora branch \"feature/{quest}-{slug}\"`, and on a branch "
+                + "e.g. `daoris place landing --workspace aurora branch \"feature/{quest}-{slug}\"`, and on a branch "
                 + "`--plugin <id>` for an installed plugin that pushes it and opens the pull request, `--auto-accept` "
                 + "for a quest's done to land it with no press, `--key <shape>` for the shape `{ticket}` is found by, and "
                 + "`--squash` for the pull request's branch as one commit.");
@@ -215,7 +215,7 @@ public sealed class LandingVerb : ChoiceVerb
 
             if (rule is not null && workspace is not null)
             {
-                Say("  A repository with a rule of its own keeps it — `daoris driver landing <repository> --clear` hands it back.");
+                Say("  A repository with a rule of its own keeps it — `daoris place landing <repository> --clear` hands it back.");
             }
 
             Say($"  Written to {path} — the review reads it at each press, so nothing restarts.");

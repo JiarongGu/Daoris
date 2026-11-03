@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The groups a session is listed in by state (D126 §2.1), in the order the person acts on them, and Archived: the
-/// public spelling the page and <c>daoris-driver sessions --group</c> share.
+/// public spelling the page and <c>daoris session list --group</c> share.
 /// </summary>
 public static class SessionGroup
 {

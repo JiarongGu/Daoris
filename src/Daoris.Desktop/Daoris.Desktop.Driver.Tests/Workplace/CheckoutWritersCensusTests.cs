@@ -100,7 +100,7 @@ public sealed partial class CheckoutWritersCensusTests
     /// </summary>
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
-        ["TreesConsole.cs"] = "`daoris-driver trees sync --yes`'s pull, and the terminal's Accept and Accept all",
+        ["TreesConsole.cs"] = "`daoris tree sync --yes`'s pull, and the terminal's Accept and Accept all",
         ["TreesRoutes.cs"] = "the window's Accept, a merge rule's move",
         ["EntriesRoutes.cs"] = "the window's Accept on an entry, a merge rule's move",
         ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",

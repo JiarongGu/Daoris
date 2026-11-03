@@ -252,8 +252,8 @@ public static class IntakeObservation
             ? SessionConclusion.Of("awaiting-person", Noted.Of(
                 NoteCodes.IntakeAsks,
                 $"published nothing: the declarations did not settle ask `#{after.Id}`, so it asks you rather "
-                + "than guess — its question ends its transcript. `daoris-driver ask --publish "
-                + $"{after.Id} --to <repository>` answers it; `daoris-driver ask --close {after.Id} --reason \"…\"` "
+                + "than guess — its question ends its transcript. `daoris ask publish "
+                + $"{after.Id} --to <repository>` answers it; `daoris ask close {after.Id} --reason \"…\"` "
                 + "ends it.",
                 ("ask", after.Id)))
             : SessionConclusion.Of("failed", Noted.Of(

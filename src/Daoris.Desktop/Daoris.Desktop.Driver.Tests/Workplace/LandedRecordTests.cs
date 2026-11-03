@@ -404,7 +404,7 @@ public sealed class LandedRecordTests : IDisposable
         var tidied = LandedReviewWords.NotAgain("s1a2b3c4", new LandedReview(entry, LandedState.Standing), treeGone: true);
         Assert.StartsWith("`s1a2b3c4` landed on `feature/q1-fix` in `engine`", tidied);
         Assert.Contains("that branch still stands. Nothing was landed again: its tree is gone.", tidied);
-        Assert.EndsWith("`daoris-driver trees hand s1a2b3c4` hands that branch to a landing plugin.", tidied);
+        Assert.EndsWith("`daoris tree hand s1a2b3c4` hands that branch to a landing plugin.", tidied);
 
         var kept = LandedReviewWords.NotAgain("s1a2b3c4", new LandedReview(entry with { Pushed = true, PullRequest = "https://example.test/pr/7" }, LandedState.Standing), treeGone: false);
         Assert.EndsWith("Its pull request: https://example.test/pr/7 Nothing was landed again: a second landing is refused while that branch stands.", kept);

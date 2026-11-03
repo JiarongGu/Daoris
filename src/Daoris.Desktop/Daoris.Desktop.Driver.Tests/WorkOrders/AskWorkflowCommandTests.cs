@@ -7,8 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// WORKFLOW1e (D157 point 10; the workflow design §4.1 row 1, §4.3, D50): the ask's kind and workflow at a terminal.
-/// <c>daoris-driver ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current]</c> sends them with a new ask;
-/// <c>daoris-driver ask --set-workflow &lt;id&gt; [--kind …] [--workflow …]|--clear</c> sets them on one. A kind is one the ask's
+/// <c>daoris ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current]</c> sends them with a new ask;
+/// <c>daoris ask workflow &lt;id&gt; [--kind …] [--workflow …]|--clear</c> sets them on one. A kind is one the ask's
 /// workspace declares and a workflow one saved here whose newest version reads, judged before the service is asked; every other
 /// answer is the service's sentence, its person's door's refusal included. A service stood in: the fast half (MOD8).
 /// </summary>
@@ -86,10 +86,10 @@ public sealed class AskWorkflowCommandTests : IDisposable
         Assert.Null(AskWorkflowCommand.Unchoosable("docs", "docs-to-pr", "work", world));
         Assert.Null(AskWorkflowCommand.Unchoosable(null, "current", "elsewhere", world));
         Assert.Equal(
-            "workspace `elsewhere` declares no kind `docs`: a kind is declared first, with its label. `daoris driver workflow kind elsewhere docs "
+            "workspace `elsewhere` declares no kind `docs`: a kind is declared first, with its label. `daoris workflow kind elsewhere docs "
             + "--label \"…\"` declares one. Nothing was kept.",
             AskWorkflowCommand.Unchoosable("docs", null, "elsewhere", world));
-        Assert.Equal("No workflow `release-train` is saved here: `daoris driver workflow list` names them. Nothing was kept.",
+        Assert.Equal("No workflow `release-train` is saved here: `daoris workflow list` names them. Nothing was kept.",
             AskWorkflowCommand.Unchoosable(null, "release-train", "work", world));
     }
 

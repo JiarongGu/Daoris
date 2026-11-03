@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver sessions</c>' list through the running Daoris (RPCOPEN1, RPC1e, the terminal RPC design §7.2 and §7.3): its own
+/// <c>daoris session list</c>' list through the running Daoris (RPCOPEN1, RPC1e, the terminal RPC design §7.2 and §7.3): its own
 /// <c>SESSION_GROUPS</c> look, answered as lines the verb prints, and this process's own look where none answers, both from
 /// <see cref="SessionsCommand.ListLines"/>.
 /// </summary>

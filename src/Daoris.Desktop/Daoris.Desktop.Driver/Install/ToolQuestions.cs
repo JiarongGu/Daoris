@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// Asked of the resolved file by its whole path, with fixed arguments only, and handed the tools' environment as every
 /// child is (TOOLS5): a version is asked on the <c>PATH</c> a session would be started on. Bounded, since a file the
 /// person names may be any program, and one that waits for input answers nothing in time. The driver library's since PUSH1f2c, so
-/// <c>daoris-driver tool use … file</c> asks a named file its version as the window's route does (<see cref="ToolChoices"/>).
+/// <c>daoris tool use … file</c> asks a named file its version as the window's route does (<see cref="ToolChoices"/>).
 /// </remarks>
 public static partial class ToolQuestions
 {

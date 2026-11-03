@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The person's doors for withdrawing a landing's branch the line will never hold (LANDRETIRE1; D50: one act, two doors): the window's
 /// <c>WITHDRAW_LANDING_BRANCH</c> names the branch and its repository (<see cref="WithdrawAsync"/>); the terminal's
-/// <c>daoris-driver trees remove &lt;landing branch&gt; [--repository &lt;name&gt;] --why "…" [--plan]</c> names the branch alone
+/// <c>daoris tree remove &lt;landing branch&gt; [--repository &lt;name&gt;] --why "…" [--plan]</c> names the branch alone
 /// (<see cref="WithdrawNamedAsync"/>), and both end in <see cref="SessionTrees.WithdrawLandedAsync"/>, which judges and acts.
 /// Mirrors <see cref="SessionBranchDiscard"/>.
 /// </summary>

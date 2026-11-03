@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>INTEGRATE1h: <c>daoris-driver integrate</c>'s acts pressed over the pipe, against a stand-in of it.</summary>
+/// <summary>INTEGRATE1h: <c>daoris integrate</c>'s acts pressed over the pipe, against a stand-in of it.</summary>
 public sealed class IntegratePressTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-integrate-press-tests", Guid.NewGuid().ToString("N")[..8]);

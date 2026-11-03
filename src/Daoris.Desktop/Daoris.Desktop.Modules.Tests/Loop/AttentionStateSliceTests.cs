@@ -380,7 +380,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     private static JsonObject Parked(string over = "{}") => With(
         """
         {"quest":"7a82cc","repository":"engine","verdict":"Exhausted","strikes":3,"since":"2026-10-01T09:21:00+00:00",
-         "reason":"3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 7a82cc` starts it again once you know why."}
+         "reason":"3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris quest retry 7a82cc` starts it again once you know why."}
         """,
         over);
 

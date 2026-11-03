@@ -11,7 +11,7 @@ public static class TraceEntry
     public static IReadOnlyList<string> All { get; } = [Commit, Session, Quest];
 }
 
-/// <summary>What <c>daoris-driver trace</c> was asked: an id, and the kind it names where the person said which.</summary>
+/// <summary>What <c>daoris trace</c> was asked: an id, and the kind it names where the person said which.</summary>
 /// <param name="Id">A commit (at least <see cref="CommitNames.Digits"/> hexadecimal digits), a session's id or a quest's, as typed.</param>
 /// <param name="Kind">One of <see cref="TraceEntry"/>, or null: whatever the id names here, refused where it names several.</param>
 public sealed record TraceAsk(string Id, string? Kind = null);
@@ -23,7 +23,7 @@ public sealed record TraceSources(ServiceClient Service, string Home, DriverConf
 internal sealed record TraceAskRead(string Id, AskView? Ask, string? Unread);
 
 /// <summary>
-/// <c>daoris-driver trace &lt;commit|session|quest&gt;</c> (TRACE1, D143): one read from a commit, a session or a quest back to the
+/// <c>daoris trace &lt;commit|session|quest&gt;</c> (TRACE1, D143): one read from a commit, a session or a quest back to the
 /// ask it served, each link printed from the store that keeps it and a link nothing keeps said missing. In the library, so
 /// its words are held by a test.
 /// </summary>
@@ -38,7 +38,7 @@ public static class TraceCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver trace <commit|session|quest>  ·  trace commit|session|quest <id>
+        usage: daoris trace <commit|session|quest>  ·  trace commit|session|quest <id>
         """;
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>

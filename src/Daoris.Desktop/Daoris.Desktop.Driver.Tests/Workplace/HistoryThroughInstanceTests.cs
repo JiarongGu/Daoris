@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris-driver history</c>, <c>history clear --workspace</c>, <c>quest clear</c> and <c>ask --clear</c> through the running
+/// RPC1e: <c>daoris history</c>, <c>history clear --workspace</c>, <c>quest clear</c> and <c>ask --clear</c> through the running
 /// Daoris (the terminal RPC design §7.2 and §7.3). A clear's <c>--yes</c> is the person's press, sent to the instance, which shows it in
 /// its window; the reading and a clear's list are reads of <c>HISTORY_PLAN</c>. The terminal prints the lines the route answers
 /// (<c>said</c>, the alone path's own words), and this process asks the service nothing.

@@ -21,7 +21,7 @@ diff at the end (`autonomous-development`, D37):
    generated index, the lock. The project's own documents are untouched, and its own knowledge and skills are listed `(local)`.
 4. **`daoris check`** — the offline gate: drift, staleness, index freshness, the always-loaded budget.
    Wire it into the project's own verification.
-5. **`daoris connect`** *(a management command, never run by a gate)* — registers the project with
+5. **`daoris repository connect`** *(a management command, never run by a gate)* — registers the project with
    a knowledge service, carrying its declaration and, to a local one, its root. The registry is an
    explicit list (WSP2): a project nobody connected or imported is not a member, on one machine or
    many, and a registered one is addressable (D70). The manifest's `remote` declaration travels with
@@ -55,7 +55,7 @@ transcript in `_fixtures/rehearsal-logs/`:
 - both examples hold **current, clean doctrine** — a canon change that forgot to re-sync them fails
   here, which is the same discipline this repository applies to its own `.claude/`;
 - the HTTP host comes up over a scratch store rooted at `examples/`;
-- both projects register, through the real `daoris connect`;
+- both projects register, through the real `daoris repository connect`;
 - a quest goes `game → engine`; one to a stranger is **refused naming who is addressable**; declining
   without a reason is refused; the quest is taken and finished;
 - a quest **addresses a lane**: `engine` declares two in its `daoris.lanes.json`, which `connect` sends
@@ -68,7 +68,7 @@ transcript in `_fixtures/rehearsal-logs/`:
   tree holds the start, and the person's stop is honoured — no model in the gate;
 - work is **reviewed where it runs** before it lands (D154): the newcomer declares where its work is
   shown, from a terminal; a stub chain's set-up step says what it showed through its connector; the
-  landing waits for the person's `daoris-driver quest review … reviewed`, their *not yet* reaches the
+  landing waits for the person's `daoris quest review … reviewed`, their *not yet* reaches the
   stub's next turn, a later commit holds it again, and a repository set to none lands at once;
 - the **remote crosses** (D47): a shared host with minted keys, two simulated machines, a quest
   crossing them to done, a raced take standing down, and the remote's store scanned to hold nothing

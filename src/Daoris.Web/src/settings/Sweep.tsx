@@ -69,7 +69,7 @@ export const sayDiscard = (notify: Notify, t: (key: string, options?: Record<str
  * A session branch's discard, asked once (LAND3b, D102's LAND3 note): it names the branch, its repository, its tree where
  * it still has one, and that its commits go with it for good, beside the move and *never mind* (platform language §4).
  * The commits are the ones the driver counted that no branch of the person's holds; the press is forced, as
- * `daoris-driver trees remove <branch> --repository <name> --force` is. The one inline confirmation (UXFIX2): open until
+ * `daoris tree remove <branch> --repository <name> --force` is. The one inline confirmation (UXFIX2): open until
  * the discard lands, a branch the driver kept said inside it.
  */
 export function DiscardBranchAsk({ branch, busy = false, onDiscard, onClose, className }: {
@@ -151,7 +151,7 @@ export const sayWithdraw = (notify: Notify, t: (key: string, options?: Record<st
 /**
  * A landing's branch withdrawn, asked once (LANDRETIRE1, D102's note): it names the branch and its repository, that the line will never
  * hold its work and its commits stay on a recovery ref, and asks the reason the record keeps; the move waits for one, as
- * `daoris-driver trees remove <branch> --repository <name> --why "…"` asks `--why`. The one inline confirmation (UXFIX2).
+ * `daoris tree remove <branch> --repository <name> --why "…"` asks `--why`. The one inline confirmation (UXFIX2).
  */
 export function WithdrawLandedAsk({ branch, busy = false, onWithdraw, onClose, className }: {
   branch: Pick<LandedBranch, 'repository' | 'branch'>;
@@ -244,7 +244,7 @@ export function BranchRow({ name, moving, word, children, under }: {
  * Daoris's branches go once their work has merged: the first real workspace left sixteen empty ones in one repository. **The list comes
  * first, and the press removes only what it listed to go** — the driver judges each again right before
  * it goes. Work no branch of the person's holds, uncommitted work, and a tree a session still uses are
- * kept and named, never removed from here. `daoris-driver trees clean` is the terminal's door (D50).
+ * kept and named, never removed from here. `daoris tree clean` is the terminal's door (D50).
  *
  * **The branches landings made are their own group** (WSR5): a squash merge leaves git calling them
  * unmerged, so each is proven by content — every file it changed reads on the line as it left it, or it is
@@ -256,11 +256,11 @@ export function BranchRow({ name, moving, word, children, under }: {
  *
  * **A failed or superseded attempt's branch is discarded by its own press** (LAND3b, D102's LAND3 note): its commits are on
  * no branch of the person's, so the clean-up keeps it. Beside each row the driver says `discardable`, *Discard branch…*
- * asks once under the row and then discards it, as `daoris-driver trees remove … --force` does beside the same rows. The
+ * asks once under the row and then discards it, as `daoris tree remove … --force` does beside the same rows. The
  * ask stays open until the driver answers, and says a branch it kept inside itself (UXFIX2).
  *
  * **A kept branch whose tree is still here says how it lands** (LAND4, D102's LAND4 note): where the driver says `landable`,
- * the row names the session its tree is and how it ended, and that its page offers Accept, as `daoris-driver trees land`
+ * the row names the session its tree is and how it ended, and that its page offers Accept, as `daoris tree land`
  * does from the terminal, whose list prints that line beside the same row. Words only: the press is the session's.
  */
 export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, discarding = null, onWithdraw, withdrawing = null, sync }: {

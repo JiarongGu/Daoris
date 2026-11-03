@@ -18,7 +18,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // HELP9: every `daoris driver` verb; across (D107) said form by form, and a write-to as the say-so the canon
         // asks for, which its card says too. HELP10: `retry` too, of a quest the driver parked, named from the list;
         // SESSUX1b: or one the person's stop holds, released from that stop.
-        text.Append("- `setting_propose`: every door below that `daoris driver` spells.\n");
+        text.Append("- `setting_propose`: every setting door below.\n");
         text.Append("  `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
         text.Append("  as the target, as its page's *Try again* does; a quest on neither list is refused.\n");
         text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");
@@ -114,7 +114,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  teammate's session is never reached. Resume lifts the pause and releases its stops; another pause over a quest\n");
         text.Append("  of the work stays.\n");
         text.Append("  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the\n");
-        text.Append("  ask's or the quest's page → Abandon…, or `daoris-driver ask --abandon <id>`, and never write the reason.\n");
+        text.Append("  ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.\n");
         // HIST1f-b, HIST1f-d (D153, design §6.4): the pages' clears, judged by their first press, a closed quest's failed
         // sessions alone being the `failed` door.
         text.Append("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n");
@@ -128,7 +128,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // WORKFLOW1h2's, and a merge with nobody is a decision of its own (§8.3, §12.1).
         text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");
         text.Append("  workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as\n");
-        text.Append("  `daoris driver workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`\n");
+        text.Append("  `daoris workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`\n");
         text.Append("  step landing the work by its method), and `choose` to make it the scope's workflow too. A list of `steps` is\n");
         text.Append("  refused: it is no longer saved, and one saved before is the conversion's. Its card says the person's part first, then each step by id,\n");
         text.Append("  what leaves this machine with no press of theirs, what is needed first, and that it applies to new work only.\n");
@@ -157,12 +157,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // WORKFLOWCLEAN1 1f: one door adopts a repository, a place's adoption. The room has no shell, by design (D89): the door is a
         // card whose Apply opens the page, judged by the plan's refusals.
         text.Append("- `setup_propose`: set one or several repositories registered here up (their delivery, a second opinion and the\n");
-        text.Append("  person's look, the adoption quest and what it builds, general driving), as `daoris-driver place <repository>…\n");
+        text.Append("  person's look, the adoption quest and what it builds, general driving), as `daoris place <repository>…\n");
         text.Append("  --preset keep --adoption` does and its page's *Set up…* does. Adoption asks each repository's own session for one\n");
         text.Append("  quest, which takes up the shared doctrine and writes down what the repository owns and its instructions on a\n");
         text.Append("  branch of its own, landed by its workspace's rule, with a rule letting its sessions run the doctrine tool. Give\n");
         text.Append("  the preset and the repositories, named as `registry` lists them, to `setup_propose`'s place ask; the only door is\n");
-        text.Append("  `place`. The card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in\n");
+        text.Append("  `place`. The card shows the plan `daoris place <repository>… --preset <id> --plan` prints, every refusal in\n");
         text.Append("  its words (no tree of its own, no doctrine tool, a set-up already open); where a repository is not driven here, its\n");
         text.Append("  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on\n");
         text.Append("  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the\n");

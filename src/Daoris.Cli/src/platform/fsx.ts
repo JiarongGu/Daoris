@@ -77,7 +77,7 @@ export function writeJsonAtomic(path: string, value: unknown): void {
   writeJsonTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-/** `writeJsonAtomic` for a file's whole text, composed by its editor (`jsonkeep.ts`'s `keepEdits`): refused the same way. */
+/** `writeJsonAtomic` for a file's whole text: refused the same way. */
 export function writeJsonTextAtomic(path: string, text: string): void {
   const { problem } = readJsonObject(path);
   if (problem !== null) {

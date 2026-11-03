@@ -17,7 +17,7 @@ import {
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PIECE_START, PLUGIN_OFFERS, layGitDoors, layPieceStart,
+  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PIECE_START, PLUGIN_OFFERS, layGitDoors, layPieceStart,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/desktop-publish.mjs';
 // The protocol stub both rehearsals run (DEPLOY5): one copy, where the family rehearsal's used to be.
@@ -121,7 +121,7 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
   const fx = makeFixture('deploy-cli');
   const pkg = `install/${CLI_PACKAGE.join('/')}`;
   const sound = () => {
-    for (const name of [...CLI_LAUNCHERS, ...DRIVER_LAUNCHERS]) fx.write(`install/${CLI_BIN.join('/')}/${name}`, 'launcher\n');
+    for (const name of CLI_LAUNCHERS) fx.write(`install/${CLI_BIN.join('/')}/${name}`, 'launcher\n');
     fx.write(`install/${DRIVER_HOME.join('/')}/${DRIVER_EXE}`, 'host\n');
     fx.write(`${pkg}/${CLI_ENTRY.join('/')}`, '// entry\n');
     fx.write(`${pkg}/dist/cli.js`, '// built\n');

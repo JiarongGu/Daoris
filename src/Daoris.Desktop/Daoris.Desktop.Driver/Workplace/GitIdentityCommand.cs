@@ -41,19 +41,19 @@ public static class GitIdentityCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver git identity list [--json]
-               daoris-driver git identity add-ssh <host> --label <label> [--name <name> --email <email>] [--import <file>] [--rsa]
-               daoris-driver git identity add-https <host> --label <label> [--user <user>] [--token-stdin] [--name <name> --email <email>]
-               daoris-driver git identity public-key <identity>
-               daoris-driver git identity test <identity> [--trust-host <fingerprint>] [--repo <address>]
-               daoris-driver git identity rename <identity> <label>
-               daoris-driver git identity commits-as <identity> --name <name> --email <email> | --clear
-               daoris-driver git identity read-only <identity> on|off
-               daoris-driver git identity remove <identity>
-               daoris-driver git default <host> <identity>|--clear
-               daoris-driver git use <repository> [--remote <name>] <identity>|own|--clear
-               daoris-driver git use --workspace <workspace> --host <host> <identity>|own|--clear
-               daoris-driver git use --machine --host <host> own|--clear
+        usage: daoris git identity list [--json]
+               daoris git identity add-ssh <host> --label <label> [--name <name> --email <email>] [--import <file>] [--rsa]
+               daoris git identity add-https <host> --label <label> [--user <user>] [--token-stdin] [--name <name> --email <email>]
+               daoris git identity public-key <identity>
+               daoris git identity test <identity> [--trust-host <fingerprint>] [--repo <address>]
+               daoris git identity rename <identity> <label>
+               daoris git identity commits-as <identity> --name <name> --email <email> | --clear
+               daoris git identity read-only <identity> on|off
+               daoris git identity remove <identity>
+               daoris git default <host> <identity>|--clear
+               daoris git use <repository> [--remote <name>] <identity>|own|--clear
+               daoris git use --workspace <workspace> --host <host> <identity>|own|--clear
+               daoris git use --machine --host <host> own|--clear
         """;
 
     /// <summary>The family's first words this command answers (<c>git branches</c> is <see cref="GitBranchesCommand"/>'s).</summary>
@@ -239,7 +239,7 @@ public static class GitIdentityCommand
             + (identity.Default ? $", {identity.Host}'s default." : ".")).ConfigureAwait(false);
         await output.WriteLineAsync($"Add this public key where {identity.Host} takes SSH keys{(page is null ? "" : $" ({page})")}, then test it:").ConfigureAwait(false);
         await output.WriteLineAsync(GitKeys.PublicKey(home, identity.Id)).ConfigureAwait(false);
-        await output.WriteLineAsync($"  daoris-driver git identity test {identity.Id}").ConfigureAwait(false);
+        await output.WriteLineAsync($"  daoris git identity test {identity.Id}").ConfigureAwait(false);
         return 0;
     }
 
@@ -257,7 +257,7 @@ public static class GitIdentityCommand
             token, "https", ct).ConfigureAwait(false);
         await output.WriteLineAsync($"git: {identity.Label} added for {identity.Host}: HTTPS through Git Credential Manager"
             + (identity.User is null ? "" : $" as {identity.User}") + (identity.Default ? $", {identity.Host}'s default." : ".")).ConfigureAwait(false);
-        await output.WriteLineAsync($"Its sign-in is kept in Windows' store under Daoris's own name, never in a file of Daoris's. Test it: daoris-driver git identity test {identity.Id} --repo https://{identity.Host}/<owner>/<repository>").ConfigureAwait(false);
+        await output.WriteLineAsync($"Its sign-in is kept in Windows' store under Daoris's own name, never in a file of Daoris's. Test it: daoris git identity test {identity.Id} --repo https://{identity.Host}/<owner>/<repository>").ConfigureAwait(false);
         return 0;
     }
 
@@ -283,7 +283,7 @@ public static class GitIdentityCommand
                     await output.WriteLineAsync($"  {key.Key.Split(' ')[0]} {key.Fingerprint}  {mark}").ConfigureAwait(false);
                 }
 
-                await output.WriteLineAsync($"Compare, then trust one: daoris-driver git identity test {identity.Id} --trust-host <fingerprint>").ConfigureAwait(false);
+                await output.WriteLineAsync($"Compare, then trust one: daoris git identity test {identity.Id} --trust-host <fingerprint>").ConfigureAwait(false);
                 return 1;
             default:
                 await output.WriteLineAsync($"git: {identity.Label}'s test: {answer.Result}" + (answer.Words is null ? "." : $" ({answer.Words})")).ConfigureAwait(false);
@@ -381,7 +381,7 @@ public static class GitIdentityCommand
 
         if (identities.Count == 0)
         {
-            await output.WriteLineAsync("git: no git identities yet. Daoris's git reaches a private repository only as an identity you set up: daoris-driver git identity add-ssh <host> --label <label>").ConfigureAwait(false);
+            await output.WriteLineAsync("git: no git identities yet. Daoris's git reaches a private repository only as an identity you set up: daoris git identity add-ssh <host> --label <label>").ConfigureAwait(false);
             return 0;
         }
 

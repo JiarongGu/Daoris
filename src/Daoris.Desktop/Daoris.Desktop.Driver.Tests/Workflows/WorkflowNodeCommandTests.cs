@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2; D194 point 5): <c>daoris-driver workflow skip|stop &lt;run&gt; &lt;node&gt;</c>, the
+/// FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2; D194 point 5): <c>daoris workflow skip|stop &lt;run&gt; &lt;node&gt;</c>, the
 /// terminal's twin of the run's view's presses: its words read, its alone path keeping the word on the run's record as the door does, and
 /// refused from a session's terminal before anything is read. Each seen failing first.
 /// </summary>

@@ -45,7 +45,7 @@ public sealed class PlacePlanTests
         Assert.Equal([new PlaceSave("merge-after-accept", "merge-after-accept", false, false)], plan.Saves);
         Assert.True(plan.Applies);
         Assert.Empty(solo.Lowers);
-        Assert.Equal("daoris-driver place solo --preset merge-after-accept --drive --plan", plan.Terminal);
+        Assert.Equal("daoris place solo --preset merge-after-accept --drive --plan", plan.Terminal);
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public sealed class PlacePlanTests
             Assert.Equal(atlas.Before.Values.Landing, atlas.After.Values.Landing);
             Assert.Equal(atlas.Before.Values.Workflow, atlas.After.Values.Workflow);
             Assert.Equal("kept", WorkflowSelection.Resolve(chosen, "atlas", "aurora", task: null).Workflow);
-            Assert.Equal("daoris-driver place atlas --preset keep --adoption --drive --plan", kept.Terminal);
+            Assert.Equal("daoris place atlas --preset keep --adoption --drive --plan", kept.Terminal);
 
             // A tick under Keep is refused: a step is added at the workflow's own door.
             var ticked = await PlanAsync(new World(), Ask(SetupPresets.Keep, "engine") with { Opinion = true }, chosen);

@@ -209,7 +209,7 @@ public sealed class ReviewDesk(IReviewTabs tabs)
         if (environment is null)
         {
             return (false, $"no review rule here names `{named}` for `{quest.To}`, so where it is shown is not known here: "
-                + $"`daoris driver review {quest.To} {named} …` declares it.");
+                + $"`daoris place review {quest.To} {named} …` declares it.");
         }
 
         if (environment.Kind != "local")

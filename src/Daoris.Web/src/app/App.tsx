@@ -427,7 +427,7 @@ export function App() {
   // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it (SIGNIN1).
   const agentsPane = lists.pane('agents');
   // The words to the session that proposed a rule an *Accept* on the page kept (PROPOSEHERE1c): the Agents place is handed the
-  // door, its own view pressing no say hook (the driver's `HelpCoverageTests` follows what a place's view imports).
+  // door, its own view pressing no say hook.
   const sayToSession = useSay();
   // The home's Convert… (WORKFLOWCLEAN1g-i): its review opens in the Agents place's Setup main area, from any place's head or any other door.
   const conversion = useConversion({ active: attached && view === 'agents' });

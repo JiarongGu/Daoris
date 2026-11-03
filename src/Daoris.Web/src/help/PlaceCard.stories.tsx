@@ -12,7 +12,7 @@ const PLACE: HelpProposal = {
   describe: 'Open the Agents place\'s Setup for `engine`, `site` in workspace `aurora`, with *Set up…* open on this ask — merge-after-accept, '
     + 'asking its session to set up for agents (service). The plan: its own tree (engine, site); a set-up asked of its own session (site). '
     + 'You read the plan there and press Apply yourself: nothing is written until you press Apply there.',
-  terminal: 'daoris-driver place engine site --preset merge-after-accept --with adoption --what-it-builds service --plan',
+  terminal: 'daoris place engine site --preset merge-after-accept --with adoption --what-it-builds service --plan',
   why: 'you asked for both to be set up with a merge after you accept',
   place: {
     workspace: 'aurora', digest: 'd1',

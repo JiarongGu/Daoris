@@ -139,11 +139,11 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     {
         var wire = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
         System.Text.Json.JsonElement Shown(WorkHold hold) => System.Text.Json.JsonSerializer.SerializeToElement(WorkRoutes.WorkHoldShown(hold), wire);
-        const string StopSaid = "you stopped session `b3f0re00`; Try again carries it on — `daoris driver retry q8 --session b3f0re00`.";
+        const string StopSaid = "you stopped session `b3f0re00`; Try again carries it on — `daoris quest retry q8 --session b3f0re00`.";
         const string Null = nameof(System.Text.Json.JsonValueKind.Null);
 
         var stopped = Shown(new WorkHold("q8", StartVerdict.Stopped, StopSaid) { HeldBy = "b3f0re00" });
-        var paused = Shown(new WorkHold("q9", StartVerdict.Paused, "you paused `#q9`; Resume starts it — `daoris-driver quest resume q9`.")
+        var paused = Shown(new WorkHold("q9", StartVerdict.Paused, "you paused `#q9`; Resume starts it — `daoris quest resume q9`.")
         {
             PausedBy = new PausedBy(WorkScope.Quest, "q9"),
         });

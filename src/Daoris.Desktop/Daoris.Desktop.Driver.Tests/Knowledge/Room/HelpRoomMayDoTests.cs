@@ -89,7 +89,7 @@ public sealed class HelpRoomMayDoTests
         // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.
         Assert.Contains("for a repository under\nRepositories → the repository's page → Setup → Reach", agents);
         Assert.Contains("for a whole workspace under\nRepositories → the workspace's page → Setup → Defaults → Read by agents outside", agents);
-        Assert.Contains("`daoris driver across <repository> read on`", agents);
+        Assert.Contains("`daoris place across <repository> read on`", agents);
     }
 
     /// <summary>A machine with no checkout here has nothing switched off to speak of.</summary>
@@ -310,7 +310,7 @@ public sealed class HelpRoomMayDoTests
         var room = HelpRoom.Render(HelpRoomFixture.Machine);
 
         Assert.Contains("This is restricted mode", room);
-        Assert.Contains("`daoris-driver help mode full`", room);
+        Assert.Contains("`daoris ask-daoris mode full`", room);
         Assert.Contains("never yours to propose", room);
         Assert.Contains("You change nothing yourself", room);
     }

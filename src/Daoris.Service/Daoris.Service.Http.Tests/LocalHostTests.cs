@@ -975,7 +975,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal("evidence-missing", stillHeld.GetProperty("hold").GetString());
         Assert.Equal(Commit, stillHeld.GetProperty("evidence").GetProperty("commit").GetString());
         Assert.Equal("uncommitted", stillHeld.GetProperty("evidence").GetProperty("items")[0].GetProperty("result").GetString());
-        Assert.Contains($"daoris-driver quest check {quest}", missing.Json.GetProperty("message").GetString());
+        Assert.Contains($"daoris quest check {quest}", missing.Json.GetProperty("message").GetString());
 
         var unread = await host.PostAsync($"/api/quests/{quest}/evidence", new { commit = Commit, how = "terminal", items = Array.Empty<object>() });
         Assert.Equal(400, unread.Status);

@@ -45,5 +45,3 @@ export const LoadingMore: Story = { args: { total: 40, covered: 3, onMore: () =>
 export const MoreFailed: Story = { args: { total: 40, covered: 3, onMore: () => {}, moreError: 'the driver stopped answering.' } };
 /** The last page: no foot, and so no count. */
 export const LastPage: Story = { args: { total: 3, covered: 3 } };
-/** A shell before pages answers no total: it says it left some out, and offers nothing more. */
-export const OlderShell: Story = { args: { total: null, cut: true } };

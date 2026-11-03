@@ -21,7 +21,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
             "Archive session `s1ended0` on this machine: it leaves Sessions' list with its record whole, and Show archived, in "
             + "the list's ⋯, brings it back.",
             plan.Describe);
-        Assert.Equal("daoris-driver sessions archive s1ended0", plan.Terminal);
+        Assert.Equal("daoris session archive s1ended0", plan.Terminal);
         Assert.Equal(["s1ended0"], plan.Sessions);
     }
 
@@ -36,7 +36,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
             "Archive 2 sessions on this machine: `s1ended0`, `s2ended0`. Each leaves Sessions' list with its record whole, and "
             + "Show archived, in the list's ⋯, brings them back.",
             plan.Describe);
-        Assert.Equal("daoris-driver sessions archive s1ended0 s2ended0", plan.Terminal);
+        Assert.Equal("daoris session archive s1ended0 s2ended0", plan.Terminal);
         Assert.Equal(["s1ended0", "s2ended0"], plan.Sessions);
     }
 
@@ -112,7 +112,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
             "Archives 8 sessions that ended. Kept in the list: 1 waiting on you, 1 to review. Each is judged again as Apply "
             + "archives it, and Show archived, in the list's ⋯, brings them back.",
             plan.Describe);
-        Assert.Equal("daoris-driver sessions archive --ended --yes", plan.Terminal);
+        Assert.Equal("daoris session archive --ended --yes", plan.Terminal);
         Assert.Equal(["s1ended0", "s2ended0", "h1helper", "north/s7team0", "c1chat00", "c2tree00", "c3named0", "c4remote"], plan.Sessions);
     }
 
@@ -142,7 +142,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
             "Unarchive session `s6archiv` on this machine: it is back in Sessions' list, in the group its state puts it in. "
             + "`s1ended0` is not archived, so nothing changes for it.",
             plan.Describe);
-        Assert.Equal("daoris-driver sessions unarchive s6archiv s1ended0", plan.Terminal);
+        Assert.Equal("daoris session unarchive s6archiv s1ended0", plan.Terminal);
         Assert.Equal(["s6archiv"], plan.Sessions);
         Assert.Null(none.Refusal);
         Assert.Equal("`s1ended0`, `s2ended0` are not archived, so applying changes nothing.", none.Describe);
@@ -184,11 +184,11 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
 
         Assert.True(applied.Applied);
         Assert.Equal(["SESSION_ARCHIVE archive s1ended0,s2ended0"], doors.Calls);
-        Assert.Equal("Applied: `#p6` (`daoris-driver sessions archive s1ended0 s2ended0`) — Archived it.", applied.Told);
+        Assert.Equal("Applied: `#p6` (`daoris session archive s1ended0 s2ended0`) — Archived it.", applied.Told);
         Assert.Equal("applied", HelpProposals.Find(_home, "p6")!.State);
         Assert.False(refused.Applied);
         Assert.Equal(
-            "Not applied: `#p9` (`daoris-driver sessions archive s2ended0`) — s2ended0 is still running, so it was not archived. Stop it first.",
+            "Not applied: `#p9` (`daoris session archive s2ended0`) — s2ended0 is still running, so it was not archived. Stop it first.",
             refused.Told);
         Assert.Equal("refused", HelpProposals.Find(_home, "p9")!.State);
     }

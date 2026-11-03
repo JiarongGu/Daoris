@@ -179,7 +179,7 @@ const WARN_LINE = 'm-0 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-sma
  *
  * **Each pause is an `Inheritable`**: one from above says where it came from and offers *Set for this …*, which opens its choice
  * in place; one set here carries its choice and *Clear*, which takes it back to the level above. *Questions* is shown with no
- * choice, since every setup asks as Claude Code does (AUTONOMY1e). Each row's hint is its terminal twin, `daoris-driver access`.
+ * choice, since every setup asks as Claude Code does (AUTONOMY1e). Each row's hint is its terminal twin, `daoris place access`.
  *
  * **A refusal is said where it was pressed** (ACCESSASK1, the UI/UX design R3, §3.3): every change carries how to answer it, and
  * one the driver refused is said under its own row, the pause's editor or the full-access switch, in the driver's sentence and

@@ -102,7 +102,7 @@ public sealed class WorkflowGraphRunTests
         {
             Quests = quests,
             Sessions = [Session("s1", quests[^1].Id)],
-            Process = WorkflowProcess.Current(DriverConfig.Empty, "engine", "default") with { Binding = Binding, Run = Run },
+            Process = WorkflowProcess.Declared(DriverConfig.Empty, "engine", "default") with { Binding = Binding, Run = Run },
         };
 
     private static NodeStatus Status(string node, string state, string? subject = null, string? revision = null, int attempt = 1) =>
@@ -337,8 +337,8 @@ public sealed class WorkflowGraphRunTests
             [("claimed", (IReadOnlyList<string>?)null), ("go", [NodeWordActs.Skip, NodeWordActs.Stop]), ("handed", [NodeWordActs.Stop]), ("deployed", null)],
             run.Steps.Select(step => (step.Step.Id, step.Acts)));
         var said = WorkflowRunWords.Say([run], null);
-        Assert.Contains("`daoris-driver workflow skip q1 go \"…\"` passes it over for this run; `daoris-driver workflow stop q1 go` stops it.", said);
-        Assert.Contains("`daoris-driver workflow stop q1 handed` stops it.", said);
+        Assert.Contains("`daoris workflow skip q1 go \"…\"` passes it over for this run; `daoris workflow stop q1 go` stops it.", said);
+        Assert.Contains("`daoris workflow stop q1 handed` stops it.", said);
 
         var kept = Derive(Records(Quest("q1")), GoAheadAndADeployAfter, record with { Pending = [new NodeWord("go", NodeWordActs.Skip, "nobody raises it", T)] });
         var go = Step(kept, "go");
@@ -406,7 +406,7 @@ public sealed class WorkflowGraphRunTests
         var run = Derive(Records(Quest("q1", "Done")), ReviewedThenFound, waiting);
 
         Assert.Equal([NodeWordActs.Changes, NodeWordActs.Stop], Step(run, "review").Acts);
-        Assert.Contains("`daoris-driver workflow changes q1 review \"…\"` asks for changes in place of your Accept; `daoris-driver workflow stop q1 review` stops it.",
+        Assert.Contains("`daoris workflow changes q1 review \"…\"` asks for changes in place of your Accept; `daoris workflow stop q1 review` stops it.",
             WorkflowRunWords.Say([run], null));
         Assert.Null(Step(Derive(Records(Quest("q1", "Done")), ReviewedThenFound, Record(Status("work", NodeStates.Active, "quest:q1"))), "review").Acts);
     }

@@ -927,13 +927,13 @@ describe('Ask Daoris, with an agent named', () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
       id: 'p1a2b3c4', kind: 'setting', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
-      terminal: 'daoris driver drive engine', why: 'the person asked for engine to be driven',
+      terminal: 'daoris place drive engine', why: 'the person asked for engine to be driven',
     }];
     bridge();
     show();
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    expect(within(cards).getByText(code('daoris driver drive engine'))).toBeInTheDocument();
+    expect(within(cards).getByText(code('daoris place drive engine'))).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id, held: expect.any(String) } });
 
     await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
@@ -1267,7 +1267,7 @@ describe('Ask Daoris, with an agent named', () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
       id: 'd1e2l3e4', kind: 'delete', describe: 'Delete ask `#a2none00` “a test ask”: it became no quest, so it goes alone.',
-      terminal: 'daoris-driver ask --delete a2none00', why: 'it was a test',
+      terminal: 'daoris ask delete a2none00', why: 'it was a test',
     }];
     APPLIED = { message: 'Applied: `#d1e2l3e4` — Deleted ask #a2none00.', applied: true, go: null, harnessAction: null };
     bridge();

@@ -37,7 +37,7 @@ public sealed class HelpRoomMayProposeTests
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("- `setup_propose`: set one or several repositories registered here up", proposes);
-        Assert.Contains("as `daoris-driver place <repository>…", proposes);
+        Assert.Contains("as `daoris place <repository>…", proposes);
         Assert.Contains("--preset keep --adoption` does", proposes);
         Assert.Contains("asks each repository's own session for one", proposes);
         Assert.Contains("a rule letting its sessions run the doctrine tool", proposes);
@@ -129,7 +129,7 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("a session waiting on the person stays parked, a running intake keeps reading, and a\n  teammate's session is never reached.", proposes);
         Assert.Contains("Resume lifts the pause and releases its stops", proposes);
         Assert.Contains("Abandoning is never proposed: it declines quests with the person's reason, which is their answer,", proposes);
-        Assert.Contains("`daoris-driver ask --abandon <id>`", proposes);
+        Assert.Contains("`daoris ask abandon <id>`", proposes);
     }
 
     /// <summary>
@@ -164,7 +164,7 @@ public sealed class HelpRoomMayProposeTests
         {
             "daoris agent update <agent>", "daoris agent pin <agent> <version>",
             "daoris agent settings <agent> --account <name> model <model> effort <effort>",
-            "daoris-driver quest delete <id>", "daoris-driver ask --delete <id>",
+            "daoris quest delete <id>", "daoris ask delete <id>",
         })
         {
             Assert.Contains(command, agents);
@@ -181,7 +181,7 @@ public sealed class HelpRoomMayProposeTests
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("every door below that `daoris driver` spells.", proposes);
+        Assert.Contains("every setting door below.", proposes);
         Assert.DoesNotContain("but `retry`", proposes);
         Assert.Contains("`across` takes `read on|off|--clear` for a repository or a whole workspace", proposes);
         Assert.Contains("`write-to <other> [--clear]` for a repository", proposes);

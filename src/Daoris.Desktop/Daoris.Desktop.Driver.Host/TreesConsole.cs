@@ -1,13 +1,13 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The session trees, from a terminal: `daoris-driver trees [list | remove &lt;path&gt; [--force] | clean | land | hand | state | sync]`.
+/// The session trees, from a terminal: `daoris tree [list | remove &lt;path&gt; [--force] | clean | land | hand | state | sync]`.
 /// </summary>
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
 /// checkouts, and the CLI's discipline is that it spawns nothing but this program (`driverprogram.ts`) — so the verbs live
 /// on the binary that already owns git (D50's parity is between surfaces, not between packages). The
-/// standing OPT-IN is the CLI's (`daoris driver trees &lt;repo&gt; on|off`), because that is a file
+/// standing OPT-IN is the CLI's (`daoris place trees &lt;repo&gt; on|off`), because that is a file
 /// edit; the trees themselves are this side's, because they are processes and disk.</para>
 ///
 /// <para>Exit codes keep the family contract: 0 clean · 1 refused (work would be lost) · 2 tool error.</para>
@@ -123,8 +123,8 @@ internal static class TreesConsole
                 if (listed.Count == 0)
                 {
                     Console.WriteLine($"trees: none — nothing under {trees.TreesRoot}.");
-                    Console.WriteLine("  `daoris driver trees <repository> on` opts a repository in;");
-                    Console.WriteLine("  `daoris-driver chat --own-tree` opens one for a conversation.");
+                    Console.WriteLine("  `daoris place trees <repository> on` opts a repository in;");
+                    Console.WriteLine("  `daoris chat --own-tree` opens one for a conversation.");
                     return 0;
                 }
 
@@ -642,7 +642,7 @@ internal static class TreesConsole
     private static int Usage(string? problem)
     {
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
-        Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
+        Console.Error.WriteLine("usage: daoris tree [list | remove <path|session|branch> [--repository <name>] [--force]");
         Console.Error.WriteLine("                           | remove <landing branch> [--repository <name>] --why \"…\" [--plan]");
         Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]");
         Console.Error.WriteLine("                           | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]");

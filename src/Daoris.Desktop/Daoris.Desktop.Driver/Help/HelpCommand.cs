@@ -61,11 +61,11 @@ public static class HelpCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver help list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
-               daoris-driver help resume <id> "…" [--file <path>]…
-               daoris-driver help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
-               daoris-driver help delete <id> [--yes]
-               daoris-driver help mode [restricted|full]
+        usage: daoris ask-daoris list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
+               daoris ask-daoris resume <id> "…" [--file <path>]…
+               daoris ask-daoris rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
+               daoris ask-daoris delete <id> [--yes]
+               daoris ask-daoris mode [restricted|full]
         """;
 
     /// <summary>The verbs this door answers; <c>help</c> alone, or anything else after it, is the host's usage.</summary>
@@ -165,8 +165,8 @@ public static class HelpCommand
 
         static string Says(string mode) => mode == HelpModes.Full
             ? "Ask Daoris runs with full access: it acts on this machine itself, with a shell, file edits, Daoris's commands and every "
-              + "plugin server, and asks nothing; your own denies still hold. `daoris-driver help mode restricted` takes it back."
-            : "Ask Daoris runs restricted: it reads, advises and proposes, and you apply. `daoris-driver help mode full` lets it act "
+              + "plugin server, and asks nothing; your own denies still hold. `daoris ask-daoris mode restricted` takes it back."
+            : "Ask Daoris runs restricted: it reads, advises and proposes, and you apply. `daoris ask-daoris mode full` lets it act "
               + "on this machine itself.";
     }
 
@@ -285,7 +285,7 @@ public static class HelpCommand
         {
             output.WriteLine(record is null
                 ? $"help: no session here is {id}."
-                : $"help: {id} is no Ask Daoris conversation of this machine's; `daoris-driver sessions` acts on the others.");
+                : $"help: {id} is no Ask Daoris conversation of this machine's; `daoris session list` acts on the others.");
             return 1;
         }
 
@@ -330,7 +330,7 @@ public static class HelpCommand
                     var title = kept.Read(id).Name ?? events.Openings([id]).GetValueOrDefault(id) ?? id;
                     output.WriteLine(
                         $"help: deleting {id} “{title}” removes its record and what this machine kept of it: its words, its transcript, "
-                        + "its files, its name and its pin. It cannot be undone. `daoris-driver help delete " + id + " --yes` deletes it.");
+                        + "its files, its name and its pin. It cannot be undone. `daoris ask-daoris delete " + id + " --yes` deletes it.");
                     return 0;
                 }
 
@@ -383,7 +383,7 @@ public static class HelpCommand
             text.Append(CultureInfo.InvariantCulture, $"{ask.Offset + 1}–{ask.Offset + listing.Conversations.Count} of {listing.Total} are listed");
             if (listing.Next is { } next)
             {
-                text.Append("; `daoris-driver help list")
+                text.Append("; `daoris ask-daoris list")
                     .Append(circle is not null ? $" --workspace {Word(circle)}" : ask.All ? " --all" : "")
                     .Append(search is { Length: > 0 } words ? $" --search \"{words}\"" : "")
                     .Append(CultureInfo.InvariantCulture, $" --offset {next}")

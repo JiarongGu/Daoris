@@ -1,8 +1,8 @@
 {
   "settings.update.title": "更新",
   "settings.update.staged": "暂存的构建",
-  "settings.update.terminal": "也可用 `daoris-driver update --when-idle|--now|--cancel`——同一个文件，两道门。",
-  "settings.update.why": "由 publish:desktop --stage 暂存在此安装旁的构建，会在工作允许时安装：不再开始新的工作，正在运行的会话结束或挂起；一旦没有驱动的会话在运行、也没有对话正在进行一轮，Daoris 就会关闭，由启动器把构建换上，再重新启动。「暂不更新」保留这个构建、让工作继续，只对这个构建有效。「立即更新」会马上关闭 Daoris，被打断的会话在重新启动后接着做。没有通过检查或没能启动的构建会被放到一边，之前的构建照常运行。在终端里，只用 daoris-driver update 会说明暂存了什么、上次更新结果如何。",
+  "settings.update.terminal": "也可用 `daoris update --when-idle|--now|--cancel`——同一个文件，两道门。",
+  "settings.update.why": "由 publish:desktop --stage 暂存在此安装旁的构建，会在工作允许时安装：不再开始新的工作，正在运行的会话结束或挂起；一旦没有驱动的会话在运行、也没有对话正在进行一轮，Daoris 就会关闭，由启动器把构建换上，再重新启动。「暂不更新」保留这个构建、让工作继续，只对这个构建有效。「立即更新」会马上关闭 Daoris，被打断的会话在重新启动后接着做。没有通过检查或没能启动的构建会被放到一边，之前的构建照常运行。在终端里，只用 daoris update 会说明暂存了什么、上次更新结果如何。",
   "settings.update.none": "此安装旁没有暂存的构建。",
   "settings.update.draining": "正在运行的工作结束后安装，在此之前不会开始新的工作。",
   "settings.update.driven": "{{count}} 个驱动的会话",

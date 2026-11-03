@@ -165,7 +165,7 @@ public static class SwapPhase
 /// </summary>
 /// <remarks>
 /// <para><b>One source, two programs.</b> The driver library carries it, for the application's check before it closes and
-/// for <c>daoris-driver update</c>; and the launcher compiles this same file (<c>Daoris.Desktop.Launcher.csproj</c>), so the
+/// for <c>daoris update</c>; and the launcher compiles this same file (<c>Daoris.Desktop.Launcher.csproj</c>), so the
 /// launcher still references nothing and the check it runs before it moves a file is this one, not a second copy that
 /// could drift. So it uses nothing but the base library.</para>
 ///

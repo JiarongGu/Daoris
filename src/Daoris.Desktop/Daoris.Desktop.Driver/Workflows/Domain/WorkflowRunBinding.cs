@@ -2,22 +2,22 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A run bound to the workflow that chose it, at its first start in its repository on this machine (WORKFLOW1e, D157 point 11,
-/// the workflow design §4.5, §5.1): the workflow and its version, or Current and the graph it drew; the level that chose it,
-/// the kind with its label and paths, and when. Kept in <c>&lt;home&gt;/workflows/runs/&lt;run&gt;.json</c>, written once
-/// (<see cref="WorkflowRunBindings"/>, the runs' use cases; STRUCT3b).
+/// the workflow design §4.5, §5.1): the workflow and its version, the level that chose it, the kind with its label and paths, and
+/// when. Kept in <c>&lt;home&gt;/workflows/runs/&lt;run&gt;.json</c>, written once (<see cref="WorkflowRunBindings"/>, the runs' use
+/// cases; STRUCT3b).
 /// </summary>
 /// <param name="Run">The run's id: its chain's first quest in the repository, which names it on this machine.</param>
-/// <param name="Workflow">The workflow's id, or <c>current</c>.</param>
+/// <param name="Workflow">The workflow's id, or <c>current</c> where none was chosen.</param>
 /// <param name="Level">One of <see cref="WorkflowLevels"/>: which level of §4.1's table chose it.</param>
 public sealed record WorkflowRunBinding(string Run, string Repository, string Workspace, string Workflow, string Level, DateTimeOffset At)
 {
     /// <summary>The ask the chain was asked by, whose choice is the task's; null for none.</summary>
     public string? Ask { get; init; }
 
-    /// <summary>The named workflow's newest version when the run started, which the run keeps; null under Current.</summary>
+    /// <summary>The workflow's newest version when the run started, which the run keeps; null where none was chosen.</summary>
     public int? Version { get; init; }
 
-    /// <summary>That version's digest; under Current, the version Current drew (its digest too).</summary>
+    /// <summary>That version's digest.</summary>
     public string? Digest { get; init; }
 
     /// <summary>The task's kind, where its workspace declares it.</summary>
@@ -32,16 +32,12 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
     /// <summary>A kind the task named that its workspace did not declare, read as none.</summary>
     public string? Undeclared { get; init; }
 
-    /// <summary>Why the named workflow chosen could not be read here when the run started: its file gone, or its newest version unreadable.</summary>
+    /// <summary>Why the workflow chosen could not be read here when the run started, or that none was chosen: the run is held.</summary>
     public string? Problem { get; init; }
 
-    /// <summary>Under Current, its steps as <see cref="WorkflowCurrent.ToJson"/> wrote them at the start, for the trace (design §2.6).</summary>
-    public IReadOnlyList<string> CurrentSteps { get; init; } = [];
-
     /// <summary>
-    /// The open options of the version's <c>land</c> node (<c>pattern</c>, <c>plugin</c> and the ticket <c>key</c>) as the repository's rule
-    /// resolved them at the bind (LANDNODE1h; the land node design §4), kept so no later rule edit reaches the run. Empty for a version with
-    /// no <c>land</c> or none left open, and for every binding from before.
+    /// The open options of the version's <c>land</c> node (<c>pattern</c>, <c>plugin</c> and the ticket <c>key</c>) as the bind resolved them
+    /// (LANDNODE1h; the land node design §4). Empty for a version with no <c>land</c> or none left open.
     /// </summary>
     public IReadOnlyDictionary<string, string> Land { get; init; } = LandNodes.NoResolved;
 
@@ -52,15 +48,15 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
     public WorkflowKept? Kept { get; init; }
 
     /// <summary>
-    /// The role each agent step of the version names (ROLESTEP1b), in the graph's order, as the catalogue read it at the bind. Empty under
-    /// Current, for a version whose steps name none, and for every binding from before, whose steps take their work's own role.
+    /// The role each agent step of the version names (ROLESTEP1b), in the graph's order, as the catalogue read it at the bind. Empty for a
+    /// version whose steps name none, whose steps take their work's own role.
     /// </summary>
     public IReadOnlyList<WorkflowStepRole> Roles { get; init; } = [];
 
     /// <summary>The role the version's first step of <paramref name="kind"/> names; null where it names none.</summary>
     public WorkflowStepRole? RoleOf(string kind) => Roles.FirstOrDefault(each => each.Kind == kind);
 
-    /// <summary>Whether the run follows Current, which every gate reads live, as today (design §2.6).</summary>
+    /// <summary>Whether the run was bound with no workflow chosen (<c>current</c>): nothing runs or lands it.</summary>
     public bool IsCurrent => Workflow == WorkflowSelection.Current;
 
     /// <summary>

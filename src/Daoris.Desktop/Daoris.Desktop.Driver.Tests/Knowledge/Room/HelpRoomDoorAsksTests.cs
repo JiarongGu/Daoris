@@ -40,19 +40,19 @@ public sealed class HelpRoomDoorAsksTests
     [Fact]
     public void A_row_says_its_answer_in_the_words_its_answer_builds()
     {
-        var drive = Row("`daoris driver drive|undrive <repository>`");
+        var drive = Row("`daoris place drive|undrive <repository>`");
         Assert.Null(drive.Ask);
         Assert.Equal(drive.Act, drive.To);
 
-        var helpers = Row("`daoris driver helpers <repository> --mode");
+        var helpers = Row("`daoris place helpers <repository> --mode");
         Assert.Equal(new HelpDoorAsk.Proposes("setting", "helpers"), helpers.Ask);
         Assert.Equal($"{helpers.Act} (Ask Daoris proposes it)", helpers.To);
 
-        var accept = Row("`daoris-driver quest accept <id>`");
+        var accept = Row("`daoris quest accept <id>`");
         Assert.Equal(new HelpDoorAsk.Never("the yes is yours"), accept.Ask);
         Assert.Null(accept.Ask!.Through);
 
-        var abandon = Row("`daoris-driver ask --abandon <id>");
+        var abandon = Row("`daoris ask abandon <id>");
         Assert.Equal(new HelpDoorAsk.Never("the reason is your answer"), abandon.Ask);
         Assert.Equal($"{abandon.Act} (Ask Daoris never proposes it: the reason is your answer)", abandon.To);
         Assert.Null(abandon.Ask!.Through);

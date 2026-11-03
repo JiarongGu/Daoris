@@ -183,7 +183,7 @@ public sealed class QuestAnswerTests : IAsyncLifetime
         Assert.Contains(quest.Id, (await _quests.ListAsync()).Select(listed => listed.Id));
         Assert.Contains("held for the person's yes", closed.Message);
         Assert.Contains("\"Verify #" + quest.Id + " in the browser\"", closed.Message);
-        Assert.Contains($"`daoris-driver quest accept {quest.Id}`", closed.Message);
+        Assert.Contains($"`daoris quest accept {quest.Id}`", closed.Message);
     }
 
     /// <summary>

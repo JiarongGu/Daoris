@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agent family's long verbs (PUSH1f2e5, D194, the alone-path design §1.4): <c>daoris-driver agent install</c> and <c>key</c>, the words
+/// The agent family's long verbs (PUSH1f2e5, D194, the alone-path design §1.4): <c>daoris agent install</c> and <c>key</c>, the words
 /// <c>daoris agent install|key …</c> hands this program. No route takes either (§2): each acts on the terminal's word, refused from a session's
 /// terminal (D194 point 5), and holds no lease at its top. <c>install</c> runs the agent's own installer at this terminal, which writes the
 /// machine and not the home, so it holds none at all; <c>key</c> reads the key from the terminal's standard input, holding nothing while the
@@ -157,7 +157,7 @@ internal static class AgentLongCommand
 
         try
         {
-            using (await HomeLease.ForPublicationAsync(home, "daoris-driver agent key",
+            using (await HomeLease.ForPublicationAsync(home, "daoris agent key",
                 holder => error.WriteLine(
                     $"{Prefix}: waiting for {holder.Named} to let this home go; the key is written then, and Ctrl+C stops."),
                 ct, world.Waiting, world.Now).ConfigureAwait(false))

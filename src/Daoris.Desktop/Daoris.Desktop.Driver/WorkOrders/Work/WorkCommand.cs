@@ -12,7 +12,7 @@ public sealed record WorkAsk(WorkScope Scope, string Verb, string Id)
 }
 
 /// <summary>
-/// <c>daoris-driver ask --pause|--resume|--abandon &lt;id&gt;</c> and <c>quest pause|resume|abandon &lt;id&gt;</c> (PAUSE1b, PAUSE1d,
+/// <c>daoris ask pause|--resume|--abandon &lt;id&gt;</c> and <c>quest pause|resume|abandon &lt;id&gt;</c> (PAUSE1b, PAUSE1d,
 /// D132 §7.2, D50): the terminal's door to <see cref="WorkPausing"/> and <see cref="WorkAbandoning"/>, which the screen's
 /// <c>WORK_PAUSE</c>, <c>WORK_RESUME</c> and <c>WORK_ABANDON</c> call too. In the library, so its words are held by a test.
 /// </summary>
@@ -31,8 +31,8 @@ public sealed record WorkAsk(WorkScope Scope, string Verb, string Id)
 public static class WorkCommand
 {
     public const string Usage =
-        "usage: daoris-driver ask --pause|--resume <id>  ·  daoris-driver ask --abandon <id> [--reason \"…\" --yes]  ·  "
-        + "daoris-driver quest pause|resume <id>  ·  daoris-driver quest abandon <id> [--reason \"…\" --yes]";
+        "usage: daoris ask pause|--resume <id>  ·  daoris ask abandon <id> [--reason \"…\" --yes]  ·  "
+        + "daoris quest pause|resume <id>  ·  daoris quest abandon <id> [--reason \"…\" --yes]";
 
     /// <summary>Whether the words after <c>ask</c> or <c>quest</c> name a pause, a resume or an abandon, rightly or not.</summary>
     public static bool Asks(WorkScope scope, IReadOnlyList<string> args) =>

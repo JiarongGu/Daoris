@@ -109,7 +109,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
     private static HelpPlan PausePlan(PausedBy work, WorkPlan plan, DriverConfig config, HelpMachineFacts facts)
     {
         var what = What(work);
-        var terminal = work.Scope == WorkScope.Ask ? $"daoris-driver ask --pause {work.Id}" : $"daoris-driver quest pause {work.Id}";
+        var terminal = work.Scope == WorkScope.Ask ? $"daoris ask pause {work.Id}" : $"daoris quest pause {work.Id}";
         var already = WorkPausing.Entry(config, work.Scope, work.Id) is not null;
         if (!already && !plan.Pausable)
         {

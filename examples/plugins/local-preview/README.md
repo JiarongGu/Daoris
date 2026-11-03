@@ -7,7 +7,7 @@ does is what `plugin.mjs` does.
 > An example performed step: it writes a preview of the attempt's revision into its own data folder,
 > once per attempt, and removes it once the work is over. It touches nothing outside that folder.
 
-This is the example the plugin kit's performer is filled in from (FABRIC-PERFORM1e): `daoris-driver plugins
+This is the example the plugin kit's performer is filled in from (FABRIC-PERFORM1e): `daoris plugin
 new local-preview --point work/perform` wrote every file here, and only `act()`, `check()` and `remove()` in
 `plugin.mjs`, the manifest's `description` and this paragraph were written by hand. Its "platform" is
 `previews/<invocation>/` under its data folder, so the whole cycle runs on any machine and reaches nothing:
@@ -33,7 +33,7 @@ repository, with its tests, reviewed as a diff. It is installed only when a pers
 | `README.md` | this: the wire, the rules, and each point's frame and answer |
 | `work.mjs` | the kit's half of working: the journal, the work points' answers, the stand-in world; written by the kit, not by hand |
 | `plugin.contract.test.mjs` | its contract test: what the kit promises of a performer, checked over the wire |
-| `cycle.json` | the cycle `daoris-driver plugins try --cycle` drives it through |
+| `cycle.json` | the cycle `daoris plugin try --cycle` drives it through |
 
 ## Where it speaks
 
@@ -146,7 +146,7 @@ given; write into another repository. It acts with its own authority, on its own
 ### The stand-in world
 
 `DAORIS_PLUGIN_WORLD`, when it is set, names a JSON file that answers in the platform's place: `act()`, `check()` and
-`remove()` are not called, so a test or a trial reaches nothing. The kit's tests and `daoris-driver plugins try` set it,
+`remove()` are not called, so a test or a trial reaches nothing. The kit's tests and `daoris plugin try` set it,
 and nothing is sent to a plugin that does not take it. `work.mjs` says what the file may script.
 
 ## Its contract test
@@ -162,7 +162,7 @@ and nothing is sent to a plugin that does not take it. `work.mjs` says what the 
 It checks the protocol, not the code's honesty: what `act()` really does on its platform is for a test of your own, with
 a fake of that platform.
 
-`daoris-driver plugins try <this folder> --cycle cycle.json` drives the same plugin through the driver itself: a step
+`daoris plugin try <this folder> --cycle cycle.json` drives the same plugin through the driver itself: a step
 made due, its attempt delivered twice, a failure, a timeout, a restart and a new revision's attempt, then its resource
 removed twice. `cycle.json` names the step and what each attempt is given.
 
@@ -194,7 +194,7 @@ JSON-RPC 2.0, one frame per line. Daoris calls and the plugin answers; the plugi
   fails is a line on the console. A landing has two minutes.
 - **A platform's tool on Windows is often a `.cmd` script** (npm's shims, `az`). Node cannot start one
   without cmd, and cmd reads the line a second time, so quote every argument, and refuse one holding a
-  double quote, a percent sign or a line break rather than pass it. `daoris-driver plugins new <id> --point work/land` writes a `run()` helper that does exactly that.
+  double quote, a percent sign or a line break rather than pass it. `daoris plugin new <id> --point work/land` writes a `run()` helper that does exactly that.
 - **Nothing runs until a person says so.** An installed plugin runs once it is turned on, and a landing
   plugin only once a workspace's landing rule names it.
 
@@ -211,7 +211,7 @@ turning it on and Daoris can check them: `[]` until it runs one. Each is `{ "id"
 | `ready` | at most four checks, each `{ "run": ["…"], "says": "…", "fix": "…" }`: a command whose exit 0 means ready, what that means, and the command a person runs when it is not |
 | `name`, `command`, `versionArguments` | only for a tool Daoris does not know: what a person calls it, the program to find (the id when absent), and what prints its version |
 
-A check runs only at a trial (`daoris-driver plugins try`, or *Try* on its page), one at a time, with ten
+A check runs only at a trial (`daoris plugin try`, or *Try* on its page), one at a time, with ten
 seconds each; Daoris never runs `fix`. A problem in `tools` never stops the plugin: it is said beside
 the tool, and a trial says each in its own sentence.
 
@@ -219,8 +219,8 @@ the tool, and a trial says each in its own sentence.
 
 ```sh
 node --test                                        # in this folder: the wire test, no Daoris needed
-daoris-driver plugins try <this folder>            # the same frames, through the driver itself
-daoris-driver plugins try <this folder> --point <point> --frame <file.json>
+daoris plugin try <this folder>            # the same frames, through the driver itself
+daoris plugin try <this folder> --point <point> --frame <file.json>
 ```
 
 `plugin.test.mjs` starts the plugin as the driver does, then checks the handshake, one frame at every

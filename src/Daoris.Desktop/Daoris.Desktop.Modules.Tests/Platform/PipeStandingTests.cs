@@ -782,7 +782,7 @@ public sealed class PipeStandingTests : Bridge
         tree.Processes[10] = new ProcessFacts(10, 1, Born.AddSeconds(-60), @"C:\install\app\Daoris.Desktop.exe", [], _ => null);
         tree.Processes[20] = new ProcessFacts(20, 10, Born, image, arguments ?? HolderTerminal.SessionArguments,
             name => name == HolderTerminal.ConfigVariable ? configVariable ?? config : null);
-        tree.Processes[25] = new ProcessFacts(25, 20, Born.AddSeconds(5), @"C:\Program Files\Git\usr\bin\bash.exe", ["-c", "daoris-driver steward probe"], _ => null);
+        tree.Processes[25] = new ProcessFacts(25, 20, Born.AddSeconds(5), @"C:\Program Files\Git\usr\bin\bash.exe", ["-c", "daoris steward probe"], _ => null);
         tree.Processes[30] = new ProcessFacts(30, 25, Born.AddSeconds(6), @"C:\install\app\daoris-driver.exe", ["steward", "probe"], _ => null);
         return tree;
     }

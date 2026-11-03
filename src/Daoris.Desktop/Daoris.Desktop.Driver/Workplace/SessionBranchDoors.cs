@@ -14,7 +14,7 @@ public static class SessionBranchDoors
     /// other row, and for one git could not judge.
     /// </summary>
     public static string? RemovalOffered(SweepItem item) => item.Kind == SweepKind.Unlanded && item.Commits > 0
-        ? $"if its work is not wanted (a failed or superseded attempt): `daoris-driver trees remove {item.Branch} --repository {item.Repository} --force`"
+        ? $"if its work is not wanted (a failed or superseded attempt): `daoris tree remove {item.Branch} --repository {item.Repository} --force`"
         : null;
 
     /// <summary>
@@ -26,7 +26,7 @@ public static class SessionBranchDoors
     /// <param name="session">The session the branch's tree is (<see cref="SessionOfTree"/>), or null.</param>
     public static string? LandingOffered(SweepItem item, SessionRecord? session) =>
         item is { Kind: SweepKind.Unlanded, Commits: > 0, Tree: not null } && session is { Live: false, Teammate: false }
-            ? $"if its work is wanted: `daoris-driver trees land {session.Id}` accepts it (session {session.Id}, {session.State}, its tree here)"
+            ? $"if its work is wanted: `daoris tree land {session.Id}` accepts it (session {session.Id}, {session.State}, its tree here)"
             : null;
 
     /// <summary>

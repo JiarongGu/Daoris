@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The terminal's door onto a go-ahead (KNOWUSE1a, D50): <c>daoris-driver ask --go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]</c>,
+/// The terminal's door onto a go-ahead (KNOWUSE1a, D50): <c>daoris ask go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]</c>,
 /// read here, in the library, so its words are held by a test.
 /// </summary>
 public static class GoAheadCommand

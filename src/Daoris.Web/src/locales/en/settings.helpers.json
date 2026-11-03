@@ -1,8 +1,8 @@
 {
   "settings.helpers.label": "Helpers",
   "settings.helpers.body": "A session here may ask another agent to answer one question: the helper reads, answers and changes nothing. This says whether such an ask waits for your yes, starts at once within the limits, or is not offered, and which agents may be asked, in the order they are tried. Your own press asks one whatever this says. A repository's rule replaces its workspace's whole.",
-  "settings.helpers.twin.repository": "`daoris driver helpers {{repository}} --mode ask|on|off --agents <adapter,adapter>|--clear`",
-  "settings.helpers.twin.workspace": "`daoris driver helpers --workspace {{workspace}} --mode ask|on|off --agents <adapter,adapter>|--clear`",
+  "settings.helpers.twin.repository": "`daoris place helpers {{repository}} --mode ask|on|off --agents <adapter,adapter>|--clear`",
+  "settings.helpers.twin.workspace": "`daoris place helpers --workspace {{workspace}} --mode ask|on|off --agents <adapter,adapter>|--clear`",
   "settings.helpers.says.ask": "Each helper an agent asks for waits for your yes.",
   "settings.helpers.says.on": "A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.",
   "settings.helpers.says.off": "A helper is not offered to a session here: only your own press asks one.",

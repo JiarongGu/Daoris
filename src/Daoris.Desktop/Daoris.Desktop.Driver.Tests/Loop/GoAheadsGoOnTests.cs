@@ -45,7 +45,7 @@ public sealed class GoAheadsGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The row's own case, through the terminal's door (<c>daoris-driver ask --go-ahead</c>), the ask page's twin: the first
+    /// 🔴 The row's own case, through the terminal's door (<c>daoris ask go-ahead</c>), the ask page's twin: the first
     /// of two answered keeps the session parked and begins nothing; the second, the last it waited on, sends it on at the next
     /// look, once though a look comes while it works, its turn the park's answer and then both go-aheads' answers, each saying
     /// which, approved or refused, and the person's words.

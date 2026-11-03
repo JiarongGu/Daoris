@@ -19,7 +19,7 @@ public sealed record SessionReview(
 
 /// <summary>
 /// Review's read of a session, today's chain (GITAPP1a-i, the git-app design P1.1): what <c>SESSION_DIFF</c> asks, moved here from
-/// the route unchanged so the route and the terminal door (<c>daoris-driver git review</c>) read through one code. Each read is
+/// the route unchanged so the route and the terminal door (<c>daoris git review</c>) read through one code. Each read is
 /// asked one after another, as the route asked it; every start is counted through <see cref="GitLaunch"/> in its budget, and the read
 /// is said in the machine log as <c>review.read</c>.
 /// </summary>

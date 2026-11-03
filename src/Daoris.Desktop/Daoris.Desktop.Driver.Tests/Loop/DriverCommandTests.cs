@@ -379,7 +379,7 @@ public sealed class DriverCommandTests
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply)\n", usage);
         Assert.DoesNotContain("\n  setup ", usage);
-        Assert.StartsWith("usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>]", PlaceCommand.Usage);
+        Assert.StartsWith("usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>]", PlaceCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.DoesNotContain("args is [\"setup\"", program);
@@ -418,7 +418,7 @@ public sealed class DriverCommandTests
         Assert.Contains(
             "\n  update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]\n",
             DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.StartsWith("usage: daoris-driver update [--install <folder>]", UpdateCommand.Usage);
+        Assert.StartsWith("usage: daoris update [--install <folder>]", UpdateCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"update\", .. var updateArgs])", program);
@@ -433,7 +433,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_the_wiring_and_the_host_routes_it_to_the_librarys_reader()
     {
         Assert.Contains("\n  wiring [--json] [--measure]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver wiring [--json] [--measure]", WiringCommand.Usage);
+        Assert.Equal("usage: daoris wiring [--json] [--measure]", WiringCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"wiring\", .. var wiringArgs])", program);
@@ -448,7 +448,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_the_space_and_the_host_routes_it_to_the_librarys_reader()
     {
         Assert.Contains("\n  space [--json] [--measure]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver space [--json] [--measure]", SpaceCommand.Usage);
+        Assert.Equal("usage: daoris space [--json] [--measure]", SpaceCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"space\", .. var spaceArgs])", program);
@@ -463,7 +463,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_space_free_and_the_host_routes_it_before_the_read()
     {
         Assert.Contains("\n  space free [--kind <id>]... [--early <group>]... [--yes]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver space free [--kind <id>]... [--early <group>]... [--yes]", SpaceFreeCommand.Usage);
+        Assert.Equal("usage: daoris space free [--kind <id>]... [--early <group>]... [--yes]", SpaceFreeCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var free = program.IndexOf("if (args is [\"space\", \"free\", .. var freeArgs])", StringComparison.Ordinal);
@@ -480,7 +480,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_registering_from_the_line_and_the_host_routes_it_to_the_librarys_words()
     {
         Assert.Contains("\n  repository register [--repository <name>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver register [--repository <name>]", RegisterCommand.Usage);
+        Assert.Equal("usage: daoris repository register [--repository <name>]", RegisterCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"register\", .. var registerArgs])", program);
@@ -649,7 +649,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_the_trace_and_the_host_routes_it_before_anything_is_written()
     {
         Assert.Contains("\n  trace <commit|session|quest>  ·  trace commit|session|quest <id>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.StartsWith("usage: daoris-driver trace <commit|session|quest>  ·  trace commit|session|quest <id>", TraceCommand.Usage);
+        Assert.StartsWith("usage: daoris trace <commit|session|quest>  ·  trace commit|session|quest <id>", TraceCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var trace = program.IndexOf("if (args is [\"trace\", .. var traceArgs])", StringComparison.Ordinal);
@@ -672,7 +672,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_the_branch_list_and_the_host_routes_it_before_anything_is_written()
     {
         Assert.Contains("\n  git branches [--repository <name>] [--all] [--json]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.StartsWith("usage: daoris-driver git branches [--repository <name>] [--all] [--json]", GitBranchesCommand.Usage);
+        Assert.StartsWith("usage: daoris git branches [--repository <name>] [--all] [--json]", GitBranchesCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var git = program.IndexOf("if (args is [\"git\", .. var gitArgs])", StringComparison.Ordinal);
@@ -696,7 +696,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_reviews_read_and_the_host_routes_it_to_the_library()
     {
         Assert.Contains("\n  git review <session> [--json] [--time]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.StartsWith("usage: daoris-driver git review <session> [--json] [--time]", GitReviewCommand.Usage);
+        Assert.StartsWith("usage: daoris git review <session> [--json] [--time]", GitReviewCommand.Usage);
 
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "GitConsole.cs"));
         Assert.Contains("GitReviewCommand.Read(args, out var wrong)", console);

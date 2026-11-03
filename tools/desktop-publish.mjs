@@ -61,7 +61,7 @@
  * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed (D103), and so
  * does the list of where each tool's versions download from, `app/resources.json` (D121). And Daoris's
  * doctrine tool (WSSETUP2, D124 §1.2): the CLI packed as the release packs it, unpacked under `app/cli/`,
- * with a launcher for each shell in `app/bin/`, beside the driver's launchers and Daoris's two git doors (GITAUTH1b, D198).
+ * with a launcher for each shell in `app/bin/`, beside Daoris's two git doors (GITAUTH1b, D198).
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
  * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
@@ -332,26 +332,21 @@ export const CLI_LAUNCHERS = Object.freeze(['daoris', 'daoris.cmd']);
  * it can open.
  */
 export function cliLaunchers() {
-  return launchersOf(CLI_LAUNCHERS, "Daoris's command, the desktop's program this install carries (ONEWAY1ai), run from its own folder.", null);
+  return launchersOf(CLI_LAUNCHERS, "Daoris's command, the desktop's program this install carries (ONEWAY1ai), run from its own folder.");
 }
 
 /**
  * The desktop's program (DRIVERDOOR1, ONEWAY1ai): the Host, published framework-dependent into a folder of its own under
  * `app/` that keeps its name for good, replaced whole by a republish (and carried by an update's swap of `app/`), and run
  * from `app/bin/` by `daoris`'s launchers, so the PATH every child Daoris starts has it by that bare name. It finds the
- * home by `DAORIS_HOME`, as the CLI does (D105). `DRIVER_LAUNCHERS` are its old name's, kept one release for a session an
- * older build told of them: they run the program only to say what their words are now, and do nothing.
+ * home by `DAORIS_HOME`, as the CLI does (D105).
  */
 export const DRIVER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Host';
 export const DRIVER_HOME = Object.freeze(['app', 'daoris-driver']);
 export const DRIVER_EXE = 'daoris-driver.exe';
-export const DRIVER_LAUNCHERS = Object.freeze(['daoris-driver', 'daoris-driver.cmd']);
 
-/** The variable the old name's launchers set, which makes the program refuse their words naming the new form (`CommandWords.OldNameVariable`). */
-export const OLD_NAME_VARIABLE = 'DAORIS_OLD_NAME';
-
-/** Each shell's launcher of the program, by the names given; `oldName` set, the program is told the words are that name's. */
-function launchersOf(names, says, oldName) {
+/** Each shell's launcher of the program, by the names given. */
+function launchersOf(names, says) {
   const exe = posix.relative(CLI_BIN.join('/'), [...DRIVER_HOME, DRIVER_EXE].join('/'));
   const sh = [
     '#!/bin/sh',
@@ -359,14 +354,13 @@ function launchersOf(names, says, oldName) {
     '# Written by the publish, and replaced by the next one.',
     'basedir=$(dirname "$(echo "$0" | sed -e \'s,\\\\,/,g\')")',
     'if command -v cygpath >/dev/null 2>&1; then basedir=$(cygpath -w "$basedir"); fi',
-    `${oldName === null ? '' : `${OLD_NAME_VARIABLE}=${oldName} `}exec "$basedir/${exe}" "$@"`,
+    `exec "$basedir/${exe}" "$@"`,
     '',
   ].join('\n');
   const cmd = [
     '@echo off',
     `rem ${says}`,
     'rem Written by the publish, and replaced by the next one.',
-    ...(oldName === null ? [] : ['setlocal', `set "${OLD_NAME_VARIABLE}=${oldName}"`]),
     `"%~dp0${exe.replace(/\//g, '\\')}" %*`,
     '',
   ].join('\r\n');
@@ -420,22 +414,6 @@ export function artifactsOf(argv, cwd = process.cwd()) {
     return { artifacts: null, refusal: 'desktop-publish: --artifacts-path <folder> names the folder every build of the publish goes into; it was given none.' };
   }
   return { artifacts: isAbsolute(given) ? given : resolve(cwd, given), refusal: null };
-}
-
-/**
- * The text of each old-name launcher, by name (ONEWAY1ai): the program, told the words are `daoris-driver`'s, says what they are
- * now and does nothing. Kept one release, the register's `old-command-names`; ONEWAY1af deletes them.
- */
-export function driverLaunchers() {
-  return launchersOf(DRIVER_LAUNCHERS, "The old name of Daoris's command, kept one release (ONEWAY1ai): it runs nothing, and says what its words are now.",
-    DRIVER_LAUNCHERS[0]);
-}
-
-/** Write the old name's launchers into `<install>/app/bin/`, beside `daoris`'s (which {@link layCli} replaces whole). */
-export function layDriverLaunchers(install) {
-  const bin = join(install, ...CLI_BIN);
-  mkdirSync(bin, { recursive: true });
-  for (const [name, text] of Object.entries(driverLaunchers())) writeFileSync(join(bin, name), text, { mode: 0o755 });
 }
 
 /**
@@ -796,9 +774,6 @@ Daoris running on that home, by the address the application leaves there while i
 Nothing puts \`${CLI_BIN.join('/')}/\` on your account's PATH, so a terminal of yours outside Daoris still runs whatever
 \`daoris\` you installed; run this one by its path there, from the repository it should look at. A re-publish
 replaces these folders whole.
-
-The same folder holds \`${DRIVER_LAUNCHERS[0]}\` and \`${DRIVER_LAUNCHERS[1]}\` for one release, for a session an older build
-told of them: they run nothing, and say what their words are now under \`daoris\`.
 
 ## Pinning it to the taskbar
 
@@ -1350,8 +1325,7 @@ async function main() {
     process.exit(1);
   }
 
-  // The driver's verbs (DRIVERDOOR1): the Host in a folder of its own, REPLACED whole as the service hosts are, and its
-  // launchers beside the doctrine tool's, laid after `layCli` replaced `app/bin/`.
+  // The driver's verbs (DRIVERDOOR1): the Host in a folder of its own, REPLACED whole as the service hosts are.
   console.log(`desktop-publish: publishing ${DRIVER_HOME.at(-1)} under ${DRIVER_HOME.join('/')}/…`);
   const driverFolder = join(root, ...DRIVER_HOME);
   rmSync(driverFolder, { recursive: true, force: true });
@@ -1360,7 +1334,6 @@ async function main() {
     console.error(`desktop-publish: the publish of ${DRIVER_HOME.at(-1)} made no ${DRIVER_EXE}.`);
     process.exit(1);
   }
-  layDriverLaunchers(root);
 
   // The git doors (GITAUTH1b, D198 point 2), in `app/bin/` beside the launchers, laid after `layCli` replaced the folder: every
   // process Daoris starts is routed through them from the next start (`GitWiring.Hand`). Only with `--git-doors` until D198's owed

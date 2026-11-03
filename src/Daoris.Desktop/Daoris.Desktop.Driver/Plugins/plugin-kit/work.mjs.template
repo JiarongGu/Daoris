@@ -1,7 +1,7 @@
 // The kit's half of a plugin that works (FABRIC-PERFORM1e; the fabric events design §D3, §D6, §D9): what Daoris's plugin kit
 // promises every plugin at the work points, so its author writes only the external calls, in plugin.mjs.
 //
-// Daoris's plugin kit wrote this file, and `daoris-driver plugins new` writes it again for a newer build: change plugin.mjs, not
+// Daoris's plugin kit wrote this file, and `daoris plugin new` writes it again for a newer build: change plugin.mjs, not
 // this. README.md says what each part promises; `node --test` here checks it (plugin.test.mjs, plugin.contract.test.mjs).
 //
 // What it keeps, it keeps in the plugin's data folder, in `work-journal.json`, written whole before anything it records is said:

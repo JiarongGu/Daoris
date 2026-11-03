@@ -54,16 +54,16 @@ const mine = <R extends { workspace: string }>(rows: readonly R[], workspace: st
  * and the plugins on Setup.
  *
  * @remarks
- * **Every control is the screen's half of a terminal verb** (D50): `daoris driver line|landing|language|across --workspace`,
- * `daoris remote add|remove`, `daoris agent rules … --workspace`, `daoris-driver trees clean|sync`, and a failed attempt's
- * branch discarded as `daoris-driver trees remove <branch> --repository <name> --force` (LAND3b). A refusal is the driver's
+ * **Every control is the screen's half of a terminal verb** (D50): `daoris place line|landing|language|across --workspace`,
+ * `daoris remote add|remove`, `daoris agent rules … --workspace`, `daoris tree clean|sync`, and a failed attempt's
+ * branch discarded as `daoris tree remove <branch> --repository <name> --force` (LAND3b). A refusal is the driver's
  * sentence, in a toast. They are where Settings → Workspace and Settings → Permissions held them (§3.1).
  *
  * **A browser is handed what it may know** (D47 §4): its repositories, and whether it syncs, read from this machine's own
  * host without a host's name (D48 §5). No tab, no branch, no setting and no account.
  *
  * **Its Details reads what this machine keeps of its finished work, and clears it** (HIST1e, D153 §6.1): the reading, and
- * *Clear history…* while anything may go, `daoris-driver history clear --workspace`'s screen twin (D50). A kept unit's door
+ * *Clear history…* while anything may go, `daoris history clear --workspace`'s screen twin (D50). A kept unit's door
  * opens its Branches, *Sync now*, or the quest's, the ask's or the session's page where the application hands those doors.
  */
 export function WorkspaceView({
@@ -282,11 +282,11 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
   // heard reaches the list as the shell's push where it pushes one, and as its answer where the list is pulled.
   const look = useSweepLook();
   const sweep = useSweep();
-  // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris-driver trees remove … --force`.
+  // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris tree remove … --force`.
   const discard = useDiscardSessionBranch();
-  // A landing's branch the line will never hold, withdrawn by its own press (LANDRETIRE1): `daoris-driver trees remove … --why`.
+  // A landing's branch the line will never hold, withdrawn by its own press (LANDRETIRE1): `daoris tree remove … --why`.
   const withdraw = useWithdrawLandingBranch();
-  // The person's delete of the recovery refs nothing holds (RECOVERYDROP1): `daoris-driver work recovery drop`'s twin.
+  // The person's delete of the recovery refs nothing holds (RECOVERYDROP1): `daoris work recovery drop`'s twin.
   const dropRecoveries = useDropRecoveries();
   const syncScope = useTreesSyncScope();
   const syncPlan = useTreesSyncPlan(workspace);
@@ -381,7 +381,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
 
 /**
  * Workflow (WORKFLOW1b, the workflow design §6.1): the workspace's Current, read only while the tab shows, as
- * `daoris driver workflow show --workspace` reads it. A refusal is said in its place, since the tab is the answer's whole
+ * `daoris workflow show --workspace` reads it. A refusal is said in its place, since the tab is the answer's whole
  * page; each step's door opens Setup at its defaults, and a repository that sets rules of its own opens at its own.
  */
 function WorkflowPart({ workspace, onSetup, onOpenRepository }: {

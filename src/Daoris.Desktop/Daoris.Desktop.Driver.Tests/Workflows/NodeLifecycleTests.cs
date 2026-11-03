@@ -423,7 +423,7 @@ public sealed class NodeLifecycleTests
             seen.Add((NodeKinds.Look, state, LookNode.Observe(unit, Declared(NodeKinds.Look), Bind(1), gate)));
         }
 
-        var goAhead = Declared(NodeKinds.GoAhead) with { Options = new Dictionary<string, string> { ["act"] = WorkflowCurrent.Quoted("ship it") } };
+        var goAhead = Declared(NodeKinds.GoAhead) with { Options = new Dictionary<string, string> { ["act"] = WorkflowSteps.Quoted("ship it") } };
         foreach (var (state, answer) in new (string, GoAheadAnswerView?)[] { ("waiting", null), ("yes", new(true, null, at)), ("no", new(false, "not yet", at)) })
         {
             GoAheadView[] asked = [new(1, "write", "production", "ship it", []) { Answer = answer }];

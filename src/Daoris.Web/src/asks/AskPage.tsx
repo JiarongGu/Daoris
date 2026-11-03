@@ -53,7 +53,7 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
 
 /**
  * An ask's page (INT4c; FRAME1d, D118 §3d): the record in Quests' main area, the screen twin of
- * `daoris-driver ask`'s answer — what was asked and with what, which tier answered, what it proposed, the
+ * `daoris ask`'s answer — what was asked and with what, which tier answered, what it proposed, the
  * quests it became — with *Close ask* and *Delete…* in its header and *publish to…* where the proposal is
  * read (D50: `ask --publish <id> --to` and `ask --close <id> --reason` are the terminal's).
  *
@@ -74,11 +74,11 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  *
  * **An ask made by mistake can be deleted** (D95), with every quest asked by it — offered only where
  * the service says it may go (`deletable`), and asked once under the header, because nothing gives the
- * record back. `daoris-driver ask --delete <id>` is the terminal's twin.
+ * record back. `daoris ask delete <id>` is the terminal's twin.
  *
  * **The go-aheads its sessions asked** (KNOWUSE1a, D135 §2) come first among its sections, each once, by its act: one
  * waiting is answered here, yes or no with the person's words, and every session on the ask is handed the answer.
- * `daoris-driver ask --go-ahead` is the terminal's twin.
+ * `daoris ask go-ahead` is the terminal's twin.
  *
  * The ask's files are named and never located: the host answers their path to this machine only, and a
  * page does not show a machine path (D47 §4, D65 §2).

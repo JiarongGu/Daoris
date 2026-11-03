@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1e (D195 point 4; the cleanup design §3.3, §4.4, §9): <i>Free up space…</i> and <c>daoris-driver space free</c>, listed first, then
+/// KEEP1e (D195 point 4; the cleanup design §3.3, §4.4, §9): <i>Free up space…</i> and <c>daoris space free</c>, listed first, then
 /// pressed. A list that changes nothing; a press removing only the units listed, one changed since kept and counted; the browser's caches
 /// only while the shell says its browser is not running, and kept with no Daoris; an earlier build's folder a program holds kept as in use;
 /// a second press joining the run under way, and another holder refusing it; the terminal's exits by the run's end, alone and over the
@@ -346,7 +346,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Contains("what goes now, by the rules: 2 items", said);
         Assert.Contains("set-aside: 2 items", said);
         Assert.Contains("1 holds files of its own", said);
-        Assert.Contains("daoris-driver history clear", said);
+        Assert.Contains("daoris history clear", said);
         Assert.Contains("nothing was removed", said);
     }
 

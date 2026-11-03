@@ -11,7 +11,7 @@ public sealed record GitHistoryWorld(
     Func<string, CancellationToken, Task<string?>> CheckoutOf, Func<string, string, CancellationToken, Task<string?>> LineOf, Func<ActRuns> Runs, string Home);
 
 /// <summary>
-/// <c>daoris-driver git pick|revert &lt;repository&gt; &lt;branch&gt; &lt;commit|A..B&gt;</c> and <c>git rebase &lt;repository&gt; &lt;branch&gt; &lt;onto&gt;</c>,
+/// <c>daoris git pick|revert &lt;repository&gt; &lt;branch&gt; &lt;commit|A..B&gt;</c> and <c>git rebase &lt;repository&gt; &lt;branch&gt; &lt;onto&gt;</c>,
 /// each <c>[--plan|--yes]</c> (GITAPP2m, D204; the git-writes design §7, §9): the terminal's twin of a branch page's <i>Edit history</i>. Without
 /// <c>--yes</c> it says the plan and changes nothing. With <c>--yes</c> it says the plan, then is the running Daoris's client
 /// (<see cref="InstanceDoor.PressAsync"/>), the press carrying the ids the plan pinned and confirmed in the window; with no Daoris running
@@ -21,10 +21,10 @@ public sealed record GitHistoryWorld(
 public static class GitHistoryCommand
 {
     public const string Usage =
-        "usage: daoris-driver git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]\n"
-        + "       daoris-driver git rebase <repository> <branch> <onto> [--plan | --yes]";
+        "usage: daoris git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]\n"
+        + "       daoris git rebase <repository> <branch> <onto> [--plan | --yes]";
 
-    private const string Prefix = "daoris-driver git";
+    private const string Prefix = "daoris git";
 
     /// <summary>Whether the words after <c>git</c> are these verbs'.</summary>
     public static bool Answers(IReadOnlyList<string> args) => args.Count > 0 && args[0] is GitHistoryEdits.Pick or GitHistoryEdits.Revert or GitHistoryEdits.Rebase;

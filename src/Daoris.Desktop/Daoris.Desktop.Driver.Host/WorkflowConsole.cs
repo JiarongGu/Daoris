@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Where a piece of work stands in its workflow, from a terminal (WORKFLOW1c2, D157, D50): <c>daoris-driver workflow run</c>, the
+/// Where a piece of work stands in its workflow, from a terminal (WORKFLOW1c2, D157, D50): <c>daoris workflow run</c>, the
 /// twin of the session's <i>Workflow</i> view. The words are the library's (<see cref="WorkflowRunCommand"/>); this wires the real
 /// world: the service, the home and the person's choices. It writes nothing: the host routes it before the machine log opens,
 /// since that open prunes old files. <c>workflow keep</c> (WORKFLOW1f, <see cref="WorkflowKeepCommand"/>) keeps a kind's workflow for

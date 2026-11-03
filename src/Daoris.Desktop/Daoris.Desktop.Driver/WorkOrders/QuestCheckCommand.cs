@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver quest check</c> was asked: the quest, and the commit to read, or null for the done's own.</summary>
+/// <summary>What <c>daoris quest check</c> was asked: the quest, and the commit to read, or null for the done's own.</summary>
 public sealed record QuestCheckAsk(string Quest, string? Commit);
 
 /// <summary>What the terminal's check reads through: the service, and the git Daoris runs (a test stands it in).</summary>
@@ -15,7 +15,7 @@ public sealed class QuestCheckWorld(ServiceClient service)
 }
 
 /// <summary>
-/// The terminal's door to a done's evidence (EVID1b, D144 §3, §5, D50): <c>daoris-driver quest check &lt;id&gt; [--commit
+/// The terminal's door to a done's evidence (EVID1b, D144 §3, §5, D50): <c>daoris quest check &lt;id&gt; [--commit
 /// &lt;sha&gt;]</c> reads it again, posts what it read as the terminal's, and prints the verdict. The quest page's
 /// <i>Check again</i> is the other door, EVID1c's.
 /// </summary>
@@ -35,7 +35,7 @@ public sealed class QuestCheckWorld(ServiceClient service)
 public static class QuestCheckCommand
 {
     public const string Usage =
-        "usage: daoris-driver quest check <id> [--commit <sha>]\n"
+        "usage: daoris quest check <id> [--commit <sha>]\n"
         + "       read a done's evidence again: at the commit a driven end here read, or the one named, which must come after\n"
         + "       it on the same history. With no driven end on record, name the commit.";
 
@@ -141,7 +141,7 @@ public static class QuestCheckCommand
         if (commit is null)
         {
             output.WriteLine($"daoris-driver: no driven end on this machine read quest `#{quest.Id}`'s evidence, so name the commit "
-                + $"to read: `daoris-driver quest check {quest.Id} --commit <sha>`. Daoris never guesses it from what stands now.");
+                + $"to read: `daoris quest check {quest.Id} --commit <sha>`. Daoris never guesses it from what stands now.");
             return 1;
         }
 

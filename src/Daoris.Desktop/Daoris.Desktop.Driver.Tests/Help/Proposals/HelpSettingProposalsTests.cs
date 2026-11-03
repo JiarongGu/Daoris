@@ -6,38 +6,37 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 {
     [Theory]
-    [InlineData("drive", "engine", null, null, "daoris driver drive engine", "Drive `engine`")]
-    [InlineData("hold", "game", null, null, "daoris driver hold game", "Hold `game`")]
-    [InlineData("trees", "engine", null, "on", "daoris driver trees engine on", "own tree")]
-    [InlineData("line", "engine", null, "develop", "daoris driver line engine develop", "`engine`'s line to `develop`")]
-    [InlineData("line", null, "work", "--clear", "daoris driver line --workspace work --clear", "Clear workspace `work`'s line")]
-    [InlineData("landing", null, "work", "branch feature/{quest}-{slug} --tidy", "daoris driver landing --workspace work branch feature/{quest}-{slug} --tidy", "on a branch `feature/{quest}-{slug}`")]
-    [InlineData("strikes", null, null, "5", "daoris driver strikes 5", "5 failed sessions")]
-    [InlineData("notify", null, null, "off", "daoris driver notify off", "Stop saying")]
+    [InlineData("drive", "engine", null, null, "daoris place drive engine", "Drive `engine`")]
+    [InlineData("hold", "game", null, null, "daoris place hold game", "Hold `game`")]
+    [InlineData("trees", "engine", null, "on", "daoris place trees engine on", "own tree")]
+    [InlineData("line", "engine", null, "develop", "daoris place line engine develop", "`engine`'s line to `develop`")]
+    [InlineData("line", null, "work", "--clear", "daoris place line --workspace work --clear", "Clear workspace `work`'s line")]
+    [InlineData("landing", null, "work", "branch feature/{quest}-{slug} --tidy", "daoris place landing --workspace work branch feature/{quest}-{slug} --tidy", "on a branch `feature/{quest}-{slug}`")]
+    [InlineData("notify", null, null, "off", "daoris settings notify off", "Stop saying")]
     // HELP9: reading and writing across (D107), and the two dials the terminal alone had.
-    [InlineData("across", "engine", null, "read off", "daoris driver across engine read off", "read by no agent outside it")]
-    [InlineData("across", "engine", null, "read on", "daoris driver across engine read on", "never a write")]
-    [InlineData("across", null, "work", "read off", "daoris driver across --workspace work read off", "Each checkout in workspace `work` that sets none of its own")]
-    [InlineData("across", "engine", null, "read --clear", "daoris driver across engine read --clear", "takes its workspace's reading again")]
-    [InlineData("across", "game", null, "write-to engine", "daoris driver across game write-to engine", "your standing say-so")]
-    [InlineData("across", "game", null, "write-to engine --clear", "daoris driver across game write-to engine --clear", "no longer write into `engine`")]
-    [InlineData("cap", null, null, "3", "daoris driver cap 3", "at most 3 sessions at once")]
-    // TOOL4l-b: how long an account cools when its limit names no time, as `daoris driver cooloff` takes it.
-    [InlineData("cooloff", null, null, "90", "daoris driver cooloff 90", "cools for 90 minutes")]
-    [InlineData("cooloff", null, null, "1", "daoris driver cooloff 1", "cools for 1 minute before")]
-    // KEEP1d: each kind's keep rule, as `daoris driver keep <kind> <rule>` takes it, judged by the one judgement.
-    [InlineData("keep", null, null, "set-aside 30", "daoris driver keep set-aside 30", "kept 30 days; its package folders go an hour after the move")]
-    [InlineData("keep", null, null, "set-aside whole", "daoris driver keep set-aside whole", "kept 14 days, whole")]
-    [InlineData("keep", null, null, "downloads never", "daoris driver keep downloads never", "stays until you remove it")]
-    [InlineData("keep", null, null, "logs 7", "daoris driver keep logs 7", "machine log is kept 7 days")]
-    [InlineData("keep", null, null, "logs default", "daoris driver keep logs default", "machine log is kept 30 days")]
-    [InlineData("keep", null, null, "history 365", "daoris driver keep history 365", "records go 365 days after their last move")]
-    [InlineData("keep", null, null, "history never", "daoris driver keep history never", "records stay until you clear them")]
-    // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris driver retry` do, `#` or not.
-    [InlineData("retry", "q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
-    [InlineData("retry", "#q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "what already happened is still in the records")]
+    [InlineData("across", "engine", null, "read off", "daoris place across engine read off", "read by no agent outside it")]
+    [InlineData("across", "engine", null, "read on", "daoris place across engine read on", "never a write")]
+    [InlineData("across", null, "work", "read off", "daoris place across --workspace work read off", "Each checkout in workspace `work` that sets none of its own")]
+    [InlineData("across", "engine", null, "read --clear", "daoris place across engine read --clear", "takes its workspace's reading again")]
+    [InlineData("across", "game", null, "write-to engine", "daoris place across game write-to engine", "your standing say-so")]
+    [InlineData("across", "game", null, "write-to engine --clear", "daoris place across game write-to engine --clear", "no longer write into `engine`")]
+    [InlineData("cap", null, null, "3", "daoris settings cap 3", "at most 3 sessions at once")]
+    // TOOL4l-b: how long an account cools when its limit names no time, as `daoris settings cooloff` takes it.
+    [InlineData("cooloff", null, null, "90", "daoris settings cooloff 90", "cools for 90 minutes")]
+    [InlineData("cooloff", null, null, "1", "daoris settings cooloff 1", "cools for 1 minute before")]
+    // KEEP1d: each kind's keep rule, as `daoris settings keep <kind> <rule>` takes it, judged by the one judgement.
+    [InlineData("keep", null, null, "set-aside 30", "daoris settings keep set-aside 30", "kept 30 days; its package folders go an hour after the move")]
+    [InlineData("keep", null, null, "set-aside whole", "daoris settings keep set-aside whole", "kept 14 days, whole")]
+    [InlineData("keep", null, null, "downloads never", "daoris settings keep downloads never", "stays until you remove it")]
+    [InlineData("keep", null, null, "logs 7", "daoris settings keep logs 7", "machine log is kept 7 days")]
+    [InlineData("keep", null, null, "logs default", "daoris settings keep logs default", "machine log is kept 30 days")]
+    [InlineData("keep", null, null, "history 365", "daoris settings keep history 365", "records go 365 days after their last move")]
+    [InlineData("keep", null, null, "history never", "daoris settings keep history never", "records stay until you clear them")]
+    // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris quest retry` do, `#` or not.
+    [InlineData("retry", "q1a2b3c4", null, null, "daoris quest retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
+    [InlineData("retry", "#q1a2b3c4", null, null, "daoris quest retry q1a2b3c4", "what already happened is still in the records")]
     // SESSUX1b (D126 §3.4): a quest the person's stop holds, released from that stop as Try again releases it.
-    [InlineData("retry", "q2taken0", null, null, "daoris driver retry q2taken0 --session s7a8b9c0", "released from your stop of session `s7a8b9c0`")]
+    [InlineData("retry", "q2taken0", null, null, "daoris quest retry q2taken0 --session s7a8b9c0", "released from your stop of session `s7a8b9c0`")]
     public void A_setting_is_planned_as_what_it_changes_and_the_command_that_does_the_same(
         string door, string? target, string? workspace, string? value, string terminal, string says)
     {
@@ -50,26 +49,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// 🔴 ONEWAY1a (the oneway design §2 S1): the staffing doors `setting_propose` once had are refused naming `role_propose`, whatever
-    /// they are given, and plan nothing; the service's twin says the same words.
-    /// </summary>
-    [Theory]
-    [InlineData("adapter", "claude-code-acp")]
-    [InlineData("intake", "off")]
-    [InlineData("intake", "claude-code")]
-    [InlineData("helper", "claude-code")]
-    public void ONEWAY1a_a_staffing_door_is_refused_naming_the_role_door(string door, string value)
-    {
-        var plan = HelpProposals.Plan(Setting(door, null, null, value), DriverConfig.Empty with { Adapter = "claude-code" }, Facts);
-
-        Assert.Equal(HelpSettingProposals.StaffingRetired, plan.Refusal);
-        Assert.Null(plan.Apply);
-        Assert.DoesNotContain(door, new HelpSettingProposals().Doors);
-    }
-
-    /// <summary>
     /// KNOWUSE1b (D135 §3): a standing answer for a registered repository, planned in the person's words with the terminal's
-    /// spelling, and applied as `SET_STANDING` and `daoris driver standing` make it; cleared with `--clear`. One for a
+    /// spelling, and applied as `SET_STANDING` and `daoris place standing` make it; cleared with `--clear`. One for a
     /// repository this machine does not hold, and blank words, are refused in the driver's own sentences.
     /// </summary>
     [Fact]
@@ -78,14 +59,14 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Setting("standing", "engine", null, "dev writes allowed; prod only on a yes"), DriverConfig.Empty, Facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris driver standing engine \"dev writes allowed; prod only on a yes\"", plan.Terminal);
+        Assert.Equal("daoris place standing engine \"dev writes allowed; prod only on a yes\"", plan.Terminal);
         Assert.Contains("handed to every session in `engine`", plan.Describe);
         var config = plan.Apply!(DriverConfig.Empty);
         Assert.Equal("dev writes allowed; prod only on a yes", config.StandingFor("engine")!.Says);
         Assert.NotNull(config.StandingFor("engine")!.At);
 
         var clear = HelpProposals.Plan(Setting("standing", "engine", null, "--clear"), config, Facts);
-        Assert.Equal("daoris driver standing engine --clear", clear.Terminal);
+        Assert.Equal("daoris place standing engine --clear", clear.Terminal);
         Assert.Null(clear.Apply!(config).StandingFor("engine"));
 
         Assert.Contains("is not registered on this machine", HelpProposals.Plan(Setting("standing", "elsewhere", null, "dev only"), DriverConfig.Empty, Facts).Refusal);
@@ -94,7 +75,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
     /// <summary>
     /// LANG1c (D142 point 7): a session language for a registered repository or a workspace, judged by the closed table and
-    /// the registry, planned with the terminal's spelling and applied as `SET_LANGUAGE` and `daoris driver language` make it.
+    /// the registry, planned with the terminal's spelling and applied as `SET_LANGUAGE` and `daoris place language` make it.
     /// One of the kind's doors since LANG1c2, once the service's setting writer listed it.
     /// </summary>
     [Fact]
@@ -103,19 +84,19 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Setting("language", "engine", null, "zh"), DriverConfig.Empty, Facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris driver language engine zh", plan.Terminal);
+        Assert.Equal("daoris place language engine zh", plan.Terminal);
         Assert.Contains("Sessions in `engine` write to you in Simplified Chinese (简体中文)", plan.Describe);
         var config = plan.Apply!(DriverConfig.Empty);
         Assert.Equal("zh", config.Languages["engine"]);
 
         var shared = HelpProposals.Plan(Setting("language", null, "work", "EN"), config, Facts);
-        Assert.Equal("daoris driver language --workspace work en", shared.Terminal);
+        Assert.Equal("daoris place language --workspace work en", shared.Terminal);
         Assert.Contains("that sets none of its own write to you in English", shared.Describe);
         config = shared.Apply!(config);
         Assert.Equal("en", config.WorkspaceLanguages["work"]);
 
         var clear = HelpProposals.Plan(Setting("language", "engine", null, "--clear"), config, Facts);
-        Assert.Equal("daoris driver language engine --clear", clear.Terminal);
+        Assert.Equal("daoris place language engine --clear", clear.Terminal);
         Assert.False(clear.Apply!(config).Languages.ContainsKey("engine"));
 
         Assert.Equal(SessionLanguages.Refusal("fr"), HelpProposals.Plan(Setting("language", "engine", null, "fr"), DriverConfig.Empty, Facts).Refusal);
@@ -133,17 +114,17 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     /// </summary>
     [Theory]
     [InlineData("engine", null, "dev --kind local --procedure README.md --address http://localhost:4200 --required",
-        "daoris driver review engine dev --kind local --procedure README.md --address http://localhost:4200 --required",
+        "daoris place review engine dev --kind local --procedure README.md --address http://localhost:4200 --required",
         "Declare the review environment `dev` for `engine`. Before work here lands, it is shown to you in `dev` and waits for you to say it is right.")]
     [InlineData("engine", null, "dev --kind deployed --procedure docs/deploying-to-dev.md",
-        "daoris driver review engine dev --kind deployed --procedure docs/deploying-to-dev.md",
+        "daoris place review engine dev --kind deployed --procedure docs/deploying-to-dev.md",
         "A set-up step here follows `docs/deploying-to-dev.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.")]
     [InlineData(null, "work", "local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve\"",
-        "daoris driver review --workspace work local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve\"",
+        "daoris place review --workspace work local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve\"",
         "A set-up step here may run `npm run serve` in its tree on a port nobody holds, without asking you each time; it stops once you have reviewed.")]
-    [InlineData("game", null, "none", "daoris driver review game none",
+    [InlineData("game", null, "none", "daoris place review game none",
         "Declare that `game` has no review environment, whatever its workspace says. No review environment here")]
-    [InlineData("engine", null, "--clear", "daoris driver review engine --clear", "Clear `engine`'s review rule: it takes its workspace's again, else none.")]
+    [InlineData("engine", null, "--clear", "daoris place review engine --clear", "Clear `engine`'s review rule: it takes its workspace's again, else none.")]
     public void A_review_rule_is_planned_with_what_it_lets_a_step_do_and_applied_as_the_terminal_makes_it(
         string? target, string? workspace, string value, string terminal, string says)
     {
@@ -332,16 +313,16 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     /// own sentences.
     /// </summary>
     [Theory]
-    [InlineData("engine", null, "--mode on --agents codex-acp", "daoris driver helpers engine --mode on --agents codex-acp",
+    [InlineData("engine", null, "--mode on --agents codex-acp", "daoris place helpers engine --mode on --agents codex-acp",
         "Set the helpers rule for `engine`: on: `codex-acp`. A helper an agent asks for starts at once, within the limits")]
-    [InlineData(null, "work", "--agents \"codex-acp, dsh\"", "daoris driver helpers --workspace work --agents \"codex-acp, dsh\"",
+    [InlineData(null, "work", "--agents \"codex-acp, dsh\"", "daoris place helpers --workspace work --agents \"codex-acp, dsh\"",
         "Set the helpers rule for each repository of workspace `work` that sets none of its own: ask: `codex-acp`, else `dsh`. "
         + "Each helper an agent asks for waits for your yes.")]
-    [InlineData("game", null, "--mode off", "daoris driver helpers game --mode off",
+    [InlineData("game", null, "--mode off", "daoris place helpers game --mode off",
         "A helper is not offered to a session here: only your own press asks one.")]
-    [InlineData("engine", null, "--clear", "daoris driver helpers engine --clear",
+    [InlineData("engine", null, "--clear", "daoris place helpers engine --clear",
         "Clear `engine`'s helpers rule: it takes its workspace's again, else each helper waits for your yes.")]
-    [InlineData(null, "work", "--clear", "daoris driver helpers --workspace work --clear",
+    [InlineData(null, "work", "--clear", "daoris place helpers --workspace work --clear",
         "Clear workspace `work`'s helpers rule: each repository there keeps its own, else each helper waits for your yes.")]
     public void A_helpers_rule_is_planned_with_what_an_agents_ask_then_does(
         string? target, string? workspace, string value, string terminal, string says)
@@ -369,7 +350,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.False(config.WorkspaceHelpers.ContainsKey("work"));
     }
 
-    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris driver helpers` does not take, each refused in its words.</summary>
+    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris place helpers` does not take, each refused in its words.</summary>
     [Theory]
     [InlineData("engine", "work", "--clear", "a helpers rule is set for a repository or a workspace — name exactly one.")]
     [InlineData(null, null, "--mode on", "a helpers rule is set for a repository or a workspace — name exactly one.")]
@@ -399,16 +380,16 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     /// </summary>
     [Theory]
     [InlineData("engine", null, "--mode ask --convention \"Imperative subject line.\"",
-        "daoris driver commits engine --mode ask --convention \"Imperative subject line.\"",
+        "daoris place commits engine --mode ask --convention \"Imperative subject line.\"",
         "Set the commit rule for `engine`: `ask`. Each commit waits for your yes before it is made. "
         + "Commit messages follow this convention: \"Imperative subject line.\"")]
-    [InlineData(null, "work", "--mode at-end", "daoris driver commits --workspace work --mode at-end",
+    [InlineData(null, "work", "--mode at-end", "daoris place commits --workspace work --mode at-end",
         "Set the commit rule for each repository of workspace `work` that sets none of its own: `at-end`. One commit is made when the work is done.")]
-    [InlineData("game", null, "--convention \"feat: …, fix: …\"", "daoris driver commits game --convention \"feat: …, fix: …\"",
+    [InlineData("game", null, "--convention \"feat: …, fix: …\"", "daoris place commits game --convention \"feat: …, fix: …\"",
         "`as-you-go`. Each piece that passes its checks is committed as the work goes. Commit messages follow this convention: \"feat: …, fix: …\"")]
-    [InlineData("engine", null, "--clear", "daoris driver commits engine --clear",
+    [InlineData("engine", null, "--clear", "daoris place commits engine --clear",
         "Clear `engine`'s commit rule: it takes its workspace's again, else work is committed as it goes.")]
-    [InlineData(null, "work", "--clear", "daoris driver commits --workspace work --clear",
+    [InlineData(null, "work", "--clear", "daoris place commits --workspace work --clear",
         "Clear workspace `work`'s commit rule: each repository there keeps its own, else work is committed as it goes.")]
     public void A_commit_rule_is_planned_with_how_work_is_then_committed(
         string? target, string? workspace, string value, string terminal, string says)
@@ -441,7 +422,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.False(config.Commits.ContainsKey("engine"));
     }
 
-    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris driver commits` does not take, each refused in its words.</summary>
+    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris place commits` does not take, each refused in its words.</summary>
     [Theory]
     [InlineData("engine", "work", "--clear", "a commit rule is set for a repository or a workspace — name exactly one.")]
     [InlineData(null, null, "--mode ask", "a commit rule is set for a repository or a workspace — name exactly one.")]
@@ -502,18 +483,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Equal(new LandingRule("branch", "feature/{quest}-{slug}", Tidy: true), config.WorkspaceLandings["work"]);
     }
 
-    /// <summary>SESSWATCH1a (D200, the session-watch design §3): the retired `timeout` door refuses whatever it is given, in the verb's words.</summary>
-    [Theory]
-    [InlineData("120")]
-    [InlineData("0")]
-    public void The_retired_timeout_door_refuses_saying_sessions_are_no_longer_limited_by_time(string minutes)
-    {
-        var plan = HelpProposals.Plan(Setting("timeout", value: minutes), DriverConfig.Empty, Facts);
-
-        Assert.Null(plan.Apply);
-        Assert.Equal(DriverChoicesCommand.TimeoutRetired, plan.Refusal);
-    }
-
     /// <summary>HELP9: across (D107) and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
     [Fact]
     public void Applying_across_and_a_cap_makes_the_edit_the_terminal_makes()
@@ -537,7 +506,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// HELP10: a retry is the edit <c>RETRY_QUEST</c> and <c>daoris driver retry</c> make — the quest forgiven at the
+    /// HELP10: a retry is the edit <c>RETRY_QUEST</c> and <c>daoris quest retry</c> make — the quest forgiven at the
     /// strike limit as it stands when applied, not erased, so the next failures park it again.
     /// </summary>
     [Fact]
@@ -598,14 +567,12 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
             ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"),
-            ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
-            ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"),
+            ("retry", "q1a2b3c4", null, null), ("notify", null, null, "on"), ("cap", null, null, "1"),
             ("cooloff", null, null, "90"), ("keep", null, null, "logs 14"), ("git-use", "engine", null, "--clear"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
-        // SESSWATCH1a (D200): the retired `timeout` door is kept only to refuse, saying why.
-        foreach (var (door, target, workspace, value) in samples.Where(sample => sample.Door != "timeout"))
+        foreach (var (door, target, workspace, value) in samples)
         {
             Assert.Null(HelpProposals.Plan(Setting(door, target, workspace, value), DriverConfig.Empty, Facts).Refusal);
         }
@@ -617,7 +584,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("line", null, "elsewhere", "develop", "no workspace `elsewhere`")]
     [InlineData("line", "engine", null, "bad..name", "not a branch name git would take")]
     [InlineData("landing", "engine", null, "branch feature/fixed", "`{quest}` or `{session}`")]
-    // HELP9: what `daoris driver across` refuses, in its words, and the names a helper can invent.
+    // HELP9: what `daoris place across` refuses, in its words, and the names a helper can invent.
     [InlineData("across", "engine", null, "write-to engine", "`engine` writes in its own tree already")]
     [InlineData("across", "engine", null, "write-to nowhere", "`nowhere` is not registered")]
     [InlineData("across", "engine", null, "write-to", "a relationship names the repository it may write into")]
@@ -662,7 +629,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Setting("landing", null, "work", value), DriverConfig.Empty, facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal($"daoris driver landing --workspace work {value}", plan.Terminal);
+        Assert.Equal($"daoris place landing --workspace work {value}", plan.Terminal);
         Assert.Contains("on a branch `feature/{quest}-{slug}`", plan.Describe);
         Assert.Contains("plugin `example.lands` pushes it and opens the pull request", plan.Describe);
         Assert.Equal(new LandingRule("branch", "feature/{quest}-{slug}", Tidy: true, Plugin: "example.lands"),
@@ -682,7 +649,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Setting("landing", null, "work", value), DriverConfig.Empty, WithPlugin("example.lands"));
 
         Assert.Null(plan.Refusal);
-        Assert.Equal($"daoris driver landing --workspace work {value}", plan.Terminal);
+        Assert.Equal($"daoris place landing --workspace work {value}", plan.Terminal);
         Assert.Contains("accepted automatically", plan.Describe);
         Assert.Contains(says, plan.Describe);
         var rule = plan.Apply!(DriverConfig.Empty).WorkspaceLandings["work"];
@@ -710,7 +677,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest} --auto-accept --no-auto-accept"), DriverConfig.Empty, Facts).Refusal);
     }
 
-    /// <summary>HELP8: what `daoris driver landing` refuses about a plugin, refused here in the same words.</summary>
+    /// <summary>HELP8: what `daoris place landing` refuses about a plugin, refused here in the same words.</summary>
     [Theory]
     [InlineData("branch feature/{quest} --plugin nowhere.lands", "", "not installed on this machine")]
     [InlineData("branch feature/{quest} --plugin example.off", "off", "switched off")]
@@ -732,7 +699,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
     /// <summary>
     /// DOORS1a (D164's amendment point 2, PROCESS1b-i and -ii): a branch rule naming its ticket's key and asking for a squash, as
-    /// `daoris driver landing` spells them, a quoted key kept whole; the card says what finds the ticket and what Accept makes.
+    /// `daoris place landing` spells them, a quoted key kept whole; the card says what finds the ticket and what Accept makes.
     /// </summary>
     [Fact]
     public void A_landing_may_name_its_tickets_key_and_squash()
@@ -741,7 +708,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, Facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal($"daoris driver landing engine {value}", plan.Terminal);
+        Assert.Equal($"daoris place landing engine {value}", plan.Terminal);
         Assert.Contains("on a branch `feature/{ticket}-{slug}`", plan.Describe);
         Assert.Contains("`{ticket}` is the first match of `TK-\\d+` in the title, then the request, then its links, as written; "
             + "where none is found, the session's id stands in.", plan.Describe);
@@ -794,7 +761,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{ticket} --no-squash"), config, Facts).Describe);
     }
 
-    /// <summary>DOORS1a: what `daoris driver landing` refuses about a key or a squash, refused here in the same words.</summary>
+    /// <summary>DOORS1a: what `daoris place landing` refuses about a key or a squash, refused here in the same words.</summary>
     [Theory]
     [InlineData("merge --key TK-\\d+", "only a branch rule reads a ticket's key")]
     [InlineData("merge --squash", "only a branch rule squashes")]

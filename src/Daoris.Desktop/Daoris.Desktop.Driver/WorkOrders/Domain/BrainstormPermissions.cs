@@ -60,7 +60,7 @@ public static class BrainstormPermissions
         "opinion_answer", "opinion_give", "partner_answer", "pause_propose", "permission_propose",
         "plugin_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry", "repository_propose", "review_ready",
         "review_serve", "role_propose", "session_propose", "setting_propose", "settings_cap", "settings_cooloff", "settings_language", "settings_notify",
-        "settings_timeout", "setup_propose", "sync_propose", "workflow_propose",
+        "setup_propose", "sync_propose", "workflow_propose",
     ];
 
     /// <summary>What a pass is denied in the harness's own rule language beside the connector's tools: writing, the shell and the web.</summary>

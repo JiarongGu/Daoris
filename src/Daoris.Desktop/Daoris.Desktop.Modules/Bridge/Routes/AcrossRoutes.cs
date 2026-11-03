@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// Reading and writing across repositories, the page's `bridge/across.ts` (READ1, D107): how each registered
-/// repository's checkout stands, and the screen's half of `daoris driver across` over the same `driver.json`.
+/// repository's checkout stands, and the screen's half of `daoris place across` over the same `driver.json`.
 /// </summary>
 public sealed class AcrossRoutes(DriverContext context)
 {
@@ -45,7 +45,7 @@ public sealed class AcrossRoutes(DriverContext context)
     }
 
     // A repository's reading across, or a workspace's, or either cleared with no `read` — the same file
-    // `daoris driver across … read` edits: one truth, two doors (D50). The state it answers, and every repository's answer under
+    // `daoris place across … read` edits: one truth, two doors (D50). The state it answers, and every repository's answer under
     // the driver's key, move with it (STATEHUB1h, D169).
     [DriverRoute("SET_READ_ACROSS")]
     [Publishes("SET_READ_ACROSS", StateScopes.Driver)]
@@ -68,7 +68,7 @@ public sealed class AcrossRoutes(DriverContext context)
         return DriverRoutes.State(_loop);
     }
 
-    // A relationship declared, or taken back — the same file `daoris driver across <repo> write-to <other>`
+    // A relationship declared, or taken back — the same file `daoris place across <repo> write-to <other>`
     // edits. A repository naming itself is refused in the driver's own sentence.
     [DriverRoute("SET_WRITE_ACROSS")]
     [Publishes("SET_WRITE_ACROSS", StateScopes.Driver)]

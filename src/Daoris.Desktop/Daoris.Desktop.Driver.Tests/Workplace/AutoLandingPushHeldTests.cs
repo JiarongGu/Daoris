@@ -163,7 +163,7 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         Assert.Null(handed.Plugin);
         Assert.NotNull(handed.Withheld);
         Assert.Contains("its push was not tried", handed.Message);
-        Assert.Contains("`daoris-driver trees hand s2`", handed.Message);
+        Assert.Contains("`daoris tree hand s2`", handed.Message);
         Assert.Equal(1, TreesWords.Hand(handed, []).Code);
     }
 
@@ -261,7 +261,7 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         Assert.Null(handed.Plugin);
         Assert.NotNull(handed.Withheld);
         Assert.Contains("its push was not tried", handed.Message);
-        Assert.Contains("`daoris-driver trees hand s2`", handed.Message);
+        Assert.Contains("`daoris tree hand s2`", handed.Message);
         Assert.Equal(1, TreesWords.Hand(handed, []).Code);
     }
 
@@ -297,7 +297,7 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
             // Both stand as the look chooses; s2's is taken back as the hand-on waits for the branch.
             _world.Quests["q2"] = _world.Quests["q2"] with { Held = false, Hold = null };
             var said = await HeldAtThePushAsync(root, quest => quest with { Submission = null }, quest: "q2", choices: 2);
-            Assert.Contains("`daoris-driver trees hand s2`", Assert.Single(said));
+            Assert.Contains("`daoris tree hand s2`", Assert.Single(said));
         }
         else
         {

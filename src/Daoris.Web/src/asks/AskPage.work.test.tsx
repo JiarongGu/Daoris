@@ -165,7 +165,7 @@ describe('pausing and abandoning an ask', () => {
     expect(await more()).toEqual(['Close ask', 'Delete…', 'Copy ask ID']);
     await userEvent.keyboard('{Escape}');
     const said = screen.getByText(/a browser offers neither/);
-    expect(within(said).getByText(code('daoris-driver ask --pause a1b2c3'))).toBeInTheDocument();
+    expect(within(said).getByText(code('daoris ask pause a1b2c3'))).toBeInTheDocument();
   });
 
   it('names its acts in 中文', async () => {

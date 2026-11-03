@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 20: <c>daoris-driver sessions at-work</c>. With no Daoris window running the verb composes the same answer by
+/// COWORKVIEW1a rule 20: <c>daoris session at-work</c>. With no Daoris window running the verb composes the same answer by
 /// the same function, issuing no token, so an open child reads <i>not known whether it still runs</i> and never <i>working</i>.
 /// </summary>
 public sealed class AtWorkVerbTests : IDisposable

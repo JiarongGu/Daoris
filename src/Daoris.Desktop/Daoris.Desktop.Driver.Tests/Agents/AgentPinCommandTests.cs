@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver agent pin|update</c> (PUSH1f2e, the alone-path design §1.4): a maker's release downloaded holding nothing, staged
+/// <c>daoris agent pin|update</c> (PUSH1f2e, the alone-path design §1.4): a maker's release downloaded holding nothing, staged
 /// under the run's own name, and published under the home's lease, the move and the pin's write, waited for and stopped by Ctrl+C; a
 /// pinned update moving the pin as a pin. Codex's channel serves, its bytes from a transport the test holds: no test here touches the
 /// network, and none starts a real agent's install or update. Today's words for the refusals are <c>AgentsTextTests</c>' rows.
@@ -84,7 +84,7 @@ public sealed class AgentPinCommandTests : IDisposable
     [Fact]
     public async Task A_pin_s_publication_waits_on_a_held_lease_and_takes_it_when_let_go()
     {
-        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         Assert.NotNull(held);
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var run = AgentsCommand.RunAsync(["pin", "codex", "0.156.1", "--workspace", "Aurora"],
@@ -106,7 +106,7 @@ public sealed class AgentPinCommandTests : IDisposable
     [Fact]
     public async Task A_Ctrl_C_while_the_pin_waits_removes_the_download_and_pins_nothing()
     {
-        using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris-driver trees land");
+        using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var stop = new CancellationTokenSource();
         var run = AgentsCommand.RunAsync(["pin", "codex", "0.156.1"], World(new Served(CodexRelease("0.156.1")), waiting.SetResult), stop.Token);

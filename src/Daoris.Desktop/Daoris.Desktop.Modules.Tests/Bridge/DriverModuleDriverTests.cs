@@ -110,7 +110,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
     /// <summary>
     /// Session trees (D51): the desktop half of the standing opt-in, over the same file the CLI's
-    /// `daoris driver trees <repo> on|off` edits — two editors, one truth (D50).
+    /// `daoris place trees <repo> on|off` edits — two editors, one truth (D50).
     /// </summary>
     [Fact]
     public async Task Opting_a_repository_into_session_trees_writes_the_same_file()
@@ -148,7 +148,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
     /// <summary>
     /// Notifications (SURF5b): the desktop half of a machine-local switch whose other door is
-    /// `daoris driver notify on|off`. One file, two editors (D50) — and it is ON until somebody
+    /// `daoris settings notify on|off`. One file, two editors (D50) — and it is ON until somebody
     /// says otherwise, because a driver nobody has to watch is the whole point of one.
     /// </summary>
     [Fact]
@@ -167,12 +167,11 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The strike limit over the bridge (DRV6/D58) — the other half of D50's two doors, and the half
-    /// that rots: a setting added to the terminal and not reported here compiles perfectly and leaves
-    /// the screen unable to show, let alone change, what the machine is actually doing.
+    /// A retry over the bridge (DRV6/D58) — the other half of D50's two doors: it marks the quest at the strike limit the state
+    /// reports, in the same file the terminal edits.
     /// </summary>
     [Fact]
-    public async Task The_strike_limit_and_a_retry_write_the_same_file_the_terminal_edits()
+    public async Task A_retry_writes_the_same_file_the_terminal_edits()
     {
         // SESSUX1b: a retry does what the loop's last look says applies, so the look parked the quest first.
         var loop = Loop();
@@ -182,24 +181,13 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
         Assert.Equal(3, (await AnswerAsync(module, "STATE")).GetProperty("strikes").GetInt32());
 
-        var set = await AnswerAsync(module, "SET_STRIKES", new { strikes = 5 });
-        Assert.Equal(5, set.GetProperty("strikes").GetInt32());
-        Assert.Equal(5, DriverConfig.Load(DriverConfigPath).Strikes);
-
-        // 🔴 Zero is a real answer — "keep trying", the behaviour before this existed — and must not
-        // be read as the absence of one.
-        var never = await AnswerAsync(module, "SET_STRIKES", new { strikes = 0 });
-        Assert.Equal(0, never.GetProperty("strikes").GetInt32());
-        Assert.Equal(0, DriverConfig.Load(DriverConfigPath).Strikes);
-
-        await AnswerAsync(module, "SET_STRIKES", new { strikes = 3 });
         var retried = await AnswerAsync(module, "RETRY_QUEST", new { quest = "a78553" });
         Assert.Equal(3, retried.GetProperty("forgiven").GetProperty("a78553").GetInt32());
         Assert.Equal(3, DriverConfig.Load(DriverConfigPath).ForgivenAt("a78553"));
     }
 
     /// <summary>
-    /// The intake's harness (INT4b) over the bridge — the screen's half of `daoris driver intake`. Off
+    /// The intake's harness (INT4b) over the bridge — the screen's half of `daoris role set intake`. Off
     /// until named, and 🔴 kept by every other edit: the state is what the page shows, and a control
     /// that deleted it would switch the intake off with nobody touching it.
     /// </summary>

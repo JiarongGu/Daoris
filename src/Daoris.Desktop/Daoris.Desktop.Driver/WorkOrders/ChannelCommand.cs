@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris-driver ask channel</c> was asked: the ask, and with words a post, to one repository or everyone (<paramref name="To"/>
+/// What <c>daoris ask channel</c> was asked: the ask, and with words a post, to one repository or everyone (<paramref name="To"/>
 /// null), answering a message or not; with no words, a read. A post is urgent, the person's default (D188 point 2), unless
 /// <paramref name="Ordinary"/> asked it to wait for each turn's end (COWORK1e).
 /// </summary>
@@ -11,7 +11,7 @@ public sealed record ChannelAsk(string Ask, string? To, string? Re, string? Text
 
 /// <summary>
 /// The person's side of an ask's channel at a terminal (SESSONE2c, D167 points 6 to 8; the co-working design §2.4, D50), the twin
-/// of the ask page's <i>Channel</i>: <c>daoris-driver ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re &lt;message&gt;]
+/// of the ask page's <i>Channel</i>: <c>daoris ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re &lt;message&gt;]
 /// [--ordinary] ["…"]</c>.
 /// </summary>
 /// <remarks>

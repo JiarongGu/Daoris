@@ -41,7 +41,7 @@ export function PlaceDrivingScope({ row, notify, onOpenAppointed, onOpenReposito
     busy: setDrivable.isPending || setHold.isPending || setTrees.isPending,
     note: !row.adopted && doorOf(roster.data?.adapter, doors) === 'pipe' ? t('projects.outside.directDoor') : undefined,
     stewardSet: stewardSet ? t('projects.setup.stewardSet', { time: clockOf(stewardSet, undefined, i18n.language) }) : null,
-    terminal: `daoris driver ${row.driven ? 'undrive' : 'drive'} ${repository}`,
+    terminal: `daoris place ${row.driven ? 'undrive' : 'drive'} ${repository}`,
     onDrive: (drivable, answered) => setDrivable.mutate({ repository, drivable }, {
       onSuccess: () => answered.done(),
       onError: (error) => answered.refused(sentence(error)),

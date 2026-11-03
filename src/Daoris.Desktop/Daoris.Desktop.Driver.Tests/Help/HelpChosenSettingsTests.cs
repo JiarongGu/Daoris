@@ -149,7 +149,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
 
         var notify = await AnswerAsync(ledger, Request(ConfiguredAccess.Notify, "off"));
         Assert.Equal((true, (string?)null), (notify.Done, notify.Code));
-        Assert.Contains("`daoris driver notify off`", notify.Said);
+        Assert.Contains("`daoris settings notify off`", notify.Said);
         Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.Cap, "3"))).Done);
         Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.CoolOff, "90"))).Done);
         var language = await AnswerAsync(ledger, Request(ConfiguredAccess.Language, "zh", repository: "engine"));

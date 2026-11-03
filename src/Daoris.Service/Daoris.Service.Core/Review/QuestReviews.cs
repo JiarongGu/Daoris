@@ -376,7 +376,7 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
               + "at the driver's next look.";
         var stillHeld = quest.Hold switch
         {
-            QuestHold.Departed => $" It still departs from a requirement, so it waits for your yes: `daoris-driver quest accept {quest.Id}`.",
+            QuestHold.Departed => $" It still departs from a requirement, so it waits for your yes: `daoris quest accept {quest.Id}`.",
             QuestHold.EvidenceUnread or QuestHold.EvidenceMissing => " Its evidence still holds it, until it is found or you accept the done as it stands.",
             _ => "",
         };

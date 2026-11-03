@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver integrate</c> was asked: a repository to show, and an act on it where one is named.</summary>
+/// <summary>What <c>daoris integrate</c> was asked: a repository to show, and an act on it where one is named.</summary>
 public sealed record IntegrateAsk(string Repository)
 {
     /// <summary>One of <see cref="IntegrateCommand.Acts"/>; null shows the repository's integration.</summary>
@@ -14,7 +14,7 @@ public sealed record IntegrateAsk(string Repository)
 }
 
 /// <summary>
-/// <c>daoris-driver integrate &lt;repository&gt;</c> (INTEGRATE1h; the integration design §5.8): shows a repository's integration, read from the
+/// <c>daoris integrate &lt;repository&gt;</c> (INTEGRATE1h; the integration design §5.8): shows a repository's integration, read from the
 /// record; <c>--plan &lt;branch&gt;</c> previews a branch onto the line in git's objects alone (<see cref="IntegrationPlans"/>). <c>--request</c>,
 /// <c>--drop</c>, <c>--recheck</c>, <c>--decide</c> and <c>--order</c> are the owner's acts, Person routes: a card in Daoris's window (D156),
 /// which this terminal asks and never answers.
@@ -22,7 +22,7 @@ public sealed record IntegrateAsk(string Repository)
 public static class IntegrateCommand
 {
     public const string Usage =
-        "usage: daoris-driver integrate <repository> [--plan <branch> | --request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | "
+        "usage: daoris integrate <repository> [--plan <branch> | --request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | "
         + "--order <request> first|last]";
 
     /// <summary>The acts, as their flags spell them; the verb is <c>hand-back</c> on every door.</summary>

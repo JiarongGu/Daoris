@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver heavy</c> was asked (HEAVYRUN1b2a): a repository, and its gates to set or a clear, or none to say.</summary>
+/// <summary>What <c>daoris place heavy</c> was asked (HEAVYRUN1b2a): a repository, and its gates to set or a clear, or none to say.</summary>
 public sealed record HeavyMappingAsk
 {
     /// <summary>The repository named, or null to list every repository's.</summary>
@@ -17,7 +17,7 @@ public sealed record HeavyMappingAsk
 }
 
 /// <summary>
-/// <c>daoris-driver heavy</c> (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note, D50): this machine's heavy gates for a repository whose own
+/// <c>daoris place heavy</c> (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note, D50): this machine's heavy gates for a repository whose own
 /// <c>daoris.gates.json</c> marks none, from a terminal: listed, said, set in the order they run, or cleared. It reads and writes the
 /// driver's file alone, through <see cref="HeavyMapping"/>, the door the page's will go through (HEAVYRUN1b2b), so they refuse alike;
 /// it never touches the repository.
@@ -25,7 +25,7 @@ public sealed record HeavyMappingAsk
 /// <remarks>Exit codes are the family's: 0 said or set · 1 refused, nothing written · 2 could not, the usage among them.</remarks>
 public static class HeavyMappingCommand
 {
-    public const string Usage = "usage: daoris-driver heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]";
+    public const string Usage = "usage: daoris place heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]";
 
     private const string OneChange = "one change at a time: the gates, in the order they run, or `--clear` alone.";
 

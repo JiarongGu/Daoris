@@ -151,7 +151,7 @@ describe('pausing and abandoning a quest', () => {
   it('offers none of the three in a browser, and names the terminal’s commands instead', () => {
     page({});
     expect(headerActs()).toEqual(['Take', 'Decline…', 'More actions']);
-    expect(screen.getByText(/a browser offers neither/)).toHaveTextContent('daoris-driver quest abandon abc123');
+    expect(screen.getByText(/a browser offers neither/)).toHaveTextContent('daoris quest abandon abc123');
   });
 
   it('names its acts in 中文', async () => {

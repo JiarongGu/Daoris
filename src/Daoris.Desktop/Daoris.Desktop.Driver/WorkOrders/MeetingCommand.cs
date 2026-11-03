@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A meeting at the terminal (AGENTROOM1a, D177 points 1, 2, 4 and 7; ONEWAY1t): <c>daoris-driver meeting ask "&lt;question&gt;" --agents a,b</c>
+/// A meeting at the terminal (AGENTROOM1a, D177 points 1, 2, 4 and 7; ONEWAY1t): <c>daoris brainstorm "&lt;question&gt;" --kind meeting --agents a,b</c>
 /// asks the running service's brainstorm desk for a meeting, which writes the request the driver's look takes, so every turn runs in
 /// whichever process holds the loop; <c>send</c> is the person's press for a round, the first by itself and a later one only named;
 /// <c>stop</c> ends the meeting at once; <c>clear</c> removes it, each the desk's. <c>show</c> prints the round's packet whole, what a
@@ -13,10 +13,10 @@ namespace Daoris.Driver;
 public static class MeetingCommand
 {
     public const string Usage =
-        "usage: daoris-driver meeting ask \"<question>\" --agents <a,b> [--repository <name>] [--id <id>]\n"
-        + "       daoris-driver meeting show|stop|clear <id>\n"
-        + "       daoris-driver meeting send <id> [--round <n>]\n"
-        + "       daoris-driver meeting list";
+        "usage: daoris brainstorm \"<question>\" --kind meeting --agents <a,b> [--repository <name>] [--id <id>]\n"
+        + "       daoris brainstorm show|stop|clear <id> --kind meeting\n"
+        + "       daoris brainstorm send <id> --kind meeting [--round <n>]\n"
+        + "       daoris brainstorm list --kind meeting";
 
     /// <summary>The fewest agents a meeting names: one agent alone is no meeting.</summary>
     public const int FewestAgents = 2;
@@ -198,9 +198,9 @@ public static class MeetingCommand
         _ when files.Stopped(id) => "Stopped: nothing more goes to any agent, and Daoris ends it at its next look.",
         BrainstormStates.Running => $"Round {state.Round} is running: one participant's turn at a time, in their order.",
         BrainstormStates.Frozen when files.Sent(id, state.Round) == state.Packet => $"Sent: round {state.Round} goes at Daoris's next look.",
-        BrainstormStates.Frozen when state.Round == 1 => $"Nothing has gone to any agent. Send it with `daoris-driver meeting send {id}`, or clear it.",
-        BrainstormStates.Frozen => $"Round {state.Round} has not gone to any agent. Send it with `daoris-driver meeting send {id} --round {state.Round}`, "
-                                   + $"or stop the meeting with `daoris-driver meeting stop {id}`.",
+        BrainstormStates.Frozen when state.Round == 1 => $"Nothing has gone to any agent. Send it with `daoris brainstorm send {id} --kind meeting`, or clear it.",
+        BrainstormStates.Frozen => $"Round {state.Round} has not gone to any agent. Send it with `daoris brainstorm send {id} --kind meeting --round {state.Round}`, "
+                                   + $"or stop the meeting with `daoris brainstorm stop {id} --kind meeting`.",
         _ => $"{state.State}.",
     };
 

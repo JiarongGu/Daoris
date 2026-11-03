@@ -39,18 +39,18 @@ describe('the review gate', () => {
 
   it('names the terminal twin when skip or set up is offered and the quest is known, and not otherwise', async () => {
     const { unmount } = render(<ReviewGate environment="local" state="being-set-up" step={STEP_SETTING_UP} acts={{ skip: () => {} }} />);
-    expect(gate()).toHaveTextContent('daoris-driver quest review q2 off "…"');
-    expect(gate()).toHaveTextContent('daoris-driver quest review q2 on|<environment>');
+    expect(gate()).toHaveTextContent('daoris quest review q2 off "…"');
+    expect(gate()).toHaveTextContent('daoris quest review q2 on|<environment>');
     unmount();
 
     // No quest id: nothing to name.
     const second = render(<ReviewGate environment="local" state="not-shown" acts={{ setUp: () => {} }} />);
-    expect(gate()).not.toHaveTextContent('daoris-driver quest review');
+    expect(gate()).not.toHaveTextContent('daoris quest review');
     second.unmount();
 
     // Nothing offered that the twin sets.
     render(<ReviewGate environment="local" state="shown" step={STEP_SHOWN} acts={{ showAgain: () => {} }} />);
-    expect(gate()).not.toHaveTextContent('daoris-driver quest review');
+    expect(gate()).not.toHaveTextContent('daoris quest review');
 
     await i18n.changeLanguage('zh');
   });

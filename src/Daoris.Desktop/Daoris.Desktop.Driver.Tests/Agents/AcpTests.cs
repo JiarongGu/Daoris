@@ -1714,7 +1714,7 @@ public sealed class AcpTests
             Assert.Contains("`acceptEdits`", refused.Message);
             Assert.Contains("`engine`", refused.Message);
             Assert.Contains("`unrestricted`", refused.Message);
-            Assert.Contains("`daoris-driver access engine permissions=auto`", refused.Message);
+            Assert.Contains("`daoris place access engine permissions=auto`", refused.Message);
             Assert.DoesNotContain("Ask Daoris", refused.Message);
             Assert.Null(ModeSet(claude));
         }

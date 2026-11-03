@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1a (D180's HEAVYRUN1 note): <c>daoris-driver run-heavy [--gate &lt;name&gt;]</c>, run in a checkout, runs the gates its
+/// HEAVYRUN1a (D180's HEAVYRUN1 note): <c>daoris gate run [--gate &lt;name&gt;]</c>, run in a checkout, runs the gates its
 /// <c>daoris.gates.json</c> marks <c>"heavy": true</c>, in declared order, or the one named. Its words, its choice of gates and its
 /// refusals start no process, so they are the fast half's; the runs themselves are <see cref="HeavyRunProcessTests"/>'.
 /// </summary>
@@ -361,7 +361,7 @@ public sealed class HeavyRunCommandTests : IDisposable
         var missing = Assert.Throws<DriverException>(() => HeavyGates.Resolve(_fixture.Checkout, "engine", () => null));
         Assert.Equal(
             $"no daoris.gates.json at {_fixture.Checkout}, and this machine sets no heavy gates for `engine`: `run-heavy` runs the gates a "
-            + "repository marks heavy there, or those `daoris-driver heavy engine <name>=<command>…` sets here.",
+            + "repository marks heavy there, or those `daoris place heavy engine <name>=<command>…` sets here.",
             missing.Message);
 
         _fixture.Gates(_fixture.Checkout, ("lint", "npm run lint", null));

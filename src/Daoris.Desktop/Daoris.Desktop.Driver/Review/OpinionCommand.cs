@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris-driver opinion</c> was asked (XAGENT1f): the verb, the session or opinion it names, and what goes with it.
+/// What <c>daoris session opinion</c> was asked (XAGENT1f): the verb, the session or opinion it names, and what goes with it.
 /// </summary>
 /// <param name="Verb"><c>ask</c>, <c>show</c>, <c>stop</c>, <c>anyway</c> or <c>myself</c>.</param>
 /// <param name="Id">The working session, or for <c>stop</c> the opinion, or for <c>show</c> either.</param>
@@ -22,7 +22,7 @@ public sealed record OpinionCommandAsk(string Verb, string Id)
 
 /// <summary>
 /// The terminal's doors to the second opinion's gate (XAGENT1f, D155 point 10; the second-agent design §8.5, §9, D50):
-/// <c>daoris-driver opinion ask|show|stop|anyway|myself</c>, the screen's presses' twin, each through the driver's own press
+/// <c>daoris session opinion ask|show|stop|anyway|myself</c>, the screen's presses' twin, each through the driver's own press
 /// (<see cref="OpinionPresses"/>) so both say and keep the same, and each printing what the gate says after it.
 /// <c>sessions say</c> is <i>Send back…</i>.
 /// </summary>

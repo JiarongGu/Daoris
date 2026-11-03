@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The codes a tool's operation refuses in (PUSH1f2c, D194 point 4, the alone-path design §1.3): the page's catalogue keys, which the
 /// shell's <c>Refusals</c> declares as these, and the driver's verbatim refusal for every other. One table, read by the routes that
-/// answer the window (through the module's one mapping) and by <c>daoris-driver tool</c> acting alone, so a refusal is one line both
+/// answer the window (through the module's one mapping) and by <c>daoris tool</c> acting alone, so a refusal is one line both
 /// ways.
 /// </summary>
 public static class ToolCodes
@@ -53,7 +53,7 @@ public static class ToolCodes
 }
 
 /// <summary>
-/// The routes <c>daoris-driver tool</c> sends while Daoris runs (PUSH1f2c; RPC1f, the terminal RPC design §9), each the Tools place's
+/// The routes <c>daoris tool</c> sends while Daoris runs (PUSH1f2c; RPC1f, the terminal RPC design §9), each the Tools place's
 /// press it is the twin of, and the verbs no route takes, each with why it acts alone (D171's PUSH1f note, kept by D194 point 5): the
 /// CLI's <c>TOOL_VERBS</c>, now this program's. Held to the census by <c>PipeCensusTests</c>.
 /// </summary>
@@ -94,7 +94,7 @@ public static class ToolRoutes
 
 /// <summary>
 /// The tools' operations (PUSH1f2c, D194 point 4, the alone-path design §1.3): each the judgement a Tools route made inside its handler,
-/// taken out over the facts it judges by, so the window's route and <c>daoris-driver tool</c> acting alone call one implementation. The
+/// taken out over the facts it judges by, so the window's route and <c>daoris tool</c> acting alone call one implementation. The
 /// rest are already <see cref="Tools"/>' writers and <see cref="ToolInstall.Delete"/>.
 /// </summary>
 public static class ToolChoices

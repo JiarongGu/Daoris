@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris-driver plugins approve|withdraw</c> through the running Daoris (the terminal RPC design §7.2 and §7.3): the person's
+/// RPC1e: <c>daoris plugin approve|withdraw</c> through the running Daoris (the terminal RPC design §7.2 and §7.3): the person's
 /// approval of the tools a plugin's server offers Ask Daoris, and its withdrawal, sent to the instance's <c>PLUGIN_ACTION</c>, which shows
 /// it in its window; the terminal prints the lines the route answers (<c>said</c>, the alone path's own words). <c>new</c>, <c>try</c>,
 /// <c>show</c>, <c>activity</c> and <c>install</c> stay this terminal's own: their words name this machine's folders.

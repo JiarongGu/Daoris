@@ -5,16 +5,16 @@ namespace Daoris.Driver.Host;
 /// </summary>
 /// <remarks>
 /// <code>
-/// daoris-driver ask [--workspace &lt;name&gt;] [--to &lt;repo&gt;] [--file &lt;path&gt;]… [--url &lt;address&gt;]… "…"
-/// daoris-driver ask --publish &lt;id&gt; --to &lt;repo&gt;
-/// daoris-driver ask --close &lt;id&gt; --reason "…"
-/// daoris-driver ask --delete &lt;id&gt;
-/// daoris-driver ask --go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
-/// daoris-driver ask … --short "…"
-/// daoris-driver ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]
-/// daoris-driver ask --set-review &lt;id&gt; on|&lt;environment&gt;|off ["…"]
-/// daoris-driver ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]
-/// daoris-driver ask --set-workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]
+/// daoris ask [--workspace &lt;name&gt;] [--to &lt;repo&gt;] [--file &lt;path&gt;]… [--url &lt;address&gt;]… "…"
+/// daoris ask publish &lt;id&gt; --to &lt;repo&gt;
+/// daoris ask close &lt;id&gt; --reason "…"
+/// daoris ask delete &lt;id&gt;
+/// daoris ask go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
+/// daoris ask … --short "…"
+/// daoris ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]
+/// daoris ask review &lt;id&gt; on|&lt;environment&gt;|off ["…"]
+/// daoris ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]
+/// daoris ask workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]
 /// </code>
 /// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
 /// when one of them must stay (D95) — the ask's record's <i>Delete</i> is the other door.</para>
@@ -220,17 +220,17 @@ internal static class AskConsole
     private static int Usage(string why)
     {
         Console.Error.WriteLine($"ask: {why}");
-        Console.Error.WriteLine("usage: daoris-driver ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… \"…\"");
-        Console.Error.WriteLine("       daoris-driver ask --publish <id> --to <repo>");
-        Console.Error.WriteLine("       daoris-driver ask --close <id> --reason \"…\"");
-        Console.Error.WriteLine("       daoris-driver ask --delete <id>");
-        Console.Error.WriteLine("       daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]");
-        Console.Error.WriteLine($"       daoris-driver {ChannelCommand.Usage}");
-        Console.Error.WriteLine("       daoris-driver ask … --short \"…\"");
-        Console.Error.WriteLine("       daoris-driver ask … --review rule|on|<environment>|off [--review-words \"…\"]");
-        Console.Error.WriteLine("       daoris-driver ask --set-review <id> on|<environment>|off [\"…\"]");
-        Console.Error.WriteLine("       daoris-driver ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]");
-        Console.Error.WriteLine("       daoris-driver ask --set-workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]");
+        Console.Error.WriteLine("usage: daoris ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… \"…\"");
+        Console.Error.WriteLine("       daoris ask publish <id> --to <repo>");
+        Console.Error.WriteLine("       daoris ask close <id> --reason \"…\"");
+        Console.Error.WriteLine("       daoris ask delete <id>");
+        Console.Error.WriteLine("       daoris ask go-ahead <id> <n> approve|refuse [\"…\"]");
+        Console.Error.WriteLine($"       daoris {ChannelCommand.Usage}");
+        Console.Error.WriteLine("       daoris ask … --short \"…\"");
+        Console.Error.WriteLine("       daoris ask … --review rule|on|<environment>|off [--review-words \"…\"]");
+        Console.Error.WriteLine("       daoris ask review <id> on|<environment>|off [\"…\"]");
+        Console.Error.WriteLine("       daoris ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]");
+        Console.Error.WriteLine("       daoris ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]");
         return 2;
     }
 }

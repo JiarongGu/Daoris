@@ -30,7 +30,7 @@ describe("a repository's Workflow tab", () => {
     expect(screen.getByText(/How work in engine moves, read from its rules as they stand at each gate/)).toBeInTheDocument();
     const part = screen.getByText(/^Your part:/);
     expect(part).toHaveTextContent('Your part: you look at it in dev and say it is reviewed; then you merge its pull request on the platform.');
-    expect(screen.getByText(code('daoris driver workflow show --repository engine'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris workflow show --repository engine'))).toBeInTheDocument();
   });
 
   // WORKFLOWEDIT1b: the step editor in place of INTEGRATE1q's presets in words, opened from the tab and told so its reads wait for it.
@@ -43,7 +43,7 @@ describe("a repository's Workflow tab", () => {
     const { rerender } = render(<WorkflowTab page="repository" name="engine" current={FULL} editor={editor} />);
 
     expect(screen.getByRole('heading', { name: 'A workflow of your own' })).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver workflow new <id> --from <default>'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris workflow new <id> --from <default>'))).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Compose steps…' }));
     expect(onOpen).toHaveBeenLastCalledWith(true);
     expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
@@ -246,7 +246,7 @@ describe("a workspace's Workflow tab", () => {
     render(<WorkflowTab page="workspace" name="aurora" current={WORKSPACE} />);
 
     expect(screen.getByText(/How work moves in each repository of aurora that sets no rules of its own/)).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver workflow show --workspace aurora'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris workflow show --workspace aurora'))).toBeInTheDocument();
     expect(steps()[1]).toHaveTextContent("Set by this workspace's second-opinion rule.");
     expect(steps()[3]).toHaveTextContent('No plugin pushes it: the branch is for you to push.');
   });

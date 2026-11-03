@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// SESSONE2c (D167 points 6 to 8; the co-working design §2.4): the person's side of an ask's channel at a terminal,
-/// <c>daoris-driver ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re &lt;message&gt;] ["words"]</c>, the twin of the ask page's
+/// <c>daoris ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re &lt;message&gt;] ["words"]</c>, the twin of the ask page's
 /// <i>Channel</i> (D50). With no words it reads the channel and moves the person's mark; with words it posts them as the person's,
 /// to everyone or one repository. A service stood in: the fast half (MOD8).
 /// </summary>
