@@ -59,7 +59,7 @@ const sent = () => invoke.mock.calls.filter(([, type]) => type === 'SET_APPOINTM
 const row = (name: string) => within(screen.getByRole('group', { name }));
 
 async function opened(steward = 'Steward · This Daoris') {
-  window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+  window.localStorage.setItem('daoris.list.agents.mode', 'setup');
   window.localStorage.setItem('daoris.list.roles.chosen', 'appointed');
   show(<Place />);
   await screen.findByRole('group', { name: steward });
@@ -236,7 +236,7 @@ describe('Roles → Appointed roles', () => {
 
   it('says the unreadable appointments instead of drawing none', async () => {
     standing = null as unknown as Record<string, unknown>;
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     window.localStorage.setItem('daoris.list.roles.chosen', 'appointed');
     show(<Place />);
     expect(await screen.findByText('The appointments could not be read here.')).toBeTruthy();

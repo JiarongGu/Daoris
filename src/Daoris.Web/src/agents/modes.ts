@@ -25,11 +25,9 @@ export const isAgentsMode = (value: string | null | undefined): value is AgentsM
 export const isRoleSection = (value: string | null | undefined): value is RoleSection =>
   ROLE_SECTIONS.some((section) => section === value);
 
-/** The mode the place last showed, or Agents, the first, where nothing readable is kept. A stored `roles` is Setup, which replaced it. */
+/** The mode the place last showed, or Agents, the first, where nothing readable is kept. */
 export function readAgentsMode(): AgentsMode {
   const kept = stored(KEY);
-  // transitional: roles-mode-setup
-  if (kept === 'roles') return 'setup';
   return isAgentsMode(kept) ? kept : 'agents';
 }
 

@@ -63,21 +63,3 @@ export const DriverDark: Story = { decorators: [(Story) => <InTheme theme="dark"
 
 /** In dark at the floor. */
 export const DriverDarkNarrow: Story = { decorators: [storyWidths.narrow, (Story) => <InTheme theme="dark"><Story /></InTheme>] };
-
-/**
- * A shell older than This Daoris: the home row keeps its hint and the two notices the start carried, under the value in
- * its column (R1); no cool-off and no access card, since the shell answers neither.
- */
-export const OlderShell: Story = {
-  args: {
-    facts: {
-      ...FACTS,
-      placeAnswers: false,
-      homeAccount: 'overridden',
-      homeNotice: 'This start replaced the data folder the account names; a terminal reads the other one.',
-      hostNotice: 'The host this window adopted serves another install\'s page.',
-      coolOff: undefined,
-      machineAccess: undefined,
-    },
-  },
-};

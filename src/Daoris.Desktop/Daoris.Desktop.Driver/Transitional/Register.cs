@@ -377,15 +377,6 @@ public static class TransitionalRegister
             Row = "ONEWAY1ag",
             Ended = Never,
         },
-        new()
-        {
-            Id = "roles-mode-setup",
-            Kept = "../../Daoris.Web/src/agents/modes.ts:31",
-            Reaches = "A window whose browser storage still holds the retired Roles mode: it opens on Setup, which replaced it.",
-            Ends = "One release after SETUPUX1y. The storage is the window's, so it never reads as ended here and the row deletes it.",
-            Row = "WORKFLOWCLEAN1z",
-            Ended = Never,
-        },
     ];
 
     /// <summary>A condition no file of the home answers (the floor of a build no release names, a store elsewhere, the owner's word): it never reads as ended, and its row deletes it.</summary>

@@ -211,8 +211,8 @@ public sealed class TransitionalRegisterTests : IDisposable
     {
         Assert.Equal(
             [("steps-engine", "WORKFLOWCLEAN1z"), ("current-followed", "WORKFLOWCLEAN1z"), ("auto-lander", "WORKFLOWCLEAN1z"), ("work-cycles", "WORKFLOWCLEAN1j"),
-                ("conversion-readers", "ONEWAY1ag"), ("roles-mode-setup", "WORKFLOWCLEAN1z")],
-            new[] { "steps-engine", "current-followed", "auto-lander", "work-cycles", "conversion-readers", "roles-mode-setup" }.Select(id => (id, Entry(id).Row)));
+                ("conversion-readers", "ONEWAY1ag")],
+            new[] { "steps-engine", "current-followed", "auto-lander", "work-cycles", "conversion-readers" }.Select(id => (id, Entry(id).Row)));
         Assert.All(new[] { "steps-engine", "current-followed", "auto-lander" }, id => Assert.Equal(ConversionParts.Workflows, Entry(id).Part));
         Put(HomeEntry.DriverConfig, """{"workCycles":{"engine":{"quest":"{}"}}}""");
         Assert.False(Entry("work-cycles").Ended(_home));
