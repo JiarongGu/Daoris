@@ -104,7 +104,7 @@ public sealed record Ask(
     /// made since, whose words are kept from its first.
     /// </summary>
     /// <remarks>
-    /// Kept from then by the doors that report a word: the answer door at once, and a message added to a
+    /// Kept from then by the doors that report a word: the say door's answer to a park at once, and a message added to a
     /// running session once its driver reports it (`POST /api/sessions/{id}/added`).
     /// </remarks>
     public DateTimeOffset? WordsKeptFrom { get; init; }
@@ -553,7 +553,7 @@ public sealed class AskStore
 
     /// <summary>
     /// Keep a word the person gave on the ask (DRIFT1a): appended where the list is kept, in one statement,
-    /// for the reason a published quest is (REV3) — the answer door and a driver's report arrive from two
+    /// for the reason a published quest is (REV3) — the say door and a driver's report arrive from two
     /// processes, and a whole-record save would drop the other's word.
     /// </summary>
     /// <returns>False when no ask has that id, and nothing was kept.</returns>

@@ -1664,7 +1664,7 @@ if (mode == ServiceMode.Local)
         if (outcome.SettledOn is { } settledOn) return Results.Ok(new SettledResponse(outcome.Message, settledOn));
         if (outcome.Refusal == SessionSayRefusal.None)
         {
-            // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
+            // Words to a park are its answer, the one door that answers one (ONEWAY1k), kept on its ask at once (DRIFT1a); words to an
             // ended session are kept there once a session took them (the taken door, D137 §2.4), and words for a running
             // session's run as its run takes them (COWORK1c). Words that are a channel message are on the ask already, as
             // `channel` (SESSONE2e), so neither door keeps them again. Daoris's own words (COWORK1b) are never the person's,
@@ -1712,7 +1712,7 @@ if (mode == ServiceMode.Local)
 
     // The words a session took off its record (MSG1a, D137 §2.4): the resumed run's first prompt went, or the session a
     // fallback handed them to took them. Each of the person's said after the record ended is kept on the ask its work is for,
-    // as `reopened`, said to the session that took it, beside the take as the answer door keeps an answer (DRIFT1a). Another
+    // as `reopened`, said to the session that took it, beside the take as the say door keeps a park's answer (DRIFT1a). Another
     // agent's claims never are (XAGENT1c): on the ask they would reach every later session as the person's requirements.
     app.MapPost("/api/sessions/{id}/taken", async (
         ComposedService s, HttpContext http, string id, TakenRequest body, CancellationToken ct) =>
@@ -2280,31 +2280,6 @@ app.MapPost("/api/sessions/{id}/state", async (
             or SessionAdvanceRefusal.WordsChanged =>
             Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
-    };
-});
-
-// The person answers a driven session that parked to ask them (STANDDOWN2): the record stays parked with
-// their words, and the reply is the session as it now stands, for the driver's next look to go on with
-// (ANSWER1b, D131) — its own conversation resumed, or its quest carried on in the same tree.
-app.MapPost("/api/sessions/{id}/answer", async (
-    ComposedService s, HttpContext http, string id, AnswerSessionRequest body, CancellationToken ct) =>
-{
-    var now = DateTimeOffset.UtcNow;
-    var outcome = await s.Ledger.AnswerAsync(id, body.Answer, now, ct);
-    // DRIFT1a (D133 §1): the answer is the person's word on the ask the session's quest was asked by, so
-    // it is kept there too, beside the answer and never inside it. A blank one says nothing to keep, and a
-    // session on no ask has nowhere to keep it; either way the answer stands as it was given.
-    if (outcome.Refusal == SessionAdvanceRefusal.None)
-    {
-        await s.Ledger.KeepOnAskAsync(id, AskWordKind.Answered, body.Answer, now, ct);
-    }
-
-    return outcome.Refusal switch
-    {
-        SessionAdvanceRefusal.None => Results.Ok(
-            new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
-        SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
     };
 });
 

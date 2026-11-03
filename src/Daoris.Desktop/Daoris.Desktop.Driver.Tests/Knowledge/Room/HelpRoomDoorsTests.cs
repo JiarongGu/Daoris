@@ -216,12 +216,12 @@ public sealed class HelpRoomDoorsTests
         }
 
         // In the order a person meets them: how work moves beside the rules it is drawn from, before a named workflow; where a
-        // piece of work stands after starting one, before answering what waits on the person.
+        // piece of work stands after starting one, before saying something to a session, a park's answer among them (ONEWAY1k).
         var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
         int At(string to) => order.FindIndex(each => each.StartsWith(to, StringComparison.Ordinal));
         Assert.Equal(At("declare which other agent reads") + 1, order.IndexOf(current.To));
         Assert.Equal(order.IndexOf(current.To) + 1, At("name a workflow"));
-        Assert.True(order.IndexOf(run.To) > At("start a task") && order.IndexOf(run.To) < At("answer what waits on the person"));
+        Assert.True(order.IndexOf(run.To) > At("start a task") && order.IndexOf(run.To) < At("say something to a session"));
 
         // WORKFLOW1d's row keeps the named workflows' verbs, its `show` the one that names a saved workflow, so the two shows
         // are not read as one.

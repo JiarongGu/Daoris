@@ -398,10 +398,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "at, and nothing lands by it (Ask Daoris never proposes these: each is your judgement)",
             "Sessions → the session's page → Second opinion, and What needs you: *Go on anyway…*, *I looked myself…*",
             "`daoris-driver opinion anyway <session> [\"…\"]`, `daoris-driver opinion myself <session> [\"…\"]`"),
-        ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
-        // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
-        ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "
-            + "its turn ends, or the same session goes on with them (Ask Daoris never proposes it: the words are yours)",
+        // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors. A park's
+        // answer is said here, its one door (ONEWAY1k).
+        ("say something to a session of this machine's, running, parked or ended, a park's answer among them: it reads your words "
+            + "at its next step or when its turn ends, or the same session goes on with them (Ask Daoris never proposes it: the words are yours)",
             "Sessions → the session's page → its box", "`daoris-driver sessions say <id> \"…\" [--file <path>]…`"),
         // ASKHIST1: exempt from Ask Daoris, since its conversations and what the person keeps of them are the person's own; the
         // room names both doors, so the helper points there when asked about an earlier conversation. ASKSCOPE1e: the list's

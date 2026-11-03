@@ -54,14 +54,19 @@ describe('a session parked at a checkpoint', () => {
     expect(screen.queryByText(/in the box below/)).toBeNull();
   });
 
-  it('carries on with no words when the person has nothing to add', async () => {
+  /** ONEWAY1k (the oneway design §4 M1): the answer goes through the say door, which keeps words, so the card sends none without them, as the box below. */
+  it('sends no answer without words, its press waiting for them as the box below does', async () => {
     const answer = vi.fn();
     show({ onAnswer: answer });
 
     await userEvent.click(screen.getByRole('button', { name: 'Answer and carry on…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    expect(screen.getByRole('button', { name: 'Carry on with this answer' })).toBeDisabled();
+    await userEvent.type(screen.getByLabelText(/your answer/), '   ');
+    expect(screen.getByRole('button', { name: 'Carry on with this answer' })).toBeDisabled();
 
-    expect(answer).toHaveBeenCalledWith(null);
+    await userEvent.type(screen.getByLabelText(/your answer/), 'carry on');
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    expect(answer).toHaveBeenCalledWith('carry on');
   });
 
   /**

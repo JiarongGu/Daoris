@@ -919,9 +919,4 @@ export const api = {
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
   refresh: () => post<RefreshReport>('/api/refresh', {}),
-  // The person's answer to a driven session that parked to ask them (STANDDOWN2): the record stays parked
-  // with their words, and the same session goes on with them at the driver's next look (D131); where it
-  // cannot, a new session carries the quest on in the same tree — `daoris-driver answer` is the twin.
-  answerSession: (id: string, answer: string | null) =>
-    post<{ message: string }>(`/api/sessions/${encodeURIComponent(id)}/answer`, { answer }),
 };

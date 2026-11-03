@@ -299,7 +299,7 @@ export function SessionHead({
    * words at the driver's next look (D131). Absent where nothing can reach this machine's host. Where the box below answers the
    * park too, the card's answer goes through the box's own door (PARKANSWER1); either settles with a refusal's sentence, or nothing.
    */
-  onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
+  onAnswerSession?: (answer: string) => Promise<string | null> | void;
   /** A press of the park's question's answer from its card, with the card's words (PARKANSWER1, PARKVIEW1). */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
   /** The answer selected in its question, the frame's, shared with the box below (QUESTIONUI1a); absent, the card holds its own. */

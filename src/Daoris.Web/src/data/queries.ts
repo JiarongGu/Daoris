@@ -856,24 +856,6 @@ export const usePersonDone = () => {
 };
 
 /**
- * Answer a driven session that parked to ask the person (STANDDOWN2): its record stays parked with
- * their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131). The
- * sessions are read again, so the page shows it going on (ANSWER1c) rather than still waiting.
- */
-export const useAnswerSession = () => {
-  const invalidate = useInvalidateQuestWork();
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, answer }: { id: string; answer: string | null }) => api.answerSession(id, answer),
-    onSuccess: () => {
-      invalidate();
-      // The record's move is pushed where the shell pushes the sessions (PUSH1d2): the service's change stream tells it.
-      void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
-    },
-  });
-};
-
-/**
  * Retire a machine the circle's remote still counts (FABRIC-CLOSE1i2), and read where the circle stands again where it is pulled. Where
  * the shell pushes the standings, the retirement moves no family of the change stream: the caller's pass (*Sync now*'s) pushes it.
  */

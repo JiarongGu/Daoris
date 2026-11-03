@@ -538,7 +538,6 @@ describe('clearing a parked session', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'p4rk3d00', text: 'go ahead with the PUT' },
     }));
-    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
   });
 
   /**
@@ -569,7 +568,6 @@ describe('clearing a parked session', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'p4rk3d00', text: 'yes' },
     }));
-    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
     await waitFor(() => expect(notify).toHaveBeenCalledWith("Answered — the same session goes on with your words at the driver's next look."));
   });
 

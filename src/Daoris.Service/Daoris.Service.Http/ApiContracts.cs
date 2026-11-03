@@ -662,8 +662,6 @@ public sealed record HistoryClearRequest(IReadOnlyList<HistoryUnitRequest?>? Uni
 public sealed record HistoryClearedResponse(HistoryUnitResponse Unit, bool Cleared, string Message, HistoryFailedResponse? Failed = null);
 public sealed record HistoryFailedResponse(IReadOnlyList<string> Quests, IReadOnlyList<string> Asks);
 public sealed record HistoryClearResponse(IReadOnlyList<HistoryClearedResponse> Units);
-// STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
-public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
 // look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
 // MIXAGENT1a-iii: `from`, `fromWhy` and `fromBy` name the session the new one continues, as the driver knows it: a conversation
