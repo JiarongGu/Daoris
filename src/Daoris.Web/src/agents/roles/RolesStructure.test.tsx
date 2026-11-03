@@ -59,7 +59,7 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
   beforeEach(() => {
     structure = 'ok';
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     Object.values(doors).forEach((door) => door.mockReset());
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {

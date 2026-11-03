@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// UPDATE1 (D139 §3, D50): `daoris-driver update`, the terminal's door to the banner's verbs — what is staged and how the
+/// UPDATE1 (D139 §3, D50): `daoris update`, the terminal's door to the banner's verbs — what is staged and how the
 /// last swap ended, and <c>--when-idle</c>, <c>--now</c> and <c>--cancel</c> written to the same request the screen writes.
 /// </summary>
 public sealed class UpdateCommandTests : IDisposable
@@ -158,7 +158,7 @@ public sealed class UpdateCommandTests : IDisposable
         var (code, said) = Run(args);
 
         Assert.Equal(2, code);
-        Assert.Contains("daoris-driver update", said);
+        Assert.Contains("daoris update", said);
         Assert.Null(InstallUpdate.Read(Home));
     }
 

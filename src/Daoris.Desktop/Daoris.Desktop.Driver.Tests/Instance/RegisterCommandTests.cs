@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver register [--repository &lt;name&gt;]</c> (WSSETUP5, D124 §3.1, §4.5): the terminal's door to following each
+/// <c>daoris repository register [--repository &lt;name&gt;]</c> (WSSETUP5, D124 §3.1, §4.5): the terminal's door to following each
 /// line when the person asks, in the library's words, against a world in memory.
 /// </summary>
 public sealed class RegisterCommandTests

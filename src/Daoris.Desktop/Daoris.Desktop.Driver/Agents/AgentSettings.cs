@@ -222,7 +222,7 @@ public static class AgentSettings
 
 /// <summary>
 /// An account's own model and effort, written for an agent by its name (AGT6, D98; PUSH1f2d, the alone-path design §1.3): the window's
-/// <c>SET_AGENT_SETTINGS</c>, Ask Daoris's Apply (HELP6) and <c>daoris-driver agent settings</c> alone call this one judgement over the
+/// <c>SET_AGENT_SETTINGS</c>, Ask Daoris's Apply (HELP6) and <c>daoris agent settings</c> alone call this one judgement over the
 /// roster they read. Never the tool's own configuration home, and never an account a setting would bring into being.
 /// </summary>
 public static class AccountSettings

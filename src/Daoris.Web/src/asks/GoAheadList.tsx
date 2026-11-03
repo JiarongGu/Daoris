@@ -29,7 +29,7 @@ const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
  *
  * @remarks
  * Where it lands and what it touches are the session's words, shown as written; the kind is the service's word, in the
- * page's language. `daoris-driver ask --go-ahead` is the terminal's twin (D50). **Props only, no hook** (components §2):
+ * page's language. `daoris ask go-ahead` is the terminal's twin (D50). **Props only, no hook** (components §2):
  * without `onAnswer` there is no door, and nothing offers one.
  *
  * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering the

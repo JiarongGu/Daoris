@@ -309,7 +309,7 @@ public sealed class PluginPackageTests : IDisposable
         Assert.False(File.Exists(mark));
     }
 
-    // ── The terminal's door: `daoris-driver plugins install <file.nupkg>` (§6.4) ──────────────────────
+    // ── The terminal's door: `daoris plugin install <file.nupkg>` (§6.4) ──────────────────────
 
     [Fact]
     public void The_terminal_installs_a_package_file_and_says_where_it_came_from()

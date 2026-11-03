@@ -1,8 +1,8 @@
 {
   "settings.handOver.label": "Hand-over",
   "settings.handOver.body": "A session's agent may ask to hand its session over to another agent, with a note of where the work stands, kept as its claim. This says whether such an ask waits for your yes or no on the session's page, is taken when the agent's turn ends and goes on with the next agent in your order, or is refused. Your own press hands one over whatever this says. A repository's rule replaces its workspace's.",
-  "settings.handOver.twin.repository": "`daoris driver handover {{repository}} --mode ask|on|off|--clear`",
-  "settings.handOver.twin.workspace": "`daoris driver handover --workspace {{workspace}} --mode ask|on|off|--clear`",
+  "settings.handOver.twin.repository": "`daoris settings handover {{repository}} --mode ask|on|off|--clear`",
+  "settings.handOver.twin.workspace": "`daoris settings handover --workspace {{workspace}} --mode ask|on|off|--clear`",
   "settings.handOver.says.ask": "An agent’s ask to hand its session over waits for your yes or no on the session’s page.",
   "settings.handOver.says.on": "An agent’s ask to hand its session over is taken when its turn ends: it goes on with the next agent in your order.",
   "settings.handOver.says.off": "An agent’s ask to hand its session over is refused: only your own press hands one over.",

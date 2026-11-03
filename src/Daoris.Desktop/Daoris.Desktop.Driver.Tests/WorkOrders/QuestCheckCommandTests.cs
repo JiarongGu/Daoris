@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVID1b (D144 §3, §5): <c>daoris-driver quest check &lt;id&gt; [--commit &lt;sha&gt;]</c>, the terminal's door to a done's
+/// EVID1b (D144 §3, §5): <c>daoris quest check &lt;id&gt; [--commit &lt;sha&gt;]</c>, the terminal's door to a done's
 /// evidence. It reads the done's commit a driven end on this machine read, or the commit named, which must be the done's or
 /// come after it on the same history; with no driven end on record, the commit must be named, since Daoris never guesses it
 /// from what stands now (D143 §3). It posts what it read as the terminal's, prints the verdict, and exits 0 when all is
@@ -52,7 +52,7 @@ public sealed class QuestCheckCommandTests : IDisposable
     {
         Assert.Null(QuestCheckCommand.Read(args, out var problem));
         Assert.Contains(said, problem);
-        Assert.StartsWith("usage: daoris-driver quest check <id> [--commit <sha>]", QuestCheckCommand.Usage);
+        Assert.StartsWith("usage: daoris quest check <id> [--commit <sha>]", QuestCheckCommand.Usage);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class QuestCheckCommandTests : IDisposable
         Assert.Equal(1, refused);
         Assert.Empty(service.Evidence);
         Assert.Contains("name the commit", unnamed.ToString());
-        Assert.Contains("`daoris-driver quest check q1 --commit <sha>`", unnamed.ToString());
+        Assert.Contains("`daoris quest check q1 --commit <sha>`", unnamed.ToString());
 
         var read = await Run(service, git, named, "check", "q1", "--commit", head);
         Assert.Equal(0, read);

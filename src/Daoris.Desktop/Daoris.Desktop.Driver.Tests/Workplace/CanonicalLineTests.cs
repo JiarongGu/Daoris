@@ -217,7 +217,7 @@ public sealed class CanonicalLineTests : IDisposable
 
         var refused = await Assert.ThrowsAsync<DriverException>(() => new SessionTrees(_home).OpenAsync(root, "engine", "aurora"));
 
-        Assert.Contains("daoris driver line engine", refused.Message);
+        Assert.Contains("daoris place line engine", refused.Message);
         Assert.Empty((await GitAsync(root, "branch", "--list", "daoris/*")).Trim());
     }
 

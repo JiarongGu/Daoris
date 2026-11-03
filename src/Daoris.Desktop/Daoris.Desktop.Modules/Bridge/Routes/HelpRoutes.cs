@@ -285,7 +285,7 @@ public sealed class HelpRoutes(DriverContext context)
 
     /// <summary>
     /// The history's topic's judge (PARALLEL1a): what each workspace keeps of finished work (HIST1f-c), the workspaces
-    /// `daoris-driver history` reads; null where the service could not be read, and the room says so.
+    /// `daoris history` reads; null where the service could not be read, and the room says so.
     /// </summary>
     private async Task<IReadOnlyList<HistoryReading>?> HistoryAsync(CancellationToken cancellationToken)
     {
@@ -650,7 +650,7 @@ public sealed class HelpRoutes(DriverContext context)
             ToolsRoutes.UseGitAsync(_loop.Home, _loop.Service, use.Scope, use.Repository, use.Workspace, use.Remote, use.Host, use.Identity, ct);
 
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
-        // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
+        // environment the workspace does not declare is refused before anything is sent, as `daoris ask --review` refuses
         // it: the service holds no rule, and the proposal's plan holds no repositories per workspace.
         public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
         {
@@ -1196,7 +1196,7 @@ public sealed class HelpRoutes(DriverContext context)
             facts = facts with { Drafts = WorkflowDraftTold.ToldAcross(conversation, id => _loop.Events.After(id, 0).Events) };
         }
 
-        // A place proposal is judged by its quick set-up's plan, as `daoris-driver place … --plan` and PLACE_PLAN read it (AGENTSPLACE1k): the
+        // A place proposal is judged by its quick set-up's plan, as `daoris place … --plan` and PLACE_PLAN read it (AGENTSPLACE1k): the
         // registry, the quests and each line's tip as git objects; written and probed nowhere.
         if (JudgedAgainstPlaces(proposals))
         {
@@ -1291,7 +1291,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A listing as the page reads it, its <c>HelpConversation</c>s: field for field what <c>daoris-driver help list --json</c>
+    /// A listing as the page reads it, its <c>HelpConversation</c>s: field for field what <c>daoris ask-daoris list --json</c>
     /// prints (<see cref="HelpCommand.JsonFields"/>). Public, as <see cref="Grouped"/> is, so its shape is tested without a service.
     /// </summary>
     public static object HistoryAnswer(HelpListing listing) => new

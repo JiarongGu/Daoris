@@ -86,7 +86,7 @@ public sealed record HandbackReading(string Id, Quest? Quest, Session? Session, 
 /// One quest's handback as anyone entitled to the work reads it (HANDBACK1, D219): its steward, another session of the workspace, a
 /// terminal. By the quest's id, or by the id of a session for the quest it served; in any state, open or closed; from one workspace,
 /// as <c>quest_list</c> scopes it, or from every one. The connector's <c>handback_read</c>, the local host's <c>GET /api/handbacks/{id}</c>
-/// and <c>daoris-driver sessions handback</c> answer through it.
+/// and <c>daoris session handback</c> answer through it.
 /// </summary>
 /// <param name="quests">Where the quest and its history are read.</param>
 /// <param name="ledger">Where a session's record is read; none reads every id as a quest's.</param>

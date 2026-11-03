@@ -57,7 +57,7 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
 
 /**
  * **A repository's Branches tab** (UX6h1, D150 §4.2, §4.4): its branches as `GIT_BRANCHES` reads them for it, the screen's
- * twin of `daoris-driver git branches --repository`. While the list is on its way it says so; a repository with no checkout
+ * twin of `daoris git branches --repository`. While the list is on its way it says so; a repository with no checkout
  * here, or one Git did not answer for, says why in its place; a checkout with no commit has no branch yet.
  *
  * @remarks

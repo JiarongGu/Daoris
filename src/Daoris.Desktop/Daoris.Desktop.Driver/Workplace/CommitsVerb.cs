@@ -5,7 +5,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver commits</c> (PROCESS1a; FOUNDATION1 mod-iii): the workplace's own verb, the settings' port
+/// <c>daoris place commits</c> (PROCESS1a; FOUNDATION1 mod-iii): the workplace's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="CommitRules"/>).
 /// </summary>
 public sealed class CommitsVerb : ChoiceVerb
@@ -20,8 +20,8 @@ public sealed class CommitsVerb : ChoiceVerb
         string[] valued = ["--workspace", "--mode", "--convention"];
         const string usage = "`driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or "
             + "--convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — "
-            + "e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`.";
-        Flags(args, valued, ["--clear", "--no-convention"], "commits", usage);
+            + "e.g. `daoris place commits web-app --mode ask --convention \"Imperative subject line.\"`.";
+        Flags(args, valued, ["--clear", "--no-convention"], "place commits", usage);
         var workspace = FlagValue(args, "--workspace");
         var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
         var clear = args.Contains("--clear");
@@ -74,7 +74,7 @@ public sealed class CommitsVerb : ChoiceVerb
         foreach (var (workspace, rule) in choices.WorkspaceCommits) Say($"  commits    workspace {workspace}  {CommitRules.Listed(rule)}  (for each repository there that sets none)");
         if (choices.Commits.Count == 0 && choices.WorkspaceCommits.Count == 0)
         {
-            Say("  commits    none set — work is committed as it goes; `daoris driver commits <repository> "
+            Say("  commits    none set — work is committed as it goes; `daoris place commits <repository> "
                 + "--mode ask|at-end` sets one");
         }
     }

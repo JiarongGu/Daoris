@@ -8,7 +8,7 @@ import { dataParts, dataText, LOG_FILTERS, LogList, type LogFilters, type LogRea
 
 // LOG1c (D94): Settings → Logs, the screen's door to the machine log — the recent lines newest first,
 // the terminal's filters, a count per level, and the folder. Drawn from props: SettingsView holds the
-// bridge, and `daoris-driver logs` is the terminal's door to the same reading (D50).
+// bridge, and `daoris logs` is the terminal's door to the same reading (D50).
 
 const READING: LogReading = {
   folder: 'C:/somewhere/data/logs',
@@ -51,7 +51,7 @@ describe('the logs domain', () => {
   it('sets the terminal twin in its opening as code', () => {
     draw();
 
-    expect(screen.getByText(code('daoris-driver logs'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris logs'))).toBeInTheDocument();
     expect(screen.queryByText(/`/)).toBeNull();
   });
 

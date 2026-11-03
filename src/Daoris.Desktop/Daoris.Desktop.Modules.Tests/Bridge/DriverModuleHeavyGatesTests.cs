@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// This machine's heavy gates for a repository over the bridge (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): <c>SET_HEAVY_GATES</c>, the
-/// setup page's half of <c>daoris-driver heavy</c>, over the same key in the same file (D50), a repository's whole list at once; the
+/// setup page's half of <c>daoris place heavy</c>, over the same key in the same file (D50), a repository's whole list at once; the
 /// state answering each repository's list as rows, in its order, so no key policy on the bridge respells a repository's name; a list
 /// the mapping does not read refused in <see cref="HeavyMapping"/>'s words with nothing written. Edits to <c>driver.json</c> only.
 /// </summary>

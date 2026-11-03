@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 2): the person's own door to a helper, <c>daoris-driver sessions helper &lt;session&gt; "&lt;question&gt;"
+/// MIXAGENT2a-ii (D163 point 2): the person's own door to a helper, <c>daoris session helper &lt;session&gt; "&lt;question&gt;"
 /// [--agent &lt;name&gt;]</c>. It writes the ask a connector's <c>helper_ask</c> writes, as the person (<c>askedBy: person</c>), for the
 /// driver's look to take; it judges only what the file's reader cannot, since the person is the one asking: the session is one of
 /// this machine's that may ask, and the question is a question.

@@ -13,17 +13,17 @@
         "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
-        "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
+        "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
-        "             `daoris driver drive <repository>` opts one in.",
-        "  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one",
-        "  review     none set — work is offered to land once its quest is done; `daoris driver review <repository> <environment> --kind local|deployed --procedure <path>` declares one",
+        "             `daoris place drive <repository>` opts one in.",
+        "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
+        "  review     none set — work is offered to land once its quest is done; `daoris place review <repository> <environment> --kind local|deployed --procedure <path>` declares one",
         "  opinion    none set — no other agent reads work before it lands; `daoris place opinion <repository> --agents <adapter>` declares one",
-        "  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> --mode on|off` sets one",
-        "  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris driver handover <repository> --mode on|off` sets one",
-        "  brainstorms  none set — ask; the agents each request names; 10 minutes a pass, 10 the synthesis, 10 the challenge, 30 the request; `daoris driver brainstorms --agents <a,b>` sets one",
-        "  commits    none set — work is committed as it goes; `daoris driver commits <repository> --mode ask|at-end` sets one"
+        "  helpers    none set — each helper an agent asks for waits for your yes; `daoris place helpers <repository> --mode on|off` sets one",
+        "  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris settings handover <repository> --mode on|off` sets one",
+        "  brainstorms  none set — ask; the agents each request names; 10 minutes a pass, 10 the synthesis, 10 the challenge, 30 the request; `daoris settings brainstorms --agents <a,b>` sets one",
+        "  commits    none set — work is committed as it goes; `daoris place commits <repository> --mode ask|at-end` sets one"
       ],
       "err": [],
       "after": null,
@@ -39,17 +39,17 @@
         "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
-        "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
+        "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
-        "             `daoris driver drive <repository>` opts one in.",
-        "  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one",
-        "  review     none set — work is offered to land once its quest is done; `daoris driver review <repository> <environment> --kind local|deployed --procedure <path>` declares one",
+        "             `daoris place drive <repository>` opts one in.",
+        "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
+        "  review     none set — work is offered to land once its quest is done; `daoris place review <repository> <environment> --kind local|deployed --procedure <path>` declares one",
         "  opinion    none set — no other agent reads work before it lands; `daoris place opinion <repository> --agents <adapter>` declares one",
-        "  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> --mode on|off` sets one",
-        "  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris driver handover <repository> --mode on|off` sets one",
-        "  brainstorms  none set — ask; the agents each request names; 10 minutes a pass, 10 the synthesis, 10 the challenge, 30 the request; `daoris driver brainstorms --agents <a,b>` sets one",
-        "  commits    none set — work is committed as it goes; `daoris driver commits <repository> --mode ask|at-end` sets one"
+        "  helpers    none set — each helper an agent asks for waits for your yes; `daoris place helpers <repository> --mode on|off` sets one",
+        "  hand-over  none set — an agent's ask to hand its session over waits for your yes; `daoris settings handover <repository> --mode on|off` sets one",
+        "  brainstorms  none set — ask; the agents each request names; 10 minutes a pass, 10 the synthesis, 10 the challenge, 30 the request; `daoris settings brainstorms --agents <a,b>` sets one",
+        "  commits    none set — work is committed as it goes; `daoris place commits <repository> --mode ask|at-end` sets one"
       ],
       "err": [],
       "after": null,
@@ -69,13 +69,13 @@
         "  strikes    off — a quest is never parked, and it keeps trying at the cost of a login each time",
         "  retried    #q1  (counting from 3 failure(s))",
         "  released   #q2  (your stop of session s1a2b3c4)",
-        "  paused     ask #a1  (since 2026-10-02T08:00:00Z; its pause stopped #q3's session s9) — resume: daoris-driver ask --resume a1",
-        "  paused     quest #q4  (when is not recorded) — resume: daoris-driver quest resume q4",
+        "  paused     ask #a1  (since 2026-10-02T08:00:00Z; its pause stopped #q3's session s9) — resume: daoris ask resume a1",
+        "  paused     quest #q4  (when is not recorded) — resume: daoris quest resume q4",
         "  timeout    90  (no longer limits a session; kept for an older Daoris)",
         "  cooloff    45 minutes an account cools when its agent names no time for its limit",
         "  notify     off  (a session parking, or ending without you asking — not said)",
         "  drivable   engine  (sessions open their own tree — D51)",
-        "  drivable   game  (held by you — `daoris driver resume` releases it)",
+        "  drivable   game  (held by you — `daoris place resume` releases it)",
         "  trees      docs  (sessions there open their own tree when anything spawns one)",
         "  line       engine  develop",
         "  line       workspace aurora  main  (for each repository there that sets none)",
@@ -196,7 +196,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver drive` needs a name — e.g. `daoris driver drive aurora-engine`."
+        "daoris: `driver drive` needs a name — e.g. `daoris place drive aurora-engine`."
       ],
       "after": null
     },
@@ -209,7 +209,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver retry` needs a name — e.g. `daoris driver retry aurora-engine`."
+        "daoris: `driver retry` needs a name — e.g. `daoris quest retry aurora-engine`."
       ],
       "after": null
     },
@@ -259,7 +259,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver trees` needs on|off — e.g. `daoris driver trees aurora-engine on`."
+        "daoris: `driver trees` needs on|off — e.g. `daoris place trees aurora-engine on`."
       ],
       "after": null
     },
@@ -304,7 +304,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver notify` needs on|off — e.g. `daoris driver notify off`."
+        "daoris: `driver notify` needs on|off — e.g. `daoris settings notify off`."
       ],
       "after": null
     },
@@ -332,7 +332,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris driver cap 3`."
+        "daoris: `driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris settings cap 3`."
       ],
       "after": null
     },
@@ -346,55 +346,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris driver cap 3`."
-      ],
-      "after": null
-    },
-    {
-      "name": "strikes 0",
-      "argv": [
-        "strikes",
-        "0"
-      ],
-      "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: this machine never parks a quest — it keeps trying, as it did before this setting.",
-        "  🔴 A quest that fails for a reason no retry can fix will be started again every tick,",
-        "     and every start spends a real login. That is the behaviour this setting exists for.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"strikes\": 0\n}\n"
-    },
-    {
-      "name": "strikes 3",
-      "argv": [
-        "strikes",
-        "3"
-      ],
-      "before": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"2026-10-01T10:00:00.000Z\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"2026-10-02T08:00:00Z\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "exit": 0,
-      "out": [
-        "daoris: a quest is parked after 3 failed session(s), and waits for you.",
-        "  A failure is a session that ended without landing anything. A stand-down, a decline,",
-        "  a stop and a held repository are not failures and never count toward this.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 3,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n"
-    },
-    {
-      "name": "strikes, below zero",
-      "argv": [
-        "strikes",
-        "-1"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver strikes` needs a whole number of failed sessions, 0 or more — e.g. `daoris driver strikes 3`, or `0` to never park a quest."
+        "daoris: `driver cap` needs a whole number of concurrent sessions, at least 1 — e.g. `daoris settings cap 3`."
       ],
       "after": null
     },
@@ -501,7 +453,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--session` needs the session your stop ended — the quest's *Sitting* names it: `daoris driver retry <quest> --session <id>`."
+        "daoris: `--session` needs the session your stop ended — the quest's *Sitting* names it: `daoris quest retry <quest> --session <id>`."
       ],
       "after": null
     },
@@ -522,36 +474,6 @@
         "daoris: a retry either releases your stop (`--session <id>`) or counts the strikes from a mark (`--at <n>`) — a stop is not a strike, so the two never go together."
       ],
       "after": null
-    },
-    {
-      "name": "timeout",
-      "argv": [
-        "timeout",
-        "120"
-      ],
-      "before": null,
-      "exit": 1,
-      "out": [],
-      "err": [
-        "daoris: sessions are no longer limited by time: a working session runs as long as it works, and Daoris looks in on one that has gone quiet and brings it to you; nothing was changed."
-      ],
-      "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The verb is retired: it changes nothing and says why, exit 1."
-    },
-    {
-      "name": "timeout 0",
-      "argv": [
-        "timeout",
-        "0"
-      ],
-      "before": null,
-      "exit": 1,
-      "out": [],
-      "err": [
-        "daoris: sessions are no longer limited by time: a working session runs as long as it works, and Daoris looks in on one that has gone quiet and brings it to you; nothing was changed."
-      ],
-      "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The verb is retired: it changes nothing and says why, exit 1."
     },
     {
       "name": "cooloff",
@@ -579,7 +501,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver cooloff` needs a whole number of minutes, at least 1 — e.g. `daoris driver cooloff 60`; a zero cool-off would start a spent account again at every look."
+        "daoris: `driver cooloff` needs a whole number of minutes, at least 1 — e.g. `daoris settings cooloff 60`; a zero cool-off would start a spent account again at every look."
       ],
       "after": null
     },
@@ -612,7 +534,7 @@
       "exit": 0,
       "out": [
         "daoris: work in repositories in the workspace `aurora` grows from `release` and lands on it.",
-        "  A repository with a line of its own keeps it — `daoris driver line <repository> --clear` hands it back.",
+        "  A repository with a line of its own keeps it — `daoris place line <repository> --clear` hands it back.",
         "  A session already running keeps the line it started from.",
         "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
       ],
@@ -664,7 +586,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver line` needs <repository>|--workspace <name>, then <branch>|--clear — e.g. `daoris driver line aurora-engine develop`."
+        "daoris: `driver line` needs <repository>|--workspace <name>, then <branch>|--clear — e.g. `daoris place line aurora-engine develop`."
       ],
       "after": null
     },
@@ -779,7 +701,7 @@
         "  from the session's branch, with nothing merged and no checkout touched. You push it and open",
         "  the pull request: Daoris never pushes (D87).",
         "  `{ticket}` is the first match of `[A-Z][A-Z0-9]+-\\d+` in the title, then the request, then its links, as written (the default shape); where none is found, the session's id stands in.",
-        "  A repository with a rule of its own keeps it — `daoris driver landing <repository> --clear` hands it back.",
+        "  A repository with a rule of its own keeps it — `daoris place landing <repository> --clear` hands it back.",
         "  Written to <config> — the review reads it at each press, so nothing restarts."
       ],
       "err": [],
@@ -825,7 +747,7 @@
         "  from the session's branch, with nothing merged and no checkout touched. You push it and open",
         "  the pull request: Daoris never pushes (D87).",
         "  Accept automatically: when a quest here is done, its work is put on its branch, and nothing leaves this machine: no plugin opens a pull request, so each done's branch waits here for you to push it. Switch it off to accept each one yourself.",
-        "  A repository with a rule of its own keeps it — `daoris driver landing <repository> --clear` hands it back.",
+        "  A repository with a rule of its own keeps it — `daoris place landing <repository> --clear` hands it back.",
         "  Written to <config> — the review reads it at each press, so nothing restarts."
       ],
       "err": [],
@@ -908,7 +830,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — e.g. `daoris driver landing --workspace aurora branch \"feature/{quest}-{slug}\"`, and on a branch `--plugin <id>` for an installed plugin that pushes it and opens the pull request, `--auto-accept` for a quest's done to land it with no press, `--key <shape>` for the shape `{ticket}` is found by, and `--squash` for the pull request's branch as one commit."
+        "daoris: `driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — e.g. `daoris place landing --workspace aurora branch \"feature/{quest}-{slug}\"`, and on a branch `--plugin <id>` for an installed plugin that pushes it and opens the pull request, `--auto-accept` for a quest's done to land it with no press, `--key <shape>` for the shape `{ticket}` is found by, and `--squash` for the pull request's branch as one commit."
       ],
       "after": null
     },
@@ -1136,7 +1058,7 @@
       "exit": 0,
       "out": [
         "daoris: each checkout in the workspace `aurora` that sets none of its own is read by no agent outside it: no session in another repository, and not Ask Daoris.",
-        "  A repository with a setting of its own keeps it — `daoris driver across <repository> read --clear` hands it back.",
+        "  A repository with a setting of its own keeps it — `daoris place across <repository> read --clear` hands it back.",
         "  A session already running keeps what it started with.",
         "  Written to <config> — the driver reads it at every start, so nothing restarts."
       ],
@@ -1176,7 +1098,7 @@
         "daoris: sessions in `game` may also write into `tools` — its files, and a commit there —",
         "  where both are in one workspace with a checkout here. This is your standing say-so for writing",
         "  across; it has one direction, so `tools` writes nothing into `game` unless you declare that too.",
-        "  `daoris driver across game write-to tools --clear` takes it back.",
+        "  `daoris place across game write-to tools --clear` takes it back.",
         "  Written to <config> — the driver reads it at every start, so nothing restarts."
       ],
       "err": [],
@@ -1229,7 +1151,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: a relationship is declared from one repository — `daoris driver across <repository> write-to <other>`."
+        "daoris: a relationship is declared from one repository — `daoris place across <repository> write-to <other>`."
       ],
       "after": null
     },
@@ -1242,7 +1164,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver across` needs <repository>|--workspace <name>, then read on|off|--clear or write-to <other> [--clear] — e.g. `daoris driver across engine read off`."
+        "daoris: `driver across` needs <repository>|--workspace <name>, then read on|off|--clear or write-to <other> [--clear] — e.g. `daoris place across engine read off`."
       ],
       "after": null
     },
@@ -1257,7 +1179,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver across` sets read or write-to, not `sideways` — e.g. `daoris driver across engine read off`, `daoris driver across plugins write-to engine`."
+        "daoris: `driver across` sets read or write-to, not `sideways` — e.g. `daoris place across engine read off`, `daoris place across plugins write-to engine`."
       ],
       "after": null
     },
@@ -1272,7 +1194,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver across … read` needs on|off|--clear — e.g. `daoris driver across engine read off`."
+        "daoris: `driver across … read` needs on|off|--clear — e.g. `daoris place across engine read off`."
       ],
       "after": null
     },
@@ -1322,7 +1244,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver standing` needs <repository>, then the answer in your words, or --clear — e.g. `daoris driver standing work-app \"dev writes allowed; test locally against dev; prod only on a yes\"`."
+        "daoris: `driver standing` needs <repository>, then the answer in your words, or --clear — e.g. `daoris place standing work-app \"dev writes allowed; test locally against dev; prod only on a yes\"`."
       ],
       "after": null
     },
@@ -1374,7 +1296,7 @@
         "daoris: sessions in each repository in the workspace `aurora` that sets none of its own write to you in English: their questions, closing notes, decline reasons and last words.",
         "  One line in each instruction asks it; code, commands and anything quoted stay as written. The window's own",
         "  language is Settings → Appearance, and neither sets the other.",
-        "  A repository with a language of its own keeps it — `daoris driver language <repository> --clear` hands it back.",
+        "  A repository with a language of its own keeps it — `daoris place language <repository> --clear` hands it back.",
         "  A session already running keeps what it was handed.",
         "  Written to <config> — the driver reads it at every start, so nothing restarts."
       ],
@@ -1441,7 +1363,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver language` needs <repository>|--workspace <name>, then en|zh|--clear — e.g. `daoris driver language aurora-engine zh`."
+        "daoris: `driver language` needs <repository>|--workspace <name>, then en|zh|--clear — e.g. `daoris place language aurora-engine zh`."
       ],
       "after": null
     },
@@ -1487,7 +1409,7 @@
         "daoris: `storefront` declares the review environment `local`, its default.",
         "  Before work here lands, it is shown to you in `local` and waits for you to say it is right.",
         "  A set-up step here builds the work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own servers and processes are not touched.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
         "  `README.md` is in `storefront`'s checkout here.",
         "  Written to <config>."
       ],
@@ -1577,7 +1499,7 @@
         "daoris: `away` declares the review environment `dev`, its default.",
         "  When a task asks for it, work here may be shown to you in `dev`; nothing waits for it.",
         "  A set-up step here follows `docs/deploy.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
         "  Not checked: `away` has no checkout on this machine; a set-up step sits until its tree holds `docs/deploy.md`.",
         "  Written to <config>."
       ],
@@ -1624,8 +1546,8 @@
         "daoris: repositories in the workspace `shop` that set none of their own declare the review environment `dev`, their default.",
         "  When a task asks for it, work here may be shown to you in `dev`; nothing waits for it.",
         "  A set-up step here follows `docs/deploy.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
-        "  A repository with a rule of its own keeps it — `daoris driver review <repository> --clear` hands it back.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  A repository with a rule of its own keeps it — `daoris place review <repository> --clear` hands it back.",
         "  `basket` holds no `docs/deploy.md` here: its set-up steps sit until it does.",
         "  Written to <config>."
       ],
@@ -1674,8 +1596,8 @@
         "daoris: repositories in the workspace `shop` that set none of their own declare the review environment `local`, their default.",
         "  When a task asks for it, work here may be shown to you in `local`; nothing waits for it.",
         "  A set-up step here builds the work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own servers and processes are not touched.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
-        "  A repository with a rule of its own keeps it — `daoris driver review <repository> --clear` hands it back.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  A repository with a rule of its own keeps it — `daoris place review <repository> --clear` hands it back.",
         "  Every repository of the workspace `shop` with a checkout here holds `README.md`.",
         "  Written to <config>."
       ],
@@ -1699,7 +1621,7 @@
         "daoris: `storefront` declares the review environment `dev`, its default.",
         "  When a task asks for it, work here may be shown to you in `dev`; nothing waits for it.",
         "  A set-up step here follows `docs/deploy.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
         "  Not checked: the registry could not be read — the service did not answer; a set-up step sits until its tree holds `docs/deploy.md`.",
         "  Written to <config>."
       ],
@@ -1747,7 +1669,7 @@
         "  A task may ask for `dev` instead.",
         "  A set-up step here builds the work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own servers and processes are not touched.",
         "  A set-up step here follows `docs/deploy.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
         "  `docs/deploy.md` is in `storefront`'s checkout here.",
         "  Written to <config>."
       ],
@@ -1785,7 +1707,7 @@
         "daoris: `storefront` no longer declares `local`; `dev` is its default now.",
         "  Before work here lands, it is shown to you in `dev` and waits for you to say it is right.",
         "  A set-up step here follows `docs/deploy.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
         "  Written to <config>."
       ],
       "err": [],
@@ -1804,7 +1726,7 @@
         "daoris: `storefront`'s review rule is not required now.",
         "  When a task asks for it, work here may be shown to you in `local`; nothing waits for it.",
         "  A set-up step here builds the work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own servers and processes are not touched.",
-        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. No set-up step is composed for you yet.",
+        "  Where work here waits for your review, it lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. No set-up step is composed for you yet.",
         "  Written to <config>."
       ],
       "err": [],
@@ -1869,7 +1791,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver review` needs <repository>|--workspace <name>, then <environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required], or none, --drop <environment>, --required|--not-required, or --clear — e.g. `daoris driver review storefront dev --kind local --procedure README.md --address http://localhost:4200 --required`."
+        "daoris: `driver review` needs <repository>|--workspace <name>, then <environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required], or none, --drop <environment>, --required|--not-required, or --clear — e.g. `daoris place review storefront dev --kind local --procedure README.md --address http://localhost:4200 --required`."
       ],
       "after": null
     },
@@ -2240,7 +2162,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--modes` is not a flag `place helpers` takes — `driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`."
+        "daoris: `--modes` is not a flag `place helpers` takes — `driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, or --clear — e.g. `daoris place helpers web-app --mode on --agents codex-acp`."
       ],
       "after": null
     },
@@ -2254,7 +2176,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`."
+        "daoris: `driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, or --clear — e.g. `daoris place helpers web-app --mode on --agents codex-acp`."
       ],
       "after": null
     },
@@ -2358,7 +2280,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--agents` is not a flag `settings handover` takes — `driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. `daoris driver handover web-app --mode on`."
+        "daoris: `--agents` is not a flag `settings handover` takes — `driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. `daoris settings handover web-app --mode on`."
       ],
       "after": null
     },
@@ -2372,7 +2294,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. `daoris driver handover web-app --mode on`."
+        "daoris: `driver handover` needs <repository>|--workspace <name>, then --mode ask|on|off, or --clear — e.g. `daoris settings handover web-app --mode on`."
       ],
       "after": null
     },
@@ -2494,7 +2416,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or --convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`."
+        "daoris: `driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or --convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — e.g. `daoris place commits web-app --mode ask --convention \"Imperative subject line.\"`."
       ],
       "after": null
     },
@@ -2510,7 +2432,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--style` is not a flag `place commits` takes — `driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or --convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`."
+        "daoris: `--style` is not a flag `place commits` takes — `driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or --convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — e.g. `daoris place commits web-app --mode ask --convention \"Imperative subject line.\"`."
       ],
       "after": null
     },
@@ -2539,13 +2461,13 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris driver keep set-aside …` changes it)",
-        "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris driver keep downloads …` changes it)",
-        "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris driver keep browser-cache …` changes it)",
-        "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris driver keep logs …` changes it)",
-        "  history    finished work's records stay until you clear them  (the default — `daoris driver keep history …` changes it)",
-        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris driver keep allowance …` changes it)",
-        "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris driver keep floor …` changes it)"
+        "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris settings keep set-aside …` changes it)",
+        "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris settings keep downloads …` changes it)",
+        "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris settings keep browser-cache …` changes it)",
+        "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris settings keep logs …` changes it)",
+        "  history    finished work's records stay until you clear them  (the default — `daoris settings keep history …` changes it)",
+        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris settings keep allowance …` changes it)",
+        "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris settings keep floor …` changes it)"
       ],
       "err": [],
       "after": null
@@ -2559,13 +2481,13 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  set-aside  a tree's folder moved aside is kept 30 days, whole  (set — `daoris driver keep set-aside default` takes the default again)",
-        "  downloads  a downloaded version nothing uses stays until you remove it  (set — `daoris driver keep downloads default` takes the default again)",
-        "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris driver keep browser-cache …` changes it)",
-        "  logs       each day's file of the machine log is kept 14 days  (set — `daoris driver keep logs default` takes the default again)",
-        "  history    finished work's records go 365 days after their last move, through the clear, each refusal holding  (set — `daoris driver keep history default` takes the default again)",
-        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris driver keep allowance …` changes it)",
-        "  floor      below 15% of a volume free, Daoris tells you  (set — `daoris driver keep floor default` takes the default again)"
+        "  set-aside  a tree's folder moved aside is kept 30 days, whole  (set — `daoris settings keep set-aside default` takes the default again)",
+        "  downloads  a downloaded version nothing uses stays until you remove it  (set — `daoris settings keep downloads default` takes the default again)",
+        "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris settings keep browser-cache …` changes it)",
+        "  logs       each day's file of the machine log is kept 14 days  (set — `daoris settings keep logs default` takes the default again)",
+        "  history    finished work's records go 365 days after their last move, through the clear, each refusal holding  (set — `daoris settings keep history default` takes the default again)",
+        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris settings keep allowance …` changes it)",
+        "  floor      below 15% of a volume free, Daoris tells you  (set — `daoris settings keep floor default` takes the default again)"
       ],
       "err": [],
       "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    },\n    \"floor\": {\n      \"percent\": 15\n    }\n  }\n}\n"
@@ -2737,7 +2659,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris settings keep set-aside 30`."
       ],
       "after": null
     },
@@ -2799,7 +2721,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `trees` is no kind whose rule you set here: name `set-aside`, `downloads`, `browser-cache`, `logs`, `history`, `allowance` or `floor`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `trees` is no kind whose rule you set here: name `set-aside`, `downloads`, `browser-cache`, `logs`, `history`, `allowance` or `floor`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris settings keep set-aside 30`."
       ],
       "after": null
     },
@@ -2842,36 +2764,6 @@
       ],
       "err": [],
       "after": null
-    },
-    {
-      "name": "actor, an order set, retired",
-      "argv": [
-        "actor",
-        "build",
-        "claude-code opus high"
-      ],
-      "before": "{\n  \"adapter\": \"claude-code\"\n}\n",
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `settings actor` is retired: a role's agents are set through the role door, `daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris role <role>`; nothing was changed."
-      ],
-      "after": "{\n  \"adapter\": \"claude-code\"\n}\n",
-      "changed": "ONEWAY1a (the oneway design §2 S1): a role's order is set through the role door alone; the verb is refused naming it, and the file stays as it was."
-    },
-    {
-      "name": "actor, a read, retired",
-      "argv": [
-        "actor"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `settings actor` is retired: a role's agents are set through the role door, `daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris role <role>`; nothing was changed."
-      ],
-      "after": null,
-      "changed": "ONEWAY1a (the oneway design §2 S1): `daoris role` says each role's order; the verb is refused naming it."
     }
   ]
 }

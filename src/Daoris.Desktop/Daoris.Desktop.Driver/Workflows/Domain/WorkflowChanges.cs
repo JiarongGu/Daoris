@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The change language <c>daoris driver workflow edit</c> takes (PUSH1f2b; D157, the workflow design §4.7), applied to a version's
+/// The change language <c>daoris workflow edit</c> takes (PUSH1f2b; D157, the workflow design §4.7), applied to a version's
 /// steps as saved, in order, all making one version: <c>add &lt;kind&gt; --after &lt;step&gt; [--id &lt;id&gt;] [&lt;field&gt;=&lt;value&gt;…]</c>,
 /// <c>remove &lt;step&gt;</c>, <c>set &lt;step&gt; &lt;field&gt;=&lt;value&gt;…</c>, <c>move &lt;step&gt; --after &lt;step&gt;</c>, <c>on &lt;step&gt;
 /// failed=…</c>. A value is read by its field's type (a switch, a list of names by commas); an empty value clears the field. What the
@@ -13,7 +13,7 @@ public static class WorkflowChanges
 {
     /// <summary>The language, as a refusal names it.</summary>
     public const string Said = "a change is add <kind> --after <step> [--id <id>] [<field>=<value>…], remove <step>, set <step> "
-        + "<field>=<value>…, move <step> --after <step>, or on <step> failed=wait|send-back|stop — e.g. `daoris driver workflow "
+        + "<field>=<value>…, move <step> --after <step>, or on <step> failed=wait|send-back|stop — e.g. `daoris workflow "
         + "edit docs --base 1 remove look set landing accept=automatic`.";
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal) { "add", "remove", "set", "move", "on" };

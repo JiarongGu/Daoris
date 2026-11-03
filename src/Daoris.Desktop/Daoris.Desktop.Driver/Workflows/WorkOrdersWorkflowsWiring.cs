@@ -16,7 +16,7 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
     {
         if (WorkflowStore.Load(home, workflow) is not { } found)
         {
-            return $"No workflow `{workflow}` is saved here: `daoris driver workflow list` names them. Nothing was kept.";
+            return $"No workflow `{workflow}` is saved here: `daoris workflow list` names them. Nothing was kept.";
         }
 
         if (found.Read.Problem is { } unread) return $"`{workflow}` cannot be read: {unread} Nothing was kept.";

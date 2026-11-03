@@ -18,7 +18,7 @@ public sealed record HistoryAsk(HistoryScope Scope, string? Id)
 }
 
 /// <summary>
-/// <c>daoris-driver history</c>, <c>history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c> (HIST1d,
+/// <c>daoris history</c>, <c>history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c> (HIST1d,
 /// D153 point 7; the history-clearing design §6.2, D50): the terminal's door to <see cref="HistoryClearing"/>, which the screen's
 /// <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c> call too, so a machine with no screen clears as the window does. In the library,
 /// so its words are held by a test.
@@ -44,9 +44,9 @@ public static class HistoryCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver history [--workspace <name>] [--json]
-               daoris-driver history clear --workspace <name> [--yes]
-               daoris-driver quest clear <id> [--failed] [--yes]  ·  daoris-driver ask --clear <id> [--yes]
+        usage: daoris history [--workspace <name>] [--json]
+               daoris history clear --workspace <name> [--yes]
+               daoris quest clear <id> [--failed] [--yes]  ·  daoris ask clear <id> [--yes]
         """;
 
     /// <summary>Whether the words after <c>quest</c> or <c>ask</c> name a clear, rightly or not: <c>clear</c>, or <c>--clear</c>.</summary>
@@ -256,7 +256,7 @@ public static class HistoryCommand
         if (reading.Conversations > 0)
         {
             lines.Add($"  {Count(reading.Conversations, "conversation that served no quest", "conversations that served no quest")}, "
-                      + $"{Size(reading.ConversationBytes)}: a clear never takes one; `daoris-driver sessions delete <id>` does.");
+                      + $"{Size(reading.ConversationBytes)}: a clear never takes one; `daoris session delete <id>` does.");
         }
 
         return lines;
@@ -274,14 +274,14 @@ public static class HistoryCommand
     private static string Because(string word) => word switch
     {
         HistoryWords.Open => "it is still open or taken: its record is work in progress.",
-        HistoryWords.Asked => "an ask asked it; `daoris-driver ask --clear <id>` clears the ask with every quest it became.",
-        HistoryWords.Live => "a session still runs, or its work is still being landed; `daoris-driver sessions stop <id>` stops one.",
-        HistoryWords.NeedsYou => "something of it waits on you; `daoris-driver sessions --group you` lists the sessions that do.",
+        HistoryWords.Asked => "an ask asked it; `daoris ask clear <id>` clears the ask with every quest it became.",
+        HistoryWords.Live => "a session still runs, or its work is still being landed; `daoris session stop <id>` stops one.",
+        HistoryWords.NeedsYou => "something of it waits on you; `daoris session list --group you` lists the sessions that do.",
         HistoryWords.Awaited => "open work waits on its answer or builds on it.",
-        HistoryWords.TreeHere => "a session's tree is still here; `daoris-driver trees clean` removes it once its work has landed, or "
-                                 + "`daoris-driver trees remove <session> --force` discards it.",
-        HistoryWords.LandingStands => "a landing's branch still stands; `daoris-driver trees clean` removes it once it has merged.",
-        HistoryWords.Unpushed => "its last moves have not reached the remote; `daoris-driver sync`, then clear it.",
+        HistoryWords.TreeHere => "a session's tree is still here; `daoris tree clean` removes it once its work has landed, or "
+                                 + "`daoris tree remove <session> --force` discards it.",
+        HistoryWords.LandingStands => "a landing's branch still stands; `daoris tree clean` removes it once it has merged.",
+        HistoryWords.Unpushed => "its last moves have not reached the remote; `daoris remote sync`, then clear it.",
         HistoryWords.NotOurs => "a teammate's record, which is theirs.",
         HistoryWords.Unknown => "this machine no longer holds it.",
         _ => $"the service keeps it (`{word}`).",
@@ -499,10 +499,10 @@ public static class HistoryCommand
     /// </summary>
     internal static string Door(HistoryScope scope, string id) => scope switch
     {
-        HistoryScope.Ask => $"daoris-driver ask --clear {id} --yes",
-        HistoryScope.Failed => $"daoris-driver quest clear {id} --failed --yes",
-        HistoryScope.Workspace => $"daoris-driver history clear --workspace {ShellWord.Of(id, ShellWord.Workspace)}",
-        _ => $"daoris-driver quest clear {id} --yes",
+        HistoryScope.Ask => $"daoris ask clear {id} --yes",
+        HistoryScope.Failed => $"daoris quest clear {id} --failed --yes",
+        HistoryScope.Workspace => $"daoris history clear --workspace {ShellWord.Of(id, ShellWord.Workspace)}",
+        _ => $"daoris quest clear {id} --yes",
     };
 
     internal static string? Count(int count, string noun, string? nouns = null) => count switch

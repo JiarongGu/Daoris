@@ -5,7 +5,7 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// Ask Daoris's <c>ask_propose</c> (HELP1c): the <c>ask</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAsk"/>, with
-/// the review choice the person said and their words (ENTRY1c), as the composer and <c>daoris-driver ask --review</c> send them.
+/// the review choice the person said and their words (ENTRY1c), as the composer and <c>daoris ask --review</c> send them.
 /// </summary>
 [McpServerToolType]
 public sealed class HelpAskTool(IntakeScope? intake = null, HelpProposalBox? help = null)

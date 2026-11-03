@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// MSG1g's door (D137 §2.2, D50): *Go on in a new session*. Words a resume holds while the account its session ran on cools
 /// go on now in a new session, handed them, without that conversation. The person's choice is kept by the words' ids with when
 /// it was given (D143 point 4), and the driver's next look carries the words on; what cannot is refused by a code, before
-/// anything is kept. The library's door, which the modules' route and <c>daoris-driver sessions go-on-new</c> both call.
+/// anything is kept. The library's door, which the modules' route and <c>daoris session go-on-new</c> both call.
 /// </summary>
 /// <remarks>In-process: the service is a stand-in reached through the real client, and the cool-off is handed in. The fast half.</remarks>
 public sealed class GoOnNewTests : IDisposable
@@ -88,14 +88,14 @@ public sealed class GoOnNewTests : IDisposable
         { "st00d000", WordsNever.StoodDown, "it stood down: #q3 is someone else's, so it has nothing to go on with." },
         { "e4rl1er0", WordsNever.Superseded, "#q2 went on in a later session here, l4t3r000, and its words go there." },
         { "h4nd3d00", WordsNever.Continued, "h4nd3d00 went on in conversation m0v3d000; say it to that one." },
-        { "qu1et000", GoOnNew.NoWords, "no words wait on qu1et000 to go on with: `daoris-driver sessions say qu1et000 \"…\"` says some." },
+        { "qu1et000", GoOnNew.NoWords, "no words wait on qu1et000 to go on with: `daoris session say qu1et000 \"…\"` says some." },
         { "w0rk1ng0", GoOnNew.Running, "w0rk1ng0 is working: words reach it there, so it needs no new session." },
         { "ch4t0000", GoOnNew.Conversation,
             "ch4t0000 is a conversation, which nothing carries on by itself: start a conversation with these words instead: "
-            + "`daoris-driver sessions start-from ch4t0000`." },
+            + "`daoris session start-from ch4t0000`." },
         { "cl0sed00", GoOnNew.Closed,
             "#q4 has closed, so nothing carries its session's words on by itself: start a conversation with them instead: "
-            + "`daoris-driver sessions start-from cl0sed00`." },
+            + "`daoris session start-from cl0sed00`." },
     };
 
     /// <summary>
@@ -235,7 +235,7 @@ public sealed class GoOnNewTests : IDisposable
         Assert.False(new NewSessionChoices(_home).Covers(Waiting("w1")));
     }
 
-    // ——— The terminal's door (D50): `daoris-driver sessions go-on-new <id>`.
+    // ——— The terminal's door (D50): `daoris session go-on-new <id>`.
 
     [Fact]
     public void The_terminal_reads_one_session_s_id_and_its_usage_says_the_verb()

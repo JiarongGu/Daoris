@@ -84,7 +84,7 @@ public sealed class DriverLoopLockTests : Bridge
     [Fact]
     public async Task The_desktops_start_waits_on_a_verbs_hold_and_says_so_once_it_lasts()
     {
-        Plant("verb", "daoris-driver trees sync");
+        Plant("verb", "daoris tree sync");
 
         using var closing = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var holding = Loop(tellAfter: TimeSpan.FromMilliseconds(800)).HoldHomeAsync(closing.Token);
@@ -95,7 +95,7 @@ public sealed class DriverLoopLockTests : Bridge
 
         await UntilAsync(() => Said().Any());
         var said = Assert.Single(Said());
-        Assert.Contains("a terminal's `daoris-driver trees sync`", said);
+        Assert.Contains("a terminal's `daoris tree sync`", said);
         Assert.Contains("has not let it go", said);
 
         File.Delete(LeaseFile);

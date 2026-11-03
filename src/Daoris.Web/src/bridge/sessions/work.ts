@@ -6,7 +6,7 @@ import { call, lookBound } from '../call';
 
 // The work of an ask or a quest on this machine (MOD3; PAUSE1e, D132 §7.3): what it holds and what a pause and an abandon
 // would do with each piece, a pause, a resume and an abandon. The driver library's `WorkPausing` and `WorkAbandoning`
-// answer each, which `daoris-driver ask --pause|--resume|--abandon` and `quest pause|resume|abandon` call too (D50).
+// answer each, which `daoris ask pause|--resume|--abandon` and `quest pause|resume|abandon` call too (D50).
 
 /**
  * The shapes the routes answer live with the screen's own rule (`work/pausing/pausing.ts`), since a molecule may read a shape and

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver ask --set-workflow</c> was asked: the ask, the kind and workflow (neither clears), and the words.</summary>
+/// <summary>What <c>daoris ask workflow</c> was asked: the ask, the kind and workflow (neither clears), and the words.</summary>
 public sealed record AskWorkflowAsk(string Ask, string? Kind, string? Workflow, string? Words);
 
 /// <summary>
@@ -11,8 +11,8 @@ public sealed record AskWorkflowWorld(ServiceClient Service, Func<DriverConfig> 
 
 /// <summary>
 /// The ask's kind and workflow at a terminal (WORKFLOW1e, D157 point 10; the workflow design §4.1 row 1, §4.3, D50):
-/// <c>daoris-driver ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]</c> with a new ask, and
-/// <c>daoris-driver ask --set-workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]</c> on one.
+/// <c>daoris ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]</c> with a new ask, and
+/// <c>daoris ask workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]</c> on one.
 /// The latest stands, and reaches every chain the ask publishes whose work has not started.
 /// </summary>
 /// <remarks>
@@ -81,7 +81,7 @@ public static class AskWorkflowCommand
             if (shared?.KindOf(kind) is null)
             {
                 var spelled = ShellWord.Of(named, "<workspace>");
-                return $"{WorkflowKey.UndeclaredInWorkspace(named, kind)} `daoris driver workflow kind {spelled} {kind} "
+                return $"{WorkflowKey.UndeclaredInWorkspace(named, kind)} `daoris workflow kind {spelled} {kind} "
                        + "--label \"…\"` declares one. Nothing was kept.";
             }
         }

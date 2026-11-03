@@ -35,7 +35,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         // HELPMODE1a1 (D183 point 2): asked to clean up a tree Daoris made, the helper said it could change nothing and listed
         // commands, and never that this was a mode the person could change. Said, and where; full access is never proposed.
         text.Append("This is restricted mode. In full access you would act on this machine yourself; only the person chooses it,\n");
-        text.Append("with `daoris-driver help mode full`, from the next conversation's start. When they ask why you cannot do\n");
+        text.Append("with `daoris ask-daoris mode full`, from the next conversation's start. When they ask why you cannot do\n");
         text.Append("something yourself, say so and where it is chosen: it is never yours to propose.\n\n");
         // HELPMODE1c2a (D183's note): a discard of a session branch granted is the helper's to do through its tool.
         var discards = machine.Housekeeping.Contains(ConfiguredAccess.DiscardBranch);
@@ -168,7 +168,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.
             text.Append("Reading the checkouts here is switched off. The person turns it on for a repository under\n");
             text.Append("Repositories → the repository's page → Setup → Reach, and for a whole workspace under\n");
-            text.Append("Repositories → the workspace's page → Setup → Defaults → Read by agents outside, or with `daoris driver across <repository> read on`\n");
+            text.Append("Repositories → the workspace's page → Setup → Defaults → Read by agents outside, or with `daoris place across <repository> read on`\n");
             text.Append("(`--workspace <name>` in place of the repository for a whole workspace).\n\n");
         }
 
@@ -246,8 +246,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     {
         var text = new StringBuilder();
         text.Append("## What you may do\n\n");
-        text.Append("You act on this machine yourself, as the person chose: a shell, file edits, Daoris's own commands (`daoris`,\n");
-        text.Append("`daoris-driver`) and the plugins' servers below, with no asking. What you do is your own act, not a proposal,\n");
+        text.Append("You act on this machine yourself, as the person chose: a shell, file edits, Daoris's own command (`daoris`)\n");
+        text.Append("and the plugins' servers below, with no asking. What you do is your own act, not a proposal,\n");
         text.Append("so say what you will do before you do it, and what you did after; the proposal tools (below) still serve\n");
         text.Append("where the person would rather press it themselves. Read the family through `daoris-knowledge` (the registry,\n");
         text.Append("its knowledge, its quests) when the question needs more than this page.\n\n");

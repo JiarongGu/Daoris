@@ -14,7 +14,7 @@ Tracked here as an example, it does nothing on its own. It runs only when **both
 
 1. you installed it: `daoris plugin add examples/plugins/azure-devops-pull-request` (or copied the
    folder under the Daoris home's `plugins/`), and it is not switched off;
-2. a landing rule names it: `daoris driver landing --workspace <name> branch "feature/{quest}-{slug}"
+2. a landing rule names it: `daoris place landing --workspace <name> branch "feature/{quest}-{slug}"
    --plugin azure-devops-pull-request`, or Settings → Workspace → How work lands.
 
 Installed and not named, it is never started: the driver loop keeps no process for a plugin that
@@ -91,7 +91,7 @@ commit the pull request merged. A reading that is wrong keeps the branch.
 
 - **The tools its `plugin.json` declares under `tools`**, each at the version it names or newer, with Azure
   CLI's devops extension added, `az extension add --name azure-devops`, and Azure CLI signed in, `az login`.
-  `daoris-driver plugins try azure-devops-pull-request` checks them on this machine.
+  `daoris plugin try azure-devops-pull-request` checks them on this machine.
   The plugin's page in Daoris shows each and, on *Check*, where it stands: *Set up* adds the devops extension and *Sign in* runs
   `az login`, each in a console you see, only on your press. Daoris never signs in for you. Where `az` is not found the page says how to get
   it, from the manifest's `install`: `winget install -e --id Microsoft.AzureCLI` on Windows, `brew install azure-cli` on macOS, and
@@ -130,8 +130,8 @@ calls above, the checks, and the version question Daoris asks.
 
 The branch Daoris made **always stands**. A push that fails answers *not pushed* with git's reason; an
 `az` that fails after the push answers *pushed*, with `az`'s reason and no pull request. Either way the
-review and `daoris-driver trees land` say the plugin's step did not finish and how to push the branch
-yourself, and once the cause is fixed the review's *hand it to* or `daoris-driver trees hand <session>`
+review and `daoris tree land` say the plugin's step did not finish and how to push the branch
+yourself, and once the cause is fixed the review's *hand it to* or `daoris tree hand <session>`
 gives the branch to the plugin again. On Windows `az` is a `.cmd` script, so it is run through `cmd`: a title's or a line's double
 quotes become single ones and a percent sign is spelled out, because cmd would read them.
 

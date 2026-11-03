@@ -612,7 +612,7 @@ export const useOpenSessionFolder = () => useMutation({
 /**
  * *Go on in a new session* (MSG1g, D137 §2.2): words a resume holds while the account their session ran on cools go on in a
  * new session at the driver's next look, handed them, without that conversation. By the session's id alone: the driver
- * judges it and keeps the person's choice, the door `daoris-driver sessions go-on-new` calls too (D50). Read field by field,
+ * judges it and keeps the person's choice, the door `daoris session go-on-new` calls too (D50). Read field by field,
  * so a refusal keeps its code for the page to word, and a shell older than the route answers no choice kept. The sessions
  * and the driver are asked again by the state hub (STATEHUB1d), since the loop takes the choice up at its next look.
  */
@@ -640,7 +640,7 @@ const word = (value: unknown): string | null => (typeof value === 'string' && va
 
 /**
  * *Ask another agent…* (MIXAGENT2b, D163 point 2; the mixed-agents design §3): the person's own ask of a helper for a session, the
- * file `daoris-driver sessions helper` writes, for the driver's next look to take. The question as written and the agent the person
+ * file `daoris session helper` writes, for the driver's next look to take. The question as written and the agent the person
  * named, none where Daoris chooses. Read field by field, so a refusal keeps its code for the page to word. The sessions and the
  * driver are asked again by the state hub (D169), and with the sessions the session's asks, which sit under their key.
  */
@@ -697,7 +697,7 @@ export type PartnerAsked = { asked: string | null; why: string | null; message: 
 
 /**
  * *Ask another agent to work on a piece…* (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1): the person's own ask of a
- * piece for a session, the file `daoris-driver sessions partner` writes at the commit the session's tree stands at, for the driver's
+ * piece for a session, the file `daoris session partner` writes at the commit the session's tree stands at, for the driver's
  * next look to judge. The piece as written, the agent the person named and the paths it is about. Read field by field, so a refusal
  * keeps its code for the page to word. The sessions and the driver are asked again by the state hub (D169), and with the sessions the
  * session's pieces, which sit under their key.

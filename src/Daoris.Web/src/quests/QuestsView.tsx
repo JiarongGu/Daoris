@@ -175,21 +175,21 @@ export function useQuestsView({
   // A start the driver is holding for the agent's trust (D73), and the person's grant of it.
   const untrusted = useUntrusted().data ?? [];
   const trust = useTrustFolder();
-  // A quest parked by its strikes (DRV6), started again — `daoris driver retry`'s screen twin (RETRY1).
+  // A quest parked by its strikes (DRV6), started again — `daoris quest retry`'s screen twin (RETRY1).
   const retry = useRetryQuest();
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
-  // This machine's lost take brought forward (SYNCMERGE1c2, D178 point 3): the service's own door, `daoris-driver sync forward`'s twin.
+  // This machine's lost take brought forward (SYNCMERGE1c2, D178 point 3): the service's own door, `daoris remote sync forward`'s twin.
   const forward = useForwardConflict();
   const remove = useDeleteQuest();
-  // The person's yes to a done's departure (DRIFT1d2): the service's accept door, `daoris-driver quest accept`'s twin.
+  // The person's yes to a done's departure (DRIFT1d2): the service's accept door, `daoris quest accept`'s twin.
   const accept = useAcceptQuest();
   // The person's reopen of a sealed submission and their go-on with a step it held (FABRIC-CLOSE1c3, D156): the service's own doors,
-  // `daoris-driver quest reopen` and `quest go-on`'s twins. Abandoning such a step is the decline's.
+  // `daoris quest reopen` and `quest go-on`'s twins. Abandoning such a step is the decline's.
   const reopen = useReopenQuest();
   const goOn = useContinueQuest();
-  // The person's done (QUESTCLOSE1): the service's own door for it, `daoris-driver quest done`'s twin.
+  // The person's done (QUESTCLOSE1): the service's own door for it, `daoris quest done`'s twin.
   const personDone = usePersonDone();
   // The chosen quest's work on this machine (PAUSE1e, D132 §7.1): its plan while Quests is in front, and the three presses.
   const work = useWorkPlan(item && 'quest' in item ? { scope: 'quest', id: item.quest } : null, { enabled: active });

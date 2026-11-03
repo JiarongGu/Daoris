@@ -20,7 +20,6 @@ const FACTS: DriverFacts = {
   placeAnswers: true,
   pluginsFolder: 'C:/somewhere/Daoris/plugins',
   notify: true,
-  strikes: 3,
   coolOff: 60,
   cap: 2,
   machineAccess: { full: false, pauses: [{ pause: 'goAheads', value: 'never' }] },
@@ -33,7 +32,7 @@ const meta: Meta<typeof DriverCards> = {
   args: {
     facts: FACTS,
     busy: { access: false, update: false },
-    onGo: nothing, onNotify: nothing, onStrikes: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing, onSayUpdate: nothing,
+    onGo: nothing, onNotify: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing, onSayUpdate: nothing,
   },
   decorators: [storyWidths.wide],
 };
@@ -64,24 +63,3 @@ export const DriverDark: Story = { decorators: [(Story) => <InTheme theme="dark"
 
 /** In dark at the floor. */
 export const DriverDarkNarrow: Story = { decorators: [storyWidths.narrow, (Story) => <InTheme theme="dark"><Story /></InTheme>] };
-
-/**
- * A shell older than This Daoris: the home row keeps its hint and the two notices the start carried, under the value in
- * its column (R1); no cool-off and no access card, since the shell answers neither.
- */
-export const OlderShell: Story = {
-  args: {
-    facts: {
-      ...FACTS,
-      placeAnswers: false,
-      homeAccount: 'overridden',
-      homeNotice: 'This start replaced the data folder the account names; a terminal reads the other one.',
-      hostNotice: 'The host this window adopted serves another install\'s page.',
-      coolOff: undefined,
-      machineAccess: undefined,
-    },
-  },
-};
-
-/** Zero strikes: the one value whose consequence is invisible, said under the number. */
-export const NeverParks: Story = { args: { facts: { ...FACTS, strikes: 0 } } };

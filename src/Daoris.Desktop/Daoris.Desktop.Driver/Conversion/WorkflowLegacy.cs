@@ -45,7 +45,7 @@ public sealed record LegacyCensus(
 public static class WorkflowLegacy
 {
     /// <summary>The terminal word that ends an open unit, which a run's row carries as its door.</summary>
-    public static string DoorOf(string? quest) => quest is null ? "daoris-driver quest abandon <quest>" : $"daoris-driver quest abandon {quest}";
+    public static string DoorOf(string? quest) => quest is null ? "daoris quest abandon <quest>" : $"daoris quest abandon {quest}";
 
     /// <summary>
     /// The shape of a version if it is an old one, else null. A <c>land</c> saved with an <c>accept</c> does not read as a graph (it is held, never

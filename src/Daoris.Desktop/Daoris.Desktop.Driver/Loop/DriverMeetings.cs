@@ -157,7 +157,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
         files.WriteState(new MeetingState(request.Id, BrainstormStates.Frozen, 1, packet.Digest, null, DateTimeOffset.UtcNow));
         var from = request.Repository is null ? "the question alone" : $"{packet.Sources.Count} sources of `{request.Repository}` by {packet.Tier}";
         return $"meeting `{request.Id}` frozen: round 1's packet `{packet.Digest[..19]}`, {from}, for {Named(taking)}.{outside} "
-            + $"Read it with `daoris-driver meeting show {request.Id}`, and send it with `daoris-driver meeting send {request.Id}`.";
+            + $"Read it with `daoris brainstorm show {request.Id} --kind meeting`, and send it with `daoris brainstorm send {request.Id} --kind meeting`.";
     }
 
     /// <summary>A round's line, classed where it is made (NOTIFY2h2).</summary>
@@ -290,14 +290,14 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             if (round >= MeetingPackets.MostRounds)
             {
                 files.WriteState(new MeetingState(id, BrainstormStates.Ended, round, digest, null, DateTimeOffset.UtcNow));
-                return Ran(LookClass.Progress, $"meeting `{id}` ended after round {round}: {spoken} Read the transcript with `daoris-driver meeting show {id}`.{refusals}");
+                return Ran(LookClass.Progress, $"meeting `{id}` ended after round {round}: {spoken} Read the transcript with `daoris brainstorm show {id} --kind meeting`.{refusals}");
             }
 
             var next = MeetingPackets.Refresh(packet, messages);
             files.WritePacket(id, round + 1, MeetingPackets.Bytes(next));
             files.WriteState(new MeetingState(id, BrainstormStates.Frozen, round + 1, next.Digest, null, DateTimeOffset.UtcNow));
             return Ran(LookClass.Wait, $"meeting `{id}` round {round} ended: {spoken} Round {round + 1}'s packet `{next.Digest[..19]}` adds their messages: read it with "
-                + $"`daoris-driver meeting show {id}`, and send it with `daoris-driver meeting send {id} --round {round + 1}`.{refusals}");
+                + $"`daoris brainstorm show {id} --kind meeting`, and send it with `daoris brainstorm send {id} --kind meeting --round {round + 1}`.{refusals}");
         }
         finally
         {

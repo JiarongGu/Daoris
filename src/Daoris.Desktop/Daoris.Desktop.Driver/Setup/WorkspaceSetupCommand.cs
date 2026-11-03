@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver place --workspace &lt;name&gt; --adoption …</c> (WSSETUP6, D124 §4.5; WORKFLOWCLEAN1 1f): the terminal's door to a
+/// <c>daoris place --workspace &lt;name&gt; --adoption …</c> (WSSETUP6, D124 §4.5; WORKFLOWCLEAN1 1f): the terminal's door to a
 /// workspace's paced adoption, in <see cref="PlaceCommand"/>'s verb, since the plan's press reads each line with git as that press
 /// does. In the library rather than the host, so its words are held by a test.
 /// </summary>
@@ -21,8 +21,8 @@ public static class WorkspaceSetupCommand
 {
     /// <summary>The forms the words take, one to a line.</summary>
     public const string Forms =
-        "daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]\n"
-        + "       daoris-driver place --workspace <name> --pause | --resume | --stop";
+        "daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]\n"
+        + "       daoris place --workspace <name> --pause | --resume | --stop";
 
     public const string Usage = "usage: " + Forms;
 
@@ -113,7 +113,7 @@ public static class WorkspaceSetupCommand
                     var id = steered.Published[repository];
                     if (quests.FirstOrDefault(quest => string.Equals(quest.Id, id, StringComparison.OrdinalIgnoreCase)) is { Status: "Open", Deletable: true })
                     {
-                        output.WriteLine($"  #{id} to `{repository}` is open and nobody has started it: `daoris-driver quest delete {id}` deletes it.");
+                        output.WriteLine($"  #{id} to `{repository}` is open and nobody has started it: `daoris quest delete {id}` deletes it.");
                     }
                 }
             }
@@ -230,7 +230,7 @@ public static class WorkspaceSetupCommand
                     if (naming is null)
                     {
                         return $"`{word}`: a workspace plan names repositories only after `--first` or `--skip`; "
-                            + "`daoris-driver place <repository> --preset keep --adoption` sets some up by name.";
+                            + "`daoris place <repository> --preset keep --adoption` sets some up by name.";
                     }
 
                     naming.Add(word.Trim());

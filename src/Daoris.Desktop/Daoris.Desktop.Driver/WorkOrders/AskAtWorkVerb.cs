@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver ask at-work</c> was asked: the ask, and whether to print the answer whole.</summary>
+/// <summary>What <c>daoris ask at-work</c> was asked: the ask, and whether to print the answer whole.</summary>
 public sealed record AskAtWorkAsk(string Ask, bool Json);
 
 /// <summary>
@@ -153,7 +153,7 @@ public static class AskAtWorkVerb
             if (answer.MoreQuests is > 0 and var more) lines.Add($"  {Count(more, "more quest")} not drawn");
         }
 
-        lines.Add("left out: why a quest is not taken yet is the driver's last look's, which the window says; the channel is `daoris-driver ask channel "
+        lines.Add("left out: why a quest is not taken yet is the driver's last look's, which the window says; the channel is `daoris ask channel "
             + answer.Of.Ask + "`");
         return lines;
     }

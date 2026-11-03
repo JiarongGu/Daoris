@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// KEEP1c (D195 point 5; the cleanup design §4, §9): This Daoris's <i>Disk space</i> read and its terminal twin. A kind never counted says
 /// so and the read walks nothing; each kind's walk counts its own places alone, within its own budget, a partial count saying why; each
 /// kind's <i>next</i> from the disk and the policy, its <i>last</i> from <c>keeping.json</c>, the run lock's holder from its file; and
-/// <c>daoris-driver space</c> printing the same read, its <c>--json</c> field for field. Files only, in a home under <c>_fixtures/</c>.
+/// <c>daoris space</c> printing the same read, its <c>--json</c> field for field. Files only, in a home under <c>_fixtures/</c>.
 /// </summary>
 public sealed class SystemSpaceTests : IDisposable
 {

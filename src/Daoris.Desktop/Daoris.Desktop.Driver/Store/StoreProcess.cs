@@ -15,7 +15,7 @@ public static class StoreProcess
     /// <summary>The shell: the window's process, its modules and the driver library in one.</summary>
     public const string Shell = "shell";
 
-    /// <summary>The headless loop, <c>daoris-driver drive</c>, the instance's or a <c>--share</c> loop beside it.</summary>
+    /// <summary>The headless loop, <c>daoris drive</c>, the instance's or a <c>--share</c> loop beside it.</summary>
     public const string Host = "host";
 
     /// <summary>A terminal verb, or any process no root has named.</summary>

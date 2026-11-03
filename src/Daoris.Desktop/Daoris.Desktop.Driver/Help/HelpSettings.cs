@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// (<see cref="HelpCircle.OfRecord"/>, ASKSCOPE1c). An agent that takes no rules (Codex) is held by this, not by an allow-list.</para>
 ///
 /// <para><b>The existing validation and writer</b>: the <c>setting</c> proposal's plan (<see cref="HelpProposals.Plan"/>'s two steps), the
-/// route's own edit (<c>WithNotify</c>, <c>WithLanguage</c>, <c>WithCoolOff</c>, the timeout and the cap), made on the driver's file
+/// route's own edit (<c>WithNotify</c>, <c>WithLanguage</c>, <c>WithCoolOff</c> and the cap), made on the driver's file
 /// with the writer every door uses (<see cref="DriverConfig.Save"/>: the file read again under its lock, the edit alone made onto it).
 /// The file is this home's (<see cref="DriverConfig.ResolvePath(string)"/>), as a chat going on finds it; the loop's watch on that file
 /// hears the change and looks again, as it does for a terminal's edit.</para>

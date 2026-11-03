@@ -1,8 +1,8 @@
 {
   "settings.commits.label": "提交方式",
   "settings.commits.body": "这里的会话如何在自己的工作树里提交工作：通过检查的每一部分随做随提交，每次提交前等你同意，或在工作完成时只提交一次。它从不创建、切换或推送分支，你的采纳只落地已提交的内容。你的约定（提交信息怎么写）会按你写的原样转告每个会话。仓库自己的规则整体取代工作区的。",
-  "settings.commits.twin.repository": "`daoris driver commits {{repository}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
-  "settings.commits.twin.workspace": "`daoris driver commits --workspace {{workspace}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
+  "settings.commits.twin.repository": "`daoris place commits {{repository}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
+  "settings.commits.twin.workspace": "`daoris place commits --workspace {{workspace}} --mode as-you-go|ask|at-end --convention \"…\"|--clear`",
   "settings.commits.says.asYouGo": "通过检查的每一部分随做随提交。",
   "settings.commits.says.ask": "每次提交前都等你同意。",
   "settings.commits.says.atEnd": "工作完成时只提交一次。",

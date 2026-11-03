@@ -144,16 +144,16 @@ public sealed class WorkflowGateTests : IDisposable
             + "--agents <adapter,adapter>` declares them.",
             process.OpinionCannot);
         Assert.Equal(
-            "its look `look` reads the work in `local`, and `web-app` declares no review environment: `daoris driver review web-app local "
+            "its look `look` reads the work in `local`, and `web-app` declares no review environment: `daoris place review web-app local "
             + "--kind local|deployed --procedure <path>` declares one.",
             process.Look!.Cannot);
         Assert.Equal(
             "its landing `land` puts the work on a branch, and neither the step nor `web-app`'s landing rule names a pattern for it: "
-            + "`daoris driver landing web-app branch <pattern>` declares one.",
+            + "`daoris place landing web-app branch <pattern>` declares one.",
             process.LandingCannot);
         Assert.Equal(
             "It follows `docs-to-pr` v2, and its landing `land` puts the work on a branch, and neither the step nor `web-app`'s landing rule "
-            + "names a pattern for it: `daoris driver landing web-app branch <pattern>` declares one. Nothing was landed.",
+            + "names a pattern for it: `daoris place landing web-app branch <pattern>` declares one. Nothing was landed.",
             WorkflowGate.LandingSays(process));
 
         var beyond = WorkflowProcess.Of(Config(Declared), "web-app", "work", Binding(), Steps(
@@ -163,7 +163,7 @@ public sealed class WorkflowGateTests : IDisposable
             + "a step chooses among them, and `daoris place opinion web-app --agents <adapter,adapter>` declares more.",
             beyond.OpinionCannot);
         Assert.Equal(
-            "its look `look` reads the work in `staging`, which `web-app` does not declare (it declares `local` and `dev`): `daoris driver "
+            "its look `look` reads the work in `staging`, which `web-app` does not declare (it declares `local` and `dev`): `daoris place "
             + "review web-app staging --kind local|deployed --procedure <path>` declares it.",
             beyond.Look!.Cannot);
     }
@@ -197,7 +197,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.False(sits.LetsGo);
         Assert.Equal(
             "Waits for your review, and it cannot start: `docs-to-pr` v2 asks for one, and its look `look` reads the work in `staging`, which "
-            + "it does not declare. `daoris-driver quest review q1 skip \"…\"` lets it land without one.",
+            + "it does not declare. `daoris quest review q1 skip \"…\"` lets it land without one.",
             sits.Says);
 
         // Row 1, the person's skip, and row 3, the chain's choice, still decide before the version.
@@ -588,7 +588,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal(
             "Holds: this work changed 4 paths outside Documentation's (`docs/**` and `**/*.md`): `src/app/report.ts`, `src/app/a.ts`, "
             + "`src/app/b.ts` and 1 more; and `docs-to-pr` v2, chosen for it, asks less of you than `feature` v3 would without the kind (it "
-            + "drops your look; it lands with no press of yours). `daoris-driver workflow keep s1 \"…\"` keeps `docs-to-pr` v2 for this work "
+            + "drops your look; it lands with no press of yours). `daoris workflow keep s1 \"…\"` keeps `docs-to-pr` v2 for this work "
             + "with your words; nothing switches by itself.",
             outside.Says);
 
@@ -877,7 +877,7 @@ public sealed class WorkflowGateTests : IDisposable
     public void An_integrate_with_no_pattern_declared_cannot_start_and_names_the_pattern_and_the_setup_row()
     {
         var process = GraphProcess("q1", """{"landings":{"web-app":{"form":"merge"}}}""", Integrating());
-        Holds(process, "its `merge-in` (`integrate`) integrates the branch the landing `land` makes", "names a pattern", "daoris driver landing web-app branch <pattern>");
+        Holds(process, "its `merge-in` (`integrate`) integrates the branch the landing `land` makes", "names a pattern", "daoris place landing web-app branch <pattern>");
 
         // The version's own pattern is a pattern declared.
         var own = GraphProcess("q2", """{"landings":{"web-app":{"form":"merge"}}}""", Integrating(landing: """{"form":"branch","pattern":"x/{quest}"}"""));
@@ -960,7 +960,7 @@ public sealed class WorkflowGateTests : IDisposable
              {"id":"push","kind":"pushed","version":1,"reach":"observed"},{"id":"pr","kind":"pull-request","version":1,"reach":"observed"}]
             """;
         var bare = GraphProcess("q1", Branch, nodes);
-        Holds(bare, "its `push` (`pushed`) pushes the landing's branch through a plugin", "its `pr` (`pull-request`)", "`daoris driver landing web-app branch <pattern> --plugin <id>`");
+        Holds(bare, "its `push` (`pushed`) pushes the landing's branch through a plugin", "its `pr` (`pull-request`)", "`daoris place landing web-app branch <pattern> --plugin <id>`");
 
         Assert.Null(GraphProcess("q2", Declared, nodes).Problem);
         // `plugin: none` on the landing is a choice among what is declared: nothing then pushes.
@@ -1081,7 +1081,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal((GraphGateStates.Waits, false, true, false), (task.State, task.LetsGo, task.AsksPass, task.PressWaits));
         Assert.Equal(("qa", NodeKinds.Human), (task.Node, task.Kind));
         Assert.Equal("Run q7's graph waits on `qa` (human) before `land`: Ready: nothing before it holds it. "
-            + "`daoris-driver workflow skip q7 qa \"…\"` passes it over with your words.", task.Says);
+            + "`daoris workflow skip q7 qa \"…\"` passes it over with your words.", task.Says);
 
         var gate = new LandingGate(new OpinionGateState(OpinionGateStates.None, "web-app"),
             new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = "web-app" })) { Graph = task };

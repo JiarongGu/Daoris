@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The pass <c>daoris-driver sync</c> runs now, through the running Daoris where one answers (RPCOPEN1, RPC1e, the terminal RPC design
+/// The pass <c>daoris remote sync</c> runs now, through the running Daoris where one answers (RPCOPEN1, RPC1e, the terminal RPC design
 /// §7.2): the instance's own set runs each circle's pass, as its tick and the screen's <i>Sync now</i> do (<c>SYNC_NOW</c>, D156 §3), and
 /// the verb prints the report it answers in the words it prints for a pass of its own. Alone where none runs.
 /// </summary>

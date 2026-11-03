@@ -328,7 +328,7 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
 });
 
 /**
- * **An ask, from the screen** (INT4c) — the twin of `daoris-driver ask` (D50), over the real host.
+ * **An ask, from the screen** (INT4c) — the twin of `daoris ask` (D50), over the real host.
  * Opened from the palette, made in the family's one workspace without being asked which, answered by the
  * declarations tier in the service's own words; a proposal accepted is a quest asked BY the ask,
  * carrying its link and its file; and the person closes it with the reason. The kept file is named

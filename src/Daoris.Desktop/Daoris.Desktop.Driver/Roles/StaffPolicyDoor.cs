@@ -118,7 +118,7 @@ public sealed record RolePress(RoleChange Change, IReadOnlyList<ActorChoice>? Ch
 public sealed record RoleNext(string Choice, string By, string Said, string Agent, string? Model, string? Effort);
 
 /// <summary>
-/// One role's policy as <c>ROLES</c> and <c>daoris driver role &lt;id&gt;</c> say it (STAFFPOLICY1b): its state (<c>default</c>, <c>set</c> or
+/// One role's policy as <c>ROLES</c> and <c>daoris role &lt;id&gt;</c> say it (STAFFPOLICY1b): its state (<c>default</c>, <c>set</c> or
 /// <c>stale</c>), revision, why it is stale, the record (also while stale, for the editor), and its next new start.
 /// </summary>
 public sealed record RolePolicyRow(string Role, string PolicyState, long Revision, string? Why, System.Text.Json.Nodes.JsonNode? StaffPolicy, RoleNext? Next)

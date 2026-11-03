@@ -564,7 +564,7 @@ public sealed class AccountRotationTickTests : IDisposable
         var verdict = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
         Assert.True(verdict.Verdict == StartVerdict.Blocked, seen);
         Assert.Contains("`account-1` is cooling", verdict.Reason);
-        Assert.EndsWith("`daoris-driver sessions start-from s1`.", verdict.Reason);
+        Assert.EndsWith("`daoris session start-from s1`.", verdict.Reason);
         Assert.Equal(1, service.SessionCount);
         Assert.Equal(["w1"], service.Said("s1"));
     }
@@ -773,7 +773,7 @@ public sealed class AccountRotationTickTests : IDisposable
             $"the `stub` account `account-1` is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said, and its conversation is "
             + "on that account, so your words wait to go on in it then.",
             verdict.Reason);
-        Assert.EndsWith("`daoris-driver sessions go-on-new s1`.", verdict.Reason);
+        Assert.EndsWith("`daoris session go-on-new s1`.", verdict.Reason);
         var wait = Assert.Single(held.Waits);
         Assert.Equal(("account-1", Until), (wait.Account, wait.Until));
         Assert.Equal(["q1"], wait.Quests);

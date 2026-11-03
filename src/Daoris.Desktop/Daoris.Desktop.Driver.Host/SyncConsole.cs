@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The sync, from a terminal (SYNC6a, D50): `daoris-driver sync [status | dismiss &lt;quest&gt;] [--workspace &lt;name&gt;]`.
+/// The sync, from a terminal (SYNC6a, D50): `daoris remote sync [status | dismiss &lt;quest&gt;] [--workspace &lt;name&gt;]`.
 /// </summary>
 /// <remarks>
 /// <para><b>`sync` runs the pass the tick runs</b> — the registrations, knowledge and code map up by
@@ -137,8 +137,8 @@ internal static class SyncConsole
 
     private static int Usage()
     {
-        Console.Error.WriteLine("usage: daoris-driver sync [status | dismiss <quest>] [--workspace <name>]");
-        Console.Error.WriteLine("       daoris-driver sync forward <quest> <machine> <sequence>");
+        Console.Error.WriteLine("usage: daoris remote sync [status | dismiss <quest>] [--workspace <name>]");
+        Console.Error.WriteLine("       daoris remote sync forward <quest> <machine> <sequence>");
         Console.Error.WriteLine("  sync                    one pass now, for every workspace with a remote or the one named");
         Console.Error.WriteLine("  sync status             where each workspace stands on this machine — ahead, behind, in");
         Console.Error.WriteLine("                          conflict, and when it last reached its remote; reaches no remote");

@@ -60,7 +60,7 @@ public static class SessionMove
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
 public static class RequestDoor
 {
-    /// <summary><c>daoris-driver sessions</c>.</summary>
+    /// <summary><c>daoris session list</c>.</summary>
     public const string Terminal = "terminal";
 
     /// <summary>A pause stopping what of its work another process runs (PAUSE1b, D132 §2.1): <see cref="WorkPausing"/>.</summary>

@@ -68,7 +68,7 @@ const PRESS = 'border border-line px-2 py-0 text-meta';
  * **A repository's Integration tab** (INTEGRATE1h; the integration design §5.8): the queue in its order, each line's standing candidate with
  * its members and a fixed strip of steps, what holds it and the act that releases it, what was handed back, the superseded commits awaiting
  * a disposition with their answers, the landings waiting for the owner's request, and the promoted history. Read from the integration
- * record, never copied; a terminal's twin is `daoris-driver integrate`.
+ * record, never copied; a terminal's twin is `daoris integrate`.
  */
 export function IntegrationTab({
   repository, look, reading = false, refusal = null, onDrop, onRecheck, onDecide, onOrder, onAnswer, onRequest, related,

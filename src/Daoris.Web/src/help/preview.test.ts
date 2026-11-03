@@ -7,7 +7,7 @@ import { previewText, ROW_BEFORE, ROW_LINE, rowLine } from './preview';
 describe('a conversation’s line as plain text', () => {
   it.each([
     ['**#d208d4** is the accent', '#d208d4 is the accent'],
-    ['Run `daoris driver drive engine` first.', 'Run daoris driver drive engine first.'],
+    ['Run `daoris place drive engine` first.', 'Run daoris place drive engine first.'],
     ['## Landing on a branch', 'Landing on a branch'],
     ['> quoted, then *emphasised* and ~~struck~~', 'quoted, then emphasised and struck'],
     ['- [x] the first step', 'the first step'],

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1d: <c>daoris-driver ask at-work</c> (the cowork view design §3.5). With no Daoris window running the verb composes the answer by
+/// COWORKVIEW1d: <c>daoris ask at-work</c> (the cowork view design §3.5). With no Daoris window running the verb composes the answer by
 /// the function the window's read composes by, from the listing's look and the asks the service holds; with one, it is the window's
 /// <c>SESSION_AT_WORK</c> keyed <c>{ ask }</c>. It prints the lines of work and the quests, and one line naming what it leaves out.
 /// </summary>
@@ -76,7 +76,7 @@ public sealed class AskAtWorkVerbTests : IDisposable
         Assert.Contains("#q1", string.Join('\n', lines), StringComparison.Ordinal);
         Assert.Contains("taken by s1", string.Join('\n', lines), StringComparison.Ordinal);
         Assert.Contains("the driver's last look's", lines[^1], StringComparison.Ordinal);
-        Assert.Contains("`daoris-driver ask channel a1`", lines[^1], StringComparison.Ordinal);
+        Assert.Contains("`daoris ask channel a1`", lines[^1], StringComparison.Ordinal);
     }
 
     [Fact]

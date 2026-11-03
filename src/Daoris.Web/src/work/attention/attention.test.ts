@@ -500,7 +500,7 @@ describe('a proposal to widen the rules, worded', () => {
 describe('a quest parked on its failed sessions, worded', () => {
   const parked: Consideration = {
     quest: '7a82cc', repository: 'engine', verdict: 'Exhausted', strikes: 3, since: '2026-10-01T09:21:00+00:00',
-    reason: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 7a82cc` starts it again once you know why.',
+    reason: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris quest retry 7a82cc` starts it again once you know why.',
   };
   const pushed = row('parked-quest', '7a82cc', '2026-10-01T09:21:00+00:00', { where: 'engine', sitting: parked });
 
@@ -526,7 +526,7 @@ describe('a quest parked on its failed sessions, worded', () => {
     try {
       const item = words(pushed);
       expect(item.detail).toMatch(/3 个会话/);
-      expect(item.detail).toContain('`daoris driver retry 7a82cc`');
+      expect(item.detail).toContain('`daoris quest retry 7a82cc`');
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -919,7 +919,7 @@ describe('the groups', () => {
     expect(words(kept).detail).toBe(
       'Blocked: tree s-e0a8e0fd, its session recorded it, but no branch record follows daoris/s-e0a8e0fd, so the look never cleans it up, and the clean-up on '
       + 'its workspace’s Branches keeps it too, since its tree holds 2 paths only it has, such as gate.log, local/notes.md; '
-      + `\`daoris-driver trees remove ${tree} --force\` removes it, and what it holds with it`);
+      + `\`daoris tree remove ${tree} --force\` removes it, and what it holds with it`);
     expect(words(unfollowed({ tree, keeps: 'x', uncommitted: '3', own: '1', paths: 'gate.log' })).detail)
       .toContain('since its tree holds 3 uncommitted paths, and 1 path only it has: gate.log;');
     const unread = words(unfollowed({ unread: 'true', tree })).detail ?? '';
@@ -931,7 +931,7 @@ describe('the groups', () => {
     try {
       expect(words(kept).detail).toBe(
         '受阻：工作树 s-e0a8e0fd，它的会话记录了它，但没有分支记录跟随 daoris/s-e0a8e0fd，所以查看时不会清理它；它所在工作区“分支”里的清理也会保留它，因为它的工作树里有'
-        + `2 个只有它才有的文件，例如 gate.log, local/notes.md；运行 \`daoris-driver trees remove ${tree} --force\` 可以移除它，连同其中的内容`);
+        + `2 个只有它才有的文件，例如 gate.log, local/notes.md；运行 \`daoris tree remove ${tree} --force\` 可以移除它，连同其中的内容`);
       expect(words(unfollowed({ unread: 'true', tree })).detail).not.toContain('trees remove');
     } finally {
       await i18n.changeLanguage('en');

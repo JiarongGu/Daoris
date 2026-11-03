@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Kept in the driver's file</b> as <c>helpMode</c> (<see cref="DriverConfig.HelpMode"/>), written only while full; the
-/// CLI read it by the same table until PUSH1f2b. Set at a terminal with <c>daoris-driver help mode</c>, and never by Ask
+/// CLI read it by the same table until PUSH1f2b. Set at a terminal with <c>daoris ask-daoris mode</c>, and never by Ask
 /// Daoris itself: no proposal names it (D183 point 2, full access is never chosen for the person).</para>
 /// </remarks>
 public static class HelpModes
@@ -97,7 +97,7 @@ public sealed record HelpAccess(string Mode, string Said)
         if (adapter.FullPosture is not { Length: > 0 } full)
         {
             var refusal = $"Ask Daoris's full access has no mode on `{adapter.Name}`: Daoris knows none of this agent's that asks nothing, so "
-                + "it does not start there in full access. Choose restricted access for it (`daoris-driver help mode restricted`), or "
+                + "it does not start there in full access. Choose restricted access for it (`daoris ask-daoris mode restricted`), or "
                 + "another agent for Ask Daoris.";
             return new(HelpModes.Full, refusal) { Refusal = refusal };
         }

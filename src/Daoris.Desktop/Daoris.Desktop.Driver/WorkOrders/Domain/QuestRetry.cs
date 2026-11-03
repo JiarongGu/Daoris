@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The quest's <i>Try again</i> as a standing choice judges it (PUSH1f2a, D194 point 4; FOUNDATION1 mod-iii): the work orders' judgement
 /// over the planner's verdicts, which the settings' <see cref="StandingChoices"/> held until the settings' own types named none of
-/// the planner's. The window's route and <c>daoris-driver driver retry</c> acting alone call this one.
+/// the planner's. The window's route and <c>daoris quest retry</c> acting alone call this one.
 /// </summary>
 public static class QuestRetry
 {

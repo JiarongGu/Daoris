@@ -18,13 +18,13 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
         if (machine.Repositories.Count == 0 && machine.Workspace is { } workspace)
         {
             text.Append($"No repository is in workspace `{workspace}` on this machine now. A repository joins it on its page's\n");
-            text.Append("Manage → Move to workspace, or with `daoris import <folder> --workspace <name>`.\n\n");
+            text.Append("Manage → Move to workspace, or with `daoris repository import <folder> --workspace <name>`.\n\n");
         }
         else if (machine.Repositories.Count == 0)
         {
-            text.Append("No repository is registered on this machine yet. The first step is `daoris connect` from inside\n");
+            text.Append("No repository is registered on this machine yet. The first step is `daoris repository connect` from inside\n");
             text.Append("one, or Repositories → Import a folder as a workspace, to register a folder of them at once\n");
-            text.Append("(`daoris import <folder> --workspace <name>`).\n\n");
+            text.Append("(`daoris repository import <folder> --workspace <name>`).\n\n");
         }
 
         foreach (var circle in machine.Repositories
@@ -51,7 +51,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             var kinds = machine.WorkflowKinds.Where(kind => string.Equals(kind.Workspace, circle.Key, StringComparison.OrdinalIgnoreCase)).ToList();
             if (kinds.Count > 0)
             {
-                text.Append($"Kinds of work `{circle.Key}` declares (`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths …]`):\n\n");
+                text.Append($"Kinds of work `{circle.Key}` declares (`daoris workflow kind <workspace> <kind> --label \"…\" [--paths …]`):\n\n");
                 foreach (var kind in kinds)
                 {
                     var paths = kind.Paths.Count == 0 ? "" : ", paths " + string.Join(", ", kind.Paths.Select(path => $"`{path}`"));
@@ -66,7 +66,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             if (standing.Count > 0)
             {
                 text.Append($"Standing answers in `{circle.Key}`, each handed to every session in its repository beneath its quest "
-                            + "(`daoris driver standing <repository> \"…\"|--clear`):\n\n");
+                            + "(`daoris place standing <repository> \"…\"|--clear`):\n\n");
                 foreach (var repository in standing) text.Append($"- `{repository.Name}`: \"{TextBounds.OneLine(repository.Standing!, trim: false)}\"\n");
                 text.Append('\n');
             }

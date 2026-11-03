@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver quest workflow</c> was asked: the quest, the kind and workflow (neither clears), and the words.</summary>
+/// <summary>What <c>daoris quest workflow</c> was asked: the quest, the kind and workflow (neither clears), and the words.</summary>
 public sealed record QuestWorkflowAsk(string Quest, string? Kind, string? Workflow, string? Words);
 
 /// <summary>
 /// A quest's own kind and workflow at a terminal (WORKFLOW1e2, D157; the workflow design §4.1 row 1, §4.3, D50):
-/// <c>daoris-driver quest workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]</c>, for a quest
+/// <c>daoris quest workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]</c>, for a quest
 /// published with no ask, before it starts. The latest stands, and its run binds it at its first start (§4.5).
 /// </summary>
 /// <remarks>
@@ -21,7 +21,7 @@ public sealed record QuestWorkflowAsk(string Quest, string? Kind, string? Workfl
 public static class QuestWorkflowCommand
 {
     public const string Usage =
-        "usage: daoris-driver quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]\n"
+        "usage: daoris quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]\n"
         + "       say what kind of task a quest no ask published is and which workflow its work follows, before it starts: a kind\n"
         + "       its workspace declares, a workflow saved here or current; the latest stands, and its run binds it at its first\n"
         + "       start. A quest an ask published follows its ask's: `ask --set-workflow` sets that.";

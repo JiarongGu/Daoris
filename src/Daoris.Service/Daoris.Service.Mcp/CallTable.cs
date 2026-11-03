@@ -99,7 +99,7 @@ public static class CallTable
     private static readonly HashSet<string> AskDaorisOwn = new(
     [
         "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "settings_cap", "settings_cooloff",
-        "settings_language", "settings_notify", "settings_timeout",
+        "settings_language", "settings_notify",
     ], StringComparer.Ordinal);
 
     /// <summary>

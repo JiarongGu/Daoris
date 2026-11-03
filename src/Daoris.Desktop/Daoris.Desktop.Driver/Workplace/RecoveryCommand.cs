@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris-driver work recovery drop</c> asks (RECOVERYDROP1): the refs named, or every one nothing holds, in the repository
+/// What <c>daoris work recovery drop</c> asks (RECOVERYDROP1): the refs named, or every one nothing holds, in the repository
 /// named or in each repository with a checkout here; <see cref="Plan"/> only lists what a press would do.
 /// </summary>
 public sealed record RecoveryDropAsk(IReadOnlyList<string> Refs, bool Unheld, string? Repository, bool Plan);
 
-/// <summary>The words of <c>daoris-driver work recovery drop</c>, read apart from the host so they are tested and the page's door shares them.</summary>
+/// <summary>The words of <c>daoris work recovery drop</c>, read apart from the host so they are tested and the page's door shares them.</summary>
 public static class RecoveryCommand
 {
     /// <summary>The verb's usage, said with every refusal of its words.</summary>
     public const string Usage =
-        "usage: daoris-driver work recovery drop <ref>... --repository <name> | --unheld [--repository <name>] [--plan]";
+        "usage: daoris work recovery drop <ref>... --repository <name> | --unheld [--repository <name>] [--plan]";
 
     /// <summary>
     /// Read the words after <c>work recovery drop</c>. Null with the problem said where they are not understood: it names refs or

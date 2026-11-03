@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The machine log's reader (LOG1c, D94): every source's files under the home, merged by time, with the
-/// same filters at both doors — `daoris-driver logs` at a terminal, the Settings domain on the screen.
+/// same filters at both doors — `daoris logs` at a terminal, the Settings domain on the screen.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The parse table is a twin's</b> (<c>docs/2026-09-30-machine-log-design.md</c> §3): the

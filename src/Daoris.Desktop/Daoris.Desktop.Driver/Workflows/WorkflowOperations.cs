@@ -89,7 +89,7 @@ public sealed record WorkflowShown(
     string Line, JsonNode Body, IReadOnlyList<WireProblem> Problems);
 
 /// <summary>
-/// The typed operations behind <c>daoris-driver workflow new|edit|use|kind</c> (D194 point 4; AGENTSPLACE1c): the terminal's verb and the
+/// The typed operations behind <c>daoris workflow new|edit|use|kind</c> (D194 point 4; AGENTSPLACE1c): the terminal's verb and the
 /// window's <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c> call these and differ only in how they say the result, so a
 /// refusal, a reach or a version is judged once. Nothing here writes <c>driver.json</c>; a caller writes the edit it is handed.
 /// </summary>
@@ -107,7 +107,7 @@ public static class WorkflowOperations
     {
         if (chosen is null || chosen == WorkflowSelection.Current || !WorkflowNamed.IsId(chosen)) return null;
         var found = WorkflowPorts.Store(home).Load(chosen) ?? throw new ChoiceWords(
-            $"no workflow `{chosen}` is saved here — `daoris driver workflow list` names them, and `new` names one.");
+            $"no workflow `{chosen}` is saved here — `daoris workflow list` names them, and `new` names one.");
         if (found.Read.Problem is not null) throw new ChoiceWords($"`{chosen}` cannot be read: {found.Read.Problem}", 1);
         var newest = found.Read.Versions[^1];
         if (newest.Steps is null && newest.Graph is null)
@@ -167,7 +167,7 @@ public static class WorkflowOperations
         catch (DriverException refused)
         {
             var declare = kind is not null && refused.Message.Contains("declares no kind", StringComparison.Ordinal)
-                ? $" `daoris driver workflow kind <workspace> {kind} --label \"…\"` declares one." : "";
+                ? $" `daoris workflow kind <workspace> {kind} --label \"…\"` declares one." : "";
             return new WorkflowUsed(null, false, [], reach.Rows, $"{refused.Message}{declare} Nothing was written.");
         }
 
@@ -402,13 +402,13 @@ public static class WorkflowOperations
                 + $"{(paths.Count == 0 ? "with no paths" : $"its paths {string.Join(", ", paths.Select(path => $"`{path}`"))}")}.");
             lines.Add(declared?.Workflow is { } workflow
                 ? $"  It maps to `{workflow}` there."
-                : $"  It maps to no workflow there: `daoris driver workflow use <id> --workspace {workspace} --kind {id}` maps one, and "
+                : $"  It maps to no workflow there: `daoris workflow use <id> --workspace {workspace} --kind {id}` maps one, and "
                     + "`--repository <name>` maps it for one repository.");
             // The documents default is for such a kind: it is offered, never chosen for it.
             if (declared?.Workflow is null && WorkflowDefaults.AreDocuments(paths) && WorkflowDefaults.Of("documents") is { } documents)
             {
                 lines.Add($"  Its paths are documents: the default `{documents.Id}` merges such work into the line with no review, and "
-                    + $"`daoris driver workflow new <id> --from {documents.Id}` copies it.");
+                    + $"`daoris workflow new <id> --from {documents.Id}` copies it.");
             }
         }
 
@@ -585,7 +585,7 @@ public static class WorkflowOperations
         var newest = found.Read.Versions[^1];
         if (wanted is not null && wanted != newest.Version.ToString(CultureInfo.InvariantCulture))
         {
-            throw new ChoiceWords($"`{found.Id}` is at v{newest.Version} now, not v{wanted}: read it again (`daoris driver workflow "
+            throw new ChoiceWords($"`{found.Id}` is at v{newest.Version} now, not v{wanted}: read it again (`daoris workflow "
                 + $"show {found.Id}`) and make the change against v{newest.Version}.", 1);
         }
 

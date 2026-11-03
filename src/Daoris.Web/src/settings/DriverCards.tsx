@@ -42,7 +42,6 @@ export type DriverFacts = {
   /** The installed plugins, for the Plugins section (PLUGSET1); none on an older shell or before it answers, and the section is absent. */
   plugins?: readonly PluginShown[] | null;
   notify: boolean;
-  strikes: number;
   /** Minutes an account cools when its agent names no reset (TOOL4g); absent on a shell older than the field. */
   coolOff?: number | null;
   /** How many sessions Daoris starts at once here (CAPSET1); absent on a shell older than the route. */
@@ -61,13 +60,11 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1).
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff, onCap, onAccess, onGitAccess, onSayUpdate }: {
+export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onCap, onAccess, onGitAccess, onSayUpdate }: {
   facts: DriverFacts;
   busy: { access: boolean; update: boolean; gitAccess?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
-  /** A strikes count the person typed and left: whole, zero or more, and not the one held. */
-  onStrikes: (count: number) => void;
   /** A cool-off in minutes the person typed and left: whole, one or more, and not the one held. */
   onCoolOff: (minutes: number) => void;
   /** A cap the person typed and left: whole, one or more, and not the one held (CAPSET1). */
@@ -78,11 +75,8 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
   onSayUpdate: ComponentProps<typeof UpdateSection>['onSay'];
 }) {
   const { t } = useTranslation();
-  // Held as text while it is being typed: a number input mid-edit passes through the empty string
-  // and through "0", and writing either straight to the config would park nothing while the person
-  // was still reaching for the second digit.
-  const [strikes, setStrikes] = useState<string | null>(null);
-  // The cool-off's minutes as typed (TOOL4g), held as text for the strikes' reason.
+  // The cool-off's minutes as typed (TOOL4g), held as text while it is being typed: a number input mid-edit passes through
+  // the empty string, and writing it straight to the config would be refused while the person was still reaching for a digit.
   const [coolOff, setCoolOff] = useState<string | null>(null);
   // The cap as typed (CAPSET1), held as text for the same reason.
   const [cap, setCap] = useState<string | null>(null);
@@ -95,9 +89,8 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
           label leads, the hint is one line, the value beside its words on the card's track (R1), the paragraph on the
           glyph — and the cards are the sections of one settings page rather than five essays. */}
 
-      {/* The driver's two dials, in one card: that one asks to be TOLD when a driver stops, this one
-          bounds what it spends before anyone is told (D58). The notification switch leads because it
-          is the setting a person is most likely to have come here to change. */}
+      {/* The driver's dials, in one card. The notification switch leads because it is the setting a
+          person is most likely to have come here to change. */}
       <Card>
         <SettingList>
           {/* Where this machine's Daoris lives (D63): the card's first row since D75, where it had
@@ -168,44 +161,6 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
             <p className="m-0 mt-1 text-small text-ink-faint">{t('settings.notify.press')}</p>
           </SettingRow>
 
-          <SettingRow
-            label={t('settings.strikes.label')}
-            hint={t('settings.strikes.terminal')}
-            why={t('settings.strikes.body')}
-            control={(
-              /* Sized to what it HOLDS, which is one or two digits. A full-width box for a number reads
-                 as a text field somebody forgot. */
-              <input
-                type="number"
-                min={0}
-                max={99}
-                aria-label={t('settings.strikes.label')}
-                value={strikes ?? String(facts.strikes)}
-                onChange={(event) => setStrikes(event.target.value)}
-                onBlur={() => {
-                  // 🔴 Passing through is not a write (REV3): `Number(null)` and `Number('')` are both 0,
-                  // the one value that means "never park". Nothing typed, a cleared box, or the value it
-                  // already holds all leave the config alone and put the held value back.
-                  const held = facts.strikes;
-                  const value = strikes === null || strikes.trim() === '' ? held : Number(strikes);
-                  if (!Number.isInteger(value) || value < 0 || value === held) {
-                    setStrikes(null);
-                    return;
-                  }
-                  onStrikes(value);
-                }}
-                className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
-              />
-            )}
-          >
-            {/* Stated where the zero is, because zero is the one value whose consequence is invisible. */}
-            {Number(strikes ?? facts.strikes) === 0 && (
-              <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-                {t('settings.strikes.zero')}
-              </p>
-            )}
-          </SettingRow>
-
           {/* How long an account cools when its agent names no reset (TOOL4g, D125 §2.2): offered where the shell says it,
               since an older shell answers no such field and has no route to write it. */}
           {typeof facts.coolOff === 'number' && (
@@ -222,7 +177,7 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
                     value={coolOff ?? String(facts.coolOff)}
                     onChange={(event) => setCoolOff(event.target.value)}
                     onBlur={() => {
-                      // As the strikes: passing through is not a write, and less than a minute is the driver's refusal, so
+                      // Passing through is not a write (REV3), and less than a minute is the driver's refusal, so nothing typed,
                       // a value under one, not whole, or the one it holds puts the held value back.
                       const held = facts.coolOff ?? 60;
                       const value = coolOff === null || coolOff.trim() === '' ? held : Number(coolOff);

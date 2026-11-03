@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Codes where a screen words it, the driver's sentence where a terminal reads it</b> (D143 point 1, LANG1a): every
 /// section, source, absence and cut is a code the page words in the reader's language, and each carries the driver's own
-/// English (<see cref="HandedSection.Said"/>), which <c>daoris-driver trace</c> prints and a page shows, marked, for a code it
+/// English (<see cref="HandedSection.Said"/>), which <c>daoris trace</c> prints and a page shows, marked, for a code it
 /// does not know.</para>
 ///
 /// <para><b>The sizes add up by construction.</b> <see cref="TargetPrompt.Composed"/> builds the instruction from named pieces

@@ -5,7 +5,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver work-cycle</c> (FABRIC-GRAPH1c, the fabric events design §D7; FOUNDATION1 mod-iii): the workflows' own verb, the
+/// <c>daoris place work-cycle</c> (FABRIC-GRAPH1c, the fabric events design §D7; FOUNDATION1 mod-iii): the workflows' own verb, the
 /// settings' port (<see cref="ChoiceVerb"/>) implemented where a graph is read, a quest's or an ask's cycle of work.
 /// </summary>
 public sealed class WorkCycleVerb : ChoiceVerb
@@ -37,13 +37,13 @@ public sealed class WorkCycleVerb : ChoiceVerb
         if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(kind) || clear == (file is not null))
         {
             throw new ChoiceWords("`driver work-cycle` needs <repository>|--workspace <name>, then quest|ask, then <file>|--clear — e.g. "
-                + "`daoris driver work-cycle aurora-engine quest cycle.json`, a whole graph its work of that kind follows to its end.");
+                + "`daoris place work-cycle aurora-engine quest cycle.json`, a whole graph its work of that kind follows to its end.");
         }
 
         if (kind == WorkUnitKind.Branch)
         {
             throw new ChoiceWords("a branch's cycle is its landing rule's `cycle`, so that a repository's landing and its end move together (D164); "
-                + "no kind has two homes. `daoris driver landing <repository> … --cycle <file>` sets it.");
+                + "no kind has two homes. `daoris place landing <repository> … --cycle <file>` sets it.");
         }
 
         if (!NodeGraphHomes.WorkCycleKinds.Contains(kind))

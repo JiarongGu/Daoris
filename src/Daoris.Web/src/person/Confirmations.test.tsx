@@ -345,8 +345,8 @@ describe("the window's confirmation of a terminal's press", () => {
   };
 
   it.each([
-    ['en', 'Confirm', 'Install later', 'Waiting for 2 sessions and 1 turn to finish, since 14:05.', 'daoris-driver update --cancel'],
-    ['zh', '确认', '稍后安装', '正在等待 2 个会话和 1 轮对话完成，自 14:05 起。', 'daoris-driver update --cancel'],
+    ['en', 'Confirm', 'Install later', 'Waiting for 2 sessions and 1 turn to finish, since 14:05.', 'daoris update --cancel'],
+    ['zh', '确认', '稍后安装', '正在等待 2 个会话和 1 轮对话完成，自 14:05 起。', 'daoris update --cancel'],
   ])('says what a drain waits on and since when under a held Confirm, and offers Install later (%s)', async (language, confirm, later, waits, door) => {
     await i18n.changeLanguage(language);
     const onSayUpdate = vi.fn();

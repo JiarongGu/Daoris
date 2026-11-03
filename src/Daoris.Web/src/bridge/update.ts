@@ -4,7 +4,7 @@ import { keys } from '../data/queries';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 
 // An install's update (UPDATE1, D139): where it stands, and the person's word on it, over `DAORIS.UPDATE`. The terminal's
-// door is `daoris-driver update`; both write the same request under the home (D50).
+// door is `daoris update`; both write the same request under the home (D50).
 
 /**
  * Where the install's update stands — what the banner renders, and the last swap (`last`) Settings' row says after the

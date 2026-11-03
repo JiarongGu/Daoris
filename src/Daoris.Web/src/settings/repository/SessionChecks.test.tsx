@@ -9,7 +9,7 @@ import { SessionChecksRow, type SessionChecksValue, sessionChecksSummary, sessio
 type Press = (checks: SessionChecksValue | null, answered: Answered) => void;
 
 // FABRIC-PIPELINE1b (D192 point 4; the pipeline design §3.1, §3.2): which checks a repository's sessions run, shown and set on its Setup
-// as `daoris-driver checks` sets it from a terminal (D50). Under light it names the light gates and the heavy gates, says that an
+// as `daoris place checks` sets it from a terminal (D50). Under light it names the light gates and the heavy gates, says that an
 // agent taking no rules is told them and refused run-heavy rather than refused in its shell, and that a repository marking no heavy
 // gate gives its sessions every gate; the driver judges the press.
 

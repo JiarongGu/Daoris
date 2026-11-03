@@ -5,7 +5,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver keep</c> (KEEP1d, D195 point 2, KEEP1f; FOUNDATION1 mod-iii): the workplace's own verb, the settings' port
+/// <c>daoris settings keep</c> (KEEP1d, D195 point 2, KEEP1f; FOUNDATION1 mod-iii): the workplace's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rules it sets (<see cref="KeepRules"/>), the free-space floor among them, whose volume it reads.
 /// </summary>
 public sealed class KeepVerb : ChoiceVerb
@@ -66,20 +66,20 @@ public sealed class KeepVerb : ChoiceVerb
         {
             var said = KeepRules.Said(kind.Id, choices.Keep);
             write.WriteLine(choices.Keep.IsDefault(kind.Id)
-                ? $"  {kind.Id,-10} {said}  (the default — `daoris driver keep {kind.Id} …` changes it)"
-                : $"  {kind.Id,-10} {said}  (set — `daoris driver keep {kind.Id} default` takes the default again)");
+                ? $"  {kind.Id,-10} {said}  (the default — `daoris settings keep {kind.Id} …` changes it)"
+                : $"  {kind.Id,-10} {said}  (set — `daoris settings keep {kind.Id} default` takes the default again)");
         }
 
         var allowance = KeepRules.Said(KeepRules.Allowance, choices.Keep);
         write.WriteLine(choices.Keep.IsDefault(KeepRules.Allowance)
-            ? $"  {KeepRules.Allowance,-10} {allowance}  (the default — `daoris driver keep allowance …` changes it)"
-            : $"  {KeepRules.Allowance,-10} {allowance}  (set — `daoris driver keep allowance default` takes the default again)");
+            ? $"  {KeepRules.Allowance,-10} {allowance}  (the default — `daoris settings keep allowance …` changes it)"
+            : $"  {KeepRules.Allowance,-10} {allowance}  (set — `daoris settings keep allowance default` takes the default again)");
 
         // KEEP1f: the free-space floor, set beside the kinds' rules.
         var floor = KeepRules.Said(KeepRules.Floor, choices.Keep);
         write.WriteLine(choices.Keep.IsDefault(KeepRules.Floor)
-            ? $"  {KeepRules.Floor,-10} {floor}  (the default — `daoris driver keep floor …` changes it)"
-            : $"  {KeepRules.Floor,-10} {floor}  (set — `daoris driver keep floor default` takes the default again)");
+            ? $"  {KeepRules.Floor,-10} {floor}  (the default — `daoris settings keep floor …` changes it)"
+            : $"  {KeepRules.Floor,-10} {floor}  (set — `daoris settings keep floor default` takes the default again)");
         return 0;
     }
 
@@ -87,7 +87,7 @@ public sealed class KeepVerb : ChoiceVerb
     private static KeepSet KeepAsked(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
         const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, "
-            + "`logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`.";
+            + "`logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris settings keep set-aside 30`.";
         if (args.Count != 3) throw new ChoiceWords(Usage);
         try
         {

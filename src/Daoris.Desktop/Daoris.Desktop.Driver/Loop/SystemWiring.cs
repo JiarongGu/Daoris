@@ -190,7 +190,7 @@ public sealed record WiringWorld : IToolHomeWorld
 }
 
 /// <summary>
-/// The one reader This Daoris and <c>daoris-driver wiring</c> share (WIRING1b, the this-Daoris design §6): every wire of this
+/// The one reader This Daoris and <c>daoris wiring</c> share (WIRING1b, the this-Daoris design §6): every wire of this
 /// Daoris and where it came from, in the route's shape, every field added and never renamed.
 /// </summary>
 /// <remarks>
@@ -215,7 +215,7 @@ public static class SystemWiring
     private const int LogDays = MachineLog.KeptDays;
 
     /// <summary>Each launcher an install's <c>app/bin/</c> carries (D124 §1.2, <c>desktop-publish</c>'s <c>CLI_LAUNCHERS</c> and <c>DRIVER_LAUNCHERS</c>).</summary>
-    public static IReadOnlyList<string> Launchers { get; } = ["daoris", "daoris.cmd", "daoris-driver", "daoris-driver.cmd"];
+    public static IReadOnlyList<string> Launchers { get; } = ["daoris", "daoris.cmd"];
 
     /// <summary>The settings files a person's choice lives in (design §3.4), each with the variable that overrides it and the door to where it is edited.</summary>
     private static readonly (HomeEntry Entry, string? Override, string Door)[] SettingsFiles =
@@ -902,7 +902,6 @@ public static class SystemWiring
             .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var order = machinePath.Concat(accountPath).ToArray();
         terminal["firstDaoris"] = First(order, "daoris", extensions, bin);
-        terminal["firstDriver"] = First(order, "daoris-driver", extensions, bin);
         terminal["address"] = address;
         return terminal;
     }

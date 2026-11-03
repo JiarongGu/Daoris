@@ -69,7 +69,7 @@ turning it on and Daoris can check them: `[]` until it runs one. Each is `{ "id"
 | `ready` | at most four checks, each `{ "run": ["…"], "says": "…", "fix": "…" }`: a command whose exit 0 means ready, what that means, and the command a person runs when it is not |
 | `name`, `command`, `versionArguments` | only for a tool Daoris does not know: what a person calls it, the program to find (the id when absent), and what prints its version |
 
-A check runs only at a trial (`daoris-driver plugins try`, or *Try* on its page), one at a time, with ten
+A check runs only at a trial (`daoris plugin try`, or *Try* on its page), one at a time, with ten
 seconds each; Daoris never runs `fix`. A problem in `tools` never stops the plugin: it is said beside
 the tool, and a trial says each in its own sentence.
 
@@ -77,8 +77,8 @@ the tool, and a trial says each in its own sentence.
 
 ```sh
 node --test                                        # in this folder: the wire test, no Daoris needed
-daoris-driver plugins try <this folder>            # the same frames, through the driver itself
-daoris-driver plugins try <this folder> --point <point> --frame <file.json>
+daoris plugin try <this folder>            # the same frames, through the driver itself
+daoris plugin try <this folder> --point <point> --frame <file.json>
 ```
 
 `plugin.test.mjs` starts the plugin as the driver does, then checks the handshake, one frame at every

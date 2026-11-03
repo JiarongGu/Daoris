@@ -202,7 +202,7 @@ public static class Trace
 
         if (named.Count > 1)
         {
-            var forms = named.Select(each => $"`daoris-driver trace {each.Split(' ')[0]} {id}`");
+            var forms = named.Select(each => $"`daoris trace {each.Split(' ')[0]} {id}`");
             return (null, $"`{id}` names more than one thing here: {string.Join(" and ", named)}. Name the one to read: "
                 + $"{string.Join(", or ", forms)}.");
         }

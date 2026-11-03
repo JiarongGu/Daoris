@@ -20,7 +20,7 @@ namespace Daoris.Driver;
 /// driver sends cannot drift; <c>PluginKitTests</c> also sends the samples through the loop and the
 /// landing and compares.</para>
 ///
-/// <para><b>One implementation behind both doors.</b> `daoris-driver plugins new|try` and Settings →
+/// <para><b>One implementation behind both doors.</b> `daoris plugin new|try` and Settings →
 /// Plugins both call this class. The CLI names no scaffold of its own: it spawns nothing but this program
 /// (<c>driverprogram.ts</c>), and the samples come from this library.</para>
 ///
@@ -199,7 +199,7 @@ public static class PluginKit
         new(
             HookPoints.StateChanged,
             "observation",
-            "Once something the driver holds has changed (a press in a window, or a terminal's `daoris-driver trees` verb, has "
+            "Once something the driver holds has changed (a press in a window, or a terminal's `daoris tree list` verb, has "
             + "answered), every plugin that listens here is told what moved: `scopes`, the families of state that changed, in the "
             + "screen's words, and `sessions`, the sessions it was about, or null where it was not one session's. Never what it is "
             + "now, and never the press's answer, which was given before any plugin heard. Changes come one at a time, in order, "
@@ -456,7 +456,7 @@ public static class PluginKit
 
             // The work points (README.md, "Working"): the kit's work.mjs keeps the journal, answers each point, and sends each outcome at
             // `work/step`. These are the external calls it makes, the only part to write. Under the kit's stand-in world, which its tests
-            // and `daoris-driver plugins try` set, none of them is called.
+            // and `daoris plugin try` set, none of them is called.
             const kit = work({
               data,
               send,
@@ -479,7 +479,7 @@ public static class PluginKit
 
             // The work points (README.md, "Working"): the kit's work.mjs keeps the journal, answers each point, and sends each
             // observation at `work/step`. This is the external call it makes, the only part to write. Under the kit's stand-in world,
-            // which its tests and `daoris-driver plugins try` set, it is not called.
+            // which its tests and `daoris plugin try` set, it is not called.
             const kit = work({
               data,
               send,
@@ -545,7 +545,7 @@ public static class PluginKit
         if (Performs(points))
         {
             files.Append($"| `{ContractTest}` | its contract test: what the kit promises of a performer, checked over the wire |\n");
-            files.Append($"| `{CycleFixture}` | the cycle `daoris-driver plugins try --cycle` drives it through |\n");
+            files.Append($"| `{CycleFixture}` | the cycle `daoris plugin try --cycle` drives it through |\n");
         }
 
         var work = !Works(points) ? ""
@@ -562,10 +562,10 @@ public static class PluginKit
             .Replace("{{work}}", work, StringComparison.Ordinal)
             .Replace("{{run}}", RunsATool(points)
                 ? "`run()` in `plugin.mjs` does exactly that, and `safe()` respells text so it can pass."
-                : "`daoris-driver plugins new <id> --point work/land` writes a `run()` helper that does exactly that.",
+                : "`daoris plugin new <id> --point work/land` writes a `run()` helper that does exactly that.",
                 StringComparison.Ordinal)
             .Replace("{{install}}", lands
-                ? $" A landing plugin also needs a rule to name it: `daoris driver landing --workspace <name> branch "
+                ? $" A landing plugin also needs a rule to name it: `daoris place landing --workspace <name> branch "
                   + $"\"feature/{{quest}}-{{slug}}\" --plugin {id}`, or Repositories → the workspace's page → Setup → Defaults → How work lands."
                 : "", StringComparison.Ordinal);
     }

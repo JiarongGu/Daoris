@@ -56,7 +56,7 @@ const ENGINE_WORKS = withWork(taken(), 'build', work('build', ENGINE, [choice('c
 
 const TOOLS_WORKS = withWork(
   withWork(taken(), 'build', {
-    work: 'build', held: 'No role takes `build` here, so its starts hold until one is given it: Agents → Roles, or `daoris driver role`.', choices: [],
+    work: 'build', held: 'No role takes `build` here, so its starts hold until one is given it: Agents → Roles, or `daoris role`.', choices: [],
   }),
   'help', { work: 'help', role: roleOf('help', 'Helping', '协助'), choices: [choice('claude-code')], policyFailed: 'driver.json does not read: line 4.' },
 );

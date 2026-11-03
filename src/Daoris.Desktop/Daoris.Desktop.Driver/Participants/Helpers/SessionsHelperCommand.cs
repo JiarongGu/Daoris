@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver sessions helper &lt;session&gt; "&lt;question&gt;" [--agent &lt;name&gt;]</c> (MIXAGENT2a-ii, D163 point 2; the mixed
+/// <c>daoris session helper &lt;session&gt; "&lt;question&gt;" [--agent &lt;name&gt;]</c> (MIXAGENT2a-ii, D163 point 2; the mixed
 /// agents design §3, §5): the person's own door to a helper. It writes the ask a connector's <c>helper_ask</c> writes (the same file
 /// under the home's <c>helpers</c> folder), with <c>askedBy: person</c>, for the driver's look to take; the person is the one asking, so
 /// the rule's <c>ask</c> and <c>off</c> do not hold it and the driver starts it within the limits.

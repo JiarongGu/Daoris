@@ -53,7 +53,7 @@ public static class WorkflowRunWords
     };
 
     /// <summary>
-    /// A step's title, as <c>daoris driver workflow show</c> names it; a graph run's node of a kind no step has (FABRIC-CUTOVER1e) by its
+    /// A step's title, as <c>daoris workflow show</c> names it; a graph run's node of a kind no step has (FABRIC-CUTOVER1e) by its
     /// kind, a plugin's by its node and its plugin.
     /// </summary>
     public static string Title(WorkflowStep step) => step.Kind switch
@@ -412,9 +412,9 @@ public static class WorkflowRunWords
         else if (run is not null && step.Acts is { Count: > 0 } acts)
         {
             var node = step.Step.Id;
-            var stop = $"`daoris-driver workflow stop {run} {node}` stops it.";
-            yield return acts.Contains(NodeWordActs.Skip) ? $"`daoris-driver workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
-                : acts.Contains(NodeWordActs.Changes) ? $"`daoris-driver workflow changes {run} {node} \"…\"` asks for changes in place of your Accept; {stop}"
+            var stop = $"`daoris workflow stop {run} {node}` stops it.";
+            yield return acts.Contains(NodeWordActs.Skip) ? $"`daoris workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
+                : acts.Contains(NodeWordActs.Changes) ? $"`daoris workflow changes {run} {node} \"…\"` asks for changes in place of your Accept; {stop}"
                 : stop;
         }
 
@@ -460,7 +460,7 @@ public static class WorkflowRunWords
     {
         IntegrationHeads.Queued => $"queued for `{head.Line}`",
         IntegrationHeads.InCandidate => head.Step is { Length: > 0 } step ? $"in a candidate for `{head.Line}`, at {step}" : $"in a candidate for `{head.Line}`",
-        IntegrationHeads.Held => $"held for `{head.Line}`: `daoris-driver integrate` says what releases it",
+        IntegrationHeads.Held => $"held for `{head.Line}`: `daoris integrate` says what releases it",
         IntegrationHeads.HandedBack => $"handed back from `{head.Line}`",
         IntegrationHeads.Settled => $"integrated into `{head.Line}`",
         IntegrationHeads.Dropped => $"dropped from `{head.Line}`'s queue",

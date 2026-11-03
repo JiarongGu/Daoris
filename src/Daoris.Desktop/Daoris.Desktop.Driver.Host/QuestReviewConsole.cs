@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The person's verdict on a review from a terminal (REVIEWENV1c, D154 point 8, D50): <c>daoris-driver quest review &lt;id&gt;
+/// The person's verdict on a review from a terminal (REVIEWENV1c, D154 point 8, D50): <c>daoris quest review &lt;id&gt;
 /// reviewed|not-yet|skip ["…"]</c>, and the chain's choice at the gate, <c>off|on|&lt;environment&gt;</c> (REVIEWENV1j). The words are
 /// the library's (<see cref="QuestReviewCommand"/>); this wires the real world: the service, this machine's review rule, a <i>not
 /// yet</i>'s words to the step's session through <c>sessions say</c>'s own path, and this host's machine log, where the verdict's

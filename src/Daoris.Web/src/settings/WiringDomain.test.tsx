@@ -93,7 +93,7 @@ describe('Settings → This Daoris', () => {
     // A folder not there yet says so and shows no size.
     expect(folders.getByText('Not there yet')).toBeTruthy();
     expect(folders.getAllByText(/measured /).length).toBeGreaterThan(0);
-    expect(folders.getByText(code('daoris-driver wiring'))).toBeTruthy();
+    expect(folders.getByText(code('daoris wiring'))).toBeTruthy();
   });
 
   it('says Measuring… for each size while a walk is under way, and holds the button until it ends', async () => {
@@ -193,7 +193,7 @@ describe('Settings → This Daoris', () => {
     open();
     const loop = within(await screen.findByRole('region', { name: 'Driver loop' }));
 
-    expect(loop.getByText("A terminal's daoris-driver drive")).toBeTruthy();
+    expect(loop.getByText("A terminal's daoris drive")).toBeTruthy();
     expect(loop.getByText('Draining for an update: nothing new starts.')).toBeTruthy();
     expect(loop.getByText('2 held by driver.json')).toBeTruthy();
   });
@@ -326,12 +326,11 @@ describe('Settings → This Daoris', () => {
     open();
     const terminal = within(await screen.findByRole('region', { name: 'Terminal' }));
 
-    expect(terminal.getByText('daoris-driver.cmd')).toBeTruthy();
+    expect(terminal.getByText('daoris.cmd')).toBeTruthy();
     expect(terminal.getByText('missing')).toBeTruthy();
     expect(terminal.getByText("On your account's PATH")).toBeTruthy();
-    expect(terminal.getByText("This install's")).toBeTruthy();
     expect(terminal.getByText('Another')).toBeTruthy();
-    expect(terminal.getByText('D:/somewhere/else/bin/daoris-driver.cmd')).toBeTruthy();
+    expect(terminal.getByText('D:/somewhere/else/bin/daoris.cmd')).toBeTruthy();
     // The address file's, and the account's DAORIS_SERVICE_URL, which a terminal reads first.
     expect(terminal.getAllByText('http://localhost:5177')).toHaveLength(2);
     expect(terminal.getByText(/^process 4242, since /)).toBeTruthy();
@@ -590,8 +589,8 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     // KEEP1d: the rules the person sets carry their editor and their terminal twin, history's age among them (KEEP1g).
     expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(5);
-    expect(card.textContent).toContain('daoris driver keep history …');
-    expect(card.textContent).toContain('daoris driver keep set-aside …');
+    expect(card.textContent).toContain('daoris settings keep history …');
+    expect(card.textContent).toContain('daoris settings keep set-aside …');
     await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
     expect(invoke.mock.calls.filter(([, type, request]) => type === 'SYSTEM_SPACE' && request?.payload)).toEqual([]);
   });

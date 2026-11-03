@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 public sealed record PressTold(string Route, string? Session, DateTimeOffset At);
 
 /// <summary>
-/// The presses a terminal tells (STATEHUB1e, D169 point 8): <c>daoris-driver trees land|remove|clean|sync|hand</c> run in a process
+/// The presses a terminal tells (STATEHUB1e, D169 point 8): <c>daoris tree land|remove|clean|sync|hand</c> run in a process
 /// with no bus of the desktop's, so each, once it has acted, leaves a note of what it pressed in the request folder every loop on the
 /// home already watches (<see cref="SessionRequestWatch"/>, woken as the note arrives, FABRIC-EVENT2), and the shell's loop publishes it as the window's press of
 /// that route is published: the same scopes, so a terminal's press reads in an open window as a window's does.

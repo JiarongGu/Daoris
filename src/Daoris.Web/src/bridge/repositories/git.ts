@@ -5,7 +5,7 @@ import { keys } from '../../data/queries';
 import { call } from '../call';
 import { askHeld } from '../state/held';
 
-// Git's reads (GIT1d-b, D147 §2, D150): the screen's door to `daoris-driver git`, the same reads over the same checkouts, for
+// Git's reads (GIT1d-b, D147 §2, D150): the screen's door to `daoris git`, the same reads over the same checkouts, for
 // Repositories' Branches and History tabs. Shell-only: a checkout is this machine's, and no machine path leaves it (D47 §4).
 // Each read answers {value, refusal, problem, commands, remembered}: a refusal is a code the page words (`errors.{code}`, as
 // `sentence` does) and `commands` are the git a person types for the same answer.

@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// *Try again* over the bridge (`RETRY_QUEST`, RETRY1 as SESSUX1b extends it, D126 §3.4): one act that does whichever applies
 /// to the quest the loop's last look considered, and says which. A quest parked on its failed sessions is marked at its
-/// failures as the records count them (RETRY1b), as `daoris driver retry` marks it; a quest the person's stop holds is
+/// failures as the records count them (RETRY1b), as `daoris quest retry` marks it; a quest the person's stop holds is
 /// released from the session that look named, with no mark, since a stop is not a strike; any other is refused, and nothing
 /// is written.
 /// </summary>

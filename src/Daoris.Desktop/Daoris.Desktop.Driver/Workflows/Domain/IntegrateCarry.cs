@@ -45,7 +45,7 @@ public static class IntegrateCarry
             if (landing.Form == LandingForm.Merge || landing.Pattern is null)
             {
                 said.Add($"{step} integrates the branch the landing `{land.Id}` makes, and neither the step nor `{repository}`'s landing rule names a pattern "
-                    + $"for one (a merge rule names none): `daoris driver landing {repository} branch <pattern>` declares it ({LandingRow}).");
+                    + $"for one (a merge rule names none): `daoris place landing {repository} branch <pattern>` declares it ({LandingRow}).");
             }
 
             if (landing.Plugin is { } plugin)
@@ -87,7 +87,7 @@ public static class IntegrateCarry
             foreach (var push in pushes)
             {
                 said.Add($"its `{push.Id}` (`{push.Kind}`) pushes the landing's branch through a plugin, and neither the landing `{land.Id}` nor `{repository}`'s "
-                    + $"landing rule names one: `daoris driver landing {repository} branch <pattern> --plugin <id>` declares one ({LandingRow}).");
+                    + $"landing rule names one: `daoris place landing {repository} branch <pattern> --plugin <id>` declares one ({LandingRow}).");
             }
         }
 

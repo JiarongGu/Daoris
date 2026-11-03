@@ -149,7 +149,7 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// RETRY1b: the count `daoris driver retry` marks a quest at, read by the CLI from the same records. 🔴 A TWIN with the
+    /// RETRY1b: the count `daoris quest retry` marks a quest at, read by the CLI from the same records. 🔴 A TWIN with the
     /// CLI's `failuresOf` (`strikes.ts`) until it left with the driver family's TypeScript (PUSH1f2b).
     /// Each row is one record as the records door answers it, and whether it is a strike against <c>q1</c>.
     /// </summary>

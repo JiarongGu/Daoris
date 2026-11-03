@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver agent [list]</c> (PUSH1f2e4, D194, the alone-path design §5): this machine's agents and the accounts they run as, the
+/// <c>daoris agent [list]</c> (PUSH1f2e4, D194, the alone-path design §5): this machine's agents and the accounts they run as, the
 /// words <c>daoris agent</c> and <c>daoris agent list</c> hand this program. Each agent is asked its version by the binary a start
 /// would run (<see cref="HarnessProbe"/>, D57 rule 4), and each of its accounts whether it is signed in, under the account's probe lock;
 /// what an account was read as is kept where the driver keeps its own readings (<c>reads.json</c>, AGENTREAD1). Beneath each agent its

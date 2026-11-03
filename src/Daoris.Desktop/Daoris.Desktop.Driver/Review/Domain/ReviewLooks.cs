@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// A review rule's environment put, as a standing choice looks for its procedure (PUSH1f2a, D194 point 4; REVIEWENV1a; FOUNDATION1
 /// mod-iii): the review's judgement over the checkouts the registry names, which the settings' <see cref="StandingChoices"/> held until
-/// the settings' own types named none of the review's. The window's route and <c>daoris-driver driver review</c> acting alone call this one.
+/// the settings' own types named none of the review's. The window's route and <c>daoris place review</c> acting alone call this one.
 /// </summary>
 public static class ReviewLooks
 {

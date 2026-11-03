@@ -27,7 +27,7 @@ export type TraceDoor = {
 };
 
 /**
- * **How this came to be** (TRACE1b, D143, D50): the screen's door to `daoris-driver trace`, at the foot of a session's page
+ * **How this came to be** (TRACE1b, D143, D50): the screen's door to `daoris trace`, at the foot of a session's page
  * and a quest's. The ask and the person's words, the quest with what they required and how its done answered, then each
  * session: what ran it, its tree, what it was handed, its rules, where its work landed, and what stood when it started.
  *

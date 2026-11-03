@@ -30,7 +30,7 @@ internal static class SetUpSits
         {
             return new(new CannotShowFact(CannotShowFact.Unnamed, named),
                 $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, and no review rule here names `{named}` for "
-                + $"`{quest.To}`: `daoris driver review {quest.To} {named} --kind local|deployed --procedure <path>` declares it.");
+                + $"`{quest.To}`: `daoris place review {quest.To} {named} --kind local|deployed --procedure <path>` declares it.");
         }
 
         if (environment.Kind != "local") return null;
@@ -38,7 +38,7 @@ internal static class SetUpSits
         {
             return new(new CannotShowFact(CannotShowFact.NoAddress, named),
                 $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, which declares no address to show it at: "
-                + $"`daoris driver review {quest.To} {named} --address <url>` declares where the app normally runs.");
+                + $"`daoris place review {quest.To} {named} --address <url>` declares where the app normally runs.");
         }
 
         return window

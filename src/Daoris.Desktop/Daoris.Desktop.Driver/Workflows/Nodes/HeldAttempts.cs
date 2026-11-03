@@ -54,14 +54,14 @@ public sealed record UnreadableRecord(string File, string? Unit)
 
 /// <summary>
 /// The attempts held for the person, read from the units' node records (FABRIC-PERFORM1g): what <c>WORK_STATE</c> and
-/// <c>daoris-driver work held</c> list, and the sentences both say. Read-only: no record is written, no lease taken. An install no graph
+/// <c>daoris work held</c> list, and the sentences both say. Read-only: no record is written, no lease taken. An install no graph
 /// naming a plugin's performed node governs has no record, so it lists nothing.
 /// </summary>
 public static class HeldAttempts
 {
-    /// <summary>The usage of <c>daoris-driver work held</c>, as the terminal says it when its words are not understood.</summary>
+    /// <summary>The usage of <c>daoris work held</c>, as the terminal says it when its words are not understood.</summary>
     public const string Usage =
-        "usage: daoris-driver work held [--unit <id>]  |  daoris-driver work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop; a failed step: again)";
+        "usage: daoris work held [--unit <id>]  |  daoris work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop; a failed step: again)";
 
     /// <summary>
     /// Every attempt held on the records that read, every close unknown with its node still on it (FABRIC-CLOSE1u,
@@ -144,7 +144,7 @@ public static class HeldAttempts
     };
 
     /// <summary>
-    /// The lines <c>daoris-driver work held</c> prints: one per attempt held, and what the person may say of it; then one per node record
+    /// The lines <c>daoris work held</c> prints: one per attempt held, and what the person may say of it; then one per node record
     /// that does not read (FABRIC-PERFORM1j), which no word settles.
     /// </summary>
     public static IReadOnlyList<string> Lines(IReadOnlyList<HeldAttempt> held, IReadOnlyList<UnreadableRecord>? unreadable = null)
@@ -156,12 +156,12 @@ public static class HeldAttempts
             $"{each.Unit}  {each.Node} (attempt {each.Attempt}, {each.Step}, node {each.NodeState}): {(each.Failed ? "failed" : "held")}, {WhySaid(each)}.",
             each.Resolution is { } word
                 ? $"  your word `{word}` is recorded{(each.ResolvedAt is { } at ? $" ({Moments.Write(at)})" : "")}, and applied at the next look."
-                : $"  say: daoris-driver work held {each.Unit} {each.Node} {each.Attempt} {string.Join('|', each.Words)}",
+                : $"  say: daoris work held {each.Unit} {each.Node} {each.Attempt} {string.Join('|', each.Words)}",
         }), .. unreadable.Select(each => $"work: {UnreadableSaid(each)}.")];
     }
 
     /// <summary>
-    /// <c>daoris-driver work held [--unit &lt;id&gt;]</c> lists; <c>daoris-driver work held &lt;unit&gt; &lt;node&gt; &lt;attempt&gt;
+    /// <c>daoris work held [--unit &lt;id&gt;]</c> lists; <c>daoris work held &lt;unit&gt; &lt;node&gt; &lt;attempt&gt;
     /// happened|did-not|stop</c> (a held close's: <c>record|resend|stop</c>, FABRIC-CLOSE1q; a failure kept for the person's: <c>again</c>,
     /// FABRIC-PERFORM1k) records the person's word (FABRIC-PERFORM1g, D50:
     /// the page's <c>WORK_HELD</c> is the other door). Only the

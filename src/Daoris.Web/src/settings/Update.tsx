@@ -20,7 +20,7 @@ const WORD_VARIANT = { 'when-idle': 'default', now: 'primary', 'not-now': 'ghost
 /**
  * The install's update in Settings (UPDATE1b, D139 §3, §6): what is staged beside it, the drain and what it waits on, how
  * the last swap ended, and the screen's three words for it — the row that stands where the banner, the screen's other
- * door, is gone once dismissed. `daoris-driver update` is the terminal's door to the same request.
+ * door, is gone once dismissed. `daoris update` is the terminal's door to the same request.
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell (D52 as amended); the Driver domain holds
@@ -28,7 +28,7 @@ const WORD_VARIANT = { 'when-idle': 'default', now: 'primary', 'not-now': 'ghost
  * the two doors never word one thing twice. Nothing until the shell answers.
  *
  * The last swap is `last`, the journal's record told or not (UPDATE1d), never the banner's once-said `outcome`: it stands
- * after the banner's *Dismiss* and at every later start, as the terminal's plain `daoris-driver update` says it (D50).
+ * after the banner's *Dismiss* and at every later start, as the terminal's plain `daoris update` says it (D50).
  */
 export function UpdateSection({ update, busy = false, onSay }: {
   update: UpdateState | undefined;

@@ -200,7 +200,7 @@ public static class PluginInstall
         {
             return Refuse($"plugin `{installed}` came from {source.Said}, and a plugin from a package is installed whole. "
                 + $"A newer package takes its place: `daoris plugin remove {installed}`, then "
-                + "`daoris-driver plugins install <file.nupkg>`, and what it kept stays where it is.");
+                + "`daoris plugin install <file.nupkg>`, and what it kept stays where it is.");
         }
 
         // LANDPIN3b: a copy whose record says what its install copied is never replaced once its files are not those any more.

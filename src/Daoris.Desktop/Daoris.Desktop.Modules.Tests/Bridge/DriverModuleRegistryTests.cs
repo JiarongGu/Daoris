@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// The repository row's *Refresh* over the bridge (`RegistryRoutes.cs`, WSSETUP5, D124 §3.1): the screen's half of
-/// <c>daoris-driver register --repository</c>, through the loop's own client. A refusal is an answer, saying what the row
+/// <c>daoris repository register --repository</c>, through the loop's own client. A refusal is an answer, saying what the row
 /// says; held here where no git is asked, the line's read being the driver library's (<c>RegistrationFollowTests</c>).
 /// </summary>
 public sealed class DriverModuleRegistryTests : DriverModuleBridge

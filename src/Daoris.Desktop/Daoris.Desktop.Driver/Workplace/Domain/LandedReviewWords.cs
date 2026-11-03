@@ -62,7 +62,7 @@ public static class LandedReviewWords
             ? "Nothing was landed again: its tree is gone."
             : "Nothing was landed again: a second landing is refused while that branch stands.";
         var hand = review is { State: LandedState.Standing, Entry.Pushed: false }
-            ? $" `daoris-driver trees hand {session}` hands that branch to a landing plugin."
+            ? $" `daoris tree hand {session}` hands that branch to a landing plugin."
             : "";
         return $"{Describe(session, review)} {why}{hand}";
     }

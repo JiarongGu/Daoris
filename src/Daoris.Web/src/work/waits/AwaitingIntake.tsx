@@ -12,7 +12,7 @@ import { InConversation } from './WaitAnchor';
  * settle whose an ask is and it asked the person rather than guess (INT4b). The person answers by
  * publishing the ask to a repository or closing it, and the driver's next tick ends this record:
  * `completed` for a publish, `stopped` for a close. So the one move that answers is a door to the
- * ask's record, where publish and close already live, and `daoris-driver ask --publish/--close`
+ * ask's record, where publish and close already live, and `daoris ask --publish/--close`
  * are the terminal's twins (D50).
  *
  * **Not the three moves a parked session has.** Each ended the record without answering the ask,

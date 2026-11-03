@@ -89,7 +89,7 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
  *
  * HELPPLUG1a's tightening (D170's note): `help-approve`, `help-reads` and `help-withdraw`, with the `server`, are the person's
  * approval of the exact tools a plugin's server offers Ask Daoris, its reads only, or its withdrawal, the page's half of
- * `daoris-driver plugins approve|withdraw`. Since HELPPLUG1c `help-approve` carries the `writes` the person ticked, each on its
+ * `daoris plugin approve|withdraw`. Since HELPPLUG1c `help-approve` carries the `writes` the person ticked, each on its
  * own (`--writes`); without them it approves every write, as an older page's did.
  */
 export const usePluginAction = () => useMutation({
@@ -118,7 +118,7 @@ export const usePluginInstall = () => useMutation({
 });
 
 /**
- * The screen's half of `daoris-driver plugins new` (PLUG8, D101): a plugin's folder written into the one
+ * The screen's half of `daoris plugin new` (PLUG8, D101): a plugin's folder written into the one
  * the person named. Nothing is installed, so nothing is asked again.
  */
 export const usePluginNew = () =>
@@ -163,7 +163,7 @@ export const usePluginToolFix = () =>
   });
 
 /**
- * The screen's half of `daoris-driver plugins try`: an installed plugin by its id, or a folder by its
+ * The screen's half of `daoris plugin try`: an installed plugin by its id, or a folder by its
  * path, started as the driver would. It may take as long as the driver waits — two minutes for a landing.
  */
 export const usePluginTry = () =>

@@ -157,7 +157,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
     internal static string NotRead(bool yet) => yet ? "not read yet" : "not read";
 
     /// <summary>
-    /// What each workspace keeps of finished work (HIST1f-b), in the terminal's words (<c>daoris-driver history</c>): its closed
+    /// What each workspace keeps of finished work (HIST1f-b), in the terminal's words (<c>daoris history</c>): its closed
     /// work and sessions with their size, what a clear would take now, and how many units stay by the word that keeps them; the
     /// home's left-over files once, since every workspace's clear takes them.
     /// </summary>

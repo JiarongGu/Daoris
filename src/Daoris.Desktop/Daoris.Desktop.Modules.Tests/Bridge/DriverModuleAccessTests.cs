@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// A repository's session access setup over the bridge (AUTONOMY1a, D184 point 1): <c>SET_ACCESS</c>, the setup page's half of
-/// <c>daoris-driver access</c>, over the same keys in the same file (D50); the state answering each level as set; a pause or a value the
+/// <c>daoris place access</c>, over the same keys in the same file (D50); the state answering each level as set; a pause or a value the
 /// setup does not have refused in the driver's words with nothing written. Edits to <c>driver.json</c> only, so no service and no process.
 /// </summary>
 public sealed class DriverModuleAccessTests : DriverModuleBridge

@@ -5,7 +5,7 @@ namespace Daoris.Driver.Tests;
 
 /// <summary>
 /// Ask Daoris's <c>setup</c> proposal (D170 point 1; WORKFLOWCLEAN1 1f): the one door is <c>place</c>, a place's set-up with adoption in its
-/// ask, proposed as the plan <c>daoris-driver place … --plan</c> prints and opened on the page that applies it.
+/// ask, proposed as the plan <c>daoris place … --plan</c> prints and opened on the page that applies it.
 /// </summary>
 public sealed class HelpSetupProposalsTests : HelpProposalsFixture
 {
@@ -45,7 +45,7 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver place engine web --preset merge-after-accept --adoption --what-it-builds library --plan", plan.Terminal);
+        Assert.Equal("daoris place engine web --preset merge-after-accept --adoption --what-it-builds library --plan", plan.Terminal);
         Assert.Contains("`engine`, `web`", plan.Describe);
         Assert.Contains("Set up…", plan.Describe);
         Assert.Contains("nothing is written until you press Apply there", plan.Describe);
@@ -78,7 +78,7 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver place engine --preset keep --drive --plan", plan.Terminal);
+        Assert.Equal("daoris place engine --preset keep --drive --plan", plan.Terminal);
         Assert.Equal((SetupPresets.Keep, true), (plan.Go!.Setup!.Preset, plan.Go.Setup.Drive));
     }
 
@@ -94,7 +94,7 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
         Assert.Contains("ghost", plan.Refusal);
         Assert.Null(plan.Go);
         Assert.Null(plan.Place);
-        Assert.StartsWith("daoris-driver place solo ghost", plan.Terminal);
+        Assert.StartsWith("daoris place solo ghost", plan.Terminal);
     }
 
     [Fact]

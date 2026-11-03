@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useSetStrikes, useUpdateState,
+  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useUpdateState,
 } from '../bridge/shell';
 import { useSystemWiring } from '../bridge/system';
 import { failure } from '../design/ui';
@@ -10,7 +10,7 @@ import { accessToast } from './repository/Access';
 import type { SettingsDomainProps } from './domains';
 
 /**
- * The Driver domain (D75): where this machine's Daoris lives, and the driver's two dials over
+ * The Driver domain (D75): where this machine's Daoris lives, and the driver's dials over
  * `driver.json`, the same file `daoris driver` edits (D50). The file is the truth and this is an
  * editor over it: hand-editing keeps working, and neither surface is the only way to say anything.
  *
@@ -30,7 +30,7 @@ import type { SettingsDomainProps } from './domains';
 export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
   const { t } = useTranslation();
   // Whether this machine interrupts the person (SURF5b) — the same `driver.json` field
-  // `daoris driver notify on|off` edits, which is what makes this a door rather than the door.
+  // `daoris settings notify on|off` edits, which is what makes this a door rather than the door.
   const driver = useDriver();
   // The catalogue the Plugins place reads, for its folder and its plugins' settings. An older shell names none, and the row is absent.
   const plugins = usePlugins();
@@ -40,7 +40,6 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const wiring = useSystemWiring();
   const placeAnswers = typeof wiring.query.data?.schema === 'number';
   const setNotify = useSetNotify();
-  const setStrikes = useSetStrikes();
   const setCoolOff = useSetCoolOff();
   const setCap = useSetCap();
   // The install's update (UPDATE1b, D139 §6): the query the banner reads, and the same word it says.
@@ -62,7 +61,6 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         pluginsFolder,
         plugins: plugins.data?.plugins ?? null,
         notify: driver.data?.notify ?? true,
-        strikes: driver.data?.strikes ?? 3,
         coolOff: driver.data?.coolOff,
         cap: driver.data?.cap,
         machineAccess: driver.data?.machineAccess,
@@ -78,10 +76,6 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       onGo={onGo}
       onNotify={(on) => setNotify.mutate({ notify: on }, {
         onSuccess: () => notify(t(on ? 'settings.notify.on' : 'settings.notify.off')),
-        onError,
-      })}
-      onStrikes={(value) => setStrikes.mutate({ strikes: value }, {
-        onSuccess: () => notify(t(value === 0 ? 'settings.strikes.never' : 'settings.strikes.set', { count: value })),
         onError,
       })}
       onCoolOff={(value) => setCoolOff.mutate({ minutes: value }, {

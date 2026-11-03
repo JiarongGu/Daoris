@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver quest done</c> was asked: the quest, and the person's words, or null for none.</summary>
+/// <summary>What <c>daoris quest done</c> was asked: the quest, and the person's words, or null for none.</summary>
 public sealed record QuestDoneAsk(string Quest, string? Note);
 
 /// <summary>
-/// The terminal's door to the person's done (QUESTCLOSE1, D126's note, D50): <c>daoris-driver quest done &lt;id&gt; [--note
+/// The terminal's door to the person's done (QUESTCLOSE1, D126's note, D50): <c>daoris quest done &lt;id&gt; [--note
 /// "…"]</c> marks an open or taken quest done as the person's, through the service's own door for it, and prints the service's
 /// sentence. The quest page's <i>Mark done…</i> is the other door, and a finish at a checkpoint names this one right after it
 /// where the session's quest is still taken.
@@ -18,7 +18,7 @@ public sealed record QuestDoneAsk(string Quest, string? Note);
 public static class QuestDoneCommand
 {
     public const string Usage =
-        "usage: daoris-driver quest done <id> [--note \"…\"]\n"
+        "usage: daoris quest done <id> [--note \"…\"]\n"
         + "       mark a quest done as yours: its record says you marked it done, with your words, and answers none of its\n"
         + "       requirements one by one. For a quest whose session here ended and left it taken, or any open or taken one.";
 

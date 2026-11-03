@@ -949,7 +949,7 @@ public sealed record AskOutcome(AskRefusal Refusal, string Message, Ask? Ask, Qu
 /// <summary>
 /// The judgement over asks (D65 §1a): what may be asked where, what the no-model tier proposes, and
 /// how an ask becomes a quest. The store holds state; this decides — the exchange's shape, for the
-/// same reason: two doors (the page and `daoris-driver ask`), one set of answers.
+/// same reason: two doors (the page and `daoris ask`), one set of answers.
 /// </summary>
 /// <remarks>
 /// <b>An ask's quests are asked BY the ask</b> — <c>ask #id</c> is their sender. It cannot be mistaken

@@ -147,7 +147,7 @@ public sealed class ReviewGateTests
         Assert.Equal(ReviewStates.NotShown, gate.State);
         Assert.Equal(
             "Waits for your review in `local`: nothing shows it there yet: no set-up step for `web-app` is in its chain. "
-            + "`daoris-driver quest review q1 skip \"…\"` lets it land without one.",
+            + "`daoris quest review q1 skip \"…\"` lets it land without one.",
             gate.Says);
     }
 
@@ -172,7 +172,7 @@ public sealed class ReviewGateTests
         Assert.Equal(ReviewStates.Shown, gate.State);
         Assert.Equal(
             "Waits for your review in `local`: set-up step `#q2` showed it at `01234567`, at <http://localhost:4200/reports>: the new "
-            + "column. Look at it, then `daoris-driver quest review q2 reviewed`, or `daoris-driver quest review q2 not-yet \"…\"` with "
+            + "column. Look at it, then `daoris quest review q2 reviewed`, or `daoris quest review q2 not-yet \"…\"` with "
             + "what is not right yet.",
             gate.Says);
     }
@@ -237,7 +237,7 @@ public sealed class ReviewGateTests
         Assert.Contains("what you reviewed does not hold these commits", gate.Says);
         Assert.Contains($"`{Later[..8]}` is not that commit or one before it", gate.Says);
         // The set-up step was reviewed, so a skip there is refused: the skip goes on the chain's work.
-        Assert.Contains("`daoris-driver quest review q1 skip", gate.Says);
+        Assert.Contains("`daoris quest review q1 skip", gate.Says);
 
         // Git that cannot say holds nothing either.
         Assert.Equal(ReviewStates.NotHeld, (await Judge(ReviewGate.Decide([Quest("q1"), step], "web-app", null, null), holds: null)).State);
@@ -380,7 +380,7 @@ public sealed class ReviewGateTests
 
         Assert.Equal(StartVerdict.Waiting, waits.Verdict);
         Assert.Contains("it waits for your review in `local`", waits.Reason);
-        Assert.Contains("`daoris-driver quest review q2 reviewed`", waits.Reason);
+        Assert.Contains("`daoris quest review q2 reviewed`", waits.Reason);
         Assert.DoesNotContain("quest accept", waits.Reason);
     }
 
@@ -429,7 +429,7 @@ public sealed class ReviewGateTests
         Assert.Contains("· skipped the review of the work, on quest #q4\n", said);
         Assert.Contains("· wrote on the ask's channel\n", said);
         Assert.DoesNotContain("to session a session", said);
-        Assert.Contains("  held: it waits for your review of what it showed (`daoris-driver quest review q2 reviewed`", said);
+        Assert.Contains("  held: it waits for your review of what it showed (`daoris quest review q2 reviewed`", said);
         Assert.DoesNotContain("departed from what you required", said);
     }
 

@@ -491,7 +491,7 @@ describe.each(['en', 'zh'])('a conversation’s rename in %s', (language) => {
     await userEvent.clear(field);
     expect(within(form).getByRole('button', { name: i18n.t('help.history.save') })).toBeDisabled();
     await userEvent.type(field, 'Branches');
-    expect(within(form).getByText(code('daoris-driver help rename h3 Branches'))).toBeInTheDocument();
+    expect(within(form).getByText(code('daoris ask-daoris rename h3 Branches'))).toBeInTheDocument();
     await userEvent.click(within(form).getByRole('button', { name: i18n.t('help.history.save') }));
 
     expect(onRename).toHaveBeenCalledWith('h3', 'Branches', expect.anything());
@@ -509,7 +509,7 @@ describe.each(['en', 'zh'])('a conversation’s rename in %s', (language) => {
     const field = within(form).getByRole('textbox', { name: i18n.t('help.history.name') });
     await userEvent.clear(field);
     await userEvent.type(field, name);
-    expect(within(form).getByText(code(`daoris-driver help rename h3 ${word}`))).toBeInTheDocument();
+    expect(within(form).getByText(code(`daoris ask-daoris rename h3 ${word}`))).toBeInTheDocument();
     await userEvent.click(within(form).getByRole('button', { name: i18n.t('help.history.save') }));
     expect(onRename).toHaveBeenCalledWith('h3', name, expect.anything());
   });
@@ -672,7 +672,7 @@ describe('Ask Daoris’s history at the dock’s edge', () => {
     await userEvent.clear(field);
     await userEvent.type(field, long.slice(0, 80));
     // The twin's line: without `min-w-0` it is as wide as its longest word, which its code then never breaks.
-    const twin = within(form).getByText(code('daoris-driver help rename u1 <name>')).parentElement;
+    const twin = within(form).getByText(code('daoris ask-daoris rename u1 <name>')).parentElement;
     expect(twin).toHaveClass('min-w-0', 'wrap-anywhere');
     await userEvent.click(within(form).getByRole('button', { name: i18n.t('common.cancel') }));
 

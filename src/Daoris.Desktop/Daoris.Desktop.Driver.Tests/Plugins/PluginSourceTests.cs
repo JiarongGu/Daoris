@@ -262,7 +262,7 @@ public sealed class PluginSourceTests : IDisposable
     [InlineData("refused by this build", "acme.gate", "`dsh`, which this build already carries")]
     [InlineData("offer no longer offered", "acme.gate", "`acme.gate` is not offered by this install any more")]
     [InlineData("source inside the home", "acme.gate", "inside Daoris's home")]
-    [InlineData("a package", "acme.gate", "A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris-driver plugins install <file.nupkg>`")]
+    [InlineData("a package", "acme.gate", "A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris plugin install <file.nupkg>`")]
     [InlineData("not an id", "../acme.gate", "is not a plugin id")]
     [InlineData("a dotted capital I lowers to no letter of an id", "acme.İ", "is not a plugin id")]
     [InlineData("a line break after an id", "acme.gate\u000A", "is not a plugin id")]

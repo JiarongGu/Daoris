@@ -317,7 +317,7 @@ public sealed class HelpCheckoutsTests : IDisposable
         DriverConfig.Load(config).WithReadAcross("engine", false).Save(config);
         var unreadable = await AnswerAsync(ledger, Request(HelpCheckouts.Read, "engine", "README.md"));
         Assert.Equal(CheckoutAnswer.NotReadable, unreadable.Code);
-        Assert.Contains("daoris driver across engine read on", unreadable.Said);
+        Assert.Contains("daoris place across engine read on", unreadable.Said);
         Assert.Empty(_asked);
     }
 

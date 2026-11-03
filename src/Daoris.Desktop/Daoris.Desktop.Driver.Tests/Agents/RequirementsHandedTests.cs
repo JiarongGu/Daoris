@@ -171,7 +171,7 @@ public sealed class RequirementsHandedTests
     }
 
     /// <summary>
-    /// The terminal's yes (`daoris-driver quest accept`) posts to the accept door and says the service's sentence, a
+    /// The terminal's yes (`daoris quest accept`) posts to the accept door and says the service's sentence, a
     /// refusal included; a host from before the door is said to be older, never read as nothing.
     /// </summary>
     [Fact]

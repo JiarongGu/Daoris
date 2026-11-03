@@ -177,7 +177,7 @@ public static class LandedWords
     /// one way past the clean-up, which keeps such a branch for ever. Null for a row the clean-up already takes or keeps for another reason.
     /// </summary>
     public static string? Door(LandedItem item) => item.Kind == LandedKind.Differs
-        ? $"if the line will never hold its work: `daoris-driver trees remove {item.Branch} --repository {item.Repository} --why \"…\" [--plan]` "
+        ? $"if the line will never hold its work: `daoris tree remove {item.Branch} --repository {item.Repository} --why \"…\" [--plan]` "
             + "withdraws it, keeping its commits on a recovery ref"
         : null;
 }

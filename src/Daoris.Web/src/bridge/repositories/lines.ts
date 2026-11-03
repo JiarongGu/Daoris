@@ -186,7 +186,7 @@ export const useSweepLook = () => {
 
 /**
  * Each unit of work's milestone (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached, the result kept, its
- * cleanup pending or completed and the recovery retained, as `daoris-driver work state` says it. With `unit`, the units that name
+ * cleanup pending or completed and the recovery retained, as `daoris work state` says it. With `unit`, the units that name
  * picks (its id, its session or its branch). A read of this machine's records and git: shell-only, and stored nowhere. A shell older
  * than the route answers nothing of the kind, which reads as no unit. The state hub asks it again with the landings, the sweep and
  * the sessions (`landing`, `sweep`, `sessions`), which are what move it.
@@ -234,7 +234,7 @@ export const useSweep = () =>
 
 /**
  * Discard a failed or superseded attempt's session branch, its commits with it and its tree where it is still here (LAND3b,
- * D102's LAND3 note): the screen's half of `daoris-driver trees remove <branch> --repository <name> --force`. Always
+ * D102's LAND3 note): the screen's half of `daoris tree remove <branch> --repository <name> --force`. Always
  * forced, since the page asks once, naming the branch and its commits, before it sends; a branch the driver kept is an
  * answer with its sentence. What it moved is asked again either way, since a branch gone already is a list out of date: the
  * state hub's, as the route declares it, as after the clean-up (STATEHUB1b, D169), and never the hook's own (STATEHUB1f).
@@ -247,7 +247,7 @@ export const useDiscardSessionBranch = () =>
 
 /**
  * Withdraw a branch a landing made whose work the line will never hold (LANDRETIRE1, D102's note): the screen's half of
- * `daoris-driver trees remove <branch> --repository <name> --why "…"`. The reason is the person's, kept with the record; the commits stay
+ * `daoris tree remove <branch> --repository <name> --why "…"`. The reason is the person's, kept with the record; the commits stay
  * on a recovery ref, which the answer names. A branch the driver kept is an answer with its sentence, never an error. What it moved is
  * asked again by the state hub, as the route declares it (STATEHUB1b, D169), and never the hook's own (STATEHUB1f).
  */
@@ -258,7 +258,7 @@ export const useWithdrawLandingBranch = () =>
   });
 
 /**
- * The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the screen's half of `daoris-driver work
+ * The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the screen's half of `daoris work
  * held <unit> <node> <attempt> <word>`. The driver records it only where it holds the home, and applies it at its next look; a refusal
  * is an answer with the driver's sentence. What it moved the state hub asks again, as the route declares it (STATEHUB1f).
  */
@@ -452,18 +452,18 @@ export const useTreesSync = (workspace?: string) =>
 // the driver's state, written where it is read; what each repository resolves to, and every plan and gate that reads it, move
 // with it, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
 
-/** Set a repository's line or a workspace's, or clear it with no branch — the file `daoris driver line` edits (D50). */
+/** Set a repository's line or a workspace's, or clear it with no branch — the file `daoris place line` edits (D50). */
 export const useSetLine = () => useDriverChange<LineChange>('SET_LINE');
 
 /**
  * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language (LANG1c) —
- * the file `daoris driver language` edits (D50). A code the driver's table does not hold is its refusal, its sentence verbatim.
+ * the file `daoris place language` edits (D50). A code the driver's table does not hold is its refusal, its sentence verbatim.
  */
 export const useSetLanguage = () => useDriverChange<LanguageChange>('SET_LANGUAGE');
 
 /**
  * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,
- * over the file `daoris driver review` edits (D50). An environment put has its procedure looked for in the checkouts it
+ * over the file `daoris place review` edits (D50). An environment put has its procedure looked for in the checkouts it
  * reaches, and the answer's `reviewed` says what was found. A refusal is the driver's sentence, verbatim. The landing's gate
  * reads the rule since REVIEWENV1c.
  */
@@ -471,39 +471,39 @@ export const useSetReview = () => useDriverChange<ReviewChange>('SET_REVIEW');
 
 /**
  * Change which other agent reads a repository's work before it lands, or a workspace's (XAGENT1a, D155 point 3): the twins'
- * edit, over the file `daoris driver opinion` edits (D50). A refusal is the driver's sentence, verbatim.
+ * edit, over the file `daoris place opinion` edits (D50). A refusal is the driver's sentence, verbatim.
  */
 export const useSetOpinion = () => useDriverChange<OpinionChange>('SET_OPINION');
 
 /**
  * Change how a repository's work is committed, or a workspace's (DOORS1b, D164's amendment points 1 and 3): the twins' edit, over
- * the file `daoris driver commits` edits (D50). A refusal is the driver's sentence, verbatim. Driven sessions and conversations
+ * the file `daoris place commits` edits (D50). A refusal is the driver's sentence, verbatim. Driven sessions and conversations
  * are told the rule at their start (PROCESS1d).
  */
 export const useSetCommits = () => useDriverChange<CommitChange>('SET_COMMITS');
 
 /**
  * Change what a helper a repository's agent asks for does, or a workspace's (DOORS1b, D163 point 3): the twins' edit, over the
- * file `daoris driver helpers` edits (D50). A refusal is the driver's sentence, verbatim.
+ * file `daoris place helpers` edits (D50). A refusal is the driver's sentence, verbatim.
  */
 export const useSetHelpers = () => useDriverChange<HelperChange>('SET_HELPERS');
 
 /**
  * Change what an agent's ask to hand its session over does in a repository, or a workspace (MIXAGENT1c, D163 point 3): the twins'
- * edit, over the file `daoris driver handover` edits (D50). A refusal is the driver's sentence, verbatim.
+ * edit, over the file `daoris settings handover` edits (D50). A refusal is the driver's sentence, verbatim.
  */
 export const useSetHandOver = () => useDriverChange<HandOverChange>('SET_HAND_OVER');
 
 /**
  * Change the access setup a repository's sessions start under, a workspace's or this machine's (AUTONOMY1d, D184 points 1-3): full
- * access, a pause set or taken back to the level above, or the level cleared, over the file `daoris-driver access` edits (D50). A
+ * access, a pause set or taken back to the level above, or the level cleared, over the file `daoris place access` edits (D50). A
  * refusal is the driver's sentence, verbatim. Full access is the person's press alone: no proposal names it (D184's rejected list).
  */
 export const useSetAccess = () => useDriverChange<AccessChange>('SET_ACCESS');
 
 /**
  * Change git access for a repository, a workspace or this machine (GITAUTH1f, D198 points 8, 10 and 12): the classes it sets (a null
- * taking one back to the level above), one value for Read and Write, or the level cleared, over the file `daoris-driver git access`
+ * taking one back to the level above), one value for Read and Write, or the level cleared, over the file `daoris git access`
  * edits. A separate route from `SET_ACCESS`. A refusal is the driver's sentence, verbatim; a widening is confirmed by the page first.
  */
 export const useSetGitAccess = () => useDriverChange<GitAccessChange>('SET_GIT_ACCESS');

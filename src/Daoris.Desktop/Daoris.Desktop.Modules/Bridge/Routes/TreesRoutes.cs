@@ -1121,7 +1121,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         : new { review.State, review.Decision.Environment, review.Decision.Level, Quest = review.Decision.SetUpStep?.Id, Says = review.Says, review.Decision.ChatRun, review.Decision.LookNode };
 
     // A branch a landing made, handed to a landing plugin afterwards (WSR5b): what a press would do,
-    // said before it, and the press — `daoris-driver trees hand` is the terminal's door (D50).
+    // said before it, and the press — `daoris tree hand` is the terminal's door (D50).
     /// <summary>
     /// A session's landed branch handed to a landing plugin after its landing (WSR5b): the plan before the
     /// press, or the press. The branch is the one this session's landing made and recorded; a session whose

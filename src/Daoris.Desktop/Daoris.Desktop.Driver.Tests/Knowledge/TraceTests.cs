@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TRACE1 (D143): <c>daoris-driver trace &lt;commit|session|quest&gt;</c>, one read from a commit back to its ask. Six stores
+/// TRACE1 (D143): <c>daoris trace &lt;commit|session|quest&gt;</c>, one read from a commit back to its ask. Six stores
 /// already hold a change's provenance (the service's session records, quests and asks; this machine's events, rules files and
 /// landings) and nothing read them together. Each link is printed from the store that keeps it, and a link nothing keeps is
 /// said missing, never guessed.
@@ -387,7 +387,7 @@ public sealed class TraceTests : IDisposable
         var (_, said, _) = await TraceAsync(new TraceAsk("q1"), sessions: sessions, quests: [quest]);
 
         Assert.Contains("departed: the bridge has no tile feed, on their words \"as common-report does\"", said);
-        Assert.Contains("held: its done departed from what you required, and waits for your yes (`daoris-driver quest accept q1`)", said);
+        Assert.Contains("held: its done departed from what you required, and waits for your yes (`daoris quest accept q1`)", said);
         Assert.Contains("instruction handed: event 1, 70,000 characters, of which the record keeps the first 65,536", said);
     }
 
@@ -423,7 +423,7 @@ public sealed class TraceTests : IDisposable
 
         Assert.Contains("        evidence: `docs/report.md` found, changed by this work · `docs/tile.md` case, the commit spells it `docs/Tile.md`\n", said);
         Assert.Contains("  held: its evidence was not found in the commit read, and waits for you: a later commit that holds it "
-            + "(`daoris-driver quest check q1 --commit <sha>`), or your yes to the done as it stands (`daoris-driver quest accept q1`)\n", said);
+            + "(`daoris quest check q1 --commit <sha>`), or your yes to the done as it stands (`daoris quest accept q1`)\n", said);
         Assert.Contains($"  evidence read at `{commit[..8]}` (session-end), at the end of session s2 on laptop, 2026-10-03 10:05 UTC: 1 of 2 found\n", said);
         Assert.DoesNotContain("departed from what you required", said);
     }
@@ -464,7 +464,7 @@ public sealed class TraceTests : IDisposable
 
         Assert.Contains("        evidence: `docs/report.md` not read yet\n", said);
         Assert.Contains("  held: its evidence is not read yet: the driver reads it when the session that closed it ends, or "
-            + "`daoris-driver quest check q1` reads it; your yes takes the done as it stands (`daoris-driver quest accept q1`)\n", said);
+            + "`daoris quest check q1` reads it; your yes takes the done as it stands (`daoris quest accept q1`)\n", said);
     }
 
     /// <summary>A quest no ask asked says so, and reads its sessions all the same.</summary>
@@ -899,7 +899,7 @@ public sealed class TraceTests : IDisposable
     {
         Assert.Null(TraceCommand.Read(words.Split(' ', StringSplitOptions.RemoveEmptyEntries), out var problem));
         Assert.Contains(why, problem);
-        Assert.StartsWith("usage: daoris-driver trace <commit|session|quest>", TraceCommand.Usage);
+        Assert.StartsWith("usage: daoris trace <commit|session|quest>", TraceCommand.Usage);
     }
 
     /// <summary>One section of the output: from its heading line to the next blank line.</summary>
