@@ -1274,6 +1274,11 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver', 'modules'],
     why: "the driver's HelperAskersTests, the modules' DriverModuleSessionHelpersTests and the service's HelperAskersTests ask the five doors of who may ask for a helper one table (FOUNDATION1q)",
   },
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/senders.json'],
+    gates: ['service', 'driver', 'web-unit'],
+    why: "COMMS1a's sender table, read by the service's, the driver's (SendersTests) and the page's tests alike",
+  },
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
