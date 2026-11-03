@@ -44,7 +44,6 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   OPINION_ANYWAY: { scopes: ['sessions', 'landing'], session: 'id' },
   OPINION_MYSELF: { scopes: ['sessions', 'landing'], session: 'id' },
   STOP_OPINION: { scopes: ['sessions', 'landing'] },
-  SET_LANDING: { scopes: ['landing', 'lines'] },
   START_CHAT: { scopes: ['sessions', 'driver'] },
   SESSION_START_FROM: { scopes: ['sessions', 'driver'], session: 'id' },
   SESSION_GO_ON_BRIEF: { scopes: ['sessions', 'driver'], session: 'id' },
