@@ -113,9 +113,10 @@ public static class SetupPress
     /// the person's standing answer for it among them. Reads, and writes nothing.
     /// </summary>
     /// <remarks>
-    /// Offered for a repository the registry marks adopted. Whether the canon has moved is the doctrine tool's answer
-    /// (<c>status --json</c>), which the driver does not read, so the body says a reconcile that finds nothing closes done;
-    /// the driver keeps no copy of the tool's table (D117).
+    /// For a repository the registry marks adopted. Whether the canon has moved is the doctrine tool's answer, its
+    /// <c>status --json</c> for the checkout (<see cref="ISetupWorld.StatusAsync"/>), held on the plan and said in the body; the
+    /// driver keeps no copy of the tool's table (D117). A status that moved nothing refuses nothing, since the standing answer's
+    /// lines are the reconcile's too (D230 point 4): where it is offered is the page's door, by <see cref="DoctrineStatus.Offers"/>.
     /// </remarks>
     public static async Task<SetupPlan> PlanReconcileAsync(
         ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, CancellationToken ct = default)
@@ -150,16 +151,36 @@ public static class SetupPress
         }
 
         var tools = await world.ToolsAsync(ct).ConfigureAwait(false);
-        if (SetupPressRules.NodeRefusal(tools) is { } node) refusals.Add(node);
-        if (SetupPressRules.ToolRefusal(tools) is { } tool) refusals.Add(tool);
+        var toolRefusals = SetupPressRules.ToolRefusals(tools);
+        refusals.AddRange(toolRefusals);
+
+        // The tool's status, asked of an adopted, synced checkout the tool can be run in.
+        DoctrineStatus? doctrine = null;
+        if (row.Adopted && line.Facts is { Adopted: true, Locked: true } && toolRefusals.Count == 0)
+        {
+            var read = await world.StatusAsync(row, ct).ConfigureAwait(false);
+            doctrine = read.Status;
+            if (doctrine is null)
+            {
+                refusals.Add(new(SetupRefusals.StatusUnread,
+                    $"this machine's doctrine tool printed no status for `{row.Repository}`: {(read.Problem ?? "it said nothing").TrimEnd('.')}."));
+            }
+            else if (doctrine.NewerLock is { } newer)
+            {
+                refusals.Add(new(SetupRefusals.NewerLock,
+                    $"`{row.Repository}`'s lock was written by a newer shared doctrine, {newer}, than the {doctrine.Carried ?? "one"} this machine's "
+                    + "doctrine tool carries, which never rolls a lock back: a reconcile waits for a doctrine tool that carries it."));
+            }
+        }
+
         if (OpenRefusal(await world.QuestsAsync(ct).ConfigureAwait(false), row.Repository) is { } open) refusals.Add(open);
 
-        plan = plan with { Facts = line.Facts, Tools = tools, Refusals = refusals };
+        plan = plan with { Facts = line.Facts, Tools = tools, Doctrine = doctrine, Refusals = refusals };
         if (refusals.Count > 0) return plan;
 
         var (title, body) = SetupBrief.Compose(new SetupBriefInput(
             SetupCase.Reconcile, day, row.Repository, line.Facts!, tools.DaorisVersion is { Length: > 0 } version ? version : "(no version was found)",
-            Description: null, Entries: [], Neighbours: [], Standing: config.StandingFor(row.Repository)));
+            Description: null, Entries: [], Neighbours: [], Standing: config.StandingFor(row.Repository), Doctrine: doctrine));
         return plan with { Title = title, Body = body };
     }
 

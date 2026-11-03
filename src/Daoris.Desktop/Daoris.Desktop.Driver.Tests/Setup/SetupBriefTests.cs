@@ -192,6 +192,30 @@ public sealed partial class SetupBriefTests
     }
 
     /// <summary>
+    /// The context-one design §3 A: the body says what the doctrine tool's <c>status --json</c> said of the checkout before the request, in
+    /// the tool's own verdicts, how the canons stand and what a sync would do; and still that one finding nothing closes done.
+    /// </summary>
+    [Theory]
+    [InlineData(DoctrineUpdates.Behind, "its canon, `0.0.2`, is newer than the `0.0.1` this repository synced from; a sync would change 2 files and add 1; 1 keep was judged against a canon text that has moved since.")]
+    [InlineData(DoctrineUpdates.Differs, "its canon differs from the one this repository synced from at the same version, `0.0.1`, so which is newer only the text can say; a sync would change 2 files and add 1; 1 keep was judged against a canon text that has moved since.")]
+    [InlineData(null, "the canon has not moved since this repository synced; 1 keep was judged against a canon text that has moved since.")]
+    public void The_reconcile_says_what_the_status_said_before_it(string? update, string said)
+    {
+        var doctrine = new DoctrineStatus
+        {
+            Synced = true, Update = update, Carried = update == DoctrineUpdates.Behind ? "0.0.2" : "0.0.1", Locked = "0.0.1",
+            Changed = update is null ? 0 : 2, Added = update is null ? 0 : 1, Reopened = 1,
+        };
+
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Reconcile) with { Doctrine = doctrine });
+
+        Assert.Contains("This machine's doctrine tool, asked `daoris status --json` before this request, said " + said, body);
+        Assert.Contains("if `daoris reconcile` finds nothing", body);
+        Assert.DoesNotContain("did not read first", body);
+        Assert.Contains("did not read first", SetupBrief.Compose(Input(SetupCase.Reconcile)).Body);
+    }
+
+    /// <summary>
     /// D124 §2.6: what a set-up writes, and the bounds it never crosses. INIT1b (D25's INIT1 note): the whole set-up's
     /// `daoris init` writes a `.gitattributes` where there is none, so the list of what it writes names that file, and the
     /// bounds keep one already there as the tool keeps it.
