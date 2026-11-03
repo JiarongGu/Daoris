@@ -11,7 +11,8 @@
  * Open: a row is open while its id is in `TASKS.md` and `docs/task-archive.md` has no heading `## <ID> —` for it. A
  * `ONEWAY1`-prefixed id also stands in `TASKS.md` as its letters alone inside the ONEWAY1 entry's list of rows, so it is open
  * while that entry is, and closes with its own heading or ONEWAY1's. A marker is read from C# under `src/`, tests and build
- * output skipped, through `blank` so one inside a string or a block comment is never read. There is no .NET build.
+ * output skipped, through `blank` so one inside a string or a block comment is never read; and from the page's TypeScript, tests,
+ * stories and fixtures skipped, as a line comment on a line of its own (COMMS1h). There is no .NET build.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -38,6 +39,10 @@ export function isOpen(id, tasks, archive) {
   return rows.length > 0 && word(id.slice(PREFIX.length)).test(rows);
 }
 
+/** A page source the markers are read from (COMMS1h): TypeScript, never a test, a story or a fixture. */
+const PAGE = /\.tsx?$/;
+const PAGE_SKIPPED = /\.(test|stories|fixtures)\.tsx?$|\.d\.ts$/;
+
 function* sources(dir) {
   let entries;
   try {
@@ -49,10 +54,20 @@ function* sources(dir) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       if (!SKIPPED.has(entry.name) && !entry.name.endsWith('.Tests')) yield* sources(full);
-    } else if (entry.name.endsWith('.cs')) {
+    } else if (entry.name.endsWith('.cs') || (PAGE.test(entry.name) && !PAGE_SKIPPED.test(entry.name))) {
       yield full;
     }
   }
+}
+
+/** A page source's markers (COMMS1h): a line comment on a line of its own, so none inside a string or after code is read. */
+function pageMarkersOf(raw) {
+  const found = [];
+  raw.split('\n').forEach((text, at) => {
+    const m = /^[ \t]*\/\/[ \t]*transitional:[ \t]*([A-Za-z0-9][\w-]*)/.exec(text);
+    if (m) found.push({ id: m[1], line: at + 1 });
+  });
+  return found;
 }
 
 /** The entries the register holds, `{ id, row }`, read from its literals where `blank` shows code; `problems` for one without a row. */
@@ -99,7 +114,8 @@ export function checkTransitional(root) {
   for (const file of sources(join(root, 'src'))) {
     if (file === register) continue;
     const rel = file.slice(root.length + 1).replaceAll('\\', '/');
-    for (const { id, line } of markersOf(readFileSync(file, 'utf8'))) {
+    const raw = readFileSync(file, 'utf8');
+    for (const { id, line } of file.endsWith('.cs') ? markersOf(raw) : pageMarkersOf(raw)) {
       markers++;
       marked.add(id);
       if (!ids.has(id)) problems.push(`${rel}:${line}: marker "${id}" names no entry in ${REGISTER}: register it, or take the marker out`);

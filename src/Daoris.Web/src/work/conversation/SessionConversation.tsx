@@ -12,6 +12,8 @@ import { ConversationFind } from './ConversationFind';
 import { useEverySession } from '../../data/queries';
 import { isPartnerRecord } from './sender';
 import { type CallMark, type Cooling, ConversationView } from './ConversationView';
+import { exchangesOf, NO_EXCHANGES } from './exchanges';
+import type { HelperAskRow } from '../waits/HelperAsks';
 import type { ReasonValues } from '../say';
 import { useFollowTail } from './followTail';
 import type { Wait } from '../waits/waits';
@@ -84,8 +86,13 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait,
+  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked,
 }: {
+  /**
+   * The helpers its agent asked for, each drawn as its card at its call with its answer folded in (COMMS1h): the session's asks as the
+   * frame read them, the agents' names, and the door to a helper's conversation.
+   */
+  helpersAsked?: { asks: readonly HelperAskRow[]; nameOf?: (agent: string) => string; onOpen?: (helper: string) => void };
   /** *Go on with Daoris's brief* (SESSCTX1c part B), beside the fresh start where the words wait for the person — `ConversationView`'s. */
   onGoOnBrief?: () => void;
   /** *Say it again* (COWORK1c): the person's own words that may have reached the agent, said anew — `ConversationView`'s. */
@@ -274,6 +281,13 @@ export function SessionConversation({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `asked` stands for `waits`
     [anchors, asked, Boolean(onToWait)]);
   const anchored = [...Object.keys(anchors.held), ...anchors.earlier] as AnchorWait[];
+  // COMMS1h: each helper its agent asked for, drawn once as its card at its call, the turn that took its answer a line to it.
+  const askedFor = JSON.stringify(own ? helpersAsked?.asks ?? null : null);
+  const exchanges = useMemo(
+    () => (own && helpersAsked ? exchangesOf(turns, helpersAsked.asks, helpersAsked.nameOf) : NO_EXCHANGES),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `askedFor` stands for `helpersAsked.asks`
+    [turns, askedFor, own],
+  );
   const said = anchored.join(' ');
   const tellAnchors = useRef(onAnchors);
   tellAnchors.current = own ? onAnchors : undefined;
@@ -337,6 +351,9 @@ export function SessionConversation({
         names={names}
         marks={marks}
         onToWait={own ? onToWait : undefined}
+        exchanges={exchanges}
+        onOpenHelper={own ? helpersAsked?.onOpen : undefined}
+        onShow={show}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}

@@ -2705,6 +2705,8 @@ export function WorkFrame({
                       permissions: waits.permissions?.waits,
                     } : undefined}
                     onAnchors={(session, state) => setAnchored({ session, ...state })}
+                    // COMMS1h: each helper its agent asked for, a card at its call, the answer folded in, the helper's door on it.
+                    helpersAsked={helperWaits ? { asks: helperWaits.asks, nameOf: helperWaits.nameOf, onOpen: helperWaits.onOpen } : undefined}
                     onToWait={(wait) => {
                       const anchor = anchorOf(wait);
                       if (anchor) goToWait(anchor);

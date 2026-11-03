@@ -126,6 +126,19 @@ test('tests and build output are not read; the register itself holds no marker',
   assert.deepEqual(checkTransitional(dir).problems, []);
 });
 
+test('COMMS1h: a page source’s marker is a line comment of its own; a test, a story or one after code is not read', () => {
+  const page = "const a = 1;\n  // transitional: one\nconst s = '// transitional: stray';\nconst b = 2; // transitional: stray2\n";
+  const dir = tree({
+    entries: [['one', 'ROWA1']],
+    sources: { 'Web/src/a.ts': page, 'Web/src/a.test.ts': site('stray3'), 'Web/src/A.stories.tsx': site('stray4'), 'Web/node_modules/x.ts': site('stray5') },
+  });
+  const { problems, markers } = checkTransitional(dir);
+  assert.deepEqual(problems, []);
+  assert.equal(markers, 1);
+  const unmarked = tree({ entries: [['one', 'ROWA1']], sources: { 'Web/src/a.tsx': 'export const a = 1;\n' } });
+  assert.match(checkTransitional(unmarked).problems[0], /one.*no marker/);
+});
+
 test('an id twice in the register is refused', () => {
   const dir = tree({ entries: [['one', 'ROWA1'], ['one', 'ROWA1']], sources: { 'D/A.cs': site('one') } });
   assert.match(checkTransitional(dir).problems[0], /one.*twice/);

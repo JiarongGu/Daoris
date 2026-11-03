@@ -130,6 +130,15 @@ public static class TransitionalRegister
         },
         new()
         {
+            Id = "receipt-answered",
+            Kept = "../../Daoris.Web/src/work/conversation/conversation.ts:752",
+            Reaches = "An event log an older build wrote, holding the receipt `answered` for the turn that took a word, which COMMS1h's build writes `ended`: the page draws it as it was.",
+            Ends = "No event log on the home holds an `answered` receipt (the logs are history, cleared by their store's remover), and the floor passes COMMS1h's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
             Id = "answers-alone-events",
             Kept = "Course/Domain/AnswersAlone.cs:49, Course/ContinuationAdmissions.cs:301, Course/GoOn/AnswersAloneHold.cs:97, Course/GoOn/AnswersAloneHold.cs:130",
             Reaches = "A line no admission keeps yet, seeded once from its events as the count was read before; and a store short of step 20, or records that did not read, counted from the events as before.",
