@@ -85,6 +85,42 @@ public static class TransitionalRegister
         },
         new()
         {
+            Id = "solicited-older-host",
+            Kept = "Loop/DriverHelpers.cs:758, Loop/DriverPartners.cs:484, Loop/OpinionDeliverer.cs:182",
+            Reaches = "A host with no `answers` mark, before COMMS1b: the helper's sixteen-link walk and read-back, and the partner's and the opinion's pre-check of the record named.",
+            Ends = "The floor passes COMMS1b's build: the host and the driver ship together, so no host without the mark is reached.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "solicited-old-files",
+            Kept = "Loop/DriverHelpers.cs:806, Loop/DriverPartners.cs:464",
+            Reaches = "A helper state or a partner receipt whose attempt an older build wrote, with no `keyed` mark: read back along the line, else uncertain.",
+            Ends = "No open helper or partner ask holds an attempt without `keyed`, and the floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "solicited-old-guards",
+            Kept = "Loop/DriverHelpers.cs:835, Loop/DriverPartners.cs:496",
+            Reaches = "A driver rolled back before COMMS1b, or a host that drops its mark mid-hand: the helper state's and the partner receipt's attempt, still written.",
+            Ends = "The floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "opinion-handed-guard",
+            Kept = "Loop/OpinionDeliverer.cs:95",
+            Reaches = "An opinion handed before the one door, whose findings word has no key: its `handed` is the only guard that hands it once.",
+            Ends = "No opinion waits with an unkeyed findings word (census), and the floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
             Id = "answers-alone-events",
             Kept = "Course/Domain/AnswersAlone.cs:49, Course/ContinuationAdmissions.cs:305, Course/GoOn/AnswersAloneHold.cs:97, Course/GoOn/AnswersAloneHold.cs:130",
             Reaches = "A line no admission keeps yet, seeded once from its events as the count was read before; and a store short of step 20, or records that did not read, counted from the events as before.",
@@ -93,6 +129,9 @@ public static class TransitionalRegister
             Ended = ContinuationAdmissions.Begun,
         },
     ];
+
+    /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>
+    private static bool Floor(string _) => false;
 
     /// <summary>Whether a request file waiting in the home's requests folder says <c>now: true</c> with no <c>level</c>.</summary>
     private static bool WaitingNowAlone(string home)

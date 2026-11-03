@@ -65,6 +65,8 @@ public sealed class SessionOpenDoors
     // FOUNDATION1d-ii (§19.12): the say door's `continued`, naming the line's head; kept beside `opens` by the same run.
     private int _head;
     private int _presses;
+    // COMMS1b: the one door for solicited answers, kept beside the others by the same run.
+    private int _answers;
     private readonly object _marks = new();
     private readonly HashSet<string> _lost = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _step = new(1, 1);
@@ -83,7 +85,7 @@ public sealed class SessionOpenDoors
     {
         var reply = await _service.SendAsync(ServiceVerb.Get, "/api/protocol", null, ct).ConfigureAwait(false);
         string? run = null;
-        int opens = 0, head = 0, presses = 0;
+        int opens = 0, head = 0, presses = 0, answers = 0;
         if (reply.Ok)
         {
             using var json = JsonDocument.Parse(reply.Payload);
@@ -93,12 +95,13 @@ public sealed class SessionOpenDoors
                 opens = Mark(marks, "opens");
                 head = Mark(marks, "head");
                 presses = Mark(marks, "presses");
+                answers = Mark(marks, "answers");
             }
         }
 
         lock (_marks)
         {
-            (_run, _opens, _head, _presses, _known) = (run, opens, head, presses, true);
+            (_run, _opens, _head, _presses, _answers, _known) = (run, opens, head, presses, answers, true);
         }
     }
 
@@ -141,6 +144,18 @@ public sealed class SessionOpenDoors
     {
         await HeadAsync(ct).ConfigureAwait(false);
         lock (_marks) return _presses >= 1;
+    }
+
+    /// <summary>
+    /// Whether the host's <c>answers</c> mark is 1 or more (COMMS1b, the comms design §4.2, §13 point 12): its helper, partner and opinion hand
+    /// doors are the one door for solicited answers, which walks the line to the store's bound, takes an answered park, answers a word already
+    /// waiting with its holder and keys the opinion, so the looks hand through it alone. False for a host without it, or one that does not answer
+    /// the protocol, whose looks keep their own hand. Never throws.
+    /// </summary>
+    public async Task<bool> AnswersAsync(CancellationToken ct = default)
+    {
+        await HeadAsync(ct).ConfigureAwait(false);
+        lock (_marks) return _answers >= 1;
     }
 
     /// <summary>
