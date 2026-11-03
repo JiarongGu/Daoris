@@ -137,10 +137,67 @@ public static class TransitionalRegister
             Row = "ONEWAY1af",
             Ended = ContinuationAdmissions.Begun,
         },
+        new()
+        {
+            Id = "presses-older-host",
+            Kept = "Service/ServiceClient.cs:447",
+            Reaches = "A host with no `presses` mark, before COMMS1e: a person's press is said with no question, the modules' own check before the say standing alone.",
+            Ends = "The floor passes COMMS1e's build: the host and the driver ship together, so no host without the mark is reached.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "held-press-unasked",
+            Kept = "../Daoris.Desktop.Modules/Loop/SessionWords.cs:1219",
+            Reaches = "A press of a park's question held at a door before COMMS1e, which names its choice and no question: forwarded with no question for the head to check.",
+            Ends = "No held word names a choice without its question, once the census of the held words finds none.",
+            Row = "ONEWAY1af",
+            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !HeldPressUnasked(home),
+        },
+        new()
+        {
+            Id = "staffing-copy",
+            Kept = "Roles/RoleStaffing.cs:578",
+            Reaches = "A home an older build may still open (D226): each staffing write is copied onto driver.json's staffing keys, and the found check compares the file with what the store wrote.",
+            Ends = "The floor passes the w-s build on the home, which the staffing part's first Apply makes so; ONEWAY1c-ii makes the writer skip such a home first.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "conversation-moves-refused",
+            Kept = "Roles/StaffPolicyDoor.cs:41",
+            Reaches = "A role that takes a conversation's work, whose policy names a limit's wait or ask, or `most`: refused at the door, since a conversation's limit moves by its own order only (D226).",
+            Ends = "A conversation's moves are the supervisor's rules (CONTEXTDRIVE1n, which took STAFFPOLICY1e3's conversation half up; D229).",
+            Row = "CONTEXTDRIVE1n",
+            Ended = Unbuilt,
+        },
     ];
 
     /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>
     private static bool Floor(string _) => false;
+
+    /// <summary>An entry that ends when its row is built is no file of the home either: it never reads as ended, and that row deletes it.</summary>
+    private static bool Unbuilt(string _) => false;
+
+    /// <summary>Whether the home's held words hold a press that names its choice and no question; true where the file does not read.</summary>
+    private static bool HeldPressUnasked(string home)
+    {
+        try
+        {
+            var path = HeldWordsFile.PathOf(home);
+            if (!File.Exists(path)) return false;
+            if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root || root["held"] is not JsonArray held) return false;
+            return held.OfType<JsonObject>().Any(word =>
+                word["choice"] is JsonValue choice && choice.TryGetValue<string>(out var label) && label.Length > 0
+                && (word["question"] is not JsonValue question || !question.TryGetValue<string>(out var asked) || asked.Length == 0));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException or InvalidOperationException)
+        {
+            return true;
+        }
+    }
 
     /// <summary>Whether a request file waiting in the home's requests folder says <c>now: true</c> with no <c>level</c>.</summary>
     private static bool WaitingNowAlone(string home)

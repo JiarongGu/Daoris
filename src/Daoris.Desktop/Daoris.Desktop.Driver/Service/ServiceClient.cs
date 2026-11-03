@@ -444,6 +444,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         (string Decision, string Question, string Choice)? supervised = null, bool ending = false, string? question = null)
     {
         // COMMS1e: the person's press names its question only to a host that checks it (the `presses` mark); an older host refuses the field.
+        // transitional: presses-older-host
         var presses = question is { Length: > 0 } && supervised is null && await Opens.PressesAsync(ct).ConfigureAwait(false);
         var body = WriteJson(writer =>
         {
