@@ -4,7 +4,7 @@ import type { ExitCode } from '../platform/errors.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown } from '../platform/fsx.ts';
-import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
+import { canonDigest, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.ts';
 import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
@@ -160,6 +160,13 @@ export function commandStatus(
   let update: {
     available: string;
     locked: string;
+    /**
+     * `newer` when the lock's version is older, so its files are behind; `unknown` when the versions are equal and the
+     * canons differ, which no content comparison can order.
+     */
+    direction: 'newer' | 'unknown';
+    /** This daoris's canon and the one the lock was written from (null for a lock from before the digest). */
+    digest: { carried: string; locked: string | null };
     changed: string[];
     added: string[];
     retired: string[];
@@ -196,22 +203,34 @@ export function commandStatus(
 
   // status may reach the canon; `check` deliberately may not (D8), which is why
   // "a newer canon exists" is reported here and never gates a build.
+  //
+  // The sync's own plan runs whatever the versions say (CONTEXTONE1a): the stamp stays at 0.0.1 through every 0.0.x
+  // build, and gating on it hid every update from every adopter. Only the version orders two canons, so files are
+  // behind only under an older lock; an equal version over another canon is a difference whose side cannot be told,
+  // and sync is never offered for it, since from an older daoris it would write the older text back (WSSETUP4).
   if (canon && lock && !selectionProblem && !behind) {
-    if (canon.version !== lock.canonVersion) {
+    const newer = canon.version !== lock.canonVersion;
+    const carried = canonDigest(canon);
+    if (newer || lock.canonDigest !== carried) {
       // Naming what moved is the difference between a prompt to act and a
       // prompt to investigate. All of it comes from the lock, so it stays offline.
       const changes = planChanges({ root, manifest, canon, lock });
-      update = {
-        available: canon.version,
-        locked: lock.canonVersion,
-        changed: changes.changed,
-        added: changes.added,
-        retired: changes.retired,
-        versionOnly: !changes.changed.length && !changes.added.length && !changes.retired.length,
-      };
+      const moved = changes.changed.length > 0 || changes.added.length > 0 || changes.retired.length > 0;
+      if (newer || moved) {
+        update = {
+          available: canon.version,
+          locked: lock.canonVersion,
+          direction: newer ? 'newer' : 'unknown',
+          digest: { carried, locked: lock.canonDigest ?? null },
+          changed: changes.changed,
+          added: changes.added,
+          retired: changes.retired,
+          versionOnly: !moved,
+        };
+      }
       // Which files moved comes from the lock; whether it MATTERS is a sentence
       // only the author of the change can write, so the canon carries it.
-      notes = notesBetween(canonRoot, lock.canonVersion, canon.version);
+      if (newer) notes = notesBetween(canonRoot, lock.canonVersion, canon.version);
     }
   }
 
@@ -244,6 +263,7 @@ export function commandStatus(
       mirrors: lock?.mirrors?.length ?? 0,
       synced: lock !== null,
       canonVersion: lock?.canonVersion ?? null,
+      canonDigest: lock?.canonDigest ?? null,
       files: lock?.entries.length ?? 0,
       coreBytes: inspection?.coreBytes ?? null,
       coreBudgetBytes: manifest.coreBudgetBytes,
@@ -346,22 +366,30 @@ export function commandStatus(
   } else if (behind) {
     write(`  newer lock    the lock is at canon ${behind.locked}, and this daoris carries ${behind.carried} — `
       + `sync and upstream refuse; run ${behind.run}`);
-  } else if (update) {
-    write(
-      `  update        canon ${update.available} available (lock has ${update.locked}) — run 'daoris sync'`,
-    );
+  } else if (update?.direction === 'newer') {
+    write(`  update        canon ${update.available} available; the lock is behind at ${update.locked} — run 'daoris sync'`);
     for (const target of update.changed) write(`                  changed  ${target}`);
     for (const target of update.added) write(`                  new      ${target}`);
     for (const target of update.retired) write(`                  retired  ${target}`);
     if (update.versionOnly) {
       write('                  (version only — no document changed)');
     }
+  } else if (update) {
+    // No side is named and sync is not offered: from the older of the two it would write the older text back.
+    write(`  update        differs from this CLI's canon (newer or older cannot be told): both are canon ${update.available}`);
+    write(`                  this CLI's canon  ${update.digest.carried.slice(0, 12)}`);
+    write(`                  the lock's canon  ${update.digest.locked?.slice(0, 12) ?? 'none recorded'}`);
+    for (const target of update.changed) write(`                  differs           ${target}`);
+    for (const target of update.added) write(`                  not in the lock   ${target}`);
+    for (const target of update.retired) write(`                  not in this canon ${target}`);
+    write("                'daoris sync' writes this CLI's canon over the lock's: run it from the daoris that carries the newer one");
+  }
 
-    for (const note of notes) {
-      write('');
-      write(`  why ${note.version}`);
-      for (const line of note.body.split('\n')) write(line ? `    ${line}` : '');
-    }
+  // Set only for a newer canon: the versions between the lock's and this one's.
+  for (const note of notes) {
+    write('');
+    write(`  why ${note.version}`);
+    for (const line of note.body.split('\n')) write(line ? `    ${line}` : '');
   }
   return 0;
 }
