@@ -4,58 +4,9 @@ using Daoris.Knowledge;
 
 namespace Daoris.Knowledge.Http;
 
-// The wire contracts, whole and in one place — every shape a route reads or writes, plus the
-// source-generated serializer context (this host publishes AOT-friendly, and reflection-based JSON
-// would be the one thing stopping it). Program.cs keeps the routes; the shapes live here.
+// The wire shapes not yet declared in Daoris.Contracts beside their routes, and their source-generated serializer
+// context. A domain's shapes move there with its routes.
 
-// `Proof` (PERSONDOOR1a, the person-door design §2.3): asked with `prove`, a host holding a person key answers the proof of
-// possession its starter checks before it trusts the host; absent otherwise, so the answer is what it always was.
-// `Home` (HOMEID1, the terminal RPC design §3.2): a local host's home's id (`HomeIdentity`), which a terminal's discovery checks
-// before it takes an address; absent from a shared host, and where the home's id does not read.
-// `Version` (WIRING1b, the this-Daoris design §3.6): the host's informational version as the release workflow stamped it, which
-// This Daoris shows. Added after the others, a wire shape's field being added and never renamed; a reader older than it skips it.
-// `Closure` (FABRIC-CLOSE1b's handshake): this host knows a closure graph's operations (`bound`, `submitted`) and its bind and close
-// doors. A host from before answers none, which a driver reads as not knowing them, and binds nothing there.
-// `CloseOutcome` (CLOSECAP1): this host also answers the outcome door (`POST /api/quests/{id}/close/outcome`, FABRIC-CLOSE1u), the
-// close protocol's recovery. A driver binds only where `Closure` and this are both answered; a host with `Closure` alone binds nothing.
-// `CloseRemote` (FABRIC-CLOSE1i): this host judges a bind in a workspace synced through a remote by the remote's handshake, whether every
-// machine of it declared it knows a bound quest, and refuses it naming those that did not. A host before it refuses every such bind, and a
-// driver asks it none.
-public sealed record StatusResponse(
-    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null, bool? Closure = null,
-    bool? CloseOutcome = null, bool? CloseRemote = null);
-
-/// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
-public static class HostVersion
-{
-    public static string? Stamped { get; } = typeof(StatusResponse).Assembly
-        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
-        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion;
-}
-// Provenance is SERVED, never implied (D48 §6): the deployment's copy of a repository's knowledge is
-// a claim about a commit, so the answer names the commit, when it was made, which line it came from
-// and which machine fed it. Absent on a deployment that reads its own checkouts — it has no feed, and
-// what it shows is its own state.
-public sealed record ProvenanceResponse(
-    string Commit, string ShortCommit, DateTimeOffset CommittedAt, string Branch, string? Origin);
-public sealed record RepositoryResponse(
-    string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed,
-    // KNOWCURRENT1: when this host read the repository's checkout and the commit it was at; null where it read none.
-    DateTimeOffset? IndexedAt = null, string? IndexedCommit = null);
-// The lines (ORIENT2e): the entry's first and last line in its file, and the line its excerpt starts on, beside
-// the fields every client already reads. Null where the entry names none (a row read with its columns, a feed
-// that named none), never a guess.
-public sealed record HitResponse(
-    string Id, string Repository, string Kind, string Title, string Path, string? Excerpt, double Score,
-    string Workspace, int? FirstLine = null, int? LastLine = null, int? ExcerptLine = null);
-public sealed record EntryResponse(
-    string Id, string Repository, string Kind, string Provenance, string Title, string Path, string Body,
-    string? Anchor, string Workspace, int? FirstLine = null, int? LastLine = null);
-public sealed record ConvergenceEntryResponse(
-    string Id, string Repository, string Kind, string Title, string Path);
-public sealed record ConvergenceResponse(
-    string Method, double Similarity, IReadOnlyList<string> Repositories,
-    IReadOnlyList<ConvergenceEntryResponse> Entries, string Suggestion);
 // What a quest carries (D65 §2) travels on every read: links whole, files by name. `Path` is where
 // THIS machine keeps a file — answered only to a caller on this machine, like a transcript (D47 §4),
 // and only when the bytes are actually here: a file of a quest published on another machine is named
@@ -527,10 +478,6 @@ public sealed record SaidResponse(SessionResponse Session, string Message, SaidW
 // A keyed say or hand answered settled (row p): a success that names the record the key's word left, with no session, no `said` and no word at
 // all, so a reader that reads a word finds none. Sent only to a request that asked with `settled`.
 public sealed record SettledResponse(string Message, string Settled);
-// The host's protocol (row p, the design §19.12): `run`, an id the host draws at its start, and the marks it keeps, each a version
-// (`settled` 1: a key the line has settled answered `Settled` to a request that asks; `opens` 1: row d-i's keyed open, 2 once it moves the words
-// its `moves` names, d-ii part 3's; `head` 1: row d-ii's `continued` with its `head`).
-public sealed record ProtocolResponse(string Run, IReadOnlyDictionary<string, int> Marks);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
 // `stood-down`, `running`, XAGENT1c's `opinion`, a reviewer's record, and COWORK1b's `from`, an author this service does not
 // know), which a reader acts on instead of the sentence, and
@@ -876,9 +823,6 @@ public sealed record HandbackRecordResponse(
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
 // host that brings a teammate's map down reads the same answer the door writes.
-// `Code` (ORIGIN1): a word a client reads instead of the sentence, where a refusal has one; absent elsewhere, so every
-// answer from before reads as it did.
-public sealed record ErrorResponse(string Error, string? Code = null);
 /// <summary>
 /// A refusal the CLIENT should report rather than fix (D48 §6) — a stale or branch feed is the system
 /// working, and the machine that is behind is simply behind. The flag is what lets a sync loop tell
@@ -925,14 +869,8 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved, 
 // Where the event journal stands: the store's identity its positions are of, the lowest position kept (the floor) and the newest issued.
 public sealed record ChangesJournalResponse(string Store, long Floor, long Newest);
 
-[JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(ChangesResponse))]
 [JsonSerializable(typeof(JournalPage))]
-[JsonSerializable(typeof(IEnumerable<RepositoryResponse>))]
-[JsonSerializable(typeof(IEnumerable<HitResponse>))]
-[JsonSerializable(typeof(EntryResponse))]
-[JsonSerializable(typeof(IEnumerable<EntryResponse>))]
-[JsonSerializable(typeof(IEnumerable<ConvergenceResponse>))]
 [JsonSerializable(typeof(IEnumerable<QuestResponse>))]
 [JsonSerializable(typeof(PublishQuestRequest))]
 [JsonSerializable(typeof(RespondQuestRequest))]
@@ -1030,5 +968,4 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 [JsonSerializable(typeof(HandbackResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]
-[JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;

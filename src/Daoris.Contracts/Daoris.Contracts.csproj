@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The service's HTTP API, declared once: each route as its request record, and the records it answers. The HTTP host binds
+    these, the driver sends them and tools/contracts writes the page's types from them. It sits beside both .NET trees and
+    belongs to neither, so it sets its own build settings and takes no package: the standard library alone, which is what lets
+    either tree reference it without reaching the other's packages.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- BOM-less UTF-8 sources mojibake on a CJK-locale machine without this: csc reads them as ANSI. -->
+    <CodePage>65001</CodePage>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Daoris.Contracts</RootNamespace>
+    <AssemblyName>Daoris.Contracts</AssemblyName>
+  </PropertyGroup>
+
+</Project>

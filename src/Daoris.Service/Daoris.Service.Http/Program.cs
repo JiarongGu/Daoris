@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Hosting;
 using Daoris.Knowledge.Http;
+using Daoris.Knowledge.Http.Routes;
 using static Daoris.Knowledge.Http.ChannelRoutes;
 
 // The browser's half of the service. The MCP host serves an agent over stdio; a browser cannot speak
@@ -210,10 +211,11 @@ if (composed.IndexRefusal is { } refusedIndex)
 }
 
 // Source-generated serialization: this host publishes AOT-friendly and reflection-based JSON would be
-// the one thing stopping it.
+// the one thing stopping it. The declared routes' records first, then the shapes not yet declared beside their routes.
 builder.Services.ConfigureHttpJsonOptions(json =>
 {
-    json.SerializerOptions.TypeInfoResolverChain.Insert(0, ApiJson.Default);
+    json.SerializerOptions.TypeInfoResolverChain.Insert(0, ContractJson.Resolver);
+    json.SerializerOptions.TypeInfoResolverChain.Insert(1, ApiJson.Default);
     json.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 
@@ -461,121 +463,8 @@ if (mode == ServiceMode.Shared)
 // (D156) narrows the local trust rather than adding a story beside it: minted for each start, never
 // configured, read only by a local host, and enforced only by a host its starter handed one (PERSONDOOR1a).
 
-app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusResponse(
-    Semantic: s.SemanticEnabled,
-    Tier: s.SemanticEnabled ? "lexical + semantic" : "lexical only",
-    // Said on every response, not only when it is absent. A caller with results has no way to know the
-    // semantic half was missing, and will read "these are the matches" as complete rather than as
-    // complete-for-word-overlap (D24).
-    Note: s.SemanticEnabled
-        ? null
-        : $"Set {ServiceOptions.ModelVariable} to enable semantic recall — it is what finds two "
-          + "repositories that reached the same conclusion in different words.",
-    // The proof of possession (PERSONDOOR1a, design §2.3): the shell hands its modules and the page the key only once the
-    // host it started proves it holds it, so a process that took the port first never learns it. None without a key.
-    Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove),
-    Home: homeId,
-    // What this host is (WIRING1b): This Daoris shows it beside the tier, and `daoris wiring` reads it.
-    Version: HostVersion.Stamped,
-    // FABRIC-CLOSE1b's handshake: a driver binds a quest to a closure graph only against a host that says it knows one.
-    Closure: true,
-    // CLOSECAP1: the outcome door's recovery, which a binding needs beside the graph's doors.
-    CloseOutcome: true,
-    // FABRIC-CLOSE1i: a circle synced through a remote is judged here by the remote's handshake, so a driver asks this host's bind there.
-    CloseRemote: true));
-
-// FOUNDATION1 row p (D212, the foundation design §19.12): how a newer client tells what this host does. `run` is an id this host draws at its
-// start, so a host replaced under one client is told from its predecessor; `marks` are the protocol versions it keeps, each a version: `settled` 1
-// is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`), `opens` 2 row d-ii part 3's
-// keyed open, which moves the words its `moves` names in its own step (an `opens` 1 host, row d-i's, moves none), and `head` 1 row d-ii's say door,
-// which refuses a record its line left `continued` naming the head, and `journal` 1 row k's event journal, whose family and place the change stream
-// answers to a reader that asks with `journal=1` (a reader that does not is answered as before), and `answers` 1 COMMS1b's one door for solicited
-// answers: the head walk to the store's bound, answered parks, *already waiting* (`waiting` with its holder and word), the opinion key and
-// `serves`; a driver that sees it hands a solicited answer through the door alone. A host before this answers none, and a client keeps no mark for it.
-// `presses` 1 is COMMS1e: a say naming `question` is a person's press, checked inside the door's step against the question on file (`question-changed`);
-// a host before it refuses a person's say that names one, so a client sends it only to a host with the mark.
-app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1, ["journal"] = 1, ["answers"] = 1, ["presses"] = 1 }));
-
-// Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
-// every circle this deployment holds, which for a shared host is one by construction and for a local
-// one is the person's own machine (D21). The DOOR never invents a default: a caller that wants its
-// own circle says so, because only the caller knows which repository it is speaking for.
-app.MapGet("/api/repositories", async (ComposedService s, string? workspace, CancellationToken ct) =>
-    (await s.Service.SummarizeAsync(workspace, ct))
-        .Select(r => new RepositoryResponse(
-            r.Repository, r.Total, r.Local, r.Canonical, r.Workspace,
-            // Staleness a person can SEE beats freshness they must assume (D48 §6).
-            r.Fed is null
-                ? null
-                : new ProvenanceResponse(
-                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin),
-            r.IndexedAt, r.IndexedCommit)));
-
-app.MapGet("/api/search", async (
-    ComposedService s, HttpContext http, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
-    string? workspace, CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(q)) return Results.BadRequest(new ErrorResponse("q is required"));
-    if (KindsOrRefusal(kinds) is { Refusal: { } refused }) return Results.BadRequest(new ErrorResponse(refused));
-
-    var answer = await s.Service.AnswerAsync(new KnowledgeQuery(q)
-    {
-        Kinds = KnowledgeQuery.ParseKinds(kinds),
-        Repositories = KnowledgeQuery.ParseSet(repositories),
-        Provenance = (localOnly ?? true) ? Provenance.Local : null,
-        Limit = Math.Clamp(limit ?? 20, 1, 100),
-        Workspace = workspace,
-    }, ct);
-    var hits = answer.Hits;
-
-    // Which tier ANSWERED (TIER1, D24), as a token in a header, so the body stays the array every
-    // client already reads. The failure's own words are not sent here: a header is ASCII, and the
-    // sentence is the status door's and the refresh's to say.
-    http.Response.Headers["x-daoris-tier"] = answer.Tier;
-
-    return Results.Ok(hits.Select(h => new HitResponse(
-        h.Entry.Id, h.Entry.Repository, h.Entry.Kind.ToString(), h.Entry.Title,
-        h.Entry.RelativePath, h.Excerpt, h.Score, h.Entry.Workspace,
-        h.Entry.Lines?.First, h.Entry.Lines?.Last, h.ExcerptLine)));
-});
-
-app.MapGet("/api/entry", async (ComposedService s, string id, CancellationToken ct) =>
-{
-    var entry = await s.Service.FindAsync(id, ct);
-    return entry is null
-        ? Results.NotFound(new ErrorResponse($"no entry with id '{id}'"))
-        : Results.Ok(ToEntry(entry));
-});
-
-// One repository's own knowledge, whole — what a sync loop feeds from (D47 §4). Local provenance
-// only, because that is the only class a feed may carry: canonical doctrine is distributed by `sync`.
-app.MapGet("/api/entries", async (ComposedService s, string repository, CancellationToken ct) =>
-    (await s.Service.LocalEntriesAsync(repository, ct)).Select(ToEntry));
-
-// The landing view's endpoint (D30). Convergence is the centre of this UI, not a feature on a menu:
-// search answers a question you have, and comparison tells you which question to ask.
-app.MapGet("/api/convergence", async (
-    ComposedService s, double? minimumSimilarity, string? kinds, int? limit, string? workspace,
-    CancellationToken ct) =>
-{
-    if (KindsOrRefusal(kinds) is { Refusal: { } refused }) return Results.BadRequest(new ErrorResponse(refused));
-
-    var found = await s.Service.FindConvergenceAsync(
-        new ConvergenceOptions(
-            Math.Clamp(minimumSimilarity ?? 0.82, 0, 1), KnowledgeQuery.ParseKinds(kinds),
-            Math.Clamp(limit ?? 25, 1, 100), workspace),
-        ct);
-
-    return Results.Ok(found.Select(c => new ConvergenceResponse(
-        c.Method.ToString(),
-        c.Similarity,
-        c.Repositories,
-        c.Entries.Select(e => new ConvergenceEntryResponse(
-            e.Id, e.Repository, e.Kind.ToString(), e.Title, e.RelativePath)).ToList(),
-        // The command, not an edit box (D31). The UI shows where the change belongs; the person makes it
-        // in the repository that owns the file, where review happens.
-        Suggestion: SuggestionFor(c))));
-});
+// Each domain's routes, declared in Daoris.Contracts and mapped by its module (Routes/), found by reflection.
+RouteModules.MapAll(app, new HostWiring(composed, mode, hostRun, homeId, personKey));
 
 // What each repository OWES, as opposed to what it knows. Held by the service rather than written
 // into anyone's files: repositories here are not developed across, so a quest is published and pulled,
@@ -2845,35 +2734,6 @@ static IResult FeedAnswer(FeedOutcome outcome) =>
             ? Results.BadRequest(new FeedRefusalResponse(outcome.Message, outcome.Information))
             : Results.Conflict(new FeedRefusalResponse(outcome.Message, outcome.Information));
 
-// A convergence is a prompt to look, so the suggestion says what to read and where the change goes —
-// never "apply this". Doctrine that appeared without anyone choosing it is the failure this project
-// exists to prevent (D21).
-// A kind nobody has is the caller's mistake, said back as a 400 rather than widened to every kind (REV3).
-static (IReadOnlySet<EntryKind>? Kinds, string? Refusal) KindsOrRefusal(string? kinds)
-{
-    try
-    {
-        return (KnowledgeQuery.ParseKinds(kinds), null);
-    }
-    catch (ArgumentException refused)
-    {
-        return (null, refused.Message);
-    }
-}
-
-static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method switch
-{
-    ConvergenceMethod.Identical =>
-        "The same document in more than one repository. If it should be doctrine, promote one copy with "
-        + "`daoris upstream <file>` from the repository that owns it, then let the others sync.",
-    ConvergenceMethod.Restatement =>
-        "A copy that has drifted. Read both, decide which wording is right, and promote that one with "
-        + "`daoris upstream <file>`.",
-    _ =>
-        "The same lesson in different words — the case no text comparison finds. Read both: what they "
-        + "share may be canonical, and what differs is usually each repository's own and must stay local.",
-};
-
 // Which quests this host would delete (D95) — the exchange's judgement, so the page offers the verb only
 // where the door would take it. None at a shared deployment, which has no delete door.
 async Task<IReadOnlySet<string>> DeletableAsync(ComposedService s, IEnumerable<Quest> quests, CancellationToken ct) =>
@@ -3059,11 +2919,6 @@ static IReadOnlyList<QuestStep> StepsOf(IReadOnlyList<QuestStepWire?>? given) =>
 
 // A chain's review choice as a door hands it to the exchange (REVIEWENV1b): a choice left out arrives blank, refused there.
 static QuestReview? ReviewOf(QuestReviewWire? given) => given is null ? null : new QuestReview(given.Choice ?? "", given.Words);
-
-static EntryResponse ToEntry(KnowledgeEntry entry) => new(
-    entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),
-    entry.Title, entry.RelativePath, entry.Body, entry.Anchor, entry.Workspace,
-    entry.Lines?.First, entry.Lines?.Last);
 
 // The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
 // answered only to a caller on this machine. The evidence stays — commits are the reviewable record

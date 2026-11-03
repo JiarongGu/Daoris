@@ -48,6 +48,8 @@ src/Daoris.Devkit/**/bin/
 src/Daoris.Devkit/**/obj/
 src/Daoris.Desktop/**/bin/
 src/Daoris.Desktop/**/obj/
+src/Daoris.Contracts/bin/
+src/Daoris.Contracts/obj/
 tools/chromium-probe/bin/
 tools/chromium-probe/obj/
 
