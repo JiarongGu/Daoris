@@ -42,8 +42,8 @@ public static class InstallRollback
             : null;
     }
 
-    /// <summary>A version's numbered core, a prerelease and a build's metadata left off.</summary>
-    private static Version? Numbered(string? version)
+    /// <summary>A version's numbered core, a prerelease and a build's metadata left off; null where it does not read.</summary>
+    public static Version? Numbered(string? version)
     {
         if (string.IsNullOrWhiteSpace(version)) return null;
         var core = version.Trim().TrimStart('v').Split('-', '+')[0];

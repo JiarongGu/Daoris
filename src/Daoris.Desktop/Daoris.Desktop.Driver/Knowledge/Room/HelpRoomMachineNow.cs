@@ -96,10 +96,23 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             : "- Plugins: none installed.\n");
         // WSR5b: by name and session, so a hand-off names one the record holds.
         text.Append(machine.Landed.Count > 0
-            ? $"- Landed branches: {string.Join(", ", machine.Landed.Select(LandedLine))}.\n\n"
-            : "- Landed branches: none recorded.\n\n");
+            ? $"- Landed branches: {string.Join(", ", machine.Landed.Select(LandedLine))}.\n"
+            : "- Landed branches: none recorded.\n");
+        // ONEWAY1ad-ii (the oneway design §1.3): the list This machine's page shows under Old records, each part's census, then each
+        // old way Daoris still reads with its state, so a question about an old record names the one it is.
+        if (machine.Kept.Count > 0)
+        {
+            text.Append("- Old records (Agents → Setup → This machine → Old records): "
+                + string.Join("; ", machine.Kept.Select(KeptSaid)) + ".\n");
+        }
+
+        text.Append('\n');
         return text.ToString();
     }
+
+    private static string KeptSaid(KeptLine line) => line.Kind == KeptLine.Part
+        ? $"{line.Id}: " + (line.Ended ? "nothing old here" : $"{line.Count} old record{(line.Count == 1 ? "" : "s")} wait for the conversion (`daoris convert --plan`)")
+        : $"`{line.Id}` " + (line.Ended ? "has ended: nothing old here" : $"kept until {line.Ends?.TrimEnd('.')} (deleted by {line.Row})");
 
     // An intake runs for its ask, whose record names it as its repository (D65 §1b).
     private static string WaitingLine(HelpWaitingSession session) =>

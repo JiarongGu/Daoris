@@ -98,4 +98,78 @@ public sealed class TransitionalRegisterTests : IDisposable
         Put(HomeEntry.Harnesses, """{"rotation":{"claude-code":["a"]}}""");
         Assert.True(Entry("account-pool-fold").Ended(_home));
     }
+
+    private HomeReceipt Receipt(string digest, string? build, string outcome = ConversionOutcomes.Done, DateTimeOffset? at = null) =>
+        new(digest, at ?? DateTimeOffset.Parse("2026-11-04T10:00:00Z"), new ConversionChoices(), [new PartReceipt("settings", digest, outcome, [])]) { Build = build };
+
+    /// <summary>ONEWAY1ad-ii (the oneway design §1.3): the floor from fixture homes: no receipt, a receipt with no build, one with a build, a store stamp.</summary>
+    [Fact]
+    public void ONEWAY1ad_ii_the_floor_reads_the_oldest_standing_receipts_build_and_the_stores_stamp()
+    {
+        var waited = new OlderBuild("the builds before 0.42") { Version = "0.41.0" };
+        Assert.Equal(new HomeFloor(null, null), HomeFloor.Of(_home));
+        Assert.False(HomeFloor.Of(_home).Passes(waited));
+
+        // A receipt with no build gives none, even beside one that has a build: every entry waiting on the floor stays.
+        var receipts = new HomeReceipts(_home);
+        receipts.Write(Receipt(new string('a', 64), null, at: DateTimeOffset.Parse("2026-11-03T10:00:00Z")));
+        receipts.Write(Receipt(new string('b', 64), "0.43.0"));
+        Assert.Null(HomeFloor.Of(_home).Build);
+
+        // Undone, the oldest no longer stands, and the next one's build is the floor.
+        receipts.Write(Receipt(new string('a', 64), null, at: DateTimeOffset.Parse("2026-11-03T10:00:00Z")) with { UndoneAt = DateTimeOffset.Parse("2026-11-03T11:00:00Z") });
+        Assert.Equal("0.43.0", HomeFloor.Of(_home).Build);
+        Assert.True(HomeFloor.Of(_home).Passes(waited));
+        Assert.False(HomeFloor.Of(_home).Passes(waited with { Version = "0.43.0" }));
+        Assert.False(HomeFloor.Of(_home).Passes(new OlderBuild("no release names it")));
+
+        // A receipt whose only part failed does not stand, so it gives no floor.
+        receipts.Write(Receipt(new string('b', 64), "0.43.0", ConversionOutcomes.Failed));
+        Assert.Null(HomeFloor.Of(_home).Build);
+
+        // The desktop store's stamp: a build below it reads the store and writes nothing.
+        using (DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes })) { }
+        var floor = HomeFloor.Of(_home);
+        Assert.Equal(DesktopStore.WriterStamp, floor.StoreWriter);
+        Assert.True(floor.Passes(new OlderBuild("before the policy writer") { StoreWriter = DesktopStore.DeliveryWriter }));
+        Assert.False(floor.Passes(new OlderBuild("the policy writer") { StoreWriter = DesktopStore.WriterStamp }));
+    }
+
+    /// <summary>ONEWAY1ad-ii: the list from a fixture register: the parts' census first, then one entry ended and one not, and one read by its part.</summary>
+    [Fact]
+    public void ONEWAY1ad_ii_the_list_says_each_parts_census_then_each_entry_ended_or_not()
+    {
+        TransitionalEntry Planted(string id, bool ended, string? part = null) => new()
+        {
+            Id = id, Kept = "A.cs:1", Reaches = $"{id} reaches", Ends = $"{id} ends", Row = "ONEWAY1af", Ended = _ => ended, Part = part,
+            Waits = id == "kept" ? new OlderBuild("the builds before ROWX1's") : null,
+        };
+
+        var list = TransitionalRegister.List(_home, [new("workflows", 3, false)],
+            [Planted("gone", ended: true), Planted("kept", ended: false), Planted("by-part", ended: true, part: "workflows")]);
+
+        Assert.Equal(
+            [(KeptLine.Part, "workflows", false), (KeptLine.Read, "gone", true), (KeptLine.Read, "kept", false), (KeptLine.Read, "by-part", false)],
+            list.Select(each => (each.Kind, each.Id, each.Ended)));
+        Assert.Equal(3, list[0].Count);
+        Assert.Equal(("kept ends", "ONEWAY1af", "the builds before ROWX1's"), (list[2].Ends, list[2].Row, list[2].Waits));
+        Assert.True(TransitionalRegister.List(_home, [new("workflows", 0, true)], [Planted("by-part", false, "workflows")])[1].Ended);
+        Assert.Equal([KeptLine.Read], TransitionalRegister.List(_home, null, [Planted("gone", true)]).Select(each => each.Kind));
+    }
+
+    /// <summary>ONEWAY1ad-ii: WORKFLOWCLEAN1 §4.7's kept reads are registered, each with its row, the engine's ending with the workflow part's census.</summary>
+    [Fact]
+    public void ONEWAY1ad_ii_the_workflow_waves_kept_reads_are_registered()
+    {
+        Assert.Equal(
+            [("steps-engine", "WORKFLOWCLEAN1z"), ("current-followed", "WORKFLOWCLEAN1z"), ("auto-lander", "WORKFLOWCLEAN1z"), ("work-cycles", "WORKFLOWCLEAN1j"),
+                ("conversion-readers", "ONEWAY1ag"), ("roles-mode-setup", "WORKFLOWCLEAN1z")],
+            new[] { "steps-engine", "current-followed", "auto-lander", "work-cycles", "conversion-readers", "roles-mode-setup" }.Select(id => (id, Entry(id).Row)));
+        Assert.All(new[] { "steps-engine", "current-followed", "auto-lander" }, id => Assert.Equal(ConversionParts.Workflows, Entry(id).Part));
+        Put(HomeEntry.DriverConfig, """{"workCycles":{"engine":{"quest":"{}"}}}""");
+        Assert.False(Entry("work-cycles").Ended(_home));
+        Put(HomeEntry.DriverConfig, """{"workCycles":{}}""");
+        Assert.True(Entry("work-cycles").Ended(_home));
+        Assert.All(new[] { "solicited-older-host", "solicited-old-guards", "say-now-field" }, id => Assert.NotNull(Entry(id).Waits));
+    }
 }

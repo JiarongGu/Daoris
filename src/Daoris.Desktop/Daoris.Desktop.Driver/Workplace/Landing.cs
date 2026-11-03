@@ -884,6 +884,7 @@ public static class LandingRules
     }
 
     /// <summary>The repository's rule, else its workspace's (a repository in no workspace is in `default`'s), else merge.</summary>
+    // transitional: current-followed
     public static Landing Choose(DriverConfig config, string repository, string? workspace)
     {
         var chosen = Unpolicied(config, repository, workspace);

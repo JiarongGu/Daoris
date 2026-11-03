@@ -8,10 +8,11 @@
  * comment `// transitional: <id>`. The check fails on a marker naming no entry, an entry with no marker, an id registered twice,
  * and an entry whose deleting row is not open. It reads markers and register entries only: a row named in prose is no marker.
  *
- * Open: a row is open while its id is in `TASKS.md` and `docs/task-archive.md` has no heading `## <ID> —` for it. A
- * `ONEWAY1`-prefixed id also stands in `TASKS.md` as its letters alone inside the ONEWAY1 entry's list of rows, so it is open
- * while that entry is, and closes with its own heading or ONEWAY1's. A marker is read from C# under `src/`, tests and build
- * output skipped, through `blank` so one inside a string or a block comment is never read. There is no .NET build.
+ * Open: a row is open while its id is in `TASKS.md` and `docs/task-archive.md` has no heading `## <ID> —` for it. A row of an
+ * entry (`WORKFLOWCLEAN1z`, `FOUNDATION1v`) also stands in `TASKS.md` by its letters inside that entry's open line: in bold
+ * (`**1z**`), as `row v`, or, for `ONEWAY1`, in the list after `prefixed`; so it is open while that entry is, and closes with its
+ * own heading or the entry's. A marker is read from C# under `src/` and from the web's TypeScript under `src/Daoris.Web/`, tests,
+ * stories and build output skipped, through `blank` so one inside a string or a block comment is never read. There is no .NET build.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -20,25 +21,36 @@ import { isMain } from './fsx.mjs';
 import { blank } from './partials.mjs';
 
 export const REGISTER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Register.cs';
-const SKIPPED = new Set(['bin', 'obj', 'node_modules', '_fixtures']);
+const SKIPPED = new Set(['bin', 'obj', 'node_modules', '_fixtures', 'e2e', 'dist', 'storybook-static']);
 const MARKER = /\/\/[ \t]*transitional:[ \t]*([A-Za-z0-9][\w-]*)/g;
 const FIELD = /\b(Id|Row)\s*=\s*"([^"\r\n]*)"/g;
 const PREFIX = 'ONEWAY1';
 const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const word = (text) => new RegExp(`(?<![\\w-])${escaped(text)}(?![\\w-])`);
 
-/** Whether row `id` is open: named in `tasks` (or, for a `ONEWAY1` row, by its letters in the ONEWAY1 entry) with no heading in `archive`. */
+/** Whether row `id` is open: named in `tasks` (or by its letters as a row of an open entry it starts with) with no heading in `archive`. */
 export function isOpen(id, tasks, archive) {
   const archived = (row) => new RegExp(`^##[ \\t]+${escaped(row)}[ \\t]+—`, 'm').test(archive);
   if (archived(id)) return false;
   if (word(id).test(tasks)) return true;
-  if (!id.startsWith(PREFIX) || id === PREFIX || archived(PREFIX)) return false;
-  const entry = /^[ \t]*- \[ \] \*\*ONEWAY1\b[^\n]*/m.exec(tasks)?.[0] ?? '';
-  const rows = entry.slice(entry.indexOf('prefixed') + 1);
-  return rows.length > 0 && word(id.slice(PREFIX.length)).test(rows);
+  for (const [line, entry] of tasks.matchAll(/^[ \t]*- \[ \] \*\*([A-Z][A-Z0-9-]*\d) —[^\n]*/gm)) {
+    if (!id.startsWith(entry) || id === entry || archived(entry)) continue;
+    const letters = escaped(id.slice(entry.length));
+    const digits = /\d+$/.exec(entry)[0];
+    if (new RegExp(`\\*\\*(?:${digits})?${letters}\\*\\*`).test(line)) return true;
+    if (new RegExp(`(?<![\\w-])row ${letters}(?![\\w-])`).test(line)) return true;
+    if (entry === PREFIX) {
+      const rows = line.slice(line.indexOf('prefixed') + 1);
+      if (rows.length > 0 && word(id.slice(PREFIX.length)).test(rows)) return true;
+    }
+  }
+  return false;
 }
 
-function* sources(dir) {
+/** The web's TypeScript a marker is read from: its sources, not its tests or stories. */
+const webSource = (name) => /\.tsx?$/.test(name) && !/\.(test|stories)\.tsx?$/.test(name);
+
+function* sources(dir, web = false) {
   let entries;
   try {
     entries = readdirSync(dir, { withFileTypes: true });
@@ -48,8 +60,8 @@ function* sources(dir) {
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!SKIPPED.has(entry.name) && !entry.name.endsWith('.Tests')) yield* sources(full);
-    } else if (entry.name.endsWith('.cs')) {
+      if (!SKIPPED.has(entry.name) && !entry.name.endsWith('.Tests')) yield* sources(full, web || entry.name === 'Daoris.Web');
+    } else if (entry.name.endsWith('.cs') || (web && webSource(entry.name))) {
       yield full;
     }
   }
