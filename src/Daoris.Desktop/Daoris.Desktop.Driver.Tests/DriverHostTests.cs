@@ -48,8 +48,9 @@ public sealed class DriverHostTests : IDisposable
         var (code, said) = await RunAsync(service);
 
         Assert.Equal(2, code);
-        Assert.Contains("usage: daoris-driver", said);
+        Assert.Contains("usage: daoris <command>", said);
         Assert.Contains("drive [--once | --until-idle] [--quiet-end <minutes>] [--share]", said);
+        Assert.DoesNotContain("daoris-driver ", said);
         Assert.Equal(0, service.Requests);
         Assert.False(File.Exists(LockFile));
     }
