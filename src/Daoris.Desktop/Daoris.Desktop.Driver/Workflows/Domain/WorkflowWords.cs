@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public static class WorkflowWords
 {
     /// <summary>Said by every verb that names a named workflow (WORKFLOW1e): a choice names one, and every gate reads the version bound.</summary>
-    public const string WhatChooses = "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> "
+    public const string WhatChooses = "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> "
         + "[--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version.";
 
     /// <summary>Said by every verb that edits the choice (WORKFLOW1e): what the gate reads of it (WORKFLOW1f).</summary>
@@ -121,7 +121,7 @@ public static class WorkflowWords
 
         var lines = new List<string> { $"  {title} — {participation} · {executor}{press}. {set} {SourceSaid(step.Source)}" };
         if (step.Kind == WorkflowKinds.Work && Set("standing") is string standing) lines.Add($"      Your standing answer, handed to each session: \"{standing}\"");
-        // FABRIC-PIPELINE1b: the checks its sessions run, where the repository sets them (`daoris-driver checks`, Setup).
+        // FABRIC-PIPELINE1b: the checks its sessions run, where the repository sets them (`daoris place checks`, Setup).
         if (step.Kind == WorkflowKinds.Work && Has("checks") && (string?)Set("checks") == "light")
         {
             lines.Add("      Its sessions' checks: light: the gates it does not mark heavy and the checks a change reaches; its heavy gates are its "
@@ -229,7 +229,7 @@ public static class WorkflowWords
     /// whole. A sentence that names the version.
     /// </summary>
     public static string NoSteps(string id, NamedVersion version) =>
-        $"`{id}` v{version.Version} is {GraphSaid(version).TrimEnd('.')}, and holds no steps to read or change: `daoris driver workflow export {id}` "
+        $"`{id}` v{version.Version} is {GraphSaid(version).TrimEnd('.')}, and holds no steps to read or change: `daoris workflow export {id}` "
         + "prints it whole, and a version saved after it is saved whole.";
 
     /// <summary>

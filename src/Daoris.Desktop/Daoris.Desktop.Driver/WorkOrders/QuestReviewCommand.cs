@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver quest review</c> was asked: the quest, the verdict as the service spells it, and the person's words.</summary>
+/// <summary>What <c>daoris quest review</c> was asked: the quest, the verdict as the service spells it, and the person's words.</summary>
 /// <param name="Said">
 /// <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>, which <c>off</c> is (REVIEWENV1j, design §3.6); or
 /// <see cref="QuestReviewCommand.SetUpStep"/>, a set-up step asked in <see cref="SetUpIn"/>.
@@ -36,7 +36,7 @@ public sealed record QuestReviewWorld(ServiceClient Service)
 
 /// <summary>
 /// The terminal's door to the person's verdict on a review (REVIEWENV1c, D154 point 8; the review environment design §3.3, D50):
-/// <c>daoris-driver quest review &lt;id&gt; reviewed|not-yet|skip ["…"]</c>. It prints what the set-up step showed and how to show it
+/// <c>daoris quest review &lt;id&gt; reviewed|not-yet|skip ["…"]</c>. It prints what the set-up step showed and how to show it
 /// again, sends the verdict with the set-up it printed, by its <c>machine</c> and <c>sequence</c> (REVIEWENV1b3: what the person
 /// looked at is what the verdict answers), and says what the gate now says. A <i>not yet</i> needs words, and they go to the step's
 /// session as its next turn (design §3.4).
@@ -56,11 +56,11 @@ public sealed record QuestReviewWorld(ServiceClient Service)
 public static class QuestReviewCommand
 {
     public const string Usage =
-        "usage: daoris-driver quest review <id> reviewed|not-yet|skip [\"…\"]\n"
+        "usage: daoris quest review <id> reviewed|not-yet|skip [\"…\"]\n"
         + "       say what you saw of a set-up step's showing: reviewed lets the work it holds land; not-yet, with your words, sends\n"
         + "       them to the step's session as its next turn; skip lets this work land without a review, on a set-up step or the\n"
         + "       chain's work quest. It prints what was shown and how to show it again, then what the gate says.\n"
-        + "       daoris-driver quest review <id> off [\"…\"]  ·  daoris-driver quest review <id> on|<environment>\n"
+        + "       daoris quest review <id> off [\"…\"]  ·  daoris quest review <id> on|<environment>\n"
         + "       choose whether a done quest's work is reviewed, as its gate does: off is the skip; on (the repository's default\n"
         + "       environment) or an environment it declares publishes a set-up step to show the work there.";
 
@@ -131,7 +131,7 @@ public static class QuestReviewCommand
         var quest = await world.Service.FindQuestAsync(ask.Quest, ct).ConfigureAwait(false);
         if (quest is null)
         {
-            output.WriteLine($"daoris-driver: no quest `#{ask.Quest}` here. Ids come from the quest's page or `daoris-driver sessions`.");
+            output.WriteLine($"daoris-driver: no quest `#{ask.Quest}` here. Ids come from the quest's page or `daoris session list`.");
             return 1;
         }
 
@@ -143,7 +143,7 @@ public static class QuestReviewCommand
             if (quest.SetUpIn is null)
             {
                 output.WriteLine($"daoris-driver: quest `#{quest.Id}` is no set-up step, so nothing of it was shown to review: "
-                    + $"`{ask.Said}` answers a set-up. `daoris-driver quest review {quest.Id} skip` lets its work land without a review.");
+                    + $"`{ask.Said}` answers a set-up. `daoris quest review {quest.Id} skip` lets its work land without a review.");
                 return 1;
             }
 
@@ -191,7 +191,7 @@ public static class QuestReviewCommand
         if (KnowledgeReviews.Current.Review(world.Config, quest.To, quest.Workspace) is not { Rule.IsNone: false } declared)
         {
             output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment, so nothing of its work can be shown for review: "
-                + $"`daoris driver review {quest.To} <environment> --kind local|deployed --procedure <path>` declares one. Nothing was published.");
+                + $"`daoris place review {quest.To} <environment> --kind local|deployed --procedure <path>` declares one. Nothing was published.");
             return 1;
         }
 
@@ -209,7 +209,7 @@ public static class QuestReviewCommand
         if (!ok) return 1;
 
         output.WriteLine($"daoris-driver: the gate: `{quest.To}`'s work waits for set-up step `#{step ?? "…"}` to show it in `{environment}`, "
-            + $"then for your look: `daoris-driver quest review {step ?? "<step>"} reviewed` once you have looked.");
+            + $"then for your look: `daoris quest review {step ?? "<step>"} reviewed` once you have looked.");
         return 0;
     }
 
@@ -233,7 +233,7 @@ public static class QuestReviewCommand
     private static string Gate(QuestView quest, string said, QuestSetUpView? shown) => said switch
     {
         ReviewVerdicts.Reviewed =>
-            $"work up to `{Short(shown!.Commit)}` in `{quest.To}` may land: the review's Accept, `daoris-driver trees land <session>`, or "
+            $"work up to `{Short(shown!.Commit)}` in `{quest.To}` may land: the review's Accept, `daoris tree land <session>`, or "
             + "the next look where it is accepted automatically. Work added after it waits for its own review.",
         ReviewVerdicts.NotYet =>
             $"it waits for the set-up `#{quest.Id}` shows next, in `{quest.SetUpIn}`.",

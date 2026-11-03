@@ -1033,8 +1033,8 @@ public static class Planner
         {
             var resumes = quest.Status == "Taken" ? "carries it on" : "starts it";
             return new(quest, StartVerdict.Paused, pause.Scope == WorkScope.Ask
-                ? $"paused with ask `#{pause.Id}`; Resume {resumes} — `daoris-driver ask --resume {pause.Id}`."
-                : $"you paused `#{pause.Id}`; Resume {resumes} — `daoris-driver quest resume {pause.Id}`.")
+                ? $"paused with ask `#{pause.Id}`; Resume {resumes} — `daoris ask resume {pause.Id}`."
+                : $"you paused `#{pause.Id}`; Resume {resumes} — `daoris quest resume {pause.Id}`.")
             {
                 PausedBy = pause,
             };
@@ -1047,14 +1047,14 @@ public static class Planner
                 // STEWARDROLE1b (D209 §5.1): the steward's stop, held the same way and said as the steward's, never as the person's.
                 ? new(quest, StartVerdict.Stopped,
                     $"the steward stopped session `{stop.Session}`; Try again, by the steward or the owner, "
-                    + $"{(quest.Status == "Taken" ? "carries it on" : "starts it again")} — `daoris driver retry {quest.Id} --session {stop.Session}`.")
+                    + $"{(quest.Status == "Taken" ? "carries it on" : "starts it again")} — `daoris quest retry {quest.Id} --session {stop.Session}`.")
                 {
                     HeldBy = stop,
                     Said = new(SittingFact.Steward) { Session = stop.Session },
                 }
                 : new(quest, StartVerdict.Stopped,
                     $"you stopped session `{stop.Session}`; Try again {(quest.Status == "Taken" ? "carries it on" : "starts it again")} — "
-                    + $"`daoris driver retry {quest.Id} --session {stop.Session}`.")
+                    + $"`daoris quest retry {quest.Id} --session {stop.Session}`.")
                 {
                     HeldBy = stop,
                 };
@@ -1242,7 +1242,7 @@ public static class Planner
         // is (OVERVIEWNOISE1c), so the page words it.
         (SittingFact Said, string Reason) HeldQuestion(QuestView question)
         {
-            var yes = $"once you accept the done as it stands, your yes: `daoris-driver quest accept {question.Id}`.";
+            var yes = $"once you accept the done as it stands, your yes: `daoris quest accept {question.Id}`.";
             var atCommit = !snapshot.LastRun.ContainsKey(question.Id);
             var named = atCommit ? " --commit <sha>" : "";
             SittingFact Fact(string code) => new(code) { Quest = question.Id, Repository = question.To };
@@ -1256,22 +1256,22 @@ public static class Planner
                 EvidenceCodes.Unread =>
                     (Fact(atCommit ? SittingFact.UnreadAtCommit : SittingFact.Unread),
                         $"waits on `#{question.Id}`, which `{question.To}` closed done, and its evidence is not read yet — it resumes, in "
-                        + $"the same tree, once the evidence is found, `daoris-driver quest check {question.Id}{named}`, or {yes}"),
+                        + $"the same tree, once the evidence is found, `daoris quest check {question.Id}{named}`, or {yes}"),
                 EvidenceCodes.MissingHold =>
                     (Fact(SittingFact.Missing),
                         $"waits on `#{question.Id}`, which `{question.To}` closed done without the evidence it names — it resumes, in the "
-                        + $"same tree, once a later commit holds it, `daoris-driver quest check {question.Id} --commit <sha>`, or {yes}"),
+                        + $"same tree, once a later commit holds it, `daoris quest check {question.Id} --commit <sha>`, or {yes}"),
                 // A set-up step waits for the person's review (REVIEWENV1c, D154 point 9), which a yes does not give.
                 EvidenceCodes.Unreviewed =>
                     (Fact(SittingFact.Unreviewed) with { Environment = question.SetUpIn },
                         $"waits on `#{question.Id}`, which `{question.To}` closed done: it waits for your review"
                         + (question.SetUpIn is { } environment ? $" in `{environment}`" : "")
-                        + $" — it resumes, in the same tree, once you say it is reviewed, `daoris-driver quest review {question.Id} reviewed`, "
-                        + $"or skip the review, `daoris-driver quest review {question.Id} skip`."),
+                        + $" — it resumes, in the same tree, once you say it is reviewed, `daoris quest review {question.Id} reviewed`, "
+                        + $"or skip the review, `daoris quest review {question.Id} skip`."),
                 _ =>
                     (Fact(SittingFact.Departed),
                         $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
-                        + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`."),
+                        + $"resumes, in the same tree, once you accept that, your yes: `daoris quest accept {question.Id}`."),
             };
         }
 
@@ -1352,7 +1352,7 @@ public static class Planner
             if (repo.Root is null)
             {
                 return new(quest, StartVerdict.NoRoot,
-                    $"no root is known for `{quest.To}` — run `daoris connect` from that repository.");
+                    $"no root is known for `{quest.To}` — run `daoris repository connect` from that repository.");
             }
 
             // 🔴 Before busy and before capacity, because those are waits and this is a stop: a
@@ -1368,7 +1368,7 @@ public static class Planner
                 return new(quest, StartVerdict.Exhausted,
                     $"{strikes} session(s) have failed on `#{quest.Id}` without landing anything — "
                     + $"parked, because trying again spends an account rather than making progress. "
-                    + $"`daoris driver retry {quest.Id}` starts it again once you know why.")
+                    + $"`daoris quest retry {quest.Id}` starts it again once you know why.")
                 {
                     // What *Try again* marks (RETRY1b): the records' count, not the count past the mark this sentence says.
                     Failures = failures,

@@ -33,7 +33,7 @@ public sealed class LinesRoutes(DriverContext context)
     private const StateScopes Chosen = StateScopes.Driver;
 
     // A repository's line, or a workspace's (WSR2), or either cleared with no branch — the same
-    // file `daoris driver line` edits: one truth, two doors (D50).
+    // file `daoris place line` edits: one truth, two doors (D50).
     [DriverRoute("SET_LINE")]
     [Publishes("SET_LINE", Chosen)]
     private object? SetLine(IpcRequest request)
@@ -71,7 +71,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     // A repository's session language, or a workspace's (LANG1c, D142 point 7), or either cleared with no language — the
-    // same file `daoris driver language` edits: one truth, two doors (D50). A code the table does not hold is the driver's
+    // same file `daoris place language` edits: one truth, two doors (D50). A code the table does not hold is the driver's
     // refusal.
     [DriverRoute("SET_LANGUAGE")]
     [Publishes("SET_LANGUAGE", Chosen)]
@@ -216,7 +216,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     // A repository's landing rule or a workspace's, or either cleared with no form — the same file
-    // `daoris driver landing` edits: one truth, two doors (D50).
+    // `daoris place landing` edits: one truth, two doors (D50).
     [DriverRoute("SET_LANDING")]
     [Publishes("SET_LANDING", StateScopes.Landing | StateScopes.Lines)]
     private object? SetLanding(IpcRequest request)
@@ -399,7 +399,7 @@ public sealed class LinesRoutes(DriverContext context)
 
     // Discarding a failed or superseded attempt's branch (LAND3b, D102's LAND3 note), beside the clean-up whose list offers
     // it: its commits are on no branch of the person's, so no landing's tidy and no clean-up takes it, and once its tree is
-    // gone the review has nothing to discard. `daoris-driver trees remove <branch> --repository <name> --force` is the
+    // gone the review has nothing to discard. `daoris tree remove <branch> --repository <name> --force` is the
     // terminal's door (D50), and both end in the driver's one discard (LAND3c), which keeps a branch a live session's tree holds.
     /// <summary>
     /// Discard a session branch by its name and its repository (LAND3b): with its tree where it still has one.
@@ -441,7 +441,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     // Withdrawing a landing's branch the line will never hold (LANDRETIRE1, D102's note of it), beside the clean-up whose `Differs` rows it
-    // answers: `trees clean` keeps such a branch for ever, so this is the person's saying so. `daoris-driver trees remove <landing branch>
+    // answers: `trees clean` keeps such a branch for ever, so this is the person's saying so. `daoris tree remove <landing branch>
     // --why "…"` is the terminal's door (D50), and both end in the driver's one withdrawal (`LandedBranchWithdrawal`). The page's own press
     // and the steward's act are LANDRETIRE1's part 2 and a later one: nothing on the page calls this route yet.
     /// <summary>
@@ -475,7 +475,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): CLEANUP1 keeps such a ref at any
-    // age until they say so, and this is their saying, the page's half of `daoris-driver work recovery drop`. Both doors end in
+    // age until they say so, and this is their saying, the page's half of `daoris work recovery drop`. Both doors end in
     // RecoveryDropping.PressAsync, which re-reads the holders at the moment of the delete.
     /// <summary>
     /// Delete the recovery refs the page listed, `refs` each with the commit it was shown at, in `repository`'s checkout.
@@ -534,7 +534,7 @@ public sealed class LinesRoutes(DriverContext context)
 
     // Bringing repositories up to date after a pull request merged (WSR6, D109): the list, which fetches each line —
     // moving only origin's refs — and the press, which does not fetch again: it acts on what the list fetched, and
-    // only on the rows the page listed (`only`). `daoris-driver trees sync` is the terminal's door (D50).
+    // only on the rows the page listed (`only`). `daoris tree sync` is the terminal's door (D50).
     /// <summary>
     /// Bringing each repository with a checkout here up to date (WSR6): its line fast-forwarded, the branches still at
     /// work replayed onto it, the landed branches whose work reached it deleted — listed first, done by a press.
@@ -656,7 +656,7 @@ public sealed class LinesRoutes(DriverContext context)
 
     /// <summary>
     /// Each unit of work's milestone (FABRIC-MILESTONE1a, the fabric events design §D0, §D3), the page's read of what
-    /// `daoris-driver work state` says (D50): whether its end was reached, the result kept, the cleanup pending (what waits and
+    /// `daoris work state` says (D50): whether its end was reached, the result kept, the cleanup pending (what waits and
     /// why) or completed (what went), and the recovery retained until its date, each with the inventory entries it is read from.
     /// Derived at each read from the records the tree lifecycle keeps, never stored; a look that changes nothing, so it declares
     /// nothing (D169 point 2). With `unit`, the units that name picks (its id, session or branch). The work slice pushes the same
@@ -788,7 +788,7 @@ public sealed class LinesRoutes(DriverContext context)
         .. ends.Select(each => new { each.Unit, each.Kind, each.At, each.Nodes, each.Quest, each.Node, each.Attempt, each.NodeState, each.Resolution, each.Words, each.Word }),
     ];
 
-    // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris-driver work
+    // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris work
     // held <unit> <node> <attempt> <word>`. Both doors end in HeldAttempts.Word, which records it under the unit's node record's lock with
     // the lease asked inside it; the loop's runtime applies it under the node's declaration at its next pass, which the nudge wakes.
     /// <summary>
@@ -827,7 +827,7 @@ public sealed class LinesRoutes(DriverContext context)
 
     /// <summary>
     /// A session branch's row: what the proof found (D88), and whether its discard is offered beside it (LAND3b), by the
-    /// driver's own rule, so the page offers it beside the rows `daoris-driver trees clean` prints its line beside: a
+    /// driver's own rule, so the page offers it beside the rows `daoris tree clean` prints its line beside: a
     /// failed or superseded attempt's commits, which no clean-up takes. The tree's path stays here; the page is told only
     /// whether there is one.
     /// </summary>
@@ -932,7 +932,7 @@ public sealed class LinesRoutes(DriverContext context)
         BranchTidying.HeldTreesAsync(service, cancellationToken);
 
     // REVIEWENV1a (D154 point 2, design §1.7): where each repository's work is reviewed before it lands, the screens' half of
-    // `daoris driver review`, sent by `bridge/lines.ts`. Declared only: nothing here composes a step, gates or serves.
+    // `daoris place review`, sent by `bridge/lines.ts`. Declared only: nothing here composes a step, gates or serves.
 
     /// <summary>
     /// One change to a review rule, as the page sends it: the twin's edit in the shared table's own shape (<c>repository</c>
@@ -953,7 +953,7 @@ public sealed class LinesRoutes(DriverContext context)
         // The twin's refusals come first, in its words, before the registry is asked anything.
         ReviewRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
 
-        // PUSH1f2a: the look is the library's operation, which `daoris-driver driver review` acting alone calls too.
+        // PUSH1f2a: the look is the library's operation, which `daoris place review` acting alone calls too.
         ReviewLooked? looked = null;
         if (edit.Put is { Procedure: { } procedure })
         {
@@ -1026,7 +1026,7 @@ public sealed class LinesRoutes(DriverContext context)
     };
 
     // DOORS1b (D163 point 3, D164's amendment points 1 and 3): what a helper an agent asks for does, and how work is committed,
-    // the screens' half of `daoris driver helpers` and `daoris driver commits`, sent by `bridge/lines.ts`. Ask Daoris's `setting`
+    // the screens' half of `daoris place helpers` and `daoris place commits`, sent by `bridge/lines.ts`. Ask Daoris's `setting`
     // kind's `helpers` and `commits` doors are their third (DOORS1a).
 
     /// <summary>
@@ -1048,7 +1048,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <summary>
     /// One change to a hand-over rule (MIXAGENT1c, D163 point 3), as the page sends it: the twin's edit in the shared table's own
     /// shape (<c>repository</c> or <c>workspace</c>; <c>set</c> with its <c>mode</c>, or <c>clear</c>), judged by
-    /// <see cref="HandOverRules.Apply"/> before anything is written; the screens' half of `daoris driver handover`.
+    /// <see cref="HandOverRules.Apply"/> before anything is written; the screens' half of `daoris settings handover`.
     /// </summary>
     [DriverRoute("SET_HAND_OVER")]
     [Publishes("SET_HAND_OVER", Chosen)]
@@ -1077,7 +1077,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// One change to a session access setup (AUTONOMY1a, D184 point 1), the setup page's half of <c>daoris-driver access</c> over the
+    /// One change to a session access setup (AUTONOMY1a, D184 point 1), the setup page's half of <c>daoris place access</c> over the
     /// same keys: <c>repository</c>, <c>workspace</c> or <c>machine: true</c>, and <c>access</c>, <c>"full"</c>, the pauses it sets
     /// (a null value taking one back to the level above) or null to clear, judged by <see cref="AccessRules.Apply"/> before anything is
     /// written. Full access is the person's press alone: no proposal names it (D184's rejected options). It reads nothing else, so it
@@ -1100,7 +1100,7 @@ public sealed class LinesRoutes(DriverContext context)
 
     /// <summary>
     /// One change to git access (GITAUTH1f, D198 points 8, 10 and 12; the git-auth design §6.4), the page's half of
-    /// <c>daoris-driver git access</c>: <c>repository</c>, <c>workspace</c> or <c>machine: true</c>, and <c>access</c> (the classes it
+    /// <c>daoris git access</c>: <c>repository</c>, <c>workspace</c> or <c>machine: true</c>, and <c>access</c> (the classes it
     /// sets, a null value taking one back to the level above), <c>oneValue</c> (Read and Write together), or neither to clear. A
     /// separate route from <c>SET_ACCESS</c>: a payload with no <c>access</c> clears the access setup on a host that does not know the
     /// field. Judged by <see cref="GitAccessActs.Changes"/> before anything is written; the window confirms a widening in its own

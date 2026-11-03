@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver access</c> was asked (AUTONOMY1a): a level, and the change to it, or none to say it.</summary>
+/// <summary>What <c>daoris place access</c> was asked (AUTONOMY1a): a level, and the change to it, or none to say it.</summary>
 public sealed record AccessAsk
 {
     /// <summary>The repository named, or null.</summary>
@@ -19,7 +19,7 @@ public sealed record AccessAsk
 public sealed record AccessPlace(string? Workspace, bool Known);
 
 /// <summary>
-/// <c>daoris-driver access</c> (AUTONOMY1a, D184 point 1, D50): a repository's session access setup from a terminal, its workspace's
+/// <c>daoris place access</c> (AUTONOMY1a, D184 point 1, D50): a repository's session access setup from a terminal, its workspace's
 /// with <c>--workspace</c>, or this machine's with neither: said pause by pause with where each came from, or set to full access, to the
 /// pauses named, or cleared. It reads and writes the driver's file alone, through <see cref="AccessRules"/>, the door the screen's
 /// <c>SET_ACCESS</c> goes through, so the two refuse alike.
@@ -32,7 +32,7 @@ public static class AccessCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver access [<repository> | --workspace <name>] [full | <pause>=<value>… | --clear]
+        usage: daoris place access [<repository> | --workspace <name>] [full | <pause>=<value>… | --clear]
                pauses: permissions=asking|auto|unrestricted  routing=person|intake  landing=person|rule
                        goAheads=named|never  questions=claude-code;  <pause>= takes one back to the level above
         """;

@@ -6,7 +6,7 @@ import { call } from '../call';
 import { type DriverState, writeAnswered } from '../driver';
 
 // Reading and writing across repositories (READ1, D107): how each repository's checkout stands, and the
-// screen's half of `daoris driver across`, over the same `driver.json`.
+// screen's half of `daoris place across`, over the same `driver.json`.
 
 /**
  * Every repository here, whether agents outside it read its checkout and what said so, and what its sessions
@@ -23,7 +23,7 @@ export const useAcross = ({ enabled = true }: { enabled?: boolean } = {}) => {
 };
 
 /**
- * Set a repository's reading or a workspace's, or clear it with no `read` — the file `daoris driver across …
+ * Set a repository's reading or a workspace's, or clear it with no `read` — the file `daoris place across …
  * read` edits (D50). The answer is the driver's state, written where it is read; every repository's answer moves with it,
  * under the driver's key, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
  */
@@ -35,7 +35,7 @@ export const useSetReadAcross = () => {
   });
 };
 
-/** Declare a relationship, or take it back — `daoris driver across <repository> write-to <other> [--clear]`. */
+/** Declare a relationship, or take it back — `daoris place across <repository> write-to <other> [--clear]`. */
 export const useSetWriteAcross = () => {
   const client = useQueryClient();
   return useMutation({

@@ -220,7 +220,7 @@ public sealed class ChatGoOnTests : IDisposable
         Assert.Equal(("c1", "wait:AccountCooling"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Contains("the `stub` account `account-1` is cooling until", held.Text);
         Assert.Contains("its conversation is on that account, so your words wait to go on in it then.", held.Text);
-        Assert.EndsWith("`daoris-driver sessions start-from c1`.", held.Text);
+        Assert.EndsWith("`daoris session start-from c1`.", held.Text);
         Assert.StartsWith(ResumeWords.NotYet, held.Text);
         // CONVNOTE2g: the wait and its door by code, the account by its id, the session its command names a value.
         Assert.Equal(["waits.account", "waits.door-chat"], NoteAssert.Codes(held.Parts));

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver checks</c> was asked (FABRIC-PIPELINE1b): a repository, and its checks to set or a clear, or none to say.</summary>
+/// <summary>What <c>daoris place checks</c> was asked (FABRIC-PIPELINE1b): a repository, and its checks to set or a clear, or none to say.</summary>
 public sealed record SessionChecksAsk
 {
     /// <summary>The repository named, or null to list every repository's.</summary>
@@ -17,14 +17,14 @@ public sealed record SessionChecksAsk
 }
 
 /// <summary>
-/// <c>daoris-driver checks</c> (FABRIC-PIPELINE1b, D192 point 4, D50): which checks a repository's sessions run under Current, from a
+/// <c>daoris place checks</c> (FABRIC-PIPELINE1b, D192 point 4, D50): which checks a repository's sessions run under Current, from a
 /// terminal: listed, said, set or cleared. It reads and writes the driver's file alone, through <see cref="SessionChecks.Apply"/>, the door
 /// Setup's row goes through, so they refuse alike.
 /// </summary>
 /// <remarks>Exit codes are the family's: 0 said or set · 1 refused, nothing written · 2 could not, the usage among them.</remarks>
 public static class SessionChecksCommand
 {
-    public const string Usage = "usage: daoris-driver checks [<repository> [light | heavy-at-end | --clear]]";
+    public const string Usage = "usage: daoris place checks [<repository> [light | heavy-at-end | --clear]]";
 
     /// <summary>What the words after <c>checks</c> ask, or null with what is wrong with them.</summary>
     public static SessionChecksAsk? Read(IReadOnlyList<string> args, out string? problem)

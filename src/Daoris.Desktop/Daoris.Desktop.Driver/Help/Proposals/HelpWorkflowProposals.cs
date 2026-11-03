@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// file names no door: one with no <c>base</c> is a <c>new</c> workflow, one with a base an <c>edit</c>, and <c>choose</c> is the
 /// <c>use</c> door. It is judged as the editor judges a version (<see cref="WorkflowNamed"/>, §2.5, §3.9), and applied by saving
 /// it through <see cref="WorkflowStore.Add"/> with the door <c>ask-daoris:&lt;proposal&gt;</c>, then the choice through the
-/// driver's file, as <c>daoris driver workflow use</c> makes it.
+/// driver's file, as <c>daoris workflow use</c> makes it.
 /// </summary>
 /// <remarks>
 /// <para><b>Stale is refused, never applied over</b> (§8.1, §2.6): a new workflow takes an id no workflow here has, and an edit's
@@ -105,7 +105,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         if (repository is not null && workspace is not null)
         {
             return Refused($"`{scope}` names both a repository and a workspace on this machine, and a workflow proposal does not say "
-                + $"which: `daoris driver workflow use {id} --repository|--workspace {scope}` chooses it for either.");
+                + $"which: `daoris workflow use {id} --repository|--workspace {scope}` chooses it for either.");
         }
 
         var found = facts.Workflows.FirstOrDefault(each => each.Id == id);
@@ -125,7 +125,6 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var newest = found?.Read.Versions is [.., var last] ? last : null;
         var before = !saves || proposal.Base is null ? null : newest;
         var version = !saves ? newest!.Version : before is null ? 1 : before.Version + 1;
-        IReadOnlyList<NamedStep>? steps = null;
         NodeGraph? graph = null;
         if (proposal.Graph is { } drawn)
         {
@@ -139,9 +138,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var given = proposal.Base is null ? proposal.Name?.Trim() : null;
         if (!string.IsNullOrEmpty(given) && WorkflowNamed.NameProblem(given) is { } nameProblem) return Refused(nameProblem);
         var name = found?.Read.Name ?? (string.IsNullOrEmpty(given) ? id : given);
-        var unchanged = !saves
-            || (steps is not null && before?.Steps is not null && before.Digest == WorkflowNamed.Digest(steps))
-            || (graph is not null && before?.Graph is not null && before.Digest == NodeGraphs.Digest(graph));
+        var unchanged = !saves || (graph is not null && before?.Graph is not null && before.Digest == NodeGraphs.Digest(graph));
 
         // The choice: the scope's route made this workflow (its default where the proposal names no route), judged by the edit that
         // makes it; none where it is made already.
@@ -169,10 +166,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var reached = landed ? ReachedLanded(after, facts, id) : Reached(after, facts, id);
         var kept = facts.WorkflowRuns.Count(run => run.Workflow == id && !run.IsCurrent);
         var applies = AppliesTo(id, reached, kept, use is not null ? workspace : null);
-        var stepsNow = steps ?? (saves ? null : newest!.Steps);
-        List<string> needs = (unchanged && use is null) || stepsNow is null
-            ? []
-            : Needs(after, facts, id, version, stepsNow, [.. reached.Union(Scoped(after, facts, repository, workspace), StringComparer.OrdinalIgnoreCase)]);
+        var needs = new List<string>();
 
         // INTEGRATE1r part r2 (the integration design §17.7): a graph chosen with no save integrates its landing in each repository it reaches, so
         // each that cannot carry it is a need, and each whose rule integrates with no gates is said (F42).
@@ -196,7 +190,6 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             }
         }
 
-        var diff = steps is not null ? WorkflowDiff.Of(before?.Steps, steps) : null;
         var nodes = graph is not null ? GraphLines(before?.Graph, graph) : [];
 
         // D157 point 10 (the pipeline design §1.3): what the change asks less of the person. An agent's choice that lowers anything is
@@ -228,7 +221,6 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
                   + (use is null ? "" : $", and choose it {forScope}") + ".",
         };
         if (saves && chosen is not null && use is null) said.Add($"{Capital(whose)} chooses `{id}`{RouteWords(chosen)} already.");
-        if (!unchanged && diff is not null) said.AddRange(diff.Said);
         if (!unchanged && graph is not null)
         {
             said.Add("Nodes, by id:");
@@ -261,8 +253,8 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         // The landed route resolves on its own and replaces nothing (FABRIC-PIPELINE1a).
         if (use is { Repository: { } chooser, Landed: false } && OwnOf(config, chooser) is null)
         {
-            said.Add($"This replaces the workspace's for every kind: `{chooser}` follows its own kinds and its own default, and Current where "
-                + "it names none.");
+            said.Add($"This replaces the workspace's for every kind: `{chooser}` follows its own kinds and its own default, and this machine's "
+                + "default where it names none.");
         }
 
         said.Add($"Applies to: {applies}");
@@ -270,19 +262,19 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var terminals = new List<string>();
         if (!unchanged)
         {
-            terminals.Add(before is null ? "daoris driver workflow import <file>" : $"daoris driver workflow apply {id} <file> --base {before.Version}");
+            terminals.Add(before is null ? "daoris workflow import <file>" : $"daoris workflow apply {id} <file> --base {before.Version}");
         }
 
         if (use is not null)
         {
             var flag = use.Landed ? " --landed" : use.Kind is { } kind ? $" --kind {kind}" : "";
             terminals.Add(repository is not null
-                ? $"daoris driver workflow use {id} --repository {repository}{flag}"
-                : $"daoris driver workflow use {id} --workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}{flag}");
+                ? $"daoris workflow use {id} --repository {repository}{flag}"
+                : $"daoris workflow use {id} --workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}{flag}");
         }
 
         var card = new HelpWorkflowCard(
-            id, name, before?.Version, version, repository ?? workspace!, diff?.Steps ?? nodes, diff?.Part ?? Part(graph), diff?.Outward ?? Outward(graph),
+            id, name, before?.Version, version, repository ?? workspace!, nodes, Part(graph), Outward(graph),
             needs, applies, chosen is not null)
         {
             ScopeKind = repository is not null ? "repository" : "workspace",
@@ -294,7 +286,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             Lowers = judged.Lowered,
             NoGates = noGates,
         };
-        return new HelpPlan(null, string.Join('\n', said), terminals.Count > 0 ? string.Join(" && ", terminals) : $"daoris driver workflow show {id}", null)
+        return new HelpPlan(null, string.Join('\n', said), terminals.Count > 0 ? string.Join(" && ", terminals) : $"daoris workflow show {id}", null)
         {
             Workflow = card,
         };
@@ -510,48 +502,9 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         if (found is null) return $"there is no workflow `{id}` on this machine: a new workflow names no base.";
         if (found.Read.Problem is { } unread) return $"`{id}`'s file cannot be read here, and nothing is saved over it: {unread}";
         return newest == number ? null
-            : $"`{id}` is at v{newest} now, not v{number}: read it again (`daoris driver workflow show {id}`) and make the change against v{newest}.";
+            : $"`{id}` is at v{newest} now, not v{number}: read it again (`daoris workflow show {id}`) and make the change against v{newest}.";
     }
 
-    /// <summary>
-    /// What each step needs first (§8.1, §8.2) in each repository it reaches: the declarations the gate reads it over
-    /// (<see cref="WorkflowProcess.Of"/>, its sentences naming their doors), a landing plugin that cannot land here, then each
-    /// step of a kind this build does not run (§3.9), never guessed past.
-    /// </summary>
-    private static List<string> Needs(
-        DriverConfig config, HelpMachineFacts facts, string id, int version, IReadOnlyList<NamedStep> steps, IReadOnlyList<string> repositories)
-    {
-        var needs = new List<string>();
-        var plugins = WorkflowCurrent.PluginsOf(facts.Plugins);
-        var land = steps.First(step => step.Kind == WorkflowKinds.Landing);
-        foreach (var repository in repositories)
-        {
-            var workspace = WorkspaceOf(facts, repository);
-            var binding = new WorkflowRunBinding("", repository, RemoteTarget.Workspace(workspace), id, WorkflowLevels.Repository, DateTimeOffset.MinValue)
-            {
-                Version = version,
-            };
-            var process = WorkflowProcess.Of(config, repository, workspace, binding, steps);
-            if (process.OpinionCannot is { } opinion) needs.Add(opinion);
-            if (process.Look?.Cannot is { } look) needs.Add(look);
-            if (process.LandingCannot is { } landing) needs.Add(landing);
-            if (process.Landing.Rule is { Form: LandingForm.Branch, Plugin: { } plugin }
-                && !plugins.Any(each => Same(each.Id, plugin) && each.Points.Contains(HookPoints.Land, StringComparer.Ordinal)))
-            {
-                needs.Add($"its landing `{land.Id}` hands `{repository}`'s branch to `{plugin}`. {WorkflowLimits.Says(WorkflowLimits.PluginUnready)}");
-            }
-        }
-
-        foreach (var step in steps.SelectMany(step => new[] { step }.Concat(step.Members)))
-        {
-            if (WorkflowKindTable.Of(step.Kind)!.Runtime == WorkflowKindTable.None)
-            {
-                needs.Add($"its step `{step.Id}` is a `{step.Kind}`, which this build does not run yet.");
-            }
-        }
-
-        return [.. needs.Distinct(StringComparer.Ordinal)];
-    }
 
     /// <summary>The routes a workflow proposal chooses its workflow for (FABRIC-PIPELINE1i, the pipeline design §1.3).</summary>
     private static class Routes

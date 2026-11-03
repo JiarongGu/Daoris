@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// What a plugin did (PLUGUI1d, D119 §3.2 and §4.1): the machine log's <c>plugin.*</c> lines for one plugin over a
 /// period, summarised, with the sessions started on its agents (<c>session.started</c>'s <c>adapter</c>) and the
 /// branches it pushed (the landing record, D102). One reader for both doors: the page's <c>PLUGIN_ACTIVITY</c> and
-/// <c>daoris-driver plugins activity</c>.
+/// <c>daoris plugin activity</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Never the plugin's words.</b> The log holds none (D94 §5), and the landing record's pull request is an

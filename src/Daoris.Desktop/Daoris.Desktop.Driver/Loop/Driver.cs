@@ -198,7 +198,7 @@ public sealed class Driver(
     /// <summary>
     /// The driver's file, read again at a running driven session's turn's end (ACCESSSWAP1b, D183's note): the look's config is the file
     /// as that look read it, and a session outlives its look, so a change the page's <c>SET_ACCESS</c> or the terminal's
-    /// <c>daoris-driver access</c> wrote since is seen only here. The watch's; null where nothing names it, a one-look run's and a gate's,
+    /// <c>daoris place access</c> wrote since is seen only here. The watch's; null where nothing names it, a one-look run's and a gate's,
     /// and a session there goes on under its start's setup until its next start.
     /// </summary>
     public string? ConfigPath { get; init; }
@@ -699,7 +699,7 @@ public sealed class Driver(
     private Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct) =>
         WorkflowRunStart.BindAsync(
             [.. opened.Select(start => new WorkflowStarted(start.Quest, start.Workspace))], new StartWorld(service), home, config,
-            WorkflowCurrent.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines, made: [.. Context.Runs.TakeBound().Cast<WorkflowBind>()]);
+            WorkflowSteps.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines, made: [.. Context.Runs.TakeBound().Cast<WorkflowBind>()]);
 
     /// <summary>
     /// A start's bind of its run before its take (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8): Workflows' use case
@@ -709,7 +709,7 @@ public sealed class Driver(
     private async Task<WorkflowBind> BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct)
     {
         var bound = await WorkflowRunStart.AtStartAsync(
-                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowCurrent.PluginsOf(Context.Catalog),
+                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowSteps.PluginsOf(Context.Catalog),
                 () => DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         if (bound.Came == WorkflowBindCame.Bound) Context.Runs.Bound(bound);
@@ -723,7 +723,7 @@ public sealed class Driver(
     /// </summary>
     internal async Task<string?> StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) =>
         (await WorkflowRunStart.PlannedAsync(
-                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowCurrent.PluginsOf(Context.Catalog),
+                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowSteps.PluginsOf(Context.Catalog),
                 () => DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false))?.RoleOf(NodeKinds.Claimed)?.Role;
 

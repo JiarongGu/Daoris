@@ -19,7 +19,7 @@ every session after uses it. Signing in is the person's to do, never a session's
 **Ask Daoris uses it once you approve it.** The server is offered to Ask Daoris too (`"to": ["sessions",
 "help"]`), and Ask Daoris is handed it only once you approve its exact tools on the plugin's page
 (Plugins → *In-app browser* → *Ask Daoris* → *Approve*), or press Apply on Ask Daoris's own proposal of
-it, or run `daoris-driver plugins approve in-app-browser browser`. Its reads (`allow`: navigating,
+it, or run `daoris plugin approve in-app-browser browser`. Its reads (`allow`: navigating,
 reading a page's snapshot, a screenshot, its tabs, its console and its requests) are approved
 whole; each write (`writes`: clicking, typing, filling a form, choosing, dragging, uploading a file,
 answering a dialog) only as you tick it, since it acts on a page as you. The tools that run a

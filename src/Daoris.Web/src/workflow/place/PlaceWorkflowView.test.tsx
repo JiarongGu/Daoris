@@ -526,7 +526,7 @@ describe('Change… and Edit steps…', () => {
     draw();
     expect(screen.queryByRole('button', { name: 'Change…' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit steps…' })).toBeNull();
-    expect(screen.getByText(code('daoris driver workflow new <id> --from <default>'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris workflow new <id> --from <default>'))).toBeInTheDocument();
   });
 });
 

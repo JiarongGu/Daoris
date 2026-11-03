@@ -191,7 +191,7 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
 /// it (design §4).
 /// </summary>
 /// <remarks>
-/// <para><b>Every landing door asks it</b>: the review's press (<c>LAND_SESSION_TREE</c>), <c>daoris-driver trees land</c>, and
+/// <para><b>Every landing door asks it</b>: the review's press (<c>LAND_SESSION_TREE</c>), <c>daoris tree land</c>, and
 /// the look under <i>Accept automatically</i>, an advance of the chain's branch among them, since each lands through
 /// <see cref="SessionTrees.LandAsync"/>, which refuses a state that does not let go.</para>
 ///
@@ -367,7 +367,7 @@ public static class ReviewGate
         var lead = $"Waits for your review in `{decision.Environment}`: ";
         var step = decision.SetUpStep?.Id;
         var skipOn = step is not null && gate.State != ReviewStates.NotHeld ? step : decision.Work ?? step;
-        var skip = skipOn is null ? "" : $" `daoris-driver quest review {skipOn} skip \"…\"` lets it land without one.";
+        var skip = skipOn is null ? "" : $" `daoris quest review {skipOn} skip \"…\"` lets it land without one.";
         return gate.State switch
         {
             // CHATFLOW1d2 (the chat-flow design §5.3): a chat run's look, which no set-up step can show, and the person's way past it.
@@ -375,7 +375,7 @@ public static class ReviewGate
                 $"Waits for your look, and it cannot start: {ChatLookLimit}"
                 + (decision.LookNode is null
                     ? " Convert its workflow to a saved one, and its look becomes a step you can skip."
-                    : $" `daoris-driver workflow skip {decision.ChatRun} {decision.LookNode} \"…\"` passes it over with your words."),
+                    : $" `daoris workflow skip {decision.ChatRun} {decision.LookNode} \"…\"` passes it over with your words."),
             ReviewStates.Skipped when decision.ChatRun is not null =>
                 $"You accepted this conversation's work without the look at `{Short(decision.SkippedAt ?? "")}`: it lands without one.",
             ReviewStates.None => decision.Level == ReviewLevels.Nothing
@@ -395,7 +395,7 @@ public static class ReviewGate
             ReviewStates.Shown => lead + $"set-up step `#{step}` showed it at `{Short(gate.SetUp!.Commit)}`"
                 + (gate.SetUp.Look is { } look ? $", at <{look}>" : gate.SetUp.Local ? ", on the machine that showed it" : "")
                 + (gate.SetUp.Shows is { Length: > 0 } shows ? $": {shows.TrimEnd().TrimEnd('.')}" : "")
-                + $". Look at it, then `daoris-driver quest review {step} reviewed`, or `daoris-driver quest review {step} not-yet \"…\"` "
+                + $". Look at it, then `daoris quest review {step} reviewed`, or `daoris quest review {step} not-yet \"…\"` "
                 + "with what is not right yet.",
             ReviewStates.NotYet => lead
                 + $"you said not yet to what set-up step `#{step}` showed at `{Short(gate.SetUp!.Commit)}`, and it waits for the set-up it "

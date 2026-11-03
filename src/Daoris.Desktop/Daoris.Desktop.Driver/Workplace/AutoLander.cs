@@ -618,7 +618,7 @@ public sealed class AutoLander(
                 if (why is not null)
                 {
                     return $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first look once its quest "
-                        + $"stands again hands it on, or `daoris-driver trees hand {last}` does now";
+                        + $"stands again hands it on, or `daoris tree hand {last}` does now";
                 }
 
                 // FABRIC-CLOSE1h16: the choice's own work is judged at the commit its branch was judged and made at (LandingGate.Tip, the
@@ -630,7 +630,7 @@ public sealed class AutoLander(
                 {
                     if (line is not null) log?.Invoke(line);
                     return $"{AutoLandingNotes.GateHeld} before its plugin was told, so its push was not tried: the branch stands, and the first "
-                        + $"look once the gate lets it go hands it on, or `daoris-driver trees hand {last}` does now. {held.Message}";
+                        + $"look once the gate lets it go hands it on, or `daoris tree hand {last}` does now. {held.Message}";
                 }
             }
         }
@@ -649,7 +649,7 @@ public sealed class AutoLander(
             {
                 return $"session {work.Session}'s quest #{id}, whose work this push carries, {why} before its plugin was told, so its push was "
                     + $"not tried: the branch stands, and the first look once that quest stands again hands it on, or "
-                    + $"`daoris-driver trees hand {last}` does now";
+                    + $"`daoris tree hand {last}` does now";
             }
         }
 

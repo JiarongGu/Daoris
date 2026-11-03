@@ -121,7 +121,7 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // *Go on in a new session* (MSG1g, D137 §2.2): words a resume holds while the account their session ran on cools go on now
     // in a new session, handed them, without that conversation. The driver's door judges and keeps the person's choice
-    // (D143 point 4), the same door `daoris-driver sessions go-on-new` calls (D50); the loop is nudged so its next look carries
+    // (D143 point 4), the same door `daoris session go-on-new` calls (D50); the loop is nudged so its next look carries
     // them on. What cannot is `sent: false` with its code, for the page to word, and the driver's sentence beside it. The
     // page's press is a later row.
     [DriverRoute("SESSION_GO_ON_NEW")]
@@ -141,7 +141,7 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     // *Ask another agent…* (MIXAGENT2b, D163 point 2; the mixed-agents design §3): the person's own ask of a helper for a session,
-    // the file `daoris-driver sessions helper` writes (`HelperFiles.WriteAsk`, asked by the person, so the `helpers` rule's `ask`
+    // the file `daoris session helper` writes (`HelperFiles.WriteAsk`, asked by the person, so the `helpers` rule's `ask`
     // and `off` do not hold it), judged as that verb judges: a question within the bound, an agent of one word, and a session of
     // this machine's that may ask. Everything else is the driver's, at its next look, which the nudge brings sooner. What cannot is
     // `asked: null` with its code for the page to word, and the verb's sentence beside it; the page never reads a path.
@@ -220,7 +220,7 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     // *Ask another agent to work on a piece…* (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1): the person's own ask of
-    // a piece for a session, the file `daoris-driver sessions partner` writes, by the one judge and writer both share
+    // a piece for a session, the file `daoris session partner` writes, by the one judge and writer both share
     // (`PartnerPersonAsk`): the piece within its bound, an agent named in one word, the paths inside, a session of this machine's that
     // may lead one, and its tree's commit read as the piece's exact base. Everything else is the driver's, at its next look, which the
     // nudge brings sooner. What cannot is `asked: null` with its code for the page to word, and the verb's sentence beside it.
@@ -891,7 +891,7 @@ public sealed class SessionsRoutes(DriverContext context)
         var entries = SessionGroups.ReadEntries(look, ids).Select(Entry).ToArray();
         if (!Flag(request, "said")) return new { Sessions = sessions, Entries = entries };
 
-        // RPCOPEN1: `daoris-driver sessions` asks for its own lines from this look (the group, the repository and `--json` it was given),
+        // RPCOPEN1: `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it was given),
         // which the alone path prints from a look of its own through the same function (§7.3); the page asks for none.
         var ask = new SessionsAsk("list") { Group = Optional(request, "group"), Repository = Optional(request, "repository"), Json = Flag(request, "json") };
         return new
@@ -902,7 +902,7 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// One entry of <c>SESSION_GROUPS</c>, field for field what <c>daoris-driver sessions --json</c> prints in <c>entries</c>
+    /// One entry of <c>SESSION_GROUPS</c>, field for field what <c>daoris session list --json</c> prints in <c>entries</c>
     /// (SESSONE1b): its key and the key's halves, the group its leading part put it in, and its parts, oldest first, each with
     /// how it began. Ids, words and counts only.
     /// </summary>
@@ -1051,7 +1051,7 @@ public sealed class SessionsRoutes(DriverContext context)
             ? [.. named.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!).Distinct(StringComparer.Ordinal)]
             : null;
 
-    /// <summary>One row of <c>SESSION_GROUPS</c>, field for field what <c>daoris-driver sessions --json</c> prints (SESSUX1g). Public, as <see cref="SweepRow"/> is, so its shape is tested without a service.</summary>
+    /// <summary>One row of <c>SESSION_GROUPS</c>, field for field what <c>daoris session list --json</c> prints (SESSUX1g). Public, as <see cref="SweepRow"/> is, so its shape is tested without a service.</summary>
     public static object Grouped(SessionGrouping row) => new
     {
         row.Session,

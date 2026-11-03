@@ -172,10 +172,10 @@ describe('the stop’s ask', () => {
   it('says what follows, and stops only on its second press, with never mind beside it', async () => {
     const stop = vi.fn();
     const close = vi.fn();
-    render(<StopAsk sentence="Stops the session now. Run `daoris driver retry abc123` later." onStop={stop} onClose={close} />);
+    render(<StopAsk sentence="Stops the session now. Run `daoris quest retry abc123` later." onStop={stop} onClose={close} />);
 
     const ask = screen.getByRole('group', { name: 'stop this session' });
-    expect(within(ask).getByText(code('daoris driver retry abc123'))).toBeInTheDocument();
+    expect(within(ask).getByText(code('daoris quest retry abc123'))).toBeInTheDocument();
     expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Stop session', 'Never mind']);
     await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
     expect(close).toHaveBeenCalledOnce();

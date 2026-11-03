@@ -337,7 +337,7 @@ public static class Continuations
         Noted.Of(
             NoteCodes.HeldAgentGone,
             $"It does not go on yet: `{agent}` is no longer an agent on this machine, so its words cannot go on with it. They wait on "
-            + $"it: hand it over to another agent to go on with them, `daoris-driver sessions hand-over {session} --agent <agent>`.",
+            + $"it: hand it over to another agent to go on with them, `daoris session hand-over {session} --agent <agent>`.",
             ("agent", agent), ("session", session));
 
     /// <summary>The record's note, then a blank line and the new line; the line alone where the record said nothing.</summary>

@@ -9,7 +9,7 @@
   "work.trace.story.sessions_other": "{{count}} 个会话",
   "work.trace.nothing.session": "记录中没有任何内容指向这个会话。",
   "work.trace.nothing.quest": "记录中没有任何内容指向这个委托。",
-  "work.trace.terminal": "终端用 `daoris-driver trace {{kind}} {{id}}` 读取同一条链，它还会说明某处为何没有应答。",
+  "work.trace.terminal": "终端用 `daoris trace {{kind}} {{id}}` 读取同一条链，它还会说明某处为何没有应答。",
   "work.trace.missing": "缺失",
   "work.trace.from": "来自{{source}}",
   "work.trace.source.sessions": "服务的会话记录",

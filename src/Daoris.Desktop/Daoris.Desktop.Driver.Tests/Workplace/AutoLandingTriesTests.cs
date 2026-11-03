@@ -137,7 +137,7 @@ public sealed class AutoLandingTriesTests : AutoLandingFixture
         Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"), line);
         Assert.Empty(_frames);
         Assert.Contains("not installed", line);
-        Assert.Contains("`daoris-driver trees hand s1`", line);
+        Assert.Contains("`daoris tree hand s1`", line);
         var record = new LandedBranches(_home).Landing("s1")!;
         Assert.False(record.Pushed);
         Assert.Equal(AcceptedBy.Auto, record.AcceptedBy);

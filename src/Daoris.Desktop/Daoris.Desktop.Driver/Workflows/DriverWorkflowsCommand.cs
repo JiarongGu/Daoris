@@ -6,8 +6,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver workflow …</c> (PUSH1f2b, D194, the alone-path design §5; D157, the workflow design §4.7): the terminal's door
-/// to workflows, the words <c>daoris driver workflow …</c> hands this program. <c>show --repository|--workspace [--kind]</c> draws what
+/// <c>daoris workflow …</c> (PUSH1f2b, D194, the alone-path design §5; D157, the workflow design §4.7): the terminal's door
+/// to workflows, the words <c>daoris workflow …</c> hands this program. <c>show --repository|--workspace [--kind]</c> draws what
 /// work there follows: Current, read from the rules as they stand, or the named workflow a choice gives. The rest are named workflows,
 /// one file each under the home's <c>workflows</c>: <c>list</c>, <c>show &lt;id&gt;[@&lt;version&gt;]</c>, <c>new</c>, <c>edit</c>,
 /// <c>apply</c>, <c>export</c> and <c>import</c>; and the choice in <c>driver.json</c>, <c>use</c> and <c>kind</c>. A writer says its
@@ -37,7 +37,7 @@ public static class DriverWorkflowsCommand
         + "use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); "
         + "kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. "
         + "new, apply, import, use and kind print their change, and with --plan save nothing — e.g. "
-        + "`daoris driver workflow new docs --from merge-after-accept --plan`.";
+        + "`daoris workflow new docs --from merge-after-accept --plan`.";
 
     /// <summary>Whether the words (after <c>workflow</c>) write: a writing sub-verb with no <c>--plan</c>.</summary>
     public static bool Changes(IReadOnlyList<string> args) => ChoiceGrammar.WorkflowChanges(args);
@@ -205,7 +205,7 @@ public static class DriverWorkflowsCommand
         }
 
         private Found Required(string id) =>
-            Load(id) ?? throw new ChoiceWords($"no workflow `{id}` here — `daoris driver workflow list` names them.");
+            Load(id) ?? throw new ChoiceWords($"no workflow `{id}` here — `daoris workflow list` names them.");
 
         /// <summary><c>&lt;id&gt;</c> or <c>&lt;id&gt;@&lt;version&gt;</c>.</summary>
         private static (string Id, int? Version) Named(string? token) => WorkflowOperations.Named(token);
@@ -243,7 +243,7 @@ public static class DriverWorkflowsCommand
                     + (reads is null ? "; no version of it reads here." : $"; v{reads.Version} is the newest that reads."));
             }
 
-            Say("Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):");
+            Say("Defaults built in, for `daoris workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):");
             foreach (var preset in WorkflowPresets.GraphTable)
             {
                 Say($"  `{preset.Id}` — {preset.Name}, a graph. {WorkflowPresets.GraphLine(preset.Graph())}");
@@ -264,20 +264,20 @@ public static class DriverWorkflowsCommand
             if (named is null && argv.Count > 2) throw new ChoiceWords(Usage);
             if (named is null)
             {
-                Say("daoris: the defaults Daoris ships, each a graph `daoris driver workflow new <id> --from <default>` copies (`--with-opinion`, `--with-look`):");
+                Say("daoris: the defaults Daoris ships, each a graph `daoris workflow new <id> --from <default>` copies (`--with-opinion`, `--with-look`):");
                 foreach (var each in WorkflowDefaults.All) Say($"  `{each.Id}` — {each.Name}. {each.For}");
-                Say("  `daoris driver workflow defaults <default>` says one whole, and `--to <file>` writes its graph to a file.");
+                Say("  `daoris workflow defaults <default>` says one whole, and `--to <file>` writes its graph to a file.");
                 return 0;
             }
 
             var shipped = WorkflowDefaults.Of(named) ?? throw new ChoiceWords(
-                $"`{named}` is no default Daoris ships — `daoris driver workflow defaults` names them, and `show {named}` shows a workflow saved here.");
+                $"`{named}` is no default Daoris ships — `daoris workflow defaults` names them, and `show {named}` shows a workflow saved here.");
             if (FlagValue("--to") is { } to)
             {
                 var path = FileOperand(to);
                 if (File.Exists(path) || Directory.Exists(path)) throw new ChoiceWords($"`{to}` exists already: a default is written to a new file, and never over one.");
                 AtomicFile.WriteText(path, JsonFile.Serialize(shipped.Graph()));
-                Say($"daoris: the default `{shipped.Id}`'s graph written to {path}: `daoris driver workflow apply <id> {to}` saves it as a version.");
+                Say($"daoris: the default `{shipped.Id}`'s graph written to {path}: `daoris workflow apply <id> {to}` saves it as a version.");
                 return 0;
             }
 
@@ -297,7 +297,7 @@ public static class DriverWorkflowsCommand
             }
 
             Say($"  Wires: {string.Join(", ", graph.Wires.Select(wire => $"{wire.From?.Node} → {wire.To.Node}"))}.");
-            Say($"  `daoris driver workflow new <id> --from {shipped.Id}` copies it, and the copy keeps where it came from.");
+            Say($"  `daoris workflow new <id> --from {shipped.Id}` copies it, and the copy keeps where it came from.");
             return 0;
         }
 
@@ -334,7 +334,7 @@ public static class DriverWorkflowsCommand
         private async Task<int> ShowChosenAsync()
         {
             const string usage = "`driver workflow show` takes --repository <name>|--workspace <name>, and --kind <kind> for a kind of task: "
-                + "the workflow its work follows, Current or the one chosen — e.g. `daoris driver workflow show --repository web-app`; or a "
+                + "the workflow its work follows, Current or the one chosen — e.g. `daoris workflow show --repository web-app`; or a "
                 + "named workflow's <id>[@<version>].";
             string[] valued = ["--repository", "--workspace", "--kind"];
             for (var at = 2; at < argv.Count; at++)
@@ -355,27 +355,23 @@ public static class DriverWorkflowsCommand
                 var selected = WorkflowSelection.Resolve(choices, null, workspace, task);
                 var whose = $"the workspace `{workspace}`{KindSaid(selected)}";
                 if (selected.Workflow != WorkflowSelection.Current) return ShowNamed(selected, whose, workspace, null, [], workspace);
-                var said = WorkflowWords.CurrentSaid(WorkflowCurrent.Derive(choices, null, workspace, Plugins()), whose,
-                    "for each repository there that sets none of its own");
-                foreach (var line in WithChoice(said, selected, workspace, null, [], workspace, kind)) Say(line);
+                foreach (var line in WithChoice([NoneSaid(whose)], selected, workspace, null, [], workspace, kind)) Say(line);
                 return 0;
             }
 
-            var current = await CurrentOfAsync(repository!).ConfigureAwait(false);
-            var chosen = WorkflowSelection.Resolve(choices, repository, current.InWorkspace, task);
+            var (notes, inWorkspace) = await WorkspaceOfAsync(repository!).ConfigureAwait(false);
+            var chosen = WorkflowSelection.Resolve(choices, repository, inWorkspace, task);
             var named = $"`{repository}`{KindSaid(chosen)}";
-            var circle = RemoteTarget.Workspace(current.InWorkspace);
-            if (chosen.Workflow != WorkflowSelection.Current) return ShowNamed(chosen, named, circle, repository, current.Notes, current.InWorkspace);
-            foreach (var line in WithChoice(WorkflowWords.CurrentSaid(current.Drawn, named, current.Where), chosen, circle, repository, current.Notes,
-                current.InWorkspace, kind))
-            {
-                Say(line);
-            }
-
+            var circle = RemoteTarget.Workspace(inWorkspace);
+            if (chosen.Workflow != WorkflowSelection.Current) return ShowNamed(chosen, named, circle, repository, notes, inWorkspace);
+            foreach (var line in WithChoice([NoneSaid(named)], chosen, circle, repository, notes, inWorkspace, kind)) Say(line);
             return 0;
         }
 
-        /// <summary>Current's lines, with the registry's notes and, where a choice or a kind is read, what chose it under the header; then the routes.</summary>
+        private static string NoneSaid(string whose) =>
+            $"{whose} follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.";
+
+        /// <summary>The lines of a place that follows no workflow, with the registry's notes and, where a choice or a kind is read, what chose it under the header; then the routes.</summary>
         private List<string> WithChoice(
             IReadOnlyList<string> said, WorkflowSelected selected, string circle, string? owner, IReadOnlyList<string> notes, string? inWorkspace, string? kind)
         {
@@ -395,7 +391,7 @@ public static class DriverWorkflowsCommand
         private List<string> RoutesSaid(string? owner, string circle, string? inWorkspace)
         {
             string Target(WorkflowSelected selected) =>
-                $"{(selected.Workflow == WorkflowSelection.Current ? "Current" : $"`{selected.Workflow}`")}, {WorkflowWords.WhyChosen(selected, owner, circle)}";
+                $"{(selected.Workflow == WorkflowSelection.Current ? "no workflow" : $"`{selected.Workflow}`")}, {WorkflowWords.WhyChosen(selected, owner, circle)}";
             var lines = new List<string>
             {
                 "  Its start node routes the work that comes here:",
@@ -468,7 +464,7 @@ public static class DriverWorkflowsCommand
         private async Task<int> UseAsync()
         {
             const string usage = "`driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> "
-                + "for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`.";
+                + "for a kind of task or --landed for the work that lands — e.g. `daoris workflow use docs-to-pr --workspace work --kind docs`.";
             string[] valued = ["--repository", "--workspace", "--kind"];
             var operands = new List<string>();
             for (var at = 2; at < argv.Count; at++)
@@ -517,7 +513,7 @@ public static class DriverWorkflowsCommand
             if (repository is null)
             {
                 IReadOnlyList<string> shared = chosen is not null && chosen != WorkflowSelection.Current
-                    ? [$"  Its gates are accepted repository by repository, at each line's tip: `daoris driver workflow use {chosen} --repository <name> "
+                    ? [$"  Its gates are accepted repository by repository, at each line's tip: `daoris workflow use {chosen} --repository <name> "
                         + "--landed` accepts one's."]
                     : [];
                 return LandedDone(Edit(null), workspace, shared, repository, workspace, chosen);
@@ -658,7 +654,7 @@ public static class DriverWorkflowsCommand
         private int Kind()
         {
             const string usage = "`driver workflow kind` takes <workspace> <kind> --label \"…\" [--paths <path,…>], or <workspace> <kind> --drop — "
-                + "e.g. `daoris driver workflow kind work docs --label \"Documentation\" --paths \"docs/**,**/*.md\"`.";
+                + "e.g. `daoris workflow kind work docs --label \"Documentation\" --paths \"docs/**,**/*.md\"`.";
             string[] valued = ["--label", "--paths"];
             var operands = new List<string>();
             for (var at = 2; at < argv.Count; at++)
@@ -701,45 +697,37 @@ public static class DriverWorkflowsCommand
             return 0;
         }
 
-        /// <summary>The plugins of the home the choices are in, as the driver reads them: the landing's and the opinion's doors with it.</summary>
-        private IReadOnlyList<WorkflowPlugin> Plugins() => WorkflowCurrent.PluginsOf(PluginCatalog.Load(_home, AdapterSet.Built().Names));
-
         /// <summary>
-        /// A repository's Current: its workspace is the registry's, read as <c>review</c> reads it; unread, it is drawn only where no rule
-        /// in the file is set for a workspace, since none could then reach it.
+        /// A repository's workspace, the registry's, read as <c>review</c> reads it; unread, it is read only where no choice in the file is set
+        /// for a workspace, since none could then reach it.
         /// </summary>
-        private async Task<(CurrentWorkflow Drawn, string Where, List<string> Notes, string? InWorkspace)> CurrentOfAsync(string name)
+        private async Task<(List<string> Notes, string? InWorkspace)> WorkspaceOfAsync(string name)
         {
             var read = await world.Registry(ct).ConfigureAwait(false);
             var notes = new List<string>();
             string? inWorkspace = null;
-            string where;
             if (read.Checkouts is not { } checkouts)
             {
-                if (choices.WorkspaceLandings.Count > 0 || choices.WorkspaceReviews.Count > 0 || choices.WorkspaceOpinions.Count > 0
-                    || choices.WorkspaceWorkflows.Count > 0)
+                if (choices.WorkspaceWorkflows.Count > 0)
                 {
-                    throw new ChoiceWords($"cannot say which workspace's rules reach `{name}`: the registry could not be read — "
-                        + $"{read.Unread} — and this file sets rules for a workspace. Nothing was drawn. `--workspace <name>` draws a "
-                        + "workspace's Current from this file alone.");
+                    throw new ChoiceWords($"cannot say which workspace's choices reach `{name}`: the registry could not be read — "
+                        + $"{read.Unread} — and this file sets choices for a workspace. `--workspace <name>` shows a workspace's from this file alone.");
                 }
 
-                where = "its workspace not read";
-                notes.Add($"  The registry was not read ({read.Unread}); no rule here is set for a workspace, so none reaches it.");
+                notes.Add($"  The registry was not read ({read.Unread}); no choice here is set for a workspace, so none reaches it.");
             }
             else
             {
                 var checkout = checkouts.FirstOrDefault(each => InScope(each.Repository, name));
                 inWorkspace = checkout.Workspace;
-                where = $"in the workspace `{RemoteTarget.Workspace(inWorkspace)}`";
                 if (checkout.Repository is null)
                 {
                     notes.Add($"  `{name}` is not in the registry, so it is read as in no workspace: the `{RemoteTarget.Workspace(null)}` "
-                        + "workspace's rules reach it.");
+                        + "workspace's choices reach it.");
                 }
             }
 
-            return (WorkflowCurrent.Derive(choices, name, inWorkspace, Plugins()), where, notes, inWorkspace);
+            return (notes, inWorkspace);
         }
 
         private async Task<int> CreateAsync()
@@ -752,7 +740,7 @@ public static class DriverWorkflowsCommand
             if (Load(id) is { } existing)
             {
                 var at = existing.Read.Versions.Count > 0 ? $", at v{existing.Read.Versions[^1].Version}" : "";
-                throw new ChoiceWords($"`{id}` is a workflow here already{at}: `daoris driver workflow apply {id} <file>` adds a version to it.", 1);
+                throw new ChoiceWords($"`{id}` is a workflow here already{at}: `daoris workflow apply {id} <file>` adds a version to it.", 1);
             }
 
             var opinion = argv.Contains("--with-opinion");
@@ -854,7 +842,7 @@ public static class DriverWorkflowsCommand
             AtomicFile.WriteText(path, text);
             var count = found.Read.Versions.Count;
             Say($"daoris: `{id}` written to {path}, with {(count == 1 ? "its version" : $"its {count} versions")}: "
-                + "`daoris driver workflow import <file>` reads it on another machine.");
+                + "`daoris workflow import <file>` reads it on another machine.");
             return 0;
         }
 
@@ -885,7 +873,7 @@ public static class DriverWorkflowsCommand
                 }
 
                 var at = here.Read.Versions.Count > 0 ? $", at v{here.Read.Versions[^1].Version}" : "";
-                throw new ChoiceWords($"`{id}` is a workflow here already{at}, and the file's versions differ: `daoris driver workflow apply {id} {from}` "
+                throw new ChoiceWords($"`{id}` is a workflow here already{at}, and the file's versions differ: `daoris workflow apply {id} {from}` "
                     + "adds the file's newest version to it.", 1);
             }
 

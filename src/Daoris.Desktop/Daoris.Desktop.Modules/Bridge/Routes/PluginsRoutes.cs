@@ -121,7 +121,7 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    // A plugin's page (PLUGUI1e, D119 §3.2 and §4.1): the reader `daoris-driver plugins show` prints, with its health
+    // A plugin's page (PLUGUI1e, D119 §3.2 and §4.1): the reader `daoris plugin show` prints, with its health
     // from the loop's own record, since this process runs the loop. A plugin no longer here is PLUGIN_UNKNOWN, which
     // the page reads as gone by the code (D48 §6).
     [DriverRoute("PLUGIN")]
@@ -133,7 +133,7 @@ public sealed class PluginsRoutes(DriverContext context)
             () => PluginPage.Read(_loop.Home, entry.Manifest.Id, _loop.Health, OffersFolder), cancellationToken).ConfigureAwait(false);
     }
 
-    // What a plugin did over a period (PLUGUI1e, D119 §4.1): the reader `daoris-driver plugins activity` prints, over
+    // What a plugin did over a period (PLUGUI1e, D119 §4.1): the reader `daoris plugin activity` prints, over
     // the machine log under the home. `since` is the span the page chose (`1d`, `7d`, `30d`), the log's own spans;
     // absent, the page's opening period. Its words this run are the console's ring, read apart (`TAIL_SESSION`).
     [DriverRoute("PLUGIN_ACTIVITY")]
@@ -304,7 +304,7 @@ public sealed class PluginsRoutes(DriverContext context)
     {
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        // RPC1e: `daoris-driver plugins approve|withdraw` sent over the pipe asks for the verb's own words, a refusal among them as its
+        // RPC1e: `daoris plugin approve|withdraw` sent over the pipe asks for the verb's own words, a refusal among them as its
         // exit 2, the approvals written by the verb's own path under this Daoris's home.
         if (Flag(request, "said") && PluginsCommand.GrantWords(
                 action, id, Optional(request, "server") ?? "", Named(request, "writes")) is { } words)
@@ -327,14 +327,14 @@ public sealed class PluginsRoutes(DriverContext context)
                 // The install folder goes; what the plugin kept is NAMED and stays — it is
                 // the person's to throw away, the same judgement Forget makes for an account.
                 // 🔴 Its hook process first (the live process's coordination stays here, the alone-path design §1.3), then the
-                // library's remove (PUSH1f2f), which `daoris-driver plugin remove` calls alone: the folder moved aside WHOLE, a
+                // library's remove (PUSH1f2f), which `daoris plugin remove` calls alone: the folder moved aside WHOLE, a
                 // held one refused as PLUGIN_BUSY with nothing taken.
                 await _loop.StopPluginAsync(entry.Manifest.Id).ConfigureAwait(false);
                 PluginInstall.Remove(_loop.Home, entry.Manifest.Id);
                 break;
             }
             // HELPPLUG1a's tightening (D170's note): the person's approval of the exact tools a plugin's server offers Ask Daoris,
-            // its writes too or its reads only, or its withdrawal; `daoris-driver plugins approve|withdraw` is the terminal's half.
+            // its writes too or its reads only, or its withdrawal; `daoris plugin approve|withdraw` is the terminal's half.
             // A server that names a generic execution tool is refused with the reason, which the page says.
             // HELPPLUG1c: `writes`, beside `help-approve`, names the writes the person ticked, each on its own; absent, every one.
             case "help-approve" or "help-reads":
@@ -369,7 +369,7 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    // The plugin kit's screen half (PLUG8, D101): `daoris-driver plugins new` from a form. It writes
+    // The plugin kit's screen half (PLUG8, D101): `daoris plugin new` from a form. It writes
     // a plugin's folder into the one the person named, a plugins repository's typically, and
     // installs nothing: making a plugin is work, reviewed before `daoris plugin add`.
     [DriverRoute("PLUGIN_NEW")]
@@ -387,7 +387,7 @@ public sealed class PluginsRoutes(DriverContext context)
         return new { plan.Id, plan.Folder, plan.Points, Files = files };
     }
 
-    // `daoris-driver plugins try` from a button: an installed plugin by its id, or a folder by
+    // `daoris plugin try` from a button: an installed plugin by its id, or a folder by
     // its path, started as the driver would and every answer read by the driver's own reader.
     // It may take as long as the driver waits at the points tried — two minutes for a landing.
     [DriverRoute("PLUGIN_TRY")]

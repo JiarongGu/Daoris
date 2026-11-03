@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver agent login</c> (PUSH1f2e6, D194, the alone-path design §1.1 and §1.4), the words <c>daoris agent login …</c> hands this
+/// <c>daoris agent login</c> (PUSH1f2e6, D194, the alone-path design §1.1 and §1.4), the words <c>daoris agent login …</c> hands this
 /// program: the agent's own sign-in, run at this terminal into an account's folder, the person answering its prompts. No route takes it (§2),
 /// it is refused from a session's terminal (D194 point 5), and it holds no lease at its top: the folder is made before the flow and never
 /// moved, and the sign-in's end (its mark, its cool-off ended, its name and its joins) is published under the home's lease, waited for and
@@ -271,7 +271,7 @@ internal static class AgentLoginCommand
             string? called = null;
             try
             {
-                using (await HomeLease.ForPublicationAsync(home, "daoris-driver agent login",
+                using (await HomeLease.ForPublicationAsync(home, "daoris agent login",
                     holder => Told($"{Prefix}: waiting for {holder.Named} to let this home go; the sign-in's end is written then, and Ctrl+C stops."),
                     ct, world.Waiting, world.Now).ConfigureAwait(false))
                 {

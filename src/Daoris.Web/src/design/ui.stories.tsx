@@ -116,13 +116,13 @@ function SettingRowsCards({ zh = false }: { zh?: boolean }) {
         <SettingList>
           <SettingRow
             label={zh ? '会话停泊或意外结束时通知我' : 'Tell me when a session parks or ends unasked'}
-            hint="Also `daoris driver notify on|off` — one file, either door."
+            hint="Also `daoris settings notify on|off` — one file, either door."
             why="Nobody should have to watch a driver."
             control={<CheckField hideLabel checked onChange={() => {}} label="Tell me when a session parks or ends unasked" />}
           />
           <SettingRow
             label={zh ? '委托在多少次失败会话后停泊' : 'Park a quest after this many failed sessions'}
-            hint="Also `daoris driver strikes <n>`; stand-downs, declines and stops never count."
+            hint="Stand-downs, declines and stops never count."
             why="One quest whose session could not start ran eighteen times, and every run spent an account."
             control={numberField}
           >
@@ -142,7 +142,7 @@ function SettingRowsCards({ zh = false }: { zh?: boolean }) {
           />
           <SettingRow
             label={zh ? '没有指定时间时的冷却时长，按分钟计' : 'Cool-off when no time is named, and the label is long enough to wrap at the cap'}
-            hint="Also `daoris driver cool-off <minutes>`."
+            hint="Also `daoris settings cooloff <minutes>`."
             control={<span className="inline-flex items-center gap-1.5">{numberField}<span className="text-small text-ink-soft">min</span></span>}
           />
           <SettingRow label={zh ? '版本' : 'Version'} control={<Pill>0.22.0</Pill>} />
@@ -262,12 +262,12 @@ export const CodeSpans: StoryObj = {
         <div key={width} className={`${width} max-w-full rounded-card border border-line bg-raised px-4 py-3`}>
           <SettingRow
             label="对话保留在"
-            hint="`daoris agent profile use claude-code --keep <account>|--no-keep --workspace engine`"
+            hint="`daoris agent account use claude-code --keep <account>|--no-keep --workspace engine`"
             control={<CheckField hideLabel label="保留" checked onChange={() => {}} />}
           />
           <SettingRow
             label="Keep for conversations"
-            hint="Or `daoris agent profile order claude-code <account>…|--clear --workspace engine` at a terminal."
+            hint="Or `daoris agent account order claude-code <account>…|--clear --workspace engine` at a terminal."
           />
           <SettingRow
             label="A word wider than its line"

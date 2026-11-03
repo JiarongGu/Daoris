@@ -26,10 +26,10 @@ public static class PluginsCommand
 {
     public const string Usage =
         PluginKitCommand.Usage + "\n"
-        + "       daoris-driver plugins show <id> [--json]\n"
-        + "       daoris-driver plugins activity <id> [--since <30m|2h|3d>] [--json]\n"
-        + "       daoris-driver plugins approve <id> <server> [--reads-only | --writes <tool,…>]\n"
-        + "       daoris-driver plugins withdraw <id> <server>\n"
+        + "       daoris plugin show <id> [--json]\n"
+        + "       daoris plugin activity <id> [--since <30m|2h|3d>] [--json]\n"
+        + "       daoris plugin approve <id> <server> [--reads-only | --writes <tool,…>]\n"
+        + "       daoris plugin withdraw <id> <server>\n"
         + InstanceDoor.WaitUsage;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
@@ -196,7 +196,7 @@ public static class PluginsCommand
             {
                 Field(text, "", "  " + (landing.Rules.Count > 0
                     ? "named by " + string.Join("; ", landing.Rules.Select(rule => $"{rule.Scope} `{rule.Name}` ({rule.Pattern})"))
-                    : "no landing rule names it — `daoris driver landing` names one"));
+                    : "no landing rule names it — `daoris place landing` names one"));
                 Field(text, "", "  " + (landing.Problem ?? "it can land work here"));
             }
         }

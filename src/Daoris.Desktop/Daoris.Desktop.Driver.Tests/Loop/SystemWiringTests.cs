@@ -6,7 +6,7 @@ namespace Daoris.Driver.Tests.Platform;
 
 /// <summary>
 /// What This Daoris reads (WIRING1b, the this-Daoris design §3, §5, §6): one reader in the library, which the window's
-/// <c>SYSTEM_WIRING</c> and the terminal's <c>daoris-driver wiring</c> both call, each fact with its source, a fact not read
+/// <c>SYSTEM_WIRING</c> and the terminal's <c>daoris wiring</c> both call, each fact with its source, a fact not read
 /// <c>null</c> with its <c>…Why</c>, and no secret anywhere in the answer. Every world here is handed in: no test reads this
 /// machine's environment, its account's or its home.
 /// </summary>
@@ -541,19 +541,17 @@ public sealed class SystemWiringTests : IDisposable
         var (install, home, driver) = Install();
         var bin = Path.Combine(install, "app", "bin");
         Directory.CreateDirectory(bin);
-        foreach (var name in new[] { "daoris", "daoris.cmd", "daoris-driver", "daoris-driver.cmd" }) File.WriteAllText(Path.Combine(bin, name), "");
+        foreach (var name in new[] { "daoris", "daoris.cmd" }) File.WriteAllText(Path.Combine(bin, name), "");
         var other = Scratch("other-bin");
-        File.WriteAllText(Path.Combine(other, "daoris-driver.cmd"), "");
 
         var wiring = SystemWiring.Read(Terminal(home, driver,
             account: Env(("PATH", $"{other}{Path.PathSeparator}{bin}"), ("PATHEXT", ".COM;.EXE;.CMD"))));
 
         var terminal = wiring["terminal"]!.AsObject();
-        Assert.Equal(4, terminal["launchers"]!.AsArray().Count(row => (bool)row!["present"]!));
+        Assert.Equal(2, terminal["launchers"]!.AsArray().Count(row => (bool)row!["present"]!));
         Assert.True((bool)terminal["onAccountPath"]!);
         Assert.False((bool)terminal["onMachinePath"]!);
         Assert.Equal("this", (string?)terminal["firstDaoris"]!["is"]);
-        Assert.Equal("another", (string?)terminal["firstDriver"]!["is"]);
         Assert.DoesNotContain(other + Path.PathSeparator, SystemWiring.Json(wiring), StringComparison.Ordinal);
     }
 

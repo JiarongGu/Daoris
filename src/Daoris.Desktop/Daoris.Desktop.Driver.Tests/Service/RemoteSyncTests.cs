@@ -389,7 +389,7 @@ public sealed class RemoteSyncTests
         Assert.False(unnamed.RootElement.TryGetProperty("base", out _));
     }
 
-    // ——— Where a circle stands (SYNC6a), as `daoris-driver sync status` prints it.
+    // ——— Where a circle stands (SYNC6a), as `daoris remote sync status` prints it.
 
     /// <summary>
     /// Ahead, behind and conflicts in one line, the quests named beneath it, and a wall said as the last
@@ -1296,7 +1296,7 @@ public sealed class RemoteSyncSetTests
     ]);
 
     /// <summary>
-    /// `daoris-driver sync --workspace` and *Sync now* run ONE circle's pass (SYNC6a): the other circle's
+    /// `daoris remote sync --workspace` and *Sync now* run ONE circle's pass (SYNC6a): the other circle's
     /// remote hears nothing, and a circle this machine has no remote for is not a pass at all.
     /// </summary>
     [Fact]

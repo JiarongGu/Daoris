@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// REVIEWENV1j (D154 point 3; the review environment design §1.4–§1.5, D50): the ask's review choice at a terminal, the twin of
-/// the composer's and the ask page's. <c>daoris-driver ask … --review rule|on|&lt;environment&gt;|off</c> sends it with a new ask,
-/// <c>rule</c> sending none, as the composer's default does; <c>daoris-driver ask --set-review &lt;id&gt; on|&lt;environment&gt;|off</c>
+/// the composer's and the ask page's. <c>daoris ask … --review rule|on|&lt;environment&gt;|off</c> sends it with a new ask,
+/// <c>rule</c> sending none, as the composer's default does; <c>daoris ask review &lt;id&gt; on|&lt;environment&gt;|off</c>
 /// sets it on an ask, as its page's <i>Set</i> and <i>Apply</i> do. A named environment is one the ask's workspace declares, as the
 /// page offers only those; every other answer is the service's sentence. A service stood in: the fast half (MOD8).
 /// </summary>
@@ -199,7 +199,7 @@ public sealed class AskReviewCommandTests
         Assert.Contains("case \"--set-review\": setReview = Value(); break;", console);
         Assert.Contains("AskReviewCommand.Compose(review, reviewWords, out var reviewProblem)", console);
         Assert.Contains("AskReviewCommand.Read(setReview, words, out var setProblem)", console);
-        Assert.Contains("daoris-driver ask --set-review <id> on|<environment>|off [\\\"…\\\"]", console);
+        Assert.Contains("daoris ask review <id> on|<environment>|off [\\\"…\\\"]", console);
     }
 
     private static AskReviewWorld World(ServiceClient service) => new(service, () => ReviewChoiceStandIn.Config());

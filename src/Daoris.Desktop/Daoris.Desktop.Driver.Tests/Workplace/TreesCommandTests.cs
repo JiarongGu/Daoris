@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRSCOPE1a (D150's BRSCOPE1 note, D50, WSP5): <c>daoris-driver trees clean|sync</c> look at one workspace's checkouts where
+/// BRSCOPE1a (D150's BRSCOPE1 note, D50, WSP5): <c>daoris tree clean|sync</c> look at one workspace's checkouts where
 /// the words name one, as that workspace's Branches tab does: the words, the checkouts each look is handed, the refusal of a
 /// workspace the registry does not name, and the press each list suggests. Read off registry rows alone, since a look at a
 /// real checkout runs git; the host hands these rows to its looks and presses (<c>DriverCommandTests</c>).
@@ -191,15 +191,15 @@ public sealed class TreesCommandTests
     [Fact]
     public void The_press_a_list_suggests_carries_its_scope()
     {
-        Assert.Equal("daoris-driver trees clean --yes", TreesCommand.Press(new TreesAsk(TreesLook.Clean)));
-        Assert.Equal("daoris-driver trees clean --workspace aurora --yes", TreesCommand.Press(new TreesAsk(TreesLook.Clean) { Workspace = "aurora" }));
-        Assert.Equal("daoris-driver trees sync --repository newcomer --yes", TreesCommand.Press(new TreesAsk(TreesLook.Sync) { Repository = "newcomer" }));
-        Assert.Equal("daoris-driver trees sync --repository anvil --workspace tools --all --yes",
+        Assert.Equal("daoris tree clean --yes", TreesCommand.Press(new TreesAsk(TreesLook.Clean)));
+        Assert.Equal("daoris tree clean --workspace aurora --yes", TreesCommand.Press(new TreesAsk(TreesLook.Clean) { Workspace = "aurora" }));
+        Assert.Equal("daoris tree sync --repository newcomer --yes", TreesCommand.Press(new TreesAsk(TreesLook.Sync) { Repository = "newcomer" }));
+        Assert.Equal("daoris tree sync --repository anvil --workspace tools --all --yes",
             TreesCommand.Press(new TreesAsk(TreesLook.Sync) { Repository = "anvil", Workspace = "tools", All = true }));
         // A workspace's name goes through the one spelling every shell keeps whole (ACCTQUOTE1b).
-        Assert.Equal("daoris-driver trees clean --workspace \"my circle\" --yes",
+        Assert.Equal("daoris tree clean --workspace \"my circle\" --yes",
             TreesCommand.Press(new TreesAsk(TreesLook.Clean) { Workspace = "my circle" }));
-        Assert.Equal("daoris-driver trees clean --workspace <workspace> --yes",
+        Assert.Equal("daoris tree clean --workspace <workspace> --yes",
             TreesCommand.Press(new TreesAsk(TreesLook.Clean) { Workspace = "R&D" }));
     }
 

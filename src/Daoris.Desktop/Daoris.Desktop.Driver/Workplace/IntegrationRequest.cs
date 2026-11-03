@@ -101,7 +101,7 @@ public sealed record IntegrationRequester(string Kind, string Door)
 /// <summary>The doors a request comes through (§4.6).</summary>
 public static class IntegrationDoors
 {
-    /// <summary>The owner's card: <c>daoris-driver integrate --request</c>, with <c>--landed</c> for a recorded landing (row h).</summary>
+    /// <summary>The owner's card: <c>daoris integrate --request</c>, with <c>--landed</c> for a recorded landing (row h).</summary>
     public const string Card = "card";
 
     /// <summary>The come-up sweep.</summary>

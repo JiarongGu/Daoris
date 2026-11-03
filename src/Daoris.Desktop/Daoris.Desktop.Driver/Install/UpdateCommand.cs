@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris-driver update`, the terminal's door to an install's update (UPDATE1, D139 §3, D50): what is staged, what holds
+/// `daoris update`, the terminal's door to an install's update (UPDATE1, D139 §3, D50): what is staged, what holds
 /// for it and how the last swap ended; and <c>--when-idle</c>, <c>--now</c> and <c>--cancel</c>, written to
 /// <c>$DAORIS_HOME/update.json</c> as the banner's *Update when idle*, *Update now* and *Not now* write it.
 /// </summary>
@@ -19,8 +19,8 @@ namespace Daoris.Driver;
 public static class UpdateCommand
 {
     public const string Usage =
-        "usage: daoris-driver update [--install <folder>]                 what is staged, what holds for it, the last swap\n"
-        + "       daoris-driver update --when-idle|--now|--cancel [--install <folder>]";
+        "usage: daoris update [--install <folder>]                 what is staged, what holds for it, the last swap\n"
+        + "       daoris update --when-idle|--now|--cancel [--install <folder>]";
 
     /// <param name="home">The Daoris home, where the request is written.</param>
     /// <param name="log">This host's machine log: a word said here is a line, as the screen's is.</param>
@@ -144,7 +144,7 @@ public static class UpdateCommand
     private static string Meaning(string mode) => mode switch
     {
         UpdateMode.Now => "installed now — the desktop closes, ending what runs as a close does, and starts again on the new build",
-        UpdateMode.NotNow => "not now — it waits, and work starts as before; `daoris-driver update --when-idle` installs it when idle, `--now` at once",
+        UpdateMode.NotNow => "not now — it waits, and work starts as before; `daoris update --when-idle` installs it when idle, `--now` at once",
         _ => "installed when idle — the desktop starts nothing new, lets what runs end or park, then installs it and starts again",
     };
 

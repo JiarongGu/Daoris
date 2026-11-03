@@ -83,7 +83,7 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
   LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
   SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
@@ -168,10 +168,10 @@ export function offerProblems(install, homes) {
  */
 export function cliProblems(install, version) {
   const problems = [];
-  for (const name of [...CLI_LAUNCHERS, ...DRIVER_LAUNCHERS]) {
+  for (const name of CLI_LAUNCHERS) {
     if (!existsSync(join(install, ...CLI_BIN, name))) problems.push(`${CLI_BIN.join('/')}/${name} is not there`);
   }
-  // DRIVERDOOR1: the driver's host the two driver launchers run.
+  // DRIVERDOOR1: the driver's host the launchers run.
   if (!existsSync(join(install, ...DRIVER_HOME, DRIVER_EXE))) problems.push(`${DRIVER_HOME.join('/')}/${DRIVER_EXE} is not there`);
   const pkg = join(install, ...CLI_PACKAGE);
   const where = CLI_PACKAGE.join('/');
@@ -1553,8 +1553,7 @@ if (!done.ok) throw new Error(done.text);
   }
 
   // DRIVERDOOR1, ONEWAY1ai: a group of the one tree by the same bare name (D50's terminal door), on a scratch home of its own so
-  // nothing of any install's is read: the shipped program, complete with its libraries, answers `tree list`. The old name's launcher,
-  // kept one release, runs nothing and names the new form, exit 2.
+  // nothing of any install's is read: the shipped program, complete with its libraries, answers `tree list`.
   const driverHome = join(scratch, 'driver-door-home');
   mkdirSync(driverHome, { recursive: true });
   const driverEnvironment = { ...toolEnvironment, DAORIS_HOME: driverHome };
@@ -1565,10 +1564,6 @@ if (!done.ok) throw new Error(done.text);
   const driverOut = `${driverPrompt.stdout ?? ''}${driverPrompt.stderr ?? ''}`;
   check(`Command Prompt runs \`daoris tree list\` from ${CLI_BIN.join('/')}/ and it answers (exit 0)`,
     driverPrompt.status === 0, driverOut);
-  const oldName = promptOn('daoris-driver trees list');
-  const oldOut = `${oldName.stdout ?? ''}${oldName.stderr ?? ''}`;
-  check('…and the old name `daoris-driver trees list` runs nothing, naming `daoris tree` (exit 2)',
-    oldName.status === 2 && oldOut.includes('`daoris tree') && oldOut.includes('nothing was done'), oldOut);
 
   // -------------------------------------------------------------- 9. the install updates when its work allows
 

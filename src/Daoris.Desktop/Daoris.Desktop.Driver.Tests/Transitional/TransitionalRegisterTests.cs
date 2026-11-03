@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// ONEWAY1ad-i (D228; the oneway design §1.3): the register is a plain list of entries, each with the site it keeps and the row that deletes
-/// it. <c>tools/transitional-markers.mjs</c> holds the markers against the same list. D232: what is left is the old workflow engine's and the
-/// old command names', which their own rows delete with the list.
+/// it. <c>tools/transitional-markers.mjs</c> holds the markers against the same list. D232: what is left is the old workflow logic's and the
+/// handed sections the page still names, which their own rows delete with the list.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class TransitionalRegisterTests
@@ -40,13 +40,12 @@ public sealed class TransitionalRegisterTests
         }
     }
 
-    /// <summary>ONEWAY1ad-ii: WORKFLOWCLEAN1 §4.7's kept reads are registered, each with its row.</summary>
+    /// <summary>ONEWAY1ad-ii: what is left of WORKFLOWCLEAN1 §4.7's kept reads is registered, each with its row.</summary>
     [Fact]
     public void The_workflow_waves_kept_reads_are_registered()
     {
         Assert.Equal(
-            [("steps-engine", "WORKFLOWCLEAN1z"), ("current-followed", "WORKFLOWCLEAN1z"), ("auto-lander", "WORKFLOWCLEAN1z"), ("work-cycles", "WORKFLOWCLEAN1j"),
-                ("conversion-readers", "ONEWAY1ag"), ("roles-mode-setup", "WORKFLOWCLEAN1z")],
-            new[] { "steps-engine", "current-followed", "auto-lander", "work-cycles", "conversion-readers", "roles-mode-setup" }.Select(id => (id, Entry(id).Row)));
+            [("current-followed", "WORKFLOWCLEAN1z"), ("auto-lander", "WORKFLOWCLEAN1z"), ("work-cycles", "WORKFLOWCLEAN1j")],
+            new[] { "current-followed", "auto-lander", "work-cycles" }.Select(id => (id, Entry(id).Row)));
     }
 }

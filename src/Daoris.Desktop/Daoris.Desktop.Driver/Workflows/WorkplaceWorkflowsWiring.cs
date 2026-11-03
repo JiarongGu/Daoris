@@ -23,7 +23,7 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
         await WorkflowProcesses.ReadAsync(home, config, quests, quest, repository, workspace, ct).ConfigureAwait(false);
 
     public string? BindChatFirst(DriverConfig config, string home, string run, string tree, IWorkplacePluginCatalog plugins, DateTimeOffset at) =>
-        ChatRuns.BindFirst(config, home, run, tree, WorkflowCurrent.PluginsOf(plugins), at).Failed;
+        ChatRuns.BindFirst(config, home, run, tree, WorkflowSteps.PluginsOf(plugins), at).Failed;
 
     public (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson) => ChatRuns.PressOf(session, recordsJson);
 

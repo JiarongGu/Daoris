@@ -51,7 +51,7 @@ public sealed record PartnerPassRun(string? Session, string Line)
 /// it (<see cref="PartnerStates"/>); a piece no pass of this process holds is reconciled from what is observed (<see cref="PartnerReconcile"/>).
 /// </summary>
 /// <remarks>
-/// <para>The person's ask is written by <see cref="PartnerPersonAsk"/>, from the page's press and <c>daoris-driver sessions partner</c>.
+/// <para>The person's ask is written by <see cref="PartnerPersonAsk"/>, from the page's press and <c>daoris session partner</c>.
 /// Until the measurements table holds a row, <see cref="PartnerChoice"/> admits no production start: every piece is refused
 /// <see cref="PartnerWhy.NotMeasured"/> unless a test hands in its rows.</para>
 /// </remarks>

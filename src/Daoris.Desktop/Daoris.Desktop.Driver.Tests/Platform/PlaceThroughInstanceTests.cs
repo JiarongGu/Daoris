@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTSPLACE1b3: <c>daoris-driver place … --apply</c> through the running Daoris (the terminal RPC design §7.2): the apply is the person's, sent
+/// AGENTSPLACE1b3: <c>daoris place … --apply</c> through the running Daoris (the terminal RPC design §7.2): the apply is the person's, sent
 /// once to the instance's <c>PLACE_APPLY</c> with the acceptances the words named, which shows one card in its window; the terminal prints the
 /// lines the route answers (<c>said</c>, the alone path's own words) and applies nothing itself. <c>--plan</c> stays a read of <c>PLACE_PLAN</c>.
 /// </summary>

@@ -239,13 +239,13 @@ public sealed class InstallHomeTests : IDisposable
         File.WriteAllText(older, new System.Text.Json.Nodes.JsonObject
         {
             ["kind"] = "verb", ["pid"] = Environment.ProcessId, ["started"] = self.StartTime.ToUniversalTime().Ticks,
-            ["since"] = "2026-10-20T08:00:00+00:00", ["what"] = "daoris driver cap",
+            ["since"] = "2026-10-20T08:00:00+00:00", ["what"] = "daoris settings cap",
         }.ToJsonString());
 
         var held = Inherited(install, Path.Combine(install, "data"));
 
         Assert.Empty(held?.Placed ?? []);
-        Assert.Contains("daoris driver cap", held!.PlaceHeld);
+        Assert.Contains("daoris settings cap", held!.PlaceHeld);
         Assert.True(File.Exists(older));
 
         File.WriteAllText(older, new System.Text.Json.Nodes.JsonObject
@@ -690,7 +690,7 @@ public sealed class InstallHomeTests : IDisposable
         File.WriteAllText(HomeLease.PathIn(data), new System.Text.Json.Nodes.JsonObject
         {
             ["kind"] = "verb", ["pid"] = Environment.ProcessId, ["started"] = self.StartTime.ToUniversalTime().Ticks,
-            ["since"] = "2026-10-16T08:00:00+00:00", ["what"] = "daoris-driver trees sync",
+            ["since"] = "2026-10-16T08:00:00+00:00", ["what"] = "daoris tree sync",
         }.ToJsonString());
         var legacy = Path.Combine(_root, "legacy");
         Directory.CreateDirectory(legacy);
@@ -701,7 +701,7 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Empty(established!.Moved);
         Assert.True(established.Worth);
         Assert.True(File.Exists(Path.Combine(legacy, "driver.json")));
-        Assert.Contains("could not move anything, since a terminal's `daoris-driver trees sync` (pid", established.Notice);
+        Assert.Contains("could not move anything, since a terminal's `daoris tree sync` (pid", established.Notice);
         Assert.Contains($"held this home; the next start moves it; still at {legacy}", established.Notice);
 
         // The verb ends; the next start moves it.

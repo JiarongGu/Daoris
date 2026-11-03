@@ -74,7 +74,7 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
     [Fact]
     public void A_workflow_reads_the_plugins_of_any_catalogue_that_answers_the_facet()
     {
-        var plugins = WorkflowCurrent.PluginsOf(new Standing(
+        var plugins = WorkflowSteps.PluginsOf(new Standing(
             new Entry("b.one", ["work/land"]), new Entry("a.two", [])));
 
         Assert.Equal(["b.one", "a.two"], plugins.Select(plugin => plugin.Id));

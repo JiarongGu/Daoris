@@ -17,7 +17,7 @@ public static class IntegrationPlanSettles
 }
 
 /// <summary>
-/// What <c>daoris-driver integrate &lt;repository&gt; --plan &lt;branch&gt;</c> previews (INTEGRATE1h; the integration design §5.8, §6.3 point 3):
+/// What <c>daoris integrate &lt;repository&gt; --plan &lt;branch&gt;</c> previews (INTEGRATE1h; the integration design §5.8, §6.3 point 3):
 /// the branch merged onto its line's tip in git's objects alone, the commits the line lacks, the files the branch changes, and each conflict
 /// with what would settle it. Null fields are what git could not say.
 /// </summary>

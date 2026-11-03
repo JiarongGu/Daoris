@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// TRACE1b (D143, D50): the screen's door to <c>daoris-driver trace</c>. <c>TRACE</c> reads the same stores the terminal
+/// TRACE1b (D143, D50): the screen's door to <c>daoris trace</c>. <c>TRACE</c> reads the same stores the terminal
 /// reads, through the driver's own <see cref="Trace.ReadChainAsync"/>: the service's session records, quests and asks, and this
 /// machine's events, rules files, landings and standing answers under the home. It answers the chain as data, each link with
 /// the store it was read from and a missing link with why, and never a machine path (D47 §4): a tree by its folder's name, a

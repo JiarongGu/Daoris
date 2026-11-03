@@ -67,7 +67,7 @@ export const WorkflowPathsHeld: Story = { args: {
   lands: { branch: 'daoris/s-workflow', tree: 's-workflow', commits: 2, uncommitted: 0 },
   onLand: () => {},
   landing: { form: 'branch', target: 'feature/docs', workflow: { state: 'kind-paths', holds: true,
-    says: 'Holds: this work changed paths outside Documentation. Keep its workflow with `daoris-driver workflow keep s1a2b3c4`.' } },
+    says: 'Holds: this work changed paths outside Documentation. Keep its workflow with `daoris workflow keep s1a2b3c4`.' } },
 } };
 export const WorkflowPathsHeldChineseDark: Story = { ...WorkflowPathsHeld, decorators: [chinese, dark] };
 export const WorkflowBindingUnread: Story = { ...WorkflowPathsHeld, args: { ...WorkflowPathsHeld.args,

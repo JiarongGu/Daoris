@@ -473,8 +473,8 @@ public sealed class AbandonTests : IDisposable
         var said = output.ToString();
         Assert.Contains("could not stop w0rk1ng0", said);
         Assert.Contains("ask #a1 stays paused", said);
-        Assert.Contains("daoris-driver ask --abandon a1", said);
-        Assert.Contains("daoris-driver ask --resume a1", said);
+        Assert.Contains("daoris ask abandon a1", said);
+        Assert.Contains("daoris ask resume a1", said);
     }
 
     /// <summary>
@@ -540,7 +540,7 @@ public sealed class AbandonTests : IDisposable
         Assert.Equal(0, exit);
         Assert.StartsWith(
             "daoris-driver: abandoning ask #a1 would take 11 pieces and keep 9; "
-            + "`daoris-driver ask --abandon a1 --reason \"…\" --yes` abandons what this list holds.\n",
+            + "`daoris ask abandon a1 --reason \"…\" --yes` abandons what this list holds.\n",
             said);
         Assert.Contains("  declines #q1: it applies only while it is open.", said);
         Assert.Contains("  stops w0rk1ng0 on #q2, then archives it.", said);

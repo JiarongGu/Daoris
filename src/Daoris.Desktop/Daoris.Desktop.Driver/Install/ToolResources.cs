@@ -74,7 +74,7 @@ public sealed record MergedResources(
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The one reader since PUSH1f2c</b> (D194): the CLI's <c>resources.ts</c> was its twin, held row for row to
-/// <c>ToolResourcesTests</c>' tables, until <c>daoris tool</c> became <c>daoris-driver tool</c>; a member's note naming the CLI names
+/// <c>ToolResourcesTests</c>' tables, until <c>daoris tool</c> became <c>daoris tool</c>; a member's note naming the CLI names
 /// the function it was the twin of. Its rules:</para>
 /// <list type="number">
 /// <item><c>schema</c> is read first: anything but 1 refuses the whole list, and so does a <c>tools</c> that is no

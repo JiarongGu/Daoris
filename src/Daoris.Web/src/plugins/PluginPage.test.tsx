@@ -582,7 +582,7 @@ describe("a plugin's page", () => {
   it('ends with its terminal twins, naming it', () => {
     page();
     expect(screen.getByText(code(/daoris plugin enable\|disable\|update\|remove acme\.gate/))).toBeInTheDocument();
-    expect(screen.getByText(code(/daoris-driver plugins try acme\.gate/))).toBeInTheDocument();
+    expect(screen.getByText(code(/daoris plugin try acme\.gate/))).toBeInTheDocument();
   });
 });
 

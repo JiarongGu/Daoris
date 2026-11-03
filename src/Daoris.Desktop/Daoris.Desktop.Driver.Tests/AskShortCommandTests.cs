@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// HEAD2e2 (D162's HEAD2e note, D50): an ask's short title at a terminal, the twin of the composer's field and of the one Ask Daoris's
-/// ask card says. <c>daoris-driver ask … --short "…"</c> sends it as typed; the service judges it, so a title too long reaches the door
+/// ask card says. <c>daoris ask … --short "…"</c> sends it as typed; the service judges it, so a title too long reaches the door
 /// unchanged and the refusal is the service's sentence, printed verbatim. A service stood in: the fast half (MOD8).
 /// </summary>
 public sealed class AskShortCommandTests
@@ -53,6 +53,6 @@ public sealed class AskShortCommandTests
         Assert.Contains("case \"--short\": shortTitle = Value(); break;", console);
         Assert.Contains("shortTitle: shortTitle", console);
         Assert.Contains("--short goes with a new ask's words", console);
-        Assert.Contains("daoris-driver ask … --short \\\"…\\\"", console);
+        Assert.Contains("daoris ask … --short \\\"…\\\"", console);
     }
 }

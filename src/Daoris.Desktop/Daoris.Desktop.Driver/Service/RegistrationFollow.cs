@@ -42,7 +42,7 @@ public interface IRegistrationWorld
 /// <remarks>
 /// <para><b>Three moments, never every tick</b> (§3.1): after Daoris moves a line (a landing under <c>merge</c>, a
 /// fast-forward of <i>Bring up to date</i>, both recorded by <see cref="SessionTrees"/> in <see cref="RegistryFollowing"/>),
-/// once as a watch starts, and when the person asks (<c>daoris-driver register</c>, the row's <i>Refresh</i>).</para>
+/// once as a watch starts, and when the person asks (<c>daoris repository register</c>, the row's <i>Refresh</i>).</para>
 ///
 /// <para><b>Every refusal is said</b> (§3.4): on the row (<see cref="RegistryFollowing"/> keeps each outcome's sentence),
 /// in the machine log (<c>registry.followed</c>, a name and a word), and, for what changed or what the person must fix,
@@ -79,7 +79,7 @@ public static class RegistrationFollow
                 followed.Add(row is null
                     ? new(name.Trim(), RegistryOutcome.NotOnRegistry,
                         $"`{name.Trim()}` is not on this machine's registry, so there is nothing to register. Add it on Repositories, "
-                        + "or with `daoris import <folder> --workspace <name>`.")
+                        + "or with `daoris repository import <folder> --workspace <name>`.")
                     : await OneAsync(world, row, ct).ConfigureAwait(false));
             }
         }
@@ -124,7 +124,7 @@ public static class RegistrationFollow
             return new(name, RegistryOutcome.NoLine,
                 // HELPSETUP1: a repository's line is set on its Setup since UX6f (D150 §4.2).
                 $"`{name}` has no line here to register from: {files.Problem ?? "git names none"}. Set one with "
-                + $"`daoris driver line {name} <branch>`, or on Repositories → the repository's page → Setup → Line and landing.");
+                + $"`daoris place line {name} <branch>`, or on Repositories → the repository's page → Setup → Line and landing.");
         }
 
         var at = $"`{files.Line}` at `{Short(files.Commit)}`";
@@ -141,7 +141,7 @@ public static class RegistrationFollow
                 $"`{name}` is not set up on its line `{files.Line}`: no {LineRegistration.ManifestFile} there"
                 + (waiting is not null
                     ? $". Its set-up waits for your review on `{waiting}`; once it is merged, *Bring up to date* registers it."
-                    : $". `daoris-driver place {name} --preset keep --adoption` asks its own session to set it up."),
+                    : $". `daoris place {name} --preset keep --adoption` asks its own session to set it up."),
                 files.Line, files.Commit);
         }
 
@@ -187,7 +187,7 @@ public static class RegistrationFollow
 
     private static string DeclaresNothingSaid(string name, string at) =>
         $"adopted, declares nothing: its line {at} holds a {LineRegistration.ManifestFile} whose `domain` says nothing, so its "
-        + $"adoption is recorded and the declaration is as the row held it. `daoris-driver place {name} --preset keep --adoption` asks its own session to "
+        + $"adoption is recorded and the declaration is as the row held it. `daoris place {name} --preset keep --adoption` asks its own session to "
         + "declare what it owns.";
 
     /// <summary>The body with the declaration the row holds in place of the line's empty one; none where it held none.</summary>

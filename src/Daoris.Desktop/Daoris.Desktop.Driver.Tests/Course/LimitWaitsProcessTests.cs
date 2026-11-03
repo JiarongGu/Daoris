@@ -565,7 +565,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
             () => Seen(ledger, events, "c1"));
         Assert.StartsWith(ResumeWords.NotYet, held!.Text);
         Assert.Equal("account-2", held.Parts!.Single(part => part.Code == NoteCodes.HeldLimitWaits.Code).Value("account"));
-        Assert.EndsWith("`daoris-driver sessions start-from c1`.", held.Text);
+        Assert.EndsWith("`daoris session start-from c1`.", held.Text);
         Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
         Assert.Equal(["w1"], ledger.Said("c1"));
         Assert.Empty(StubFile.Lines(Heard));

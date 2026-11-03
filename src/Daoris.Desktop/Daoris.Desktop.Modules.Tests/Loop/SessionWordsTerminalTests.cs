@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MSG1e2 (D137's MSG1e note, design §5.2): the shell's loop answers a terminal's <c>daoris-driver sessions say</c> with the
+/// MSG1e2 (D137's MSG1e note, design §5.2): the shell's loop answers a terminal's <c>daoris session say</c> with the
 /// screen's judge, <see cref="SessionWords"/>, as the box's words are judged: kept on a parked or ended record and shown at
 /// once as the terminal's, the loop nudged; held at a running session's door; held in the shell while a session winds up,
 /// never asked again; and refused by the one table of what never goes on. A conversation the window runs hearing a

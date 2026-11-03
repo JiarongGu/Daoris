@@ -338,7 +338,7 @@ public sealed record SpaceWorld(string Home)
 
 /// <summary>
 /// This Daoris's <i>Disk space</i> read (KEEP1c, D195 point 5; the cleanup design §4.4): <c>SYSTEM_SPACE</c>'s answer and
-/// <c>daoris-driver space</c>'s, one reader. The free space of the Daoris folder's volume; each kind's size with when it was counted, its
+/// <c>daoris space</c>'s, one reader. The free space of the Daoris folder's volume; each kind's size with when it was counted, its
 /// rule, its next and its last clean; and the run lock's holder, a run under way or one a crash cut short. It walks nothing: sizes are
 /// the kinds' last walks (<see cref="SpaceSizes"/>), and a kind never counted says so. It changes nothing.
 /// </summary>
@@ -500,7 +500,7 @@ public static class SystemSpace
             // KEEP1f: a kind's entry on another volume than the Daoris folder's, said on its own row with that volume's floor.
             ["volume"] = KindVolume(world, kind, policy, folderId, stretches),
             ["rule"] = Rule(kind, policy),
-            // KEEP1d: the person sets the rules of the kinds `KeepRules.Settable` names, on the card's *Change…* and `daoris driver keep`.
+            // KEEP1d: the person sets the rules of the kinds `KeepRules.Settable` names, on the card's *Change…* and `daoris settings keep`.
             ["settable"] = kind.Keeps is { } settable && KeepRules.Settable.Contains(settable),
             // KEEP1d: what the person may set, so the editor offers the kind's own choices and the driver's bounds, never a copy of them.
             ["bounds"] = kind.Keeps is { } bounded && KeepRules.Settable.Contains(bounded) ? Bounds(bounded) : null,

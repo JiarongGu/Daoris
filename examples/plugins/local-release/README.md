@@ -2,7 +2,7 @@
 
 A Daoris plugin that **speaks**: a process of its own, which the Daoris driver starts and asks at
 `work/perform` (and `work/watch`), over JSON-RPC 2.0 on its stdin and stdout. It was made by Daoris's
-plugin kit (`daoris-driver plugins new local-release --points work/perform`); what it does is what
+plugin kit (`daoris plugin new local-release --points work/perform`); what it does is what
 `plugin.mjs` does. Its wire, the rules a plugin is held to, the tools it runs and the stand-in world are
 those of [local-preview](../local-preview/README.md), which this folder is built the same way as.
 
@@ -74,13 +74,13 @@ package.
 | `work.mjs` | the kit's half of working: the journal and the work points; written by the kit, not by hand |
 | `plugin.test.mjs`, `plugin.contract.test.mjs` | the kit's wire and contract tests, in the stand-in world |
 | `release.test.mjs` | the tail on its real folders, with no world |
-| `cycle.json` | the cycle `daoris-driver plugins try --cycle` drives it through, and the tail |
+| `cycle.json` | the cycle `daoris plugin try --cycle` drives it through, and the tail |
 
 ## Testing it
 
 ```sh
 node --test                                        # in this folder, nothing of Daoris's installed
-daoris-driver plugins try <this folder> --cycle cycle.json
+daoris plugin try <this folder> --cycle cycle.json
 ```
 
 ## Installing it

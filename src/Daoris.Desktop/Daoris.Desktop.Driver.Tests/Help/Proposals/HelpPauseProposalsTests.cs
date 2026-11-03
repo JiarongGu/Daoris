@@ -76,7 +76,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
             + "machine, and nothing this machine sends reaches it. `#q4else00` is taken with no session of this machine's on "
             + "it, so a pause here does not reach it.",
             plan.Describe);
-        Assert.Equal("daoris-driver ask --pause a1paus00", plan.Terminal);
+        Assert.Equal("daoris ask pause a1paus00", plan.Terminal);
         Assert.Equal(new PausedBy(WorkScope.Ask, AskId), plan.Pause);
     }
 
@@ -113,7 +113,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
             "Stops 1 running session now and starts nothing of quest `#q2taken0` on this machine until you resume it. Its tree "
             + "keeps what it wrote, and a quest it took stays taken here.",
             plan.Describe);
-        Assert.Equal("daoris-driver quest pause q2taken0", plan.Terminal);
+        Assert.Equal("daoris quest pause q2taken0", plan.Terminal);
         Assert.Equal(new PausedBy(WorkScope.Quest, "q2taken0"), plan.Pause);
     }
 
@@ -128,7 +128,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
             "Starts nothing of quest `#q1open00` on this machine until you resume it; nothing of it runs now, so nothing is "
             + "stopped. Another machine may still take `#q1open00`: a pause holds this machine only.",
             plan.Describe);
-        Assert.Equal("daoris-driver quest pause q1open00", plan.Terminal);
+        Assert.Equal("daoris quest pause q1open00", plan.Terminal);
         Assert.Equal(new PausedBy(WorkScope.Quest, "q1open00"), plan.Pause);
     }
 
@@ -183,7 +183,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
             "Resume ask `#a1paus00` on this machine: its pause is lifted, and the driver's next look plans its work as it would "
             + "have, a taken quest carried on in its tree. It releases the pause's stop of `s3live00` on `#q2taken0`.",
             plan.Describe);
-        Assert.Equal("daoris-driver ask --resume a1paus00", plan.Terminal);
+        Assert.Equal("daoris ask resume a1paus00", plan.Terminal);
         Assert.Equal(new PausedBy(WorkScope.Ask, AskId), plan.Pause);
     }
 
@@ -205,12 +205,12 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         var quest = HelpProposals.Plan(Pause("resume", "q2taken0"), PausedAsk().WithPausedQuest("q2taken0", new WorkPause(At, none)), facts);
 
         Assert.EndsWith(
-            "`#q1open00` stays paused on its own: `daoris-driver quest resume q1open00` resumes it.",
+            "`#q1open00` stays paused on its own: `daoris quest resume q1open00` resumes it.",
             ask.Describe);
         Assert.Equal(
             "Resume quest `#q2taken0` on this machine: its pause is lifted, and the driver's next look plans its work as it would "
             + "have, a taken quest carried on in its tree. `#q2taken0` stays paused with ask `#a1paus00`: "
-            + "`daoris-driver ask --resume a1paus00` resumes it.",
+            + "`daoris ask resume a1paus00` resumes it.",
             quest.Describe);
     }
 
@@ -322,10 +322,10 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
 
         Assert.True(applied.Applied);
         Assert.Equal(["WORK_PAUSE ask a1paus00"], doors.Calls);
-        Assert.Equal("Applied: `#p6` (`daoris-driver ask --pause a1paus00`) — Paused it.", applied.Told);
+        Assert.Equal("Applied: `#p6` (`daoris ask pause a1paus00`) — Paused it.", applied.Told);
         Assert.Equal("applied", HelpProposals.Find(_home, "p6")!.State);
         Assert.False(refused.Applied);
-        Assert.Equal("Not applied: `#p9` (`daoris-driver ask --pause a1paus00`) — no ask #a1paus00 on this machine.", refused.Told);
+        Assert.Equal("Not applied: `#p9` (`daoris ask pause a1paus00`) — no ask #a1paus00 on this machine.", refused.Told);
         Assert.Equal("refused", HelpProposals.Find(_home, "p9")!.State);
     }
 
@@ -338,7 +338,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
 
         Assert.True(applied.Applied);
         Assert.Equal(["WORK_RESUME quest q2taken0"], doors.Calls);
-        Assert.Equal("Applied: `#p6` (`daoris-driver quest resume q2taken0`) — Resumed it.", applied.Told);
+        Assert.Equal("Applied: `#p6` (`daoris quest resume q2taken0`) — Resumed it.", applied.Told);
     }
 
     /// <summary>A card that changes nothing calls no door when applied, and says so.</summary>

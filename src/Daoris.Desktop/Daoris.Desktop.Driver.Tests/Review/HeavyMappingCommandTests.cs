@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1b2a (D180's HEAVYRUN1b2a note): <c>daoris-driver heavy</c>, the terminal's door to this machine's heavy gates for a
+/// HEAVYRUN1b2a (D180's HEAVYRUN1b2a note): <c>daoris place heavy</c>, the terminal's door to this machine's heavy gates for a
 /// repository whose own <c>daoris.gates.json</c> marks none. It reads and writes the driver's file alone, through
 /// <see cref="HeavyMapping.Apply"/>, so it refuses what the page's door will, in the same words, with nothing written; and it never
 /// touches the repository.
@@ -123,7 +123,7 @@ public sealed class HeavyMappingCommandTests : IDisposable
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
         Assert.Contains("\n  place heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]", HeavyMappingCommand.Usage);
+        Assert.Equal("usage: daoris place heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]", HeavyMappingCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"heavy\", .. var mappingArgs])", program);

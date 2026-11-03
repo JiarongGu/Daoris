@@ -72,7 +72,7 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
             [("SET_TREES", "atlas,tools"), ("WORKFLOW_SAVE", "atlas,tools"), ("WORKFLOW_USE", "atlas,tools"), ("SET_DRIVABLE", "atlas,tools"), ("SETUP_PRESS", "atlas,tools")],
             changes);
         Assert.Equal(
-            "daoris-driver place atlas tools --preset merge-after-accept --with opinion --adoption --what-it-builds library --drive --plan",
+            "daoris place atlas tools --preset merge-after-accept --with opinion --adoption --what-it-builds library --drive --plan",
             plan.GetProperty("terminal").GetString());
     }
 

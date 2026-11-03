@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// Ask Daoris's access mode over the bridge (HELPMODE1a2, D183 point 2): <c>SET_HELP_MODE</c>, the screen's half of
-/// <c>daoris-driver help mode</c>, over the same key in the same file (D50); the state answering it as <c>helpMode</c>; a mode the
+/// <c>daoris ask-daoris mode</c>, over the same key in the same file (D50); the state answering it as <c>helpMode</c>; a mode the
 /// driver does not know refused with nothing written. Edits to <c>driver.json</c> only, so no service and no process.
 /// </summary>
 public sealed class DriverModuleHelpModeTests : DriverModuleBridge

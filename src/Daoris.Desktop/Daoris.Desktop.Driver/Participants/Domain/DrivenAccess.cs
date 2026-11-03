@@ -148,7 +148,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
 
     /// <summary>The person's two ways on from a value the harness cannot run: auto for the repository, or another agent.</summary>
     private static string WayOn(string repository) =>
-        $"Set its permission prompts to `auto` (`daoris-driver access {repository} permissions=auto`), or choose another agent for it.";
+        $"Set its permission prompts to `auto` (`daoris place access {repository} permissions=auto`), or choose another agent for it.";
 
     /// <summary>A posture list as a sentence says it: <c>auto|acceptEdits</c> is <c>`auto` or `acceptEdits`</c>.</summary>
     private static string Spelled(string posture) => string.Join(

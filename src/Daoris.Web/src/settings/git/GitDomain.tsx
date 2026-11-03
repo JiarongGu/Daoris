@@ -12,7 +12,7 @@ import { GitAdd } from './GitAdd';
 
 /**
  * Settings → Git (GITAUTH1e, the git-auth design §7.1): the git identities Daoris's git acts as, a host's default by way, and the
- * hosts where the person's own sign-ins are used. The screen's half of `daoris-driver git identity`, `git default` and `git use`,
+ * hosts where the person's own sign-ins are used. The screen's half of `daoris git identity`, `git default` and `git use`,
  * over the same files. It holds the presses; the cards below it hold none.
  *
  * @remarks

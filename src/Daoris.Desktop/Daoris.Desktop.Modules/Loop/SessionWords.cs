@@ -750,7 +750,7 @@ public sealed class SessionWords : IDisposable
     }
 
     /// <summary>
-    /// A terminal's words (MSG1e2, D137 §5.2): the shell's half of <c>daoris-driver sessions say</c>, handed to its request
+    /// A terminal's words (MSG1e2, D137 §5.2): the shell's half of <c>daoris session say</c>, handed to its request
     /// watch as <see cref="SessionRequestWatch.Say"/>. Judged as the box's words are (<see cref="SayAsync"/>), at the door
     /// <c>terminal</c>, and answered in the request's shape: a conversation the window runs hears them, words a running
     /// session took are kept on its ask, kept words are shown at once and the loop nudged, and words said as a session winds

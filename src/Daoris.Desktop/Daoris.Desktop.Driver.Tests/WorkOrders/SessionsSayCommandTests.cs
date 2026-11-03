@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1e (D137 §5.2, D50): <c>daoris-driver sessions say</c>, the terminal's door to what the screen's box says to a session.
+/// MSG1e (D137 §5.2, D50): <c>daoris session say</c>, the terminal's door to what the screen's box says to a session.
 /// The words reach the loop that runs the session through the request folder; a loop keeps those said to a session nothing
 /// here runs on its record; where no loop drives the home, a driven record keeps them for the next and a conversation is
 /// refused. One line says where they stand. Exit codes are the family's: 0 taken or held, 1 refused, 2 could not.
@@ -150,20 +150,12 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(["notes.md", "b.txt"], ask.Files);
     }
 
-    /// <summary>ONEWAY1l: <c>--now</c> is retired and refused naming <c>--level now</c>, wherever it stands; a say with no level asks none.</summary>
+    /// <summary>A say with no level asks none.</summary>
     [Fact]
-    public void Now_is_refused_naming_the_level_that_replaced_it()
+    public void A_say_with_no_level_asks_none()
     {
         var plain = SessionsCommand.Read(["say", "d0ne0000", "also the changelog"], out _);
         Assert.Null(plain!.Level);
-
-        foreach (var args in new[] { new[] { "say", "d0ne0000", "also", "--now", "the", "changelog" }, ["say", "d0ne0000", "--now"] })
-        {
-            Assert.Null(SessionsCommand.Read(args, out var problem));
-            Assert.Contains("--level now", problem);
-        }
-
-        Assert.DoesNotContain("--now", SessionsCommand.Usage.Split('\n').Single(line => line.Contains("sessions say", StringComparison.Ordinal)));
     }
 
     /// <summary>
@@ -350,8 +342,8 @@ public sealed class SessionsSayCommandTests : IDisposable
     [InlineData("laptop/s9", "laptop/s9 ran on laptop, where its conversation is")]
     [InlineData("1ntake00", "is an intake; answer its ask #a1 instead")]
     [InlineData("st00d000", "it stood down: #q3 is someone else's, so it has nothing to go on with")]
-    [InlineData("e4rl1er0", "#q2 went on in a later session here, l4t3r000; say it to that one: daoris-driver sessions say l4t3r000")]
-    [InlineData("h4nd3d00", "h4nd3d00 went on in conversation n3w3st00; say it to that one: daoris-driver sessions say n3w3st00")]
+    [InlineData("e4rl1er0", "#q2 went on in a later session here, l4t3r000; say it to that one: daoris session say l4t3r000")]
+    [InlineData("h4nd3d00", "h4nd3d00 went on in conversation n3w3st00; say it to that one: daoris session say n3w3st00")]
     public async Task Each_never_is_refused_by_its_code_before_anything_is_asked(string id, string why)
     {
         var room = Nevers();
@@ -622,7 +614,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         if (!marked)
         {
             Assert.Equal(1, exit);
-            Assert.Contains("c1000000 went on in conversation c2000000; say it to that one: daoris-driver sessions say c2000000", said);
+            Assert.Contains("c1000000 went on in conversation c2000000; say it to that one: daoris session say c2000000", said);
             Assert.Equal(0, room.Says);
             return;
         }
@@ -791,7 +783,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
         Assert.Equal(1, exit);
         Assert.Contains("sessions: kept, but it cannot go on in this session, because the agent no longer has its conversation.", said);
-        Assert.Contains("start a conversation with them instead: daoris-driver sessions start-from d0ne0000", said);
+        Assert.Contains("start a conversation with them instead: daoris session start-from d0ne0000", said);
         Assert.Equal(["w1"], room.Said("d0ne0000"));
     }
 
@@ -933,7 +925,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
             Assert.Equal(0, exit);
             Assert.True(fell.Count == 0, $"fell back after {string.Join("; ", causes.Concat(fell))}");
-            Assert.Equal("sessions: held: it goes on with this once engine is no longer held: daoris driver resume engine\n", said);
+            Assert.Equal("sessions: held: it goes on with this once engine is no longer held: daoris place resume engine\n", said);
             return;
         }
     }
@@ -1165,7 +1157,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Equal(
-            "sessions: 2 words wait on d0ne0000; take one back with `daoris-driver sessions take-back d0ne0000 <word>`:\n"
+            "sessions: 2 words wait on d0ne0000; take one back with `daoris session take-back d0ne0000 <word>`:\n"
             + "  w1  Use the blue one.\n  w2  And another, over two lines.\n",
             said);
         Assert.Equal(0, room.TakeBacks);

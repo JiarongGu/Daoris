@@ -23,7 +23,7 @@ export const pointGloss = (t: TFunction, point: KitPoint): string =>
     ? t(OWN_GLOSS[point.name])
     : t(`plugin.kit.kind.${point.kind}`, { defaultValue: point.kind });
 
-/** A new plugin as the form sends it: `daoris-driver plugins new <id> --point <p>… --in <folder>`. */
+/** A new plugin as the form sends it: `daoris plugin new <id> --point <p>… --in <folder>`. */
 export type NewPlugin = { id: string; points: string[]; folder: string };
 
 /** One thing a trial checked, in the driver's own sentence. */
@@ -49,7 +49,7 @@ const FIELD =
 /**
  * The kit a plugin is made with (PLUG8, D101), on the screen: New writes a plugin's folder where the
  * person names, and Try starts a folder's plugin as the driver would. The screen's half of
- * `daoris-driver plugins new|try` (D50).
+ * `daoris plugin new|try` (D50).
  *
  * @remarks
  * **Making a plugin is work.** A plugin is code that runs on this machine as the person, so New writes a

@@ -221,7 +221,7 @@ public static class HandOver
         {
             return new HandOverJudged(Refused(NotConversation, record.Kind == "chat"
                 ? $"{id} is a conversation about a quest, not its session: hand over the quest's own session instead."
-                : $"{id} is a quest's session: it is handed over from a terminal, `daoris-driver sessions hand-over {id} --agent <adapter>`; its page's press comes later."), null, course);
+                : $"{id} is a quest's session: it is handed over from a terminal, `daoris session hand-over {id} --agent <adapter>`; its page's press comes later."), null, course);
         }
 
         var accounts = accountsOf(agent);

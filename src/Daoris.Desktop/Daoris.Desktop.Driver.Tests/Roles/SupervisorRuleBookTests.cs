@@ -115,19 +115,6 @@ public sealed class SupervisorRuleBookTests : IDisposable
     }
 
     [Fact]
-    public void CONTEXTDRIVE1e_the_strikes_doors_write_on_a_home_not_reached_and_are_refused_naming_role_rules_on_a_reached_one()
-    {
-        Assert.Null(RuledPolicy.StrikesRefused(_home));
-        Assert.False(SupervisorRuleCensus.Ended(_home));
-
-        var store = new SupervisorRuleStore(_home, () => StoreSettled.Yes);
-        Assert.True(store.Write("machine", 0, SupervisorRuleBook.Seeded(3), SupervisorRuleBook.SeedDoor, new SupervisorRuleWorld(["build"])).Stored);
-
-        Assert.Contains("daoris role rules --place machine --set failures=<n>:hold", RuledPolicy.StrikesRefused(_home));
-        Assert.True(SupervisorRuleBook.Read(_home).Reached);
-    }
-
-    [Fact]
     public void CONTEXTDRIVE1e_the_save_writes_no_strikes_the_file_did_not_hold_and_keeps_one_it_did()
     {
         var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);

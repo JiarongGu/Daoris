@@ -189,7 +189,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
         var reads = declared.Allow.Count > 0 ? $"reads with {Tools(declared.Allow)}" : "reads with none of its tools";
         if (withdraw)
         {
-            var terminal = $"daoris-driver plugins withdraw {named} {declared.Name}";
+            var terminal = $"daoris plugin withdraw {named} {declared.Name}";
             if (grant is not { State: HelpGrants.Approved })
             {
                 return Refused($"`{declared.Name}` of plugin `{named}` is not approved for Ask Daoris, so there is nothing to withdraw.", terminal);
@@ -231,7 +231,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
         return new HelpPlan(null,
             $"Approve server `{declared.Name}` of plugin `{named}` for Ask Daoris: from its next conversation it {string.Join("; it ", said)}. "
             + $"A plugin is code that runs as you; an update that adds or widens a tool asks you again.{again}",
-            $"daoris-driver plugins approve {named} {declared.Name}{flags}", null)
+            $"daoris plugin approve {named} {declared.Name}{flags}", null)
         {
             Grant = new HelpGrantView(named, plugin.Manifest.Name, declared.Name, declared.Allow, declared.Writes, kept),
         };

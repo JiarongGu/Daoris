@@ -6,119 +6,56 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// How work moves, over the bridge (WORKFLOW1b; D157 point 7, the workflow design §2.7, §6.1): `WORKFLOW_CURRENT` answers
-/// <see cref="WorkflowCurrent.Derive"/> read from this machine's driver file, its plugins and its registry as `daoris driver
-/// workflow show` reads them, each step the shared table's cell; a repository the registry does not hold read as in no
-/// workspace and said so; a workspace's Current with each of its repositories, following it or not; and the one refusal.
+/// How work moves, over the bridge (WORKFLOW1b; D157 point 7, the workflow design §2.7, §6.1): `WORKFLOW_CURRENT` answers a
+/// repository's or a workspace's routes from this machine's driver file, its plugins and its registry as `daoris driver workflow show`
+/// reads them; a repository the registry does not hold read as in no workspace and said so; a workspace's with each of its repositories,
+/// following it or not; and the one refusal.
 /// </summary>
 public sealed class DriverModuleWorkflowTests : DriverModuleBridge
 {
-    /// <summary>
-    /// A repository in a workspace whose branch rule names a plugin that lands and answers its state, a plugin that may hold a
-    /// start, its own required review and a standing answer: the answer is the driver's derivation, cell for cell.
-    /// </summary>
+    /// <summary>A repository in a workspace, a plugin that may hold a start: its answer names the start holds and draws no steps of its own.</summary>
     [Fact]
-    public async Task A_repositorys_Current_is_the_drivers_derivation_read_from_the_file_the_plugins_and_the_registry()
+    public async Task A_repositorys_answer_is_read_from_the_file_the_plugins_and_the_registry()
     {
         Plugin("example.pull-request", ["work/land", "work/state"]);
         Plugin("example.hold-by-title", ["quest/consider"]);
-        // The file as the person's doors write it, read by the driver's own reader.
-        File.WriteAllText(DriverConfigPath, """
-            {
-              "workspaceLandings": { "aurora": { "form": "branch", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request" } },
-              "reviews": { "engine": { "required": true, "environments": [{ "name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200" }] } }
-            }
-            """);
         var (module, _) = await UpAsync();
 
         var answer = await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine" });
 
-        var expected = WorkflowCurrent.Derive(
-            DriverConfig.Load(DriverConfigPath), "engine", "aurora", WorkflowCurrent.PluginsOf(PluginCatalog.Load(Home, AdapterSet.Built().Names)));
         Assert.Equal("engine", answer.GetProperty("repository").GetString());
         Assert.Equal("aurora", answer.GetProperty("workspace").GetString());
         Assert.True(answer.GetProperty("registered").GetBoolean());
         Assert.Equal(["example.hold-by-title"], answer.GetProperty("startHolds").EnumerateArray().Select(each => each.GetString()));
-        Assert.Equal(expected.Steps.Select(WorkflowCurrent.ToJson), answer.GetProperty("steps").EnumerateArray().Select(each => each.GetRawText()));
-        Assert.Equal(["work", "look", "landing", "pull-request"], answer.GetProperty("steps").EnumerateArray().Select(each => each.GetProperty("kind").GetString()));
-        Assert.Equal(expected.Version, answer.GetProperty("version").GetString());
-        // Each limit a step carries, in the driver's words, for a page with none of its own for it.
-        var limits = answer.GetProperty("limits");
-        Assert.Equal(WorkflowLimits.Says(WorkflowLimits.LookPartial), limits.GetProperty(WorkflowLimits.LookPartial).GetString());
-        Assert.Equal(WorkflowLimits.Says(WorkflowLimits.PullRequestAtCleanUp), limits.GetProperty(WorkflowLimits.PullRequestAtCleanUp).GetString());
-        Assert.Equal(2, limits.EnumerateObject().Count());
+        Assert.Empty(answer.GetProperty("steps").EnumerateArray());
     }
 
-    /// <summary>INTEGRATE1r (F43): a rule carrying <c>integrate</c> draws the step after the landing, declared, with its limit said in the driver's words.</summary>
-    [Fact]
-    public async Task A_rule_carrying_integrate_is_answered_with_the_integrate_step_and_its_limit()
-    {
-        File.WriteAllText(DriverConfigPath, """{"landings":{"engine":{"form":"branch","pattern":"work/{session}","integrate":{"request":"owner"}}}}""");
-        var (module, _) = await UpAsync();
-
-        var answer = await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine" });
-
-        var steps = answer.GetProperty("steps").EnumerateArray().ToList();
-        Assert.Equal(["work", "landing", "integrate"], steps.Select(each => each.GetProperty("kind").GetString()));
-        Assert.Equal("declared", steps[2].GetProperty("runtime").GetString());
-        Assert.Equal("owner", steps[2].GetProperty("settings").GetProperty("request").GetString());
-        Assert.Equal(WorkflowLimits.NotIntegratedYet, steps[2].GetProperty("limit").GetString());
-        Assert.Equal(WorkflowLimits.Says(WorkflowLimits.NotIntegratedYet), answer.GetProperty("limits").GetProperty(WorkflowLimits.NotIntegratedYet).GetString());
-    }
-
-    /// <summary>A repository the registry does not hold is read as in no workspace, the `default` one's rules reaching it, and said so.</summary>
+    /// <summary>A repository the registry does not hold is read as in no workspace, and said so.</summary>
     [Fact]
     public async Task A_repository_the_registry_does_not_hold_is_read_as_in_no_workspace()
     {
-        DriverConfig.Empty.WithWorkspaceLanding("default", new LandingRule(LandingForm.Branch, "work/{quest}", false, null, false)).Save(DriverConfigPath);
         var (module, _) = await UpAsync();
 
         var answer = await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "stray" });
 
         Assert.False(answer.GetProperty("registered").GetBoolean());
         Assert.Equal("default", answer.GetProperty("workspace").GetString());
-        var landing = answer.GetProperty("steps")[1];
-        Assert.Equal("workspace", landing.GetProperty("source").GetProperty("level").GetString());
-        Assert.Equal("work/{quest}", landing.GetProperty("settings").GetProperty("pattern").GetString());
     }
 
-    /// <summary>
-    /// A workspace's Current is the file's alone, and beside it each repository the registry holds there: one with a rule of
-    /// its own follows its own, one with only a standing answer follows the workspace's, and one in another workspace is not
-    /// listed.
-    /// </summary>
+    /// <summary>Beside a workspace's answer, each repository the registry holds there, whether a choice of its own makes it follow something else.</summary>
     [Fact]
-    public async Task A_workspaces_Current_lists_its_repositories_each_following_it_or_its_own()
+    public async Task A_workspaces_answer_lists_its_repositories_each_following_it_or_its_own()
     {
-        File.WriteAllText(DriverConfigPath, """
-            {
-              "workspaceOpinions": { "aurora": { "reviewers": ["codex-acp"], "required": true } },
-              "landings": { "engine": { "form": "merge", "tidy": true } },
-              "standing": { "game": { "says": "dev writes allowed", "at": "2026-10-09T09:00:00Z" } }
-            }
-            """);
+        File.WriteAllText(DriverConfigPath, """{ "workflows": { "engine": { "default": "release" } } }""");
         var (module, _) = await UpAsync();
 
         var answer = await AnswerAsync(module, "WORKFLOW_CURRENT", new { workspace = "aurora" });
 
-        var expected = WorkflowCurrent.Derive(DriverConfig.Load(DriverConfigPath), null, "aurora", []);
-        Assert.Equal(expected.Version, answer.GetProperty("version").GetString());
         Assert.Equal("aurora", answer.GetProperty("workspace").GetString());
         Assert.False(answer.TryGetProperty("repository", out var none) && none.ValueKind != JsonValueKind.Null);
-        Assert.Equal(["work", "opinion", "landing"], answer.GetProperty("steps").EnumerateArray().Select(each => each.GetProperty("kind").GetString()));
         var repositories = answer.GetProperty("repositories").EnumerateArray()
             .Select(each => (each.GetProperty("repository").GetString(), each.GetProperty("own").GetBoolean())).ToList();
         Assert.Equal([("engine", true), ("game", false)], repositories);
-    }
-
-    /// <summary>Before the driver's service is up a workspace is still drawn from the file, its repositories unread.</summary>
-    [Fact]
-    public async Task A_workspace_is_drawn_before_the_driver_comes_up_and_its_repositories_are_not_read()
-    {
-        var answer = await AnswerAsync(Module(), "WORKFLOW_CURRENT", new { workspace = "aurora" });
-
-        Assert.Equal(["work", "landing"], answer.GetProperty("steps").EnumerateArray().Select(each => each.GetProperty("kind").GetString()));
-        Assert.False(answer.TryGetProperty("repositories", out var unread) && unread.ValueKind != JsonValueKind.Null);
     }
 
     /// <summary>
@@ -156,33 +93,17 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Equal(before, File.ReadAllBytes(DriverConfigPath));
     }
 
-    /// <summary>Current's effective graph is the handler `new --from current` writes through, its cells Current's, its limits in the driver's words; a workspace's the same over its own rules.</summary>
+    /// <summary>A route where no workflow is chosen draws nothing and says that its work is held.</summary>
     [Fact]
-    public async Task Currents_effective_graph_carries_Currents_cells_and_limits_and_a_workspaces_is_drawn_from_its_own_rules()
+    public async Task A_route_with_no_workflow_chosen_draws_nothing_and_says_why()
     {
-        File.WriteAllText(DriverConfigPath, """
-            {
-              "workspaceOpinions": { "aurora": { "reviewers": ["codex-acp"], "required": true } },
-              "reviews": { "engine": { "required": true, "environments": [{ "name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200" }] } }
-            }
-            """);
         var (module, _) = await UpAsync();
-        var config = DriverConfig.Load(DriverConfigPath);
 
         var repository = (await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine", route = "default" })).GetProperty("effective");
-        var drawn = WorkflowCurrent.Derive(config, "engine", "aurora", []);
-        Assert.Equal("current", repository.GetProperty("workflow").GetString());
-        Assert.Equal(drawn.Version, repository.GetProperty("digest").GetString());
-        Assert.Equal(JsonValueKind.Null, repository.GetProperty("version").ValueKind);
-        Assert.Equal(WorkflowWords.GraphOfCurrent(drawn, false, false).ToJsonString(), repository.GetProperty("graph").GetRawText());
-        var look = repository.GetProperty("cells").EnumerateArray().Single(each => each.GetProperty("node").GetString() == "look");
-        Assert.Equal(WorkflowCurrent.ToJson(drawn.Steps.Single(step => step.Id == "look")), look.GetProperty("step").GetRawText());
-        Assert.Equal(WorkflowLimits.Says(WorkflowLimits.LookPartial), repository.GetProperty("limits").GetProperty(WorkflowLimits.LookPartial).GetString());
 
-        var workspace = (await AnswerAsync(module, "WORKFLOW_CURRENT", new { workspace = "aurora", route = "default" })).GetProperty("effective");
-        var shared = WorkflowCurrent.Derive(config, null, "aurora", []);
-        Assert.Equal(WorkflowWords.GraphOfCurrent(shared, false, false).ToJsonString(), workspace.GetProperty("graph").GetRawText());
-        Assert.Equal(shared.Version, workspace.GetProperty("digest").GetString());
+        Assert.Equal("current", repository.GetProperty("workflow").GetString());
+        Assert.Equal(JsonValueKind.Null, repository.GetProperty("graph").ValueKind);
+        Assert.Equal(WorkflowProcess.NoWorkflow("engine"), repository.GetProperty("problem").GetString());
     }
 
     /// <summary>The landed route under Current is no verification and draws no graph; a route that is none, or a kind the workspace does not declare, is refused.</summary>
@@ -487,7 +408,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// <c>WORKFLOW_VERIFY</c>, the page's half of <c>daoris-driver verify</c> (FABRIC-PIPELINE1d part 5): a repository with no checkout here is
+    /// <c>WORKFLOW_VERIFY</c>, the page's half of <c>daoris gate verify</c> (FABRIC-PIPELINE1d part 5): a repository with no checkout here is
     /// refused <c>no-checkout</c> in a sentence and binds nothing, and the press names a repository and no more than one of a branch or a commit.
     /// </summary>
     [Fact]

@@ -35,7 +35,7 @@ public sealed record PartnerAsked(string? Asked, string? Why, string Message);
 
 /// <summary>
 /// The person's own ask of a piece (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1, §6.4): the one judge and writer the
-/// terminal's <c>daoris-driver sessions partner</c> and the page's <i>Ask another agent to work on a piece…</i> share. It judges what a
+/// terminal's <c>daoris session partner</c> and the page's <i>Ask another agent to work on a piece…</i> share. It judges what a
 /// reader of the file cannot know (the words, the agent named, the paths, the session's record and its tree's commit), then writes the
 /// piece's ask once, at the exact commit the lead's tree stands at and with its uncommitted paths, asked by the person. Everything else
 /// (the choice, the measured admission, the reservation) is the driver's look's, which judges it at its next look.

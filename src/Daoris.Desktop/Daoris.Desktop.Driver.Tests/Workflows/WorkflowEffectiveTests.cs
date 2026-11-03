@@ -64,14 +64,14 @@ public sealed class WorkflowEffectiveTests : IDisposable
             Assert.True(selected.Level == effective.Source.Level, name);
             Assert.Equal(selected.Kind, effective.Source.Kind);
             Assert.Equal(selected.Label, effective.Source.Label);
-            Assert.NotNull(effective.Graph);
             if (selected.Workflow == WorkflowSelection.Current)
             {
                 Assert.Null(effective.Version);
-                Assert.Equal(WorkflowCurrent.Derive(config, Repo, Space, Plugins).Version, effective.Digest);
+                Assert.Null(effective.Graph);
             }
             else
             {
+                Assert.NotNull(effective.Graph);
                 Assert.Equal(1, effective.Version);
                 Assert.Equal(Store.Load(selected.Workflow)!.Read.Versions[^1].Digest, effective.Digest);
             }
@@ -94,63 +94,12 @@ public sealed class WorkflowEffectiveTests : IDisposable
         Assert.Equal(WorkflowLevels.WorkspaceKind, workspace.Source.Level);
     }
 
-    /// <summary>Current's graph is what <c>new --from current:&lt;repository&gt;</c> writes, and a workspace's the same handler over its own rules.</summary>
+    /// <summary>A saved version's cells are the cells a run bound to it answers, at the level that chose it.</summary>
     [Fact]
-    public async Task Currents_graph_is_the_one_new_from_current_writes_for_a_repository_and_for_a_workspace()
-    {
-        var config = DriverConfig.Load(WriteConfig("""
-            {
-              "workspaceLandings": { "aurora": { "form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request" } },
-              "reviews": { "engine": { "required": true, "environments": [{ "name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200" }] } }
-            }
-            """));
-        WorkflowOperations.RegistryRead registry = _ => Task.FromResult(new ChoicesRegistry([(Repo, (string?)Space, (string?)null)], null));
-
-        // `new --from current:` is retired (WORKFLOWCLEAN1 1a); the handler the chart draws from is the conversion's to read.
-        await Assert.ThrowsAsync<ChoiceWords>(() => WorkflowOperations.SourceAsync(config, _home, registry, "current:" + Repo, opinion: false, look: false, CancellationToken.None));
-        var written = WorkflowOperations.CurrentSource(
-            await WorkflowOperations.CurrentOfAsync(config, _home, registry, Repo, CancellationToken.None), Repo, opinion: false, look: false);
-        var repository = Read(config, "default");
-        Assert.Equal(written.Graph!.ToJsonString(), repository.Graph!.ToJsonString());
-        Assert.Contains(repository.Graph!["nodes"]!.AsArray(), node => (string?)node!["kind"] == NodeKinds.Look);
-
-        var shared = WorkflowCurrent.Derive(config, null, Space, Plugins);
-        var workspace = Read(config, "default", repository: null);
-        Assert.Equal(WorkflowWords.GraphOfCurrent(shared, false, false).ToJsonString(), workspace.Graph!.ToJsonString());
-        Assert.DoesNotContain(workspace.Graph!["nodes"]!.AsArray(), node => (string?)node!["kind"] == NodeKinds.Look);
-        Assert.Equal(shared.Version, workspace.Digest);
-    }
-
-    /// <summary>Each node of Current's graph has a cell: the step Current draws where it draws one, else the cell a run answers for the node.</summary>
-    [Fact]
-    public void Each_node_carries_the_cell_a_run_answers_and_the_steps_cell_where_Current_has_one()
-    {
-        var config = DriverConfig.Load(WriteConfig("""
-            { "landings": { "engine": { "form": "branch", "pattern": "work/{session}", "plugin": "example.pull-request" } } }
-            """));
-        var drawn = WorkflowCurrent.Derive(config, Repo, Space, Plugins);
-
-        var effective = Read(config, "default");
-
-        var nodes = effective.Graph!["nodes"]!.AsArray().Select(node => (string)node!["id"]!).ToList();
-        Assert.Equal(nodes, effective.Cells.Select(cell => cell.Node));
-        foreach (var step in drawn.Steps)
-        {
-            Assert.Equal(WorkflowCurrent.ToJson(step), WorkflowCurrent.ToJson(effective.Cells.Single(cell => cell.Node == step.Id).Step));
-        }
-
-        var requests = effective.Cells.Single(cell => cell.Node == "requests").Step;
-        Assert.Equal(NodeKinds.WorkRequests, requests.Kind);
-        Assert.Equal(WorkflowRuntime.Built, requests.Runtime);
-    }
-
-    /// <summary>A saved version's cells are the cells a run bound to it answers, at the level that chose it; a steps version reads as the graph it decodes to.</summary>
-    [Fact]
-    public void A_saved_versions_graph_is_its_newest_and_a_steps_version_is_drawn_as_its_decoded_graph()
+    public void A_saved_versions_graph_is_its_newest()
     {
         Save("release", "Release", null, Release());
         Save("release", "Release", null, Release());
-        Save("legacy", "Legacy", JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]"""), null);
         var config = Edit(DriverConfig.Empty, new WorkflowUse("release", Repo, null, null));
 
         var graph = Read(config, "default");
@@ -158,11 +107,6 @@ public sealed class WorkflowEffectiveTests : IDisposable
         Assert.Equal("Release", graph.Name);
         Assert.Equal(2, graph.Schema);
         Assert.All(graph.Cells, cell => Assert.Equal(WorkflowLevels.Repository, cell.Step.Source.Level));
-
-        var steps = Read(Edit(DriverConfig.Empty, new WorkflowUse("legacy", Repo, null, null)), "default");
-        Assert.Equal(1, steps.Schema);
-        Assert.Equal(WorkflowGraphs.Saved(Store.Load("legacy")!.Read.Versions[^1].Steps!).ToJsonString(), steps.Graph!.ToJsonString());
-        Assert.NotEmpty(steps.Cells);
     }
 
     /// <summary>A choice naming a workflow that is not saved here, or does not read, answers why and no graph.</summary>

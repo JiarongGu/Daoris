@@ -130,8 +130,7 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it('opens in the mode it was left in', async () => {
-    // A stored `roles` is Setup, which replaced it.
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     show(<Place />);
     expect(await screen.findByRole('radio', { name: 'Setup' })).toBeChecked();
   });
@@ -165,7 +164,7 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it('draws no role and edits none on a shell with no catalogue, since each order is its role row\'s', async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'none';
     show(<Place />);
 
@@ -176,7 +175,7 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it("reads each order from the role read alone, its row's staffing", async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'seeded';
     show(<Place />);
 
@@ -185,7 +184,7 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it("ONEWAY1a: saves Build's order over SET_ROLE, one choice's model named", async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'seeded';
     const notify = vi.fn();
     show(<Place notify={notify} />);
@@ -204,13 +203,12 @@ describe('The Agents place, Roles mode', () => {
         choices: [{ agent: 'claude-code', model: 'opus', effort: null }],
       },
     });
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', expect.anything());
     await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.roles.saved', { role: 'Build' })));
     await waitFor(() => expect(screen.queryByRole('form', { name: 'Build' })).toBeNull());
   });
 
   it('says a refusal under its Save and keeps the editor open as it was (R3)', async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'seeded';
     refuseRole = true;
     const notify = vi.fn();
@@ -229,7 +227,7 @@ describe('The Agents place, Roles mode', () => {
 
   /** The editor is the mode's, held above the card (D168 point 3): a refresh of the roles read does not close it. */
   it('keeps an open editor while the roles are read again', async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'seeded';
     show(<Place />);
     const user = userEvent.setup();
@@ -242,7 +240,7 @@ describe('The Agents place, Roles mode', () => {
 
   /** Chat's and Ask Daoris's editors say what a running conversation does; every other role's says it never moves. */
   it.each(['en', 'zh'])("says in Chat's and Ask Daoris's editors that a conversation goes on with the next choice, in %s", async (language) => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'seeded';
     await i18n.changeLanguage(language);
     show(<Place />);
@@ -259,7 +257,7 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it('adds the suggested Designer over SET_ROLE and says so', async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     const notify = vi.fn();
     show(<Place notify={notify} />);
     const user = userEvent.setup();
@@ -279,7 +277,7 @@ describe('The Agents place, Roles mode', () => {
   // AGENTSPLACE1g2: *Use these choices* is one press over SET_ROLES, said once; a refusal is the driver's sentence and every role is refused.
   describe.each([[false], [true]])('the suggested choices pressed, refused %s', (refused) => {
     it('goes out as one SET_ROLES and says so, or says the driver\'s sentence', async () => {
-      window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+      window.localStorage.setItem('daoris.list.agents.mode', 'setup');
       const answer = invoke.getMockImplementation()!;
       invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
         if (type === 'ROLES') {
@@ -317,7 +315,7 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it('tells a failed read of the roles from a shell that offers none', async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     const answer = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
       if (type === 'ROLES') throw new Error('the store did not read');
@@ -330,7 +328,7 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it("says the driver's refusal of a removal under the role's row", async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     refuseRole = true;
     show(<Place />);
     const user = userEvent.setup();
@@ -345,7 +343,7 @@ describe('The Agents place, Roles mode', () => {
 
   /** Ask Daoris's row says what it runs on and how, under its order (it said so beside its access on AI features before COMPANYVIEW1b). */
   it("says under Ask Daoris's row what it runs on, and with full access where the driver says so", async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     const answer = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
       if (module === 'DAORIS.DRIVER' && type === 'STATE') return { ...DRIVER_STATE, helpMode: 'full' };
@@ -389,7 +387,7 @@ describe('Intake in the Roles mode', () => {
   beforeEach(() => {
     intake = [];
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { id?: string; choices?: { agent: string }[] | null } }) => {

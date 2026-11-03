@@ -262,7 +262,7 @@ public sealed class RoleCatalogTests : IDisposable
     [Fact]
     public void A_named_role_that_cannot_take_the_step_holds_it_said_and_never_falls_to_another_role()
     {
-        const string Here = "Agents → Roles, or `daoris driver role`";
+        const string Here = "Agents → Roles, or `daoris role`";
         var appointed = """{"id":"lead","name":{"en":"Lead","zh":"Lead"},"filled":"appointed","authority":["answer"],"scope":{"kind":"machine"}}""";
         var catalog = RoleCatalog.Of(
         [

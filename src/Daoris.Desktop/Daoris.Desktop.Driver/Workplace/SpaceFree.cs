@@ -147,7 +147,7 @@ public sealed record SpaceFreeWorld(string Home)
 /// CACHECLEAR1's). The list changes nothing: per kind, what its rule takes now, and what could go early by the person's word (set-aside
 /// folders before their date, unused downloads within their days, the browser's caches, what an earlier build left, a failed update's
 /// folder). A run removes exactly the units a press names, each judged again right before it goes through its kind's one removal; one
-/// changed since the list is kept and counted. The window's route, <c>daoris-driver space free</c> and nothing else call it.
+/// changed since the list is kept and counted. The window's route, <c>daoris space free</c> and nothing else call it.
 /// </summary>
 /// <remarks>
 /// <para><b>Each kind's one removal</b> (§2.1, §6.6): the set-aside folders through the purge and the slim (<see cref="SetAsideKeeping"/>),

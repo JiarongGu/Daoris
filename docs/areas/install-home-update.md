@@ -246,7 +246,7 @@ drains, swaps, rolls back and refuses.
 - **ONEWAY1w**: the home's old places as a migration step: every entry at its old place moved, `driver.lock`, D63's move-in and
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
-- **NOCOMPAT1b, c**: the workflow step of the migration and the old workflow engine's reads; the old command names; the
-  register and its gate deleted with the last of them.
+- **NOCOMPAT1b2**: the rest of the old workflow logic's reads (`current-followed`, `auto-lander`, `work-cycles`), and the page's
+  handed sections (`handed-before-block`); the register and its gate deleted with the last of them.
 - **ONEWAY1ai-ii, ai-iv**: the driver's, the tools' and the documents' words name `daoris …` alone.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

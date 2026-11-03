@@ -93,7 +93,7 @@ public sealed class DrivenAccessTests : IDisposable
         Assert.Contains($"`{permissions}`", got.Refusal);
         Assert.Contains(kind, got.Refusal);
         Assert.Contains("set for its repository", got.Refusal);
-        Assert.Contains("`daoris-driver access engine permissions=auto`", got.Refusal);
+        Assert.Contains("`daoris place access engine permissions=auto`", got.Refusal);
         Assert.Contains("another agent", got.Refusal);
         Assert.Equal(((string?)null, (string?)null), (got.Posture, got.PermissionMode));
     }

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NOTIFY2i's route (D196 point 8, the notification design §9): <c>NOTIFICATIONS</c>, what <c>daoris-driver notices</c> prints through the
+/// NOTIFY2i's route (D196 point 8, the notification design §9): <c>NOTIFICATIONS</c>, what <c>daoris notices</c> prints through the
 /// running Daoris, read from what the windows hold — the confirmation channel of both sources, the <c>attention</c> slice's rows and the
 /// <c>notices</c> slice's messages — and the notices' record, changing nothing.
 /// </summary>

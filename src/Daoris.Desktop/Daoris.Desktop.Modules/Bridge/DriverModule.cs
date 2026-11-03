@@ -191,7 +191,7 @@ public sealed class DriverModule : ModuleBase
         catch (ToolRefusal coded) when (ToolCodes.Coded(coded))
         {
             // PUSH1f2c: a tool's operation refusing by a check the library's table codes (a file not there or answering no version, a
-            // version not downloaded, in use or held, a location that is no address), the code `daoris-driver tool` says it in alone.
+            // version not downloaded, in use or held, a location that is no address), the code `daoris tool` says it in alone.
             throw Refusals.Declared(ToolCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
         catch (PluginRefusal coded) when (PluginCodes.Coded(coded))

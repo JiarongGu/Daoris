@@ -1,11 +1,11 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Pausing, resuming and abandoning a work from a terminal (PAUSE1b, PAUSE1d, D132 §7.2, D50): <c>daoris-driver ask
+/// Pausing, resuming and abandoning a work from a terminal (PAUSE1b, PAUSE1d, D132 §7.2, D50): <c>daoris ask
 /// --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c>. The words are the library's (<see cref="WorkCommand"/>);
 /// this wires the real world: the service, the home and its file, the home's process markers (this host runs no session here,
 /// so a live one is reached through the request its loop takes), the configured agent's wire, this host's machine log, where
-/// the act says the terminal's door, and the sync pass an abandon runs before it answers, the one `daoris-driver sync` runs.
+/// the act says the terminal's door, and the sync pass an abandon runs before it answers, the one `daoris remote sync` runs.
 /// </summary>
 internal static class WorkConsole
 {
@@ -56,7 +56,7 @@ internal static class WorkConsole
     }
 
     /// <summary>
-    /// <c>daoris-driver work state [&lt;unit&gt;] [--entries]</c> (FABRIC-MILESTONE1a, D50): each unit's milestone, from the inventory the
+    /// <c>daoris work state [&lt;unit&gt;] [--entries]</c> (FABRIC-MILESTONE1a, D50): each unit's milestone, from the inventory the
     /// records derive; a unit named by its id, its session or its branch. A look: it changes nothing and tells no window. The page's
     /// is MILESTONE1b's. Exit 0 clean; 1 where the unit named is none; 2 for words not understood.
     /// </summary>
@@ -67,7 +67,7 @@ internal static class WorkConsole
         if (words.Count > 1 || words.Any(word => word.StartsWith('-')))
         {
             Console.Error.WriteLine($"daoris-driver: `work state` takes one unit and `--entries`: {string.Join(" ", args)}");
-            Console.Error.WriteLine("usage: daoris-driver work state [<unit>] [--entries]");
+            Console.Error.WriteLine("usage: daoris work state [<unit>] [--entries]");
             return 2;
         }
 
@@ -93,7 +93,7 @@ internal static class WorkConsole
     }
 
     /// <summary>
-    /// <c>daoris-driver work recovery drop &lt;ref&gt;... --repository &lt;name&gt; | --unheld [--repository &lt;name&gt;] [--plan]</c> (RECOVERYDROP1,
+    /// <c>daoris work recovery drop &lt;ref&gt;... --repository &lt;name&gt; | --unheld [--repository &lt;name&gt;] [--plan]</c> (RECOVERYDROP1,
     /// D50): the person's delete of the recovery refs nothing holds, the screen's <c>RECOVERY_DROP</c> being the other door. Only the
     /// lease's holder acts (<see cref="RecoveryDropping.WithoutHome"/>); <c>--plan</c> lists what it would do and changes nothing. Exit
     /// 0 clean; 1 where it was refused or a ref named was kept; 2 for words not understood or a service that did not answer.

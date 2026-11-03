@@ -29,17 +29,6 @@ public sealed partial class SettingsBox(string? home)
     /// <summary>The language a repository's or a workspace's sessions write to the person in: <c>en</c>, <c>zh</c>, or <c>clear</c>.</summary>
     public const string Language = "language";
 
-    /// <summary>The retired setting of how many minutes one session may run (SESSWATCH1a, D200): no request of it is written.</summary>
-    public const string Timeout = "timeout";
-
-    /// <summary>
-    /// What the retired <c>timeout</c> door and <c>settings_timeout</c> answer (SESSWATCH1a, D200, the session-watch design §3): the twin of
-    /// the driver's <c>DriverChoicesCommand.TimeoutRetired</c>, word for word.
-    /// </summary>
-    public const string TimeoutRetired =
-        "sessions are no longer limited by time: a working session runs as long as it works, and Daoris looks in on one that has gone "
-        + "quiet and brings it to you; nothing was changed.";
-
     /// <summary>How many sessions run at once on this machine.</summary>
     public const string Cap = "cap";
 

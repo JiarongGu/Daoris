@@ -6,7 +6,7 @@ import { LOG_FILTERS, LogList, type LogFilters } from './Logs';
 
 /**
  * The machine log read back (LOG1c, D94): the filters are held here and applied by the shell, the same
- * reading `daoris-driver logs` prints at a terminal (D50).
+ * reading `daoris logs` prints at a terminal (D50).
  */
 export function LogsDomain({ notify }: { notify: Notify }) {
   const { t } = useTranslation();

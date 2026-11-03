@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Sessions from a terminal (SESSUX1g, D126 §7.1, D50): <c>daoris-driver sessions</c>. The words are the library's
+/// Sessions from a terminal (SESSUX1g, D126 §7.1, D50): <c>daoris session list</c>. The words are the library's
 /// (<see cref="SessionsCommand"/>); this wires the real world: the service, the home's choices and files, the configured
 /// agent's wire, and this host's machine log, where an archive and a delete say the terminal's door.
 /// </summary>

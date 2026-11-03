@@ -23,7 +23,7 @@ export type UpdateState = {
   outcome: UpdateOutcome | null;
   /**
    * The last swap as the install's journal records it, told or not, on every state (UPDATE1d): what Settings' row says
-   * after a dismissal, as the terminal's plain `daoris-driver update` says it (D50). Null with no journal, and while a swap
+   * after a dismissal, as the terminal's plain `daoris update` says it (D50). Null with no journal, and while a swap
    * is under way. The banner reads `outcome`, never this.
    */
   last: UpdateOutcome | null;
@@ -43,7 +43,7 @@ const WHY = new Set([
 /**
  * The install's update, as a quiet strip under the app strip (UPDATE1, D139 §2, §3): a build staged and waiting, the drain
  * counting down what runs, the swap under way, a refusal, and — once, at the start after — how the last swap ended. Its
- * words are the banner's half of the two doors; `daoris-driver update` is the terminal's.
+ * words are the banner's half of the two doors; `daoris update` is the terminal's.
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell (D52 as amended). Nothing when nothing is

@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// SESSONE2c (D167 points 6 to 8; the co-working design §2.4, D50): the page's door onto an ask's channel, the screen twin of
-/// <c>daoris-driver ask channel</c>. <c>CHANNEL_READ</c> answers the channel as the person reads it (their own mark, an open
+/// <c>daoris ask channel</c>. <c>CHANNEL_READ</c> answers the channel as the person reads it (their own mark, an open
 /// question marked), <c>CHANNEL_POST</c> posts their words and answers the service's code where it refused, and <c>CHANNEL_MARK</c>
 /// moves their mark. The service is a stand-in reached through the real client; nothing machine-local is on the answer.
 /// </summary>

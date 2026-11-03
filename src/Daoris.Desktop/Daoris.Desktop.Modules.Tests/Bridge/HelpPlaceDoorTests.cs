@@ -39,7 +39,7 @@ public sealed class HelpPlaceDoorTests : DriverModuleBridge
         var drawn = await AnswerAsync(module, "HELP_PROPOSALS", new { session = "h1" });
 
         var card = Assert.Single(drawn.GetProperty("proposals").EnumerateArray());
-        Assert.Equal("daoris-driver place atlas tools --preset merge-after-accept --adoption --what-it-builds library --plan", card.GetProperty("terminal").GetString());
+        Assert.Equal("daoris place atlas tools --preset merge-after-accept --adoption --what-it-builds library --plan", card.GetProperty("terminal").GetString());
         var place = card.GetProperty("place");
         Assert.Equal("aurora", place.GetProperty("workspace").GetString());
         Assert.Equal(["atlas", "tools"], place.GetProperty("asked").GetProperty("repositories").EnumerateArray().Select(each => each.GetString()));

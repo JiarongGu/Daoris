@@ -63,7 +63,7 @@ public static class ReviewRules
     /// table's <c>gate</c> rows: the doors' words change together, never at one alone.
     /// </summary>
     public const string Waiting = "Where work here waits for your review, it lands only once you say it is reviewed, "
-        + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "
+        + "`daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. "
         + "No set-up step is composed for you yet.";
 
     /// <summary>What stands where nothing is set anywhere (design §1.8): today's behaviour, said as such.</summary>
@@ -241,7 +241,7 @@ public static class ReviewRules
     }
 
     /// <summary>
-    /// One change as a door sends it, read as the shared table's (the page's edit, and <c>daoris-driver driver review</c>'s payload,
+    /// One change as a door sends it, read as the shared table's (the page's edit, and <c>daoris place review</c>'s payload,
     /// PUSH1f2a): a field of another type is absent, <c>none</c> and <c>clear</c> only when true.
     /// </summary>
     public static ReviewEdit EditOf(JsonElement? payload)

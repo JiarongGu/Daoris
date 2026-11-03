@@ -52,7 +52,7 @@ public static class WorkspaceSetup
         {
             refusals.Add(new(WorkspaceSetupRefusals.NoRepository, members.Count == 0
                 ? $"no repository on this machine's registry is in workspace `{name}`. Add them on Repositories, or with "
-                  + $"`daoris import <folder> --workspace {Spelled(name)}`, then press again."
+                  + $"`daoris repository import <folder> --workspace {Spelled(name)}`, then press again."
                 : $"workspace `{spelled}` has no checkout here of any of its repositories ({Names(away)}): each is a teammate's "
                   + "registration, and its own machine's driver can set it up."));
         }
@@ -61,7 +61,7 @@ public static class WorkspaceSetup
         {
             refusals.Add(new(WorkspaceSetupRefusals.PlanWorking,
                 $"a plan for workspace `{spelled}` is already working, made {Day(working.Created)}. "
-                + $"`daoris-driver place --workspace {Spelled(spelled)} --pause`, `--resume` or `--stop` steers it, and a stopped plan "
+                + $"`daoris place --workspace {Spelled(spelled)} --pause`, `--resume` or `--stop` steers it, and a stopped plan "
                 + "may be replaced by a new press."));
         }
 
@@ -72,7 +72,7 @@ public static class WorkspaceSetup
             refusals.Add(new(WorkspaceSetupRefusals.AtOnce, atOnce < 1
                 ? "at least one set-up must be open at once, or the plan would never ask anything."
                 : $"{atOnce} at once is more than this machine's cap of {config.Cap} leaves: at most {most}, so other work always "
-                  + "keeps a slot. Raise the cap with `daoris driver cap <n>` first, or ask for fewer."));
+                  + "keeps a slot. Raise the cap with `daoris settings cap <n>` first, or ask for fewer."));
         }
 
         var pilot = Math.Max(0, options.Pilot ?? WorkspaceSetupRules.DefaultPilot);
@@ -221,7 +221,7 @@ public static class WorkspaceSetup
                 if (flown.All(standing => standing.State is not (SetupState.Open or SetupState.Parked)))
                 {
                     var sentence = $"paused after the pilot: {string.Join(", ", flown.Select(standing => $"`{standing.Repository}` {WorkspaceSetupRules.Word(standing.State)}"))}. "
-                        + $"Look at what each wrote and what it cost, then `daoris-driver place --workspace {Spelled(workspace)} --resume` carries on.";
+                        + $"Look at what each wrote and what it cost, then `daoris place --workspace {Spelled(workspace)} --resume` carries on.";
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Pilot, sentence, now), current => !current.PilotResumed))
                     {
                         world.Said(SetupLine.Paused(workspace, SetupPausedBy.Pilot));
@@ -279,7 +279,7 @@ public static class WorkspaceSetup
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Tool, tool.Sentence, now), _ => true))
                     {
                         world.Said(SetupLine.Paused(workspace, SetupPausedBy.Tool));
-                        said.Progress($"setup  {workspace}: paused: {tool.Sentence} `daoris-driver place --workspace {Spelled(workspace)} --resume` carries on once it is.");
+                        said.Progress($"setup  {workspace}: paused: {tool.Sentence} `daoris place --workspace {Spelled(workspace)} --resume` carries on once it is.");
                     }
 
                     return;
@@ -334,7 +334,7 @@ public static class WorkspaceSetup
         world.Said(SetupLine.Paused(plan.Workspace, SetupPausedBy.Person));
         return new(true,
             $"the plan for workspace `{plan.Workspace}` is paused: nothing more is asked until "
-            + $"`daoris-driver place --workspace {Spelled(plan.Workspace)} --resume`, and what it already asked carries on.",
+            + $"`daoris place --workspace {Spelled(plan.Workspace)} --resume`, and what it already asked carries on.",
             next);
     }
 
@@ -374,7 +374,7 @@ public static class WorkspaceSetup
         world.Said(SetupLine.Stopped(plan.Workspace));
         return new(true,
             $"the plan for workspace `{plan.Workspace}` is stopped: nothing more is asked. What it published stays, and a quest "
-            + "nobody has started can be deleted with `daoris-driver quest delete <id>`.",
+            + "nobody has started can be deleted with `daoris quest delete <id>`.",
             next);
     }
 
@@ -402,7 +402,7 @@ public static class WorkspaceSetup
     }
 
     private static string NoPlan(string workspace) =>
-        $"there is no plan for workspace `{RemoteTarget.Workspace(workspace)}`: `daoris-driver place --workspace {Spelled(RemoteTarget.Workspace(workspace))} --adoption` makes one.";
+        $"there is no plan for workspace `{RemoteTarget.Workspace(workspace)}`: `daoris place --workspace {Spelled(RemoteTarget.Workspace(workspace))} --adoption` makes one.";
 
     /// <summary>A workspace in a command a person pastes, spelled for any shell (ACCTQUOTE1b); the words around it name it as it is.</summary>
     internal static string Spelled(string workspace) => ShellWord.Of(workspace, ShellWord.Workspace);

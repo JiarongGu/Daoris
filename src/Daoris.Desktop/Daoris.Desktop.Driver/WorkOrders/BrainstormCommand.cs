@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The brainstorm at the terminal (BRAINSTORM1a, D176 points 1, 2 and 8; ONEWAY1t): <c>daoris-driver brainstorm "&lt;question&gt;"</c>
+/// The brainstorm at the terminal (BRAINSTORM1a, D176 points 1, 2 and 8; ONEWAY1t): <c>daoris brainstorm "&lt;question&gt;"</c>
 /// asks the running service's desk, the one writer of a request, which the driver's look takes, so every pass runs in whichever
 /// process holds the loop. <c>send</c>, <c>stop</c> and <c>clear</c> are the desk's presses; <c>show</c> and <c>list</c> read the
 /// records here, which the look and the desk share. <c>--kind meeting</c> asks a meeting of the same desk (D177). With no service
@@ -12,11 +12,11 @@ namespace Daoris.Driver;
 public static class BrainstormCommand
 {
     public const string Usage =
-        "usage: daoris-driver brainstorm \"<question>\" [--repository <name>] [--agents <a,b>] [--source <path>]... [--id <id>]\n"
-        + "       daoris-driver brainstorm show|send|stop|clear <id>\n"
-        + "       daoris-driver brainstorm list\n"
-        + "       daoris-driver brainstorm \"<question>\" --kind meeting --agents <a,b> [--repository <name>] [--id <id>]\n"
-        + "       daoris-driver brainstorm send <id> --kind meeting [--round <n>]";
+        "usage: daoris brainstorm \"<question>\" [--repository <name>] [--agents <a,b>] [--source <path>]... [--id <id>]\n"
+        + "       daoris brainstorm show|send|stop|clear <id>\n"
+        + "       daoris brainstorm list\n"
+        + "       daoris brainstorm \"<question>\" --kind meeting --agents <a,b> [--repository <name>] [--id <id>]\n"
+        + "       daoris brainstorm send <id> --kind meeting [--round <n>]";
 
     /// <summary>
     /// Exit codes as every verb's: 0 done, 1 refused or no service, 2 a line this verb does not read. <paramref name="doors"/> null
@@ -149,7 +149,7 @@ public static class BrainstormCommand
         output.Write(Packet(id, packet));
         output.WriteLine(state.State switch
         {
-            BrainstormStates.Frozen when files.Sent(id) is null => $"Nothing has gone to any agent. Send it with `daoris-driver brainstorm send {id}`, or clear it.",
+            BrainstormStates.Frozen when files.Sent(id) is null => $"Nothing has gone to any agent. Send it with `daoris brainstorm send {id}`, or clear it.",
             BrainstormStates.Frozen => "Sent: it goes at Daoris's next look.",
             BrainstormStates.Running => "Sent, and running.",
             _ => $"Ended ({state.Code ?? "no document"}): {(state.Code == BrainstormStates.NoAgent ? "no agent could answer, and the packet is kept" : "no document was kept")}.",

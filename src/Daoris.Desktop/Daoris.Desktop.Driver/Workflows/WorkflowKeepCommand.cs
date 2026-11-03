@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver workflow keep</c> was asked (WORKFLOW1f): the session whose work it keeps, and the person's words.</summary>
+/// <summary>What <c>daoris workflow keep</c> was asked (WORKFLOW1f): the session whose work it keeps, and the person's words.</summary>
 public sealed record WorkflowKeepAsk(string Session, string? Words);
 
 /// <summary>
-/// <c>daoris-driver workflow keep &lt;session&gt; ["…"]</c> (WORKFLOW1f; the workflow design §4.4, D50): the person's <i>Keep</i>.
+/// <c>daoris workflow keep &lt;session&gt; ["…"]</c> (WORKFLOW1f; the workflow design §4.4, D50): the person's <i>Keep</i>.
 /// Where a kind chose a workflow that asks less of them, and the work changed paths outside the kind's, the gate holds it for
 /// their say-so; this keeps the kind's workflow for that work, with their words, on its run, and says what the gate says after.
 /// </summary>
@@ -20,7 +20,7 @@ public static class WorkflowKeepCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver workflow keep <session> ["…"]
+        usage: daoris workflow keep <session> ["…"]
                keep the workflow a kind of task chose for a session's work, where the work changed paths outside the kind's
                and that workflow asks less of you than the one it would follow without the kind: your say-so, with your
                words, kept on its run. It prints what the landing gate says after it.

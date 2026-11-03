@@ -163,7 +163,7 @@ export const FINISHED_HERE: Session = {
 export const HELD_BY_PERSON: Consideration = { quest: OPEN.id, repository: 'engine', verdict: 'Held', reason: '`engine` is held by the person.' };
 export const EXHAUSTED: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Exhausted',
-  reason: '3 sessions failed on this quest, so it is parked. `daoris driver retry abc123` starts it again.',
+  reason: '3 sessions failed on this quest, so it is parked. `daoris quest retry abc123` starts it again.',
 };
 /**
  * Taken on another machine after this machine's session on it was cut off (CARRY2b), naming whose take it is as the tick's
@@ -178,7 +178,7 @@ export const TAKEN_ELSEWHERE: Consideration = {
 /** Held by the person's stop (SESSUX1b), naming the session the tick says holds it (SESSUX1d). */
 export const STOPPED: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Stopped', heldBy: 's1a2b3c4',
-  reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris driver retry abc123 --session s1a2b3c4`.',
+  reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris quest retry abc123 --session s1a2b3c4`.',
 };
 
 /**
@@ -194,19 +194,19 @@ export const WAITS_FOR_ACCOUNT: Consideration = {
 /** Paused with its ask (PAUSE1b, D132 §2.3): the tick names the ask whose pause holds it, and *Resume* is on the ask. */
 export const PAUSED_WITH_ASK: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'ask', id: 'a1b2c3' },
-  reason: 'paused with ask `#a1b2c3`; Resume starts it — `daoris-driver ask --resume a1b2c3`.',
+  reason: 'paused with ask `#a1b2c3`; Resume starts it — `daoris ask resume a1b2c3`.',
 };
 
 /** Paused on its own: *Resume* stands where *Try again* would. */
 export const PAUSED_ITSELF: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'quest', id: OPEN.id },
-  reason: 'you paused `#abc123`; Resume starts it — `daoris-driver quest resume abc123`.',
+  reason: 'you paused `#abc123`; Resume starts it — `daoris quest resume abc123`.',
 };
 
 /** A question its asker's pause holds: the quest whose pause it is, a door away. */
 export const PAUSED_WITH_QUEST: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'quest', id: 'def456' },
-  reason: 'you paused `#def456`; Resume starts it — `daoris-driver quest resume def456`.',
+  reason: 'you paused `#def456`; Resume starts it — `daoris quest resume def456`.',
 };
 
 /** The submission a closure graph's quest stands at (FABRIC-CLOSE1a): its agent's `ready`, two hours ago. */

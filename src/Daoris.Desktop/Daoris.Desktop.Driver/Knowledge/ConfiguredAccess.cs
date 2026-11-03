@@ -46,16 +46,16 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// <summary>Whether the person left <paramref name="repository"/>'s checkout on: not turned off, its name matched without case.</summary>
     public bool Reads(string repository) => !CheckoutsOff.Contains(repository.Trim(), StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Whether a session parking, or ending unasked, is said: <c>daoris driver notify</c>.</summary>
+    /// <summary>Whether a session parking, or ending unasked, is said: <c>daoris settings notify</c>.</summary>
     public const string Notify = "notify";
 
-    /// <summary>A repository's or a workspace's session language: <c>daoris driver language</c>.</summary>
+    /// <summary>A repository's or a workspace's session language: <c>daoris place language</c>.</summary>
     public const string Language = "language";
 
-    /// <summary>How many sessions run at once on this machine: <c>daoris driver cap</c>.</summary>
+    /// <summary>How many sessions run at once on this machine: <c>daoris settings cap</c>.</summary>
     public const string Cap = "cap";
 
-    /// <summary>How long an account whose limit names no time cools: <c>daoris driver cooloff</c>.</summary>
+    /// <summary>How long an account whose limit names no time cools: <c>daoris settings cooloff</c>.</summary>
     public const string CoolOff = "cooloff";
 
     /// <summary>

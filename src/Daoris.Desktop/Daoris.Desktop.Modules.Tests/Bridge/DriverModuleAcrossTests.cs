@@ -4,12 +4,12 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// Reading and writing across repositories over the bridge (`AcrossRoutes.cs`, READ1, D107): the
-/// screen's half of `daoris driver across`, over the same `driver.json`.
+/// screen's half of `daoris place across`, over the same `driver.json`.
 /// </summary>
 public sealed class DriverModuleAcrossTests : DriverModuleBridge
 {
     /// <summary>
-    /// A repository's reading or a workspace's, set and cleared as `daoris driver across … read` does it. The
+    /// A repository's reading or a workspace's, set and cleared as `daoris place across … read` does it. The
     /// names ride as rows, not as an object's keys, so no key policy on the bridge can respell one.
     /// </summary>
     [Fact]
@@ -32,7 +32,7 @@ public sealed class DriverModuleAcrossTests : DriverModuleBridge
         Assert.Equal(0, cleared.GetProperty("readAcross").GetArrayLength());
     }
 
-    /// <summary>A relationship declared and taken back, as `daoris driver across … write-to` does it.</summary>
+    /// <summary>A relationship declared and taken back, as `daoris place across … write-to` does it.</summary>
     [Fact]
     public async Task A_relationship_is_declared_and_taken_back_over_the_same_file()
     {

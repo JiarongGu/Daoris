@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The plugin kit from a terminal (PLUG8, D50): `daoris-driver plugins new|try`. The Plugins place is
+/// The plugin kit from a terminal (PLUG8, D50): `daoris plugin new|try`. The Plugins place is
 /// the other door, onto the same <see cref="PluginKit"/>.
 /// </summary>
 /// <remarks>
@@ -21,9 +21,9 @@ namespace Daoris.Driver;
 public static class PluginKitCommand
 {
     public const string Usage =
-        "usage: daoris-driver plugins new <id> --point <point>… [--in <folder>]\n"
-        + "       daoris-driver plugins try <folder|id> [--point <point>] [--frame <file.json>]\n"
-        + "       daoris-driver plugins try <folder> --cycle <fixture.json>";
+        "usage: daoris plugin new <id> --point <point>… [--in <folder>]\n"
+        + "       daoris plugin try <folder|id> [--point <point>] [--frame <file.json>]\n"
+        + "       daoris plugin try <folder> --cycle <fixture.json>";
 
     /// <param name="log">
     /// The machine log, where a trial of an installed plugin is one <c>plugin.tried</c> line from this door
@@ -64,7 +64,7 @@ public static class PluginKitCommand
         if (positional is null)
         {
             throw new DriverException(
-                "`plugins new` needs a plugin id — e.g. `daoris-driver plugins new acme.quiet-hours --point quest/consider`.");
+                "`plugins new` needs a plugin id — e.g. `daoris plugin new acme.quiet-hours --point quest/consider`.");
         }
 
         var plan = PluginKit.Plan(positional, points, options.GetValueOrDefault("--in") ?? PluginKitFiles.Here());
@@ -86,7 +86,7 @@ public static class PluginKitCommand
         output.WriteLine(performs
             ? "  Next: write act(), check() and remove() in plugin.mjs, then `node --test` in the folder and"
             : "  Next: write what each handler does in plugin.mjs, then `node --test` in the folder and");
-        output.WriteLine($"  `daoris-driver plugins try {plan.Folder}{(performs ? $" --cycle {Path.Combine(plan.Folder, PluginKit.CycleFixture)}" : "")}`.");
+        output.WriteLine($"  `daoris plugin try {plan.Folder}{(performs ? $" --cycle {Path.Combine(plan.Folder, PluginKit.CycleFixture)}" : "")}`.");
         output.WriteLine("  Once a person has read it, `daoris plugin add <folder>` installs it; nothing runs before that.");
         return 0;
     }
@@ -96,7 +96,7 @@ public static class PluginKitCommand
         var (positional, points, options) = Parse(args, "try", ["--frame", "--cycle"]);
         if (positional is null)
         {
-            throw new DriverException("`plugins try` needs a folder, or an installed plugin's id — e.g. `daoris-driver plugins try ./acme.quiet-hours`.");
+            throw new DriverException("`plugins try` needs a folder, or an installed plugin's id — e.g. `daoris plugin try ./acme.quiet-hours`.");
         }
 
         if (points.Count > 1) throw new DriverException("`plugins try` sends one point's frame at a time: name one --point, or none for every point.");

@@ -17,7 +17,7 @@ namespace Daoris.Driver.Host;
 /// pipe a scripted exchange in, read the record out.</para>
 ///
 /// <para><b>And the terminal's *Start a conversation with these words*</b> (MSG1f3, D137 §2.2, D50):
-/// `daoris-driver sessions start-from <id>` opens the same conversation here, its first message the
+/// `daoris session start-from <id>` opens the same conversation here, its first message the
 /// words a session could not go on with, through <see cref="ChatRunner.StartFromAsync"/>, the act the
 /// screen's `SESSION_START_FROM` calls. From its first message on it is this door's conversation.</para>
 ///
@@ -35,14 +35,14 @@ internal static class ChatConsole
     public static Task<int> RunAsync(string[] args) => DoorAsync("chat", () => ConverseAsync(args));
 
     /// <summary>
-    /// `daoris-driver sessions start-from <id>` (MSG1f3): a conversation here with the words a session
+    /// `daoris session start-from <id>` (MSG1f3): a conversation here with the words a session
     /// could not go on with, on the machine's adapter, as the screen's press starts one; with the same
     /// contract as `chat`.
     /// </summary>
     public static Task<int> StartFromAsync(string session) => DoorAsync("sessions", () => FromAsync(session));
 
     /// <summary>
-    /// `daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]` (MIXAGENT1a-i, D163): a conversation goes on
+    /// `daoris session hand-over <id> --agent <adapter> [--account <name>]` (MIXAGENT1a-i, D163): a conversation goes on
     /// with another agent, in this terminal, through <see cref="ChatRunner.HandOverAsync"/>, as start-from goes through its act;
     /// from the new conversation's first message on it is this door's conversation, with the same contract as `chat`.
     /// </summary>

@@ -138,7 +138,7 @@ const PARKED_QUEST: Attention = {
   title: 'Read the media field names from config',
   where: 'engine',
   since: at(64),
-  detail: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 7a82cc` starts it again once you know why.',
+  detail: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris quest retry 7a82cc` starts it again once you know why.',
 };
 
 /** A quest the steward stopped (STEWARDROLE1b, D209 §5.3): its session said, its one act Try again; its door the quest's page. */
@@ -835,7 +835,7 @@ export const ParkedQuestRows: StoryObj = {
             ...PARKED_QUEST,
             id: 'cjk-quest',
             title: '让世界流式加载在每一帧内限制水合工作量，并把预算暴露在区块 API 上，供上层调度器读取',
-            detail: '`#cjk-quest` 上已有 3 个会话失败，且没有落地任何工作——已挂起，因为继续尝试只会消耗账户，而不会有进展。弄清原因后，`daoris driver retry cjk-quest` 会让它重新开始。',
+            detail: '`#cjk-quest` 上已有 3 个会话失败，且没有落地任何工作——已挂起，因为继续尝试只会消耗账户，而不会有进展。弄清原因后，`daoris quest retry cjk-quest` 会让它重新开始。',
           }}
           acts={ACTS}
           onOpen={() => {}}

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The milestone in a terminal's words (FABRIC-MILESTONE1a, D50): `daoris-driver trees state` and `work state`. In the library, so
+/// The milestone in a terminal's words (FABRIC-MILESTONE1a, D50): `daoris tree state` and `work state`. In the library, so
 /// a test holds the sentences; the page's own words are MILESTONE1b's.
 /// </summary>
 public static class WorkWords

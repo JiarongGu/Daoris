@@ -14,8 +14,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Each writer keeps the other's sections</b> (TOOL4e): the four here, the orders (<see cref="Rotation"/>,
 /// <see cref="WorkspaceRotation"/>), how each is used (<see cref="Uses"/>, <see cref="WorkspaceUses"/>, TOOL6a), and
-/// whatever a newer build wrote (<see cref="Kept"/>). For the same wiring the two write the same bytes, which
-/// <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c> hold row for row.</para>
+/// whatever a newer build wrote (<see cref="Kept"/>), which <c>RotationOrderTests</c> holds.</para>
 ///
 /// <para><b>Silence means the harness's own home.</b> A machine that has never named a profile spawns
 /// exactly as it did before this existed — the environment seam is not set at all, and the harness
@@ -700,9 +699,9 @@ public sealed record HarnessSettings(
     /// for the agent, else the machine's, else none — and none is no rotation at all.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>The CLI writes these too</b> (<c>daoris agent account order</c>), so <see cref="Save"/> writes them,
-    /// or a screen edit would delete the person's order. <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c>
-    /// hold the reading, the edits, the refusals and the file both write, row for row.</para>
+    /// <para>🔴 <b>The terminal writes these too</b> (<c>daoris agent account order</c>), so <see cref="Save"/> writes them,
+    /// or a screen edit would delete the person's order. <c>RotationOrderTests</c> holds the reading, the edits, the refusals
+    /// and the file written.</para>
     /// <para>An account the order does not list is never rotated into (§3.1): one list, not a list and a mark. A start
     /// reads its one scope instead (<see cref="Set"/>, TOOL6b, D130 §3.1), where a workspace that names a default
     /// and no list takes no list at all; this is D125's reading of the file, held by its twin.</para>

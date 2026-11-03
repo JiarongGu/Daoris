@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// installed and named by the person, never Daoris's.</para>
 ///
 /// <para><b>Started per landing, not kept with the loop.</b> A landing is a press, and it happens where
-/// the press is: in the shell, or in a terminal's <c>daoris-driver trees land</c>, which has no loop. A
+/// the press is: in the shell, or in a terminal's <c>daoris tree land</c>, which has no loop. A
 /// process that exists exactly as long as the one frame it answers is the registration-as-effect rule
 /// (D64 §4) at its smallest.</para>
 ///

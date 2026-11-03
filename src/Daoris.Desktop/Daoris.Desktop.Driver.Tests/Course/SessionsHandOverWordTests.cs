@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// MIXAGENT1c (D163 point 3): the person's yes and no at a terminal to an agent's ask to hand its session over, waiting under the
-/// `handOver` rule's `ask`: <c>daoris-driver sessions hand-over &lt;id&gt; --approve|--decline</c>, the page's judge
+/// `handOver` rule's `ask`: <c>daoris session hand-over &lt;id&gt; --approve|--decline</c>, the page's judge
 /// (<see cref="HandOverAskWord"/>). A yes is the state the look takes; a no is the look's own refusal `declined` with its note, once.
 /// </summary>
 public sealed class SessionsHandOverWordTests : IDisposable

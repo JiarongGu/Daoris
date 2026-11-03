@@ -680,11 +680,11 @@ describe('noteLines', () => {
       ];
       expect(noteLines(t, { parts }, 'en').map((line) => line.text)).toEqual([
         `It does not go on yet: the \`claude-code\` account \`account-1\` is cooling until ${moment(until, 'en')} (the agent said so), and its conversation is on that account, so your words wait to go on in it then.`,
-        'To start a conversation with these words now instead, without that one: `daoris-driver sessions start-from c1`.',
+        'To start a conversation with these words now instead, without that one: `daoris session start-from c1`.',
       ]);
       expect(noteLines(zh, { parts }, 'zh').map((line) => line.text)).toEqual([
         `还不能继续：\`claude-code\` 账户 \`account-1\` 冷却至 ${moment(until, 'zh')}（智能体如此说明），而它的对话在那个账户上，所以你的话会等到那时再在其中继续。`,
-        '要现在改用这些话开始一段对话、不带那一段：`daoris-driver sessions start-from c1`。',
+        '要现在改用这些话开始一段对话、不带那一段：`daoris session start-from c1`。',
       ]);
     });
 
@@ -699,7 +699,7 @@ describe('noteLines', () => {
       expect(lines[0]).toMatch(/^It does not go on yet: `codex`'s own sign-in is cooling until .+ \(Daoris's default: the agent named no time\), /);
       expect(lines.slice(1)).toEqual([
         "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts.",
-        'To go on now in a new session instead, without that conversation: `daoris-driver sessions go-on-new s1`.',
+        'To go on now in a new session instead, without that conversation: `daoris session go-on-new s1`.',
         "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.",
       ]);
       expect(noteLines(zh, { parts }, 'zh').every((line) => line.kind === 'said')).toBe(true);
@@ -828,13 +828,13 @@ describe('noteLines', () => {
 
       const clauses = [
         coded('held.kept-aside', '…', { account: 'account-3' }),
-        coded('held.outside-machine', '…', { accounts: ['account-3'], first: 'account-3', door: 'daoris agent profile order fake account-1 account-3' }),
-        coded('held.outside-workspace', '…', { workspace: 'work', accounts: ['account-3', 'account-4'], first: 'account-3', door: 'daoris agent profile order fake account-1 account-3 --workspace work' }),
+        coded('held.outside-machine', '…', { accounts: ['account-3'], first: 'account-3', door: 'daoris agent account order fake account-1 account-3' }),
+        coded('held.outside-workspace', '…', { workspace: 'work', accounts: ['account-3', 'account-4'], first: 'account-3', door: 'daoris agent account order fake account-1 account-3 --workspace work' }),
       ];
       expect(noteLines(t, { parts: clauses }, 'en', names).map((line) => line.text)).toEqual([
         '`Spare` is kept for conversations.',
-        'Not cooling, and not among the accounts this machine\'s starts may use: `Spare` — Daoris starts nothing on them unless a list names them; `daoris agent profile order fake account-1 account-3` adds `Spare`.',
-        'Not cooling, and not among the accounts `work` may use: `Spare` and `account-4` — Daoris starts nothing on them unless a list names them; `daoris agent profile order fake account-1 account-3 --workspace work` adds `Spare`.',
+        'Not cooling, and not among the accounts this machine\'s starts may use: `Spare` — Daoris starts nothing on them unless a list names them; `daoris agent account order fake account-1 account-3` adds `Spare`.',
+        'Not cooling, and not among the accounts `work` may use: `Spare` and `account-4` — Daoris starts nothing on them unless a list names them; `daoris agent account order fake account-1 account-3 --workspace work` adds `Spare`.',
       ]);
       for (const parts of [wait, every, picked, refused, own, clauses]) {
         expect(noteLines(zh, { parts }, 'zh', names).every((line) => line.kind !== 'recorded')).toBe(true);

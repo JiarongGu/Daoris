@@ -51,7 +51,7 @@ public sealed class OwnerSetCensusTests
     /// <summary>The setting doors that name no repository, workspace or quest (a machine's), each with why.</summary>
     internal static readonly IReadOnlyDictionary<string, string> MachineDoors = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["strikes"] = "the machine's strikes", ["timeout"] = "the machine's timeout", ["notify"] = "the machine's notifications",
+        ["notify"] = "the machine's notifications",
         ["cap"] = "the machine's cap", ["cooloff"] = "the machine's cool-off", ["keep"] = "how long the machine keeps what it keeps",
     };
 

@@ -60,7 +60,7 @@ describe('a standing answer', () => {
   // UX6f: a row of the repository's Setup, its terminal twin as its hint and why it is safe on its info glyph.
   it('says its terminal twin, and on its info glyph that it is handed to every session here and never written into the repository', () => {
     show();
-    expect(screen.getByText(code('daoris driver standing engine "…"|--clear'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris place standing engine "…"|--clear'))).toBeInTheDocument();
     const why = screen.getByRole('note', { name: /handed to every session in this repository/ });
     expect(why).toHaveAccessibleName(/never written into the repository/);
   });

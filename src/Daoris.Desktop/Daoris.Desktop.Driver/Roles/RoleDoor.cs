@@ -23,7 +23,7 @@ public sealed record RoleRow(
 
 /// <summary>
 /// The person's one door into the role catalogue (FOUNDATION1y-i, the foundation design §2.7): Settings' <c>SET_ROLE</c>,
-/// <c>daoris driver role</c> and Ask Daoris's <c>role_propose</c>, applied by the person's press, each call <see cref="Apply"/>, so each
+/// <c>daoris role</c> and Ask Daoris's <c>role_propose</c>, applied by the person's press, each call <see cref="Apply"/>, so each
 /// answers the judge's closed codes alike. A role's record and its staffing are set together: the staffing first, a row no record reads
 /// until the record lands, then the catalogue's one write, then the staffing's check, which writes the projection the narrowing moved.
 /// </summary>

@@ -1,8 +1,8 @@
 {
   "settings.handOver.label": "转交",
   "settings.handOver.body": "会话的智能体可以要求把会话转交给另一个智能体，并附上一段说明工作进展的备注，作为它自己的说法保留。这里决定它的要求是在会话页面上等你同意或拒绝，还是在它这一轮结束时按你的顺序交给下一个智能体，或是直接拒绝。无论这里怎么设，你自己按下的转交照常进行。仓库自己的规则取代其工作区的规则。",
-  "settings.handOver.twin.repository": "`daoris driver handover {{repository}} --mode ask|on|off|--clear`",
-  "settings.handOver.twin.workspace": "`daoris driver handover --workspace {{workspace}} --mode ask|on|off|--clear`",
+  "settings.handOver.twin.repository": "`daoris settings handover {{repository}} --mode ask|on|off|--clear`",
+  "settings.handOver.twin.workspace": "`daoris settings handover --workspace {{workspace}} --mode ask|on|off|--clear`",
   "settings.handOver.says.ask": "智能体要求转交会话时，在会话页面上等你同意或拒绝。",
   "settings.handOver.says.on": "智能体要求转交会话时，在它这一轮结束时转交：由你顺序中的下一个智能体接着做。",
   "settings.handOver.says.off": "智能体要求转交会话会被拒绝：只有你自己按下才会转交。",

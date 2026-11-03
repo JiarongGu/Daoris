@@ -139,7 +139,6 @@ public static class WiringVariables
         [InstanceDoor.Variable] = "the dev loop's or a rehearsal's own instance, named for a workspace build, which reads no address file",
         ["DAORIS_DRIVER_PROGRAM"] = "the dev loop's or a rehearsal's own build of the driver's program, which a checkout's `daoris` hands every word but doctrine to (D194, ONEWAY1ai-i); an install's finds its own",
         ["DAORIS_HANDED"] = "set by `daoris` on the one start that hands a command between the CLI and the desktop program (ONEWAY1ai-i): which handed it, read and removed at the other's entry so a word is never handed back",
-        ["DAORIS_OLD_NAME"] = "set by the install's old `daoris-driver` launcher alone (ONEWAY1ai-i), so the program refuses the old name with the new one; it ends with the launcher",
         ["DAORIS_WEB_WORKERS"] = "the web tests' worker count",
         ["DAORIS_MEASURED_PORT"] = "the web's measured check's port, where a checkout's own is not wanted",
         ["DAORIS_CANON"] = "the doctrine tool's tests' fixture canon",

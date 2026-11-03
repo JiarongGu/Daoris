@@ -168,8 +168,8 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Equal($"trees: archived s1a2b3c4.{Environment.NewLine}", _out.ToString());
         // CONFIRMWAIT1b (the confirm-wait design §4.1): the id, and the two verbs that read and take it back, said at once.
         Assert.Equal(
-            $"trees: waiting for you to confirm this in Daoris's window (request {id}); `daoris-driver result {id}` says how it ended, "
-            + $"and `daoris-driver withdraw {id}` takes it back…{Environment.NewLine}",
+            $"trees: waiting for you to confirm this in Daoris's window (request {id}); `daoris press result {id}` says how it ended, "
+            + $"and `daoris press withdraw {id}` takes it back…{Environment.NewLine}",
             _error.ToString());
     }
 
@@ -195,7 +195,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Single(standIn.Results);
         var lines = _error.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal(2, lines.Length);
-        Assert.Contains($"(request {id}); `daoris-driver result {id}` says how it ended, and `daoris-driver withdraw {id}` takes it back…", lines[0]);
+        Assert.Contains($"(request {id}); `daoris press result {id}` says how it ended, and `daoris press withdraw {id}` takes it back…", lines[0]);
         Assert.Equal(InstanceDoor.StillWaiting("trees", id!), lines[1]);
         var kept = new SentPresses(_home).Find(id!, DateTimeOffset.UtcNow.AddDays(2));
         Assert.NotNull(kept);
@@ -735,7 +735,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     [Theory]
     [InlineData("withdrawn", 0, "took back request {id}: it was not done, and its card is gone from Daoris's window.")]
     [InlineData("running", 1, "request {id} was confirmed meanwhile and is under way, so nothing was taken back")]
-    [InlineData("ended", 1, "request {id} had already ended: it was done; `daoris-driver result {id}` says its answer.")]
+    [InlineData("ended", 1, "request {id} had already ended: it was done; `daoris press result {id}` says its answer.")]
     [InlineData("id-taken", 2, "refused id-taken. (id-taken)")]
     [InlineData("no-route", 2, "the Daoris running here cannot take a press back (request {id}): it is from before `withdraw`")]
     public async Task Withdraw_sends_the_pipes_own_withdraw_with_the_kept_key_and_says_each_answer(string answer, int code, string said)
@@ -818,8 +818,8 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     public void The_four_ctrl_c_sentences_name_result_and_withdraw_and_withdraw_nothing()
     {
         Assert.Contains("may still be confirmed there", InstanceDoor.StoppedAtCtrlC);
-        Assert.Contains("`daoris-driver result <id>` asks how it ended", InstanceDoor.StoppedAtCtrlC);
-        Assert.Contains("`daoris-driver withdraw <id>` takes it back", InstanceDoor.StoppedAtCtrlC);
+        Assert.Contains("`daoris press result <id>` asks how it ended", InstanceDoor.StoppedAtCtrlC);
+        Assert.Contains("`daoris press withdraw <id>` takes it back", InstanceDoor.StoppedAtCtrlC);
         var host = Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host");
         foreach (var console in new[] { "AgentsConsole.cs", "DriverChoicesConsole.cs", "PluginConsole.cs", "ToolsConsole.cs" })
         {

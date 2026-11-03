@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// How this Daoris is wired, the page's `bridge/system.ts` (WIRING1b, the this-Daoris design §6): Settings → This Daoris's
-/// read, through the driver library's <see cref="SystemWiring"/>, the reader `daoris-driver wiring` calls too (D50). A machine
+/// read, through the driver library's <see cref="SystemWiring"/>, the reader `daoris wiring` calls too (D50). A machine
 /// domain: the desktop's alone, answering this machine's paths and never a key (D47 §4, design §5).
 /// </summary>
 public sealed class SystemRoutes(DriverContext context)
@@ -47,7 +47,7 @@ public sealed class SystemRoutes(DriverContext context)
     }
 
     // KEEP1c (D195 point 5, the cleanup design §4.4): the Disk space card's read through the driver library's `SystemSpace`, the reader
-    // `daoris-driver space` calls too: the free space, and each kind's size with when it was counted, its rule, its next and last clean,
+    // `daoris space` calls too: the free space, and each kind's size with when it was counted, its rule, its next and last clean,
     // and the run lock's holder. A read: it declares nothing and removes nothing. `{ measure: true }` counts every kind, `{ measure: [ids] }`
     // those, each a bounded walk in the background, one kind after another; each kind's end tells `wiring`, so the card fills in kind by
     // kind (WIRING-SIZES-LIVE1's need). The open walks nothing. Off the window's thread; the reader's own JSON whole, so a null stays a field.
@@ -73,7 +73,7 @@ public sealed class SystemRoutes(DriverContext context)
     }
 
     // KEEP1e (D195 point 4, the cleanup design §3.3, §4.4): *Free up space…*, listed first, then pressed, through the driver library's
-    // `SpaceFree`, which `daoris-driver space free` calls too. `{ plan: true }` answers the list and changes nothing (open on the pipe, a
+    // `SpaceFree`, which `daoris space free` calls too. `{ plan: true }` answers the list and changes nothing (open on the pipe, a
     // `PipeRule`): per kind what its rule takes now, what could go early in groups, and the doors of the kinds with presses of their own.
     // `{ units, early }` starts a run removing exactly those, each judged again right before it goes, under the home's run lock, and answers
     // at once `{ run, joined }`; a run under way here is joined, and one held elsewhere is refused as data, `{ why: held, held, message }`.

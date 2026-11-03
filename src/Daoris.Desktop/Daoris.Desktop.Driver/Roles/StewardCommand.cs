@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver steward &lt;act&gt; …</c> (STEWARDROLE1b, D209 §3.3): the steward's holder's verbs, each the grammar of the verb it
+/// <c>daoris steward &lt;act&gt; …</c> (STEWARDROLE1b, D209 §3.3): the steward's holder's verbs, each the grammar of the verb it
 /// mirrors, sent only over the pipe as <c>ROLE_ACT</c> with a proof over the connection's nonce; and <c>steward acts</c>, the run's acts,
 /// an open read. No alone path: with no Daoris running, the role does not exist.
 /// </summary>
@@ -37,7 +37,7 @@ public static class StewardCommand
 
     /// <summary>What the verb's usage says.</summary>
     public const string Usage =
-        "usage: daoris-driver steward acts | drive <repo> | undrive <repo> | trees <repo> on | hold <repo> | resume <repo> | stop <id> | "
+        "usage: daoris steward acts | drive <repo> | undrive <repo> | trees <repo> on | hold <repo> | resume <repo> | stop <id> | "
         + "finish <id> | retry <quest> | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
 
     /// <summary>The acts a request may ask for: those the steward's verbs make.</summary>

@@ -14,7 +14,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(ask, DriverConfig.Empty, Facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver ask --workspace work \"fix the cold-cache stall\"", plan.Terminal);
+        Assert.Equal("daoris ask --workspace work \"fix the cold-cache stall\"", plan.Terminal);
         Assert.Contains("fix the cold-cache stall", plan.Describe);
         Assert.DoesNotContain("review", plan.Describe);
         Assert.Null(plan.Apply); // an ask is made through the ask door, not an edit to the file
@@ -44,7 +44,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(ask, DriverConfig.Empty, Facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal($"daoris-driver ask --workspace work {flags}\"add the compare setting\"", plan.Terminal);
+        Assert.Equal($"daoris ask --workspace work {flags}\"add the compare setting\"", plan.Terminal);
         Assert.Equal($"Ask at workspace `work`: “add the compare setting”{said}", plan.Describe);
     }
 
@@ -135,7 +135,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         };
 
         var flags = review is null ? "" : "--review dev ";
-        Assert.Equal($"daoris-driver ask --workspace work {flags}\"add the compare setting\"{said}", HelpProposals.Plan(ask, DriverConfig.Empty, Facts).Terminal);
+        Assert.Equal($"daoris ask --workspace work {flags}\"add the compare setting\"{said}", HelpProposals.Plan(ask, DriverConfig.Empty, Facts).Terminal);
     }
 
     /// <summary>ENTRY1c: the ask door hears the choice and the words as the composer sends them.</summary>

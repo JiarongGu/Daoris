@@ -171,15 +171,6 @@ export const NotKept: Story = { args: { catalogue: { ...CATALOGUE, kept: false, 
 /** The same at the floor, in 中文. */
 export const NotKeptChineseNarrow: Story = { args: { catalogue: { ...CATALOGUE, kept: false, suggested: [] } }, decorators: [storyWidths.narrow, chinese] };
 
-/** A shell that answers the staffing and no roles: one order editor per role, and the card says the catalogue is not offered. */
-export const OlderShell: Story = { args: { catalogue: null, read: 'notOffered' } };
-
-/** The same at the half width. */
-export const OlderShellHalf: Story = { args: { catalogue: null, read: 'notOffered' }, decorators: [storyWidths.half] };
-
-/** The same at the floor, in 中文. */
-export const OlderShellChineseNarrow: Story = { args: { catalogue: null, read: 'notOffered' }, decorators: [storyWidths.narrow, chinese] };
-
 /** A read that failed, told apart from a shell that does not offer it. */
 export const ReadFailed: Story = { args: { catalogue: null, read: 'failed' } };
 

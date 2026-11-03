@@ -129,8 +129,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     planner's start, tries at a run's start and past its episode, conditions where the staffing course reads a move. (from D229, D212)
 38. A rule acts between turns only. It never acts on an unknown count, never ends a running or quiet session, and never
     answers a question. Each hold is released by its own door. (from D229)
-39. On a reached home `SET_STRIKES` and `settings strikes` are refused, naming `role rules`. The cap stays a machine
-    setting outside the rules. (from D229)
+39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes`. The cap stays a machine
+    setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
     `supervisor`, or `role_propose`. Any other field of the supervisor is `appointed-not-configurable`. (from D229)
 

@@ -183,7 +183,7 @@ function LogLine({ line, level }: { line: LogRow; level: string }) {
  * @remarks
  * **Desktop only** (D47 §4): the log is the machine's, and a browser is offered no such domain. **Drawn
  * from props**: SettingsView holds the bridge, and the filters are applied by the shell, the same reading
- * `daoris-driver logs` prints (D50). **Nobody's words are here** because none are in the log: an event's
+ * `daoris logs` prints (D50). **Nobody's words are here** because none are in the log: an event's
  * name and data are the log's own and shown as written, never translated.
  */
 export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRefresh }: {

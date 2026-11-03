@@ -18,7 +18,7 @@ public sealed class ReviewPortsTests : IDisposable
     public void Dispose() => GitSeed.Remove(_home);
 
     private static WorkflowProcess Named() =>
-        WorkflowProcess.Current(DriverConfig.Empty, "web-app", null) with
+        WorkflowProcess.Declared(DriverConfig.Empty, "web-app", null) with
         {
             Binding = new WorkflowRunBinding("q2", "web-app", "default", "docs", "repository", DateTimeOffset.UnixEpoch) { Version = 1 },
         };
@@ -37,7 +37,7 @@ public sealed class ReviewPortsTests : IDisposable
         Assert.Same(named.Review, reviewed.Review);
         Assert.Equal(new WorkflowLook("dev", null), reviewed.Look);
         Assert.Equal((true, SessionChecks.Light, (IReadOnlyDictionary<string, string>?)null), (checks.Named, checks.WorkChecks, checks.Claimed));
-        Assert.Null(WorkflowProcess.Current(DriverConfig.Empty, "web-app", null).WorkChecks);
+        Assert.Null(WorkflowProcess.Declared(DriverConfig.Empty, "web-app", null).WorkChecks);
     }
 
     [Fact]

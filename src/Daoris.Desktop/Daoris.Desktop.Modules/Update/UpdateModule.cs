@@ -5,7 +5,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The screen's door to an install's update (UPDATE1, D139 §3, D50): the banner's state, and its words — *Update when
-/// idle*, *Update now*, *Not now* — written to the request `daoris-driver update` writes.
+/// idle*, *Update now*, *Not now* — written to the request `daoris update` writes.
 /// </summary>
 /// <remarks>
 /// <para><b><c>STATE</c></b> answers <see cref="InstallUpdater.State"/>; <b><c>SET</c></b> takes <c>{ mode }</c>

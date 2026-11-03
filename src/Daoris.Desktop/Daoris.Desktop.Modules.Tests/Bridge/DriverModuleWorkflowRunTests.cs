@@ -94,91 +94,6 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         return await output;
     }
 
-    [Fact]
-    public async Task A_named_runs_bound_steps_survive_Current_changes_and_a_newer_saved_version()
-    {
-        var config = DriverConfig.Parse("""
-            {"reviews":{"engine":{"required":false,"environments":[
-              {"name":"local","kind":"local","procedure":"README.md","address":"http://localhost:4200"}]}}}
-            """);
-        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.ToString("O"),
-            System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"write","kind":"work"},{"id":"inspect","kind":"look","environment":"local"},
-                 {"id":"publish","kind":"landing","form":"merge","accept":"you"}]
-                """)), kept: []);
-        var binding = WorkflowRunBindings.Plan(config, Home, "q1", "engine", "aurora", "a1",
-            new WorkflowTaskChoice(null, "release"), [], T);
-        Assert.True(WorkflowRunBindings.Bind(Home, binding));
-        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.AddMinutes(1).ToString("O"),
-            System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]
-                """)), kept: [1]);
-        DriverConfig.Parse("""
-            {"reviews":{"engine":{"required":true,"environments":[
-              {"name":"dev","kind":"deployed","procedure":"README.md"},
-              {"name":"local","kind":"local","procedure":"README.md","address":"http://localhost:4200"}]}}}
-            """).Save(DriverConfigPath);
-        var (module, _) = await UpAsync();
-
-        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
-        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
-        var workflow = run.GetProperty("workflow");
-        Assert.Equal("release", workflow.GetProperty("id").GetString());
-        Assert.Equal(1, workflow.GetProperty("boundVersion").GetInt32());
-        Assert.Equal(binding.Digest, workflow.GetProperty("version").GetString());
-        // FABRIC-PIPELINE1a: the run's view says which route chose its pipeline, as its binding keeps it.
-        var route = workflow.GetProperty("route");
-        Assert.Equal((WorkflowLevels.Task, JsonValueKind.Null, JsonValueKind.Null), (route.GetProperty("level").GetString(), route.GetProperty("kind").ValueKind, route.GetProperty("label").ValueKind));
-        var steps = run.GetProperty("steps").EnumerateArray().ToList();
-        Assert.Equal(["write", "inspect", "publish"], steps.Select(step => step.GetProperty("step").GetProperty("id").GetString()));
-        Assert.Equal("local", steps[1].GetProperty("step").GetProperty("settings").GetProperty("environment").GetString());
-        Assert.Equal("waiting-on-you", steps[1].GetProperty("state").GetString());
-    }
-
-    [Theory]
-    [InlineData("version")]
-    [InlineData("binding")]
-    public async Task An_unreadable_bound_workflow_is_not_drawn_as_Current_or_done(string broken)
-    {
-        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
-            System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]
-                """)), kept: []);
-        var binding = WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
-            new WorkflowTaskChoice(null, "release"), [], T);
-        Assert.True(WorkflowRunBindings.Bind(Home, binding));
-        var path = broken == "binding" ? WorkflowRunBindings.PathOf(Home, "q1") : Path.Combine(WorkflowStore.FolderOf(Home), "release.json");
-        File.WriteAllText(path, "{broken");
-        var (module, _) = await UpAsync();
-
-        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
-        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
-        Assert.False(string.IsNullOrWhiteSpace(run.GetProperty("problem").GetString()));
-        Assert.Empty(run.GetProperty("steps").EnumerateArray());
-    }
-
-    [Theory]
-    [InlineData(false, "cannot-start")]
-    [InlineData(true, "not-known")]
-    public async Task A_bound_look_with_no_declaration_is_never_skipped_even_when_the_ask_is_unreadable(bool askUnread, string state)
-    {
-        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
-            System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"write","kind":"work"},{"id":"inspect","kind":"look"},
-                 {"id":"publish","kind":"landing","form":"merge","accept":"you"}]
-                """)), kept: []);
-        Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
-            new WorkflowTaskChoice(null, "release"), [], T)));
-        var (module, _) = await UpAsync(askUnread: askUnread);
-
-        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
-        var look = answer.GetProperty("runs")[0].GetProperty("steps")[1];
-
-        Assert.Equal("inspect", look.GetProperty("step").GetProperty("id").GetString());
-        Assert.Equal(state, look.GetProperty("state").GetString());
-        Assert.False(string.IsNullOrWhiteSpace(look.GetProperty("words").GetString()));
-    }
-
     /// <summary>
     /// FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is answered from its record, never as a problem: its nodes as its
     /// steps, each with its own kind, its detail its record's state and the subject it observes; its graph's entries, end and wires, a fork and its
@@ -259,94 +174,6 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.False(string.IsNullOrWhiteSpace(step.GetProperty("words").GetString()));
     }
 
-    /// <summary>
-    /// A chain's work done in a repository whose branch rule names a plugin that lands and answers its state, landed here on a
-    /// branch whose pull request is open: the work done, the landing done on its branch, the pull request waiting for the merge.
-    /// </summary>
-    [Fact]
-    public async Task A_run_is_read_from_the_records_each_step_beside_Current_s_cell()
-    {
-        Plugin("example.pull-request", ["work/land", "work/state"]);
-        File.WriteAllText(DriverConfigPath, """
-            { "landings": { "engine": { "form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request" } } }
-            """);
-        new LandedBranches(Home).Record(new LandedBranch("engine", "aurora", "work/q1", "main", Commit, "s1", "q1", "Quest q1", T)
-        {
-            Plugin = "example.pull-request", Pushed = true, PullRequest = "https://example.test/pull/7",
-        });
-        var (module, _) = await UpAsync();
-
-        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
-
-        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
-        Assert.Equal("engine", run.GetProperty("repository").GetString());
-        Assert.Equal("aurora", run.GetProperty("workspace").GetString());
-        Assert.Equal("a1", run.GetProperty("ask").GetString());
-        Assert.Equal(["q1"], run.GetProperty("quests").EnumerateArray().Select(each => each.GetString()));
-        Assert.Equal("s1", run.GetProperty("session").GetString());
-        Assert.Equal("pull-request", run.GetProperty("at").GetString());
-
-        var current = WorkflowCurrent.Derive(
-            DriverConfig.Load(DriverConfigPath), "engine", "aurora", WorkflowCurrent.PluginsOf(PluginCatalog.Load(Home, AdapterSet.Built().Names)));
-        Assert.Equal(current.Version, run.GetProperty("workflow").GetProperty("version").GetString());
-        var steps = run.GetProperty("steps").EnumerateArray().ToList();
-        Assert.Equal(current.Steps.Select(WorkflowCurrent.ToJson), steps.Select(step => step.GetProperty("step").GetRawText()));
-        Assert.Equal(
-            [("done", "finished"), ("done", "branch"), ("waiting-on-you", "merge")],
-            steps.Select(step => (step.GetProperty("state").GetString(), step.GetProperty("detail").GetString())));
-        Assert.Equal("work/q1", steps[1].GetProperty("branch").GetString());
-        Assert.Equal("https://example.test/pull/7", steps[2].GetProperty("pullRequest").GetString());
-        Assert.Equal("claude-code", steps[0].GetProperty("agent").GetString());
-        // The pull request's limit, in the driver's words, for a page with none of its own for it.
-        Assert.Equal(
-            WorkflowLimits.Says(WorkflowLimits.PullRequestAtCleanUp),
-            run.GetProperty("workflow").GetProperty("limits").GetProperty(WorkflowLimits.PullRequestAtCleanUp).GetString());
-    }
-
-    /// <summary>
-    /// INTEGRATE1r part r3: Current draws an <c>integrate</c> step after the landing where the rule carries one (part r1), but a run under Current
-    /// is drawn by its own steps, the work and its landing, so it never lists that step nor its <c>not-integrated-yet</c> limit: the run's page has
-    /// nothing of Current's integrate step to say until the integration run draws one (row g).
-    /// </summary>
-    [Fact]
-    public async Task A_run_under_a_rule_that_integrates_draws_no_integrate_step_and_lists_no_such_limit()
-    {
-        File.WriteAllText(DriverConfigPath, """
-            { "landings": { "engine": { "form": "branch", "pattern": "work/{quest}", "integrate": { "request": "owner" } } } }
-            """);
-        new LandedBranches(Home).Record(new LandedBranch("engine", "aurora", "work/q1", "main", Commit, "s1", "q1", "Quest q1", T));
-        var (module, _) = await UpAsync();
-
-        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
-
-        var current = WorkflowCurrent.Derive(
-            DriverConfig.Load(DriverConfigPath), "engine", "aurora", WorkflowCurrent.PluginsOf(PluginCatalog.Load(Home, AdapterSet.Built().Names)));
-        Assert.Contains(current.Steps, step => step.Kind == NodeKinds.Integrate);
-        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
-        Assert.DoesNotContain(run.GetProperty("steps").EnumerateArray(), step => step.GetProperty("step").GetProperty("kind").GetString() == NodeKinds.Integrate);
-        Assert.False(run.GetProperty("workflow").GetProperty("limits").TryGetProperty(WorkflowLimits.NotIntegratedYet, out _));
-    }
-
-    /// <summary>
-    /// INTEGRATE1o part o2, additive: the work step answers <c>requests</c>, each quest its sessions published (its repository, state, whether its
-    /// session waits on it, the close's note) and each helper they asked; every other step, and a run with none, answers null.
-    /// </summary>
-    [Fact]
-    public async Task The_work_step_answers_the_requests_its_sessions_made_and_every_other_step_none()
-    {
-        var (module, _) = await UpAsync(requests: true);
-
-        var run = Assert.Single((await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" })).GetProperty("runs").EnumerateArray());
-
-        var steps = run.GetProperty("steps").EnumerateArray().ToList();
-        Assert.Equal(
-            [("q5", "quest", "docs", "done", false, "the shape is in"), ("h1", "agent", "codex-acp", "working", false, null)],
-            steps[0].GetProperty("requests").EnumerateArray().Select(request => (request.GetProperty("id").GetString(), request.GetProperty("kind").GetString(),
-                request.GetProperty("to").GetString(), request.GetProperty("state").GetString(), request.GetProperty("awaits").GetBoolean(),
-                request.GetProperty("words").GetString())));
-        Assert.All(steps.Skip(1), step => Assert.Equal(JsonValueKind.Null, step.GetProperty("requests").ValueKind));
-    }
-
     /// <summary>A session's run is its quest's, and an ask's is each run of each chain it asked: the same records, read the same.</summary>
     [Fact]
     public async Task A_session_and_an_ask_read_the_same_run_as_the_quest()
@@ -359,9 +186,6 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
 
         Assert.Equal(byQuest.GetProperty("runs").GetRawText(), bySession.GetProperty("runs").GetRawText());
         Assert.Equal(byQuest.GetProperty("runs").GetRawText(), byAsk.GetProperty("runs").GetRawText());
-        // Nothing landed it here: the merge waits for the person's Accept.
-        var landing = byQuest.GetProperty("runs")[0].GetProperty("steps")[1];
-        Assert.Equal(("waiting-on-you", "accept"), (landing.GetProperty("state").GetString(), landing.GetProperty("detail").GetString()));
     }
 
     /// <summary>

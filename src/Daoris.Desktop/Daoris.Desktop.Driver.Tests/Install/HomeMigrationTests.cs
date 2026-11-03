@@ -202,6 +202,28 @@ public sealed class HomeMigrationTests : IDisposable
         Assert.True(row.IsDBNull(1));
     }
 
+    [Fact]
+    public void The_workflow_step_reads_the_repositories_from_the_services_registry_table()
+    {
+        var path = DaorisHome.Entry(_home, HomeEntry.Knowledge);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using (var connection = new SqliteConnection($"Data Source={path};Pooling=False"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                CREATE TABLE registrations (repository TEXT PRIMARY KEY, root TEXT NULL, workspace TEXT NOT NULL DEFAULT 'default', adopted INTEGER NOT NULL DEFAULT 1);
+                INSERT INTO registrations (repository, workspace) VALUES ('engine', 'games');
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        var migrated = HomeMigration.Run(_home);
+
+        Assert.Null(migrated.Failed);
+        Assert.Contains("workflows", migrated.Ran);
+    }
+
     private sealed class Step(string name, List<string> ran, Func<bool> fails) : IHomeMigrationStep
     {
         public string Name => name;

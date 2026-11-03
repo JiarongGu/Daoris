@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver git branches</c> was asked: which repositories, and in which form.</summary>
+/// <summary>What <c>daoris git branches</c> was asked: which repositories, and in which form.</summary>
 /// <param name="Repository">The one repository named, which is listed whatever it holds (D112); null for the scope's.</param>
 /// <param name="All">Every repository with a checkout here, not only those holding Daoris's branches.</param>
 /// <param name="Json">The list whole, written, rather than said.</param>
@@ -28,7 +28,7 @@ public sealed record GitBranchesSources(IReadOnlyList<RepoView> Registry, Driver
 }
 
 /// <summary>
-/// <c>daoris-driver git branches</c> (GIT1c, D147 §3.3, D50): the terminal's read door to the branch list, each repository's
+/// <c>daoris git branches</c> (GIT1c, D147 §3.3, D50): the terminal's read door to the branch list, each repository's
 /// line and branches by kind, and the git each read ran, ready to copy, since a read's terminal door is git itself. In the
 /// library, so its words are held by a test.
 /// </summary>
@@ -46,7 +46,7 @@ public static class GitBranchesCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver git branches [--repository <name>] [--all] [--json]
+        usage: daoris git branches [--repository <name>] [--all] [--json]
         """;
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>

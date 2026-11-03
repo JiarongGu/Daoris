@@ -3,7 +3,7 @@
 // checks each answer by the driver's own rules. `node --test` runs it with nothing of Daoris's
 // installed: it imports nothing but Node.
 //
-// The frames are the driver's own, written into this file when the kit made it. `daoris-driver plugins
+// The frames are the driver's own, written into this file when the kit made it. `daoris plugin
 // try` speaks the same ones through the driver itself, where Daoris is on the machine. `root` in a frame
 // is an empty scratch folder here, where git is told there is no repository, so a plugin that pushes
 // first fails on this machine and reaches nothing. To test past the push, write a test of your own that

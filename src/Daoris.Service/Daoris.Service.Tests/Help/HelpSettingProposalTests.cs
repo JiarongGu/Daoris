@@ -79,20 +79,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.DoesNotContain("never on a merge", tool);
     }
 
-    /// <summary>
-    /// ONEWAY1a (the oneway design §2 S1): the staffing doors are refused naming `role_propose`, whatever they are given, in the words of
-    /// the driver's twin, and are no door the tool lists.
-    /// </summary>
-    [Theory]
-    [InlineData("adapter", "claude-code-acp")]
-    [InlineData("intake", "off")]
-    [InlineData("helper", "claude-code")]
-    public void ONEWAY1a_a_staffing_door_is_refused_naming_the_role_door(string door, string value)
-    {
-        Assert.Equal(HelpSettingProposalWriter.StaffingRetired, HelpSettingProposalWriter.Refusal(new SettingChange(door, null, null, value)));
-        Assert.DoesNotContain(door, HelpSettingProposalWriter.Doors);
-    }
-
     /// <summary>HELP9: reading and writing across (D107) and a cap pass the shape as the terminal spells them.</summary>
     [Theory]
     [InlineData("across", "engine", null, "read off")]
@@ -122,7 +108,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("language", null, "work", "en")]
     [InlineData("language", "engine", null, "ZH")]
     [InlineData("language", null, "work", "--clear")]
-    // REVIEWENV1a (D154 point 2): a review rule for a repository or a workspace, as `daoris driver review` takes its words, a
+    // REVIEWENV1a (D154 point 2): a review rule for a repository or a workspace, as `daoris place review` takes its words, a
     // quoted command kept whole whatever it holds; the rule, the registry and the procedure are the driver's to judge.
     [InlineData("review", "storefront", null, "dev --kind local --procedure README.md --address http://localhost:4200 --required")]
     [InlineData("review", null, "work", "local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve -- --port 4300\"")]
@@ -138,7 +124,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("opinion", "notes-site", null, "none")]
     [InlineData("opinion", "web-app", null, "--clear")]
     // DOORS1a (D163 point 3; D164's amendment points 1 and 5): a helpers rule and a commit rule for a repository or a workspace,
-    // as `daoris driver helpers` and `daoris driver commits` take their words, a quoted list or convention kept whole; the rule and
+    // as `daoris place helpers` and `daoris place commits` take their words, a quoted list or convention kept whole; the rule and
     // the registry are the driver's to judge.
     [InlineData("helpers", "web-app", null, "--mode on --agents codex-acp,dsh")]
     [InlineData("helpers", null, "work", "--agents \"codex-acp, dsh\"")]
@@ -146,7 +132,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("commits", "web-app", null, "--mode ask --convention \"Imperative subject line, at most 72 characters.\"")]
     [InlineData("commits", null, "work", "--mode at-end --no-convention")]
     [InlineData("commits", "web-app", null, "--clear")]
-    // DOORS1a (PROCESS1b-i, -ii): a branch rule's ticket key and squash, as `daoris driver landing` takes them.
+    // DOORS1a (PROCESS1b-i, -ii): a branch rule's ticket key and squash, as `daoris place landing` takes them.
     [InlineData("landing", "web-app", null, "branch feature/{ticket}-{slug} --key \"TK-\\d+\" --squash")]
     [InlineData("landing", null, "work", "branch feature/{ticket} --no-key --no-squash")]
     public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
@@ -372,10 +358,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     // LANDSVC1: a merge carrying the switch is no shape the box takes, and its sentence says the switch rides a branch.
     [InlineData("landing", "engine", null, "merge --auto-accept", "`branch <pattern>` (with `--tidy`")]
     [InlineData("landing", "engine", null, "merge --auto-accept", "`--auto-accept` for a quest's done")]
-    [InlineData("strikes", null, null, "many", "a whole number")]
-    // SESSWATCH1a (D200): the retired door is refused whatever it is given.
-    [InlineData("timeout", null, null, "0", "no longer limited by time")]
-    [InlineData("timeout", null, null, "90", "no longer limited by time")]
     [InlineData("notify", null, null, "loud", "`on` or `off`")]
     [InlineData("across", null, null, "read off", "a repository or a workspace")]
     [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]
@@ -404,7 +386,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("language", "engine", null, null, "`language` is set to `en` or `zh`, or `--clear`")]
     [InlineData("language", null, "work", "fr", "`language` is set to `en` or `zh`, or `--clear`")]
     [InlineData("language", "engine", null, "en zh", "`language` is set to `en` or `zh`, or `--clear`")]
-    // REVIEWENV1a: exactly one of a repository or a workspace, some words, and only the flags `daoris driver review` takes.
+    // REVIEWENV1a: exactly one of a repository or a workspace, some words, and only the flags `daoris place review` takes.
     [InlineData("review", null, null, "none", "review rule is set for a repository or a workspace — name exactly one")]
     [InlineData("review", "storefront", "work", "none", "review rule is set for a repository or a workspace — name exactly one")]
     [InlineData("review", "storefront", null, null, "review is `<environment> --kind local|deployed --procedure <path>")]
@@ -415,8 +397,8 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("opinion", "web-app", null, null, "opinion is `--agents <adapter,adapter> [--on landing,steps]")]
     [InlineData("opinion", "web-app", null, "  ", "opinion is `--agents <adapter,adapter> [--on landing,steps]")]
     [InlineData("opinion", "web-app", null, "--agents dsh --colour blue", "`none` or `--clear`")]
-    // DOORS1a: exactly one of a repository or a workspace, some words, and only the flags `daoris driver helpers` and
-    // `daoris driver commits` take; a merge carrying a key or a squash is no shape the box takes, and its sentence names both.
+    // DOORS1a: exactly one of a repository or a workspace, some words, and only the flags `daoris place helpers` and
+    // `daoris place commits` take; a merge carrying a key or a squash is no shape the box takes, and its sentence names both.
     [InlineData("helpers", null, null, "--mode on", "helpers rule is set for a repository or a workspace — name exactly one")]
     [InlineData("helpers", "web-app", "work", "--clear", "helpers rule is set for a repository or a workspace — name exactly one")]
     [InlineData("helpers", "web-app", null, null, "`helpers` is `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear`")]

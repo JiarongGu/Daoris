@@ -3600,7 +3600,7 @@ public sealed class AcpSession(
             // A driven start's required posture is its repository's permission prompts' (AUTONOMY1b), said in its setup's words.
             return new(Unoffered?.Invoke(named, offered)
                 ?? $"the agent does not offer `{named}`, the mode that asks nothing which full access needs ({offered}), so it does not start in "
-                + "a narrower one under that name. Choose restricted access for Ask Daoris (`daoris-driver help mode restricted`), or another "
+                + "a narrower one under that name. Choose restricted access for Ask Daoris (`daoris ask-daoris mode restricted`), or another "
                 + "agent for it.");
         }
 

@@ -159,7 +159,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         if (logCode != 0)
         {
             return Refused($"git cannot compare `{branch}` with `{line ?? "HEAD"}` here: {FirstLine(logErr)} "
-                + "Fetch it, or set another line with `daoris driver line`.");
+                + "Fetch it, or set another line with `daoris place line`.");
         }
 
         var commits = ahead.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -170,7 +170,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         if (plugin is null)
         {
             return Refused($"no plugin is named to hand `{branch}` to: `{repository}`'s landing rule names none. Name one on the rule "
-                + $"(`daoris driver landing {repository} branch <pattern> --plugin <id>`), or once with `--plugin <id>`.", commits.Count);
+                + $"(`daoris place landing {repository} branch <pattern> --plugin <id>`), or once with `--plugin <id>`.", commits.Count);
         }
 
         // D100's refusals, in its words: not installed, off, unsound, or speaking on no `work/land` point.
@@ -184,7 +184,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         if (proof.Kind is LandedKind.OnLine or LandedKind.Merged)
         {
             return Refused($"`{branch}`'s work already reads on the line — its pull request was merged. Nothing to hand on: the "
-                + "clean-up removes it (Repositories → the workspace's page → Branches → Session branches, or `daoris-driver trees clean`).", commits.Count);
+                + "clean-up removes it (Repositories → the workspace's page → Branches → Session branches, or `daoris tree clean`).", commits.Count);
         }
 
         // PLUGHOOK1a (D148, amending D102): the same refusal where the platform's kept word clears it and git confirms it.
@@ -193,7 +193,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         {
             return Refused($"`{branch}`'s work already reads on the line — its pull request completed"
                 + (kept.Plugin is { } answered ? $", as `{answered}` answered," : "") + $" and its merge commit is on `{verdict.Form}`. "
-                + "Nothing to hand on: the clean-up removes it (Repositories → the workspace's page → Branches → Session branches, or `daoris-driver trees clean`).",
+                + "Nothing to hand on: the clean-up removes it (Repositories → the workspace's page → Branches → Session branches, or `daoris tree clean`).",
                 commits.Count);
         }
 

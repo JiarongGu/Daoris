@@ -149,7 +149,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HIST1d (D50; the history-clearing design §6.2): <c>daoris-driver history --workspace --json</c> prints this route's answer
+    /// HIST1d (D50; the history-clearing design §6.2): <c>daoris history --workspace --json</c> prints this route's answer
     /// field for field. Both serialize the driver library's one projection (<see cref="HistoryAnswers"/>): here the route's
     /// answer, as the page receives it, is the terminal's for the same home and service, value for value, and each object's
     /// fields are the lists the terminal's own test holds.

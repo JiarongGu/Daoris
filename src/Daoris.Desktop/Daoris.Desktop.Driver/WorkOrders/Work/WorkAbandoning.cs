@@ -20,7 +20,7 @@ public static class WorkAbandoning
 
     /// <summary>The terminal's door to the first press, and with <c>--reason</c> and <c>--yes</c> the second (design §7.2).</summary>
     public static string Door(WorkScope scope, string id) =>
-        scope == WorkScope.Ask ? $"daoris-driver ask --abandon {id}" : $"daoris-driver quest abandon {id}";
+        scope == WorkScope.Ask ? $"daoris ask abandon {id}" : $"daoris quest abandon {id}";
 
     /// <summary>
     /// What an abandon would do with each piece of a work (design §3.2). Pure: the pause's plan, this machine's claim on each
@@ -606,7 +606,7 @@ public static class WorkAbandoning
             return
             [
                 $"nothing of {what} is left to abandon on this machine"
-                + (plan.Closes is { } open ? $"; `daoris-driver ask --close {open} --reason \"…\"` closes it." : "."),
+                + (plan.Closes is { } open ? $"; `daoris ask close {open} --reason \"…\"` closes it." : "."),
             ];
         }
 

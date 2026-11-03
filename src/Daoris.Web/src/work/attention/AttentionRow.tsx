@@ -221,7 +221,7 @@ export type AttentionActs = {
   helper?: (item: Attention, yes: boolean) => void;
   /** An agent's ask to hand its session over said yes or no to (NOTIFY2e, MIXAGENT1c): its session's foot's own presses. */
   handOver?: (item: Attention, yes: boolean) => void;
-  /** The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): `daoris-driver work held`'s. */
+  /** The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): `daoris work held`'s. */
   held?: (item: Attention, resolution: HeldResolution) => void;
   /** The node records' folder opened, where the person mends one that does not read (FABRIC-PERFORM1j). */
   openRecords?: (item: Attention) => void;
@@ -475,17 +475,17 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       // COWORK1e: the session's page's own words for a third answer alone (§8.5).
       case 'go-on-answer': return t('work.wait.goOnAnswer');
       case 'keep-answer': return t('work.wait.answer.notNow');
-      // FABRIC-PERFORM1g: each says what it does, as `daoris-driver work held` names it.
+      // FABRIC-PERFORM1g: each says what it does, as `daoris work held` names it.
       case 'happened': return t('work.milestone.held.act.happened');
       case 'did-not': return t('work.milestone.held.act.did-not');
       case 'stop-step': return t('work.milestone.held.act.stop');
-      // FABRIC-CLOSE1q: a held close's own, as `daoris-driver work held` names them: record, resend, stop.
+      // FABRIC-CLOSE1q: a held close's own, as `daoris work held` names them: record, resend, stop.
       case 'record-close': return t('work.milestone.held.act.record');
       case 'resend-close': return t('work.milestone.held.act.resend');
       case 'stop-close': return t('work.milestone.held.act.stopClose');
       // FABRIC-PERFORM1j: where the record is mended.
       case 'open-records': return t('work.milestone.unreadable.act.open');
-      // FABRIC-PERFORM1k: a failure kept for the person, as `daoris-driver work held … again` names it.
+      // FABRIC-PERFORM1k: a failure kept for the person, as `daoris work held … again` names it.
       case 'again-step': return t('work.milestone.held.act.again');
       // FABRIC-CLOSE1j: a close found closed only in part, its node waiting again: its stop alone.
       case 'stop-partial': return t('work.milestone.closed.act.stop');

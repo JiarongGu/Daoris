@@ -79,9 +79,9 @@ export function starters(
   }
 
   if (machine.repositories.length === 0) {
-    found.push({ id: 'nothing-registered', values: {}, door: { view: 'projects' }, command: 'daoris connect' });
+    found.push({ id: 'nothing-registered', values: {}, door: { view: 'projects' }, command: 'daoris repository connect' });
   } else if (machine.drivable.length === 0) {
-    found.push({ id: 'nothing-driven', values: {}, door: { view: 'projects' }, command: 'daoris driver drive <repository>' });
+    found.push({ id: 'nothing-driven', values: {}, door: { view: 'projects' }, command: 'daoris place drive <repository>' });
   }
 
   for (const tool of machine.tools) {
@@ -101,7 +101,7 @@ export function starters(
       id: 'no-line', values: { count: machine.unnamedLines.length, first: machine.unnamedLines[0]! },
       // The first one's Setup, where its line is set (UX6f), since the lines moved from Settings to the workspace's page (UX6g).
       door: { view: 'projects', item: machine.unnamedLines[0]!, tab: 'setup' },
-      command: `daoris driver line ${machine.unnamedLines[0]} <branch>`,
+      command: `daoris place line ${machine.unnamedLines[0]} <branch>`,
     });
   }
 

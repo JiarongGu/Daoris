@@ -34,7 +34,7 @@ one `change` skill, and `co-working` as a pack.
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do), `doctor` (look-alike documents), the LF pin |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
-| Command tree | `Daoris.Desktop.Driver/Platform/CommandWords.cs`, `Loop/CommandTree.cs` | Every group and verb of `daoris`, old forms refused, the carried CLI's path |
+| Command tree | `Daoris.Desktop.Driver/Platform/CommandWords.cs`, `Loop/CommandTree.cs` | Every group and verb of `daoris`, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a doctrine word through the CLI an install carries, marked `DAORIS_HANDED=driver` |
 | Set-up press | `Driver/Setup/SetupPress.cs`, `Setup/Domain/SetupPressRules.cs`, `SetupBrief.cs` | Which set-up a line calls for, its refusals, its quest and the exact-verb rule |
 | Place and workspace plan | `Driver/Setup/Place*.cs`, `WorkspaceSetup*.cs`, `Domain/WorkspaceSetupRules.cs`, `SetupOrder.cs` | `daoris place`: a place's set-up, and a workspace's paced adoption |
@@ -154,8 +154,8 @@ one `change` skill, and `co-working` as a pack.
 39. Exit codes are 0 clean, 1 policy failure, 2 tool error. A failure nobody anticipated is 2, said in one line.
     (from D8)
 40. The groups and verbs are declared in `CommandWords.cs` and the driver tests' `fixtures/command-tree.json`; the CLI's
-    rows are held to the same file. A management verb is a driver group, never a CLI row. An old form (`daoris-driver …`,
-    `driver place`, `connect`) is refused naming its new form. (from D194, D228)
+    rows are held to the same file. A management verb is a driver group, never a CLI row. No word is kept for an older name:
+    an old form is no command. (from D194, D232)
 
 **The devkit's universal gates**
 
@@ -244,8 +244,8 @@ one `change` skill, and `co-working` as a pack.
    of groups, no `driver` group): the note and the code read right.
 6. D117 point 7 and D124 point 5 (`daoris-driver setup [--workspace]`) vs `CommandWords.cs:63` and
    `WorkspaceSetupCommand.cs:24` (`daoris place … --adoption`): the code reads right.
-7. `CommandWords.cs:35-36` (no one types `daoris-driver`) vs about 69 usage and lease strings still naming it
-   (`PlaceCommand.cs:19`, `WorkspaceSetupCommand.cs:24`, `Agents/AgentLoginCommand.cs:274`): `CommandWords` reads right.
+7. `CommandWords.cs` (one name, `daoris`) vs about a hundred doc comments and the older `CHANGELOG.md` entries that still
+   spell `daoris-driver …` or `daoris driver …`: the code reads right. `app/daoris-driver/` is the program's folder, kept.
 8. D27 (the devkit verifies itself against the hash) vs `src/Daoris.Devkit/README.md:255` (deliberately not built; the
    installer verifies): the README reads right.
 9. `src/Daoris.Devkit/README.md:264` (the CLI's service client) and `AGENTS.md:23` (a service seam) vs `dogfood.test.ts:659`
@@ -259,9 +259,6 @@ one `change` skill, and `co-working` as a pack.
     canon reads right.
 14. D194's ONEWAY1ai-i note (the CLI starts on the node `PATH` finds) vs `DoctrineConsole.cs:67-78` (the tools' resolved node
     where a home exists, `PATH` only without one): the code reads right.
-15. D194 point 7 (a family's TypeScript retires with its last reader) vs `layout/lanes.ts`, `platform/jsonkeep.ts` and
-    `platform/casefold.ts`, which no source imports (only their tests; `lanes.ts:2` says `connect` reads it): D194 reads
-    right, and the modules are dead.
 
 ## Open
 
@@ -276,4 +273,3 @@ one `change` skill, and `co-working` as a pack.
 - No row: a `PowerShell(…)` rule for a set-up waits on the canary that a driven Windows session uses that tool, and codex
   and dsh get no safe-work rules until measured (`SetupPress.cs` remarks; D122 point 6).
 - No row: the newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`lockversion.ts:30-31`).
-- No row: remove the dead CLI modules (contradiction 15) and the stale `daoris-driver` strings (contradiction 7).

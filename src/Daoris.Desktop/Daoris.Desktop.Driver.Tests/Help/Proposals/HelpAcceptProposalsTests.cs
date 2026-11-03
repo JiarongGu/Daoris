@@ -52,7 +52,7 @@ public sealed class HelpAcceptProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Of("accept", "accept", "#q3done00"), DriverConfig.Empty, Records);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver quest accept q3done00", plan.Terminal);
+        Assert.Equal("daoris quest accept q3done00", plan.Terminal);
         Assert.Contains("Accept the departure on quest `#q3done00` “Stream the tiles from the cold cache”, for `engine`", plan.Describe);
         Assert.Contains("it departed from requirement 2", plan.Describe);
         // What the yes lets go on: the chain's next step as the service will publish it, and the quest waiting on it.
@@ -118,7 +118,7 @@ public sealed class HelpAcceptProposalsTests : HelpProposalsFixture
             + "at what it shows, or skip the review for this work.",
             plan.Refusal);
         Assert.Null(plan.Accept);
-        Assert.Equal("daoris-driver quest accept q8show00", plan.Terminal);
+        Assert.Equal("daoris quest accept q8show00", plan.Terminal);
     }
 
     /// <summary>
@@ -136,7 +136,7 @@ public sealed class HelpAcceptProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Refusal);
         Assert.Contains(
             "it departed from requirement 2. Its review still holds it after your yes: it waits for your review in `local`, and what "
-            + "follows it waits until you say it is reviewed (`daoris-driver quest review q8show00 reviewed`) or skip the review.",
+            + "follows it waits until you say it is reviewed (`daoris quest review q8show00 reviewed`) or skip the review.",
             plan.Describe);
         Assert.DoesNotContain("goes on", plan.Describe);
 
@@ -162,7 +162,7 @@ public sealed class HelpAcceptProposalsTests : HelpProposalsFixture
 
         Assert.True(applied.Applied);
         Assert.Equal(["POST /api/quests/q3done00/accept"], doors.Calls);
-        Assert.Contains("Applied: `#p6` (`daoris-driver quest accept q3done00`) — Accepted the departure", applied.Told);
+        Assert.Contains("Applied: `#p6` (`daoris quest accept q3done00`) — Accepted the departure", applied.Told);
         Assert.Equal("applied", HelpProposals.Find(_home, "p6")!.State);
         Assert.False(refused.Applied);
         Assert.Contains("already accepted", refused.Told);

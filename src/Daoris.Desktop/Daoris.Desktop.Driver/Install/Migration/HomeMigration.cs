@@ -27,6 +27,7 @@ public static class HomeMigration
     [
         new StaffingStep(),
         new RulesStep(),
+        new WorkflowsStep(),
         new DriverKeysStep(),
         new HarnessesStep(),
         new RequestsStep(),

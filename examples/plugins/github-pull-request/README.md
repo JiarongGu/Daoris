@@ -12,7 +12,7 @@ Tracked here as an example, it does nothing on its own. It runs only when **both
 
 1. you installed it: `daoris plugin add examples/plugins/github-pull-request` (or copied the folder
    under the Daoris home's `plugins/`), and it is not switched off;
-2. a landing rule names it: `daoris driver landing --workspace <name> branch "feature/{quest}-{slug}"
+2. a landing rule names it: `daoris place landing --workspace <name> branch "feature/{quest}-{slug}"
    --plugin github-pull-request`, or Settings → Workspace → How work lands.
 
 Installed and not named, it is never started: the driver loop keeps no process for a plugin that
@@ -61,7 +61,7 @@ rest is yours to open.
 ## What it needs
 
 - **The tools its `plugin.json` declares under `tools`**, each at the version it names or newer, with GitHub
-  CLI signed in: `gh auth login`. `daoris-driver plugins try github-pull-request` checks them on this machine.
+  CLI signed in: `gh auth login`. `daoris plugin try github-pull-request` checks them on this machine.
 - **`origin`** pointing at the GitHub repository, with push access for whoever `git` pushes as.
 
 ## Why each version
@@ -88,8 +88,8 @@ calls above, the check, and the version question Daoris asks.
 
 The branch Daoris made **always stands**. A push that fails answers *not pushed* with git's reason; a
 `gh` that fails after the push answers *pushed*, with `gh`'s reason and no pull request. Either way
-the review and `daoris-driver trees land` say the plugin's step did not finish and how to push the
-branch yourself, and once the cause is fixed the review's *hand it to* or `daoris-driver trees hand
+the review and `daoris tree land` say the plugin's step did not finish and how to push the
+branch yourself, and once the cause is fixed the review's *hand it to* or `daoris tree hand
 <session>` gives the branch to the plugin again. On Windows, a `gh` that is a `.cmd` script is run through `cmd`, so a title's double
 quotes become single ones and a percent sign is spelled out.
 

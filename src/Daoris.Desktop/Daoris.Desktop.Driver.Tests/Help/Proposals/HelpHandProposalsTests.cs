@@ -43,7 +43,7 @@ public sealed class HelpHandProposalsTests : HelpProposalsFixture
         var byBranch = HelpProposals.Plan(Of("hand", "hand", "feature/q2-second"), HandsToPlugin, facts);
 
         Assert.Null(bySession.Refusal);
-        Assert.Equal("daoris-driver trees hand feature/q2-second --repository engine", bySession.Terminal);
+        Assert.Equal("daoris tree hand feature/q2-second --repository engine", bySession.Terminal);
         Assert.Contains("Hand `feature/q2-second` (in `engine`) to plugin `example.lands`", bySession.Describe);
         Assert.Contains("pushes the branch and opens the pull request", bySession.Describe);
         Assert.Contains("“Second part”", bySession.Describe);
@@ -59,7 +59,7 @@ public sealed class HelpHandProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Of("hand", "hand", "s2a3b4c5", "example.lands"), DriverConfig.Empty, HandMachine());
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris-driver trees hand feature/q2-second --repository engine --plugin example.lands", plan.Terminal);
+        Assert.Equal("daoris tree hand feature/q2-second --repository engine --plugin example.lands", plan.Terminal);
         Assert.Equal("example.lands", plan.Hand!.Plugin);
     }
 
@@ -99,7 +99,7 @@ public sealed class HelpHandProposalsTests : HelpProposalsFixture
 
         Assert.True(applied.Applied);
         Assert.Equal(["HANDOFF engine feature/q2-second (the rule's)"], doors.Calls);
-        Assert.StartsWith("Applied: `#p6` (`daoris-driver trees hand feature/q2-second --repository engine`)", applied.Told);
+        Assert.StartsWith("Applied: `#p6` (`daoris tree hand feature/q2-second --repository engine`)", applied.Told);
         Assert.Contains("Plugin `example.lands`: pushed it.", applied.Told);
         Assert.Equal("applied", HelpProposals.Find(_home, "p6")!.State);
     }

@@ -108,7 +108,7 @@ public static class HeavyGates
             ? new HeavyDeclared(declared, repository, Mapped: false)
             : throw new DriverException(
                 $"no {FileName} at {checkout}, and this machine sets no heavy gates for `{repository}`: `run-heavy` runs the gates a "
-                + $"repository marks heavy there, or those `daoris-driver heavy {repository} <name>=<command>…` sets here.");
+                + $"repository marks heavy there, or those `daoris place heavy {repository} <name>=<command>…` sets here.");
     }
 
     /// <summary>

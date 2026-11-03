@@ -555,7 +555,7 @@ function RenameHelp({ row, onSave, onClose }: {
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" variant="primary" disabled={pending || unchanged || !kept}>{t('help.history.save')}</Button>
         {original && (
-          <Tip content={t('help.command', { command: `daoris-driver help rename ${row.session} --clear` })}>
+          <Tip content={t('help.command', { command: `daoris ask-daoris rename ${row.session} --clear` })}>
             <Button disabled={pending} onClick={() => save(null)}>{t('help.history.useOriginal')}</Button>
           </Tip>
         )}
@@ -567,7 +567,7 @@ function RenameHelp({ row, onSave, onClose }: {
       {kept && (
         // `min-w-0`: a grid item is otherwise as wide as its longest word, and a code word breaks only inside its line.
         <span className="min-w-0 text-meta text-ink-faint wrap-anywhere">
-          <Inline text={t('help.command', { command: `daoris-driver help rename ${row.session} ${shellWord(kept, '<name>')}` })} />
+          <Inline text={t('help.command', { command: `daoris ask-daoris rename ${row.session} ${shellWord(kept, '<name>')}` })} />
         </span>
       )}
     </form>

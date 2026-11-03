@@ -76,8 +76,8 @@ const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raise
 
 /**
  * **This machine's heavy gates for a repository** (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): the builds and suites a driven session
- * runs once, at its end, through `daoris-driver run-heavy`, one run at a time in the repository, used only where the repository's own
- * `daoris.gates.json` marks no heavy gate. A row of its Setup's section of their own, the same `heavyGates` `daoris-driver heavy`
+ * runs once, at its end, through `daoris gate run`, one run at a time in the repository, used only where the repository's own
+ * `daoris.gates.json` marks no heavy gate. A row of its Setup's section of their own, the same `heavyGates` `daoris place heavy`
  * edits (D50), kept on this machine and never written into the repository.
  *
  * @remarks

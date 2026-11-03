@@ -5,7 +5,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver helpers</c> (MIXAGENT2a-i; FOUNDATION1 mod-iii): the participants' own verb, the settings' port
+/// <c>daoris place helpers</c> (MIXAGENT2a-i; FOUNDATION1 mod-iii): the participants' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="HelperRules"/>).
 /// </summary>
 public sealed class HelpersVerb : ChoiceVerb
@@ -19,8 +19,8 @@ public sealed class HelpersVerb : ChoiceVerb
         void Say(string line) => world.Instance.Out.WriteLine(line);
         string[] valued = ["--workspace", "--mode", "--agents"];
         const string usage = "`driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, "
-            + "or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`.";
-        Flags(args, valued, ["--clear"], "helpers", usage);
+            + "or --clear — e.g. `daoris place helpers web-app --mode on --agents codex-acp`.";
+        Flags(args, valued, ["--clear"], "place helpers", usage);
         var workspace = FlagValue(args, "--workspace");
         var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
         var clear = args.Contains("--clear");
@@ -71,7 +71,7 @@ public sealed class HelpersVerb : ChoiceVerb
         foreach (var (workspace, rule) in choices.WorkspaceHelpers) Say($"  helpers    workspace {workspace}  {HelperRules.Listed(rule)}  (for each repository there that sets none)");
         if (choices.Helpers.Count == 0 && choices.WorkspaceHelpers.Count == 0)
         {
-            Say("  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> "
+            Say("  helpers    none set — each helper an agent asks for waits for your yes; `daoris place helpers <repository> "
                 + "--mode on|off` sets one");
         }
     }

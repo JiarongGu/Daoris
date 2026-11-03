@@ -29,7 +29,7 @@ const IMPORTED = PLACES({ detail: { workspace: 'aurora', repository: 'archive-1'
 const WORKSPACE = READ.workspaces[0]!.place;
 
 const DRIVING: PlaceDriving = {
-  drivable: true, held: false, ownTree: true, busy: false, terminal: 'daoris driver drive|undrive engine',
+  drivable: true, held: false, ownTree: true, busy: false, terminal: 'daoris place drive|undrive engine',
   onDrive: nothing, onHold: nothing, onTrees: nothing, onOpenAppointed: nothing, onOpenRepositories: nothing,
 };
 

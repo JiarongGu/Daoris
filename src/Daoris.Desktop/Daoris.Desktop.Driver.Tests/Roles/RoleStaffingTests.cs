@@ -312,7 +312,7 @@ public sealed class RoleStaffingTests : IDisposable
     public void The_staffing_family_is_named_by_its_own_files_the_roots_that_wire_it_the_loops_check_and_its_writers_doors_alone()
     {
         // A role's staffing policy (STAFFPOLICY1a) is the family's own too: its digest and its state read the choices as the staffing writes them.
-        var own = new[] { "RoleStaffing.cs", "StaffingFile.cs", "StaffingProjection.cs", "RoleStaffingPort.cs", "DriverConfig.cs", "StaffPolicy.cs", "StaffLedger.cs" };
+        var own = new[] { "RoleStaffing.cs", "StaffingProjection.cs", "RoleStaffingPort.cs", "DriverConfig.cs", "StaffPolicy.cs", "StaffLedger.cs" };
         var naming = Production()
             .Where(path => !own.Contains(Path.GetFileName(path)))
             .Where(path => File.ReadAllText(path).Contains("RoleStaffing", StringComparison.Ordinal))
@@ -325,11 +325,10 @@ public sealed class RoleStaffingTests : IDisposable
                 // ONEWAY1a: SET_ACTOR, its context write and the retired verbs' press are gone, so the role door alone writes the family.
                 "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
-                // ONEWAY1b: the staffing part converts the family through the conversion's one door, which the modules hand it.
-                "../Daoris.Desktop.Modules/Loop/ConversionDoors.cs", "Conversion/StaffingPart.cs",
-                "Help/Proposals/HelpRoleProposals.cs", "Loop/DriverWatch.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs", "Roles/StaffingVerbs.cs",
-                // ONEWAY1o, ONEWAY1c-ii: the register names the copy's kept site and reads whether the home was seeded.
-                "Transitional/Register.cs",
+                "Help/Proposals/HelpRoleProposals.cs",
+                // D232: the release's migration writes an older home's orders into the family once.
+                "Install/Migration/StaffingStep.cs",
+                "Loop/DriverWatch.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
             ],
             naming);
     }
