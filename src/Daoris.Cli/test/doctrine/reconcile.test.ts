@@ -67,7 +67,8 @@ test('the brief over an adopter lists only the differences, each with its decisi
   assert.match(text, /This repository was synced from canon 0\.1\.0, older than the canon 0\.2\.0 this tool carries/);
   assert.match(text, /^1\. `knowledge\/storage\.md` — the canon changed it, and the copy here is untouched\.$/m);
   assert.match(text, new RegExp(`^ {3}To keep it: "knowledge/storage\\.md": \\{ "reason": "<why>", "canon": "${storage}" \\}$`, 'm'));
-  assert.match(text, /^\d\. `skills\/co-working\/SKILL\.md` — the canon added it\.$/m);
+  assert.match(text, /^\d\. `skills\/co-working\/SKILL\.md` — the canon added it, a core file, which is adopted\.$/m);
+  assert.doesNotMatch(text, /"skills\/co-working\/SKILL\.md": \{/, 'a core file is never kept absent, so no keep line is offered');
   assert.match(text, /^\d\. `knowledge\/notes\.md` — edited here: this repository's copy differs from what the tool last wrote\.$/m);
   assert.match(text, new RegExp(`"knowledge/notes\\.md": \\{ "reason": "<why>", "canon": "${notes}" \\}`));
   assert.match(text, /^\d\. `AGENTS\.md` is \d+ bytes, and one agent reads 32768 bytes of a repository's instruction files/m);

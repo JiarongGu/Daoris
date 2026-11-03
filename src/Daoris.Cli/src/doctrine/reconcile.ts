@@ -52,7 +52,11 @@ export function reconcileItems(
   const items: ReconcileItem[] = [];
   const changes = planChanges({ root, manifest, canon, lock });
   for (const target of changes.changed) items.push(item(target, 'changed', 'the canon changed it, and the copy here is untouched.'));
-  for (const target of changes.added) items.push(item(target, 'added', 'the canon added it.'));
+  // A core file is kept only as a text, so one the canon added and this repository lacks is adopted, never kept absent.
+  for (const target of changes.added) {
+    const core = byTarget.get(target)?.pack === 'core';
+    items.push(item(target, 'added', core ? 'the canon added it, a core file, which is adopted.' : 'the canon added it.', !core));
+  }
   for (const target of changes.retired) {
     items.push(item(target, 'retired', 'the canon no longer ships it, and a sync deletes it: adopt that, or copy it aside as '
       + "this repository's own document first.", false));

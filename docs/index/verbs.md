@@ -15,7 +15,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `upstream` | doctrine | `cli/upstream.ts:5` | `doctrine/upstream.ts:238` commandUpstream | <file> propose a locally-edited canonical file to the canon: the |
 | `index` | doctrine | `cli/index.ts:6` | `doctrine/indexgen.ts:149` commandIndex | say where the roster is: the rules in AGENTS.md, the |
 | `status` | doctrine | `cli/status.ts:5` | `doctrine/commands.ts:144` commandStatus | summary of packs, drift, local files, and any pending |
-| `reconcile` | doctrine | `cli/reconcile.ts:5` | `doctrine/reconcile.ts:159` commandReconcile | a brief of every difference from the canon, for this |
+| `reconcile` | doctrine | `cli/reconcile.ts:5` | `doctrine/reconcile.ts:163` commandReconcile | a brief of every difference from the canon, for this |
 | `doctor` | doctrine | `cli/doctor.ts:5` | `doctrine/twins.ts:143` commandDoctor | report local documents that look like canonical ones |
 | `connect` | management | `cli/connect.ts:5` | `service/connect.ts:155` commandConnect | register this repo with a knowledge service: what it owns |
 | `retire` | management | `cli/retire.ts:5` | `service/manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
