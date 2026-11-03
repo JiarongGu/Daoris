@@ -90,14 +90,14 @@ public static class GitDoors
         var serves = Serving(home, folder, call, variable);
         if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host);
 
-        // Once the home has moved (GITAUTH1e, §6.8), nothing serving a host means no key to reach it with.
-        if (serves.Kind == GitServeKind.None && GitMoved.Moved(home))
+        // Nothing serving a host means no key to reach it with (GITAUTH1e, §6.8).
+        if (serves.Kind == GitServeKind.None)
         {
             GitLog.Refused(home, variable, "no-identity", act, null, host);
             return Refuse(error, GitMoved.SshLine(host));
         }
 
-        // Under own, and where nothing serves before the move (today's ambient credentials, §6.8): what git would have run.
+        // Under own: what git would have run.
         var (file, prefix, problem) = SshCommand(folder, variable);
         if (problem is not null)
         {
@@ -405,8 +405,8 @@ public static class GitDoors
 
         var serves = ServingHttps(home, folder ?? Environment.CurrentDirectory, address, variable);
         var identity = serves.Kind == GitServeKind.Identity ? serves.Identity : null;
-        // GITAUTH1e: once the home has moved, a remote nothing serves reads anonymously, as an identity's with no sign-in would.
-        var anonymous = serves.Kind == GitServeKind.None && GitMoved.Moved(home);
+        // GITAUTH1e: a remote nothing serves reads anonymously, as an identity's with no sign-in would.
+        var anonymous = serves.Kind == GitServeKind.None;
         if ((identity is not null || anonymous) && GitHttps.HasPassword(address))
             return Refuse(error, "git-remote-daoris: refuses an address carrying a password: a git identity's sign-in is stored through Git Credential Manager, not written into an address.");
 

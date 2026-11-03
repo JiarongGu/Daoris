@@ -34,10 +34,6 @@ public sealed class RetiredStaffingVerb(string word) : ChoiceVerb
         $"`settings {verb}` is retired: a role's agents are set through the role door, `daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` "
         + "(`off` for Intake and Ask Daoris), and said by `daoris role <role>`; nothing was changed.";
 
-    /// <summary><c>actor found</c> (FOUNDATION1w-s, §19.15): the staffing copy's found changes, acting alone; null for the rest.</summary>
-    public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
-        word == "actor" && args.Count > 1 && args[1] == "found" ? Task.FromResult(StaffingVerbs.Run(args, before, world)) : null;
-
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world) => throw new ChoiceWords(Refusal(Named(args)));
 
     public override int? Said(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world) => throw new ChoiceWords(Refusal(Named(args)));

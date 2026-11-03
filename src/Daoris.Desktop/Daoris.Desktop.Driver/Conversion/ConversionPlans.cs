@@ -212,7 +212,7 @@ public static class ConversionPlans
                 var cycled = place.IsWorkspace ? config.WorkspaceWorkCycles.ContainsKey(place.Place) : config.WorkCycles.ContainsKey(place.Place);
                 if (defaultWrite is not null && cycled)
                 {
-                    working = WorkflowPart.PinnedToCurrent(working, place.Place, place.IsWorkspace);
+                    working = PinnedToCurrent(working, place.Place, place.IsWorkspace);
                     uses.Add(new(place.Place, place.IsWorkspace, WorkflowSelection.Current, null, $"`{place.Place}` stays on Current, as its work cycle needs"));
                 }
 
@@ -275,6 +275,20 @@ public static class ConversionPlans
         }
 
         return new(Digest(world, facts, choices, saves, uses, defaultWrite, policies, removals, census), choices, saves, uses, defaultWrite, policies, removals, kept, lowers, holding, census);
+    }
+
+    /// <summary>
+    /// A place's default choice written as <c>current</c>, which no door writes any more for a development route: the conversion keeps a place with a
+    /// work cycle on Current this way once the home default would take it, its kinds and landed route as they were.
+    /// </summary>
+    public static DriverConfig PinnedToCurrent(DriverConfig config, string place, bool workspace)
+    {
+        var map = workspace ? config.WorkspaceWorkflows : config.Workflows;
+        var held = map.GetValueOrDefault(place);
+        var pinned = new Dictionary<string, WorkflowChoice>(map, StringComparer.OrdinalIgnoreCase);
+        var spelled = pinned.Keys.FirstOrDefault(each => string.Equals(each, place, StringComparison.OrdinalIgnoreCase)) ?? place;
+        pinned[spelled] = new WorkflowChoice(WorkflowSelection.Current, held?.Kinds ?? []) { Landed = held?.Landed };
+        return workspace ? config with { WorkspaceWorkflows = pinned } : config with { Workflows = pinned };
     }
 
     /// <summary>The places whose default choice resolves to <paramref name="workflow"/>, repositories first: the places its rule reaches.</summary>

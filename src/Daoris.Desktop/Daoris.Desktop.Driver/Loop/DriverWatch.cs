@@ -401,8 +401,6 @@ public sealed class DriverWatch(
     {
         try
         {
-            // GITAUTH1e (§6.8): the first start of this build marks the home as moved off ambient credentials, once.
-            GitMove.Ensure(home, DateTimeOffset.UtcNow);
             var git = Tools.Resolve(Tools.Read(home), home, "git");
             GitLog.Wired(home, git.Way?.ToString().ToLowerInvariant(), git.Version, GitWiring.SshForm(home),
                 GitWiring.DoorPath(home, GitWiring.RemoteHelper) is not null);
@@ -868,9 +866,8 @@ public sealed class DriverWatch(
                     // and the watch died on its first tick — silently, in the shell. Now it is said, nothing
                     // ticks on choices it cannot read, and the next look after the fix ticks again.
                     config = Load(configPath);
-                    // FOUNDATION1w-s: the look's check takes both locks with no wait, leaving a held one to the next look; a turn-off it
-                    // found is applied in the store, so the look reads the choices again.
-                    if (staffing?.Check(StaffingCheckAt.Look, config.Source).How == StaffingChecks.Found) config = Load(configPath);
+                    // FOUNDATION1w-s: a home whose staffing the store holds no import of yet is imported by a look, waiting for no lock.
+                    staffing?.Check(StaffingCheckAt.Look);
 
                     if (!swept)
                     {

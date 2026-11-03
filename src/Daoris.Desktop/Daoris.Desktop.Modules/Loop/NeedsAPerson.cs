@@ -122,9 +122,6 @@ public sealed record AttentionFacts
     /// workspace, remote, host, class, session, since when, and whether its door has gone.
     /// </summary>
     public IReadOnlyList<JsonObject> GitAsks { get; init; } = [];
-
-    /// <summary>The conversion's wait (WORKFLOWCLEAN1g-ii), <c>{places, since}</c> while the kept census has not ended; null otherwise.</summary>
-    public JsonObject? Conversion { get; init; }
 }
 
 /// <summary>
@@ -608,15 +605,6 @@ public static class NeedsAPerson
                 ["freed"] = low["freed"]?.DeepClone(),
                 ["could"] = low["could"]?.DeepClone(),
             };
-            rows.Add(row);
-        }
-
-        // Old records wait for the conversion (ONEWAY1ae; the oneway design §1.1): one row for the home while any part's census has not
-        // ended, its stored kind kept, the count by part in its detail; its door opens the home-wide review.
-        if (facts.Conversion is { } conversion)
-        {
-            var row = Row("workflow-convert", "home", Text(conversion, "since"));
-            row["convert"] = new JsonObject { ["records"] = conversion["records"]?.DeepClone(), ["parts"] = conversion["parts"]?.DeepClone() };
             rows.Add(row);
         }
 

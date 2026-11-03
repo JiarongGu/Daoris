@@ -381,24 +381,4 @@ public sealed class HelpRoomMachineNowTests
 
         Assert.Equal(new ParkedQuest("q1a2b3c4", "engine"), Assert.Single(machine.Parked));
     }
-
-    /// <summary>ONEWAY1ad-ii (the oneway design §1.3): the room reads the list This machine's page shows, each part's census, then each kept read.</summary>
-    [Fact]
-    public void ONEWAY1ad_ii_the_room_reads_this_machines_list_of_old_records()
-    {
-        KeptLine[] kept =
-        [
-            new(KeptLine.Part, "workflows", Ended: true) { Count = 0 },
-            new(KeptLine.Read, "work-cycles", Ended: false) { Ends = "driver.json holds no `workCycles`.", Row = "WORKFLOWCLEAN1j" },
-            new(KeptLine.Read, "git-moved-key", Ended: true) { Ends = "No key.", Row = "ONEWAY1af" },
-        ];
-
-        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, kept: kept);
-        var said = HelpRoom.Render(machine);
-
-        Assert.Equal(kept, machine.Kept);
-        Assert.Contains("- Old records (Agents → Setup → This machine → Old records): workflows: nothing old here; "
-            + "`work-cycles` kept until driver.json holds no `workCycles` (deleted by WORKFLOWCLEAN1j); `git-moved-key` has ended: nothing old here.", said);
-        Assert.DoesNotContain("- Old records", HelpRoom.Render(HelpRoomFixture.Machine));
-    }
 }

@@ -332,10 +332,6 @@ public sealed class PipeCensus
             "PLACE_PLAN",
             // D230: a repository's reconcile planned from the registry, its line and the doctrine tool's status for its checkout, written nowhere.
             "RECONCILE_PLAN",
-            // WORKFLOWCLEAN1 1e: the conversion's plan (or the undo's) read from the file, the saved workflows, the bound runs and the registry, written nowhere.
-            "CONVERT_PLAN",
-            // ONEWAY1ad-ii: This machine's list of old records, read from the home's files and the census as last read, written nowhere.
-            "KEPT_READS",
             // WORKFLOWEDIT1a: the step editor's reads of the saved workflows and what a step graph may hold; they write nothing.
             "WORKFLOW_LIST", "WORKFLOW_SHOW", "WORKFLOW_PALETTE",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
@@ -401,8 +397,6 @@ public sealed class PipeCensus
             // LIMITRESUME1d: *Stop waiting*, the person's word that a conversation held by its limit goes on only when they write.
             "SESSION_STOP_WAITING",
             // Their set-up and their standing choices: what a review is set to, how work lands, what agents may reach.
-            // FOUNDATION1w-s: a change of the actors another program made, taken or dismissed.
-            "STAFFING_FOUND_ANSWER",
             // FOUNDATION1y-i: a working role of the catalogue added, changed, removed or given back its seed.
             "SET_ROLE",
             // AGENTSPLACE1g2: several roles' changes made as one, the Roles mode's suggested choices.
@@ -418,8 +412,6 @@ public sealed class PipeCensus
             "PLACE_APPLY",
             // D230: a repository's reconcile asked of its own session, as the person's, its rule added to the repository's scope.
             "RECONCILE_APPLY",
-            // WORKFLOWCLEAN1 1e: the old records converted to saved graph workflows, and the conversion taken back, each by its plan's digest.
-            "CONVERT_APPLY", "CONVERT_UNDO",
             // INTEGRATE1d: a repository's integration declaration, what integration runs and a tidy removes, accepted by its blob (D215 point 10).
             "INTEGRATION_GATES",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
@@ -527,9 +519,9 @@ public sealed class PipeCensus
             // answer over the gate. A workflow node's word and a run's accepted gates; a pause's release, which reaches more than its
             // quests. The keeping rule, whose pass removes set-aside trees. A start held for a folder's trust, and a plugin, which may
             // hold a start.
-            "SET_HELPERS", "SET_CAP", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
+            "SET_HELPERS", "SET_CAP", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
             "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "PLACE_APPLY", "RECONCILE_APPLY", "CONVERT_APPLY", "CONVERT_UNDO", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            "PLACE_APPLY", "RECONCILE_APPLY", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
             "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",

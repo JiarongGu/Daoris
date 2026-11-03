@@ -100,13 +100,10 @@ public static class ActorChoices
             return fenced;
         }
 
-        if (stored is not null)
-        {
-            return [.. stored.Select((choice, i) => new ActorEffective(
+        return stored is null
+            ? []
+            : [.. stored.Select((choice, i) => new ActorEffective(
                 choice.Agent, choice.Model, choice.Effort, (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)))];
-        }
-
-        return ActorKey.Before(actor, config) is { Length: > 0 } legacy ? [new ActorEffective(legacy, null, null, "before")] : [];
     }
 
     /// <summary>The agent a start of <paramref name="actor"/> runs where nothing walks its order: its first entry's, or null where it is off.</summary>

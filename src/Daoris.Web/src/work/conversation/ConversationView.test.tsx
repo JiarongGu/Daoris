@@ -1003,17 +1003,17 @@ describe('ConversationView', () => {
    * observed and never otherwise: sent, taken and answered, each with its moment. Both languages.
    */
   it('folds a word’s receipts under its ask, each only where observed, in both languages', async () => {
-    const received = (answered: boolean) => [
+    const received = (ended: boolean) => [
       ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'turn-end', text: 'and the readme' }),
       { ...ev({ kind: 'receipt', id: 'w1' }), receipt: 'sent' },
       ev({ kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' }),
       ev({ kind: 'message', text: 'on it' }),
       ev({ kind: 'turn', stopReason: 'end_turn' }),
-      ...(answered ? [{ ...ev({ kind: 'receipt', id: 'w1' }), receipt: 'answered' }] : []),
+      ...(ended ? [{ ...ev({ kind: 'receipt', id: 'w1' }), receipt: 'ended' }] : []),
     ];
     const { container, unmount } = view(received(true));
     const fold = container.querySelector('[data-receipts]');
-    expect(fold?.textContent).toMatch(/^sent [^·]+ · taken [^·]+ · answered [^·]+$/);
+    expect(fold?.textContent).toMatch(/^sent [^·]+ · taken [^·]+ · turn ended [^·]+$/);
     unmount();
 
     const { container: unanswered, unmount: shown } = view(received(false));
@@ -1023,7 +1023,7 @@ describe('ConversationView', () => {
     await i18n.changeLanguage('zh');
     try {
       const { container: zh } = view(received(true));
-      expect(zh.querySelector('[data-receipts]')?.textContent).toMatch(/^已发出 [^·]+ · 已收下 [^·]+ · 已回应 [^·]+$/);
+      expect(zh.querySelector('[data-receipts]')?.textContent).toMatch(/^已发出 [^·]+ · 已收下 [^·]+ · 回合已结束 [^·]+$/);
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -1031,9 +1031,9 @@ describe('ConversationView', () => {
 
   /**
    * COMMS1h (the comms design §7): a receipt says what Daoris saw. A turn that ended after taking the word reads *taken · turn ended*,
-   * never *answered*; an older build's `answered` receipt is drawn as it was. Both languages.
+   * never *answered*. Both languages.
    */
-  it('COMMS1h says a turn ended after the word was taken, and an older answered receipt as it was', async () => {
+  it('COMMS1h says a turn ended after the word was taken', async () => {
     const received = (receipt: string) => [
       ev({ kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' }),
       ev({ kind: 'turn', stopReason: 'end_turn' }),
@@ -1042,9 +1042,6 @@ describe('ConversationView', () => {
     const { container, unmount } = view(received('ended'));
     expect(container.querySelector('[data-receipts]')?.textContent).toMatch(/^taken [^·]+ · turn ended [^·]+$/);
     unmount();
-    const { container: older, unmount: gone } = view(received('answered'));
-    expect(older.querySelector('[data-receipts]')?.textContent).toMatch(/^taken [^·]+ · answered [^·]+$/);
-    gone();
 
     await i18n.changeLanguage('zh');
     try {

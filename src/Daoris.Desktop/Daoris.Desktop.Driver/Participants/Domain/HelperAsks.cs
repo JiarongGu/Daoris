@@ -56,13 +56,6 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
     /// </summary>
     public DateTimeOffset? Attempted { get; init; }
 
-    /// <summary>
-    /// That <see cref="Attempted"/> went through the one door for solicited answers under the helper's key (COMMS1b, the comms design §13 point 3),
-    /// so a look inside the settlement's horizon asks the door again, which answers it once. An attempt without it, an older build's, is read as
-    /// before (<see cref="SolicitedHand"/>).
-    /// </summary>
-    public bool Keyed { get; init; }
-
     /// <summary>The agent that was started, for the notes.</summary>
     public string? Agent { get; init; }
 

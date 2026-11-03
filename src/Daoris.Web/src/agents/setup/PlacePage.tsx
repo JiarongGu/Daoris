@@ -44,8 +44,6 @@ export type PlaceHeadProps = {
   parent?: { name: string; onOpen: () => void };
   /** *Set up…*, where the place has one: primary on a place not driven. */
   setUp?: { onOpen: () => void };
-  /** *Convert…*, where the place follows an old landing rule (WORKFLOWCLEAN1g-i): the home's review, the same from every place. */
-  convert?: { onOpen: () => void };
 };
 
 export type PlaceSectionSpec = {
@@ -174,14 +172,13 @@ export function PlacePageView({ head, sections, notes, driving, back, row, onRow
         <PageHead
           title={head.title}
           pills={head.pill && <Pill tone={head.pill.tone}>{head.pill.label}</Pill>}
-          facts={head.convert ? [...head.facts, t('agents.convert.follows')] : head.facts}
+          facts={head.facts}
           fact={head.parent && (
             <Button variant="ghost" className="px-0 py-0 text-small" onClick={head.parent.onOpen}>{head.parent.name} ›</Button>
           )}
-          acts={(head.setUp || head.convert || driven) && (
+          acts={(head.setUp || driven) && (
             <>
               {head.setUp && <Button variant={driven ? 'default' : 'primary'} onClick={head.setUp.onOpen}>{t('agents.setup.set.open')}</Button>}
-              {head.convert && <Button onClick={head.convert.onOpen}>{t('agents.convert.open')}</Button>}
               {driven && driving && (
                 <Button disabled={driving.busy} onClick={() => driving.onHold(!driving.held)}>
                   {t(driving.held ? 'agents.setup.page.resume' : 'agents.setup.page.hold')}

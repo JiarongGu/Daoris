@@ -219,7 +219,6 @@
   "note.chat.told-where": "已告知智能体你所在的位置：",
   "note.chat.told-browser": "已告知智能体它拥有 Daoris 的浏览器：",
   "note.chat.told-process": "已告知智能体这个仓库的流程，提交规则 `{{mode}}`（{{source}}）：",
-  "note.chat.told-routing": "已告知智能体这个仓库的分派状态：{{standing}}：",
   "note.chat.told-block": "已告知智能体 Daoris 的常驻说明：",
   "note.chat.told-draft": "已告知智能体你在编辑器里打开的工作流草稿：",
   "note.chat.handed-over": "这段对话已转交给 {{agent}} 继续，新对话为 {{session}}。",

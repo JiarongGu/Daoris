@@ -447,21 +447,19 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     /// then marked attempted before the door, then taken naming the record the door kept it on, and the state <c>handed</c>. A running
     /// or parked lead takes it at its turn's end, so nothing is tried or said while it runs; a door that refuses puts the receipt back to
     /// waiting. A receipt found attempted was cut by a restart: it is uncertain and waits for the person, never handed again by itself.
-    /// COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): against a host with the one door for solicited answers, the look reads the line's
-    /// head as that door walks it and whether its park was answered, an attempt it made under the piece's key is asked again inside the
-    /// settlement's horizon, and a word already waiting is dispatched on the record that holds it. Null where nothing moved worth saying.
+    /// COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): the look reads the line's head as the host's one door for solicited answers
+    /// walks it and whether its park was answered, an attempt made under the piece's key is asked again inside the settlement's horizon,
+    /// and a word already waiting is dispatched on the record that holds it. Null where nothing moved worth saying.
     /// </summary>
     private async Task<LookLine?> HandAsync(PartnerAsk ask, PartnerFiles files, CancellationToken ct)
     {
         var state = files.ReadState(ask.Id);
         if (state is not { State: PartnerStates.Answered, Partner: { } partner }) return null;
-        var answers = await _context.Service.Opens.AnswersAsync(ct).ConfigureAwait(false);
         var now = DateTimeOffset.UtcNow;
         var receipt = files.ReadReceipt(ask.Id);
-        var retry = answers && receipt is { Outcome: PartnerDelivery.Attempted, Keyed: true } && SolicitedHand.Before(receipt.At, now) == SolicitedStep.Retry;
+        var retry = receipt is { Outcome: PartnerDelivery.Attempted } && SolicitedHand.Before(receipt.At, now) == SolicitedStep.Retry;
         switch (receipt?.Outcome)
         {
-            // transitional: solicited-old-files
             case PartnerDelivery.Attempted when !retry:
                 files.WriteReceipt(PartnerDelivery.Found(receipt, now));
                 Note(ask.Asker, PartnerNotes.Uncertain(PartnerWhy.HandCut));
@@ -475,15 +473,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
         // Never into a step in flight (D136): a running lead takes it at its turn's end, and a park once the person answered it, beside their
         // answer (§13 point 1). Said nowhere, as a helper's.
-        if (answers)
-        {
-            if (SolicitedHand.Walk(await _context.Service.RecordsAsync(ct).ConfigureAwait(false), ask.Asker).Head is { } head && !SolicitedHand.TakesNow(head)) return null;
-        }
-        else if (await _context.Service.RecordAsync(ask.Asker, ct).ConfigureAwait(false) is { Running: true } or { Parked: true })
-        {
-            // transitional: solicited-older-host
-            return null;
-        }
+        if (SolicitedHand.Walk(await _context.Service.RecordsAsync(ct).ConfigureAwait(false), ask.Asker).Head is { } head && !SolicitedHand.TakesNow(head)) return null;
 
         receipt = PartnerDelivery.Claim(receipt, ask.Id, ask.Asker, now);
         files.WriteReceipt(receipt);
@@ -491,12 +481,11 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var text = PartnerWords.Compose(ask, state, facts, files.ReadAnswer(ask.Id), PieceRefs.Of(ask.Id));
 
         // 🔴 Attempted before the door: a restart between the two finds it so, and never hands it twice. A retry keeps its first attempt's
-        // moment, which the horizon counts from. Still written through the door, so a driver rolled back, or a host that drops its mark, hands
-        // nothing twice (§13 point 3).
-        if (!retry) files.WriteReceipt(PartnerDelivery.Attempt(receipt, now) with { Keyed = answers }); // transitional: solicited-old-guards
+        // moment, which the horizon counts from.
+        if (!retry) files.WriteReceipt(PartnerDelivery.Attempt(receipt, now));
         var answer = await _context.Service.Partners.HandAsync(partner, text, ct).ConfigureAwait(false);
-        // An uncertain hand through the one door keeps its attempt, which the next look asks again; an older host's goes back to waiting, as before.
-        if (answer.Fate == SolicitedFate.Uncertain && answers)
+        // An uncertain hand keeps its attempt, which the next look asks again under its key.
+        if (answer.Fate == SolicitedFate.Uncertain)
         {
             return Line(LookClass.Retry, $"partner  piece `{ask.Id}`'s hand to session {ask.Asker}'s line is uncertain: {answer.Message}. The next look asks again under its key, which answers it once.");
         }

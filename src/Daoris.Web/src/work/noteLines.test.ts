@@ -579,25 +579,6 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: [told] }, 'zh')[0].text).toBe('已告知智能体 Daoris 的常驻说明：');
     });
 
-    it('words the routing standing a conversation was told by the judge’s four, under its own lead, in both languages', () => {
-      // COWORKVIEW1e-i, read for the records that hold it since the standing block carries the routing (CONTEXTONE1c): the words after
-      // the lead are Daoris's English to the agent, shown as written.
-      const told = (standing: string) => coded('chat.told-routing', "told the agent this repository's routing standing, …:", { standing });
-      const routing = words('Routing standing here: open. This repository is driven on this machine, …', 'program');
-      expect(noteLines(t, { parts: [told('one-at-a-time'), routing] }, 'en')).toEqual([
-        { kind: 'said', text: "The agent was told this repository's routing standing, one at a time:" },
-        { kind: 'words', text: routing.words, by: 'program' },
-      ]);
-      expect(noteLines(t, { parts: [told('not-driven')] }, 'en')[0].text).toBe("The agent was told this repository's routing standing, not driven here:");
-      expect(noteLines(t, { parts: [told('no-lanes')] }, 'en')[0].text).toContain('no lanes');
-      expect(noteLines(t, { parts: [told('open')] }, 'en')[0].text).toContain('standing, open:');
-      expect(noteLines(zh, { parts: [told('not-driven')] }, 'zh')[0].text).toBe('已告知智能体这个仓库的分派状态：不在本机驱动：');
-      expect(noteLines(zh, { parts: [told('one-at-a-time')] }, 'zh')[0].text).toBe('已告知智能体这个仓库的分派状态：一次一个：');
-      // A standing this page does not know, or a part missing it, shows as recorded rather than guessed.
-      expect(noteLines(t, { parts: [told('elsewhere')] }, 'en')[0].kind).toBe('recorded');
-      expect(noteLines(t, { parts: [coded('chat.told-routing', '…')] }, 'en')[0].kind).toBe('recorded');
-    });
-
     it('words a withheld server by name and why, an exception’s words as written', () => {
       const lead = coded('browser.withheld', '— `browser` drives Daoris’s own browser, and was not handed:', { servers: ['browser'] });
       expect(noteLines(t, { parts: [lead, coded('browser.no-host', '…')] }, 'en').map((line) => line.text)).toEqual([

@@ -426,21 +426,18 @@ describe('toTurns', () => {
       { seq: 5, at: '2026-09-25T00:02:00Z', kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' },
       e(6, { kind: 'message', text: 'on it' }),
       e(7, { kind: 'turn', stopReason: 'end_turn' }),
-      { seq: 8, at: '2026-09-25T00:09:00Z', kind: 'receipt', id: 'w1', receipt: 'answered' },
+      { seq: 8, at: '2026-09-25T00:09:00Z', kind: 'receipt', id: 'w1', receipt: 'ended' },
     ]);
 
     expect(turns.map((turn) => turn.ask?.receipts)).toEqual([
       undefined,
-      { sent: '2026-09-25T00:01:00Z', taken: '2026-09-25T00:02:00Z', answered: '2026-09-25T00:09:00Z' },
+      { sent: '2026-09-25T00:01:00Z', taken: '2026-09-25T00:02:00Z', ended: '2026-09-25T00:09:00Z' },
     ]);
     expect(turns.flatMap((turn) => turn.items).some((block) => block.kind === 'raw')).toBe(false);
   });
 
-  /**
-   * COMMS1h (the comms design §7): a turn that ended after taking a word is the receipt `ended`, said as what Daoris saw and never as
-   * an answer; an `answered` receipt an older build wrote folds as it was.
-   */
-  it('COMMS1h folds the ended receipt, and an older answered one as it was', () => {
+  /** COMMS1h (the comms design §7): a turn that ended after taking a word is the receipt `ended`, said as what Daoris saw and never as an answer. */
+  it('COMMS1h folds the ended receipt, and no other', () => {
     const said = (receipt: string) => toTurns([
       e(1, { kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' }),
       e(2, { kind: 'turn', stopReason: 'end_turn' }),
@@ -448,7 +445,7 @@ describe('toTurns', () => {
     ]).turns[0]!.ask?.receipts;
 
     expect(said('ended')).toEqual({ taken: e(1, {}).at, ended: '2026-09-25T00:09:00Z' });
-    expect(said('answered')).toEqual({ taken: e(1, {}).at, answered: '2026-09-25T00:09:00Z' });
+    expect(said('answered')).toEqual({ taken: e(1, {}).at });
   });
 
   /** COMMS1h: a helper's or a partner's answer names the session it is from, which its exchange card is joined on. */

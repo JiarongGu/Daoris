@@ -228,22 +228,6 @@ public sealed class EventJournalTests : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// The answer of a record from before the list sits in the old column, so it is not a word added when the list begins beside it.
-    /// </summary>
-    [Fact]
-    public async Task An_answer_in_the_old_column_is_not_a_word_added_when_the_list_begins_beside_it()
-    {
-        var record = await OpenedAsync();
-        await ExecuteAsync("UPDATE sessions SET answer = 'old answer', said = NULL WHERE id = $id", ("$id", record.Id));
-        Assert.Single(await RowsAsync());
-
-        await _sessions.KeepSaidAsync(record.Id, new SaidWord("w1", "next", Now, []));
-
-        Assert.Equal(["opened", "word-added"], (await RowsAsync()).Select(row => row.Change).ToList());
-        Assert.Equal("w1", (await RowsAsync())[1].Word);
-    }
-
     // ---- the immutable inputs ----
 
     /// <summary>

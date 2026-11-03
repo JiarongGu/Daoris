@@ -22,17 +22,6 @@ export { MACHINE, repositoryId, workspaceId };
 export const placeIdOf = (row: PlaceRow): string =>
   row.repository ? repositoryId(row.workspace, row.repository) : row.workspace ? workspaceId(row.workspace) : MACHINE;
 
-/**
- * The home's *Convert…* as the application hands it in (WORKFLOWCLEAN1g-i): `shown` puts its review in the main area in place of the place's
- * sections, `follows` says which places follow an old landing rule, and `onOpen` is the door every *Convert…* press and Ask Daoris's row open.
- */
-export type ConvertHand = {
-  shown: boolean;
-  onOpen: () => void;
-  follows: (place: { repository?: string | null; workspace?: string | null }) => boolean;
-  panel: ReactNode;
-};
-
 export type SetupState = {
   search: string;
   onSearch: (search: string) => void;
@@ -248,7 +237,7 @@ export const rowOfFound = (found: Found | null, detail: PlaceRow | null): PlaceR
 
 const SECTION_TITLE: Record<PlaceSection, string> = {
   workflow: 'agents.setup.workflow.title', roles: 'agents.setup.roles.title', sessions: 'agents.setup.sessions.title',
-  allRoles: 'agents.setup.allRoles.title', oldRecords: 'agents.setup.oldRecords.title',
+  allRoles: 'agents.setup.allRoles.title',
 };
 
 /**
@@ -258,7 +247,7 @@ const SECTION_TITLE: Record<PlaceSection, string> = {
  *
  * A molecule: the driver's answer arrives, and each press goes out.
  */
-export function SetupMain({ found, state, id, row, counts, members, shell, bodies, notes, drive, setUp, convert, onGo }: {
+export function SetupMain({ found, state, id, row, counts, members, shell, bodies, notes, drive, setUp, onGo }: {
   found: Found | null;
   state: SetupState['status'];
   /** The chosen place's id, which the shell's state is held under. */
@@ -280,13 +269,10 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
    * panel is the application's, which reads the plan and presses Apply. None for *This machine*, which has no set-up.
    */
   setUp?: { open: boolean; onOpen: () => void; panel: ReactNode; /** Returns to a place's set-up left through a refusal's door (SETUPUX1j). */ onResume: (place: string) => void };
-  /** The home's *Convert…*: its review takes the main area while shown, and a place that follows an old landing rule offers it from its head. */
-  convert?: ConvertHand;
   /** A door to another place at a section and row; the page names itself as the way back. */
   onGo: (target: string, at: PlaceAt) => void;
 }) {
   const { t, i18n } = useTranslation();
-  if (convert?.shown) return <ViewMain>{convert.panel}</ViewMain>;
   if (!found || !id || !row) {
     return (
       <ViewMain state={state === 'loading' ? 'loading' : 'none'} none={{ headline: t('agents.setup.none.headline'), body: t('agents.setup.none.body') }}>
@@ -324,9 +310,6 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
         facts: [...facts.facts, ...row.needs.map((each) => `⚠ ${t(`agents.setup.need.${each.code}`, { defaultValue: each.code })}${each.detail ? `: ${each.detail}` : ''}`)],
         parent: kind === 'repository' && workspace ? { name: workspace, onOpen: () => onGo(workspaceId(workspace), { section: firstSection('workspace'), back: from(first) }) } : undefined,
         setUp: offersSetUp ? { onOpen: setUp.onOpen } : undefined,
-        convert: convert && kind !== 'machine' && convert.follows(kind === 'workspace' ? { workspace: row.workspace } : { repository: row.repository, workspace: row.workspace })
-          ? { onOpen: convert.onOpen }
-          : undefined,
       }}
       sections={sections}
       notes={notes}

@@ -251,24 +251,4 @@ public sealed class SystemRoutes(DriverContext context)
 
         return world with { ToolOrigins = await Task.Run(() => ToolHomeLeftovers.Origins(home, json), cancellationToken).ConfigureAwait(false) };
     }
-
-    // ONEWAY1ad-ii (D228; the oneway design §1.3): This machine's list of old records, `{}`. Each conversion part's census as the loop last read
-    // it, then each transitional read the register keeps with its condition's state, the home's floor and the build from which the
-    // conversion's Undo is refused; Ask Daoris's room reads the same list. It reads the home's receipts, its store's stamp and the files each
-    // condition names, and writes and asks nothing. Answers `{ floor: {build, storeWriter}, floorNeeded, lines: [{kind, id, ended, count,
-    // reaches, ends, row, waits}] }`.
-    [DriverRoute("KEPT_READS")]
-    [ByEvent("KEPT_READS", Untold = "the home's receipts, its store's stamp, the files the register's conditions read and the conversion's census")]
-    private object? KeptReads(IpcRequest request)
-    {
-        var loop = _context.Loop;
-        var floor = HomeFloor.Of(loop.Home);
-        return new
-        {
-            Floor = new { floor.Build, floor.StoreWriter },
-            TransitionalRegister.FloorNeeded,
-            Lines = TransitionalRegister.List(loop.Home, loop.Conversion.Parts())
-                .Select(each => new { each.Kind, each.Id, each.Ended, each.Count, each.Reaches, each.Ends, each.Row, each.Waits }).ToArray(),
-        };
-    }
 }

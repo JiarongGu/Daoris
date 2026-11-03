@@ -7,45 +7,28 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class StaffCourse
 {
-    /// <summary>
-    /// The tries a driven run's transient episode makes: on a reached home the lowest <c>at</c> of the line's effective tries rules (CONTEXTDRIVE1e);
-    /// else the role's <c>after</c> where it moves on <c>transient</c>, else D210's five.
-    /// </summary>
-    internal static int Tries(StaffLedger? staff, string? role, StaffPlace? place = null)
-    {
-        if (staff is null || role is null) return TransientRetry.Bound;
-        var book = staff.Rules();
-        if (book.Reached) return SupervisorRuleBook.TriesLimit(book.For(role, place?.Repository, place?.Workspace, place?.Line));
-        // transitional: transient-bound
-        if (staff.Policy(role).Applied is not { } policy) return TransientRetry.Bound;
-        return policy.Moves.TryGetValue(StaffConditions.Transient, out var move) && move.After is { } after
-            ? Math.Clamp(after, 1, TransientRetry.Bound)
-            : TransientRetry.Bound;
-    }
+    /// <summary>The tries a driven run's transient episode makes: the lowest <c>at</c> of the line's effective tries rules (CONTEXTDRIVE1e), else D210's five.</summary>
+    internal static int Tries(StaffLedger? staff, string? role, StaffPlace? place = null) =>
+        staff is null || role is null
+            ? TransientRetry.Bound
+            : SupervisorRuleBook.TriesLimit(staff.Rules().For(role, place?.Repository, place?.Workspace, place?.Line));
 
     /// <summary>
     /// The policy the course reads for <paramref name="role"/>'s line at <paramref name="place"/> (CONTEXTDRIVE1e; the context counters design §4.5):
-    /// on a reached home the applied policy's moves and bound are the line's effective rules'; on one not reached, the policy's own.
+    /// the applied policy's moves and bound are the line's effective rules'.
     /// </summary>
-    internal static StaffPolicy? CourseOf(StaffLedger staff, string role, StaffPlace place)
-    {
-        var applied = staff.Policy(role).Applied;
-        var book = staff.Rules();
-        // transitional: policy-moves
-        if (!book.Reached) return applied;
-        return SupervisorRuleBook.Course(applied, book.For(role, place.Repository, place.Workspace, place.Line));
-    }
+    internal static StaffPolicy? CourseOf(StaffLedger staff, string role, StaffPlace place) =>
+        SupervisorRuleBook.Course(staff.Policy(role).Applied, staff.Rules().For(role, place.Repository, place.Workspace, place.Line));
 
     /// <summary>
-    /// The facts a driven quest's next start arranges by: the choices its line moved off within the hold, and on a reached home the moves its
-    /// rules set, which decide whether those passes apply. A store that does not answer arranges by none.
+    /// The facts a driven quest's next start arranges by: the choices its line moved off within the hold, and the moves its rules set, which
+    /// decide whether those passes apply. A store that does not answer arranges by none.
     /// </summary>
     internal static StaffFacts? LineFacts(StaffLedger staff, QuestView quest, string? workspace, string? role)
     {
         try
         {
             var facts = staff.Moves.LineFacts(quest.Id);
-            if (!staff.Rules().Reached) return facts;
             var named = role ?? RoleOf(staff, workspace, quest, null);
             return facts with { Moves = CourseOf(staff, named, new StaffPlace(quest.To, workspace, quest.Id))?.Moves ?? new Dictionary<string, StaffMove>() };
         }
@@ -66,16 +49,12 @@ internal static class StaffCourse
     internal static StaffPlace PlaceOf(Snapshot snapshot, QuestView quest) =>
         new(quest.To, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace, quest.Id);
 
-    /// <summary>
-    /// The failed sessions that park each open quest on a reached home (CONTEXTDRIVE1e): its line's effective failures rule, 0 where none holds;
-    /// none on a home not reached, where the planner reads <c>strikes</c>.
-    /// </summary>
+    /// <summary>The failed sessions that park each open quest (CONTEXTDRIVE1e): its line's effective failures rule, 0 where none holds.</summary>
     internal static IReadOnlyDictionary<string, int> FailuresAt(StaffLedger? staff, Snapshot snapshot)
     {
         var at = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         if (staff is null) return at;
         var book = staff.Rules();
-        if (!book.Reached) return at;
         foreach (var quest in snapshot.Quests.Where(quest => quest.Status is "Open" or "Taken"))
         {
             var place = PlaceOf(snapshot, quest);
@@ -86,11 +65,8 @@ internal static class StaffCourse
         return at;
     }
 
-    /// <summary>The failed sessions that park <paramref name="quest"/>: its rule's where the look read one, else the home's <c>strikes</c>.</summary>
-    internal static int FailuresBound(Snapshot snapshot, string quest, DriverConfig config) =>
-        snapshot.FailuresAt.TryGetValue(quest, out var ruled) ? ruled
-        // transitional: strikes-key
-        : config.Strikes;
+    /// <summary>The failed sessions that park <paramref name="quest"/>: its rule's as the look read it, 0 where none holds.</summary>
+    internal static int FailuresBound(Snapshot snapshot, string quest) => snapshot.FailuresAt.GetValueOrDefault(quest);
 
     /// <summary>Whether a record ended on the watcher's quiet end (<see cref="NoteCodes.EndedQuiet"/>), by its code: failed, and the quiet policy's, never the failed one's.</summary>
     internal static bool EndedQuiet(PriorSession record) =>
@@ -188,7 +164,7 @@ internal static class StaffCourse
 
             // The strikes park a quest as they always did: a parked line is the person's, and a move would only be counted against it.
             var strikes = snapshot.Strikes.GetValueOrDefault(quest.Id) - config.ForgivenAt(quest.Id);
-            var parks = FailuresBound(snapshot, quest.Id, config);
+            var parks = FailuresBound(snapshot, quest.Id);
             if (condition != StaffConditions.Transient && parks > 0 && strikes >= parks) continue;
 
             written ??= staff.Moves.Moving();

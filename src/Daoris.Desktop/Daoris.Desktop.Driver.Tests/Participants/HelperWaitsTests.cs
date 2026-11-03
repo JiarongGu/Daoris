@@ -46,7 +46,7 @@ public sealed class HelperWaitsTests
     {
         var asks = new[] { Ask("a1"), Ask("a2"), Ask("a3") };
         var states = States(
-            State("a1", HelperStates.Answered) with { Attempted = At, Keyed = true }, State("a2", HelperStates.Answered) with { Attempted = At },
+            State("a1", HelperStates.Answered) with { Attempted = At }, State("a2", HelperStates.Answered) with { Attempted = At },
             State("a3", HelperStates.Answered, handed: "settled"));
 
         Assert.Equal(["a1", "a2"], HelperWaits.Open("s1", asks, states).Select(ask => ask.Id));

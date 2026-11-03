@@ -1476,29 +1476,6 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.True(woken >= 2);
     }
 
-    /// <summary>
-    /// WORKFLOWCLEAN1g-ii, ONEWAY1ae: while any part's kept census holds old records, one row for the home, its stored kind kept, says how many
-    /// and how many by part, and it is pushed; a part that has ended is not counted.
-    /// </summary>
-    [Fact]
-    [Trait("Category", "Census")]
-    public void A_census_that_holds_old_records_is_one_row_for_the_home_counted_by_part()
-    {
-        var conversion = new ConversionCensus(null);
-        conversion.Tell([new("workflows", 3, false), new("settings", 2, false), new("git", 0, true)]);
-        var row = Assert.Single(Rows(new() { Conversion = conversion.Wait() }));
-        Assert.Equal("workflow-convert:home", $"{row["kind"]}:{row["id"]}");
-        Assert.Equal(5, row["convert"]!["records"]!.GetValue<int>());
-        Assert.Equal((3, 2), (row["convert"]!["parts"]!["workflows"]!.GetValue<int>(), row["convert"]!["parts"]!["settings"]!.GetValue<int>()));
-        Assert.Null(row["convert"]!["parts"]!["git"]);
-        var pushed = AttentionStateSlice.Judge(new() { Conversion = conversion.Wait() })!.Single(each => each.Partition == AttentionStateSlice.Rows);
-        Assert.Contains("\"records\"", JsonSerializer.Serialize(pushed.Data, IpcJson.Options));
-        Assert.False(conversion.Tell([new("settings", 2, false), new("workflows", 3, false)]));
-
-        conversion.Tell([new("workflows", 0, true)]);
-        Assert.Empty(Rows(new() { Conversion = conversion.Wait() }));
-    }
-
     /// <summary>AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person holds work: its wait whole, the session that holds it.</summary>
     [Fact]
     public void A_tool_call_a_session_holds_for_the_person_is_a_row_with_the_wait_whole()

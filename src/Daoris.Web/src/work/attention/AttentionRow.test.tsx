@@ -799,19 +799,6 @@ describe('an account’s row', () => {
     expect(screen.getByText('github.com refused the sign-in git has here')).toBeInTheDocument();
   });
 
-  /** WORKFLOWCLEAN1g-ii: the home's conversion row has its door as its one control, which hands the row to the review's opener. */
-  it('opens the conversion review from the home’s row, which has no act of its own', async () => {
-    vi.useRealTimers();
-    const row: Attention = {
-      id: 'home', kind: 'workflow-convert', title: '2 old records wait for your conversion', where: '', since: '2026-11-02T09:00:00Z',
-    };
-    const onOpen = vi.fn();
-    render(<AttentionRow item={row} acts={everyAct()} onOpen={onOpen} />);
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Review conversion…']);
-    await userEvent.click(screen.getByRole('button', { name: 'Review conversion…' }));
-    expect(onOpen).toHaveBeenCalledWith(row);
-  });
-
   it('holds what its band hands it under the row', () => {
     render(<AttentionRow item={SIGNED_OUT} acts={everyAct()} below={<p>the sign-in’s steps</p>} />);
     expect(within(screen.getByRole('listitem')).getByText('the sign-in’s steps')).toBeInTheDocument();

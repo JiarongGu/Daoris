@@ -57,9 +57,9 @@ export const DEPLOY: GitIdentityShown = {
   pointedAt: [],
 };
 
-export const PAGE: GitPageShown = { moved: true, identities: [WORK, PERSONAL, DEPLOY], own: ['gitlab.com'], hosts: ['dev.azure.com', 'github.com', 'gitlab.com'] };
+export const PAGE: GitPageShown = { identities: [WORK, PERSONAL, DEPLOY], own: ['gitlab.com'], hosts: ['dev.azure.com', 'github.com', 'gitlab.com'] };
 
-export const EMPTY_PAGE: GitPageShown = { moved: true, identities: [], own: [], hosts: [] };
+export const EMPTY_PAGE: GitPageShown = { identities: [], own: [], hosts: [] };
 
 export const UNKNOWN_HOST: GitTestAnswer = {
   result: 'host-unknown',

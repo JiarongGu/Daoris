@@ -502,20 +502,11 @@ export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full
 export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
 
 // The actors' wire types live in `data/wiring` so the presentational Actors card reads them without reaching the bridge.
-export type { ActorEntry, ActorRow, StaffingFound } from '../data/wiring';
+export type { ActorEntry, ActorRow } from '../data/wiring';
 
 /** Each seeded role's order as it runs: the staffing each `ROLES` row carries, read from the one role query. Empty in a browser. */
 export const useActors = ({ enabled = true }: { enabled?: boolean } = {}) =>
   useRolesAs((catalogue) => catalogue?.roles.flatMap((row) => (row.staffing ? [row.staffing] : [])) ?? [], enabled);
-
-/** The changes of driver.json's staffing another program made, kept for the person: `ROLES`' `found`. Empty in a browser. */
-export const useStaffingFound = () => useRolesAs((catalogue) => catalogue?.found ?? [], true);
-
-/**
- * A found change answered (FOUNDATION1w-s): *Take it*, the actors as that file showed them, a turn-on of Intake or Ask Daoris among them
- * by this press, or *Dismiss*. `daoris driver actor found take|dismiss <n>` is its terminal twin (D50).
- */
-export const useAnswerStaffingFound = () => useDriverChange<{ found: number; answer: 'take' | 'dismiss' }>('STAFFING_FOUND_ANSWER');
 
 export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../data/wiring';
 
@@ -534,7 +525,6 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
     ...(Array.isArray(answer.policyFields) ? { policyFields: answer.policyFields } : {}),
     ...(Array.isArray(answer.policyPresets) ? { policyPresets: answer.policyPresets } : {}),
     ...(Array.isArray(answer.suggestedChoices) ? { suggestedChoices: answer.suggestedChoices, suggestedChoicesDated: answer.suggestedChoicesDated } : {}),
-    ...(Array.isArray(answer.found) ? { found: answer.found } : {}),
   };
 };
 

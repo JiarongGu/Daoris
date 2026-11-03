@@ -71,9 +71,8 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
     public int Near => Switch == "curve" && Curve["session"] is [var only] ? only.Used : SmartSession;
 
     /// <summary>
-    /// An entry's settings, its old names read on: today's default where it says nothing or holds what this build does not
-    /// know, and the names of what it does not know — the known settings first, in their order, then an old name whose
-    /// value does not read, then the ones it has no name for.
+    /// An entry's settings: today's default where it says nothing or holds what this build does not know, and the names of what it
+    /// does not know — the known settings first, in their order, then the ones it has no name for.
     /// </summary>
     public static (RotationUse Use, IReadOnlyList<string> Unknown) Read(UseEntry? entry)
     {
@@ -81,10 +80,9 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
         var unknown = new List<string>();
         if (entry is null) return (use, unknown);
 
-        var folded = entry.Folded();
         foreach (var field in Fields)
         {
-            if (folded[field] is not { } raw) continue;
+            if (entry[field] is not { } raw) continue;
             switch (field)
             {
                 case "use" when ModeOf(raw) is { } mode: use = use with { Use = mode }; break;
@@ -95,11 +93,7 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
             }
         }
 
-        if (entry["early"] is { } early && FlagOf(early) is null) unknown.Add("early");
-        if (entry["near"] is { } near && NearOf(near) is null) unknown.Add("near");
-        unknown.AddRange(entry.Fields.Select(field => field.Key)
-            .Where(name => !Fields.Contains(name, StringComparer.Ordinal) && !OldNames.Contains(name, StringComparer.Ordinal)
-                && !Retired.Contains(name, StringComparer.Ordinal)));
+        unknown.AddRange(entry.Fields.Select(field => field.Key).Where(name => !Fields.Contains(name, StringComparer.Ordinal)));
         return (use, unknown);
     }
 

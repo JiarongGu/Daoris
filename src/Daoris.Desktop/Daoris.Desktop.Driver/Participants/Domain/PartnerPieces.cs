@@ -185,15 +185,7 @@ public sealed record PartnerFacts(
 /// <param name="To">The record the answer is claimed for: the lead, or the newest live record continuing it by <c>from</c>.</param>
 /// <param name="Key">The producer key the word carries, stable for the piece.</param>
 /// <param name="Outcome">One of <see cref="PartnerDelivery"/>'s outcomes.</param>
-public sealed record PartnerReceipt(string Id, string To, string Key, string Outcome, DateTimeOffset At)
-{
-    /// <summary>
-    /// That an <see cref="PartnerDelivery.Attempted"/> receipt's hand went through the one door for solicited answers under the piece's key (COMMS1b,
-    /// the comms design §13 point 3), so a look inside the settlement's horizon asks the door again, which answers it once. A receipt without it, an
-    /// older build's, is read as before: found attempted, it is uncertain.
-    /// </summary>
-    public bool Keyed { get; init; }
-}
+public sealed record PartnerReceipt(string Id, string To, string Key, string Outcome, DateTimeOffset At);
 
 /// <summary>A delivery receipt's outcomes, and how a hand reads one (the design §7.6).</summary>
 public static class PartnerDelivery

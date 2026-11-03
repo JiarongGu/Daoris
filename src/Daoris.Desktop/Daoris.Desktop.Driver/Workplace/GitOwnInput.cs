@@ -106,17 +106,17 @@ public static class GitOwnInput
             // The certificate binds only where an HTTPS identity of Daoris's serves (GITAUTH1d): else today's credentials carry it, as before.
             if (serves == GitServeKind.Identity && await CertificateAsync(root, address, ct).ConfigureAwait(false) is { } certificate)
                 return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.OwnInput, certificate, DateTimeOffset.UtcNow);
-            // A scoped header or cookie file is the person's own authentication where an identity serves, or the move has left nothing to serve.
-            if ((serves == GitServeKind.Identity || (serves == GitServeKind.None && GitMoved.Moved(home)))
+            // A scoped header or cookie file is the person's own authentication where an identity serves, or nothing does.
+            if (serves is GitServeKind.Identity or GitServeKind.None
                 && await ScopedInputAsync(root, address, ct).ConfigureAwait(false) is { } scoped)
                 return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.OwnInput, scoped, DateTimeOffset.UtcNow);
         }
 
         GitHolds.Lift(home, root, remote, "setting", hold => hold.Class == GitFailures.Code(GitFailureClass.OwnInput));
 
-        // GITAUTH1e (§6.8): once the home has moved, an SSH remote nothing serves has no key to reach it with, so it is held before it
-        // connects; an HTTPS one reads anonymously and is classed where the host refuses it (GitMove.Reclass). A serving choice lifts it.
-        var nothing = GitMoved.Moved(home) && ServesNothing(home, repository, workspace, remote, address);
+        // GITAUTH1e (§6.8): an SSH remote nothing serves has no key to reach it with, so it is held before it connects; an HTTPS one
+        // reads anonymously and is classed where the host refuses it (GitMove.Reclass). A serving choice lifts it.
+        var nothing = ServesNothing(home, repository, workspace, remote, address);
         if (nothing && TreeRefs.ReachOf(address) == "ssh")
             return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.NoIdentity, words: null, DateTimeOffset.UtcNow);
         if (!nothing) GitHolds.Lift(home, root, remote, "identity", hold => hold.Class == GitFailures.Code(GitFailureClass.NoIdentity));

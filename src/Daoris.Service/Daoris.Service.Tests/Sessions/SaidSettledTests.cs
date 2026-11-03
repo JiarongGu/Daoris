@@ -164,28 +164,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A record from before <c>said</c> holds its answer in the old column, which a take leaves as it was: nothing settles. Once a word is
-    /// kept beside it, the answer is the list's first word under the id <c>answer</c> and settles as any keyless word does, on its own record.
-    /// </summary>
-    [Fact]
-    public async Task An_answer_still_in_the_old_column_settles_nothing_and_beside_a_kept_word_settles_as_answer_on_its_record()
-    {
-        var plain = await EndedAsync();
-        await ExecuteAsync("UPDATE sessions SET answer = 'old answer', said = NULL WHERE id = $id", ("$id", plain.Id));
-        await _sessions.TakeSaidAsync(plain.Id, ["answer"]);
-        Assert.Empty(await RowsAsync());
-
-        var beside = await EndedAsync();
-        await ExecuteAsync("UPDATE sessions SET answer = 'old answer', said = NULL WHERE id = $id", ("$id", beside.Id));
-        var word = (await SayAsync(beside.Id, "producer/beside")).Word!;
-        await _sessions.TakeSaidAsync(beside.Id, ["answer", word.Id]);
-
-        Assert.Equal(
-            new[] { (beside.Id, "answer", "id:answer"), (beside.Id, word.Id, "producer/beside") }.Order().ToList(),
-            (await RowsAsync()).Select(row => (row.Session, row.Word, row.Key)).Order().ToList());
-    }
-
-    /// <summary>
     /// A list that is not a JSON array of words, on either side, settles nothing and never fails the statement that wrote it: a take must
     /// still land. (A list that is not JSON at all never reaches the trigger: the words counter before it, <c>words_revision_kept</c>, refuses it.)
     /// </summary>
@@ -946,22 +924,6 @@ public sealed class SaidSettledTests : IAsyncLifetime
             (await RowsAsync()).Select(row => (row.Session, row.Word, row.Key)).Order().ToList());
         Assert.Equal(a.Id, (await SayAsync(a.Id, "producer/moved")).SettledOn);
         Assert.Equal(b.Id, (await SayAsync(b.Id, "producer/moved")).SettledOn);
-
-        // The literal `answer` on every record that kept one before `said`: each its own row, never replacing another's.
-        var c = await EndedAsync();
-        var d = await EndedAsync();
-        foreach (var record in new[] { c, d })
-        {
-            await ExecuteAsync("UPDATE sessions SET answer = $answer, said = NULL WHERE id = $id", ("$answer", $"old {record.Id}"), ("$id", record.Id));
-            var word = (await SayAsync(record.Id, $"producer/beside-{record.Id}")).Word!;
-            await _sessions.TakeSaidAsync(record.Id, ["answer", word.Id]);
-        }
-
-        var answers = (await RowsAsync()).Where(row => row.Word == "answer").Select(row => row.Session).Order().ToList();
-        Assert.Equal(new[] { c.Id, d.Id }.Order().ToList(), answers);
-        Assert.Equal(c.Id, (await SaidKeys.Settled(_sessions, [c.Id], "id:answer", Now))!.Record);
-        Assert.Equal(d.Id, (await SaidKeys.Settled(_sessions, [d.Id], "id:answer", Now))!.Record);
-        Assert.Null(await SaidKeys.Settled(_sessions, [a.Id], "id:answer", Now));
     }
 
     /// <summary>

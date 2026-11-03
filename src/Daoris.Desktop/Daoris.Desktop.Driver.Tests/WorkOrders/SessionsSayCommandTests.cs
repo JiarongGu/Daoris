@@ -213,21 +213,6 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(MessageLevel.Urgent, new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow).Asked);
     }
 
-    /// <summary>ONEWAY1l, transitional <c>say-now-field</c>: a request file waiting from an older build with <c>now: true</c> and no level is read as <c>now</c>.</summary>
-    [Fact]
-    public void A_waiting_request_with_now_and_no_level_is_read_as_now()
-    {
-        var requests = new SessionRequests(_home);
-        Directory.CreateDirectory(requests.Folder);
-        File.WriteAllText(Path.Combine(requests.Folder, "w0rk1ng0.old1.json"), $$"""
-            {"session":"w0rk1ng0","move":"say","at":"{{DateTimeOffset.UtcNow:O}}","text":"hi","key":"old1","now":true}
-            """);
-
-        var pending = Assert.Single(requests.Pending(DateTimeOffset.UtcNow));
-
-        Assert.Equal(("now", MessageLevel.Now), (pending.Level, pending.Asked));
-    }
-
     /// <summary>
     /// STEER2c, COWORK1a: the verb says what the door did, in its own words, from the answer { sent, reaches, why, now }: taken at
     /// once, or not now with the reason and where it reads the words instead. No door's turn is stopped (D188 point 3): a door that

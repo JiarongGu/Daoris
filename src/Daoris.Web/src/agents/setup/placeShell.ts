@@ -8,18 +8,15 @@ import type { EditorHold } from '../../workflow/edit/WorkflowEditor';
 // one-line summary each folds to, and the state the application holds above the page so a door out and back finds it as left.
 
 export const SECTIONS = ['workflow', 'roles', 'sessions'] as const;
-/**
- * *All roles* and *Old records* are this machine's alone: every role once, as a list or a diagram, with what Daoris suggests and the changes
- * found; and the old shapes Daoris still reads, each with when it ends (ONEWAY1ad-ii).
- */
-export type PlaceSection = (typeof SECTIONS)[number] | 'allRoles' | 'oldRecords';
+/** *All roles* is this machine's alone: every role once, as a list or a diagram, with what Daoris suggests. */
+export type PlaceSection = (typeof SECTIONS)[number] | 'allRoles';
 export type PlaceKind = 'machine' | 'workspace' | 'repository';
 
 export const isPlaceSection = (value: string | null | undefined): value is PlaceSection =>
-  value === 'allRoles' || value === 'oldRecords' || SECTIONS.some((each) => each === value);
+  value === 'allRoles' || SECTIONS.some((each) => each === value);
 
-/** The sections a kind of place draws, in order. *This machine*'s Sessions are Settings' own, so its page draws Roles, All roles and Old records. */
-export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind === 'machine' ? ['roles', 'allRoles', 'oldRecords'] : SECTIONS);
+/** The sections a kind of place draws, in order. *This machine*'s Sessions are Settings' own, so its page draws Roles and All roles. */
+export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind === 'machine' ? ['roles', 'allRoles'] : SECTIONS);
 
 /** The section that opens on arrival: Workflow on a repository and a workspace, Roles on this machine. */
 export const firstSection = (kind: PlaceKind): PlaceSection => sectionsOf(kind)[0]!;
@@ -115,7 +112,7 @@ export function foldedLines(row: PlaceRow, kind: PlaceKind, t: TFunction, langua
   }
 
   return {
-    workflow, roles: rolesLine(row, kind, t, language, say), sessions, allRoles: t('agents.setup.allRoles.fold'), oldRecords: t('agents.setup.oldRecords.fold'),
+    workflow, roles: rolesLine(row, kind, t, language, say), sessions, allRoles: t('agents.setup.allRoles.fold'),
   };
 }
 

@@ -37,10 +37,9 @@ export type GitIdentityShown = {
   pointedAt: string[];
 };
 
-/** The page: the identities, the hosts the person's own sign-ins are chosen for, and whether the home has moved off ambient credentials. */
+/** The page: the identities and the hosts the person's own sign-ins are chosen for. */
 export type GitPageShown = {
   problem?: string | null;
-  moved: boolean;
   identities: GitIdentityShown[];
   own: string[];
   hosts: string[];
