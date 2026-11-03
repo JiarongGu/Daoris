@@ -191,6 +191,9 @@ const tool = await import(
   flakeDecision: (output: string, isProcess?: (test: string) => boolean) => { rerun: string[]; reason?: string };
   timedDecision: (output: string) => { playwright: boolean; rerun: string[]; reason?: string };
   timedRerunCommand: (run: string, specs: string[]) => string;
+  nodeTestDirs: (root: string, gate: Gate) => string[];
+  nodeTestDecision: (output: string) => { node: boolean; rerun: { file: string; tests: string[] }[]; reason?: string };
+  nodeTestRerunCommand: (file: string, title: string) => string;
   rerunCommand: (run: string, test: string) => string;
   prefixCommand: (gate: { run: string }, failure: { names: string; unit?: string; test?: string }) => string;
   rerunPassed: (output: string) => boolean;
