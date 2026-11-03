@@ -41,9 +41,10 @@ public sealed class RoleCatalogTests : IDisposable
     {
         var catalog = RoleCatalog.Of([]);
 
-        Assert.Equal(ActorChoices.Ids, catalog.Slots.Select(slot => slot.Id));
+        Assert.Equal([.. ActorChoices.Ids, AppointedRoles.Supervisor, AppointedRoles.Steward], catalog.Slots.Select(slot => slot.Id));
         Assert.All(catalog.Slots, slot => Assert.Equal((RoleState.Seed, 0L), (slot.State, slot.Revision)));
-        Assert.All(RoleCatalog.Seed, role => Assert.Equal((RoleRecord.Always, RoleScope.Everywhere), (role.Filled, role.Scope)));
+        Assert.All(RoleCatalog.Seed, role => Assert.Equal(RoleScope.Everywhere, role.Scope));
+        Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Where(role => role.Filled == RoleRecord.Always).Select(role => role.Id));
         Assert.Equal(
             [("build", "build"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"), ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm")],
             ParticipantWork.Codes.Where(work => work != ParticipantWork.Design).Select(work => (work, catalog.RoleFor(work, Machine).Role!.Id)));
@@ -52,14 +53,15 @@ public sealed class RoleCatalogTests : IDisposable
     }
 
     [Fact]
-    public void The_seed_is_the_shipped_data_and_its_ids_are_the_actors()
+    public void The_seed_is_the_shipped_data_and_its_working_ids_are_the_actors()
     {
-        Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Select(role => role.Id));
+        Assert.Equal([.. ActorChoices.Ids, AppointedRoles.Supervisor, AppointedRoles.Steward], RoleCatalog.Seed.Select(role => role.Id));
         Assert.Equal(
             [("build", "Build", "开发"), ("intake", "Intake", "受理"), ("opinion", "Second opinion", "第二意见"), ("helper", "Helper", "助手"),
-                ("partner", "Partner", "搭档"), ("brainstorm", "Brainstorm", "头脑风暴"), ("ask-daoris", "Ask Daoris", "问道衍"), ("chat", "Chat", "聊天")],
+                ("partner", "Partner", "搭档"), ("brainstorm", "Brainstorm", "头脑风暴"), ("ask-daoris", "Ask Daoris", "问道衍"), ("chat", "Chat", "聊天"),
+                ("supervisor", "Supervisor", "主管"), ("steward", "Steward", "管家")],
             RoleCatalog.Seed.Select(role => (role.Id, role.Name.In("en"), role.Name.In("zh"))));
-        Assert.All(RoleCatalog.Seed, role => Assert.Equal(ActorWords.Name(role.Id), role.Name.In("en")));
+        Assert.All(RoleCatalog.Seed.Where(role => role.Hold is null), role => Assert.Equal(ActorWords.Name(role.Id), role.Name.In("en")));
     }
 
     [Fact]

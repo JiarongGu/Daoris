@@ -18,7 +18,8 @@ public sealed class RoleVerb : ChoiceVerb
 
     private const string Grammar =
         "`driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
-        + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
+        + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, an appointed role's `[--acts <act,…>] [--holder terminal|rules|none] [--window <1-60>]`, "
+        + "`driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
 
     /// <summary><c>role suggested [--use]</c> (MODELROLE1g): the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
@@ -293,6 +294,14 @@ public sealed class RoleVerb : ChoiceVerb
                 ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
                 ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
             };
+            if (role.Hold is { } hold)
+            {
+                payload["role"]!["filled"] = RoleRecord.Appointed;
+                payload["role"]!["authority"] = new JsonArray([.. hold.Acts.Select(act => (JsonNode)JsonValue.Create(act))]);
+                payload["role"]!["holder"] = hold.Holder;
+                payload["role"]!["window"] = hold.Window;
+            }
+
             payload["choices"] = choices is null ? null : new JsonArray([.. choices.Select(choice => (JsonNode)new JsonObject
             {
                 ["agent"] = choice.Agent, ["model"] = choice.Model, ["effort"] = choice.Effort,
@@ -340,7 +349,7 @@ public sealed class RoleVerb : ChoiceVerb
             {
                 "removed" => "removed",
                 "unreadable" => $"unreadable: {row.Error}",
-                _ => $"{row.Name?.In("en")} · {Shape(row.Takes, row.ScopeKind, row.ScopeId)}"
+                _ => $"{row.Name?.In("en")} · {(row.Hold is { } hold ? Held(hold, row.ScopeKind, row.ScopeId) : Shape(row.Takes, row.ScopeKind, row.ScopeId))}"
                     + (row.Choices is { } staffed ? $" · {(staffed.Count == 0 ? "off" : Choices(staffed))}" : row.Seeded ? " · its staffing's order" : "")
                     + (row.State == "seed" ? " (the seed)" : $" (revision {row.Revision})"),
             };
@@ -382,6 +391,7 @@ public sealed class RoleVerb : ChoiceVerb
         var name = current?.Name;
         var takes = current?.Takes ?? [];
         var scope = current?.Scope ?? RoleScope.Everywhere;
+        var hold = current?.Hold;
         var entries = new List<ActorChoice>();
         var off = false;
         for (var at = 0; at < rest.Count; at++)
@@ -394,6 +404,12 @@ public sealed class RoleVerb : ChoiceVerb
                 case "--zh": name = NameIn(name, $"zh={Value()}"); break;
                 case "--takes": takes = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]; break;
                 case "--scope": scope = Scope(Value()); break;
+                case "--acts": hold = (hold ?? new RoleHold([], null)) with { Acts = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)] }; break;
+                case "--holder": hold = (hold ?? new RoleHold([], null)) with { Holder = Value() is var holder && holder == "none" ? null : holder }; break;
+                case "--window":
+                    var window = Value();
+                    hold = (hold ?? new RoleHold([], null)) with { Window = int.TryParse(window, out var minutes) ? minutes : throw new ChoiceWords($"`--window {window}` is not whole minutes: {Grammar}.") };
+                    break;
                 case var flag when flag.StartsWith("--", StringComparison.Ordinal): throw new ChoiceWords($"`{flag}` is not a flag of `driver role set`: {Grammar}.");
                 // ONEWAY1a: a role whose work may be off (Intake, Ask Daoris) is set off here, as the retired `driver intake|helper off` did.
                 case "off": off = true; break;
@@ -402,9 +418,12 @@ public sealed class RoleVerb : ChoiceVerb
         }
 
         if (off && entries.Count > 0) throw new ChoiceWords($"`off` is a role's whole staffing, never beside its choices: {Grammar}.");
-        if (takes.Count == 0) throw new ChoiceWords($"a new role names the work it takes (`--takes`): {Grammar}.");
         if (name is null) throw new ChoiceWords($"a new role names itself (`--name`): {Grammar}.");
-        return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Always, takes, scope)), off ? [] : entries.Count > 0 ? entries : null);
+        IReadOnlyList<ActorChoice>? choices = off ? [] : entries.Count > 0 ? entries : null;
+        // An appointed role keeps its acts in place of work; the judge refuses a record holding both.
+        if (hold is not null) return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Appointed, takes, scope, hold)), choices);
+        if (takes.Count == 0) throw new ChoiceWords($"a new role names the work it takes (`--takes`): {Grammar}.");
+        return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Always, takes, scope)), choices);
     }
 
     /// <summary><c>--name</c>: the one text as written, which replaces a map's <c>en</c> (its first entry where it has none) and keeps its other languages.</summary>
@@ -443,10 +462,19 @@ public sealed class RoleVerb : ChoiceVerb
         return new ActorChoice(words[0], Value(1), Value(2));
     }
 
-    private static string Shape(RoleRecord role) => $"{role.Name.In("en")} ·{Shape(role.Takes, role.Scope.Kind, role.Scope.Id)}";
+    private static string Shape(RoleRecord role) =>
+        $"{role.Name.In("en")} ·{(role.Hold is { } hold ? " " + Held(hold, role.Scope.Kind, role.Scope.Id) : Shape(role.Takes, role.Scope.Kind, role.Scope.Id))}";
 
     private static string Shape(IReadOnlyList<string> takes, string? kind, string? scope) =>
-        $"takes {string.Join(", ", takes)} " + (kind is null or RoleScope.Machine ? "on the machine" : $"in {kind} `{scope}`");
+        $"takes {string.Join(", ", takes)} " + Where(kind, scope);
+
+    /// <summary>An appointed role's line: the acts it holds, where, who holds it, and the supervisor's window.</summary>
+    private static string Held(RoleHold hold, string? kind, string? scope) =>
+        $"holds {string.Join(", ", hold.Acts)} {Where(kind, scope)} · "
+        + (hold.Holder switch { RoleHolders.Terminal => "held by a terminal", RoleHolders.Rules => "held by your rules", _ => "held by no one" })
+        + (hold.Kind == AppointedRoles.Supervisor ? $" · answers held {hold.Window} minutes for your overrule" : "");
+
+    private static string Where(string? kind, string? scope) => kind is null or RoleScope.Machine ? "on the machine" : $"in {kind} `{scope}`";
 
     private static string Choices(IReadOnlyList<ActorChoice> choices) =>
         string.Join(", ", choices.Select((choice, i) => $"{i + 1} {choice.Agent} · {choice.Model ?? "account default"} · {choice.Effort ?? "account default"}"));

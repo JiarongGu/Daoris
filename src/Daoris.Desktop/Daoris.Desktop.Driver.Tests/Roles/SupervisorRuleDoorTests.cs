@@ -88,13 +88,27 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     [InlineData("""{ "id": "supervisor", "choices": [{ "agent": "claude" }], "place": "machine", "rulesRevision": 0, "rules": [] }""")]
     [InlineData("""{ "id": "supervisor", "policy": "even", "place": "machine", "rulesRevision": 0, "rules": [] }""")]
     [InlineData("""{ "id": "supervisor", "revision": 2, "place": "machine", "rulesRevision": 0, "rules": [] }""")]
-    [InlineData("""{ "id": "supervisor", "change": "remove" }""")]
-    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "takes": ["build"] } }""")]
-    public void CONTEXTDRIVE1d_any_other_field_of_the_supervisor_s_press_is_appointed_not_configurable(string json)
+    [InlineData("""{ "id": "supervisor", "change": "remove", "place": "machine" }""")]
+    public void CONTEXTDRIVE1d_a_rules_press_carrying_a_role_s_field_is_a_mixed_shape(string json)
     {
         using var press = JsonDocument.Parse(json);
 
-        Assert.Equal("appointed-not-configurable", Assert.Throws<RoleRefusedException>(() => RoleDoor.ReadPress(press.RootElement)).Code);
+        Assert.Equal("mixed-shape", Assert.Throws<RoleRefusedException>(() => RoleDoor.ReadPress(press.RootElement)).Code);
+    }
+
+    /// <summary>ROLEONE1 (D233 point 2): the supervisor's own record is a role's press, judged as every role's is.</summary>
+    [Theory]
+    [InlineData("""{ "id": "supervisor", "change": "remove" }""", "may-not-be-off")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "takes": ["build"] } }""", "mixed-shape")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "authority": ["answer", "defer"], "holder": "agent" } }""", "appointed-not-configurable")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "authority": ["answer", "defer"], "holder": "terminal" }, "choices": [{ "agent": "claude" }] }""", "appointed-not-configurable")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "authority": ["answer", "defer"], "holder": "terminal", "window": 12 } }""", null)]
+    public void ROLEONE1_the_supervisor_s_own_press_is_a_role_s_press_its_judge_reads(string json, string? code)
+    {
+        using var press = JsonDocument.Parse(json);
+        var read = RoleDoor.ReadPress(press.RootElement);
+
+        Assert.Equal(code, RoleDoor.Judge(RoleCatalog.Of([]), read.Change, read.Choices)?.Code);
     }
 
     [Fact]

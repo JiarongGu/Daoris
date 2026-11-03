@@ -71,8 +71,8 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     public async Task The_eight_always_on_ids_are_one_list_the_catalogue_the_run_and_the_settings_read()
     {
         Assert.Same(ActorKey.Ids, ActorChoices.Ids);
-        Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Select(role => role.Id));
-        Assert.Empty(ActorChoices.Ids.Intersect(RoleCatalog.Reserved));
+        Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Where(role => role.Hold is null).Select(role => role.Id));
+        Assert.Empty(ActorChoices.Ids.Intersect(AppointedRoles.Kinds));
 
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         foreach (var id in ActorChoices.Ids)
