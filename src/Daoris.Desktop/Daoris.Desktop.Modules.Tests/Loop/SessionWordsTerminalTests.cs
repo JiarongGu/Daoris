@@ -89,7 +89,7 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
         var inbox = loop.Processes.OpenInbox("s1");
         inbox.Attach(() => { stopped++; return Task.CompletedTask; });
 
-        var now = await loop.Words.HoldAsync(Say("s1", "the level file moved") with { Now = true }, CancellationToken.None);
+        var now = await loop.Words.HoldAsync(Say("s1", "the level file moved") with { Level = "now" }, CancellationToken.None);
 
         Assert.Equal((true, "turn-end", SendNowWhy.NoInterrupt, false), (now.Sent, now.Reaches, now.Why, now.Now));
         Assert.Equal(0, stopped);

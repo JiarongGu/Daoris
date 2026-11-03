@@ -862,7 +862,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
                      ("d3", "now", true, (string?)null),
                  })
         {
-            var sent = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "start with the tests", now = true });
+            var sent = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "start with the tests", level = "now" });
             var leveled = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "and the readme", level = "now" });
             foreach (var answer in new[] { sent, leveled })
             {
