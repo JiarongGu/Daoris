@@ -2485,6 +2485,11 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// MCP tool waits behind a <c>ToolSearch</c> step, a whole model round trip before the agent's first real
     /// move; a value its parser reads as false loads every tool with the first request instead.
     /// </summary>
+    /// <remarks>
+    /// It loads every server's tools, not only the connector's (CONTEXTONE1d). Claude Code 2.1.314 also reads a server entry's
+    /// <c>alwaysLoad</c> and a tool's <c>_meta</c> <c>anthropic/alwaysLoad</c>, but the protocol door's servers are composed by its
+    /// adapter, not shown to carry the key, and a tool's mark does not hold the first request for a server still starting.
+    /// </remarks>
     internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront =
         new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
 

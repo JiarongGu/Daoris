@@ -388,6 +388,10 @@ try keeps a quiet `transient` record event (`next`, `try`) the head reads; and *
 that hands the session servers also carries `_meta.mcpStartupAwaitTimeoutMs` (`AcpSession.McpStartupAwait`, 15 s), beside the
 adapter's rules in the same `_meta`, so codex-acp waits for the connector to start before it answers and the first turn's tool catalog
 holds it; a session handed no server sends none, and an adapter that does not read the key ignores it.
+Since CONTEXTONE1d (D230 point 3) every session's spawn, of every kind and on either door, is equipped by `Driver.Equip`: its
+toolchain's environment, then the adapter's `ToolsUpFront`, which on both Claude Code doors is `ENABLE_TOOL_SEARCH=false` (HELP5), so the
+connector's tools come with the first request rather than behind a tool search; Codex holds them already and is handed nothing. The
+switch loads every MCP server the session has, the repository's own too: the connector's 58 tools are about 96 KB of definitions.
 
 A conversation's turn (Ask Daoris and a repository's chat, on the protocol door) is tried again the same way since AGENTERRORS1b, inside
 the turn, on the conversation's own process: `ProtocolChat` hands its session the same `TransientRetry` once it is open (`ChatRetry`, the
