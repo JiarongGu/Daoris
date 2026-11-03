@@ -17,10 +17,10 @@ internal interface IRolesWorkOrders
     ParkQuestion? QuestionOf(string home, string session);
 
     /// <summary>
-    /// The ask <paramref name="from"/> names, read through <paramref name="service"/> as the print reads it (see <c>AskWords.ReadAsync</c>), its
-    /// go-aheads and its owner's words beneath the quest <paramref name="questId"/>.
+    /// The ask <paramref name="session"/>'s line is on, read through <paramref name="service"/> as the print reads it (see
+    /// <c>AskWords.ReadOfSessionAsync</c>), its go-aheads and its owner's words beneath the quest <paramref name="questId"/>.
     /// </summary>
-    Task<SupervisorAskWords> AskWordsAsync(ServiceClient service, string? from, string questId, CancellationToken ct);
+    Task<SupervisorAskWords> AskWordsAsync(ServiceClient service, string session, string questId, CancellationToken ct);
 }
 
 internal static class RolesWorkOrders

@@ -270,17 +270,8 @@ public sealed record Session(
     /// </remarks>
     public IReadOnlyList<SaidWord> Said { get; init; } = [];
 
-    /// <summary>
-    /// The person's words waiting, joined by a blank line, or null when none wait: what an answer was before <see cref="Said"/>
-    /// (ANSWER1b), kept for every reader from before it — the driver's resume, its carry-on and the page's answered park.
-    /// </summary>
-    /// <remarks>
-    /// <b>Never another agent's</b> (XAGENT1c, D155 point 7): every reader of this field reads it as the person's, and a
-    /// carry-on hands it to a new session as theirs. An opinion's findings wait in <see cref="Said"/> alone, marked by whom, and so
-    /// do Daoris's own words, marked <see cref="SaidWord.From"/> (COWORK1b).
-    /// </remarks>
-    public string? Answer =>
-        Said.Where(word => word.Persons).Select(word => word.Text).ToList() is { Count: > 0 } persons ? string.Join("\n\n", persons) : null;
+    /// <summary>Whether any of <see cref="Said"/> is the person's: an answered park, or words to an ended session (never another agent's or Daoris's own).</summary>
+    public bool PersonSaid => Said.Any(word => word.Persons);
 
     /// <summary>
     /// A <see cref="SessionState.Stopped"/> record that was not the person's stop (D104): the orphan
@@ -396,8 +387,8 @@ public sealed record SaidWord(
     string? Channel = null, string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null,
     string? Decision = null, string? Question = null, string? Choice = null)
 {
-    /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's, Daoris's or the supervisor's.</summary>
-    public bool Persons => By is null && Helper is null && From is null;
+    /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's, a partner's, Daoris's or the supervisor's.</summary>
+    public bool Persons => Senders.Of(this) == Senders.Person;
 
     /// <summary>Whether it claims the supervisor (SUPERVISOR1a-i): a claim only, which the driver attributes or quarantines.</summary>
     public bool Supervisors => From == SaidFrom.Supervisor;
@@ -1647,6 +1638,7 @@ public sealed class SessionStore
     {
         await using (var command = _db.Command())
         {
+            // transitional: session-answer-column (the old column becomes the first word, then is emptied)
             command.CommandText = $"""
                 UPDATE sessions SET
                   said = json_insert(
@@ -1740,6 +1732,7 @@ public sealed class SessionStore
         if (!reader.IsDBNull(0)) return StoredElements(reader.GetString(0));
         if (reader.IsDBNull(1)) return [];
 
+        // transitional: session-answer-column
         var answer = new SaidWord(AnswerWordId, reader.GetString(1), Moments.ReadRequired(reader.GetString(2)), []);
         return [(WordJson(answer), answer)];
     }
@@ -1867,6 +1860,7 @@ public sealed class SessionStore
         var said = reader.GetOrdinal("said");
         if (!reader.IsDBNull(said)) return SaidWords(reader.GetString(said));
 
+        // transitional: session-answer-column
         var answer = reader.GetOrdinal("answer");
         return reader.IsDBNull(answer)
             ? []

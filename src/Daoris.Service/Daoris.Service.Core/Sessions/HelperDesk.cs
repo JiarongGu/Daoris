@@ -40,6 +40,12 @@ public sealed record HelperOutcome(HelperRefusal Refusal, string Message)
     /// <see cref="Word"/> are null. Only a hand that asked for it (<c>settled</c>) is answered so.
     /// </summary>
     public string? SettledOn { get; init; }
+
+    /// <summary>
+    /// The answer was waiting already (COMMS1b): <see cref="Session"/> holds it and <see cref="Word"/> is it, so the caller dispatches it
+    /// there before it marks the ask handed. Nothing was kept now.
+    /// </summary>
+    public bool Waiting { get; init; }
 }
 
 /// <summary>What the driver names for a helper's record: it is the driver's to say where it reads, as which agent and account.</summary>
@@ -90,8 +96,8 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             }
 
             string? wrong =
-                asker.Serves is { } serves ? $"Session `{asker.Id}` is a helper for session `{serves}`, and a helper cannot ask for a helper"
-                : asker.Opinion is { } reads ? $"Session `{asker.Id}` reads another session's work for second opinion `{reads}`, and a reviewer cannot ask for a helper"
+                asker.Opinion is { } reads ? $"Session `{asker.Id}` reads another session's work for second opinion `{reads}`, and a reviewer cannot ask for a helper"
+                : asker.Serves is { } serves ? $"Session `{asker.Id}` is a helper for session `{serves}`, and a helper cannot ask for a helper"
                 : asker.Ask is { } ask ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, and an intake cannot ask for a helper"
                 // FOUNDATION1q (D203 point 6): the store's own guard, held to the driver's start layer by fixtures/helper-askers.json.
                 : SessionLedger.IsHelp(asker) ? $"Session `{asker.Id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper"
@@ -121,9 +127,8 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
 
     /// <summary>
     /// Hand a helper's answer to the session it serves: a word on its record naming the helper as <see cref="SaidWord.Helper"/>,
-    /// which reopens it at the driver's next look (D137). Once, and only to a record of this machine's that ended and takes words,
-    /// or to an open conversation between turns (MIXAGENT2a-iii), which says it as its next turn: a running quest takes it at its
-    /// end, never into a step in flight, so the driver hands it then.
+    /// which reopens it at the driver's next look (D137). Once, through <see cref="SolicitedAnswers"/>, the door every solicited answer
+    /// shares: to the head of the asker's line, by that door's table of the head's state.
     /// </summary>
     /// <param name="text">The words as Daoris composed them around the helper's claim.</param>
     /// <param name="running">
@@ -140,107 +145,51 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
 
         return await sessions.ExclusiveAsync(async inside =>
         {
+            // B5: a reviewer carries `serves` too, so the opinion mark is read first.
             var helper = await sessions.FindAsync(helperId.Trim(), inside).ConfigureAwait(false);
-            if (helper is not { Origin: null, Serves: { } served })
+            if (helper is not { Origin: null, Opinion: null, Serves: { } served })
             {
                 return Refused(HelperRefusal.NotFound, $"There is no helper session `{helperId.Trim()}` on this machine");
             }
 
-            // HELPERWAIT1 (D189 point 6): the newest live record of the asker's line, as a partner's piece is handed (PartnerDesk): a hand-over,
-            // a move or a carry-on takes the asker's helpers with it, and a left conversation is never reopened. FOUNDATION1 row d-ii (D212, the
-            // design §3.4 rule 2): the line's head the say door reads, across kinds and to a driven part's quest's last run here.
-            var named = await sessions.FindAsync(served, inside).ConfigureAwait(false);
-            var line = named is { Origin: null } ? await Lines.WalkAsync(sessions, named, inside).ConfigureAwait(false) : null;
-            var asker = line is null ? named : line.Head ?? line.Records[^1];
-            // 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): a line that goes on past the bound is refused, its newest part unread, never
-            // handed to the record where the bound stopped, which the line has left; the helper's conversation keeps the answer. The hand follows
-            // sixteen links, as the driver's look does, inside the walk's own bound; a line that loops has no newest part at all.
-            var pastBound = line is not null && (line.End == LineEnd.Bound || line.Records.Count - 1 > LineBound);
-            var loops = line is { End: LineEnd.Cycle };
-
-            // Row p (D212, the design §3.4 rule 5): asked before any refusal but the record's absence, over the asker's line back along `from`
-            // and forward over the head walk's records, so a retry after the take is answered as kept whatever the asker is doing now. A word
-            // still waiting on the record the hand reaches is the desk's own below; one waiting on a record the line has left keeps once on
-            // the newest. A line that cannot be read whole is refused below, so a settlement is never read over a line cut short.
-            if (settled && named is { Origin: null } && line is not null && KeyOf(helper.Id) is var key
-                && !asker!.Said.Any(word => string.Equals(word.Key, key, StringComparison.Ordinal))
-                && await SaidKeys.SettledOnLineAsync(sessions, named, line, key, now, inside).ConfigureAwait(false) is (var held, var whole))
-            {
-                if (!whole)
+            var outcome = await SolicitedAnswers.KeepAsync(
+                sessions,
+                new SolicitedAsk(
+                    served, await sessions.FindAsync(served, inside).ConfigureAwait(false), KeyOf(helper.Id), text, $"helper `{helper.Id}`'s answer", "a helper's answer")
                 {
-                    return Refused(HelperRefusal.CannotTake,
-                        $"Session `{served}`'s line runs past {Lines.Bound} parts, so whether its answer was taken already is not read and no part takes it");
-                }
-
-                if (held is not null)
-                {
-                    return new HelperOutcome(
-                        HelperRefusal.None,
-                        $"Helper `{helper.Id}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
-                    {
-                        SettledOn = held.Record,
-                    };
-                }
-            }
-
-            if (loops)
-            {
-                return Refused(HelperRefusal.CannotTake,
-                    $"Session `{served}`'s line loops back on a part it already passed, so it has no newest part and no part takes the answer");
-            }
-
-            if (pastBound)
-            {
-                return Refused(HelperRefusal.CannotTake,
-                    $"Session `{served}`'s line runs past sixteen links, so its newest part is not read and no part it left takes the answer");
-            }
-
-            string? cannot = asker switch
-            {
-                null or { Origin: not null } => $"There is no session `{served}` of this machine's to hand the answer to",
-                { Ask: { } ask } => $"Session `{asker.Id}` is the intake for ask `#{ask}`, which is answered through its ask",
-                { Opinion: { } reads } => $"Session `{asker.Id}` read the work for second opinion `{reads}`: a pass takes no words",
-                { Serves: not null } => $"Session `{asker.Id}` is a helper itself: it takes no words",
-                { State: SessionState.StoodDown } => $"Session `{asker.Id}` stood down, so it has nothing to go on with",
-                { State: SessionState.AwaitingPerson, Answer: null } =>
-                    $"Session `{asker.Id}` waits on the person's answer: a helper's answer reaches it at a turn's end, once it is answered",
-                // HELPERWAIT1 (Codex's round-2 #1 on COWORKUX1): a park the person answered takes it beside their answer, so its go-on
-                // hands both in one prompt; the answer is theirs, and it alone moves the park.
-                { State: SessionState.AwaitingPerson } => null,
-                // An open conversation between turns (MIXAGENT2a-iii) is working: the chat runner says the word as its next turn,
-                // or at its turn's end, which it alone knows. One still being started is not open yet.
-                { Kind: SessionKind.Chat, State: SessionState.Working } => null,
-                // COWORK1d: a working driven asker whose driver hands an urgent ask's answer for its run's next step.
-                { Kind: SessionKind.Driven, State: SessionState.Working } when running => null,
-                { Active: true } =>
-                    $"Session `{asker.Id}` is {Session.Spell(asker.State)}: a helper's answer reaches a running session at its turn's end, never into a step in flight",
-                _ => null,
-            };
-            if (cannot is not null) return Refused(HelperRefusal.CannotTake, cannot);
-
-            if (asker!.Said.Any(word => string.Equals(word.Helper, helper.Id, StringComparison.Ordinal)) == true)
-            {
-                return Refused(HelperRefusal.NotHanded, $"Helper `{helper.Id}`'s answer went to session `{asker.Id}` already: it goes once");
-            }
-
-            // Keyed by its helper (HELPERWAIT1), one helper per ask: the word's own identity wherever it waits, as a piece's is (PartnerDesk).
-            var word = new SaidWord(
-                Guid.NewGuid().ToString("N")[..8], text.Trim(), now, [], Reopens: true, Helper: helper.Id,
-                Level: level is { } said && SaidLevel.Known(said) ? said : null, Key: KeyOf(helper.Id));
-            var kept = await sessions.KeepSaidAsync(asker.Id, word, ct: inside).ConfigureAwait(false);
-            return new HelperOutcome(
-                HelperRefusal.None,
-                $"Handed helper `{helper.Id}`'s answer to session `{asker.Id}`: it waits on its record as another agent's claim, never the person's words, "
-                + "and it goes on with it at the driver's next look.")
-            {
-                Session = kept,
-                Word = word,
-            };
+                    Helper = helper.Id, Level = level, Running = running, Settled = settled,
+                },
+                now, inside).ConfigureAwait(false);
+            return Handed(outcome, $"helper `{helper.Id}`'s answer", "it waits on its record as another agent's claim, never the person's words");
         }, ct).ConfigureAwait(false);
     }
 
-    /// <summary>How many links of an asker's line the hand follows, at most (HELPERWAIT1); the driver's look follows as many.</summary>
-    internal const int LineBound = 16;
+    /// <summary>The desk's answer to what the solicited-answer door did; shared by the helper and the partner desk.</summary>
+    internal static HelperOutcome Handed(SolicitedOutcome outcome, string subject, string waits) => outcome.Fate switch
+    {
+        SolicitedFate.Kept => new HelperOutcome(
+            HelperRefusal.None,
+            $"Handed {subject} to session `{outcome.Session!.Id}`: {waits}, and it goes on with it at the driver's next look.")
+        {
+            Session = outcome.Session,
+            Word = outcome.Word,
+        },
+        SolicitedFate.Waiting => new HelperOutcome(HelperRefusal.None, outcome.Message)
+        {
+            Session = outcome.Session,
+            Word = outcome.Word,
+            Waiting = true,
+        },
+        SolicitedFate.Settled => new HelperOutcome(HelperRefusal.None, outcome.Message) { SettledOn = outcome.SettledOn },
+        _ => new HelperOutcome(
+            outcome.Refusal switch
+            {
+                SolicitedRefusal.NotFound => HelperRefusal.NotFound,
+                SolicitedRefusal.NotHanded => HelperRefusal.NotHanded,
+                _ => HelperRefusal.CannotTake,
+            },
+            $"{outcome.Message}. Nothing was kept."),
+    };
 
     /// <summary>A helper's answer's stable key, the producer key its word carries (HELPERWAIT1): one per helper, and so one per ask.</summary>
     public static string KeyOf(string helper) => $"helper:{helper}";

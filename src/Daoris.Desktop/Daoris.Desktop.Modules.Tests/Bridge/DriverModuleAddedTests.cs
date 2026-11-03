@@ -71,7 +71,7 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.OK, """{"kept":false,"message":"Session `s1` works quest `#q1`, which `engine` asked rather than an ask."}""")]
+    [InlineData(HttpStatusCode.OK, """{"kept":false,"message":"Session `s1` works quest `#q1`, which `engine` asked and whose line is on no ask."}""")]
     [InlineData(HttpStatusCode.NotFound, """{"error":"No session `s1` of this machine's."}""")]
     [InlineData(HttpStatusCode.InternalServerError, "")]
     public async Task Whatever_the_service_answers_the_message_still_reached_its_session(HttpStatusCode status, string body)

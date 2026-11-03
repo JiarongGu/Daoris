@@ -19,7 +19,13 @@ public static class HelperWaits
     /// </summary>
     public static IReadOnlyList<HelperAsk> Open(string session, IEnumerable<HelperAsk> asks, Func<string, HelperState?> state) =>
         [.. asks.Where(ask => string.Equals(ask.Asker, session, StringComparison.Ordinal) && ask.AskedBy == HelperAsk.ByAgent
-                              && state(ask.Id) is not ({ State: HelperStates.Refused } or { Handed: not null }))];
+                              && !Settled(state(ask.Id)))];
+
+    /// <summary>
+    /// Whether an ask's state settles it, the one rule the exchanges' read (<c>Exchanges.Of</c>), <see cref="Open"/> and the brief share:
+    /// refused, or its answer handed. An answer kept but not yet handed is not settled, its answer still on its way.
+    /// </summary>
+    public static bool Settled(HelperState? state) => state is { State: HelperStates.Refused } or { Handed: not null };
 
     /// <summary>
     /// Whether <paramref name="record"/> is a session of this machine's that ended waiting on its own helper: completed by that code,

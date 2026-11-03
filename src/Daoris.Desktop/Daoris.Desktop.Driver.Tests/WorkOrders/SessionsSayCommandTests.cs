@@ -150,20 +150,20 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(["notes.md", "b.txt"], ask.Files);
     }
 
-    /// <summary>STEER2c: <c>--now</c> is the terminal's twin of *Send now*, a flag anywhere after the id, and no part of the words.</summary>
+    /// <summary>ONEWAY1l: <c>--now</c> is retired and refused naming <c>--level now</c>, wherever it stands; a say with no level asks none.</summary>
     [Fact]
-    public void Now_is_a_flag_beside_the_words_and_not_one_of_them()
+    public void Now_is_refused_naming_the_level_that_replaced_it()
     {
-        var now = SessionsCommand.Read(["say", "d0ne0000", "also", "--now", "the", "changelog"], out var problem);
         var plain = SessionsCommand.Read(["say", "d0ne0000", "also the changelog"], out _);
+        Assert.Null(plain!.Level);
 
-        Assert.Null(problem);
-        Assert.Equal(("also the changelog", true, "now"), (now!.Text, now.Now, now.Level));
-        Assert.False(plain!.Now);
-        Assert.Null(plain.Level);
-        Assert.Null(SessionsCommand.Read(["say", "d0ne0000", "--now"], out var bare));
-        Assert.False(string.IsNullOrWhiteSpace(bare));
-        Assert.Contains("--now", SessionsCommand.Usage);
+        foreach (var args in new[] { new[] { "say", "d0ne0000", "also", "--now", "the", "changelog" }, ["say", "d0ne0000", "--now"] })
+        {
+            Assert.Null(SessionsCommand.Read(args, out var problem));
+            Assert.Contains("--level now", problem);
+        }
+
+        Assert.DoesNotContain("--now", SessionsCommand.Usage.Split('\n').Single(line => line.Contains("sessions say", StringComparison.Ordinal)));
     }
 
     /// <summary>
@@ -177,31 +177,55 @@ public sealed class SessionsSayCommandTests : IDisposable
         var now = SessionsCommand.Read(["say", "d0ne0000", "--level", "now", "stop: the tests are in /spec"], out _);
 
         Assert.Null(problem);
-        Assert.Equal(("tidy the readme", "ordinary", false), (ordinary!.Text, ordinary.Level, ordinary.Now));
-        Assert.Equal(("stop: the tests are in /spec", "now", true), (now!.Text, now.Level, now.Now));
+        Assert.Equal(("tidy the readme", "ordinary"), (ordinary!.Text, ordinary.Level));
+        Assert.Equal(("stop: the tests are in /spec", "now"), (now!.Text, now.Level));
         Assert.Null(SessionsCommand.Read(["say", "d0ne0000", "hi", "--level", "priority"], out var unknown));
         Assert.Contains("ordinary, urgent or now", unknown);
         Assert.Null(SessionsCommand.Read(["say", "d0ne0000", "hi", "--level"], out _));
         Assert.Contains("[--level ordinary|urgent|now]", SessionsCommand.Usage);
     }
 
-    /// <summary>The answer a loop gives to a say with <c>--now</c> reads back whole, by the request's file, and its level beside it.</summary>
+    /// <summary>
+    /// The answer a loop gives to a say at <c>now</c> reads back whole, by the request's file, whose level is the one spelling: no writer
+    /// writes <c>now</c> beside it (ONEWAY1l). A waiting file from an older build with <c>now: true</c> and no level is read as now.
+    /// </summary>
     [Fact]
     public void A_nows_request_and_answer_carry_it_through_the_request_folder()
     {
         var requests = new SessionRequests(_home);
         var request = new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow)
         {
-            Text = "hi", Key = SessionRequests.NewKey(), Now = true, Level = "now",
+            Text = "hi", Key = SessionRequests.NewKey(), Level = "now",
         };
         requests.Write(request);
 
+        var file = Assert.Single(Directory.EnumerateFiles(requests.Folder, "*.json"));
+        using (var written = System.Text.Json.JsonDocument.Parse(File.ReadAllText(file)))
+        {
+            Assert.False(written.RootElement.TryGetProperty("now", out _));
+            Assert.Equal("now", written.RootElement.GetProperty("level").GetString());
+        }
+
         var pending = Assert.Single(requests.Pending(DateTimeOffset.UtcNow));
-        Assert.Equal((true, "now", MessageLevel.Now), (pending.Now, pending.Level, pending.Asked));
+        Assert.Equal(("now", MessageLevel.Now), (pending.Level, pending.Asked));
         requests.Answer(request, new WordsHeld(true, "now", null) { Now = true });
         Assert.Equal(new WordsHeld(true, "now", null) { Now = true }, requests.AnswerOf(request));
-        // A request from before COWORK1a carries no level: read by its `now`, else urgent.
         Assert.Equal(MessageLevel.Urgent, new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow).Asked);
+    }
+
+    /// <summary>ONEWAY1l, transitional <c>say-now-field</c>: a request file waiting from an older build with <c>now: true</c> and no level is read as <c>now</c>.</summary>
+    [Fact]
+    public void A_waiting_request_with_now_and_no_level_is_read_as_now()
+    {
+        var requests = new SessionRequests(_home);
+        Directory.CreateDirectory(requests.Folder);
+        File.WriteAllText(Path.Combine(requests.Folder, "w0rk1ng0.old1.json"), $$"""
+            {"session":"w0rk1ng0","move":"say","at":"{{DateTimeOffset.UtcNow:O}}","text":"hi","key":"old1","now":true}
+            """);
+
+        var pending = Assert.Single(requests.Pending(DateTimeOffset.UtcNow));
+
+        Assert.Equal(("now", MessageLevel.Now), (pending.Level, pending.Asked));
     }
 
     /// <summary>
@@ -263,7 +287,7 @@ public sealed class SessionsSayCommandTests : IDisposable
             },
         };
 
-        var (exit, said) = await SayAsync(room, ["w0rk1ng0", "use the cache", "--now"], world);
+        var (exit, said) = await SayAsync(room, ["w0rk1ng0", "use the cache", "--level", "now"], world);
 
         Assert.Equal(0, exit);
         Assert.Equal(line, said);

@@ -235,7 +235,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         // Where it ran, an intake by its ask (D65 §1b); and whether it waits on the person by the list's own rule, or ended, a failure
         // an account's limit made said limited (LIMITRESUME1d2, D206 §3.1).
         var where = record.Ask is { } ask ? $" answering ask `#{ask}`" : $" in `{record.Repository}`";
-        var stands = SessionGroups.WaitsOnYou(record.Id, record.State, record.Answer) ? ", waiting on you"
+        var stands = SessionGroups.WaitsOnYou(record.Id, record.State, record.Answered) ? ", waiting on you"
             : record.Live ? ""
             : $", {ShownState.Of(record)}";
         return ((record.Id, $" → session `{record.Id}`{where}{stands}"), null);

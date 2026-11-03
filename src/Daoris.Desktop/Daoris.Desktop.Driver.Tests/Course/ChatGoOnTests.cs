@@ -663,6 +663,12 @@ public sealed class ChatGoOnTests : IDisposable
         await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("c1"))}]");
         Assert.Equal(["working", "failed"], ledger.Moves("c1"));
         Assert.Single(events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == NoteCodes.AnswersHeld.Code) == true);
+        // COMMS1g: the line's admission was seeded at two, the person's press reset it, and the answer it let go on is admitted once.
+        var admission = new ContinuationAdmissions(_home, () => StoreSettled.Yes).Of("c1")!;
+        Assert.Equal([("seed", 2), ("reset", 0)], admission.Epochs.Select(epoch => (epoch.Cause, epoch.N)));
+        var row = Assert.Single(admission.Admitted);
+        Assert.Equal(1, row.Epoch);
+        Assert.Equal(["w3"], row.Words);
     }
 
     /// <summary>

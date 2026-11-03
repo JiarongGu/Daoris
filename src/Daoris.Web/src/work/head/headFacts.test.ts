@@ -363,6 +363,12 @@ describe('a session’s facts line', () => {
       expect(sessionFacts(t, { session: helper, shown: 'working' })).toEqual(['engine', 'helping another session', 'started 2m ago']);
     });
 
+    it('says nothing of helping for a reviewer, which serves the work it reads (COMMS1b)', () => {
+      const reviewer = session({ ...CHAT, serves: 's9f8e7d6', opinion: 'o1a2b3c4' });
+      expect(sessionFacts(t, { session: reviewer, shown: 'working', helping: 'Expose a streaming budget' }))
+        .toEqual(['engine', 'started 2m ago']);
+    });
+
     it('says nothing of a link the record does not hold', () => {
       expect(sessionFacts(t, { session: session(CHAT), shown: 'working', continuesAgent: 'Codex', helping: 'Expose a streaming budget' }))
         .toEqual(['engine', 'started 2m ago']);

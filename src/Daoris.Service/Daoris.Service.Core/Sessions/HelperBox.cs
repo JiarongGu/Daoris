@@ -98,7 +98,8 @@ public sealed class HelperBox(string? home)
     public (bool Kept, string Message) Answer(Session? helper, string? named, string? words, DateTimeOffset at)
     {
         if (string.IsNullOrWhiteSpace(named)) return (false, "This connector speaks for no session the driver started here, so there is no question for it to answer.");
-        if (helper is not { Origin: null, Serves: not null }) return (false, $"Session `{named.Trim()}` is no helper: only a session the driver started to answer a question answers one.");
+        // B5: a reviewer carries `serves` too; the opinion mark is read first.
+        if (helper is not { Origin: null, Opinion: null, Serves: not null }) return (false, $"Session `{named.Trim()}` is no helper: only a session the driver started to answer a question answers one.");
         if (Home is null) return (false, $"{Capital(DaorisHome.Sentence)} Nothing was kept.");
 
         var folder = DaorisHome.Entry(Home, HomeEntry.Helpers);
@@ -129,10 +130,10 @@ public sealed class HelperBox(string? home)
     /// and a teammate's record is no session here. The sentence says which, or null when it may.
     /// </summary>
     private static string? Unfit(Session asker) =>
-        asker.Serves is { } serves
-            ? $"Session `{asker.Id}` is itself a helper for session `{serves}`, and a helper cannot ask for a helper."
-        : asker.Opinion is { } opinion
+        asker.Opinion is { } opinion
             ? $"Session `{asker.Id}` reads another session's work for second opinion `{opinion}`, and a reviewer cannot ask for a helper."
+        : asker.Serves is { } serves
+            ? $"Session `{asker.Id}` is itself a helper for session `{serves}`, and a helper cannot ask for a helper."
         : asker.Ask is { } ask
             ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, which does no work in a repository, and an intake cannot ask for a helper."
         : SessionLedger.IsHelp(asker)

@@ -304,6 +304,30 @@ describe('ConversationView', () => {
     await i18n.changeLanguage('en');
   });
 
+  /** COMMS1a: a helper's answer and a partner's are drawn under their senders, in both languages, never as the target Daoris composed. */
+  it('draws a helper’s answer and a partner’s under their senders, never as the composed target', async () => {
+    const asked = (from: 'helper' | 'partner') => render(
+      <Tooltip.Provider>
+        <ConversationView turns={toTurns([ev({ kind: 'user', origin: 'target', helper: 'h1', id: from, text: 'It is done.' })], { workOf: () => from }).turns} />
+      </Tooltip.Provider>,
+    );
+    const { unmount } = asked('helper');
+    expect(screen.getByText('A helper’s answer, in Daoris’s words')).toBeTruthy();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    unmount();
+    const { unmount: again } = asked('partner');
+    expect(screen.getByText('A partner’s answer, in Daoris’s words')).toBeTruthy();
+    again();
+
+    await i18n.changeLanguage('zh');
+    const { unmount: last } = asked('helper');
+    expect(screen.getByText('助手的回答，附 Daoris 的说明')).toBeTruthy();
+    last();
+    asked('partner');
+    expect(screen.getByText('搭档的回答，附 Daoris 的说明')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
   /**
    * SUPERVISOR1a-i (D208; the supervisor design §6.1, §6.2): the supervisor's answer is drawn under its own mark, *From the supervisor,
    * on your behalf*, taken or held, never the person's bubble nor a composed target; an author the page does not know is *Not
@@ -326,7 +350,7 @@ describe('ConversationView', () => {
     await i18n.changeLanguage('zh');
     view([
       ev({ kind: 'user', origin: 'target', from: 'supervisor', id: 'w1', text }),
-      ev({ kind: 'user', origin: 'person', from: 'agent', id: 'w2', text: 'x' }),
+      ev({ kind: 'user', origin: 'person', from: 'someone', id: 'w2', text: 'x' }),
     ]);
     expect(screen.getByText('主管代你答复')).toBeTruthy();
     expect(screen.getByText('来源不明')).toBeTruthy();

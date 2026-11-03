@@ -136,8 +136,10 @@ function linkFacts(t: TFunction, session: Session, { continuesAgent, helping, pa
     if (why) facts.push(t(why.key));
   }
   // COAGENT1b: a partner works for its lead, a piece's; a helper helps.
-  if (session.serves && session.piece) facts.push(helping ? t('work.facts.partnerFor', { title: helping }) : t('work.facts.partnerForAnother'));
-  else if (session.serves) facts.push(helping ? t('work.facts.helping', { title: helping }) : t('work.facts.helpingAnother'));
+  // A reviewer serves the work it reads too (COMMS1b): the opinion mark is read before `serves`.
+  const serves = session.opinion ? null : session.serves;
+  if (serves && session.piece) facts.push(helping ? t('work.facts.partnerFor', { title: helping }) : t('work.facts.partnerForAnother'));
+  else if (serves) facts.push(helping ? t('work.facts.helping', { title: helping }) : t('work.facts.helpingAnother'));
   if (partners && partners.agents.length > 0) {
     const agents = list(partners.agents);
     facts.push(partners.working > 0

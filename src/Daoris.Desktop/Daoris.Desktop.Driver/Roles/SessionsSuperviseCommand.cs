@@ -215,7 +215,7 @@ public static class SessionsSuperviseCommand
         }
 
         var quest = record.Quest is { } named ? await world.Service.FindQuestAsync(named, ct).ConfigureAwait(false) : null;
-        var words = await RolesWorkOrders.Current.AskWordsAsync(world.Service, quest?.From, quest?.Id ?? "", ct).ConfigureAwait(false);
+        var words = await RolesWorkOrders.Current.AskWordsAsync(world.Service, id, quest?.Id ?? "", ct).ConfigureAwait(false);
         var fence = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
         var print = new StringBuilder();
         print.Append(Header).Append('\n');

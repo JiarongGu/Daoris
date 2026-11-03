@@ -98,6 +98,32 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal((Own, 3), migrated.Stamp);
     }
 
+    [Fact]
+    public void Step_20_adds_the_answers_alone_admissions_and_leaves_the_writer_stamp_at_3()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == ContinuationAdmissions.Step);
+        Assert.Equal(DesktopStore.PolicyWriter, step.Writer);
+        Assert.Equal(3, DesktopStore.WriterStamp);
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+        Assert.True(Own >= 20);
+        foreach (var table in new[] { "continuation_lines", "continuation_epochs", "continuation_admissions", "continuation_made" }) Assert.True(HasTable(store, table), table);
+        Assert.Single(store.Query("SELECT at FROM continuation_made", reader => reader.GetString(0)));
+        Assert.Equal(3, store.Stamp.Writer);
+
+        // A store a step-19 build left reads and migrates forward to it, its stamp where it was.
+        var at = Path.Combine(_root, "older.db");
+        using (var older = Open(at: at, options: new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(19)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.False(HasTable(older, "continuation_admissions"));
+            Assert.Equal((19, 3), older.Stamp);
+        }
+
+        var migrated = Open(at: at);
+        Assert.True(HasTable(migrated, "continuation_admissions"));
+        Assert.Equal((Own, 3), migrated.Stamp);
+    }
+
     private static bool HasTable(DesktopStore store, string table) =>
         store.Query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = $name", reader => reader.GetString(0), ("$name", table)).Count == 1;
 

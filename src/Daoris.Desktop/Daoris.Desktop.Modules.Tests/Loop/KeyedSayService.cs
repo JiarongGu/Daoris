@@ -53,6 +53,9 @@ internal sealed class KeyedSayService : HttpMessageHandler
     /// <summary>Whether <c>GET /api/protocol</c> answers the <c>head</c> mark, as a host from row d-ii does; false answers none, as a host before.</summary>
     public bool HeadMark { get; init; }
 
+    /// <summary>Whether <c>GET /api/protocol</c> answers the <c>presses</c> mark (COMMS1e), as a host that checks a person's press does.</summary>
+    public bool PressMark { get; init; }
+
     /// <summary>Every say to a record, in order, and whether it was refused as <c>running</c>.</summary>
     public IReadOnlyList<(string Body, bool Refused)> Said(string session)
     {
@@ -73,7 +76,8 @@ internal sealed class KeyedSayService : HttpMessageHandler
         var (status, answer) = (request.Method.Method, parts) switch
         {
             ("GET", ["api", "sessions"]) => (HttpStatusCode.OK, Records),
-            ("GET", ["api", "protocol"]) when HeadMark => (HttpStatusCode.OK, """{"run":"keyed","marks":{"settled":1,"opens":1,"head":1}}"""),
+            ("GET", ["api", "protocol"]) when HeadMark || PressMark => (HttpStatusCode.OK,
+                $$$"""{"run":"keyed","marks":{"settled":1,"opens":1{{{(HeadMark ? ",\"head\":1" : "")}}}{{{(PressMark ? ",\"presses\":1" : "")}}}}}"""),
             ("POST", ["api", "sessions", var id, "state"]) => (HttpStatusCode.OK,
                 $$"""{"session":{"id":"{{Uri.UnescapeDataString(id)}}","state":"{{JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()}}"},"message":"Moved."}"""),
             ("POST", ["api", "sessions", var id, "say"]) => Say(Uri.UnescapeDataString(id), body),

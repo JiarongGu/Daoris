@@ -74,7 +74,93 @@ public static class TransitionalRegister
             Row = "ONEWAY1af",
             Ended = home => Read(home, HomeEntry.Harnesses) is { } root && !PooledSections.Any(root.ContainsKey),
         },
+        new()
+        {
+            Id = "say-now-field",
+            Kept = "Course/Requests/SessionRequests.cs:626",
+            Reaches = "A say request file written by an older build that waits with `now: true` and no `level`, read as `level: now`.",
+            Ends = "No waiting request file carries `now` without a `level`, once the floor passes the last build that wrote `now` alone.",
+            Row = "ONEWAY1af",
+            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !WaitingNowAlone(home),
+        },
+        new()
+        {
+            Id = "solicited-older-host",
+            Kept = "Loop/DriverHelpers.cs:758, Loop/DriverPartners.cs:484, Loop/OpinionDeliverer.cs:182",
+            Reaches = "A host with no `answers` mark, before COMMS1b: the helper's sixteen-link walk and read-back, and the partner's and the opinion's pre-check of the record named.",
+            Ends = "The floor passes COMMS1b's build: the host and the driver ship together, so no host without the mark is reached.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "solicited-old-files",
+            Kept = "Loop/DriverHelpers.cs:806, Loop/DriverPartners.cs:464",
+            Reaches = "A helper state or a partner receipt whose attempt an older build wrote, with no `keyed` mark: read back along the line, else uncertain.",
+            Ends = "No open helper or partner ask holds an attempt without `keyed`, and the floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "session-answer-column",
+            Kept = "../../Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs:1858",
+            Reaches = "A session row from before `said` that holds an `answer` and no `said`: the service's store reads it as the first said word, id `answer`, and the next word written empties the column.",
+            Ends = "No session row in the service's store holds an `answer` and no `said` (a census over the store; finished ones go with their history's clear). The condition lives in the service's store, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "solicited-old-guards",
+            Kept = "Loop/DriverHelpers.cs:835, Loop/DriverPartners.cs:496",
+            Reaches = "A driver rolled back before COMMS1b, or a host that drops its mark mid-hand: the helper state's and the partner receipt's attempt, still written.",
+            Ends = "The floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "opinion-handed-guard",
+            Kept = "Loop/OpinionDeliverer.cs:95",
+            Reaches = "An opinion handed before the one door, whose findings word has no key: its `handed` is the only guard that hands it once.",
+            Ends = "No opinion waits with an unkeyed findings word (census), and the floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "answers-alone-events",
+            Kept = "Course/Domain/AnswersAlone.cs:49, Course/ContinuationAdmissions.cs:301, Course/GoOn/AnswersAloneHold.cs:97, Course/GoOn/AnswersAloneHold.cs:130",
+            Reaches = "A line no admission keeps yet, seeded once from its events as the count was read before; and a store short of step 20, or records that did not read, counted from the events as before.",
+            Ends = "No event log on the home was begun before its store kept the admissions, so no line holds history an admission did not read.",
+            Row = "ONEWAY1af",
+            Ended = ContinuationAdmissions.Begun,
+        },
     ];
+
+    /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>
+    private static bool Floor(string _) => false;
+
+    /// <summary>Whether a request file waiting in the home's requests folder says <c>now: true</c> with no <c>level</c>.</summary>
+    private static bool WaitingNowAlone(string home)
+    {
+        try
+        {
+            var folder = DaorisHome.Entry(home, HomeEntry.Requests);
+            if (!Directory.Exists(folder)) return false;
+            foreach (var path in Directory.EnumerateFiles(folder, "*.json"))
+            {
+                if (JsonNode.Parse(AtomicFile.ReadText(path)) is JsonObject root && root["now"] is JsonValue now && now.TryGetValue<bool>(out var on) && on && root["level"] is null) return true;
+            }
+
+            return false;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException or InvalidOperationException)
+        {
+            return true;
+        }
+    }
 
     /// <summary>The home's entry as a JSON object; an absent file is an empty one, and one that does not read is null.</summary>
     private static JsonObject? Read(string home, HomeEntry entry)

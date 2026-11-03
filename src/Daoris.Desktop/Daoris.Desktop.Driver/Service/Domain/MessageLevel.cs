@@ -50,8 +50,8 @@ public static class MessageLevels
     };
 
     /// <summary>
-    /// The level a press asked for (the design §9): its <c>level</c>; else <c>now: true</c>, an older page's or terminal's *Send
-    /// now*, read as now; else the person's default, urgent. A level word this build does not know is the caller's to refuse.
+    /// The level a press asked for (the design §9, ONEWAY1l): its <c>level</c>, else the person's default, urgent. A level word this
+    /// build does not know is the caller's to refuse.
     /// </summary>
-    public static MessageLevel Asked(string? level, bool now) => Read(level) ?? (now ? MessageLevel.Now : MessageLevel.Urgent);
+    public static MessageLevel Asked(string? level) => Read(level) ?? MessageLevel.Urgent;
 }

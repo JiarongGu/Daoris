@@ -319,10 +319,12 @@ public sealed class OpinionStoreTests : IAsyncLifetime
         Assert.Contains("Finding 1 (must, likely), at `src/Report.cs:42`: The workspace name is not quoted.", word.Text);
         Assert.Contains("Finding 2 (should, likely), at `general`: The table is kept twice.", word.Text);
         Assert.Contains("What it did not read or could not tell: I did not run the gate.", word.Text);
-        Assert.Null((await _sessions.FindAsync(working.Id))!.Answer);
+        Assert.False((await _sessions.FindAsync(working.Id))!.PersonSaid);
         Assert.Equal((working.Id, word.Id, Now.AddMinutes(6)), (handed.Opinion!.Handed!.Session, handed.Opinion.Handed.Word, handed.Opinion.Handed.At));
 
-        Assert.Equal(OpinionRefusal.NotHanded, (await _desk.HandAsync(opinion.Id, Now.AddMinutes(7))).Refusal);
+        var waiting = await _desk.HandAsync(opinion.Id, Now.AddMinutes(7));
+        Assert.True(waiting.Waiting, waiting.Message);
+        Assert.Equal(word.Id, waiting.Word!.Id);
         Assert.Single((await _sessions.FindAsync(working.Id))!.Said);
 
         var quiet = await WorkingAsync("quiet");

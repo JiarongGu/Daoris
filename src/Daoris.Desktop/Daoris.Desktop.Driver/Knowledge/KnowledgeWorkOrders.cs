@@ -37,7 +37,7 @@ internal interface IKnowledgeWorkOrders
         Func<string, CancellationToken, Task<TreeWork?>> judge, IReadOnlyCollection<string>? only, CancellationToken ct, int atOnce);
     IReadOnlyList<RecordedTree> RecordedOf(IEnumerable<SessionRecord> records);
     Task<HelpWork> ReadWorkAsync(string home, HelpWorkPart part, CancellationToken ct);
-    bool WaitsOnYou(string id, string state, string? answer);
+    bool WaitsOnYou(string id, string state, bool answered);
     HelpSessions Placed(IKnowledgeSessionLook look);
     IEnumerable<string> Milestone(IKnowledgeMilestone unit);
 }

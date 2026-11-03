@@ -214,7 +214,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
             new SessionRecord("s1a2b3c4", "console-ui", "awaiting-person") { Quest = "q1a2b3c4" },
             new SessionRecord("s2b3c4d5", "engine", "working") { Quest = "q2taken0" },
             new SessionRecord("s3c4d5e6", "game", "completed") { Quest = "q3done00" },
-            new SessionRecord("s4d5e6f7", "engine", "awaiting-person") { Quest = "q5start0", Answer = "Port 8080." },
+            new SessionRecord("s4d5e6f7", "engine", "awaiting-person") { Quest = "q5start0", Said = Daoris.Desktop.Driver.Tests.PersonWords.Of("Port 8080.") },
             new SessionRecord("s7a8b9c0", "ask #a2none00", "awaiting-person") { Ask = "a2none00" },
             new SessionRecord("s5e6f7a8", HelpRoom.Repository, "awaiting-person") { Kind = "chat" },
             new SessionRecord("laptop/s6f7a8b9", "engine", "awaiting-person"),

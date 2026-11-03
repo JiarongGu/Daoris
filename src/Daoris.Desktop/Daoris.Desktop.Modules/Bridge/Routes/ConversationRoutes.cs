@@ -95,8 +95,8 @@ public sealed class ConversationRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
-        // COWORK1a (D188 point 1): `level` is when the words should reach a working session, `ordinary`, `urgent` or `now`; an older
-        // page's `now: true` is now; none is the person's default, urgent. No level stops a turn.
+        // COWORK1a (D188 point 1): `level` is when the words should reach a working session, `ordinary`, `urgent` or `now`; none is
+        // the person's default, urgent. No level stops a turn.
         var level = LevelOf(request);
         // RPC1d: `sessions say` sent over the pipe asks for the verb's own words and names the files it was given by their paths on this
         // machine, which the verb reads as it does alone; the page asks for none and attaches its files whole.
@@ -109,7 +109,7 @@ public sealed class ConversationRoutes(DriverContext context)
                 context,
                 new SessionsAsk("say")
                 {
-                    Ids = [id], Text = text, Files = paths, Now = level == MessageLevel.Now, Level = Optional(request, "level"),
+                    Ids = [id], Text = text, Files = paths, Level = Optional(request, "level"),
                 },
                 cancellationToken)
                 .ConfigureAwait(false);
@@ -148,7 +148,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // COWORK1c: `key`, the press's own where the page names one, so a press that arrives twice keeps one word; the shell gives each
         // press one otherwise.
         var said = await _loop.Words
-            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"), choice)
+            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"), choice, asking)
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
@@ -545,8 +545,8 @@ public sealed class ConversationRoutes(DriverContext context)
             : new { reach.Reaches, reach.Why, reach.To, Steers = reach.Door?.Steers, KeepingStop = reach.Door?.KeepingStop };
 
     /// <summary>
-    /// The level a press asked for (COWORK1a): its <c>level</c>, or an older page's <c>now: true</c>, else the person's default,
-    /// urgent. A level this build does not know is refused in a sentence, before anything is kept.
+    /// The level a press asked for (COWORK1a, ONEWAY1l): its <c>level</c>, else the person's default, urgent. A level this build
+    /// does not know is refused in a sentence, before anything is kept.
     /// </summary>
     internal static MessageLevel LevelOf(IpcRequest request)
     {
@@ -556,7 +556,7 @@ public sealed class ConversationRoutes(DriverContext context)
             throw new DriverException($"`{word}` is no level: when it reads your words is ordinary, urgent or now; nothing was kept.");
         }
 
-        return MessageLevels.Asked(word, Flag(request, "now"));
+        return MessageLevels.Asked(word);
     }
 
     /// <summary>

@@ -87,6 +87,21 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// </summary>
     public string? HelperHandLost { get; set; }
 
+    /// <summary>
+    /// COMMS1b (the comms design §4.2): the host answers the <c>answers</c> mark, and its three hand doors are the one door for solicited answers.
+    /// Each keeps its word under its key (<c>helper:&lt;id&gt;</c>, <c>partner:&lt;piece&gt;</c>, <c>opinion:&lt;id&gt;</c>) on the head of the named
+    /// record's line, walked by <c>from</c>; answers a word already waiting there <c>waiting</c> with its holder; answers a key a take settled
+    /// (<see cref="Take"/>) or <see cref="SettledHands"/> names <c>settled</c> where the hand asks it; takes a park the person answered; and refuses
+    /// a running turn, a park still waiting on the person and a stood-down part. Off, the doors are a host's before the row.
+    /// </summary>
+    public bool Answers { get; set; }
+
+    /// <summary>How many times a partner's hand was asked, taken or refused (COMMS1b: a look whose head runs asks none).</summary>
+    public int PartnerHandsAsked { get; private set; }
+
+    // The keys a take settled, with the record each word left (row p's settlement, as the one door reads it).
+    private readonly Dictionary<string, string> _settled = new(StringComparer.Ordinal);
+
     /// <summary>A client over this host, as a driver is handed one.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
 
@@ -149,10 +164,29 @@ internal sealed class OpinionStandIn : HttpMessageHandler
         lock (_gate) return (JsonArray)Find(id)!["said"]!.DeepClone();
     }
 
-    /// <summary>Take a record's words off by their ids, as a resumed run's conclusion does.</summary>
+    /// <summary>Take a record's words off by their ids, as a resumed run's conclusion does; each keyed word's take is settled (row p).</summary>
     public void Take(string id)
     {
-        lock (_gate) Find(id)!["said"] = new JsonArray();
+        lock (_gate)
+        {
+            foreach (var word in Find(id)!["said"]!.AsArray())
+            {
+                if (word?["key"]?.GetValue<string>() is { } key) _settled[key] = id;
+            }
+
+            Find(id)!["said"] = new JsonArray();
+        }
+    }
+
+    /// <summary>A keyed open's move of a record's waiting words to the part that continues it (FOUNDATION1d-ii part 3), its keys kept.</summary>
+    public void MoveWords(string from, string to)
+    {
+        lock (_gate)
+        {
+            var moving = Find(from)!["said"]!.AsArray().Select(word => word!.DeepClone()).ToList();
+            Find(from)!["said"] = new JsonArray();
+            foreach (var word in moving) Find(to)!["said"]!.AsArray().Add(word);
+        }
     }
 
     /// <summary>
@@ -232,6 +266,15 @@ internal sealed class OpinionStandIn : HttpMessageHandler
 
                 case ("GET", "/api/quests"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]));
+
+                // COMMS1b: the marks of a host with the one door for solicited answers; a host before it answers none, its route not found.
+                case ("GET", "/api/protocol") when Answers:
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["run"] = "opinions-stand-in", ["marks"] = new JsonObject { ["answers"] = 1 } });
+
+                case ("POST", _) when Answers && path.EndsWith("/hand", StringComparison.Ordinal)
+                                     && (path.StartsWith("/api/helpers/", StringComparison.Ordinal) || path.StartsWith("/api/partners/", StringComparison.Ordinal)
+                                         || path.StartsWith("/api/opinions/", StringComparison.Ordinal)):
+                    return OneDoor(path, body);
 
                 // HELPERWAIT1c: an ask's read the service does not answer, or refuses; with neither, the stand-in holds no ask.
                 case ("GET", _) when AskFailure is not null && path.StartsWith("/api/asks/", StringComparison.Ordinal):
@@ -412,6 +455,122 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     return Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"the stand-in has no {request.Method} {path}" });
             }
         }
+    }
+
+    /// <summary>
+    /// The one door (COMMS1b), as the service's <c>SolicitedAnswers.KeepAsync</c> takes a hand inside the caller's step: a settled key answered
+    /// first, then the named record's line walked to its head, a word waiting there answered <c>waiting</c>, the head's table, and the keep.
+    /// </summary>
+    private HttpResponseMessage OneDoor(string path, string? body)
+    {
+        var asked = string.IsNullOrWhiteSpace(body) ? new JsonObject() : JsonNode.Parse(body)!.AsObject();
+        var settled = asked["settled"]?.GetValue<bool>() == true;
+        var text = asked["text"]?.GetValue<string>() ?? "";
+        string id, named, key;
+        JsonObject? opinion = null;
+        string? to = null;
+        if (path.StartsWith("/api/opinions/", StringComparison.Ordinal))
+        {
+            id = Uri.UnescapeDataString(path["/api/opinions/".Length..^"/hand".Length]);
+            to = asked["to"]?.GetValue<string>();
+            Hands.Add(id);
+            HandsTo.Add(to);
+            if (!_opinions.TryGetValue(id, out opinion)) return Refuse(HttpStatusCode.NotFound, "no such opinion");
+            if (opinion["pass"]!.GetValue<string>() == "recheck") return Refuse(HttpStatusCode.Conflict, "a recheck's findings go to the person");
+            if (opinion["given"] is not JsonObject given) return Refuse(HttpStatusCode.Conflict, "it has said nothing yet");
+            if (given["findings"]!.AsArray().Count == 0) return Refuse(HttpStatusCode.Conflict, "it raised nothing");
+            (named, key, text) = (to ?? opinion["working"]!.GetValue<string>(), $"opinion:{id}", $"Another agent, Codex by OpenAI, read your work at `{Tip}` and claims what follows.");
+        }
+        else
+        {
+            var helper = path.StartsWith("/api/helpers/", StringComparison.Ordinal);
+            id = Uri.UnescapeDataString(path[(helper ? "/api/helpers/" : "/api/partners/").Length..^"/hand".Length]);
+            if (helper) HelperHandsAsked++;
+            else PartnerHandsAsked++;
+            if (settled && SettledHands.TryGetValue(id, out var settledOn)) return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Settled.", ["settled"] = settledOn });
+            if (helper && HelperHandRefusal is { } refusal) return Refuse(HttpStatusCode.Conflict, refusal);
+            var record = Find(id);
+            if (record?["serves"]?.GetValue<string>() is not { } served) return Refuse(HttpStatusCode.NotFound, $"There is no session `{id}` that serves one");
+            if (helper) (named, key) = (served, $"helper:{id}");
+            else if (record["piece"]?.GetValue<string>() is { } piece) (named, key) = (served, $"partner:{piece}");
+            else return Refuse(HttpStatusCode.NotFound, $"There is no partner session `{id}`");
+        }
+
+        if (Find(named) is null) return Refuse(HttpStatusCode.NotFound, $"There is no session `{named}` of this machine's");
+        var head = HeadOf(named);
+        if (head is null) return Refuse(HttpStatusCode.Conflict, $"Session `{named}`'s line loops back on a part it already passed");
+        var waiting = head["said"]!.AsArray().FirstOrDefault(word => word?["key"]?.GetValue<string>() == key);
+        if (waiting is null && settled && _settled.TryGetValue(key, out var left))
+        {
+            return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Settled.", ["settled"] = left });
+        }
+
+        if (waiting is not null)
+        {
+            if (opinion is not null && opinion["handed"] is null) opinion["handed"] = Handed(head, waiting, null);
+            var answer = new JsonObject { ["message"] = "Waits already.", ["waiting"] = true, ["session"] = head.DeepClone(), ["said"] = waiting.DeepClone() };
+            if (opinion is not null) answer["opinion"] = opinion.DeepClone();
+            return Answer(HttpStatusCode.OK, answer);
+        }
+
+        var state = head["state"]!.GetValue<string>();
+        var chat = head["kind"]?.GetValue<string>() == "chat";
+        if (head["serves"] is not null || head["opinion"] is not null || head["ask"] is not null) return Refuse(HttpStatusCode.Conflict, "it takes no words");
+        if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
+        if (state == "awaiting-person" && head["answer"] is null) return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
+        var open = state == "working" && (chat || asked["running"]?.GetValue<bool>() == true);
+        if (Running.Contains(state) && !open) return Refuse(HttpStatusCode.Conflict, "an answer reaches a running session at its turn's end");
+        if (opinion?["handed"] is JsonObject && to is null) return Refuse(HttpStatusCode.Conflict, "they go once");
+
+        var word = new JsonObject
+        {
+            ["id"] = $"{(opinion is not null ? "op" : key.StartsWith("helper:", StringComparison.Ordinal) ? "hp" : "pt")}-w{++_words}", ["text"] = text,
+            ["at"] = "2026-11-03T10:15:00Z", ["files"] = new JsonArray(), ["reopens"] = true, ["key"] = key,
+        };
+        if (opinion is not null) word["by"] = id;
+        else word["helper"] = id;
+        if (asked["level"]?.GetValue<string>() is { } level) word["level"] = level;
+        if (to is not null) word["level"] = "ordinary";
+        head["said"]!.AsArray().Add(word);
+        var holder = head["id"]!.GetValue<string>();
+        if (opinion is not null) opinion["handed"] = Handed(head, word, (opinion["handed"] as JsonObject)?["session"]?.GetValue<string>());
+        else if (key.StartsWith("helper:", StringComparison.Ordinal)) HelperHands.Add((id, text));
+        else PartnerHands.Add((id, holder, text));
+
+        if (key.StartsWith("helper:", StringComparison.Ordinal))
+        {
+            switch (HelperHandLost)
+            {
+                case "500": return Answer(HttpStatusCode.InternalServerError, new JsonObject { ["error"] = "An unexpected error." });
+                case "unreadable": return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("<html>", Encoding.UTF8, "text/html") };
+                case "timeout": throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.");
+            }
+        }
+
+        var kept = new JsonObject { ["message"] = "Handed.", ["session"] = head.DeepClone(), ["said"] = word.DeepClone() };
+        if (opinion is not null) kept["opinion"] = opinion.DeepClone();
+        return Answer(HttpStatusCode.OK, kept);
+    }
+
+    /// <summary>Where an opinion's findings went, as the desk keeps it.</summary>
+    private static JsonObject Handed(JsonObject head, JsonNode word, string? from) => new()
+    {
+        ["session"] = head["id"]!.GetValue<string>(), ["word"] = word["id"]!.GetValue<string>(), ["at"] = "2026-11-03T10:15:00Z", ["from"] = from,
+    };
+
+    /// <summary>The head of <paramref name="named"/>'s line: the newest record continuing it by <c>from</c>, followed; null for a line that loops.</summary>
+    private JsonObject? HeadOf(string named)
+    {
+        var at = Find(named)!;
+        var seen = new HashSet<string>(StringComparer.Ordinal) { named };
+        while (_sessions.Where(record => record["from"]?.GetValue<string>() == at["id"]!.GetValue<string>())
+                   .OrderByDescending(record => record["created"]?.GetValue<string>(), StringComparer.Ordinal).FirstOrDefault() is { } next)
+        {
+            if (!seen.Add(next["id"]!.GetValue<string>())) return null;
+            at = next;
+        }
+
+        return at;
     }
 
     private static HttpResponseMessage Refuse(HttpStatusCode status, string why) =>

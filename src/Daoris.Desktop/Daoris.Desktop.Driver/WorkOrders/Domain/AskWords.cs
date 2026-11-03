@@ -60,14 +60,47 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
         (ask.Words is { } said ? new AskWords(ask.Id, said, ask.WordsKeptFrom) : Unread(ask.Id)) with { GoAheads = ask.GoAheads };
 
     /// <summary>
-    /// The person's words on the ask a quest was asked by, read from the ask for a session's start (DRIFT1b): null for a
-    /// quest no ask asked, and never a failure. A read that does not answer is <see cref="Unread"/>, and the start
-    /// goes on with its instruction saying so: the words are what a session is handed, never what holds it.
+    /// The ask a session's line is on (COMMS1c, D225): the origin of its entry's key where that is <c>ask:&lt;id&gt;</c>, the same
+    /// origin the service's go-ahead and channel read. Null for a line on no ask, or a key the host did not answer.
+    /// </summary>
+    public static string? AskOfEntry(string? entry) =>
+        EntryKey.Parse(entry) is { HasSlash: true } key && key.Origin.StartsWith(ChannelEntry.AskOrigin, StringComparison.Ordinal)
+        && key.Origin.Length > ChannelEntry.AskOrigin.Length
+            ? key.Origin[ChannelEntry.AskOrigin.Length..]
+            : null;
+
+    /// <summary>
+    /// The entry key of one session's record, as the service answers it; null where the record is none or the service did not
+    /// answer (the line is then on no ask the driver can name).
+    /// </summary>
+    /// <exception cref="OperationCanceledException">The driver is closing.</exception>
+    public static async Task<string?> EntryOfAsync(ServiceClient service, string session, CancellationToken ct)
+    {
+        try
+        {
+            return (await service.RecordAsync(session, ct).ConfigureAwait(false))?.Entry;
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                          or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The person's words on the ask a session's line is on, read as <see cref="ReadAsync"/> reads them.</summary>
+    public static async Task<AskWords?> ReadOfSessionAsync(ServiceClient service, string session, CancellationToken ct) =>
+        await ReadAsync(service, await EntryOfAsync(service, session, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// The person's words on the ask a session's line is on (<see cref="AskOfEntry"/>), read from the ask for a session's start
+    /// (DRIFT1b): null for a line on no ask, and never a failure. A read that does not answer is <see cref="Unread"/>, and the
+    /// start goes on with its instruction saying so: the words are what a session is handed, never what holds it.
     /// </summary>
     /// <exception cref="OperationCanceledException">The driver is closing: a start it ends is not one to compose.</exception>
-    public static async Task<AskWords?> ReadAsync(ServiceClient service, string? sender, CancellationToken ct)
+    public static async Task<AskWords?> ReadAsync(ServiceClient service, string? entry, CancellationToken ct)
     {
-        if (AskOf(sender) is not { } ask) return null;
+        if (AskOfEntry(entry) is not { } ask) return null;
         try
         {
             return await service.FindAskAsync(ask, ct).ConfigureAwait(false) is { } held ? Of(held) : Unread(ask);
