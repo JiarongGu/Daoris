@@ -123,7 +123,7 @@ test('the index root and the store are redirected', () => {
 });
 
 /**
- * PUSH1f2a (D194 point 1): a `daoris driver …` typed in a scratch window's terminal is handed to the driver's program the variable names,
+ * PUSH1f2a (D194 point 1): a `daoris place …` typed in a scratch window's terminal is handed to the driver's program the variable names,
  * which is this checkout's build; with none built, the variable names none, so the CLI says where the program is rather than finding
  * another build, the parent shell's among them.
  */

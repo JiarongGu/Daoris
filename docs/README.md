@@ -241,6 +241,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-03-context-counters-brief.md` | Brief: CONTEXTDRIVE1, behaviors counted in a session's context and a supervisor that acts on them, an agent or a rule the person sets, within the structure (D229 reserved)
 | `2026-11-03-context-counters-design.md` | Design: CONTEXTDRIVE1, a line's behaviors counted from their records and seen by the session, today's caps as the person's rules, the supervisor an agent or a rule; accepted 2026-11-03 after two Opus reads (D229)
 | `2026-11-03-context-one-design.md` | Design: CONTEXTONE1, a repository owns its context and reconciles with the canon through its own session's model, and Daoris manages only the sessions it runs; round 2 proposed 2026-11-03 (D230)
+| `2026-11-04-consolidation-plan.md` | Plan: CONSOLIDATE1, the current truth per area, the contradictions settled and one lean way to make a change, before any more features (the owner's yes, 2026-11-04)
 
 ## UI, browser, tools and plugin contracts
 
