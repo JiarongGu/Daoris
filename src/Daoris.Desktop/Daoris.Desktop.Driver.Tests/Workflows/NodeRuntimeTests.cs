@@ -3,51 +3,60 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RUN1 (the fabric events design §E2, §E3, §E7, §D6, §A3): the evaluation runtime in the lease's loop, over a stand-in port. An
-/// install whose choices name no plugin's performed node reads, writes and starts nothing; a governed unit's performed node is started once
-/// across wakes, its outcome heard and kept, its declared retry started after its persisted delay; a restart reconciles before any new start;
-/// two wakes at once start nothing twice. A graph run's own record is <see cref="NodeRuntimeRunTests"/>'s, and the person's word on its
-/// nodes <see cref="RunNodeWordsTests"/>'.
+/// FABRIC-RUN1 (the fabric events design §E2, §E3, §E7, §D6, §A3): the evaluation runtime in the lease's loop, over a stand-in port, on run
+/// <c>q7</c> bound to a saved graph that holds the plugin's performed deploy. The deploy is started once across wakes, its outcome heard and
+/// kept, its declared retry started after its persisted delay; a restart reconciles before any new start; two wakes at once start nothing
+/// twice. The run's own record is <see cref="NodeRuntimeRunTests"/>', and the person's word on its nodes <see cref="RunNodeWordsTests"/>'.
 /// </summary>
-public sealed class NodeRuntimeTests : NodeRuntimeFixture
+public sealed class NodeRuntimeTests : NodeRunFixture
 {
-    /// <summary>A repository's quests governed by a work cycle of one performed node, the plugin's deploy.</summary>
+    /// <summary>The session's branch the deploy observes: the subject its attempts are sent for.</summary>
+    private const string Branch = "unit-b1";
+
+    /// <summary>A run whose claim is done and whose deploy is the plugin's performed node, then the landing.</summary>
     private const string Governed = """
-        { "workCycles": { "engine": { "quest": {
-            "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }],
-            "wires": [] } } } }
-        """;
-
-    /// <summary>The same cycle edited (FABRIC-RUN1e): its node given a timeout, so the graph's digest, and with it the run, is another.</summary>
-    private const string Edited = """
-        { "workCycles": { "engine": { "quest": {
-            "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "timeoutSeconds": 600 }],
-            "wires": [] } } } }
-        """;
-
-    /// <summary>Another repository's quests governed (FABRIC-RUN1e): the runtime stays armed, and the engine's quests are governed no longer.</summary>
-    private const string OtherGoverned = """
-        { "workCycles": { "other": { "quest": {
-            "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }],
-            "wires": [] } } } }
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deploy"},{"id":"d>h","kind":"after","from":"deploy","to":"handed"}]}
         """;
 
     /// <summary>
-    /// A repository's quests governed by a build whose artifact the deploy takes (FABRIC-PERFORM1c): a <c>data</c> wire, read from the build's
-    /// accepted output, its evidence the plugin's receipt.
+    /// A run whose deploy takes the build's artifact (FABRIC-PERFORM1c): a <c>data</c> wire, read from the build's accepted output, its
+    /// evidence the plugin's receipt.
     /// </summary>
     private const string Pipeline = """
-        { "workCycles": { "engine": { "quest": {
-            "schemaVersion": 2, "entries": ["build"], "end": "deploy",
-            "nodes": [
-              { "id": "build", "kind": "acme.deploy/build", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1",
-                "outputs": { "artifact": "acme.deploy/artifact@1" } },
-              { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "inputs": { "release": "acme.deploy/artifact@1" } } ],
-            "wires": [{ "id": "w1", "kind": "data", "from": "build.artifact", "to": "deploy.release" }] } } } }
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"build","kind":"acme.deploy/build","version":1,"reach":"performed","evidence":"acme.deploy/receipt@1","outputs":{"artifact":"acme.deploy/artifact@1"}},
+                  {"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed","inputs":{"release":"acme.deploy/artifact@1"}},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>b","kind":"after","from":"claimed","to":"build"},{"id":"w1","kind":"data","from":"build.artifact","to":"deploy.release"},
+                  {"id":"b>d","kind":"after","from":"build","to":"deploy"},{"id":"d>h","kind":"after","from":"deploy","to":"handed"}]}
         """;
+
+    private string? _bound;
+
+    public NodeRuntimeTests()
+    {
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), BranchUnit];
+    }
+
+    private static WorkUnit BranchUnit => RunHome.Branch(Branch, "daoris/s1", Opened, [RunId]);
+
+    /// <summary>The run bound to <paramref name="graph"/> (once, however many looks pass), and a look over its home.</summary>
+    private new NodeRuntimeLook Look(string graph, bool whole = true)
+    {
+        if (_bound != graph)
+        {
+            BoundTo(graph);
+            _bound = graph;
+        }
+
+        return RunLook("{}", whole);
+    }
 
     /// <summary>The build's completion for its attempt still waiting, with its receipt as evidence and its artifact as its output.</summary>
     private WorkStepHeard Built(string evidence, string artifact) =>
@@ -77,13 +86,13 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         await runtime.PassAsync(Declaring(whole: false), CancellationToken.None);
         await runtime.PassAsync(Declaring(), CancellationToken.None);
 
-        var receipts = new ResourceRecordFiles(_home, () => true).Read(Unit)!.Receipts;
+        var receipts = new ResourceRecordFiles(_home, () => true).Read(Branch)!.Receipts;
         Assert.Equal([PluginResourceRoles.Temporary, PluginResourceRoles.Result], receipts.Select(receipt => receipt.Role));
         Assert.Empty(_port.Cleaned);
         Assert.Empty(_port.Owed[^1]);
 
-        // The quest is done: its true end. The first ask fails, so its plugin stays owed and the retry is the loop's next timer.
-        _units = [Quest with { End = new MilestoneEnd(WorkEndState.Ended, null, null, null, _now, "done") }];
+        // The branch is done: its true end. The first ask fails, so its plugin stays owed and the retry is the loop's next timer.
+        _units = [_units[0], BranchUnit with { End = new MilestoneEnd(WorkEndState.Ended, null, null, null, _now, "done") }];
         _port.Cleanup = _ => new(CleanupDispositions.Failed, Message: "busy");
         var failed = await runtime.PassAsync(Declaring(), CancellationToken.None);
 
@@ -100,7 +109,7 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         Assert.Equal(["p-1", "p-1"], _port.Cleaned.Select(call => call.Resource));
         Assert.Single(_port.Cleaned.Select(call => call.IdempotencyKey).Distinct());
         Assert.Empty(_port.Owed[^1]);
-        var owed = WorkObligations.Read(_home, _now)[Unit].ToDictionary(entry => entry.Resource, entry => entry.Disposition);
+        var owed = WorkObligations.Read(_home, _now)[Branch].ToDictionary(entry => entry.Resource, entry => entry.Disposition);
         Assert.Equal(InventoryDisposition.Removed, owed["acme.deploy/preview@1:p-1"]);
         Assert.Equal(InventoryDisposition.Kept, owed["acme.deploy/site@1:s-1"]);
     }
@@ -134,12 +143,12 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
     public async Task An_output_accepted_on_a_revision_the_work_has_moved_past_is_never_read()
     {
         // A revision the test moves, as a new tip moves a branch: the runtime reads every unit's revision alike.
-        _units = [Quest with { Subject = new WorkSubject("#q7", "r1") }];
+        _branchTips["daoris/s1"] = "r1";
         var runtime = Runtime();
         await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
 
         // The work moves to r2 before the build's completion on r1 is heard: its outcome is a stale attempt's, and the build starts again.
-        _units = [Quest with { Subject = new WorkSubject("#q7", "r2") }];
+        _branchTips["daoris/s1"] = "r2";
         _port.Heard.Enqueue(Built("acme.deploy/receipt@1:b1", "acme.deploy/artifact@1:a1"));
         var moved = await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
 
@@ -156,35 +165,10 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         Assert.Equal("r2", deploy.SubjectRevision);
     }
 
-    private NodeRecord Record() => Files.Read(Unit)!;
+    private NodeRecord Record() => Files.Read(RunUnit)!;
 
     private WorkStepHeard Completion(WorkOutcome outcome) =>
         new(Plugin, 1, new WorkStepFrame("deploy", outcome, _now, "e1", Invocation: Assert.Single(Record().Attempts, attempt => attempt.State != AttemptStates.Settled).Call.Invocation));
-
-    [Theory]
-    [InlineData("{}")]
-    [InlineData("""
-        { "workCycles": { "engine": { "quest": {
-            "schemaVersion": 2, "entries": ["qa"], "end": "qa",
-            "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }], "wires": [] } } } }
-        """)]
-    public async Task An_install_whose_choices_name_no_performed_node_reads_writes_and_starts_nothing(string config)
-    {
-        var runtime = Runtime();
-
-        foreach (var whole in new[] { true, false, true })
-        {
-            var pass = await runtime.PassAsync(Look(config, whole), CancellationToken.None);
-            Assert.False(pass.Armed);
-            Assert.Empty(pass.Performed);
-            Assert.Empty(pass.Evaluated);
-        }
-
-        Assert.Equal((0, 0, 0), (_unitsRead, _stepsRead, _gitRead));
-        Assert.Equal((0, 0, 0, 0), (_port.Told.Count, _port.Taken, _port.Sent.Count, _port.Asked.Count));
-        Assert.False(Directory.Exists(NodeRecordFiles.FolderOf(_home)));
-        Assert.Null(runtime.NextDue);
-    }
 
     /// <summary>
     /// FABRIC-RUN1c: the home's own reading of a quest's binding (<see cref="NodeRuntime.BoundIn"/>), its run named by its chain's first quest in
@@ -335,196 +319,6 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         Assert.Single(_port.Sent);
     }
 
-    /// <summary>FABRIC-RUN1e, a transition: an install armed at a wake reads its units then, and starts what its graph proposes.</summary>
-    [Fact]
-    public async Task An_install_armed_at_a_wake_reads_its_units_then_and_starts()
-    {
-        var runtime = Runtime();
-        await runtime.PassAsync(Look("{}", whole: false), CancellationToken.None);
-        Assert.Equal(0, _unitsRead);
-
-        var pass = await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
-
-        Assert.True(pass.Armed);
-        Assert.Equal(1, _unitsRead);
-        Assert.Single(_port.Sent);
-    }
-
-    /// <summary>
-    /// FABRIC-RUN1e, finding 1: a wake whose choices no longer govern a unit (its repository's graph removed while another's keeps the
-    /// runtime armed) judges with the choices now, read afresh before any attempt: the unit's retry is not made and nothing is sent to it.
-    /// </summary>
-    [Fact]
-    public async Task A_config_wake_after_a_units_graph_is_removed_retries_and_sends_nothing_on_it()
-    {
-        var runtime = Runtime();
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-        _port.Heard.Enqueue(Completion(new WorkOutcome(WorkStates.Failed, "unavailable")));
-        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
-        Assert.NotNull(Assert.Single(Record().Attempts).RetryAt);
-
-        _now = _now.AddSeconds(31);
-        var pass = await runtime.PassAsync(Look(OtherGoverned, whole: false), CancellationToken.None);
-
-        Assert.True(pass.Armed);
-        Assert.Equal(2, _unitsRead);
-        Assert.DoesNotContain(pass.Performed, done => done.Unit == Unit);
-        Assert.Single(_port.Sent);
-        Assert.Equal(NodeStates.Failed, Record().Statuses["deploy"].State);
-        Assert.Empty(_port.Told[^1]);
-    }
-
-    /// <summary>
-    /// FABRIC-RUN1e, finding 2: disarming clears what the runtime held, though nothing was awaited (a failed node waiting for its retry): no
-    /// timer is left to wake the loop, and a wake that arms it again reads the units afresh rather than judging on the units cached before.
-    /// </summary>
-    [Fact]
-    public async Task Disarming_clears_a_pending_retrys_timer_and_the_units_held_though_nothing_was_awaited()
-    {
-        var runtime = Runtime();
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-        _port.Heard.Enqueue(Completion(new WorkOutcome(WorkStates.Failed, "unavailable")));
-        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
-        Assert.NotNull(runtime.NextDue);
-        Assert.Empty(_port.Told[^1]);
-
-        var disarmed = await runtime.PassAsync(Look("{}", whole: false), CancellationToken.None);
-        Assert.False(disarmed.Armed);
-        Assert.Null(runtime.NextDue);
-
-        var reads = _unitsRead;
-        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
-        Assert.Equal(reads + 1, _unitsRead);
-    }
-
-    /// <summary>
-    /// FABRIC-RUN1e, finding 2: the awaited set is withdrawn before the plan's supervision once no graph arms the runtime, so the look that
-    /// reads the last graph's removal starts no plugin for it; choices still armed withdraw nothing.
-    /// </summary>
-    [Fact]
-    public async Task The_awaited_set_is_withdrawn_before_supervision_once_no_graph_arms_the_runtime()
-    {
-        _port.Generation = null;
-        var runtime = Runtime();
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-        Assert.NotEmpty(_port.Told[^1]);
-        var told = _port.Told.Count;
-
-        Assert.False(await runtime.WithdrawAsync(DriverConfig.Parse(Governed), CancellationToken.None));
-        Assert.Equal(told, _port.Told.Count);
-
-        Assert.True(await runtime.WithdrawAsync(DriverConfig.Parse("{}"), CancellationToken.None));
-        Assert.Equal(told + 1, _port.Told.Count);
-        Assert.Empty(_port.Told[^1]);
-        Assert.Null(runtime.NextDue);
-
-        // The pass after it has nothing more to withdraw, and tells nothing again.
-        await runtime.PassAsync(Look("{}"), CancellationToken.None);
-        Assert.Equal(told + 1, _port.Told.Count);
-    }
-
-    /// <summary>
-    /// FABRIC-RUN1e, finding 3: a failure stays across graph edits back and forth (each of the deploy itself, so its binding another place's, FABRIC-RUN1f), so a Setup
-    /// save that changes the graph never restarts failed work; the person's new attempt does, under the graph that governs now.
-    /// </summary>
-    [Fact]
-    public async Task A_failure_stays_across_graph_edits_back_and_forth_until_the_person_restarts_it()
-    {
-        var runtime = Runtime();
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-        _port.Heard.Enqueue(Completion(new WorkOutcome(WorkStates.Failed, "broken")));
-        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
-
-        foreach (var config in new[] { Edited, Governed, Edited, Governed, Edited })
-        {
-            await runtime.PassAsync(Look(config), CancellationToken.None);
-        }
-
-        Assert.Single(_port.Sent);
-        var status = Record().Statuses["deploy"];
-        Assert.Equal((NodeStates.Failed, "broken", 1), (status.State, status.Code, status.Attempt));
-
-        var deploy = Assert.Single(NodeRuntime.Govern(DriverConfig.Parse(Edited), new NodeUnitsRead([Quest], new Dictionary<string, string>()), [Step])).Declared["deploy"];
-        var (refused, _) = Files.Edit<bool>(Unit, record =>
-            (record with { Statuses = new Dictionary<string, NodeStatus>(record.Statuses) { ["deploy"] = NodeLifecycle.Apply(deploy, status, new NodeMove(NodeStates.Ready, NodeCause.Person)).Status } }, true));
-        Assert.Null(refused);
-        await runtime.PassAsync(Look(Edited), CancellationToken.None);
-
-        Assert.Equal(2, _port.Sent.Count);
-    }
-
-    /// <summary>The node each call the plugin was sent started, in the order sent.</summary>
-    private IEnumerable<string> SentNodes()
-    {
-        var attempts = Record().Attempts;
-        return _port.Sent.Select(call => attempts.Single(attempt => attempt.Call.Invocation == call.Invocation).Node).ToList();
-    }
-
-    /// <summary>FABRIC-RUN1e, finding 4: the units past a pass's first 32 are judged at the next, not starved behind the same prefix.</summary>
-    [Fact]
-    public async Task Units_past_a_passs_first_32_are_judged_at_the_next()
-    {
-        _port.Generation = null;
-        _units = [.. Enumerable.Range(0, NodeRuntime.UnitsPerPass + 2).Select(index => QuestOf($"quest:q{index:00}"))];
-        var runtime = Runtime();
-
-        var first = await runtime.PassAsync(Look(Governed), CancellationToken.None);
-        var second = await runtime.PassAsync(Look(Governed), CancellationToken.None);
-
-        Assert.Equal(NodeRuntime.UnitsPerPass, first.Evaluated.Count);
-        Assert.Equal(NodeRuntime.UnitsPerPass, second.Evaluated.Count);
-        Assert.Equal(_units.Select(unit => unit.Id).Order(StringComparer.Ordinal), first.Evaluated.Concat(second.Evaluated).Distinct().Order(StringComparer.Ordinal));
-    }
-
-    /// <summary>
-    /// FABRIC-RUN1e, finding 5: reconciliation and the starts share the pass's four sends. A restart finds four attempts to ask after, each
-    /// redelivered, and two nodes ready: the pass calls about four attempts, and the two starts wait for the next pass.
-    /// </summary>
-    [Fact]
-    public async Task Reconciliation_and_the_starts_share_the_passs_four_sends()
-    {
-        _units = [.. Enumerable.Range(0, NodeRuntime.SendsPerPass + 2).Select(index => QuestOf($"quest:q{index}"))];
-        await Runtime().PassAsync(Look(Governed), CancellationToken.None);
-        Assert.Equal(NodeRuntime.SendsPerPass, _port.Sent.Count);
-
-        _port.Answer = _ => new(ReconcileStates.NotStarted);
-        var runtime = Runtime();
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-
-        Assert.Equal(NodeRuntime.SendsPerPass, _port.Asked.Count);
-        Assert.Equal(NodeRuntime.SendsPerPass * 2, _port.Sent.Count);
-
-        // The next pass makes the two starts left over.
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-        Assert.Equal(NodeRuntime.SendsPerPass * 2 + 2, _port.Sent.Count);
-    }
-
-    /// <summary>
-    /// FABRIC-RUN1g: reconciliation takes the attempts due in turn. Five attempts are due after a restart and the questions about the first
-    /// four in file order keep failing: each pass spends its four on those, so the fifth was never asked. The next pass begins after the last
-    /// attempt the pass before asked, round again from the first.
-    /// </summary>
-    [Fact]
-    public async Task Attempts_due_are_asked_in_turn_so_four_failing_questions_never_starve_the_fifth()
-    {
-        _units = [.. Enumerable.Range(0, NodeRuntime.SendsPerPass + 1).Select(index => QuestOf($"quest:q{index}"))];
-        var first = Runtime();
-        await first.PassAsync(Look(Governed), CancellationToken.None);
-        await first.PassAsync(Look(Governed), CancellationToken.None);
-        Assert.Equal(NodeRuntime.SendsPerPass + 1, _port.Sent.Count);
-
-        // The next loop: every attempt is asked after; the questions about the first four records in file order fail with an I/O error, the
-        // last one's answers.
-        var fifth = Files.All().Records[^1].Unit;
-        _port.Answer = call => call.Unit == fifth ? new(ReconcileStates.Running) : throw new IOException("the pipe broke");
-        var runtime = Runtime();
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-        await runtime.PassAsync(Look(Governed), CancellationToken.None);
-
-        Assert.Contains(_port.Asked, call => call.Unit == fifth);
-        Assert.Equal(NodeRuntime.SendsPerPass * 2, _port.Asked.Count);
-    }
-
     /// <summary>
     /// FABRIC-RUN1e, finding 6: the awaited set is published only while the loop holds the lease, asked after the pass's awaits: a loop that
     /// lost it while its send was out tells nothing.
@@ -570,12 +364,12 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         var (runtime, sent) = await HeldAsync();
 
         var held = Assert.Single(HeldAttempts.Read(Files));
-        Assert.Equal((Unit, "deploy", 1, Plugin, ReconcileStates.Unknown, NodeStates.Unknown, (string?)null),
+        Assert.Equal((RunUnit, "deploy", 1, Plugin, ReconcileStates.Unknown, NodeStates.Unknown, (string?)null),
             (held.Unit, held.Node, held.Attempt, held.Plugin, held.Why, held.NodeState, held.Resolution));
         await runtime.PassAsync(Look(Governed), CancellationToken.None);
         Assert.Single(_port.Sent);
 
-        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.DidNot).What);
+        Assert.Equal(PerformedWhat.Worded, Door().Word(RunUnit, "deploy", 1, HeldResolutions.DidNot).What);
         Assert.Equal(HeldResolutions.DidNot, Assert.Single(HeldAttempts.Read(Files)).Resolution);
         var pass = await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
 
@@ -601,7 +395,7 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
     {
         var (runtime, _) = await HeldAsync();
 
-        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, word).What);
+        Assert.Equal(PerformedWhat.Worded, Door().Word(RunUnit, "deploy", 1, word).What);
         await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
         await runtime.PassAsync(Look(Governed), CancellationToken.None);
 
@@ -622,7 +416,7 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
     public async Task A_closes_word_on_a_plugins_held_attempt_is_taken_back_and_nothing_moves()
     {
         var (runtime, _) = await HeldAsync();
-        Files.Edit<bool>(Unit, record => (record with { Attempts = [.. record.Attempts.Select(each => each with { Resolution = HeldResolutions.Record })] }, true));
+        Files.Edit<bool>(RunUnit, record => (record with { Attempts = [.. record.Attempts.Select(each => each with { Resolution = HeldResolutions.Record })] }, true));
 
         await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
 
@@ -641,11 +435,11 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
     public async Task The_persons_word_is_refused_without_the_lease_or_on_an_attempt_not_held()
     {
         await HeldAsync();
-        var before = File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit));
+        var before = File.ReadAllText(NodeRecordFiles.PathOf(_home, RunUnit));
 
-        var unleased = Door(holdsLease: false).Word(Unit, "deploy", 1, HeldResolutions.DidNot);
-        var other = Door().Word(Unit, "deploy", 2, HeldResolutions.DidNot);
-        var unknownWord = Door().Word(Unit, "deploy", 1, "maybe");
+        var unleased = Door(holdsLease: false).Word(RunUnit, "deploy", 1, HeldResolutions.DidNot);
+        var other = Door().Word(RunUnit, "deploy", 2, HeldResolutions.DidNot);
+        var unknownWord = Door().Word(RunUnit, "deploy", 1, "maybe");
 
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotHeld), (unleased.What, unleased.Code));
         Assert.Contains("does not hold the home", HeldAttempts.Said(unleased, 1, HeldResolutions.DidNot));
@@ -654,14 +448,14 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         Assert.Equal(PerformedWhat.Refused, unknownWord.What);
 
         // FABRIC-CLOSE1q: a close's words are not a plugin's attempt's, which keeps its three as they were.
-        var closeWord = Door().Word(Unit, "deploy", 1, HeldResolutions.Resend);
+        var closeWord = Door().Word(RunUnit, "deploy", 1, HeldResolutions.Resend);
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotOffered), (closeWord.What, closeWord.Code));
         Assert.Contains("happened, did-not or stop", HeldAttempts.Said(closeWord, 1, HeldResolutions.Resend), StringComparison.Ordinal);
         Assert.Equal(HeldResolutions.Plugin, Assert.Single(HeldAttempts.Read(Files)).Words);
-        Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit)));
+        Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, RunUnit)));
 
-        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.Stop).What);
-        var again = Door().Word(Unit, "deploy", 1, HeldResolutions.DidNot);
+        Assert.Equal(PerformedWhat.Worded, Door().Word(RunUnit, "deploy", 1, HeldResolutions.Stop).What);
+        var again = Door().Word(RunUnit, "deploy", 1, HeldResolutions.DidNot);
         Assert.Equal(PerformedWhat.Refused, again.What);
         Assert.Contains("already has your word", HeldAttempts.Said(again, 1, HeldResolutions.DidNot));
     }
@@ -682,15 +476,15 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         await runtime.PassAsync(Look(Governed), CancellationToken.None);
 
         var kept = Assert.Single(HeldAttempts.Read(Files));
-        Assert.Equal((Unit, "deploy", 1, NodeStates.Failed, WorkPerformer.FailureKept, "broken", (string?)null),
+        Assert.Equal((RunUnit, "deploy", 1, NodeStates.Failed, WorkPerformer.FailureKept, "broken", (string?)null),
             (kept.Unit, kept.Node, kept.Attempt, kept.NodeState, kept.Why, kept.Code, kept.Resolution));
         Assert.True(kept.Failed);
         Assert.Equal(HeldResolutions.Failure, kept.Words);
         Assert.Contains("failed (broken), and Daoris does not try it again by itself", HeldAttempts.WhySaid(kept), StringComparison.Ordinal);
-        Assert.Contains($"say: daoris work held {Unit} deploy 1 again", HeldAttempts.Lines([kept])[1], StringComparison.Ordinal);
+        Assert.Contains($"say: daoris work held {RunUnit} deploy 1 again", HeldAttempts.Lines([kept])[1], StringComparison.Ordinal);
         Assert.Single(_port.Sent);
 
-        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.Again).What);
+        Assert.Equal(PerformedWhat.Worded, Door().Word(RunUnit, "deploy", 1, HeldResolutions.Again).What);
         Assert.Equal(HeldResolutions.Again, Assert.Single(HeldAttempts.Read(Files)).Resolution);
         var pass = await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
 
@@ -730,14 +524,14 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
         var spent = Assert.Single(HeldAttempts.Read(Files));
         Assert.Equal((3, WorkPerformer.TriesSpent, "unavailable"), (spent.Attempt, spent.Why, spent.Code));
         Assert.Contains("its tries are spent", HeldAttempts.WhySaid(spent), StringComparison.Ordinal);
-        var before = File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit));
+        var before = File.ReadAllText(NodeRecordFiles.PathOf(_home, RunUnit));
 
-        var heldWord = Door().Word(Unit, "deploy", 3, HeldResolutions.DidNot);
+        var heldWord = Door().Word(RunUnit, "deploy", 3, HeldResolutions.DidNot);
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotAgain), (heldWord.What, heldWord.Code));
         Assert.Contains("say again", HeldAttempts.Said(heldWord, 3, HeldResolutions.DidNot), StringComparison.Ordinal);
-        Assert.Equal(WorkPerformer.NotAttempt, Door().Word(Unit, "deploy", 2, HeldResolutions.Again).Code);
-        Assert.Equal(WorkPerformer.NotHeld, Door(holdsLease: false).Word(Unit, "deploy", 3, HeldResolutions.Again).Code);
-        Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit)));
+        Assert.Equal(WorkPerformer.NotAttempt, Door().Word(RunUnit, "deploy", 2, HeldResolutions.Again).Code);
+        Assert.Equal(WorkPerformer.NotHeld, Door(holdsLease: false).Word(RunUnit, "deploy", 3, HeldResolutions.Again).Code);
+        Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, RunUnit)));
     }
 
     /// <summary>FABRIC-PERFORM1k: <i>again</i> on an attempt held is refused, saying what to say first; its three words stay.</summary>
@@ -746,7 +540,7 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
     {
         await HeldAsync();
 
-        var again = Door().Word(Unit, "deploy", 1, HeldResolutions.Again);
+        var again = Door().Word(RunUnit, "deploy", 1, HeldResolutions.Again);
 
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotAgain), (again.What, again.Code));
         Assert.Contains("is held, not failed", HeldAttempts.Said(again, 1, HeldResolutions.Again), StringComparison.Ordinal);

@@ -12,7 +12,7 @@ public sealed record WorkflowMigrated(DriverConfig Config, IReadOnlyList<string>
 
 /// <summary>
 /// The workflow step of the release's one migration (D232 point 2): every place converted to a saved graph once, at the release's first start.
-/// A saved workflow whose newest version is a list of steps, holds a <c>handed</c>, or a <c>land</c> with an <c>accept</c> gets the next version
+/// A saved workflow whose newest version holds a <c>handed</c>, or a <c>land</c> with an <c>accept</c> gets the next version
 /// as a graph; a place that followed the rules (nothing named, or <c>current</c>) follows the home default or a saved copy of what its rules drew;
 /// a rule's <c>integrate</c> becomes its line's policy; a converted place's access <c>landing</c> pause and session checks go, since its graph
 /// carries them. The home's migration takes the backup, calls <see cref="Convert"/>, and writes <c>driver.json</c> once; this step writes the
@@ -57,7 +57,7 @@ public static class WorkflowMigration
             store.Load(id) is { Read: { Problem: null, Versions: [.., { Graph: not null } newest] } } found && RawGraph(found, newest) is { } graph
                 ? MigratedGraphs.Shape(graph) : null;
 
-        // 1. The saved workflows: a steps, `handed` or `land`+`accept` newest becomes the next version of its id.
+        // 1. The saved workflows: a `handed` or `land`+`accept` newest becomes the next version of its id.
         foreach (var found in store.List().ToList())
         {
             if (found.Read is not { Problem: null, Verifies: false, Versions: [.., var newest] } read) continue;
@@ -90,7 +90,7 @@ public static class WorkflowMigration
                 var (graph, chosen) = groups[index];
                 if (index == 0)
                 {
-                    Planned(found.Id, read.Name!, shape == "steps" ? "a list of steps drawn as a graph, its landing a `land`" : "its `handed` is a `land`", graph, null);
+                    Planned(found.Id, read.Name!, "its `handed` is a `land`", graph, null);
                     continue;
                 }
 
@@ -224,24 +224,13 @@ public static class WorkflowMigration
     private static string? ShapeOf(WorkflowFileFound found, NamedVersion version)
     {
         if (RawVersion(found, version) is not { } raw) return null;
-        if (raw["steps"] is JsonArray) return "steps";
         if (raw["graph"]?["nodes"] is not JsonArray nodes) return null;
         if (nodes.Any(node => (string?)node?["kind"] == MigratedGraphs.Handed)) return "handed";
         return nodes.Any(node => (string?)node?["kind"] == NodeKinds.Land && node?["options"]?[MigratedGraphs.Accept] is not null) ? "land-accept" : null;
     }
 
-    /// <summary>A version's graph as JSON: a list of steps drawn as <see cref="WorkflowGraphs.Saved"/> draws it, a graph as its file holds it.</summary>
-    private static JsonObject? GraphOf(WorkflowFileFound found, NamedVersion version)
-    {
-        if (RawVersion(found, version) is not { } raw) return null;
-        if (raw["steps"] is JsonArray)
-        {
-            using var document = JsonDocument.Parse(raw["steps"]!.ToJsonString());
-            return WorkflowNamed.ReadSteps(document.RootElement.Clone(), version.Version).Steps is { } steps ? WorkflowGraphs.Saved(steps) : null;
-        }
-
-        return raw["graph"]?.DeepClone() as JsonObject;
-    }
+    /// <summary>A version's graph as JSON, as its file holds it.</summary>
+    private static JsonObject? GraphOf(WorkflowFileFound found, NamedVersion version) => RawVersion(found, version)?["graph"]?.DeepClone() as JsonObject;
 
     private static JsonObject? RawGraph(WorkflowFileFound found, NamedVersion version) => RawVersion(found, version)?["graph"] as JsonObject;
 

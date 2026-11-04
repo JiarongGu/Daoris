@@ -1558,13 +1558,12 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // page's curve rules.
     ['the rotation-use table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/rotation-use.json'], [...BASE, 'driver', 'web-unit']],
     // PUSH1f2b (D194 point 7): the driver family's shared tables moved to the driver's fixtures with their last CLI readers gone, the
-    // landing sentences, which cycle governs a unit, the bytes an edit of driver.json writes, D157's versions as graphs, a named graph
+    // landing sentences, which cycle governs a unit, the bytes an edit of driver.json writes, a named graph
     // as a version, and a graph judged when saved; the CLI's keep lock test still reads the lock rows, and verify runs it at every merge.
     ["the driver's tables the CLI's TypeScript left", [
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/landing-says.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-homes.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/driver-config-keeps.json',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graphs.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graph-versions.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-problems.json',
     ], [...BASE, 'driver', 'driver-process', 'driver-process-git']],

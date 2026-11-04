@@ -1,256 +1,36 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json.Nodes;
-
 namespace Daoris.Driver;
 
 /// <summary>
-/// A D157 version read as a graph (FABRIC-WORKFLOW2): its number, its identity (<see cref="WorkflowNamed.Digest"/>, unchanged), and its
+/// A named version read as a graph (FABRIC-WORKFLOW2): its number, its identity (<see cref="WorkflowNamed.Digest"/>), and its
 /// graph with the digest a run on it binds; or, with no graph, why it is unreadable.
 /// </summary>
-/// <param name="GraphDigest">What a run on the decoded graph binds (<see cref="WireRun.GraphDigest"/>): derived from the identity and the decoder's version.</param>
-/// <param name="Unreadable">The reason it does not decode, said whole: the version's own problem, or its graph's first.</param>
+/// <param name="GraphDigest">What a run on the decoded graph binds (<see cref="WireRun.GraphDigest"/>): the graph version's own digest.</param>
+/// <param name="Unreadable">The reason it does not decode, said whole: the version's own problem, or why it holds no graph.</param>
 public sealed record DecodedVersion(int Version, string? Identity, NodeGraph? Graph, string? GraphDigest, string? Unreadable)
 {
     public bool Readable => Graph is not null;
 }
 
 /// <summary>
-/// D157's named versions decoded as graphs, never rewritten (FABRIC-WORKFLOW2; the fabric events design §E7's migration contract, §E4).
-/// Pure: it reads a version as <see cref="WorkflowNamed"/> read it and writes nothing, so a stored file and a run's binding stay byte for
-/// byte. Step order is <c>after</c> wires, and each gate of the protected order before the landing is wired into every gate after it
-/// (FABRIC-GRAPH1h); a group is a synthetic <c>all</c> join with the group's id, its members wired into it and it into the next step;
-/// <c>failed: stop</c> is a <c>failed</c> wire to a synthetic <c>stop</c>, <c>wait</c> one to a synthetic person's task, and
-/// <c>send-back</c> the adapter's one return, then the person's task; a person's skip is the node's, a group's its members'.
+/// The version a run is bound to, read as a graph (§E7, <i>one governs a run, by its binding</i>). Pure: it reads a version as
+/// <see cref="WorkflowNamed"/> read it and writes nothing. A version that is not a graph is unreadable.
 /// </summary>
-/// <remarks>
-/// Held to this suite's tests' <c>fixtures/workflow-graphs.json</c>, row for row, every graph and digest included
-/// (<c>WorkflowGraphsTests</c>); the CLI's twin, <c>workflowgraphs.ts</c>, left with the driver family's TypeScript (PUSH1f2b). The choices §E7 left open are D173's FABRIC-WORKFLOW2
-/// note's.
-/// </remarks>
 public static class WorkflowGraphs
 {
     /// <summary>
-    /// The decoder's own version: a decoded graph's digest is derived from it, so a changed mapping binds afresh. 2 since FABRIC-GRAPH1h,
-    /// whose wires hold the protected order across a skip; no stored record binds a decoded digest yet (D173's FABRIC-GRAPH1h note). 3 since
-    /// FABRIC-CUTOVER1b, whose look is wired beside the opinion (the cutover design §5.1); still no stored record binds one (D190 point 1).
-    /// </summary>
-    public const int DecoderVersion = 3;
-
-    /// <summary>The kind a check decodes to after its plugin: the plugin point <c>work/checks</c>, its slash a dot, which no stage's id holds.</summary>
-    public const string ChecksNode = "work.checks";
-
-    /// <summary>
-    /// A stored version decoded (§E7): one that does not read in this build (<see cref="NamedVersion.Problem"/>, a kind it does not run
-    /// included) is unreadable with that reason, kept as it is; one that reads is decoded whole, or is unreadable with its graph's problem.
+    /// A stored version decoded: one that does not read in this build (<see cref="NamedVersion.Problem"/>) or holds no graph is
+    /// unreadable with that reason, kept as it is; a graph version is a graph already, judged where it was read, and its identity is its
+    /// own digest, which is what a run on it binds.
     /// </summary>
     public static DecodedVersion Decode(NamedVersion version) =>
         version.Graph is { } graph && version.Digest is { } digest
-            // A graph version (schema 2, FABRIC-GRAPH1b) is a graph already, judged where it was read: its identity is its own digest,
-            // which is what a run on it binds, so nothing derives from a decoder.
             ? new DecodedVersion(version.Version, digest, graph, digest, null)
-            : version.Steps is null || version.Problem is not null
-                ? new DecodedVersion(version.Version, null, null, null, version.Problem ?? $"v{version.Version}: it does not read.")
-                : DecodeSteps(version.Version, version.Steps);
+            : new DecodedVersion(version.Version, null, null, null, version.Problem ?? $"v{version.Version}: it does not read.");
 
     /// <summary>
-    /// Steps decoded as a version numbered <paramref name="version"/>: the graph and its digest where the graph holds
-    /// (<see cref="NodeGraphs.Problems"/>), else unreadable with the first problem, never in part.
-    /// </summary>
-    public static DecodedVersion DecodeSteps(int version, IReadOnlyList<NamedStep> steps)
-    {
-        var identity = WorkflowNamed.Digest(steps);
-        var graph = Graph(steps);
-        // A version's two steps of one plugin kind are valid in schema 1 (a stored version never becomes unreadable by a later rule), so the
-        // authored graph's `observed-twice` is not asked of a decoded one (FABRIC-GRAPH1g); a save as a graph asks it (`Saved`, FABRIC-GRAPH1j).
-        return NodeGraphs.Problems(graph, saved: false) is [var first, ..]
-            ? new DecodedVersion(version, null, null, null, $"v{version}: its graph does not hold: {first.Words}")
-            : new DecodedVersion(version, identity, graph, GraphDigest(identity, graph), null);
-    }
-
-    /// <summary>
-    /// The graph of <paramref name="steps"/> by §E7's table, as <see cref="WorkflowNamed.ReadShape"/> reads them, every kind included: the
-    /// first step its entry, the last its end (a group's join where a group is last), the cleanup at <i>held</i>. Nodes in step order, each
-    /// followed by its outcome's synthetic node; wires in the order they are made, each named <c>from&gt;to</c>.
-    /// </summary>
-    public static NodeGraph Graph(IReadOnlyList<NamedStep> steps)
-    {
-        var nodes = new List<NodeDeclaration>();
-        var wires = new List<Wire>();
-        void Wire(string kind, string from, string to) => wires.Add(new Wire($"{from}>{to}", kind, new WireEnd(from), new WireEnd(to)));
-
-        // A step's outcome path (§E7): `stop` a sink, `wait` the person's task, and `send-back` the adapter's one return, then, as D157
-        // §3.7 says after it, the person's task. A go-ahead's refusal takes its `refused` the same way, on its `rejected` wire.
-        void Outcome(NamedStep step, string wire, string? policy)
-        {
-            if (policy is null) return;
-            var id = $"{step.Id}:{wire}";
-            var kind = policy == "stop" ? NodeKinds.Stop : NodeKinds.Human;
-            nodes.Add(new NodeDeclaration(id, kind, 1, NodeAuthorities.BuiltIn[kind].Reach)
-            {
-                Synthetic = true,
-                Options = new Dictionary<string, string> { ["outcome"] = WorkflowSteps.Quoted(wire), ["step"] = WorkflowSteps.Quoted(step.Id) },
-            });
-            Wire(wire, step.Id, id);
-        }
-
-        string? previous = null, opinion = null, beforeOpinion = null;
-        var gates = new List<string>();
-        foreach (var step in steps)
-        {
-            if (step.Kind == WorkflowKinds.All)
-            {
-                // A member's own `failed` is kept as written and takes no path: a member failed is the group failed (D157 §3.3).
-                foreach (var member in step.Members)
-                {
-                    nodes.Add(Node(member));
-                    if (previous is not null) Wire(WireKinds.After, previous, member.Id);
-                }
-
-                nodes.Add(Node(step) with { Synthetic = true });
-                foreach (var member in step.Members) Wire(WireKinds.After, member.Id, step.Id);
-            }
-            else
-            {
-                nodes.Add(Node(step));
-                // FABRIC-CUTOVER1b (the cutover design §5.1): a look is wired after the step before the opinion, never after the opinion,
-                // since the review gate holds its set-up while an agent reads the opinion.
-                var beside = step.Kind == WorkflowKinds.Look && opinion is not null && previous == opinion;
-                var after = beside ? beforeOpinion : previous;
-                if (after is not null) Wire(WireKinds.After, after, step.Id);
-
-                // FABRIC-GRAPH1h: the protected order (D157 §2.2) held by wires, not by reachability alone. A skip satisfies its `after`
-                // wire (§E2), so the step order alone would let a gate go past an earlier one still unsettled once a step between is
-                // skipped. Each gate (the work, whose node carries the holds; the opinion; the look) is wired into every gate after it.
-                if (Gate(step))
-                {
-                    foreach (var gate in gates.Where(gate => gate != after && !(step.Kind == WorkflowKinds.Look && gate == opinion)))
-                    {
-                        Wire(WireKinds.After, gate, step.Id);
-                    }
-                    gates.Add(step.Id);
-                }
-            }
-
-            switch (step.Kind)
-            {
-                case WorkflowKinds.Check or WorkflowKinds.Stage or WorkflowKinds.All:
-                    Outcome(step, WireKinds.Failed, (string?)step.Field("failed"));
-                    break;
-                case WorkflowKinds.GoAhead:
-                    Outcome(step, WireKinds.Rejected, (string?)step.Field("refused"));
-                    break;
-            }
-
-            if (step.Kind == WorkflowKinds.Opinion) (opinion, beforeOpinion) = (step.Id, previous);
-            previous = step.Id;
-        }
-
-        return new NodeGraph(nodes, wires, steps.Count > 0 ? [steps[0].Id] : [], previous ?? "");
-    }
-
-    /// <summary>
-    /// A step of the protected order before the landing (D157 §2.2: the holds, the second opinion, the look, the landing): the work, whose
-    /// claim carries the holds, the opinion, the look and the landing. A go-ahead sits with the work and is none; no group holds one.
-    /// </summary>
-    private static bool Gate(NamedStep step) => step.Kind is WorkflowKinds.Work or WorkflowKinds.Opinion or WorkflowKinds.Look or WorkflowKinds.Landing;
-
-    /// <summary>A step as its node (§E4): its kind's node, its reach, and every field it takes but a group's members as an option, as written.</summary>
-    private static NodeDeclaration Node(NamedStep step)
-    {
-        var plugin = step.Field("plugin") as string;
-        var kind = step.Kind switch
-        {
-            WorkflowKinds.Work => NodeKinds.Claimed,
-            WorkflowKinds.Opinion => NodeKinds.Opinion,
-            WorkflowKinds.Look => NodeKinds.Look,
-            WorkflowKinds.PullRequest => NodeKinds.PullRequest,
-            WorkflowKinds.GoAhead => NodeKinds.GoAhead,
-            WorkflowKinds.Check => $"{plugin}/{ChecksNode}",
-            WorkflowKinds.Stage => $"{plugin}/{step.Field("stage")}",
-            WorkflowKinds.All => NodeKinds.All,
-            _ => throw new ArgumentException($"`{step.Kind}` is no kind of step."),
-        };
-        var reach = NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) ? builtIn.Reach
-            : step.Kind == WorkflowKinds.Stage ? NodeReach.Performed : NodeReach.Observed;
-        // A field written only where set (FABRIC-PIPELINE1b2) is no option where it is none, so a version saved before it decodes as it did.
-        var row = WorkflowKindTable.Of(step.Kind);
-        return new NodeDeclaration(step.Id, kind, 1, reach)
-        {
-            Options = step.Fields
-                .Where(field => field.Value is not IReadOnlyList<NamedStep>)
-                .Where(field => field.Value is not null || row?.Fields.FirstOrDefault(each => each.Name == field.Name) is not { WhereSet: true })
-                .ToDictionary(field => field.Name, field => OptionText(field.Value)),
-        };
-    }
-
-    /// <summary>A field's value as an option's JSON text, the CLI's <c>optionText</c>: text quoted as both twins quote it, a switch, a list, or null.</summary>
-    private static string OptionText(object? value) => value switch
-    {
-        null => "null",
-        bool flag => flag ? "true" : "false",
-        string text => WorkflowSteps.Quoted(text),
-        IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowSteps.Quoted))}]",
-        _ => throw new ArgumentException($"a field is text, a switch or a list of names, not {value.GetType().Name}."),
-    };
-
-    /// <summary>
-    /// A decoded graph's digest (§E7: derived from the stored version and the decoder's version): <c>gph-</c> and 32 hex of a SHA-256 over
-    /// the decoder's version, the version's identity and the graph's own <see cref="NodeGraphs.Digest"/>, so neither moves without it.
-    /// </summary>
-    public static string GraphDigest(string identity, NodeGraph graph) => GraphDigest(identity, graph, DecoderVersion);
-
-    /// <summary>
-    /// The digest a decoder numbered <paramref name="decoder"/> would derive (FABRIC-WORKFLOW2b): what a changed mapping binds afresh, while
-    /// the version's identity and its stored bytes stay as they are.
-    /// </summary>
-    internal static string GraphDigest(string identity, NodeGraph graph, int decoder) =>
-        "gph-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"workflow-graph\n{decoder}\n{identity}\n{NodeGraphs.Digest(graph)}\n")))[..32];
-
-    /// <summary>
-    /// <paramref name="steps"/> as the graph a save writes (FABRIC-GRAPH1j; D190 point 8, the cutover design §7.2): <see cref="Graph"/>'s
-    /// graph with every synthetic node authored, its id kept, since a saved file declares no <c>synthetic</c> and the authored bound then
-    /// counts them; each option as its JSON value. Nothing judges it here: the save reads it as a graph version is read, so it is held to
-    /// every rule an authored graph is, <c>observed-twice</c> among them. No run binds a decoded graph (D190 point 1), so a steps version
-    /// reaches the runtime only so.
-    /// </summary>
-    public static JsonObject Saved(IReadOnlyList<NamedStep> steps)
-    {
-        var graph = Graph(steps);
-        JsonNode Node(NodeDeclaration node)
-        {
-            var json = new JsonObject { ["id"] = node.Id, ["kind"] = node.Kind, ["version"] = node.Version, ["reach"] = node.Reach };
-            if (node.Options.Count > 0) json["options"] = new JsonObject(node.Options.Select(pair => KeyValuePair.Create(pair.Key, JsonNode.Parse(pair.Value))));
-            return json;
-        }
-
-        return new JsonObject
-        {
-            ["schemaVersion"] = graph.SchemaVersion,
-            ["entries"] = new JsonArray([.. graph.Entries.Select(entry => (JsonNode?)entry)]),
-            ["end"] = graph.End,
-            ["cleanup"] = new JsonObject { ["until"] = graph.Cleanup.Until },
-            ["nodes"] = new JsonArray([.. graph.Nodes.Select(Node)]),
-            ["wires"] = new JsonArray([.. graph.Wires.Select(wire => (JsonNode)new JsonObject
-            {
-                ["id"] = wire.Id, ["kind"] = wire.Kind, ["from"] = wire.From!.Node, ["to"] = wire.To.Node,
-            })]),
-        };
-    }
-
-    /// <summary>
-    /// The nodes a person's skip of <paramref name="step"/> moves (§E7's last row): a group's members, since its join is never skipped
-    /// (NODE1c's choice 3), else the step's own node; none for a step the version does not hold.
-    /// </summary>
-    public static IReadOnlyList<string> Skipped(IReadOnlyList<NamedStep> steps, string step) =>
-        steps.FirstOrDefault(each => each.Id == step) is { } found
-            ? found.Kind == WorkflowKinds.All ? [.. found.Members.Select(member => member.Id)] : [found.Id]
-            : [];
-
-    /// <summary>
-    /// The decoded version a run is bound to (§E7, <i>one governs a run, by its binding</i>; D157 §5.1): null under Current. Its identity
-    /// is the binding's digest, unchanged; a file that does not read, a version it no longer holds, or one whose identity is not the
-    /// binding's reads as unreadable, and the run cannot start on it (D157 §5.2).
+    /// The decoded version a run is bound to (D157 §5.1): null under Current. Its identity is the binding's digest; a file that does not
+    /// read, a version it no longer holds, or one whose identity is not the binding's reads as unreadable, and the run cannot start on it
+    /// (D157 §5.2).
     /// </summary>
     public static DecodedVersion? ForRun(NamedWorkflowRead workflow, WorkflowRunBinding binding)
     {

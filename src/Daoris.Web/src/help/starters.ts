@@ -2,7 +2,7 @@ import type { AgentPart } from '../agents/agents';
 import type { AgentsMode } from '../agents/modes';
 import type { RoleDoor } from '../app/opener';
 import type { PlaceAsk } from '../agents/setup/placePlan';
-import type { PlaceEdit } from '../agents/setup/placeShell';
+import type { PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { Compose, OpenGroup } from '../app/opener';
@@ -24,8 +24,12 @@ export type StarterDoor = {
   drawerWorkspace?: string;
   /** The composer opened by a go to New conversation (NEW1d-b), with the repository it chooses and the words it opens with. */
   compose?: Compose;
-  /** A repository page's tab (UX6f): a door into a repository's own value opens its Setup. */
+  /** A repository page's tab (UX6f). */
   tab?: ProjectTab;
+  /** The repository whose place the Agents place's Setup mode opens at, with the section and row of its page (SETUPUX1h). */
+  placeOf?: string;
+  placeSection?: PlaceSection;
+  placeRow?: string;
   agentPart?: AgentPart;
   /** The Agents place's mode (COMPANYVIEW1b): a door into Roles. */
   agentsMode?: AgentsMode;
@@ -100,8 +104,8 @@ export function starters(
   if (machine.unnamedLines.length > 0) {
     found.push({
       id: 'no-line', values: { count: machine.unnamedLines.length, first: machine.unnamedLines[0]! },
-      // The first one's Setup, where its line is set (UX6f), since the lines moved from Settings to the workspace's page (UX6g).
-      door: { view: 'projects', item: machine.unnamedLines[0]!, tab: 'setup' },
+      // The first one's place, where its line is set.
+      door: { view: 'agents', placeOf: machine.unnamedLines[0]! },
       command: `daoris place line ${machine.unnamedLines[0]} <branch>`,
     });
   }
