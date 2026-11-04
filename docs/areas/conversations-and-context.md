@@ -30,7 +30,9 @@ of everything it handed, section by section.
 | `BriefedMove` | `Course/Chat/BriefedMove.cs` | The move to a new part handed Daoris's brief: by itself where a conversation is proven lost, or by the person's press |
 | `WordsStart`, `StartRequests` | `Course/Chat/` | The start on words: *Start a conversation with these words*, and a conversation opened on its first words, a request id answering a retry |
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
-| `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops |
+| `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops; the one door of its parts |
+| `TurnState` | `Loop/Chat/Turns/TurnState.cs` | The turns' state under its one gate: what it guards, the keep's lock before it, what a race would break |
+| `TurnPump`, `TurnTakes`, `TurnKeeps`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the keeps on the record, edits, press and send-back; the holds; the stops |
 | `ProtocolChat`, `NativeChat` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt |
 | `ChatOptions` | `Loop/Chat/ChatOptions.cs` | A conversation's model and effort as its agent offers them, the person's change of either (never the mode), and the change as last kept |
 | `ChatWords` | `Loop/Chat/ChatWords.cs` | The words said to a live conversation: the person's (framed, kept on the record, at a level or at *now*), Daoris's own, a composed message and the workflow draft it carries |
@@ -206,7 +208,8 @@ of everything it handed, section by section.
   rules are the roles area's.
 - **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, in `Help/Proposals/` with its
   row in the room's doors table.
-- **Never grow the hubs.** `Loop/Chat/ChatTurns.cs` (72 KB) and `Course/Chat/ChatGoOn.cs` (66 KB) are over budget;
+- **Never grow the hubs.** `Course/Chat/ChatGoOn.cs` (66 KB) is over budget, and a conversation's turns grow in their parts
+  under `Loop/Chat/Turns/`, never in `ChatTurns.cs`, which is their door;
   `ChatRunner.cs` (38 KB) only wires and `ChatRun.cs` (30 KB) is the one run. New behaviour goes in its own file (D231). Agents comes before Participants and Context in the
   structure gate (D166).
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),

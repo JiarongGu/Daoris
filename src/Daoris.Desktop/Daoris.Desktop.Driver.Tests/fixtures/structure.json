@@ -41,8 +41,8 @@
   },
   "loopRules": [
     { "file": "Loop/Chat/ChatStarts.cs", "member": "ChatStarts.Isolates", "after": "Loop" },
-    { "file": "Loop/Chat/ChatTurns.cs", "member": "ChatTurns.Answer", "after": "Loop" },
-    { "file": "Loop/Chat/ChatTurns.cs", "member": "ChatTurns.Carries", "after": "Loop" },
+    { "file": "Loop/Chat/Turns/TurnState.cs", "member": "TurnState.Answer", "after": "Loop" },
+    { "file": "Loop/Chat/Turns/TurnState.cs", "member": "TurnState.Carries", "after": "Loop" },
     { "file": "Loop/Chat/StartRequests.cs", "member": "StartRequests.IsId", "after": "Loop" },
     { "file": "Loop/DriverCommand.cs", "member": "DriverCommand.AskedForHelp", "after": "Loop" },
     { "file": "Loop/DriverContinuations.cs", "member": "DriverContinuations.HandedToResume", "after": "Course" },

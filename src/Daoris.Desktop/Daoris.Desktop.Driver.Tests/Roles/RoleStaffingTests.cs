@@ -328,7 +328,7 @@ public sealed class RoleStaffingTests : IDisposable
                 "Help/Proposals/HelpRoleProposals.cs",
                 // D232: the release's migration writes an older home's orders into the family once.
                 "Install/Migration/StaffingStep.cs",
-                "Loop/DriverWatch.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
+                "Loop/Watch/WatchRun.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
             ],
             naming);
     }

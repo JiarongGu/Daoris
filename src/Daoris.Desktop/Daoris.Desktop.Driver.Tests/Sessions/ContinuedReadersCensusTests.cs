@@ -56,7 +56,7 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "Daoris's reopen and go-on words through the reopen's doors: said at the head under the fact's key, the mark kept by the session the reopen names"),
         ],
-        ["DriverWatch.cs"] =
+        ["WatchNodes.cs"] =
         [
             (How.Follows, "the workflow runtime's word to the work about a review's changes (DECIDE1c): said at the head under the changes' key"),
             (How.Follows, "the integration transport's word to a session about its line's conflict (INTEGRATE1g): said at the head under the integration's key"),
@@ -122,8 +122,8 @@ public sealed partial class ContinuedReadersCensusTests
     /// </summary>
     private static readonly Dictionary<string, string> Dispatchers = new()
     {
-        ["DrivenInbox.cs"] = "a keep answered `continued` holds, sends, steers, attempts and takes nothing and answers InboxKeep.Continued with the head; KeepOrHoldAsync never holds it here instead; a reword so answered changes nothing here",
-        ["ChatTurns.cs"] = "a keep answered `continued` queues, steers, attempts and writes nothing on its door and answers TurnKept.Head; a reword so answered changes nothing here",
+        ["InboxKeeps.cs"] = "a keep answered `continued` holds, sends, steers, attempts and takes nothing and answers InboxKeep.Continued with the head; KeepOrHoldAsync never holds it here instead; a reword so answered changes nothing here",
+        ["TurnKeeps.cs"] = "a keep answered `continued` queues, steers, attempts and writes nothing on its door and answers TurnKept.Head; a reword so answered changes nothing here",
         ["ChatWords.cs"] = "the turns' head answered as ChatSaid.Head, with no reach and no word",
         ["SessionSay.cs"] = "the headless door: the inbox's head is where the request is said again",
         ["SessionWords.cs"] = "the inbox's and the turns' head is where the shell says the word again, through its whole judge",
