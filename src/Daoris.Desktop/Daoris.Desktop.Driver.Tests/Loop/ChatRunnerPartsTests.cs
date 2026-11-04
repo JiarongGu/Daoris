@@ -25,11 +25,12 @@ public sealed class ChatRunnerPartsTests : IDisposable
             new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
 
         var order = runner.Executors.Order;
-        Assert.Equal(["start-from"], order.Select(part => part.Name));
-        Assert.Equal([ExecutorPhase.Start], order.Select(part => (ExecutorPhase)part.Phase));
+        Assert.Equal(["start-from", "replacement"], order.Select(part => part.Name));
+        Assert.Equal([ExecutorPhase.Start, ExecutorPhase.Move], order.Select(part => (ExecutorPhase)part.Phase));
 
         // What each phase holds, in the order the runner built it.
         Assert.IsType<WordsStart>(Assert.Single(runner.Executors.In(ExecutorPhase.Start)));
+        Assert.IsType<ChatReplacement>(Assert.Single(runner.Executors.In(ExecutorPhase.Move)));
     }
 
     [Fact]
