@@ -692,15 +692,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return new TreeLanding(false, TreesWords.NotJudged(id).Error.FirstOrDefault() ?? "nothing was judged.");
 
         var unit = RunUnits.IdOf(process.BoundRun!);
-        AutoLander.Retry(_loop.Home, id, unit, tip);
-        await _loop.PassWholeAsync(GraphPasses.Bound, ct);
-        var deadline = DateTimeOffset.UtcNow + GraphPasses.Bound;
-        TreeLanding? outcome;
-        while ((outcome = LandOutcomes.Of(unit, tip)) is null && DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
-        }
-
+        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
         var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
                       && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
         return outcome is null ? new TreeLanding(false, "Accepted; landing. Daoris lands it at its pass, and this window shows it when it has.")

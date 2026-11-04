@@ -608,8 +608,8 @@ public sealed class DriverWatch(
         {
             var landingPlugins = new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: hooks?.Log);
             nodes.Landing = new LandingDoor(
-                () => new AutoLander(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, landingPlugins),
-                    events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Performs = true },
+                () => new LandPerformer(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, landingPlugins),
+                    events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid),
                 said => Log?.Info("landing.run", ("said", said)), () => HomeLease.HeldHere(home) && !DrainsNow());
         }
 
