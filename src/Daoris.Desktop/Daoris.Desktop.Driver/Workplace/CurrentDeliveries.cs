@@ -46,7 +46,7 @@ internal static class CurrentDeliveries
         // the way of the name that takes, whose landing would read the key settled and land with no delivery.
         if (method != DeliveryMethods.Merge && !(branch is { } named && BranchName.IsValid(named)))
         {
-            return (null, Refused(TreeLands.Untaken(branch ?? "", subject.EnteredName is not null).TrimEnd('.')));
+            return (null, Refused(LandingSayings.Untaken(branch ?? "", subject.EnteredName is not null).TrimEnd('.')));
         }
 
         var squash = bound?.Squash ?? (rule.Squash && method is DeliveryMethods.Branch or DeliveryMethods.PullRequest);

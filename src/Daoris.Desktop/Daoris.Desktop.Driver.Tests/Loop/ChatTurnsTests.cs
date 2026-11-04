@@ -115,13 +115,13 @@ public sealed class ChatTurnsTests
             {
                 held = turns.Pressing && gate.Tip == Tip;
                 turns.Take(new ChatMessage("while it lands", []));
-                return Task.FromResult(new TreeLanding(false, TreeLands.StillLanding));
+                return Task.FromResult(new TreeLanding(false, LandingSayings.StillLanding));
             },
             () => 0, head: _ => Task.FromResult<string?>(Tip));
 
         Assert.True(held, "the landing ran with the conversation reserved and pinned to the captured tip");
         Assert.False(pressed.Landed.Landed);
-        Assert.Equal(TreeLands.StillLanding, pressed.Landed.Message);
+        Assert.Equal(LandingSayings.StillLanding, pressed.Landed.Message);
         Assert.False(turns.Pressing);
         await Poll.Until(() => door.Took.Count == 1, () => "the word that waited for the press never started once it was refused");
         turns.Gone();

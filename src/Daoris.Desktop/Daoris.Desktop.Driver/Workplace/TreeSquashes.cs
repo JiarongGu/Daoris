@@ -142,7 +142,7 @@ internal sealed class TreeSquashes(TreeContext context)
         return new Branched(
             new TreeLanding(true,
                 $"moved `{name}` on from {TextBounds.ShortCommit(standsAt, 8)} to this session's work — {adds.Count} more commit(s), "
-                + $"squashed into one.{pushIt} Nothing was merged and the checkout was not touched.{TreeLands.TreeStays}",
+                + $"squashed into one.{pushIt} Nothing was merged and the checkout was not touched.{LandingSayings.TreeStays}",
                 name)
             { AdvancedFrom = standsAt },
             root, line, carried, branch)
