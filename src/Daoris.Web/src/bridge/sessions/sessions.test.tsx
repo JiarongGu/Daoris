@@ -41,7 +41,7 @@ describe('the sessions domain', () => {
 
     const every = renderHook(() => useSessionGroups(), { wrapper: wrapper(client) });
     await waitFor(() => expect(every.result.current.data).toEqual([parked]));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {});
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} });
 
     const some = renderHook(() => useSessionGroups(['s3', 's1', 's3']), { wrapper: wrapper(client) });
     await waitFor(() => expect(some.result.current.data).toEqual([parked]));

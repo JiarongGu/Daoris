@@ -4,7 +4,7 @@ import type { InstructionAccount } from '../conversation/conversation';
 /**
  * How a session or a quest came to be (TRACE1b, D143, D50): `daoris trace`'s read, as the driver's `TRACE` route
  * answers it. Each link names the store it was read from, and a link nothing keeps carries why, as a code this page words
- * (`work.trace.json`). The driver declares every code (`Trace.Chain.cs`), and `trace.test.ts` holds both catalogues to it.
+ * (`work.trace.json`). The driver declares every code (`TraceCodes.cs`), and `trace.test.ts` holds both catalogues to it.
  *
  * @remarks
  * **No machine path is in it** (D47 §4): a tree is its folder's name, a file under the home is named by its store, and what a
