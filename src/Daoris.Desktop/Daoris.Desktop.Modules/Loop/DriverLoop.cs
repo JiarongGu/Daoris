@@ -389,132 +389,21 @@ public sealed class DriverLoop(
             Live = live,
         });
 
-    /// <summary>
-    /// One quest as the tick hands it to the page: its id, its repository, the verdict and the driver's sentence, which
-    /// the page translates by the verdict and never by its words (UX5 U27). One writer, since the shape is the page's
-    /// contract.
-    /// </summary>
-    /// <remarks>
-    /// <b>Whose stop holds it</b> (SESSUX1d, D126 §3.3): a <c>Stopped</c> verdict names the session stopped, so the page
-    /// can say the sentence in the reader's language and name the session as a fact rather than reading it out of the
-    /// driver's English. Null for every other verdict, which the bridge leaves out. The stop's tree stays here.
-    /// <para><b>How many failed, and since when</b> (SESSUX1i, D126 §4.6): an <c>Exhausted</c> verdict, with its park read,
-    /// carries the number the planner parked it at, so the page says why in the reader's language, and when its last
-    /// session ended, which *What needs you* counts its wait from. Null for every other verdict and a park not read yet.
-    /// The last session and its note stay here, as the stop's tree does.</para>
-    /// <para><b>Which account it waits for</b> (TOOL4g, D125 §4): a quest held at spawn because every account its start may use
-    /// is cooling waits for an account, not parked and with no Retry. The wait names whose account, which (null for the tool's
-    /// own sign-in), until when, and whether the agent named the time, so the page says it in the reader's language. Null where
-    /// no wait of the look holds this quest on a cooling account: a wait on signed-out accounts alone has no time (UX6d1), and
-    /// its quest says its accounts by <c>SignedOut</c>. A profile name rides this bridge only (D47 §4).</para>
-    /// <para><b>Which accounts it passed not signed in</b> (TOOL6g): beside a wait or with none cooling, whose and which, so the
-    /// page names each with its sign-in. Null where it passed none.</para>
-    /// <para><b>Whose take holds it</b> (CARRY2c): a <c>TakenElsewhere</c> verdict names the machine that took the quest and its
-    /// session where a teammate's record named them, or that it was taken here after the session ended, and the session here
-    /// not carried on. Null for every other verdict.</para>
-    /// </remarks>
-    /// <param name="park">The quest's park as the loop last read it (<see cref="QuestParkReader"/>), or null.</param>
-    /// <param name="wait">The look's wait on a cooling account, where it holds this quest (<see cref="TickReport.Waits"/>), or null.</param>
-    public static object TickConsideration(Consideration consideration, QuestPark? park = null, AccountWait? wait = null)
-    {
-        var parked = consideration.Verdict == StartVerdict.Exhausted
-                     && park is not null
-                     && string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)
-            ? park
-            : null;
-        // A wait on signed-out accounts has no reset (UX6d1): its quest waits for a sign-in, which `SignedOut` says, never a time.
-        var waiting = wait is { Until: not null } && wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase)
-            ? wait
-            : null;
-        return new
-        {
-            Quest = consideration.Quest.Id,
-            Repository = consideration.Quest.To,
-            Verdict = consideration.Verdict.ToString(),
-            consideration.Reason,
-            HeldBy = consideration.HeldBy?.Session,
-            // Whose pause holds it (PAUSE1b, D132 §2.3): the scope and the id, so the page says it from facts. Null otherwise.
-            PausedBy = consideration.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
-            parked?.Strikes,
-            parked?.Since,
-            // Each account with the name the person gave it, read when the look said it (ACCT2b): the page says the name, null
-            // where there is none, and the id stays the fact a sign-in takes.
-            WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Name, waiting.Until, waiting.Stated },
-            // The accounts its start passed not signed in (TOOL6g), whose: the page says each with its sign-in. Null otherwise.
-            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts, passed.Names, passed.NoAccount } : null,
-            // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
-            ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
-            // Whose take holds it, where it is not this machine's (CARRY2c): the machine and its session where a record named
-            // them, a take made here, and the session here not carried on, so the page says it from facts. Null otherwise.
-            TakenBy = consideration.TakenBy is { } taken ? new { taken.Machine, taken.Session, taken.Here, taken.Last } : null,
-            CannotShow = consideration.CannotShow is { } sat ? new { sat.Code, sat.Environment, sat.Address } : null,
-            // Which of its sentences the planner said, by code and facts (OVERVIEWNOISE1c): the page words it. Null otherwise.
-            Said = SaidShown(consideration.Said),
-        };
-    }
+    /// <summary>One quest as the tick hands it to the page (<see cref="TickShown.Quest"/>).</summary>
+    public static object TickConsideration(Consideration consideration, QuestPark? park = null, AccountWait? wait = null) =>
+        TickShown.Quest(consideration, park, wait);
 
-    /// <summary>
-    /// Which of a verdict's sentences the planner said, as the page receives it (OVERVIEWNOISE1c): the code and the facts its words
-    /// are said from, the cap as a number; null where the planner named none. One shape for the tick and a work's holds.
-    /// </summary>
-    public static object? SaidShown(SittingFact? said) => said is null
-        ? null
-        : new { said.Code, said.Cap, said.Session, said.Quest, said.Repository, said.Environment, said.State, said.Paths };
+    /// <summary>Which of a verdict's sentences the planner said, as the page receives it (<see cref="TickShown.Said"/>).</summary>
+    public static object? SaidShown(SittingFact? said) => TickShown.Said(said);
 
-    /// <summary>
-    /// One wait as the tick hands it to the page (UX6d, D150 §6.2): starts held because every account they may use is
-    /// cooling, one per account (<see cref="TickReport.Waits"/>), so *What needs you* lists a start waiting for accounts.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>An ask's intake is among them.</b> A consideration names a quest alone, so a held intake reached the page
-    /// only as the driver's toast and its log line, and the band could not say it waited (the TOOL6g note, TOOL4m's row).
-    /// The asks are carried by id; where each would have run (<c>ask #id</c>) stays here, since the page names an intake by
-    /// its ask.</para>
-    /// <para><b>And a start held on signed-out accounts with none cooling</b> (UX6d1): one per agent, its <c>until</c> and its
-    /// <c>account</c> null and <c>stated</c> false, its <c>signedOut</c> the accounts a sign-in frees. It waits for a person,
-    /// not a time.</para>
-    /// <para><b>Facts, never the driver's English</b>: whose account, which and the name the person gave it (ACCT2b), the
-    /// workspace where the held starts share one, until when and whether the agent named the time, what it holds, and the
-    /// accounts the starts passed signed out (TOOL6g). The page says them in the reader's language. The adapter stays too:
-    /// the page names the agent, never a door.</para>
-    /// <para>🔴 <b>Nothing is asked to build it</b> (D150 §6.3): the look's own wait, read from the cool-offs and the refusals
-    /// its starts met (D125 §4), so no row on the page starts a process to find out. A profile name rides this bridge only
-    /// (D47 §4).</para>
-    /// </remarks>
-    public static object TickWait(AccountWait wait) => new
-    {
-        wait.Agent,
-        wait.Account,
-        wait.Name,
-        wait.Workspace,
-        wait.Until,
-        wait.Stated,
-        wait.Quests,
-        wait.Asks,
-        wait.SignedOut,
-        wait.NoAccount,
-    };
+    /// <summary>One wait as the tick hands it to the page (<see cref="TickShown.Wait"/>).</summary>
+    public static object TickWait(AccountWait wait) => TickShown.Wait(wait);
 
-    /// <summary>
-    /// What a look's lines SAY, as one string (IDLECPU1), equal when the same lines are said again, whatever their order and
-    /// however often one repeats. The tick is forwarded when it changes: a standing condition (a plugin's hold, a remote the sync
-    /// cannot reach) says its line at every look, and forwarding each made the page ask every list again every look, git of
-    /// every checkout among them. The page's own rule for a toast (<c>newsFrom</c>): changed since the last, never seen before.
-    /// </summary>
-    public static string LinesSignature(IEnumerable<string> lines) =>
-        string.Join("\n", lines.Distinct(StringComparer.Ordinal).OrderBy(line => line, StringComparer.Ordinal));
+    /// <summary>What a look's lines say, as one string (<see cref="TickSignatures.Lines"/>).</summary>
+    public static string LinesSignature(IEnumerable<string> lines) => TickSignatures.Lines(lines);
 
-    /// <summary>
-    /// What the waits SAY, as one string (UX6d), equal when the same accounts hold the same starts until the same time,
-    /// whatever the order. The tick is forwarded when it changes, as it is for the considerations' signature: a wait that
-    /// begins or ends for an intake alone moves no consideration. A wait on signed-out accounts signs with no time (UX6d1).
-    /// </summary>
-    public static string WaitsSignature(IEnumerable<AccountWait> waits) =>
-        string.Join("\n", waits
-            .Select(wait => string.Join("\t",
-                wait.Agent, wait.Account ?? "", wait.Workspace ?? "", wait.Until?.ToUnixTimeSeconds(), wait.Stated,
-                string.Join(",", wait.Quests), string.Join(",", wait.Asks), string.Join(",", wait.SignedOut), wait.NoAccount))
-            .OrderBy(line => line, StringComparer.Ordinal));
+    /// <summary>What the waits say, as one string (<see cref="TickSignatures.Waits"/>).</summary>
+    public static string WaitsSignature(IEnumerable<AccountWait> waits) => TickSignatures.Waits(waits);
 
     /// <summary>
     /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
@@ -606,15 +495,8 @@ public sealed class DriverLoop(
     /// </summary>
     public LastOpinions Judged { get; } = new();
 
-    /// <summary>
-    /// What the kept second-opinion gates say that waits on the person, as one string (XAGENT1g3): the tick is forwarded when it
-    /// changes, so the page reads the route again, and a gate that waits on no one moves nothing.
-    /// </summary>
-    public static string JudgedSignature(IEnumerable<OpinionJudged> judged) =>
-        string.Join("\n", judged
-            .Where(each => TreesRoutes.WaitsOnPerson(each.Gate, each.Auto))
-            .Select(each => string.Join("\t", each.Session, each.Quest, each.Auto, each.Gate.State, each.Gate.Says))
-            .OrderBy(line => line, StringComparer.Ordinal));
+    /// <summary>What the kept second-opinion gates say that waits on the person, as one string (<see cref="TickSignatures.Judged"/>).</summary>
+    public static string JudgedSignature(IEnumerable<OpinionJudged> judged) => TickSignatures.Judged(judged);
 
     /// <summary>The loop's syncs, once it is up — the ones its tick runs, and the ones *Sync now* runs.</summary>
     private RemoteSyncSet? _sync;
@@ -1209,20 +1091,7 @@ public sealed class DriverLoop(
         return new JournalTeller(teller.TellAsync, () => news.Cursor(name), position => news.Advance(name, position));
     }
 
-    /// <summary>What is worth interrupting the person for (SURF5b), in the one shape the shell's notifier and the page's toast read.</summary>
-    private Task AttendAsync(AttentionEvent item) => eventBus.EmitAsync("DAORIS", "SESSION_ATTENTION", new
-    {
-        Kind = item.Kind.ToString(),
-        item.Session,
-        item.Repository,
-        item.State,
-        item.Headline,
-        item.Detail,
-        // The quest a park names (SESSUX1i); null for a session's own news.
-        item.Quest,
-        // NOTIFY2d, a field added: how many sessions failed before a quest parked, which its notification says in the window's words.
-        item.Strikes,
-    });
+    private Task AttendAsync(AttentionEvent item) => AttentionTold.TellAsync(eventBus, item);
 
     /// <summary>
     /// A conversation another Daoris process runs told its turns anew, or left (CLITURN1): the windows hear its queue as
@@ -1417,73 +1286,8 @@ public sealed class DriverLoop(
     /// <summary>How long the loop waits on an act's hold (a verb, a migration, a swap) before it says so (HOMELEASE1).</summary>
     public TimeSpan TellAfter { get; init; } = HomeLease.Wait;
 
-    /// <summary>
-    /// This home's lease, taken for the desktop's loop for its life (DRV8a, D104; HOMELEASE1, the terminal RPC design §5).
-    /// While another live driver holds it — a terminal's `daoris drive` — the loop waits, and says so at once, on the
-    /// channel a person acts on; while an act holds it — a terminal's verb acting alone, the first-start move, the launcher's
-    /// swap — it waits, and says so once that hold has lasted <see cref="TellAfter"/>, on that channel and in the machine log.
-    /// Either way it takes the lease the moment the holder lets go. Null when the shell closes first.
-    /// </summary>
-    /// <remarks>
-    /// Waited for rather than refused, as a terminal's loop is: the desktop is where a person drives from,
-    /// and nothing else it carries races anyone for a quest.
-    /// </remarks>
-    public async Task<HomeLease?> HoldHomeAsync(CancellationToken ct)
-    {
-        var told = false;
-        DateTimeOffset? actSince = null;
-        while (true)
-        {
-            HomeLease? held;
-            string? said;
-            LeaseHolder? holder = null;
-            try
-            {
-                held = HomeLease.TryAcquire(Home, LeaseKind.Desktop, out holder);
-                said = holder is null
-                    ? null
-                    : holder.IsInstance
-                        ? $"The driver loop is waiting: this home is already driven by {holder.Named}. It starts "
-                          + "here the moment that one stops."
-                        : $"The driver loop is waiting: this home is held by {holder.Named}, which has not let it go in "
-                          + $"{TellAfter.TotalSeconds:0} seconds. It starts here the moment that one ends.";
-            }
-            catch (HomeLeaseException error)
-            {
-                held = null;
-                said = error.Message;
-            }
-
-            if (held is not null) return held;
-
-            // An act holds the home for a moment, as a verb's press does: said only once it has lasted the wait.
-            if (holder is { IsInstance: false })
-            {
-                actSince ??= DateTimeOffset.UtcNow;
-                if (DateTimeOffset.UtcNow - actSince < TellAfter) said = null;
-            }
-
-            if (!told && said is not null)
-            {
-                await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = said }).ConfigureAwait(false);
-                if (holder is not null)
-                {
-                    log?.Warn("home.waiting", ("holder", holder.Kind.ToString().ToLowerInvariant()), ("pid", holder.Pid), ("what", holder.What));
-                }
-
-                told = true;
-            }
-
-            try
-            {
-                await Task.Delay(HoldRetry, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                return null;
-            }
-        }
-    }
+    /// <summary>This home's lease, waited for by the loop for its life (<see cref="HomeHold"/>); null when the shell closes first.</summary>
+    public Task<HomeLease?> HoldHomeAsync(CancellationToken ct) => HomeHold.WaitAsync(Home, HoldRetry, TellAfter, eventBus, log, ct);
 
     /// <summary>What the asks say this tick, or null when the host could not answer — never a change.</summary>
     private static async Task<string?> AskedAsync(ServiceClient service, CancellationToken ct)
@@ -1623,41 +1427,4 @@ public sealed class DriverLoop(
         Facts.Dispose();
         _stopping.Dispose();
     }
-}
-
-/// <param name="Code">A failure the page words from its catalogue, or null when the words are the driver's.</param>
-/// <param name="Message">The driver's own sentence, which a page that does not know the code shows.</param>
-public sealed record TickError(string? Code, string Message);
-
-/// <summary>
-/// What a failed tick tells the page (UX5 U30): said once until a tick runs again, and a failure the
-/// driver can name is named.
-/// </summary>
-/// <remarks>
-/// <para>🔴 With the machine's service stopped, the shell toasted the .NET socket's own words on every
-/// poll, <i>No connection could be made because the target machine actively refused it.
-/// (127.0.0.1:5188)</i>, beside the page's own sentence for the same fact. A refused connection is
-/// <c>SERVICE_UNREACHABLE</c>, the code the page's own requests use, so both doors say one sentence
-/// in the reader's language. A tick report is a log and a toast is an interruption (D62), so the same
-/// failure again is not news.</para>
-///
-/// <para>Called by the watch loop alone, one tick at a time, so it holds no lock.</para>
-/// </remarks>
-public sealed class TickErrors
-{
-    private string? _last;
-
-    /// <summary>The failure to tell the page, or null when it is the one already told.</summary>
-    public TickError? Failed(Exception error)
-    {
-        var said = error is HttpRequestException { StatusCode: null }
-            ? new TickError("SERVICE_UNREACHABLE", "the service is not answering — the driver looks again in a few seconds.")
-            : new TickError(null, error.Message);
-        if (said.Message == _last) return null;
-        _last = said.Message;
-        return said;
-    }
-
-    /// <summary>A tick ran, so the next failure is news again.</summary>
-    public void Ran() => _last = null;
 }
