@@ -328,10 +328,10 @@ public sealed class LookSaidTests : IDisposable
 
     /// <summary>A line classed where it is made: the driver's <c>Lines</c>, a class's <c>Said</c>, a static producer's <c>said</c>.</summary>
     private static readonly Regex Classed = new(
-        @"^((_?context|_said)\.Said|Lines|said|Said)\.(Retry|Own|Wait|Progress|News|Of|Say|Ran)\(", RegexOptions.CultureInvariant);
+        @"^((_?context|_said)\.Said|(wiring\.)?Lines|said|Said)\.(Retry|Own|Wait|Progress|News|Of|Say|Ran)\(", RegexOptions.CultureInvariant);
 
     /// <summary>A statement that hands the look's classing to the producer whose lines it adds (NOTIFY2h2): <c>Lines</c> as an argument.</summary>
-    private static readonly Regex HandsLines = new(@"[(,]\s*Lines\s*[),]", RegexOptions.CultureInvariant);
+    private static readonly Regex HandsLines = new(@"[(,]\s*(wiring\.)?Lines\s*[),]", RegexOptions.CultureInvariant);
 
     /// <summary>The lists only carried on, each classed by the producer that made it.</summary>
     private static readonly string[] Carried =

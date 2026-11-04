@@ -17,7 +17,6 @@ public static class ChoiceRoutes
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
     public static InstanceRoute Language { get; } = Person("SET_LANGUAGE");
-    public static InstanceRoute Landing { get; } = Person("SET_LANDING");
     public static InstanceRoute ReadAcross { get; } = Person("SET_READ_ACROSS");
     public static InstanceRoute WriteAcross { get; } = Person("SET_WRITE_ACROSS");
     public static InstanceRoute Standing { get; } = Person("SET_STANDING");

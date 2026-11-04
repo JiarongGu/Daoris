@@ -20,7 +20,7 @@ public sealed partial class SettledReadersCensusTests
     /// <summary>Readers that handle a settled answer in their own code, before any word: what they do with it.</summary>
     private static readonly Dictionary<string, string> First = new()
     {
-        ["ServiceClient.cs"] = "reads `settled` before `said` and carries it as SayAnswer.Settled, kept, with no word",
+        ["SessionWordDoors.cs"] = "reads `settled` before `said` and carries it as SayAnswer.Settled, kept, with no word",
         ["HelperDoors.cs"] = "reads `settled` before `said` through SolicitedHand.Read and answers SolicitedFate.Settled, with no word",
         ["PartnerDoors.cs"] = "reads `settled` before `said` through SolicitedHand.Read and answers SolicitedFate.Settled, with no word",
         ["OpinionDoors.cs"] = "the findings' hand to the working session's line asks settled and reads it through SolicitedHand.Read as SolicitedFate.Settled, with no word",
@@ -31,7 +31,7 @@ public sealed partial class SettledReadersCensusTests
         ["SessionWords.cs"] = "the record path, the inbox and the chat answer sent, no word, nothing kept on the ask",
         ["HeldWordsQueue.cs"] = "the pump takes its held word off and shows nothing",
         ["SessionSay.cs"] = "the headless door answers sent with no word, shows nothing and keeps nothing on the ask",
-        ["DriverHelpers.cs"] = "the helper pass dispatches and records nothing, the ask marked handed",
+        ["HelperSettling.cs"] = "the helper pass dispatches and records nothing, the ask marked handed",
         ["DriverPartners.cs"] = "the partner's hand dispatches and records nothing, the piece marked handed",
     };
 
@@ -58,7 +58,7 @@ public sealed partial class SettledReadersCensusTests
     /// <summary>The doors that stay today's: they ask for no settled answer and read what they always read.</summary>
     private static readonly Dictionary<string, string> Today = new()
     {
-        ["Driver.cs"] = "the supervisor's release says with `supervised` and asks no settled answer (O7-F12): its door answers its key only while its word waits, and it reads that word's id as it always did",
+        ["SupervisorLook.cs"] = "the supervisor's release says with `supervised` and asks no settled answer (O7-F12): its door answers its key only while its word waits, and it reads that word's id as it always did",
     };
 
     [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
@@ -68,7 +68,7 @@ public sealed partial class SettledReadersCensusTests
     private static partial Regex Other();
 
     /// <summary>The names the code gives a service client the say door is called on.</summary>
-    private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "world.Service"];
+    private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "world.Service", "wiring.Service"];
 
     private static IEnumerable<(string File, string Source)> Sources()
     {
@@ -117,9 +117,9 @@ public sealed partial class SettledReadersCensusTests
 
         // The doors and the classes that hold the answer's type declare it rather than read a keyed call; they are named for being read by name.
         var named = new SortedSet<string>([.. First.Keys, .. AsKept.Keys, .. Today.Keys], StringComparer.Ordinal);
-        var readers = new SortedSet<string>(found.Where(file => file is not "ServiceClient.cs"), StringComparer.Ordinal);
+        var readers = new SortedSet<string>(found.Where(file => file is not "SessionWordDoors.cs"), StringComparer.Ordinal);
         Assert.Empty(readers.Except(named));
-        Assert.Empty(named.Except(readers.Concat(["ServiceClient.cs", "HelperDoors.cs", "PartnerDoors.cs", "OpinionDoors.cs", "ChatWords.cs", "SaidDoor.cs", "SessionSay.cs"])));
+        Assert.Empty(named.Except(readers.Concat(["SessionWordDoors.cs", "HelperDoors.cs", "PartnerDoors.cs", "OpinionDoors.cs", "ChatWords.cs", "SaidDoor.cs", "SessionSay.cs"])));
     }
 
     [Fact]

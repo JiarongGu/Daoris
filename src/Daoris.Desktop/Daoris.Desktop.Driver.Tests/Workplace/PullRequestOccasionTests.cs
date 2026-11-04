@@ -22,7 +22,7 @@ public sealed class PullRequestOccasionTests
     /// dispatch left no answer, which runs inside a person's landing and only for a plugin that declared <c>hooks.key</c>. Nothing
     /// else joins them.
     /// </summary>
-    private static readonly string[] Occasions = ["TidyCarriedAsync", "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync", "AskAtMomentAsync", "ReconcileAsync"];
+    private static readonly string[] Occasions = ["CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync", "AskAtMomentAsync", "ReconcileAsync"];
 
     [Fact]
     public void The_loop_keeps_no_process_for_the_query_and_has_nothing_to_ask_it()
@@ -128,7 +128,8 @@ public sealed class PullRequestOccasionTests
             .Distinct()
             .ToList();
 
-        Assert.Equal(["TreesStateVerb.cs"], doors);
+        // The terminal's `trees state` verb is a file of its own (TreesStateVerb); the door that calls it is the trees console's dispatch.
+        Assert.Equal(["TreesConsole.cs"], doors);
     }
 
     /// <summary>
