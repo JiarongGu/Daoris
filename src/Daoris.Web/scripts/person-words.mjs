@@ -9,10 +9,11 @@ export const ROUTES = join(dirname(fileURLToPath(import.meta.url)), '..', 'src',
 
 /** The keys a generated routes file's `PERSON_WORDS` lists, or null where it lists none. */
 export function personWords(text) {
+  // The list starts after its `= `, since the annotation's `string[]` holds a bracket too.
   const start = text.indexOf('export const PERSON_WORDS');
-  const open = start < 0 ? -1 : text.indexOf('[', start);
+  const open = start < 0 ? -1 : text.indexOf('= [', start);
   const close = open < 0 ? -1 : text.indexOf('\n];', open);
-  return close < 0 ? null : JSON.parse(text.slice(open, close + 2));
+  return close < 0 ? null : JSON.parse(text.slice(open + 2, close + 2));
 }
 
 /** The keys the generated file at `path` lists, or null where it is not written or lists none. */
