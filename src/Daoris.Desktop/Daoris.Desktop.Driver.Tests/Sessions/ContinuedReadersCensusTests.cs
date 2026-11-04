@@ -131,6 +131,12 @@ public sealed partial class ContinuedReadersCensusTests
         ["LongCalls.cs"] = "Daoris's word about this run's call: a record that went on is told nothing, as a closed inbox is",
     };
 
+    /// <summary>The runner hands a keep on to the dispatcher that holds it, which is named above and reads the head itself.</summary>
+    private static readonly Dictionary<string, (string Calls, string Why)> Forwards = new()
+    {
+        ["ChatRunner.cs"] = ("_words.SayKeptAsync(", "the conversation runner's door: its keep is ChatWords's, which answers the head as ChatSaid.Head"),
+    };
+
     /// <summary>Callers that reach the say door only through another named here: what they call.</summary>
     private static readonly Dictionary<string, (string Calls, string Why)> Through = new()
     {
@@ -147,7 +153,7 @@ public sealed partial class ContinuedReadersCensusTests
     private static partial Regex Keep();
 
     /// <summary>The names the code gives a service client the say door is called on.</summary>
-    private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "world.Service"];
+    private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "Context.Service", "world.Service"];
 
     private static IEnumerable<(string File, string Source)> Sources()
     {
@@ -225,8 +231,13 @@ public sealed partial class ContinuedReadersCensusTests
             Assert.Matches(@"\bHead\b", sources[file]);
         }
 
-        var keeps = sources.Where(pair => Keep().IsMatch(pair.Value)).Select(pair => pair.Key).Order(StringComparer.Ordinal);
+        var keeps = sources.Where(pair => Keep().IsMatch(pair.Value) && !Forwards.ContainsKey(pair.Key)).Select(pair => pair.Key).Order(StringComparer.Ordinal);
         Assert.Equal(Dispatchers.Keys.Order(StringComparer.Ordinal), keeps);
+        foreach (var (file, (calls, why)) in Forwards)
+        {
+            Assert.True(sources.TryGetValue(file, out var forwarded), $"{file} is named as forwarding {calls} ({why}) but is not a source");
+            Assert.Contains(calls, forwarded);
+        }
         foreach (var (file, how) in Dispatchers)
         {
             Assert.True(Regex.IsMatch(sources[file], @"\bHead\b|InboxKeep\.Continued"), $"{file} says it reads the head ({how}) and names none");
