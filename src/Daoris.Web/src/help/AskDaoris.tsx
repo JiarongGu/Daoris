@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useSessions } from '../data/queries';
-import { type AskOpening, useAskConversation } from './AskConversation';
+import { type AskOpening } from './ask/askTypes';
+import { useAskConversation } from './AskConversation';
 import { AskPanel } from './AskPanel';
 import { setupProgress, setupSteps } from './setup';
 import { type StarterDoor, starters } from './starters';
