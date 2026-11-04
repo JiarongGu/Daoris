@@ -56,10 +56,10 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     [Fact]
     public void The_press_on_a_run_whose_land_is_performed_builds_no_plugin_wire_and_calls_no_landing()
     {
-        var source = File.ReadAllText(SourceFiles.Module("TreesRoutes.cs"));
+        var source = File.ReadAllText(SourceFiles.Module("TreesLandDesk.cs"));
         var from = source.IndexOf("private async Task<object?> PerformedPressAsync(", StringComparison.Ordinal);
         Assert.True(from > 0);
-        var body = source[from..source.IndexOf("private async Task<object?> ChatPressAsync(", from, StringComparison.Ordinal)];
+        var body = source[from..source.IndexOf("private async Task<TreeLanding> PerformedLandingAsync(", from, StringComparison.Ordinal)];
         Assert.DoesNotContain("LandingPlugins", body);
         Assert.DoesNotContain("LandAsync", body);
         Assert.DoesNotContain("TreeLands", body);

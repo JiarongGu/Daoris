@@ -296,7 +296,7 @@ public sealed class DriverCommandTests
     public void Every_press_holds_its_landing_to_the_result_it_was_made_on()
     {
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
-        var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
+        var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesLandDesk.cs"));
         var accepts = File.ReadAllText(SourceFiles.Driver("EntryAccepts.cs"));
 
         foreach (var door in new[] { console, route })
@@ -332,7 +332,8 @@ public sealed class DriverCommandTests
             Assert.Contains("beforePush: pressed.BeforePush", door);
         }
 
-        Assert.Contains("await HandAsync(_loop, trees, root, entry, named, cancellationToken)", route);
+        var handDesk = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesHandDesk.cs"));
+        Assert.Contains("await TreesRoutes.HandAsync(_loop, trees, root, entry, named, cancellationToken)", handDesk);
         Assert.Contains("TreesRoutes.HandAsync(_loop, trees, root, entry, plugin, ct)", help);
     }
 

@@ -50,11 +50,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var review = await SessionReviews.ReadAsync(
             id, tree, baseCommit, new SessionTrees(_loop.Home), (repository, ct) => CheckoutOfAsync(service, repository, ct), _loop.Log,
             cancellationToken);
-        if (review is null) throw Unreviewable(id, tree, baseCommit);
+        if (review is null) throw TreesReviewWires.Unreviewable(id, tree, baseCommit);
         return review.FromBranch
-            ? ReviewAnswer(id, review.Diff, ReviewSource.Branch, review.Landed, treeGone: review.TreeGone)
-            : ReviewAnswer(
-                id, review.Diff, ReviewSource.Tree, review.Landed, treeGone: false, uncommitted: review.Uncommitted, behind: review.Behind,
+            ? TreesReviewWires.ReviewAnswer(id, review.Diff, TreesReviewWires.ReviewSource.Branch, review.Landed, treeGone: review.TreeGone)
+            : TreesReviewWires.ReviewAnswer(
+                id, review.Diff, TreesReviewWires.ReviewSource.Tree, review.Landed, treeGone: false, uncommitted: review.Uncommitted, behind: review.Behind,
                 treeBranch: review.TreeBranch, offer: review.Offer);
     }
 
@@ -120,130 +120,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         };
     }
 
-    /// <summary>The landing plan's count of uncommitted paths in the session's own tree: 0 where clean or not asked.</summary>
-    public static int UncommittedCount(int? held) => held ?? 0;
-
-    /// <summary>Where a review's files are read from: the session's own tree, or its landed branch once the tree cannot be read.</summary>
-    public static class ReviewSource
-    {
-        public const string Tree = "tree";
-        public const string Branch = "branch";
-    }
-
-    /// <summary>
-    /// What a review becomes on the wire: the files and the range they are measured from, where they are read from,
-    /// and — for a landed session — where its work landed, where that branch stands, and whether the
-    /// review reads as landed, which is what the page's acts follow. Public, as <see cref="FileAnswer"/> is, so the
-    /// shape is tested without a service.
-    /// </summary>
-    /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
-    public static object ReviewAnswer(
-        string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone, WorkingTree.TreeDiff? uncommitted = null,
-        LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null) => new
-    {
-        Session = session,
-        Base = diff?.Base ?? "",
-        diff?.Truncated,
-        Files = (diff?.Files ?? []).Select(file => new
-        {
-            file.Path,
-            file.Status,
-            file.Added,
-            file.Removed,
-            file.Patch,
-        }).ToArray(),
-        Source = source,
-        // The session's own tree's uncommitted work, apart from the committed list: null where the
-        // source is not that tree or nothing is uncommitted. A shape added, so an answer without it reads as it did.
-        Uncommitted = source == ReviewSource.Tree && uncommitted is { Files.Count: > 0 }
-            ? new
-            {
-                Files = uncommitted.Files.Select(file => new { file.Path, file.Status, file.Added, file.Removed, file.Patch }).ToArray(),
-                Truncated = uncommitted.Truncated is not null,
-            }
-            : null,
-        // How the session's own tree stands against the latest line known here: the line's name, the commits it has that
-        // the tree does not, and the tree's beyond it. Null where the source is not that tree or the line could not be read; a shape added.
-        Behind = source == ReviewSource.Tree && behind is not null ? new { behind.Line, behind.Commits, behind.Ahead } : null,
-        // The branch the read tree's HEAD stands on, which the page's head names over the record's guess: the
-        // agent may have switched it or deleted its `daoris/` branch and detached. Null where detached, and where the
-        // source is a landed branch, whose tree was not read; a shape added.
-        TreeBranch = source == ReviewSource.Tree ? treeBranch : null,
-        // What the driver would land of the tree: null where it offers none, the
-        // work not beyond the line or landed, and on a landed branch's review; a shape added.
-        Offer = source == ReviewSource.Tree && offer is not null ? new { offer.Branch, offer.Tree, offer.Commits, offer.Uncommitted } : null,
-        Landed = landed is null ? null : new
-        {
-            landed.Entry.Branch,
-            landed.Entry.Repository,
-            landed.Entry.Line,
-            LandedAt = landed.Entry.LandedAt == DateTimeOffset.MinValue
-                ? null
-                : Moments.Write(landed.Entry.LandedAt),
-            landed.Entry.Plugin,
-            landed.Entry.Pushed,
-            landed.Entry.PullRequest,
-            // Who accepted it: `person`, `auto`, or null for a landing from before it was kept.
-            landed.Entry.AcceptedBy,
-            landed.State,
-            AsLanded = landed.ReadsAsLanded(treeGone),
-            Reads = landed.Reads is { } reads ? new { reads.Kind, reads.Where, reads.Files, reads.Detail } : null,
-            Removed = landed.Entry.RemovedAs is { } kind
-                ? new
-                {
-                    Kind = kind,
-                    Where = landed.Entry.RemovedOn,
-                    At = Moments.Write(landed.Entry.GoneAt),
-                }
-                : null,
-            // LANDRETIRE1 part 2, a shape added: a branch the person withdrew, with when, their reason and the recovery ref its commits stay
-            // on; `removed` stays the clean-up's alone, and a trace from before the reason was kept says none.
-            Withdrawn = landed.Entry is { GoneAs: LandedGone.Withdrawn, GoneAt: { } withdrawnAt }
-                ? new { At = Moments.Write(withdrawnAt), Why = landed.Entry.GoneWhy, landed.Entry.KeptOn }
-                : null,
-            landed.Detail,
-        },
-    };
-
-    /// <summary>Why a review with no landing to read instead has nothing to show, as the refusal the page renders — each its own code.</summary>
-    public static Shenora.Core.Ipc.ShenoraException Unreviewable(string session, string? tree, string? baseCommit)
-    {
-        if (string.IsNullOrWhiteSpace(tree))
-        {
-            return Refusals.Because(
-                Refusals.SessionNotReviewable,
-                "this session's record names no working tree on this machine, so there is nothing "
-                + "here to diff. That is what a record looks like when it travelled from the machine "
-                + "that did the work.",
-                ("session", session));
-        }
-
-        if (TreeFolders.TreeGone(tree))
-        {
-            return Refusals.Because(
-                Refusals.SessionTreeGone,
-                "this session's tree is gone from this machine — a clean-up after its landing, or a discard, removed it — so "
-                + "there is nothing here to diff, and no tree to land or discard.",
-                ("session", session));
-        }
-
-        if (string.IsNullOrWhiteSpace(baseCommit))
-        {
-            return Refusals.Because(
-                Refusals.SessionNoBase,
-                "this session's record does not say which commit its tree stood at when it began, so "
-                + "there is no range to measure. Records made before Daoris started writing that down "
-                + "keep their evidence line and cannot gain a diff.",
-                ("session", session));
-        }
-
-        return Refusals.Because(
-            Refusals.SessionRangeUnreadable,
-            "git could not read that range where the session ran — the tree has moved, been "
-            + "discarded, or no longer holds the commit it started from.",
-            ("session", session));
-    }
-
     // What a person may `@` in a conversation: the files in the tree the record names.
     // Desktop-only for the diff's reason — it is read off a checkout — and read-only.
     /// <summary>
@@ -306,91 +182,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
         if (!TreeFolders.TreeGone(tree) || new SessionTrees(_loop.Home).Recorded.Landing(id) is not { } landing)
         {
-            return await PreviewAsync(id, tree, path, cancellationToken, _loop.Log);
+            return await TreesReviewWires.PreviewAsync(id, tree, path, cancellationToken, _loop.Log);
         }
 
         var root = await CheckoutOfAsync(service, landing.Repository, cancellationToken);
-        return await LandedPreviewAsync(id, root, landing, tree, path, cancellationToken, _loop.Log);
-    }
-
-    /// <summary>
-    /// A file read for its preview from a session's landed branch, in the repository's checkout
-    /// <paramref name="root"/>, answered as the page receives it or refused as a code. Public, as <see cref="PreviewAsync"/> is.
-    /// </summary>
-    /// <param name="tree">The session's tree as its record names it, gone now: a path the page sends inside it is the same path on the branch.</param>
-    /// <param name="log">As <see cref="PreviewAsync"/>'s: the session and the file relative to the repository, never the branch's name, which carries a title's words.</param>
-    public static async Task<object> LandedPreviewAsync(
-        string session, string? root, LandedBranch landing, string? tree, string path, CancellationToken cancellationToken, MachineLog? log = null)
-    {
-        var read = await FilePreview.ReadLandedAsync(root, landing, path, tree, cancellationToken);
-        if (read is { Refusal: FilePreviewRefusal.None, File: { } opened })
-        {
-            log?.Info("preview.opened", ("session", session), ("path", opened.Path));
-        }
-
-        return FileAnswer(session, path, read);
-    }
-
-    /// <summary>
-    /// A file read for its preview in <paramref name="tree"/>, answered as the page receives it or refused as
-    /// a code. Public, as <see cref="OptionsAnswer"/> is, so the route's answers are tested without a service.
-    /// </summary>
-    /// <param name="log">
-    /// The machine log a preview that opened is written to, as <c>preview.opened</c>: the session and
-    /// the file relative to the tree, never the tree's own path and never the file's words. Null writes none.
-    /// </param>
-    public static async Task<object> PreviewAsync(
-        string session, string? tree, string path, CancellationToken cancellationToken, MachineLog? log = null)
-    {
-        var read = string.IsNullOrWhiteSpace(tree)
-            ? FilePreviewResult.Refused(FilePreviewRefusal.NoTree)
-            : await FilePreview.ReadAsync(tree, path, cancellationToken);
-        if (read is { Refusal: FilePreviewRefusal.None, File: { } opened })
-        {
-            log?.Info("preview.opened", ("session", session), ("path", opened.Path));
-        }
-
-        return FileAnswer(session, path, read);
-    }
-
-    /// <summary>What a preview's reading becomes on the wire: the file, or its refusal, each with its own code.</summary>
-    public static object FileAnswer(string session, string path, FilePreviewResult read)
-    {
-        (string, string)[] named = [("session", session), ("path", path)];
-        return read switch
-        {
-            // The landed branch it was read from, once the tree is gone; null for the file on disk.
-            { Refusal: FilePreviewRefusal.None, File: { } file } => new
-            {
-                Session = session, file.Path, file.Size, file.Binary, file.Text, file.Truncated, file.Branch,
-            },
-            { Refusal: FilePreviewRefusal.NotOnBranch } => throw Refusals.Because(
-                Refusals.PreviewNotOnBranch,
-                $"`{path}` is not a file on `{read.Branch}`, the branch this session's work landed on: it was deleted or moved "
-                + "there, or it is a folder or a link.",
-                [.. named, ("branch", read.Branch ?? "")]),
-            { Refusal: FilePreviewRefusal.Outside } => throw Refusals.Because(
-                Refusals.PreviewOutsideTree,
-                $"`{path}` is outside this session's tree, so the preview does not read it.",
-                named),
-            { Refusal: FilePreviewRefusal.LinkLeaves } => throw Refusals.Because(
-                Refusals.PreviewLinkLeavesTree,
-                $"`{path}` goes through a link that leads out of this session's tree, so the preview does not read it.",
-                named),
-            { Refusal: FilePreviewRefusal.GitFolder } => throw Refusals.Because(
-                Refusals.PreviewGitFolder,
-                $"`{path}` is inside `.git`, which is git's own folder rather than the session's work.",
-                named),
-            { Refusal: FilePreviewRefusal.NoTree } => throw Refusals.Because(
-                Refusals.PreviewNoTree,
-                "this session's record names no tree on this machine, or the tree is gone and no branch its landing made stands "
-                + "here to read instead, so there is no file here to show.",
-                named),
-            _ => throw Refusals.Because(
-                Refusals.PreviewNotAFile,
-                $"`{path}` is not a file in this session's tree now: it was deleted or moved, it is a folder, or it cannot be read.",
-                named),
-        };
+        return await TreesReviewWires.LandedPreviewAsync(id, root, landing, tree, path, cancellationToken, _loop.Log);
     }
 
     // Discarding a reviewed session's tree: the PERSON's act, since nothing
@@ -459,8 +255,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     public static LandingSubject Entering(LandingSubject subject, string? branch) => subject with { Entered = branch };
 
-    /// <summary>What the landing's plan or its press asked: the plan with <c>Said</c> for the verb's words, the press with its answers and follow.</summary>
-    private sealed record LandAsk(string Id, string? Branch, bool Press, bool Said = false, string? Answers = null, bool Follow = false);
+    private readonly TreesLandDesk _land = new(loop);
+    private readonly TreesHandDesk _hand = new(loop);
 
     // How a reviewed session's work lands: what a press WOULD do, said before it —
     // merge into the line, or the branch the rule names for this session — and the press, which
@@ -475,7 +271,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </remarks>
     [DriverRoute("LANDING", PipeClass.Open)]
     private Task<object?> LandingAsync(LandingRead read, CancellationToken cancellationToken) =>
-        LandAsync(new LandAsk(read.Id, read.Branch, Press: false, read.Said), cancellationToken);
+        _land.LandAsync(new TreesLandDesk.LandAsk(read.Id, read.Branch, Press: false, read.Said), cancellationToken);
 
     [DriverRoute("LAND_SESSION_TREE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("LAND_SESSION_TREE", Session = "id")]
@@ -485,266 +281,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [Says("LAND_SESSION_TREE", "id:session")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
     private Task<object?> LandSessionTreeAsync(LandSessionTree press, CancellationToken cancellationToken) =>
-        LandAsync(new LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), cancellationToken);
-
-    private async Task<object?> LandAsync(LandAsk asked, CancellationToken cancellationToken)
-    {
-        var id = asked.Id;
-        var service = _loop.Service ?? throw NotReady();
-
-        var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
-        var press = asked.Press;
-        // `trees land --plan` asks for the verb's words (`said`) in place of the page's fields, and gets them for the two
-        // cases the verb answers before it plans, as its alone path does: a landing its review reads as landed, and no tree to land.
-        var terminal = !press && asked.Said;
-        LandedReview? earlier = null;
-        if (terminal)
-        {
-            earlier = await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken);
-            if (earlier is not null && earlier.ReadsAsLanded(TreeFolders.TreeGone(tree)))
-            {
-                return new { Session = id, Said = TreesPlanWords.LandedPlan(id, earlier).ToWire() };
-            }
-
-            if (string.IsNullOrWhiteSpace(tree)) return new { Session = id, Said = TreesWords.NoTreeToLand(id).ToWire() };
-        }
-
-        // the verb's two refusals are words on the press, exit 1, where the plan keeps the page's refusal. A landing the review
-        // already reads as landed lands nothing again, and a session with no tree names nothing to land.
-        if (press && await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken) is { } before
-            && before.ReadsAsLanded(TreeFolders.TreeGone(tree)))
-        {
-            return Refused(id, TreesWords.NotAgain(id, before, TreeFolders.TreeGone(tree)));
-        }
-
-        if (string.IsNullOrWhiteSpace(tree))
-        {
-            if (press) return Refused(id, TreesWords.NoTreeToLand(id));
-            throw Refusals.Because(
-                Refusals.SessionNotReviewable,
-                "this session's record names no working tree on this machine, so there is nothing here to land.",
-                ("session", id));
-        }
-
-        var recordsJson = await service.SessionRecordsJsonAsync(cancellationToken);
-        // a chat that took a quest is gated by that quest's chain, read as the view reads it.
-        var questId = await service.SessionQuestAsync(id, cancellationToken) ?? ChatRuns.TakenOf(id, recordsJson);
-        var records = SessionRecords.Parse(recordsJson);
-        // a partner's record lands nothing, at the press, the plan and the verb alike.
-        if (TreesWords.PartnerLands(records, id) is { } partner)
-        {
-            if (press || terminal) return Refused(id, partner);
-            throw Refusals.Because(Refusals.SessionNotReviewable, partner.Error[0]["trees: ".Length..], ("session", id));
-        }
-        // A rule's plugin says its lines on the console under its name, as a hook's do; what the
-        // landing did with it goes to the machine log and the loop's record of its health.
-        // the lines also go into the answer (`said`), so a terminal that sent the press prints them as the alone path does.
-        var pluginLines = new List<string>();
-        // WORKFLOWCLEAN1 1c: the gate, the plan and the press that is only a run's Accept read through trees with no plugin wire; the wire is built
-        // where a landing is made here (a chat run's press, or the transitional in-place landing), never for a run whose `land` Daoris performs.
-        var trees = new SessionTrees(_loop.Home);
-        SessionTrees Landing() => new(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(pluginLines), log: _loop.Log, health: _loop.Health));
-
-        // a chat in a tree of its own is gated by its chat run's process. A press on a run
-        // not bound yet binds it first; one the home cannot keep refuses the press (`bind-failed`), never falling back to Current. A graph
-        // choice binds its version; a plan binds nothing.
-        var chatRun = questId is null ? ChatRuns.ChatOf(id, recordsJson, trees.Holds) : null;
-        if (press && chatRun is not null && ChatRunBound(chatRun, tree) is { Failed: { } failed }) return Refused(id, TreesWords.BindFailed(id, failed));
-        // a chat run's press is the driver's one operation, which reserves the conversation, judges
-        // every part at one captured tip, asks the opinion where it is not asked, and lands that tip pinned.
-        if (press && chatRun is not null)
-        {
-            return await ChatPressAsync(asked, service, id, tree, chatRun, records, recordsJson, Landing(), pluginLines, cancellationToken);
-        }
-
-        // The landing gate: the second opinion, then the review. What holds the press says so before it,
-        // and the press refuses it.
-        // Said to every window while the press is under way; a plan is no press and says it to nobody.
-        PressSteps.Reach(PressSteps.Gate);
-        var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken, run: chatRun);
-        // Named for the chain's first quest, and a part of an entry with others for its entry's first part, on the entry's one
-        // branch: the call every door that lands one session makes.
-        // A name the person entered still lands as entered. FABRIC-CLOSE1h3: its quests read once, the press made on its own.
-        var quests = new PressQuests(service.FindQuestAsync);
-        var subject = Entering(await trees.OwnSubjectAsync(
-            tree, id, questId, records, quest => quests.FindAsync(quest, cancellationToken),
-            named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), asked.Branch);
-        var lead = EntryLead(records, id);
-
-        if (!press)
-        {
-            // How it lands, by the process the gate read: a named workflow's landing step, or the rule.
-            var plan = await trees.PlanAsync(tree, subject, cancellationToken, gate.Process);
-            if (terminal)
-            {
-                return new
-                {
-                    Session = id,
-                    Said = (await TreesPlanWords.LandPlanAsync(trees, _loop.Home, id, tree, plan, gate, earlier, pluginLines, cancellationToken)).ToWire(),
-                };
-            }
-
-            // Accept refuses until the tree's uncommitted paths are committed: the page says so before the press.
-            var uncommitted = UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
-            // only a part of an entry with others can have been left out.
-            return Planned(id, plan, uncommitted, gate, lead is null ? null : LeftOutOfEntry(id), new CarriedAccepts(_loop.Home).Of(id),
-                LandingDelivery.Newest(_loop.Home, id));
-        }
-
-        // The press answers what it showed beside Accept (the second-agent design §8.2–§8.3): a dispute or commits nobody read,
-        // drawn with the gate's token, which the press sends back; a gate that moved since answers nothing. FABRIC-CUTOVER1d (the cutover
-        // design §4): its answer kept, a run's graph that holds it for a judgement not made yet asks the loop for that pass and waits for it
-        // within a bound, so it lands at this press where the pass makes it ready; past the bound it is refused as read.
-        var shown = gate;
-        // where the run's graph waits on its review, this press is the person's Accept, kept on the run's record for the pass.
-        gate = await GraphPasses.PressAsync(
-            token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, asked.Answers, tree, questId, token),
-            token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken,
-            (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done));
-        // WORKFLOWCLEAN1 1c (the cleanup design §2.2): a run whose `land` the runtime performs is landed by that node, never by this press: the
-        // press was the Accept (the review's word, above), and it waits within the bound for the landing the pass starts.
-        if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed)
-        {
-            return await PerformedPressAsync(asked, id, gate, performed, cancellationToken);
-        }
-
-        // FABRIC-CLOSE1h3: the result the press is made on, its quest as read for its name, judged again under the tree's
-        // hold and before the push, so a press that waited behind another landing makes nothing where that result moved meanwhile.
-        var pressed = await quests.PressedAsync(id, questId, ct: cancellationToken);
-
-        // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds.
-        PressSteps.Reach(PressSteps.Landing);
-        // a landing of this tree still under way holds the press for up to five minutes; the page is told it waits.
-        using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
-        var landed = await Landing().LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
-            joins: subject.Joins, judged: pressed?.Judged, beforePush: pressed?.BeforePush, beside: token => BranchTidying.BesideAsync(service, token));
-        // Kept where the conversation is kept, so the landing and the plugin's word outlast the press.
-        if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
-        if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
-        {
-            SessionLog.WriteLanding(log, held);
-        }
-
-        // LANDBACK1 part 1: uncommitted work or a conflict is the session's to clear and the press is the person's yes already,
-        // so the session is carried on in Daoris's own words through the say door (never the person's, never a card) and the yes kept
-        // on it; the press answers that it was carried on and lands when its tree is clean. Words the door keeps nothing of leave the refusal.
-        var carry = LandCarry.WhyOf(landed) is null ? null : await LandCarry.CarryAsync(
-            async (named, text, key, token) => (await WordsHead.FollowAsync(
-                named, at => service.SayAsync(at, text, null, token, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said,
-            _loop.Home, id, tree, landed, records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)),
-            DateTimeOffset.UtcNow, cancellationToken);
-
-        _loop.Nudge();
-        // the lines this landing moved are registered at once where the verb asks (`follow`), as the page's next look would
-        //; the lines it says ride in `followed` and after the sentence in `said`.
-        var followed = asked.Follow
-            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
-            : null;
-        return carry is null
-            ? Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [])
-            : Pressed(id, carry.Told ? landed with { Message = carry.Sentence } : landed, gate,
-                TreesWords.Carried(landed, carry, pluginLines).Followed(followed), followed?.Out ?? [], carried: carry);
-    }
-
-    /// <summary>
-    /// The press on a run whose <c>land</c> the runtime performs: its Accept is the review's word,
-    /// kept above, and it lands nothing and builds no plugin wire. It forgets a refusal nothing changed since (the press is the person's try
-    /// again), asks a whole pass, and waits within <see cref="GraphPasses.Bound"/> for the landing that pass starts; it answers what the landing
-    /// came to, or <i>accepted; landing</i> past the bound. A workflow with no review needs no Accept, and this press is only that try.
-    /// </summary>
-    private async Task<object?> PerformedPressAsync(LandAsk asked, string id, LandingGate gate, WorkflowProcess process, CancellationToken ct)
-    {
-        PressSteps.Reach(PressSteps.Landing);
-        var unit = RunUnits.IdOf(process.BoundRun!);
-        // What holds it, said as every press says it: the graph's part, the opinion, the look.
-        if (gate.Refusal is { } held) return Pressed(id, held, gate, TreesWords.Land(held, []), []);
-        if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return Refused(id, TreesWords.NotJudged(id));
-
-        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
-        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
-                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
-        var landed = outcome is null ? new TreeLanding(false, "Accepted; landing. Daoris lands it at its pass, and this window shows it when it has.")
-            : carried ? outcome with { Message = "Accepted; its session was carried on to clear its tree, and it lands when the tree is clean." }
-            : outcome;
-        _loop.Nudge();
-        var followed = asked.Follow && landed.Landed
-            ? await TreesWords.FollowMovedAsync(_loop.Service ?? throw NotReady(), _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, ct)
-            : null;
-        return Pressed(id, landed, gate, TreesWords.Land(landed, []).Followed(followed), followed?.Out ?? []);
-    }
-
-    /// <summary>
-    /// What a chat run's press waits for where the runtime performs its <c>land</c>: the landing the pass starts at the
-    /// press's tip, within <see cref="GraphPasses.Bound"/>, or <i>accepted; landing</i> past it. As <see cref="PerformedPressAsync"/>, for the
-    /// conversation's press, which keeps its own reservation and answer.
-    /// </summary>
-    private async Task<TreeLanding> PerformedLandingAsync(string id, LandingGate gate, WorkflowProcess process, CancellationToken ct)
-    {
-        if (gate.Refusal is { } held) return held;
-        if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return new TreeLanding(false, TreesWords.NotJudged(id).Error.FirstOrDefault() ?? "nothing was judged.");
-
-        var unit = RunUnits.IdOf(process.BoundRun!);
-        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
-        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
-                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
-        return outcome is null ? new TreeLanding(false, "Accepted; landing. Daoris lands it at its pass, and this window shows it when it has.")
-            : carried ? outcome with { Message = "Accepted; its session was carried on to clear its tree, and it lands when the tree is clean." }
-            : outcome;
-    }
-
-    /// <summary>
-    /// The person's press on a chat run's work: <see cref="ChatPresses.PressAsync"/>, reserved in this
-    /// window's runner, its gate keyed by the run and read at the captured tip, a press's answer to what it showed kept by the run, and the
-    /// landing pinned to that tip. It answers as every press does.
-    /// </summary>
-    private async Task<object?> ChatPressAsync(
-        LandAsk asked, ServiceClient service, string id, string tree, string chatRun, IReadOnlyList<SessionRecord> records, string recordsJson,
-        SessionTrees trees, List<string> pluginLines, CancellationToken cancellationToken)
-    {
-        var (workspace, repository) = trees.Owner(tree);
-        var (line, live) = ChatRuns.PressOf(id, recordsJson);
-        var world = new ServiceReviewWorld(service);
-        var presses = new OpinionPresses(_loop.Home, service) { Holder = _loop.Chat };
-        var quests = new PressQuests(service.FindQuestAsync);
-        PressSteps.Reach(PressSteps.Gate);
-        var pressed = await ChatPresses.PressAsync(
-            _loop.Home, new ChatPressAsk(id, tree, chatRun, repository, workspace, live), _loop.Chat,
-            // a graph-bound run's gate is the quest's, its graph part judged by the pass this press asks
-            // after the candidate it submitted, and the press's Accept the review's word.
-            async (tip, token) => await GraphPasses.PressAsync(
-                async held => await presses.PressedAsync(
-                    id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), asked.Answers, tree, null, held, chatRun),
-                held => trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), _loop.PassWholeAsync, token,
-                (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done)),
-            async (gate, token) =>
-            {
-                // WORKFLOWCLEAN1 row 1d (the cleanup design §2.7): a run whose `land` the runtime performs is landed by that node, and this press waits.
-                if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed) return await PerformedLandingAsync(id, gate, performed, token);
-                var subject = Entering(await trees.OwnSubjectAsync(
-                    tree, id, null, records, quest => quests.FindAsync(quest, token),
-                    named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, token), asked.Branch);
-                PressSteps.Reach(PressSteps.Landing);
-                // a landing of this tree still under way holds the press for up to five minutes, and the conversation with it.
-                using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
-                return await trees.LandAsync(tree, subject, token, async held => await LinesRoutes.InUseAsync(service, held), gate: gate, joins: subject.Joins,
-                    beside: held => BranchTidying.BesideAsync(service, held));
-            },
-            () => ChatPresses.TurnsOf(_loop.Events, line), cancellationToken);
-
-        var landed = pressed.Landed;
-        var gate = pressed.Gate ?? LandingGate.Open(repository);
-        if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
-        if (_loop.Log is { } log && LandingGateWords.Held(id, (workspace, repository), gate, landed, ReviewDoors.Screen) is { } held)
-        {
-            SessionLog.WriteLanding(log, held);
-        }
-
-        _loop.Nudge();
-        var followed = asked.Follow && landed.Landed
-            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
-            : null;
-        return Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [], pressed.Code);
-    }
+        _land.LandAsync(new TreesLandDesk.LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), cancellationToken);
 
     /// <summary>
     /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch and what its plugin said,
@@ -781,32 +318,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     };
 
     /// <summary>
-    /// A press the verb refuses before it lands anything: the page's fields as a refusal reads them, nothing landed, and the
-    /// verb's words, with its code, beside them.
-    /// </summary>
-    /// <summary>
-    /// A chat run bound before its press is gated, by its tree's owner: bound already, bound now, a
-    /// graph choice that binds nothing, or why the home could not keep it.
-    /// </summary>
-    private ChatRunBound ChatRunBound(string run, string tree) => ChatRuns.BindFirst(
-        DriverConfig.Load(_loop.ConfigPath), _loop.Home, run, tree, WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names)),
-        DateTimeOffset.UtcNow);
-
-    private static object Refused(string session, TreesSaid said) => new
-    {
-        Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Withheld = (string?)null,
-        Review = (object?)null, Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null,
-        Said = said.ToWire(), Followed = Array.Empty<string>(), Carried = (object?)null,
-    };
-
-    /// <summary>The sentence a refusal's words carry without the verb's <c>trees: </c> lead, as the page shows it.</summary>
-    private static string Sentence(TreesSaid said)
-    {
-        var line = said.Out.Concat(said.Error).FirstOrDefault() ?? "";
-        return line.StartsWith("trees: ", StringComparison.Ordinal) ? line["trees: ".Length..] : line;
-    }
-
-    /// <summary>
     /// <c>LANDING</c>'s answer: what a press would do, said before it, beside what holds it and how many paths the tree holds
     /// uncommitted.
     /// </summary>
@@ -840,23 +351,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
     /// <summary>The part a session's own Accept is named for: the library's, <see cref="EntryAccepts.EntryLead"/>.</summary>
     public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryAccepts.EntryLead(records, session);
-
-    /// <summary>
-    /// Where the person left this part out of its entry's Accept: the branch its conversation's newest note names, while
-    /// nothing accepted it since (<see cref="LandingRules.LeftOutOf"/>). A record that does not read says nothing left out, and the
-    /// review offers Accept as before.
-    /// </summary>
-    private string? LeftOutOfEntry(string id)
-    {
-        try
-        {
-            return File.Exists(_loop.Events.PathOf(id)) ? LandingRules.LeftOutOf(_loop.Events.After(id, 0).Events) : null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            return null;
-        }
-    }
 
     /// <summary>A landing's left-out commits on the wire: short id, subject, why, and the line's commit with its patch.</summary>
     public static object[]? LeftOut(IReadOnlyList<LeftOutCommit>? leftOut) => leftOut?
@@ -1131,7 +625,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </remarks>
     [DriverRoute("HANDOFF_PLAN", PipeClass.Open)]
     private Task<object?> HandOffPlanAsync(HandOffPlan plan, CancellationToken cancellationToken) =>
-        HandOffAsync(new HandAsk(plan.Id, plan.Branch, plan.Repository, plan.Plugin, Press: false, plan.Said), cancellationToken);
+        _hand.HandOffAsync(new TreesHandDesk.HandAsk(plan.Id, plan.Branch, plan.Repository, plan.Plugin, Press: false, plan.Said), cancellationToken);
 
     [DriverRoute("HANDOFF", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HANDOFF", Session = "id")]
@@ -1142,100 +636,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [Says("HANDOFF", "repository:repository")]
     [Publishes("HANDOFF", StateScopes.HandOff | StateScopes.Sweep, Session = "id")]
     private Task<object?> HandOffPressAsync(HandOff press, CancellationToken cancellationToken) =>
-        HandOffAsync(new HandAsk(press.Id, press.Branch, press.Repository, press.Plugin, Press: true), cancellationToken);
-
-    /// <summary>What the hand-off's plan or its press asked: the plan with <c>Said</c> for the verb's words.</summary>
-    private sealed record HandAsk(string? Id, string? Branch, string? Repository, string? Plugin, bool Press, bool Said = false);
-
-    private async Task<object?> HandOffAsync(HandAsk hand, CancellationToken cancellationToken)
-    {
-        // `trees hand <branch>` names a landed branch (and its repository where two hold one) where the page names a session.
-        // The page's `id` reads as it always did; a `branch` is found as the verb finds it, by the record's session or branch.
-        var branch = hand.Branch;
-        var id = branch is null ? hand.Id ?? throw new DriverException("a hand-off names a session's `id`, or a landed `branch`.") : hand.Id;
-        var named = hand.Plugin;
-        var service = _loop.Service ?? throw NotReady();
-        var asksPlan = !hand.Press;
-        // `trees hand --plan` asks for the verb's words (`said`) where the page asks for the plan's fields.
-        var terminal = asksPlan && hand.Said;
-        // The plugin's lines go into the answer too (`said`), so a terminal that sent the press prints them as the alone path does.
-        var pluginLines = new List<string>();
-        var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: SayTo(pluginLines), log: _loop.Log, health: _loop.Health));
-
-        // The session's newest landing: a session lands once, and a second press is refused while its branch stands.
-        LandedBranch? entry;
-        if (id is not null && branch is null)
-        {
-            entry = trees.Recorded.Find(id).FirstOrDefault(each => string.Equals(each.Session, id, StringComparison.OrdinalIgnoreCase));
-        }
-        else
-        {
-            var found = trees.Recorded.Find(branch ?? id!, hand.Repository);
-            var repositories = found.Select(each => each.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-            if (repositories.Count > 1)
-            {
-                // A branch name in two repositories means the person says which, as the verb says (`--repository`).
-                var several = TreesWords.NamesSeveral(branch ?? id!, repositories);
-                if (terminal) return new { Session = id, Said = TreesWords.HandRefused(several).ToWire() };
-                return asksPlan
-                    ? new { Session = id, Branch = (string?)null }
-                    : (object)new { Session = id, Done = false, Message = several, Branch = (string?)null, Said = TreesWords.HandRefused(several).ToWire() };
-            }
-
-            entry = found.FirstOrDefault();
-        }
-
-        if (entry is null)
-        {
-            var asked = branch ?? id!;
-            if (terminal) return new { Session = id, Said = TreesWords.HandRefused(TreeHand.NotLanded(asked)).ToWire() };
-            return asksPlan
-                ? new { Session = id, Branch = (string?)null }
-                : (object)new { Session = id, Done = false, Message = TreeHand.NotLanded(asked), Branch = (string?)null, Said = TreesWords.HandRefused(TreeHand.NotLanded(asked)).ToWire() };
-        }
-
-        id ??= entry.Session;
-        var root = await CheckoutOfAsync(service, entry.Repository, cancellationToken);
-        if (root is null)
-        {
-            var none = TreesWords.HandNoCheckout(entry.Repository, entry.Branch);
-            if (terminal) return new { Session = id, Said = TreesWords.HandRefused(none).ToWire() };
-            return asksPlan
-                ? new { Session = id, Branch = (string?)entry.Branch, entry.Repository, Plugin = (string?)null, Problem = (string?)none, entry.PullRequest, Commits = 0 }
-                : (object)new { Session = id, Done = false, Message = none, Branch = (string?)entry.Branch, Said = TreesWords.HandRefused(none).ToWire() };
-        }
-
-        if (asksPlan)
-        {
-            var plan = await trees.HandPlanAsync(root, entry, named, cancellationToken);
-            if (terminal) return new { Session = id, Said = TreesPlanWords.HandPlan(plan, pluginLines).ToWire() };
-            return new { Session = id, Branch = (string?)plan.Branch, plan.Repository, plan.Plugin, plan.Problem, plan.PullRequest, plan.Commits };
-        }
-
-        PressSteps.Reach(PressSteps.HandOff);
-        using var waiting = PressSteps.WhileWaiting(PressSteps.HandOff);
-        var handed = await HandAsync(_loop, trees, root, entry, named, cancellationToken);
-        return new
-        {
-            Session = id, Done = handed.Handed, handed.Message, Branch = (string?)handed.Branch,
-            Plugin = handed.Plugin is { } said
-                ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed }
-                : null,
-            // what `trees hand` prints, the plugin's lines first, and its exit code (§7.3).
-            Said = TreesWords.Hand(handed, pluginLines).ToWire(),
-        };
-    }
-
-    /// <summary>
-    /// A plugin's own lines, said as they come on the loop's output under its name and kept in <paramref name="lines"/> for the
-    /// answer's words. A method, so the construction of a <c>LandingPlugins</c> reads whole to <c>PluginRecordWiringTests</c>.
-    /// </summary>
-    private Action<string, string> SayTo(List<string> lines) => (plugin, line) =>
-    {
-        lines.Add(TreesWords.PluginLine(plugin, line));
-        _loop.Output.Append($"plugin:{plugin}", line);
-    };
+        _hand.HandOffAsync(new TreesHandDesk.HandAsk(press.Id, press.Branch, press.Repository, press.Plugin, Press: true), cancellationToken);
 
     /// <summary>A repository's checkout here, from the registry — or null where it has none on this machine.</summary>
     internal static async Task<string?> CheckoutOfAsync(ServiceClient service, string repository, CancellationToken cancellationToken)
