@@ -21,6 +21,7 @@ finishes first and the whole set runs once.
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes, and says when they are stale |
+| The parts kit | `src/Daoris.Contracts/Parts/`, each root's `<Root>PartsTests`, `docs/index/registered.md` | a module's parts registered with its seam's `PartAttribute`, found, ordered and built by the root that runs them |
 | The transitional register | `Driver/Transitional/Register.cs`, `tools/transitional-markers.mjs` | each kept older reading, with the condition that ends it and the row that deletes it |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
@@ -37,7 +38,12 @@ finishes first and the whole set runs once.
 2. New behaviour goes in a unit of its own: a named type in the subdomain that owns it, never a `partial` of a hub. (from D231,
    D166)
 3. A composition root wires units and holds no rule. A domain's logic is a module that registers its parts at start, each with its
-   phase and what it follows. (from D231)
+   phase and what it follows. A seam is a sealed `PartAttribute` subclass with its own phase enum, marking each part as
+   `[Seam("name", Phase.X, "after", …)]`. The root reads the marks with `Parts.Declared` and orders them with `PartOrder.Of`: by
+   phase, then each part after the ones it names, with ties broken by name. A name declared twice, an unknown or later part named
+   after, and a cycle are refused there. The root builds each part with itself as the wiring (`Parts.Build`) and runs each phase's
+   parts at that phase's anchor. A part names only its seam's wiring interface, never the root, so it lives in its own subdomain.
+   `tools/orient-index.mjs` writes the order to `docs/index/registered.md`. (from D231)
 4. A file over 40 KB does not grow, and a new file does not start over it. The ratchet's list only tightens. (from D231)
 5. Comments say what the code cannot: why a choice was made, a trap, a boundary's contract. Row ids, decision numbers and history
    live in the commits and the decisions. (from D231)
