@@ -33,11 +33,10 @@ internal static class GraphProblemsTable
         [.. row["problems"]!.AsArray().Select(problem => ((string)problem!["code"]!, (string?)problem["wire"], (string?)problem["node"], (string)problem["words"]!))];
 
     /// <summary>
-    /// Whether a problem is a graph rule's, which the table holds, and not the save's own: a <c>handed</c> is no longer saved and a <c>land</c> is
-    /// saved with its method chosen (WORKFLOWCLEAN1 1b), each proved by <c>SavesRefusedTests</c> apart from the rows.
+    /// Whether a problem is a graph rule's, which the table holds, and not the save's own: a <c>land</c> is saved with its method chosen
+    /// (WORKFLOWCLEAN1 1b), proved by <c>SavesRefusedTests</c> apart from the rows.
     /// </summary>
-    public static bool IsRule(WireProblem problem) =>
-        problem.Code != GraphRefusal.HandedRefused && problem.Code != GraphRefusal.LandMethod;
+    public static bool IsRule(WireProblem problem) => problem.Code != GraphRefusal.LandMethod;
 
     /// <summary>What a save named, as a row holds it.</summary>
     public static IReadOnlyList<(string Code, string? Wire, string? Node, string Words)> Said(IEnumerable<WireProblem> problems) =>

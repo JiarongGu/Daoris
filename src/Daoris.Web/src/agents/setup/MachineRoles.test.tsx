@@ -70,7 +70,6 @@ describe('This machine\'s page, lit', () => {
   beforeEach(() => {
     roles = CATALOGUE;
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.agents.setup', 'on');
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     // The registry names the workspace each repository sits in, which a repository's place id is made from.

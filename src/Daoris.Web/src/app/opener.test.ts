@@ -254,13 +254,13 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
   it("opens the repository's place in the Setup mode, whichever door named the tab", () => {
     const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine' };
     // What needs you's declaration wait, a Roles section's door and a workflow step's all say `open('projects', repository, { tab: 'setup' })`.
-    expect(placeOpening(opening('projects', 'engine', { tab: 'setup' }), true, where)).toEqual(place);
+    expect(placeOpening(opening('projects', 'engine', { tab: 'setup' }), where)).toEqual(place);
     // Get started's and the help room's steps name the repository by `doorOpening`.
-    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' }), true, where)).toEqual(place);
+    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' }), where)).toEqual(place);
   });
 
   it('opens the mode, whose list chooses one, for a door naming the tab and no repository', () => {
-    expect(placeOpening(doorOpening({ view: 'projects', tab: 'setup' }), true, where)).toEqual({ view: 'agents', agentsMode: 'setup' });
+    expect(placeOpening(doorOpening({ view: 'projects', tab: 'setup' }), where)).toEqual({ view: 'agents', agentsMode: 'setup' });
   });
 
   // SETUPUX1v (the setup-UX design §4, row v): the census of the doors that opened a section of a workspace's Setup tab. Each ends in `apply`, so
@@ -270,61 +270,54 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
     const door = (workspaceSection: 'access' | 'reach' | 'defaults' | 'supervisor' | 'remote') =>
       opening('projects', workspaceItem('studio'), { workspaceTab: 'setup', workspaceSection });
     const place = (section: string, row: string) => ({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section, row } });
-    expect(placeOpening(door('access'), true, where)).toEqual(place('sessions', 'access'));
-    expect(placeOpening(door('reach'), true, where)).toEqual(place('sessions', 'reach'));
-    expect(placeOpening(door('defaults'), true, where)).toEqual(place('workflow', 'defaults'));
-    expect(placeOpening(door('supervisor'), true, where)).toEqual(place('roles', 'supervisor'));
-    expect(placeOpening(door('remote'), true, where)).toEqual({
+    expect(placeOpening(door('access'), where)).toEqual(place('sessions', 'access'));
+    expect(placeOpening(door('reach'), where)).toEqual(place('sessions', 'reach'));
+    expect(placeOpening(door('defaults'), where)).toEqual(place('workflow', 'defaults'));
+    expect(placeOpening(door('supervisor'), where)).toEqual(place('roles', 'supervisor'));
+    expect(placeOpening(door('remote'), where)).toEqual({
       view: 'projects', chosen: { view: 'projects', item: 'workspace:studio' }, workspaceTab: 'details', workspaceSection: 'remote',
     });
-    for (const section of ['access', 'reach', 'defaults', 'supervisor', 'remote'] as const) {
-      expect(placeOpening(door(section), false, where)).toEqual(door(section));
-    }
   });
 
   // FLOWCHART2g: a conversation's draft card opens the place's Workflow with its editor on the draft the conversation was told.
   it("opens the place's Workflow with the editor asked on a draft, for a repository and for a workspace, lit only", () => {
     const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 };
     const repository = doorOpening({ view: 'projects', item: 'engine', tab: 'workflow', placeEdit: edit });
-    expect(placeOpening(repository, true, where)).toEqual({
+    expect(placeOpening(repository, where)).toEqual({
       view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow', edit },
     });
     const workspace = doorOpening({ view: 'projects', item: workspaceItem('studio'), workspaceTab: 'workflow', placeEdit: edit });
-    expect(placeOpening(workspace, true, where)).toEqual({
+    expect(placeOpening(workspace, where)).toEqual({
       view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section: 'workflow', edit },
     });
-    // Dark, the legacy Workflow tab opens and nothing asks its editor.
-    expect(placeOpening(repository, false, where)).toEqual(repository);
-    expect(placeOpening(workspace, false, where)).toEqual(workspace);
   });
 
   it("leaves a door naming the workspace's Setup tab and no section where it is, until the tab goes", () => {
     const tab = opening('projects', workspaceItem('studio'), { workspaceTab: 'setup' });
-    expect(placeOpening(tab, true, where)).toEqual(tab);
+    expect(placeOpening(tab, where)).toEqual(tab);
   });
 
   it("names a workspace's home from the help room's and Ask Daoris's doors too", () => {
-    expect(placeOpening(doorOpening({ view: 'projects', workspaceSection: 'defaults' }, 'studio'), true, where))
+    expect(placeOpening(doorOpening({ view: 'projects', workspaceSection: 'defaults' }, 'studio'), where))
       .toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section: 'workflow', row: 'defaults' } });
-    expect(placeOpening(doorOpening({ view: 'projects', workspaceSection: 'remote' }, 'studio'), true, where))
+    expect(placeOpening(doorOpening({ view: 'projects', workspaceSection: 'remote' }, 'studio'), where))
       .toMatchObject({ view: 'projects', workspaceTab: 'details', workspaceSection: 'remote' });
   });
 
   // AGENTSPLACE1h: What needs you's, the Roles sections' and a workflow step's doors to a repository's workflow all name the tab.
   it("opens the repository's place, whose Workflow section holds it, for a door naming the Workflow tab", () => {
     const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow' } };
-    expect(placeOpening(opening('projects', 'engine', { tab: 'workflow' }), true, where)).toEqual(place);
-    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'workflow' }), true, where)).toEqual(place);
-    expect(placeOpening(doorOpening({ view: 'projects', tab: 'workflow' }), true, where)).toEqual({ view: 'agents', agentsMode: 'setup' });
+    expect(placeOpening(opening('projects', 'engine', { tab: 'workflow' }), where)).toEqual(place);
+    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'workflow' }), where)).toEqual(place);
+    expect(placeOpening(doorOpening({ view: 'projects', tab: 'workflow' }), where)).toEqual({ view: 'agents', agentsMode: 'setup' });
   });
 
   // SETUPUX1h: a door names the section of the place's page and the row of it, and the page opens there.
   it('carries the section and row a door names to the place\'s page', () => {
     const door = opening('projects', 'engine', { tab: 'setup', placeSection: 'roles', placeRow: 'review' });
-    expect(placeOpening(door, true, where)).toEqual({
+    expect(placeOpening(door, where)).toEqual({
       view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'roles', row: 'review' },
     });
-    expect(placeOpening(door, false, where)).toEqual(door);
   });
 
   // AGENTSPLACE1k: Ask Daoris's place card opens a repository's Details (a workspace's page for several) with the ask; lit, the place's page.
@@ -332,50 +325,42 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
     const setUp = { repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false };
     const door = doorOpening({ view: 'projects', item: 'engine', tab: 'details', setUp });
     expect(door).toMatchObject({ view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'details', setUp });
-    expect(placeOpening(door, true, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', setUp });
-    expect(placeOpening(door, false, where)).toEqual(door);
+    expect(placeOpening(door, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', setUp });
 
     const several = { ...setUp, repositories: ['engine', 'site'] };
     const workspace = doorOpening({ view: 'projects', item: workspaceItem('studio'), workspaceTab: 'details', setUp: several });
-    expect(placeOpening(workspace, true, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', setUp: several });
-    expect(placeOpening(workspace, false, where)).toEqual(workspace);
+    expect(placeOpening(workspace, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', setUp: several });
   });
 
   // SETUPUX1m: the Roles mode's doors, which named the mode or one of its sections, name This machine's page once the Setup mode is lit.
   it("opens This machine's page for each door that opened the Roles mode, at the part of it the door named", () => {
     const machine = { view: 'agents', agentsMode: 'setup', place: 'machine' };
     // The Appointed roles section is the Roles section's *Appointed* row (Settings' and the supervisor's doors say it).
-    expect(placeOpening(opening('agents', null, { roleSection: 'appointed' }), true, where))
+    expect(placeOpening(opening('agents', null, { roleSection: 'appointed' }), where))
       .toEqual({ ...machine, placeAt: { section: 'roles', row: 'appointed' } });
     // Working roles, Work, Accounts and By repository were All roles' lists: one section now.
     for (const roleSection of ['working', 'work', 'accounts', 'repository'] as const) {
-      expect(placeOpening(opening('agents', null, { roleSection }), true, where)).toEqual({ ...machine, placeAt: { section: 'allRoles' } });
+      expect(placeOpening(opening('agents', null, { roleSection }), where)).toEqual({ ...machine, placeAt: { section: 'allRoles' } });
     }
     // Settings' *Roles* button, the help room's Roles step and Get started's name the mode alone.
-    expect(placeOpening(doorOpening({ view: 'agents', agentsMode: 'setup' }), true, where)).toEqual({ ...machine, placeAt: { section: 'roles' } });
-    expect(placeOpening(opening('agents', null, { agentsMode: 'setup' }), true, where)).toEqual({ ...machine, placeAt: { section: 'roles' } });
+    expect(placeOpening(doorOpening({ view: 'agents', agentsMode: 'setup' }), where)).toEqual({ ...machine, placeAt: { section: 'roles' } });
+    expect(placeOpening(opening('agents', null, { agentsMode: 'setup' }), where)).toEqual({ ...machine, placeAt: { section: 'roles' } });
   });
 
-  it('leaves the Roles mode\'s doors as they are while dark, and an agent\'s own door in either state', () => {
-    const appointed = opening('agents', null, { roleSection: 'appointed' });
-    expect(placeOpening(appointed, false, where)).toEqual(appointed);
+  it('leaves an agent\'s own door as it is', () => {
     const agent = opening('agents', 'claude-code', { agentPart: 'accounts', agentsMode: 'agents' });
-    expect(placeOpening(agent, true, where)).toEqual(agent);
+    expect(placeOpening(agent, where)).toEqual(agent);
     const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine' } as const;
-    expect(placeOpening(place, true, where)).toEqual(place);
+    expect(placeOpening(place, where)).toEqual(place);
   });
 
-  it('changes nothing while the mode is dark, nor for a door that is not one of those tabs', () => {
-    const tab = opening('projects', 'engine', { tab: 'setup' });
-    expect(placeOpening(tab, false, where)).toEqual(tab);
-    const workflow = opening('projects', 'engine', { tab: 'workflow' });
-    expect(placeOpening(workflow, false, where)).toEqual(workflow);
+  it('changes nothing for a door that is not one of those tabs', () => {
     const branches = opening('projects', 'engine', { tab: 'branches' });
-    expect(placeOpening(branches, true, where)).toEqual(branches);
+    expect(placeOpening(branches, where)).toEqual(branches);
     // A workspace's own Workflow tab stays where it is until its place is built.
     const workspace = opening('projects', workspaceItem('studio'), { workspaceTab: 'workflow' });
-    expect(placeOpening(workspace, true, where)).toEqual(workspace);
+    expect(placeOpening(workspace, where)).toEqual(workspace);
     const agents = opening('agents', 'claude-code');
-    expect(placeOpening(agents, true, where)).toEqual(agents);
+    expect(placeOpening(agents, where)).toEqual(agents);
   });
 });

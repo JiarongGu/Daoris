@@ -4,6 +4,7 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask, Quest } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import i18n from '../locales/i18n';
 import type { Consideration } from '../data/signals';
 import type { WorkDoor } from '../work/pausing/pausing';
@@ -115,7 +116,7 @@ describe("an ask's page lists its work", () => {
 
   // FABRIC-CLOSE1d2: a quest of the work reads as the quest's page does, from the quests the page holds.
   it('says submitted and source reopened for the work\'s quests the page holds so, and taken for the rest', () => {
-    const held = (id: string, over: Partial<Quest>): Quest => ({
+    const held = (id: string, over: Partial<Quest>): Quest => aQuest({
       id, from: 'ask #a1b2c3', to: 'engine', title: id, body: '', status: 'Taken', filed: '2026-10-01T00:00:00Z', updated: '2026-10-01T00:00:00Z', ...over,
     });
     page({

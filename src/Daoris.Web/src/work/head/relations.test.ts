@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { relationsOf } from './relations';
 
 // SESS1: where a session's work came from and what it caused, beyond the chain — from what the
 // records declare (`publishedBy`, `awaits`), never guessed from the times.
 
-const quest = (over: Partial<Quest> & { id: string }): Quest => ({
+const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
   from: 'engine', to: 'game', title: over.id, body: '', status: 'Open', filed: '2026-09-29T01:00:00Z', updated: '2026-09-29T01:00:00Z',
   ...over,
 });

@@ -164,7 +164,6 @@ public static class WorkflowGraphs
             WorkflowKinds.Work => NodeKinds.Claimed,
             WorkflowKinds.Opinion => NodeKinds.Opinion,
             WorkflowKinds.Look => NodeKinds.Look,
-            WorkflowKinds.Landing => NodeKinds.Handed,
             WorkflowKinds.PullRequest => NodeKinds.PullRequest,
             WorkflowKinds.GoAhead => NodeKinds.GoAhead,
             WorkflowKinds.Check => $"{plugin}/{ChecksNode}",

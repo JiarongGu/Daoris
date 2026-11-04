@@ -6,9 +6,6 @@ public static class NodeKinds
     /// <summary>The agent's done, on the ledger: a claim, and never the end (§C2).</summary>
     public const string Claimed = "claimed";
 
-    /// <summary>Daoris's landing: the landing branch at its recorded tip, or the merge on the line.</summary>
-    public const string Handed = "handed";
-
     /// <summary>The plugin's push answer, its tip held by git's remote-tracking ref.</summary>
     public const string Pushed = "pushed";
 
@@ -74,8 +71,7 @@ public static class NodeKinds
 
     /// <summary>
     /// The unit's landing as a step Daoris performs (LANDNODE1a; the land node design §2), 落地: reached when the landing record holds the bound
-    /// tip and failed by the landing's own refusal. A kind of its own, since making <c>handed</c> performed would change what a stored version
-    /// means; an older build reads it as no kind and holds the run whole. It takes no <c>accept</c>: it starts once its wires hold (LANDNODE1c2).
+    /// tip and failed by the landing's own refusal. An older build reads it as no kind and holds the run whole. It takes no <c>accept</c>: it starts once its wires hold (LANDNODE1c2).
     /// </summary>
     public const string Land = "land";
 
@@ -97,13 +93,13 @@ public static class NodeKinds
     /// </summary>
     public const string ContentHolds = "content.holds";
 
-    /// <summary>Whether a kind is the graph's one landing: the observed <c>handed</c>, or the performed <c>land</c>.</summary>
-    public static bool IsLanding(string kind) => kind is Handed or Land;
+    /// <summary>Whether a kind is the graph's one landing: the performed <c>land</c>.</summary>
+    public static bool IsLanding(string kind) => kind is Land;
 
     /// <summary>Whether a kind is a hold Daoris judges before the landing (LANDNODE1k).</summary>
     public static bool IsHold(string kind) => kind is QuestHolds or ContentHolds;
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds];
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -303,7 +299,7 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
 /// <summary>The authority by kind (§E2): the built-ins' table, and a plugin's own node's from its declaration.</summary>
 /// <remarks>
 /// <para><b>Skips</b> (§E2 leaves which nodes allow one to the node; FABRIC-NODE1's reading, D173's note): git's proofs
-/// (<c>claimed</c>, <c>handed</c>, <c>line</c>) are never skipped, since <i>held</i> and the cleanup rest on them and a skip would read
+/// (<c>claimed</c>, <c>line</c>) are never skipped, since <i>held</i> and the cleanup rest on them and a skip would read
 /// as evidence; nor is <c>quest.close</c>, whose override is the person's own done (§E5), nor a join, whose members are skipped
 /// instead, nor a <c>stop</c>, which is the run stopped (FABRIC-WORKFLOW2). Every other kind may be, and a plugin's own node unless
 /// its declaration forbids it (FABRIC-NODE1c).</para>
@@ -313,7 +309,6 @@ public static class NodeAuthorities
     public static readonly IReadOnlyDictionary<string, NodeAuthority> BuiltIn = new Dictionary<string, NodeAuthority>(StringComparer.Ordinal)
     {
         [NodeKinds.Claimed] = new(NodeKinds.Claimed, NodeReach.Observed, NodeSource.Ledger, null, false, false, MayEnd: false, Evidenced: true),
-        [NodeKinds.Handed] = new(NodeKinds.Handed, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
         [NodeKinds.Line] = new(NodeKinds.Line, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
         [NodeKinds.Pushed] = new(NodeKinds.Pushed, NodeReach.Observed, NodeSource.PluginRef, NodeSource.Plugin, false, true, true, true),
         // FABRIC-WIRE1h: the landing record passes it over where the work went into the line with no branch landed to open one on.

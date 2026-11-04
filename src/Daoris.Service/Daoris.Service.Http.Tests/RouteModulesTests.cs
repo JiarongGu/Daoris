@@ -53,6 +53,12 @@ public sealed class RouteModulesTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Contains(typeof(QuestRoutes), RouteModules.In(typeof(HostWiring).Assembly));
     }
 
+    [Fact]
+    public void The_person_s_quest_doors_are_a_module_of_their_own()
+    {
+        Assert.Contains(typeof(QuestPersonRoutes), RouteModules.In(typeof(HostWiring).Assembly));
+    }
+
     /// <summary>A body is bound as the framework bound a body parameter: required unless marked optional, and JSON or refused 415.</summary>
     [Fact]
     public async Task A_required_body_left_out_is_400_and_an_optional_one_binds_as_naming_nothing()

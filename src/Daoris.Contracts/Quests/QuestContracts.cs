@@ -121,5 +121,5 @@ public sealed record BindQuest(string Id, string? Graph, bool? AtTake = null, st
 [JsonSerializable(typeof(PostQuestEvidence))]
 [JsonSerializable(typeof(BindQuest))]
 [JsonSerializable(typeof(QuestActionResponse))]
-[JsonSerializable(typeof(QuestEvidenceVerdictWire))]
+[JsonSerializable(typeof(QuestEvidenceVerdictResponse))]
 internal sealed partial class QuestJson : JsonSerializerContext;

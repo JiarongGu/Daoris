@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Quest, Session } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import { ChainStrip } from './ChainStrip';
 import { buildChain } from './chain';
 
-const quest = (id: string, extra: Partial<Quest> = {}): Quest => ({
+const quest = (id: string, extra: Partial<Quest> = {}): Quest => aQuest({
   id, from: 'game', to: 'engine', title: `quest ${id}`, body: '', status: 'Open',
   filed: '2026-09-23T00:00:00Z', updated: '2026-09-23T00:00:00Z', ...extra,
 });

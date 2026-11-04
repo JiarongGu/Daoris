@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { HELP_REPOSITORY, type Ask, type Quest, type Session } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import {
   askName, inTree, isHelp, isHelper, isPartner, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName,
 } from './identity';
@@ -17,7 +18,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

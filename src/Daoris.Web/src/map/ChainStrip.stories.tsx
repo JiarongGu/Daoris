@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import { ChainStrip } from './ChainStrip';
 import { buildChain } from './chain';
 
@@ -10,11 +11,13 @@ import { buildChain } from './chain';
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
 const DEVELOP: Quest = {
+  ...aQuest(),
   id: '7a82cc', from: 'ask #c7c4de', to: 'engine', title: 'Develop the media config reader',
   body: '', status: 'Done', filed: at(300), updated: at(120),
 };
 
 const VERIFY: Quest = {
+  ...aQuest(),
   id: '91be07', from: 'engine', to: 'game', title: 'Verify #7a82cc in the browser',
   body: '', status: 'Taken', filed: at(120), updated: at(20), parent: '7a82cc',
   then: [{ to: 'engine', title: 'Report what the browser showed', body: '' }],
