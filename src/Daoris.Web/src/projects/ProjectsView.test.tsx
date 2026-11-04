@@ -446,7 +446,8 @@ describe("a workspace's page (UX6g)", () => {
 
     // The header's act is the first; Details' Remote row offers the same press beside the remote it would wire.
     await userEvent.click((await within(page).findAllByRole('button', { name: 'Wire to a remote…' }))[0]!);
-    const remote = within(repositoryMain()).getByRole('region', { name: 'Remote and reach' });
+    // The press opens the wiring in Details' Remote row.
+    const remote = within(repositoryMain()).getByRole('region', { name: 'Remote' });
     await userEvent.type(within(remote).getByLabelText('Deployment'), 'https://forge.example.com');
     await userEvent.type(within(remote).getByLabelText('Key'), 'dk_forgekey0000');
     await userEvent.click(within(remote).getByRole('button', { name: 'Wire' }));
