@@ -61,7 +61,7 @@ describe('the domain list, in a shell', () => {
     expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Get started');
     // Daoris's browser (CHR5, CHR7) and the machine log (LOG1c) are a machine's domains, last in the list.
     expect(within(domains).getAllByRole('button').slice(-2).map((button) => button.textContent)).toEqual(['Browser', 'Machine log']);
-    expect(await screen.findByLabelText('Failures before a quest parks')).toBeTruthy();
+    expect(await screen.findByRole('checkbox', { name: 'Announce what needs you or ended' })).toBeTruthy();
     // The main area's header names the domain (FRAME1g), and a card alone in it does not say it again.
     const main = screen.getByRole('main');
     expect(within(main).getByRole('heading', { level: 1, name: 'Driver' })).toBeTruthy();
