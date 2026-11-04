@@ -297,10 +297,10 @@ public sealed class Driver(
 
     Task<string?> IRunWiring.StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) => StepRoleAsync(quest, workspace, ct);
 
-    RoleCatalog? IRunWiring.CatalogueForReport() => CatalogueForReport();
+    RoleCatalog? IRunWiring.CatalogueForReport() => Walk.CatalogueForReport();
 
     IReadOnlyList<ActorEffective> IRunWiring.QuestOrder(Consideration start, IReadOnlyList<string>? fence, string? handed, string? role) =>
-        QuestOrder(start, fence, handed, role);
+        Walk.Order(start, fence, handed, role);
 
     Task<SettledSelection> IRunWiring.WalkBuildPassesAsync(
         Consideration start, IReadOnlyList<RepoView> registry, CancellationToken ct, bool counts, (ActorEffective Entry, string? Account)? refused,
@@ -316,13 +316,13 @@ public sealed class Driver(
 
     ReviewDesk? IRunWiring.Reviews => Reviews;
 
-    void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => CountMove(line, role, condition, from, to);
+    void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => Walk.CountMove(line, role, condition, from, to);
 
     SessionHold IRunWiring.Holds => Holds;
 
     Func<string, string?> IRunWiring.Variable => Variable;
 
-    (string Role, long Revision)? IRunWiring.RoleTaken(Consideration start, string? named) => RoleTaken(start, named);
+    (string Role, long Revision)? IRunWiring.RoleTaken(Consideration start, string? named) => Walk.RoleTaken(start, named);
 
     (ProcessStartInfo Info, string? Notice) IRunWiring.Prepare(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection) =>
         Prepare(adapter, target, selection);
@@ -347,7 +347,7 @@ public sealed class Driver(
 
     Task<(ActorAsked Asked, string Choice)?> IRunWiring.ReaskHandedAsync(
         Consideration start, string agent, HarnessSelection selection, ModelRefusal refusal, HashSet<string> refused, CancellationToken ct, string? role) =>
-        ReaskHandedAsync(start, agent, selection, refusal, refused, ct, role);
+        Walk.ReaskHandedAsync(start, agent, selection, refusal, refused, ct, role);
 
     Action<JsonElement> IRunWiring.Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => Said(adapter, selection, sessionId);
 
@@ -387,7 +387,7 @@ public sealed class Driver(
 
     void IRunWiring.Questions(string sessionId, QuestionSettle settled) => Questions(sessionId, settled);
 
-    string? IRunWiring.DesignRoleName(Consideration start, string? named) => DesignRoleName(start, named);
+    string? IRunWiring.DesignRoleName(Consideration start, string? named) => Walk.DesignRoleName(start, named);
 
     System.Collections.Concurrent.ConcurrentDictionary<string, string> IRunWiring.LimitResumed => LimitResumed;
 
@@ -478,7 +478,7 @@ public sealed class Driver(
     Task<StartRun> IStartsWiring.RunIntakeAsync(AskView ask, List<TrustHold> untrusted, Action onOpened, CancellationToken ct) =>
         RunIntakeAsync(ask, untrusted, onOpened, ct);
 
-    RoleCatalog? IStartsWiring.CatalogueForReport() => CatalogueForReport();
+    RoleCatalog? IStartsWiring.CatalogueForReport() => Walk.CatalogueForReport();
 
     System.Collections.Concurrent.ConcurrentDictionary<string, string> IStartsWiring.LimitResumed => LimitResumed;
 
@@ -807,7 +807,7 @@ public sealed class Driver(
     internal Task<SettledSelection> WalkBuildPassesAsync(
         Consideration start, IReadOnlyList<RepoView> registry, CancellationToken ct, bool counts = true,
         (ActorEffective Entry, string? Account)? refused = null, long except = 0, string? role = null) =>
-        BuildPlan(start, registry, role).ResolveAsync(ct, counts, refused, except);
+        Walk.Plan(start, registry, role).ResolveAsync(ct, counts, refused, except);
 
     /// <summary>
     /// The start's re-ask where its agent refused the entry's model at the open (D205 §3.3, MODELROLE1c2): the walk asked again as if the
@@ -821,62 +821,13 @@ public sealed class Driver(
     {
         try
         {
-            return await BuildPlan(start, registry, role).ReaskAsync(refused, selection, ct).ConfigureAwait(false);
+            return await Walk.Plan(start, registry, role).ReaskAsync(refused, selection, ct).ConfigureAwait(false);
         }
         catch (DriverException)
         {
             return null;
         }
     }
-
-    /// <summary>The catalogue for the look's report of a start, which never faults the look: a store that will not read says the seed's, and the start itself holds.</summary>
-    private RoleCatalog? CatalogueForReport()
-    {
-        try
-        {
-            return RoleCatalog.ReadHome(home);
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// The role a quest's start took and its record's revision (FOUNDATION1x), for its binding: the one its run's work step names where it
-    /// names one (ROLESTEP1b), else the work's; null where none takes the work or the store will not read.
-    /// </summary>
-    internal (string Role, long Revision)? RoleTaken(Consideration start, string? named)
-    {
-        try
-        {
-            var catalogue = RoleCatalog.ReadHome(home);
-            return Found(catalogue, StartWork(start.Quest), start, named).Role is { } role ? (role.Id, catalogue.RevisionOf(role.Id)) : null;
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>The name of the role a design quest's start took, as its opening says it; null where the catalogue will not read.</summary>
-    private string? DesignRoleName(Consideration start, string? named)
-    {
-        try
-        {
-            return Found(RoleCatalog.ReadHome(home), ParticipantWork.Design, start, named).Role is { } role
-                ? ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) ? ActorWords.Name(role.Id) : role.Name.In("en")
-                : null;
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>The role a start of <paramref name="work"/> takes: the one its step names (ROLESTEP1b), else the work's at its place.</summary>
-    private static RoleFound Found(RoleCatalog catalogue, string work, Consideration start, string? named) =>
-        named is { Length: > 0 } ? catalogue.Named(named, work, PlaceOf(start)) : catalogue.RoleFor(work, PlaceOf(start));
 
     /// <summary>The work a quest's start is: design where its publisher or the intake marked its weight so (MODELROLE1l), else build.</summary>
     internal static string StartWork(QuestView quest) =>
@@ -885,104 +836,10 @@ public sealed class Driver(
     /// <summary>Where a quest's start is, by which a scoped role is found: its circle and the repository it is asked of.</summary>
     internal static RolePlace PlaceOf(Consideration start) => new(start.Workspace, start.Quest.To);
 
-    /// <summary>
-    /// The order the role taking a quest's work walks (FOUNDATION1x), with the fence, the pick or the hand-over's agent a caller names: the
-    /// role its run's work step names where it names one (ROLESTEP1b), held by its own sentence where that role cannot take it.
-    /// </summary>
-    private IReadOnlyList<ActorEffective> QuestOrder(Consideration start, IReadOnlyList<string>? fence = null, string? handed = null, string? role = null) =>
-        role is { Length: > 0 }
-            ? RoleCatalog.ReadHome(home).Order(role, StartWork(start.Quest), PlaceOf(start), config, fence, handed: handed)
-            : RoleCatalog.ReadHome(home).Order(StartWork(start.Quest), PlaceOf(start), config, fence, handed: handed);
+    /// <summary>The walk over a quest's start: its order, its plan, its role and its re-ask.</summary>
+    internal QuestWalk Walk =>LazyInitializer.EnsureInitialized(ref _walk, () => new QuestWalk(home, config, Context, Passed));
 
-    /// <summary>
-    /// A quest's start plan (FOUNDATION1j): Build's order for its work, its passes remembered and said under the quest, its gate the quest's
-    /// own: an agent whose harness has no mode for the repository's permission prompts, and a pipe door where the repository has not adopted
-    /// Daoris, each passed before any account is asked. The role its run's work step names is walked in place of the work's (ROLESTEP1b).
-    /// </summary>
-    private StartPlan BuildPlan(Consideration start, IReadOnlyList<RepoView> registry, string? role = null)
-    {
-        var quest = start.Quest;
-        var adopted = registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Adopted ?? true;
-        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
-        (string Code, string Why)? Gate(ActorEffective entry, ISessionAdapter adapter)
-        {
-            if (DrivenAccess.For(access, quest.To, adapter).Refusal is { } unposed) return (StartPasses.NoPosture, unposed);
-            return !adopted && adapter.Wire != SessionWire.Acp
-                ? (StartPasses.NoConnector, $"`{entry.Agent}` cannot take a quest here: `{quest.To}` has not adopted Daoris")
-                : null;
-        }
-
-        return new StartPlan(
-            StartWork(quest), config, Context.Harnesses, Context.Adapters, Passed, catalogue: RoleCatalog.ReadHome(home), place: PlaceOf(start), role: role)
-        {
-            Workspace = start.Workspace,
-            Kind = StartKind.Driven,
-            Subject = $"quest:{quest.Id}",
-            Named = ("quest", quest.Id),
-            Log = Log,
-            Gate = Gate,
-            Staff = Context.Harnesses.StaffFor(home),
-            // The choices this quest's line moved off in the last 30 minutes are passed.
-            LineFacts = StaffCourse.LineFacts(Context.Harnesses.StaffFor(home), quest, start.Workspace, role),
-        };
-    }
-
-    /// <summary>
-    /// A move to another choice made inside one start (a model its agent refused, a sign-in that walked to another agent), counted against the
-    /// line's bound of moves in 24 hours (STAFFPOLICY1e2, design §11 point 5). It names no part, so no later carry-on is taken for a move's own.
-    /// </summary>
-    private void CountMove(string line, string role, string condition, ActorEffective from, string? to)
-    {
-        try
-        {
-            Context.Harnesses.StaffFor(home).Moves.Record(line, role, null, condition, StaffActions.Next, StaffKey.Of(from).Text, to);
-        }
-        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
-        {
-            Log?.Write("warn", "actor.moves-unkept", [("line", line), ("why", error.Message)]);
-        }
-    }
-
-    /// <summary>
-    /// The re-ask of a handed quest's start whose agent refused the model it asked at the open (PRESSMODEL1, D205 §3.3): Build's later
-    /// entries for the handed <paramref name="agent"/> in order, then its own default with no model asked, the first that the same account
-    /// offers, set on the same session. Models already refused here (<paramref name="refused"/>) are never asked again, so the re-ask ends.
-    /// Null where none can run on the account, and the opened record ends <c>choice-not-offered</c>.
-    /// </summary>
-    internal async Task<(ActorAsked Asked, string Choice)?> ReaskHandedAsync(
-        Consideration start, string agent, HarnessSelection selection, ModelRefusal refusal, HashSet<string> refused, CancellationToken ct,
-        string? role = null)
-    {
-        refused.Add(refusal.Value);
-        (ActorAsked Asked, string Choice)? answer = null;
-        try
-        {
-            var candidates = QuestOrder(start, fence: [agent], role: role).ToList();
-            if (!candidates.Any(entry => entry.Model is null)) candidates.Add(new ActorEffective(agent, null, null, "rule-default"));
-            // The plan's one loop over today's candidates (FOUNDATION1j part v): a handed quest names its agent and its account, so the ask
-            // stays the handed one on the account the refusal named, and a model already refused is held, neither asked nor passed.
-            var walked = await StartPlan.LoopAsync(
-                candidates, entry => entry,
-                async entry =>
-                {
-                    var (picked, _) = await Context.Harnesses
-                        .SelectHandedAsync(agent, config, start.Workspace, selection.Profile, StartKind.Driven, ct, entry.Model, null, selection.Number, counts: false)
-                        .ConfigureAwait(false);
-                    return picked.Allowed && string.Equals(picked.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase)
-                        ? EntryTry.Runs(picked)
-                        : EntryTry.Passed(StartPasses.Held, picked.Refusal, picked);
-                },
-                holds: (entry, _) => entry.Model is { } model && refused.Contains(model)).ConfigureAwait(false);
-            if (walked.Taken is { } taken) answer = (taken.Asked, taken.From);
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-
-        Log?.Write("info", "actor.reasked", [("actor", "build"), ("quest", start.Quest.Id), ("refused", refusal.Value), ("answer", answer?.Choice), ("same", answer is not null)]);
-        return answer;
-    }
+    private QuestWalk? _walk;
 
     /// <summary>
     /// One look: the sync, the plan, and every planned start begun. Returns once each start has opened its
