@@ -90,7 +90,7 @@ public sealed class HomeIntegrationDoor(string home) : IIntegrationDoor
         Task.FromResult(new IntegrationStore(home).FindByKey(unit, tip));
 
     public Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct) =>
-        new IntegrationRequests(new HomeIntegrationRecords(home), new IntegrationStore(home), () => config).AdmitAsync(ask, ct);
+        new IntegrationRequests(new HomeIntegrationRecords(home), new IntegrationStore(home), () => config, WorkflowPorts.Store(home)).AdmitAsync(ask, ct);
 
     public Task<bool> PromotedAsync(IntegrationRequest request, CancellationToken ct) =>
         Task.FromResult(new IntegrationStore(home).MemberOf(request.Id) is { State: IntegrationMemberStates.Promoted or IntegrationMemberStates.Settled });

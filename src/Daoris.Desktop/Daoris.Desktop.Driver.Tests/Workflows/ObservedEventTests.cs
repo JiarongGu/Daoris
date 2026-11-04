@@ -11,27 +11,78 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ObservedEventTests : ObservedEventFixture
 {
-    /// <summary>Observed work alone: the deploy and nothing performed.</summary>
-    private const string ObservedOnly = """
-        { "landings": { "engine": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
-            "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } } } }
+    /// <summary>The run's observed deploy, then its landing and the performed notify, both after the deploy.</summary>
+    private const string Observing = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"},
+                  {"id":"notify","kind":"acme.deploy/notify","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deployed"},{"id":"d>h","kind":"after","from":"deployed","to":"handed"},
+                  {"id":"d>n","kind":"after","from":"deployed","to":"notify"}]}
         """;
 
-    /// <summary>Two observed nodes of the one step: an event names neither.</summary>
-    private const string Twice = """
-        { "landings": { "engine": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["again"], "end": "deployed",
-            "nodes": [
-              { "id": "again", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" },
-              { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" } ],
-            "wires": [{ "id": "w1", "kind": "after", "from": "again", "to": "deployed" }] } } } }
+    /// <summary>Observed work alone: the deploy before the landing, nothing else performed.</summary>
+    private const string ObservedOnly = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deployed"},{"id":"d>h","kind":"after","from":"deployed","to":"handed"}]}
         """;
+
+    /// <summary>The deploy declares its evidence's schema.</summary>
+    private const string Evidenced = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed","evidence":"acme.deploy/record"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"},
+                  {"id":"notify","kind":"acme.deploy/notify","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deployed"},{"id":"d>h","kind":"after","from":"deployed","to":"handed"},
+                  {"id":"d>n","kind":"after","from":"deployed","to":"notify"}]}
+        """;
+
+    private static readonly DateTimeOffset Opened = new(2026, 10, 18, 8, 0, 0, TimeSpan.Zero);
+
+    private readonly Dictionary<string, string> _runOf = new(StringComparer.Ordinal);
+
+    private readonly Dictionary<(string Graph, string Unit), string> _questOf = [];
+
+    private int _quests;
+
+    public ObservedEventTests() => _units = Runs(Observing, (A, "feature/a"));
+
+    /// <summary>Each branch unit worked by its own run bound to <paramref name="graph"/>: the quests, then the branch units a pass reads.</summary>
+    private IReadOnlyList<WorkUnit> Runs(string graph, params (string Unit, string Branch)[] branches)
+    {
+        var digest = RunHome.SaveGraph(_home, graph);
+        List<WorkUnit> quests = [], units = [];
+        foreach (var (unit, branch) in branches)
+        {
+            if (!_questOf.TryGetValue((graph, unit), out var quest))
+            {
+                quest = _questOf[(graph, unit)] = "q" + unit.Replace('~', '-') + (graph == Observing ? "" : "-" + _quests++);
+                RunHome.Bind(_home, quest, digest, _now);
+            }
+
+            _runOf[unit] = quest;
+            quests.Add(RunHome.QuestUnit(RunHome.Quest(quest, "Done")));
+            units.Add(RunHome.Branch(unit, branch, Opened, [quest]));
+        }
+
+        return [.. quests, .. units];
+    }
+
+    private IReadOnlyList<WorkUnit> Runs(params (string Unit, string Branch)[] branches) => Runs(Observing, branches);
+
+    private string RunUnit(string unit) => RunUnits.IdOf(_runOf[unit]);
+
+    private new NodeRecord Record(string unit = A) => Files.Read(RunUnit(unit))!;
 
     /// <summary>The person's stop or skip, as their door makes it: one locked edit through the one table, on the status as it stands then.</summary>
     private string Press(string unit, string state)
     {
-        var (refused, after) = Files.Edit<string>(unit, record =>
+        var (refused, after) = Files.Edit<string>(RunUnit(unit), record =>
         {
             var status = WorkPerformer.StatusOf(record, "deployed");
             var move = state == NodeStates.Stopped
@@ -79,7 +130,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
     {
         var runtime = Runtime();
         await PassAsync(runtime);
-        _units = [BranchUnit(A, "feature/a"), BranchUnit(B, "feature/b")];
+        _units = Runs((A, "feature/a"), (B, "feature/b"));
         _port.Fails = units => units.Any(unit => unit.Branch == "feature/b");
         await PassAsync(runtime);
 
@@ -154,7 +205,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         var rebound = await PassAsync(runtime, whole: false);
         var deployed = Record().Statuses["deployed"];
         Assert.Equal((NodeStates.Active, C2), (deployed.State, deployed.Binding!.SubjectRevision));
-        Assert.Equal([A], rebound.Evaluated);
+        Assert.Equal([RunUnit(A)], rebound.Evaluated);
         Assert.Empty(rebound.Said);
         Assert.True(rebound.AwaitedChanged);
         Assert.Equal(C2, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
@@ -172,8 +223,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         // FABRIC-PERFORM1p: the performed node its wire starts is bound to the same tip, not the unit's lagging revision.
         Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision);
 
-        // The end fact catching up reaches nothing again: the observed node keeps its acceptance and its event, its wire fires no more.
-        _units = [BranchUnit(A, "feature/a", C2)];
+        // A later look reaches nothing again: the observed node keeps its acceptance and its event, its wire fires no more.
         await PassAsync(runtime);
         Assert.Equal(NodeRecordFiles.StatusText(reached.Statuses["deployed"]), NodeRecordFiles.StatusText(Record().Statuses["deployed"]));
         Assert.Equal(reached.Observations, Record().Observations);
@@ -210,7 +260,6 @@ public sealed class ObservedEventTests : ObservedEventFixture
 
         // The end fact catching up starts nothing again: the notify ran once, on the new tip.
         var reached = Record();
-        _units = [BranchUnit(A, "feature/a", C2)];
         await PassAsync(runtime);
         Assert.Single(_port.Sent);
         Assert.Equal(NodeRecordFiles.StatusText(reached.Statuses["notify"]), NodeRecordFiles.StatusText(Record().Statuses["notify"]));
@@ -222,7 +271,6 @@ public sealed class ObservedEventTests : ObservedEventFixture
     [Fact]
     public async Task A_completion_heard_while_the_tip_is_unread_is_judged_on_the_tip_told_not_the_lagging_revision()
     {
-        _units = [BranchUnit(A, "feature/a", C0)];
         var runtime = Runtime();
         await PassAsync(runtime);
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));
@@ -288,7 +336,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
             pass.Performed.Where(done => done.Node == "deployed").Select(done => (done.What, done.Code)));
         Assert.Equal((Plugin, WorkRefusals.Stale), Assert.Single(_port.Refusals));
         Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision); // FABRIC-PERFORM1p: the notify on the tip the deploy was reached on.
-        Assert.Equal([A], pass.Evaluated);
+        Assert.Equal([RunUnit(A)], pass.Evaluated);
 
         // One read of the checkout a pass: the hearing's, the rebinding's and the second hearing's alike.
         Assert.Equal([("checkout", 1), ("checkout", 1)], _tipReads);
@@ -308,46 +356,48 @@ public sealed class ObservedEventTests : ObservedEventFixture
         // FABRIC-PERFORM1q: two units more than a pass's turn. The second look's turn ends on A, so the rotation of the pass that rebinds
         // begins after it; A's event was held for lagging its node, so A is judged first in that turn all the same, rebound, and its event
         // taken in the pass that heard it. The rotation fills the rest of the turn and reaches the two it left at the next pass.
-        _units =
+        (string Unit, string Branch)[] many =
         [
-            .. Enumerable.Range(0, NodeRuntime.UnitsPerPass - 3).Select(at => BranchUnit($"engine~a{at:D2}", $"a/{at:D2}")),
-            BranchUnit(A, "feature/a"),
-            .. Enumerable.Range(0, 4).Select(at => BranchUnit($"engine~z{at:D2}", $"z/{at:D2}")),
+            .. Enumerable.Range(0, NodeRuntime.UnitsPerPass - 3).Select(at => ($"engine~a{at:D2}", $"a/{at:D2}")),
+            (A, "feature/a"),
+            .. Enumerable.Range(0, 4).Select(at => ($"engine~z{at:D2}", $"z/{at:D2}")),
         ];
-        foreach (var unit in _units) _tips[unit.Subject.Artifact!] = C1;
+        _units = Runs(many);
+        foreach (var (_, branch) in many) _tips[branch] = C1;
+        var runs = many.Select(each => RunUnit(each.Unit)).ToList();
         var runtime = Runtime();
         await PassAsync(runtime);
-        Assert.Equal(A, (await PassAsync(runtime)).Evaluated[^1]);
-        Assert.All(_units, unit => Assert.Equal(NodeStates.Active, Record(unit.Id).Statuses["deployed"].State));
+        Assert.Equal(RunUnit(A), (await PassAsync(runtime)).Evaluated[^1]);
+        Assert.All(many, each => Assert.Equal(NodeStates.Active, Record(each.Unit).Statuses["deployed"].State));
 
         // Every branch moved: each unit owes its rebinding, and the turn judges A first though its rotation begins after it.
         foreach (var branch in _tips.Keys.ToList()) _tips[branch] = C2;
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e2", _now, commit: C2));
         var pass = await PassAsync(runtime, whole: false);
         Assert.Equal(NodeRuntime.UnitsPerPass, pass.Evaluated.Count);
-        Assert.Equal(A, pass.Evaluated[0]);
+        Assert.Equal(RunUnit(A), pass.Evaluated[0]);
         Assert.Equal(pass.Evaluated.Count, pass.Evaluated.Distinct().Count());
 
         var deployed = Record().Statuses["deployed"];
         Assert.Equal((NodeStates.Reached, C2, C2), (deployed.State, deployed.Binding!.SubjectRevision, deployed.Acceptance!.SubjectRevision));
         Assert.Equal((C2, "e2"), (Assert.Single(Record().Observations).Commit, Record().Observations[0].Id));
-        Assert.Contains(pass.Performed, done => (done.Unit, done.Node, done.What, done.Code) == (A, "deployed", PerformedWhat.Applied, WorkStates.Reached));
+        Assert.Contains(pass.Performed, done => (done.Unit, done.Node, done.What, done.Code) == (RunUnit(A), "deployed", PerformedWhat.Applied, WorkStates.Reached));
         Assert.Empty(_port.Refusals);
 
         // The rotation went on from where the turn before left it, the held unit taking no turn of its own: the two it left are reached next,
         // and every unit is rebound to the moved tip.
-        var left = _units.Select(unit => unit.Id).Except(pass.Evaluated).ToList();
+        var left = runs.Except(pass.Evaluated).ToList();
         Assert.Equal(2, left.Count);
         var next = await PassAsync(runtime, whole: false);
         Assert.Equal(left, next.Evaluated);
         Assert.Equal(left, (await PassAsync(runtime)).Evaluated.Take(2));
-        Assert.All(_units, unit => Assert.Equal(C2, Record(unit.Id).Statuses["deployed"].Binding!.SubjectRevision));
+        Assert.All(many, each => Assert.Equal(C2, Record(each.Unit).Statuses["deployed"].Binding!.SubjectRevision));
     }
 
     [Fact]
     public async Task An_unread_tip_binds_nothing_new_and_keeps_the_node_as_it_stands()
     {
-        _units = [BranchUnit(A, "feature/a"), BranchUnit(B, "feature/b")];
+        _units = Runs((A, "feature/a"), (B, "feature/b"));
         _tips.Remove("feature/b");
         var runtime = Runtime();
         await PassAsync(runtime);
@@ -460,7 +510,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
     [InlineData(NodeStates.Skipped)]
     public async Task The_persons_stop_or_skip_stands_against_evidence_in_either_order(string press)
     {
-        _units = [BranchUnit(A, "feature/a"), BranchUnit(B, "feature/b")];
+        _units = Runs((A, "feature/a"), (B, "feature/b"));
         var runtime = Runtime();
         await PassAsync(runtime);
 
@@ -496,40 +546,21 @@ public sealed class ObservedEventTests : ObservedEventFixture
     public async Task Observed_only_work_arms_the_runtime_and_a_lease_lost_or_a_disarm_tells_and_writes_nothing()
     {
         // Without the lease: nothing told, written or started.
+        _units = Runs(ObservedOnly, (A, "feature/a"));
         var unheld = new NodeRuntime(Files, _port, () => _now, () => false);
-        var lost = await unheld.PassAsync(Look(ObservedOnly), CancellationToken.None);
+        var lost = await unheld.PassAsync(Look("{}"), CancellationToken.None);
         Assert.Empty(lost.Performed);
         Assert.Empty(_port.Told);
         Assert.False(Directory.Exists(NodeRecordFiles.FolderOf(_home)));
 
         // Armed by observed work alone: begun, then published.
         var runtime = Runtime();
-        await PassAsync(runtime, ObservedOnly);
+        await PassAsync(runtime);
         Assert.Equal(NodeStates.Active, Record().Statuses["deployed"].State);
         Assert.Equal(["deployed"], Assert.Single(_port.Told[^1][Plugin]).Awaiting);
 
-        // Disarmed before the plan's supervision: the set withdrawn, and the pass after reads, tells and writes nothing.
-        Assert.True(await runtime.WithdrawAsync(DriverConfig.Parse("{}"), CancellationToken.None));
-        Assert.Empty(_port.Told[^1]);
-        var told = _port.Told.Count;
-        var read = _tipReads.Count;
-        var idle = await PassAsync(runtime, "{}");
-        Assert.False(idle.Armed);
-        Assert.Equal(told, _port.Told.Count);
-        Assert.Equal(read, _tipReads.Count);
-    }
-
-    [Fact]
-    public async Task A_graph_with_two_observed_nodes_of_the_events_step_is_refused_at_its_reading_and_takes_neither()
-    {
-        // FABRIC-GRAPH1g: the graph is unreadable whole (its save says `observed-twice`), so no node of it waits and no event reaches one.
-        var runtime = Runtime();
-        await PassAsync(runtime, Twice);
-        _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));
-        await PassAsync(runtime, Twice, whole: false);
-
-        Assert.DoesNotContain(_port.Refusals, refusal => refusal.Item2 == WorkRefusals.NotNamed);
-        Assert.DoesNotContain(Record().Statuses.Values, status => status.State == NodeStates.Reached);
+        // A home holding a bound run is never disarmed: its runs wait on the loop whatever the choices say.
+        Assert.False(await runtime.WithdrawAsync(DriverConfig.Parse("{}"), CancellationToken.None));
     }
 
     [Fact]
@@ -537,22 +568,15 @@ public sealed class ObservedEventTests : ObservedEventFixture
     {
         // FABRIC-PERFORM1n: the deploy declares its evidence's schema, and the event's reference names another. The table refuses the move,
         // so the node stays awaiting, nothing is kept, no wire fires, and the refusal is a plugin.step line of the table's code.
-        const string evidenced = """
-            { "landings": { "engine": { "form": "merge", "cycle": {
-                "schemaVersion": 2, "entries": ["deployed"], "end": "notify",
-                "nodes": [
-                  { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed", "evidence": "acme.deploy/record" },
-                  { "id": "notify", "kind": "acme.deploy/notify", "version": 1, "reach": "performed" } ],
-                "wires": [{ "id": "w1", "kind": "after", "from": "deployed", "to": "notify" }] } } } }
-            """;
+        _units = Runs(Evidenced, (A, "feature/a"));
         var runtime = Runtime();
-        await PassAsync(runtime, evidenced);
+        await PassAsync(runtime);
         Assert.Equal(NodeStates.Active, Record().Statuses["deployed"].State);
         var before = NodeRecordFiles.ToJson(Record());
 
         var other = new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence("acme.other/record:7", null, null, null));
         _port.Heard.Enqueue(new(Plugin, _port.Generation!.Value, new WorkStepFrame("deployed", other, _now, "e1", "engine", "feature/a", C1)));
-        var pass = await PassAsync(runtime, evidenced, whole: false);
+        var pass = await PassAsync(runtime, whole: false);
 
         Assert.Contains(pass.Performed, done => (done.Node, done.What, done.Code) == ("deployed", PerformedWhat.NotTaken, NodeRefusal.NoEvidence));
         Assert.Equal((Plugin, NodeRefusal.NoEvidence), Assert.Single(_port.Refusals));
@@ -563,7 +587,7 @@ public sealed class ObservedEventTests : ObservedEventFixture
         // The declared schema's evidence, at the same commit, is still taken: the refused event established nothing for it to be ordered behind.
         var declared = new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence("acme.deploy/record:7", null, null, null));
         _port.Heard.Enqueue(new(Plugin, _port.Generation!.Value, new WorkStepFrame("deployed", declared, _now, "e2", "engine", "feature/a", C1)));
-        await PassAsync(runtime, evidenced, whole: false);
+        await PassAsync(runtime, whole: false);
 
         Assert.Equal(NodeStates.Reached, Record().Statuses["deployed"].State);
         Assert.Equal("e2", Assert.Single(Record().Observations).Id);

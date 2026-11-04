@@ -26,7 +26,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
     /// A door the kind does not have is refused as an unknown word, naming the doors; and an update or a pin names no account.
     /// </summary>
     [Theory]
-    [InlineData("default", null, null, "an agent's change is `update`, `pin`, `use`, `order` or `ready`")]
+    [InlineData("default", null, null, "An agent's change is `update`, `pin`, `use`, `order` or `ready`")]
     [InlineData("update", null, "work", "names no account")]
     [InlineData("pin", "2.1.300", "work", "names no account")]
     public void A_default_or_a_misplaced_account_is_refused_with_nothing_written(string action, string? version, string? account, string says)

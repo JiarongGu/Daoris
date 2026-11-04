@@ -42,7 +42,7 @@ public static class BrainstormCommand
                 return List(files, output);
             // The folder that holds every meeting is no brainstorm (AGENTROOM1a): the desk refuses it a press, and a read says so.
             case ["show", var id] when BrainstormFiles.Reserved(id):
-                output.WriteLine($"daoris-driver: there is no brainstorm `{id}` on this machine.");
+                output.WriteLine($"daoris: there is no brainstorm `{id}` on this machine.");
                 return 1;
             case ["show", var id]:
                 return Show(files, id, output);
@@ -130,7 +130,7 @@ public static class BrainstormCommand
     {
         if (files.Request(id) is not { } request)
         {
-            output.WriteLine($"daoris-driver: there is no brainstorm `{id}` on this machine.");
+            output.WriteLine($"daoris: there is no brainstorm `{id}` on this machine.");
             return 1;
         }
 

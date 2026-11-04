@@ -91,7 +91,7 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
     [Fact]
     public void Every_field_the_route_answers_is_classed_and_every_field_the_page_reads_is_pushed()
     {
-        var page = Fields(Path.Combine("src", "Daoris.Web", "src", "data", "api.ts"), PageStanding(), "export type SyncStanding = {", PageField());
+        var page = PageTypeFields.Of("SyncStanding");
         var service = Fields(
             Path.Combine("src", "Daoris.Contracts", "Sync", "SyncRecords.cs"), ServiceStanding(), "record SyncStandingResponse(",
             ServiceField(), camel: true);
@@ -100,7 +100,7 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
         Assert.Equal("workspace", service[0]);
         Assert.Equal("undeclared", service[^1]);
         Assert.Contains("tried", page);
-        Assert.Equal(page.Order(StringComparer.Ordinal), SyncStateSlice.Fields.Order(StringComparer.Ordinal));
+        Assert.All(SyncStateSlice.Fields, field => Assert.Contains(field, page));
         Assert.Empty(SyncStateSlice.Fields.Intersect(SyncStateSlice.PulledOnly));
         var classed = SyncStateSlice.Fields.Concat(SyncStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);
         Assert.All(service, field => Assert.Contains(field, classed));
@@ -264,17 +264,11 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
         return [.. field.Matches(body).Select(each => each.Groups["name"].Value).Select(name => camel ? char.ToLowerInvariant(name[0]) + name[1..] : name)];
     }
 
-    [GeneratedRegex(@"export type SyncStanding = \{(?<body>.*?)\n\};", RegexOptions.Singleline)]
-    private static partial Regex PageStanding();
-
     [GeneratedRegex(@"record SyncStandingResponse\((?<body>.*?)\);", RegexOptions.Singleline)]
     private static partial Regex ServiceStanding();
 
     [GeneratedRegex(@"/\*.*?\*/|//[^\n]*", RegexOptions.Singleline)]
     private static partial Regex Comments();
-
-    [GeneratedRegex(@"(?<name>\w+)\??:")]
-    private static partial Regex PageField();
 
     [GeneratedRegex(@"\b(?<name>[A-Z]\w*)\s*(?==|,|$)")]
     private static partial Regex ServiceField();

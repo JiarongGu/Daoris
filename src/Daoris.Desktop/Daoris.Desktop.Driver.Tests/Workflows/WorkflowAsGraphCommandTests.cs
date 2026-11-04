@@ -139,19 +139,4 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
         Assert.False(File.Exists(FileOf("careful")));
     }
 
-    [Fact]
-    public async Task Import_of_a_file_holding_a_handed_is_refused_at_that_node()
-    {
-        var graph = JsonNode.Parse("""{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""")!;
-        var file = Written("careful.json", new JsonObject
-        {
-            ["id"] = "careful", ["name"] = "Careful",
-            ["versions"] = new JsonArray(new JsonObject { ["version"] = 1, ["at"] = "2026-10-09T09:12:00Z", ["door"] = "screen", ["schema"] = 2, ["graph"] = graph }),
-        }.ToJsonString());
-
-        Assert.Equal(1, await Run($"workflow import {file}"));
-
-        Assert.Contains("node `land` is a `handed`", Said);
-        Assert.False(File.Exists(FileOf("careful")));
-    }
 }

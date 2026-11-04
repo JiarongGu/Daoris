@@ -15,13 +15,14 @@ public sealed record IntegrationCardWait(
 {
     /// <summary>
     /// Whether a landing refused as <paramref name="code"/> waits on the owner's card: an automatic landing under <c>request: owner</c>; one under
-    /// <c>steward</c>, whose act no role can press yet, so the card is its one door; and a record that says neither, unless the rule says
-    /// <c>request: done</c>, where Daoris's sweep requests it. Any other refusal is no wait of the owner's.
+    /// <c>steward</c>, whose act no role can press yet, so the card is its one door; and a record that says neither, unless the place's workflow's
+    /// <c>integrate</c> (<paramref name="request"/>, <see cref="PlaceIntegrate"/>) says <c>request: done</c>, where Daoris's sweep requests it.
+    /// Any other refusal is no wait of the owner's.
     /// </summary>
-    public static bool Waits(string? code, Landing landing) => code switch
+    public static bool Waits(string? code, string request) => code switch
     {
         IntegrationRefusals.AwaitsOwner or IntegrationRefusals.AwaitsSteward => true,
-        IntegrationRefusals.NoRequest => landing.Rule?.Integrate?.Resolved().Request != LandingIntegrate.Done,
+        IntegrationRefusals.NoRequest => request != LandingIntegrate.Done,
         _ => false,
     };
 }

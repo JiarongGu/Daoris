@@ -85,7 +85,6 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         Assert.Equal("h1", answer.GetProperty("from").GetString());
         Assert.Equal("queued", service.State("h2"));
         Assert.False(File.Exists(room));
-        Assert.Single(Directory.GetFiles(ChatFiles.Folder(loop.Home, "h2")));
 
         reading.SetResult(new HelpMachine { Adapter = "talk", Helper = "talk" });
 

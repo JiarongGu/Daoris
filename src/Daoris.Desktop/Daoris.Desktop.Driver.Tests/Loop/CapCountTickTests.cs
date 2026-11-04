@@ -33,6 +33,8 @@ public sealed class CapCountTickTests : IDisposable
 
     private string Tree(string name) => Path.Combine(_home, name);
 
+    private static DriverConfig Intake(int cap) => ActorChoices.With(Config(cap), "intake", [new ActorChoice("stub")]);
+
     private static DriverConfig Config(int cap) => DriverConfig.Empty with
     {
         Drivable = ["engine", "tools"],
@@ -128,7 +130,7 @@ public sealed class CapCountTickTests : IDisposable
     {
         _ledger.Working("h1", HelpRoom.Repository, Tree("room-1"));
         _ledger.Ask("a1");
-        var (driver, _) = Driver(Config(cap: 1) with { IntakeAdapter = "stub" });
+        var (driver, _) = Driver(Intake(cap: 1));
 
         var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
 
@@ -140,7 +142,7 @@ public sealed class CapCountTickTests : IDisposable
     {
         _ledger.Working("i1", "ask #a0", Tree("intake-room"), ask: "a0");
         _ledger.Ask("a1");
-        var (driver, _) = Driver(Config(cap: 1) with { IntakeAdapter = "stub" });
+        var (driver, _) = Driver(Intake(cap: 1));
 
         var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
 
@@ -153,7 +155,7 @@ public sealed class CapCountTickTests : IDisposable
         // QUESTDELETE1: the person named its receiver and its quest was deleted, so no intake routes it by its proposal.
         _ledger.Working("i1", "ask #a0", Tree("intake-room"), ask: "a0");
         _ledger.Ask("a1", tier: "named");
-        var (driver, _) = Driver(Config(cap: 1) with { IntakeAdapter = "stub" });
+        var (driver, _) = Driver(Intake(cap: 1));
 
         var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
 

@@ -1946,7 +1946,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void Every_field_the_page_reads_of_a_row_is_pushed_and_every_field_pushed_the_page_declares()
     {
-        var attention = PageSource("work", "attention", "attention.ts");
+        var attention = PageSource("work", "attention", "attentionPushed.ts");
         var accounts = PageSource("work", "attention", "accountWords.ts");
 
         Assert.Equal(AttentionStateSlice.Fields["row"].Order(StringComparer.Ordinal), TypeFields(attention, "PushedAttention").Order(StringComparer.Ordinal));

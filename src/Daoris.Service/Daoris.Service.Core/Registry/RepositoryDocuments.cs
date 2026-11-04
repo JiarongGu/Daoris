@@ -41,6 +41,7 @@ public static class RepositoryDocuments
         // ORIENT2e (D151 points 4 and 6): the generated index of where things are, after the router as the CLI
         // lists it (ORIENT2b); the scanner reads every file in its folder as entries of its own kind.
         ("index", true),
+        ("areas", true),
         ("decisions", true),
         ("backlog", true),
         ("archive", true),

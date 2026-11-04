@@ -60,13 +60,14 @@ public sealed class StartTreeCloseTests : IDisposable
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(
             _ledger.Client(),
-            DriverConfig.Empty with
-            {
-                Drivable = ["engine"],
-                Trees = ["engine"],
-                Adapter = "acp-stub",
-                Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = [_agent] },
-            },
+            ActorChoices.With(
+                DriverConfig.Empty with
+                {
+                    Drivable = ["engine"],
+                    Trees = ["engine"],
+                    Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = [_agent] },
+                },
+                "build", [new ActorChoice("acp-stub")]),
             adapters,
             _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

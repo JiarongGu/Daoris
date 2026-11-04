@@ -18,26 +18,6 @@ public sealed class LandingSaysTwinTests : HelpProposalsFixture
         HelpProposals.Plan(Setting(door, "engine", null, value), DriverConfig.Empty, Facts).Describe;
 
     [Fact]
-    public void The_ticket_sentence_is_the_tables_row_for_row()
-    {
-        using var table = Table();
-        var rows = table.RootElement.GetProperty("ticket").EnumerateArray().ToList();
-        Assert.Equal(2, rows.Count);
-        foreach (var row in rows)
-        {
-            var key = row.GetProperty("key").ValueKind == JsonValueKind.Null ? "" : $" --key \"{row.GetProperty("key").GetString()}\"";
-            Assert.Contains(row.GetProperty("says").GetString()!, Said("landing", "branch feature/{ticket}" + key));
-        }
-    }
-
-    [Fact]
-    public void The_squash_sentence_is_the_tables()
-    {
-        using var table = Table();
-        Assert.Contains(table.RootElement.GetProperty("squash").GetString()!, Said("landing", "branch feature/{quest} --squash"));
-    }
-
-    [Fact]
     public void The_helpers_and_commits_mode_sentences_are_the_tables_row_for_row()
     {
         using var table = Table();

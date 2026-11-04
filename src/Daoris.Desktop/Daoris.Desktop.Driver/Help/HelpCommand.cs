@@ -64,7 +64,7 @@ public static class HelpCommand
         """
         usage: daoris ask-daoris list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
                daoris ask-daoris resume <id> "…" [--file <path>]…
-               daoris ask-daoris rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
+               daoris ask-daoris rename <id> "…" | --clear  ·  daoris ask-daoris pin <id>  ·  daoris ask-daoris unpin <id>
                daoris ask-daoris delete <id> [--yes]
                daoris ask-daoris mode [restricted|full]
         """;

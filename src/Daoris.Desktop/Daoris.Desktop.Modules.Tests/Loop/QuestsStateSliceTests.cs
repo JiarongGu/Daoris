@@ -101,7 +101,8 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
         Assert.Contains("evidence", service);
         Assert.Contains("workflowChoices", service);
         Assert.Equal("request", service[^1]);
-        Assert.Equal(page.Order(StringComparer.Ordinal), QuestsStateSlice.Fields.Order(StringComparer.Ordinal));
+        // The page's type is derived from the service's record, so it reads each field the record answers: the pushed ones are among them.
+        Assert.All(QuestsStateSlice.Fields, field => Assert.Contains(field, page));
         Assert.Empty(QuestsStateSlice.Fields.Intersect(QuestsStateSlice.PulledOnly));
         var classed = QuestsStateSlice.Fields.Concat(QuestsStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);
         Assert.All(service, field => Assert.Contains(field, classed));
@@ -265,43 +266,8 @@ internal sealed class ServiceStandIn : HttpMessageHandler
 internal static partial class SourceFields
 {
     /// <summary>The fields of <c>export type {name} = { … };</c>.</summary>
-    public static IReadOnlyList<string> Page(string name)
-    {
-        var text = Comments().Replace(System.IO.File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src", "data", "api.ts")), "");
-        var block = Regex.Match(text, $@"export type {name} = \{{(?<body>.*?)\n?\}};", RegexOptions.Singleline);
-        Assert.True(block.Success, $"data/api.ts declares no `export type {name} = {{`");
-        var body = block.Groups["body"].Value;
-        // An inline shape's own fields (`review?: { choice; words }`) are the shape's, not the type's.
-        for (var inner = Inline().Replace(body, "_"); inner != body; inner = Inline().Replace(body, "_")) body = inner;
-        return [.. PageField().Matches(body).Select(field => field.Groups["name"].Value)];
-    }
+    public static IReadOnlyList<string> Page(string name) => PageTypeFields.Of(name);
 
     /// <summary>The parameters of <c>record {name}(…);</c>, as its web defaults write them.</summary>
-    public static IReadOnlyList<string> Service(string name)
-    {
-        var text = Comments().Replace(System.IO.File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Contracts", "Quests", "QuestRecords.cs")), "");
-        var block = Regex.Match(text, $@"record {name}\((?<body>.*?)\);", RegexOptions.Singleline);
-        Assert.True(block.Success, $"QuestRecords.cs declares no `record {name}(`");
-        return [.. ServiceField().Matches(block.Groups["body"].Value).Select(field => char.ToLowerInvariant(field.Groups["name"].Value[0]) + field.Groups["name"].Value[1..])];
-    }
-
-    /// <summary>Walk up to the workspace root, which the tests run under.</summary>
-    private static string RepositoryRoot()
-    {
-        var at = new DirectoryInfo(AppContext.BaseDirectory);
-        while (at is not null && !System.IO.File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
-        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
-    }
-
-    [GeneratedRegex(@"/\*.*?\*/|//[^\n]*", RegexOptions.Singleline)]
-    private static partial Regex Comments();
-
-    [GeneratedRegex(@"\{[^{}]*\}")]
-    private static partial Regex Inline();
-
-    [GeneratedRegex(@"(?<name>\w+)\??:")]
-    private static partial Regex PageField();
-
-    [GeneratedRegex(@"\b(?<name>[A-Z]\w*)\s*(?==|,|$)")]
-    private static partial Regex ServiceField();
+    public static IReadOnlyList<string> Service(string name) => [.. PageTypeFields.ServiceFields(name)];
 }

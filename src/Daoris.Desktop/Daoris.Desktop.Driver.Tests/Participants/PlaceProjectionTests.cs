@@ -28,20 +28,6 @@ public sealed class PlaceProjectionTests
         Assert.Null(read.Undriven);
     }
 
-    /// <summary>DEFAULTCONFIG1a: under Current, every place of a fresh home follows the default its landing rule matches, with nothing of its own.</summary>
-    [Fact]
-    public void A_fresh_home_s_places_each_follow_their_default_with_nothing_different()
-    {
-        var registry = new[] { new RepoView("engine", true, "root", "aurora"), new RepoView("tools", true, "root", "aurora") };
-        var config = DriverConfig.Empty with { Drivable = ["engine", "tools"] };
-
-        var read = PlaceProjection.Of(config, registry, () => RoleCatalog.ReadHome(Path.Combine(AppContext.BaseDirectory, "no-such-home")), new PlacesAsk());
-
-        var places = read.Workspaces.Select(each => each.Place).Concat(read.Repositories).ToList();
-        Assert.Equal(3, places.Count);
-        Assert.All(places, place => Assert.Equal(new PlaceDefault("merge-after-accept", []), place.Values!.Follows));
-    }
-
     /// <summary>DEFAULTCONFIG1a: a place choosing a version copied from a default follows that default, and names what the copy changed.</summary>
     [Fact]
     public void A_place_choosing_a_copy_of_a_default_follows_it_and_names_what_the_copy_changed()
@@ -215,7 +201,7 @@ public sealed class PlaceProjectionTests
     public void A_place_s_detail_equals_its_row_and_its_readers_driven_or_not()
     {
         var registry = new[] { new RepoView("engine", true, "root", "aurora"), new RepoView("tools", false, null, "aurora") };
-        var config = DriverConfig.Parse("""{ "drivable": ["engine"], "landings": { "tools": { "form": "branch", "pattern": "f/{quest}" } }, "holds": ["tools"] }""");
+        var config = DriverConfig.Parse("""{ "drivable": ["engine"], "holds": ["tools"] }""");
 
         PlacesRead Ask(PlaceTarget target) => PlaceProjection.Of(config, registry, Seeds, new PlacesAsk(Detail: target));
 
@@ -225,7 +211,7 @@ public sealed class PlaceProjectionTests
         var tools = Ask(new("aurora", "tools")).Detail!;
         Assert.Equal((false, true, false, false), (tools.Driven, tools.Held, tools.Checkout, tools.Adopted));
         Assert.Equal(Wire(PlaceProjection.ValuesAt(config, "tools", "aurora", PlaceSource.RepositoryLevel)), Wire(tools.Values!));
-        Assert.Equal(new SetupMatch("branch-to-push", []), tools.Values!.Lands);
+        Assert.Null(tools.Values!.Lands);
         Assert.Equal(RoleWork.Codes, tools.Works.Select(work => work.Work));
 
         var workspace = Ask(new("aurora", null));

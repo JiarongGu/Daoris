@@ -32,7 +32,7 @@ public sealed class CodecPlaybackProcessTests : Bridge
 
         var port = InAppBrowser.FreePort();
         var options = new EngineBrowserOptions(Path.Combine(Home, "engine"), port, Environment.ProcessId, Background: true);
-        using var browser = Process.Start(new ProcessStartInfo(exe, options.ToArguments()) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe)! })!;
+        using var browser = Process.Start(new ProcessStartInfo(exe, options.ToArguments()) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = Path.GetDirectoryName(exe)! })!;
         try
         {
             using var cts = new CancellationTokenSource(Limit);

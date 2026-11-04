@@ -25,16 +25,6 @@ public abstract class ObservedEventFixture : IDisposable
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
     };
 
-    /// <summary>A repository's branches under a landing rule whose cycle observes the deploy and then notifies.</summary>
-    protected const string Observing = """
-        { "landings": { "engine": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["deployed"], "end": "notify",
-            "nodes": [
-              { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" },
-              { "id": "notify", "kind": "acme.deploy/notify", "version": 1, "reach": "performed" } ],
-            "wires": [{ "id": "w1", "kind": "after", "from": "deployed", "to": "notify" }] } } } }
-        """;
-
     protected readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-observed-" + Guid.NewGuid().ToString("N")[..8]);
 
     private protected readonly ObservedPort _port = new();
@@ -72,7 +62,7 @@ public abstract class ObservedEventFixture : IDisposable
         },
     };
 
-    protected Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string config = Observing, bool whole = true) =>
+    protected Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string config = "{}", bool whole = true) =>
         runtime.PassAsync(Look(config, whole), CancellationToken.None);
 
     protected NodeRecord Record(string unit = A) => Files.Read(unit)!;

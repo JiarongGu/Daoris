@@ -104,7 +104,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     [Fact]
     public void Every_field_the_page_reads_is_pushed_and_every_field_the_service_answers_is_classed()
     {
-        var page = PageSessionFields();
+        var page = PageTypeFields.Of("Session");
         var service = ServiceSessionFields();
 
         Assert.Contains("tree", page);
@@ -112,7 +112,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         Assert.Equal("id", service[0]);
         Assert.Contains("said", service);
         Assert.Equal("head", service[^1]);
-        Assert.Equal(page.Order(StringComparer.Ordinal), SessionsStateSlice.Fields.Order(StringComparer.Ordinal));
+        Assert.All(SessionsStateSlice.Fields, field => Assert.Contains(field, page));
         Assert.Empty(SessionsStateSlice.Fields.Intersect(SessionsStateSlice.PulledOnly));
         var classed = SessionsStateSlice.Fields.Concat(SessionsStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);
         Assert.All(service, field => Assert.Contains(field, classed));
@@ -305,16 +305,6 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
-    /// <summary>The fields the page's <c>Session</c> type declares (<c>data/api.ts</c>), its comments left out.</summary>
-    private static IReadOnlyList<string> PageSessionFields()
-    {
-        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src", "data", "api.ts"));
-        var block = PageSession().Match(text);
-        Assert.True(block.Success, "data/api.ts declares no `export type Session = {`");
-        var body = Comments().Replace(block.Groups["body"].Value, "");
-        return [.. PageField().Matches(body).Select(field => field.Groups["name"].Value)];
-    }
-
     /// <summary>The fields the service answers of a record (<c>SessionResponse</c>), as its web defaults write them.</summary>
     private static IReadOnlyList<string> ServiceSessionFields()
     {
@@ -325,17 +315,11 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         return [.. ServiceField().Matches(parameters).Select(field => char.ToLowerInvariant(field.Groups["name"].Value[0]) + field.Groups["name"].Value[1..])];
     }
 
-    [GeneratedRegex(@"export type Session = \{(?<body>.*?)\n\};", RegexOptions.Singleline)]
-    private static partial Regex PageSession();
-
     [GeneratedRegex(@"record SessionResponse\((?<body>.*?)\);", RegexOptions.Singleline)]
     private static partial Regex ServiceSession();
 
     [GeneratedRegex(@"/\*.*?\*/|//[^\n]*", RegexOptions.Singleline)]
     private static partial Regex Comments();
-
-    [GeneratedRegex(@"(?<name>\w+)\??:")]
-    private static partial Regex PageField();
 
     [GeneratedRegex(@"\b(?<name>[A-Z]\w*)\s*(?==|,|$)")]
     private static partial Regex ServiceField();

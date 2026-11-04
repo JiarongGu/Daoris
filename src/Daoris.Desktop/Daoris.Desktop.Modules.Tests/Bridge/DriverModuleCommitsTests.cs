@@ -113,12 +113,10 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         Assert.Equal("ask", commits.GetProperty("rule").GetProperty("mode").GetString());
         Assert.Equal("Say why.", commits.GetProperty("rule").GetProperty("convention").GetString());
         Assert.Equal("workspace", commits.GetProperty("source").GetString());
+        // A landing rule set in the driver file is no longer read: the landing is the workflow's landing step's, and a tree with none lands as the default.
         var landing = own.GetProperty("landing");
-        Assert.Equal("branch", landing.GetProperty("form").GetString());
-        Assert.Equal("feature/{ticket}-{slug}", landing.GetProperty("pattern").GetString());
-        Assert.Equal("ENG-\\d+", landing.GetProperty("key").GetString());
-        Assert.True(landing.GetProperty("squash").GetBoolean());
-        Assert.Equal("repository", landing.GetProperty("source").GetString());
+        Assert.Equal("merge", landing.GetProperty("form").GetString());
+        Assert.Equal("default", landing.GetProperty("source").GetString());
 
         // Nothing set for its repository or its workspace: Daoris's defaults, each from `default`.
         Assert.Equal("as-you-go", defaults.GetProperty("commits").GetProperty("rule").GetProperty("mode").GetString());

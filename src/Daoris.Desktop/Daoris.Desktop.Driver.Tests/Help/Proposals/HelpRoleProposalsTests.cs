@@ -220,6 +220,6 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         RoleDoor.Apply(Staffing, plan.Role!.Change);
         Assert.Equal(3, Assert.Single(store.Of("repository:daoris").Rules).At);
         Assert.Contains("(revision)", HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine).Refusal);
-        Assert.Contains("appointed shape", HelpProposals.Plan(Role("set", "supervisor", """{ "takes": ["build"], "place": "machine", "rulesRevision": 1, "rules": [] }"""), DriverConfig.Empty, Machine).Refusal);
+        Assert.Contains("carries a place's `rules` and `rulesRevision` alone", HelpProposals.Plan(Role("set", "supervisor", """{ "takes": ["build"], "place": "machine", "rulesRevision": 1, "rules": [] }"""), DriverConfig.Empty, Machine).Refusal);
     }
 }

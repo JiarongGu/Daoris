@@ -52,7 +52,8 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         var engine = Repository(answer, "engine");
         var values = engine.GetProperty("values");
         Assert.Equal(("release", "here"), (values.GetProperty("line").GetProperty("value").GetString(), Of(values, "line")));
-        Assert.Equal(("branch", "here"), (values.GetProperty("landing").GetProperty("value").GetString(), Of(values, "landing")));
+        // The landing is the workflow's landing step's, and the engine's saved workflow is not in the store.
+        Assert.Equal((null, "here"), (values.GetProperty("landing").GetProperty("value").GetString(), Of(values, "landing")));
         Assert.Equal(("feature-review", "here"), (values.GetProperty("workflow").GetProperty("value").GetString(), Of(values, "workflow")));
         Assert.Equal(("current", "default"), (values.GetProperty("landed").GetProperty("value").GetString(), Of(values, "landed")));
         Assert.Equal(("zh", "workspace"), (values.GetProperty("language").GetProperty("value").GetString(), Of(values, "language")));
@@ -63,7 +64,7 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         // The game inherits its workspace's line, landing and workflow, and is held.
         var game = Repository(answer, "game").GetProperty("values");
         Assert.Equal(("develop", "workspace"), (game.GetProperty("line").GetProperty("value").GetString(), Of(game, "line")));
-        Assert.Equal(("merge", "workspace"), (game.GetProperty("landing").GetProperty("value").GetString(), Of(game, "landing")));
+        Assert.Equal((null, "workspace"), (game.GetProperty("landing").GetProperty("value").GetString(), Of(game, "landing")));
         Assert.Equal(("web-flow", "workspace"), (game.GetProperty("workflow").GetProperty("value").GetString(), Of(game, "workflow")));
         Assert.True(Repository(answer, "game").GetProperty("held").GetBoolean());
 
@@ -151,18 +152,6 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
     }
 
     [Fact]
-    public async Task A_landing_rule_that_reads_as_none_under_a_driven_repository_is_named_for_a_look()
-    {
-        var module = await ModuleAsync(new StandIn(driven: "broken"));
-        File.WriteAllText(DriverConfigPath, Config.Replace("\"drivable\": [\"engine\", \"game\", \"site\"]", "\"drivable\": [\"engine\", \"broken\"]", StringComparison.Ordinal));
-
-        var answer = await AnswerAsync(module, "PLACES");
-
-        var broken = Repository(answer, "broken");
-        Assert.Contains(broken.GetProperty("needs").EnumerateArray(), need => need.GetProperty("code").GetString() == "landing-unread");
-    }
-
-    [Fact]
     public async Task The_structure_asked_for_a_chain_answers_the_place_its_workspace_and_this_machine_alone()
     {
         File.WriteAllText(DriverConfigPath, Config);
@@ -205,11 +194,9 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         Assert.Equal("adopted", tools.GetProperty("adoption").GetString());
         Assert.Equal(RoleWork.Codes, tools.GetProperty("works").EnumerateArray().Select(work => work.GetProperty("work").GetString()));
 
-        // The site follows Current with no landing rule set: it lands as the merge preset with nothing of its own; the engine's saved
-        // workflow is not in the store, so it lands as nothing known.
+        // The site has no workflow and the engine's saved workflow is not in the store, so neither lands as anything known.
         var site = (await AnswerAsync(module, "PLACES", new { detail = new { repository = "site" } })).GetProperty("detail").GetProperty("values").GetProperty("lands");
-        Assert.Equal("merge-after-accept", site.GetProperty("preset").GetString());
-        Assert.Equal(0, site.GetProperty("own").GetArrayLength());
+        Assert.Equal(JsonValueKind.Null, site.ValueKind);
         Assert.Equal(JsonValueKind.Null, driven.GetProperty("values").GetProperty("lands").ValueKind);
 
         // Each work names its role and where it sits, beside the id it always had.

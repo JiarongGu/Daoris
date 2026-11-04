@@ -72,11 +72,13 @@ public sealed class ParticipantsPortsTests : IDisposable
     [Fact]
     public void A_chat_run_bind_says_its_workflow_through_the_supplied_events_and_reads_the_catalogue_the_plugins_install()
     {
-        StoredSteps.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
+        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "chat-steps", "A conversation's steps", "2026-10-09T09:00:00Z",
             System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"work","kind":"work","checks":"light"},
-                 {"id":"landing","kind":"landing","form":"branch","accept":"you","pattern":"chat/{session}-{slug}","plugin":"none"}]
-                """)), kept: []);
+                {"schemaVersion":2,"entries":["claimed"],"end":"landing",
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed","options":{"checks":"light"}},
+                          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"chat/{session}-{slug}"}}],
+                 "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"}]}
+                """)!);
         var events = new Events();
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Unanswered()));
 

@@ -19,7 +19,7 @@ internal static class RunHome
         File.WriteAllText(WorkflowStore.PathOf(home, workflow),
             $$"""{"id":"{{workflow}}","name":"Docs","versions":[{"version":1,"at":"2026-10-21T09:00:00Z","door":"terminal","schema":2,"graph":{{graph}}}]}""");
         var version = Assert.Single(new WorkflowFiles(home).Load(workflow)!.Read.Versions);
-        Assert.Null(version.Problem);
+        Assert.True(version.Problem is null, version.Problem?.ToString());
         return version.Digest!;
     }
 
