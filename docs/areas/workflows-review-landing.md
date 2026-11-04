@@ -231,9 +231,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **SETUPUX1y:** Setup is the Agents place's default and its tree of places is always drawn; the opener's `roleSection` names Appointed
   roles or All roles only. A door naming a repository's place says `placeOf`, which `placeOpening` resolves to the place's id.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **WORKFLOWCLEAN1z (NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEvent*`,
-  `IntegrateNodeTests`, `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs; the `handed` node in
-  about 22 test files.
+- **WORKFLOWCLEAN1z (NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEventTests`,
+  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs; the `handed` node in about 22 test files.
 - **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
 - **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.
