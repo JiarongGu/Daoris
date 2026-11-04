@@ -62,7 +62,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | The quest records | `Service/Quests/Records/` | `Quest`, `QuestStatus`, `QuestMove`, `QuestRequirement` and its answer, `QuestStep`, `QuestAttachment`, `QuestTakeBind`, `QuestTaker`, `QuestSubmission`, `QuestReopen` and `QuestDeletion`, one file each |
 | The store's parts | `Service/Quests/` | `QuestStore` wires and keeps one-line doors; each part is a type of its own over the store's gate: `QuestCache` (the quests table, written whole by a replay, repaired at open), `QuestLogSync` (a machine's pending, accepted and rebase; a remote's fetch, receive and standing; the log rows kept, numbered and rewritten), `QuestIntegrator` (a fetch's replay), `QuestFollowUps` (the follow-up steps a lost parent move rewrites), `QuestChain`, `QuestHistories`, `QuestTakeReadings`, `QuestForgetting`, `QuestReads` (find, list, from, waiting, cursor), `QuestPasses` (the passes and the remote's handshake) and `QuestClaims` |
 | `QuestHandbacks` | `Service/Quests/QuestHandbacks.cs` | A session's closing note on its quest |
-| `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/` | Session records, the ledger's opens, moves and says, the tree lock, a line's head |
+| `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/Sessions.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Lines.cs` | Session records, the ledger's opens, moves and says, the tree lock, a line's head; the store and the ledger are roots that wire, each door one line to a part |
+| The session records | `Service/Sessions/Records/` | `Session`, `SessionState`, `SessionKind`, `SaidWord`, `SaidFrom`, `SaidLevel`, and the ledger's outcomes and refusals (`SessionOpenOutcome`, `SessionAdvanceOutcome`, `SessionSayOutcome`, `SessionTakeOutcome`, `SessionAttemptOutcome`, `AskWordOutcome`, `SessionDeleteOutcome` and their refusals), one file each |
+| The store's parts | `Service/Sessions/` | `SessionSchema` (the table, its triggers and upgrades), `SessionRowCodec` (a row and a word read and written), `SessionReads` (finds, the tree and workspace locks, lists, the sync's reads, the review), `SessionWrites` (create, move, mirror, take, the machine-local keeps, delete, the cursors) and `SessionSaidStore` (words kept, taken, moved, marked and settled) |
+| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a tree, the busy sentence), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes`, with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
 | `AskStore`, `AskDesk` | `Service/Asks/Asks.cs` | Ask records, the person's words on them, publishing and deleting |
 
 ## Its rules
@@ -204,8 +207,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 ## Where a change goes
 
-Put new behaviour in a unit of its own, beside the subdomain below (D231). Do not grow `Loop/Driver.cs` or
-`Service/Sessions/SessionLedger.cs`: each is over the size budget. `Service/Quests/Quests.cs` is a root that wires.
+Put new behaviour in a unit of its own, beside the subdomain below (D231). Do not grow `Loop/Driver.cs`: it is over the
+size budget. `Service/Quests/Quests.cs`, `Service/Sessions/SessionLedger.cs` and `Service/Sessions/Sessions.cs` are roots that wire.
 
 | A new behaviour about | Goes in | Tests that pin it |
 |---|---|---|
@@ -220,7 +223,7 @@ Put new behaviour in a unit of its own, beside the subdomain below (D231). Do no
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests` |
-| a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Asks/Asks.cs` (`AskDesk`) | `Quests/QuestExchangeTests`, `Quests/QuestTakeBindTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
+| a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs` (with the ledger's parts above), `Service/Asks/Asks.cs` (`AskDesk`) | `Quests/QuestExchangeTests`, `Quests/QuestTakeBindTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
 | intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, service `Asks/IntakeTests` |
 
 Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`; service tests under
@@ -239,7 +242,7 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
   where it holds. D189 reads right.
 - D51 rule 2 says a tree is opened for one line and never reused; D214 hands trees from line to line. D214 is proposed
   and unbuilt, and `Workplace/SessionTrees.cs:362-364` follows D51. D51 reads right today.
-- D83 says the person answers a park; `Service/Sessions/SessionLedger.cs:1208-1381` lands an appointed supervisor's
+- D83 says the person answers a park; `Service/Sessions/SessionSays.cs` lands an appointed supervisor's
   attributed word on a park. D208 and D229 read right.
 - D88 counts work on any branch of the person's as landed; `Workplace/EndJudgement.cs:322-326` calls it handed, not
   ended, and `Workplace/TreeSetAside.cs:23-30` makes the look wait for the line; only the press goes on D88's proof.
@@ -250,7 +253,7 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
   `src/Daoris.Service/Daoris.Service.Mcp/ChosenSettingsTools.cs:47-54` keep the retired `timeout` doors, which only
   refuse. The code is today's; ONEWAY1s removes them.
 - D81 sets a driven session's posture to the harness's `auto`; D184 sets it from the repository's access setup,
-  written on the record at the open (`Service/Sessions/Sessions.cs:208-217`). D184 reads right.
+  written on the record at the open (`Service/Sessions/Records/Session.cs`, `Access`). D184 reads right.
 - D131 falls back to a plain carry-on when a conversation cannot resume; D189 hands the new part Daoris's brief
   (`LineCourse.Decide.cs:271-306`). D189 reads right.
 - D65 point 4 says a workflow is a chain of quests; D157 and D190 make it a named, versioned graph that governs a
