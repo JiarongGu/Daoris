@@ -27,11 +27,11 @@ public sealed class DriverLoopSendsBackTests : IDisposable
     [Fact]
     public void The_loop_hands_its_chat_runner_to_every_look_as_the_send_back_seam()
     {
-        var loop = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs"));
-        var watch = loop[loop.IndexOf("_watch = new DriverWatch(", StringComparison.Ordinal)..];
+        var loop = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "LoopRun.cs"));
+        var watch = loop[loop.IndexOf("new DriverWatch(", StringComparison.Ordinal)..];
         watch = watch[..watch.IndexOf("};", StringComparison.Ordinal)];
         Assert.Contains("SendsBack = chat,", watch, StringComparison.Ordinal);
-        Assert.Contains("using var chat = new ChatRunner(", loop[..loop.IndexOf("_watch = new DriverWatch(", StringComparison.Ordinal)], StringComparison.Ordinal);
+        Assert.Contains("using var chat = new ChatRunner(", loop[..loop.IndexOf("new DriverWatch(", StringComparison.Ordinal)], StringComparison.Ordinal);
 
         var looks = File.ReadAllText(SourceFiles.Driver("DriverWatch.cs"));
         Assert.Contains("HandsOver = HandsOver, SendsBack = SendsBack,", looks, StringComparison.Ordinal);

@@ -8,7 +8,8 @@ namespace Daoris.Desktop;
 /// driver with two doors (D46 §7). In-process because the shell is where the tick reports become
 /// something a person sees, and where session process control lives. The loop mechanics are
 /// <see cref="DriverWatch"/>'s; this class owns only what the shell adds — bringing the host up, and
-/// turning reports into event-bus notifications.
+/// turning reports into event-bus notifications. Its one run is <see cref="LoopRun"/>'s, and what the
+/// run brings up and these doors read is <see cref="LoopState"/>.
 /// </summary>
 /// <param name="home">
 /// What establishing the install's home did (D63), when this shell is an install and something is
@@ -47,13 +48,11 @@ public sealed class DriverLoop(
     /// </summary>
     public IBrowserCaches? BrowserCaches => browser as IBrowserCaches;
 
-    private readonly CancellationTokenSource _stopping = new();
-    private readonly TaskCompletionSource<bool> _hostReady = new();
-    private DriverWatch? _watch;
+    private readonly LoopState _state = new();
     private Task? _loop;
 
     /// <summary>Completes when the HTTP host answers (or provably will not) — what navigation waits on.</summary>
-    public Task<bool> HostReady => _hostReady.Task;
+    public Task<bool> HostReady => _state.HostReady.Task;
 
     /// <summary>
     /// The shell's machine log (D94), or null where none was handed in — for a route that writes what the person
@@ -143,7 +142,7 @@ public sealed class DriverLoop(
 
     /// <summary>
     /// The routing standing the at-work view's hint reads (COWORKVIEW1e-iii): the driver slice's drive and trees with the lanes the tick
-    /// last heard from the registry. The first registry answer moves it, and the judge is told (<see cref="RegisteredAsync"/>).
+    /// last heard from the registry. The first registry answer moves it, and the judge is told (<see cref="LookTold"/>).
     /// </summary>
     public AtWorkStanding HintStanding => LazyInitializer.EnsureInitialized(ref _hintStanding, () => new AtWorkStanding(() => Slices.Find(DriverStateSlice.Name)));
 
@@ -290,9 +289,6 @@ public sealed class DriverLoop(
     private static AdapterSet WithPlugins(AdapterSet built) =>
         built.WithPlugins(PluginCatalog.Load(HomeOfChoices(), built.Names));
 
-    /// <summary>The plugins that speak (D64): their processes live with this loop and stop with it.</summary>
-    private HookSet? _hooks;
-
     /// <summary>
     /// The loop's own record of each plugin's health (PLUGUI1d, D119 §2): fed by its hook set and by every landing and
     /// hand-off a route runs in this process, and read for the Plugins view, which a terminal reads from the log instead.
@@ -300,42 +296,42 @@ public sealed class DriverLoop(
     public PluginHealth Health { get; } = new();
 
     /// <summary>Which plugins have a hook process up right now, by id — what the Plugins card shows as running.</summary>
-    public IReadOnlyList<string> RunningPlugins => _hooks?.Running ?? [];
+    public IReadOnlyList<string> RunningPlugins => _state.Hooks?.Running ?? [];
 
     /// <summary>Stop one plugin's hook process now — before its folder is removed (REV3).</summary>
-    public Task<bool> StopPluginAsync(string id) => _hooks?.StopAsync(id) ?? Task.FromResult(false);
+    public Task<bool> StopPluginAsync(string id) => _state.Hooks?.StopAsync(id) ?? Task.FromResult(false);
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
     public void Nudge()
     {
         Interlocked.Increment(ref _nudges);
-        _watch?.Nudge();
+        _state.Watch?.Nudge();
     }
 
     /// <summary>The quests the node runtime last read (FABRIC-CLOSE1q3), for the held list to judge a close against; null before one pass has read.</summary>
-    public IReadOnlyDictionary<string, QuestView>? LastQuests => _watch?.LastQuests;
+    public IReadOnlyDictionary<string, QuestView>? LastQuests => _state.Watch?.LastQuests;
 
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), for <i>What needs you</i> to judge; none before a pass has read.</summary>
-    public IReadOnlyList<RequestHold> RequestHolds => _watch?.RequestHolds ?? [];
+    public IReadOnlyList<RequestHold> RequestHolds => _state.Watch?.RequestHolds ?? [];
 
     /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), for <i>What needs you</i> and the Integration tab; none before a pass.</summary>
-    public IReadOnlyList<IntegrationCardWait> CardWaits => _watch?.CardWaits ?? [];
+    public IReadOnlyList<IntegrationCardWait> CardWaits => _state.Watch?.CardWaits ?? [];
 
     /// <summary>The repositories whose integration declaration waits for the owner's acceptance (INTEGRATE1h, §5.8), for <i>What needs you</i>; none before a look.</summary>
-    public IReadOnlyList<DeclarationOwed> DeclarationsOwed => _watch?.DeclarationsOwed ?? [];
+    public IReadOnlyList<DeclarationOwed> DeclarationsOwed => _state.Watch?.DeclarationsOwed ?? [];
 
     /// <summary>
     /// Ask the loop's runtime for a whole pass, and wait for it within <paramref name="bound"/> (FABRIC-CUTOVER1d, <see cref="DriverWatch.PassWholeAsync"/>):
     /// a press held by a run's graph for a judgement not made yet. False past the bound, and where no loop runs.
     /// </summary>
-    public Task<bool> PassWholeAsync(TimeSpan bound, CancellationToken ct) => _watch?.PassWholeAsync(bound, ct) ?? Task.FromResult(false);
+    public Task<bool> PassWholeAsync(TimeSpan bound, CancellationToken ct) => _state.Watch?.PassWholeAsync(bound, ct) ?? Task.FromResult(false);
 
     /// <summary>Look now because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake (FABRIC-EVENT2b).</summary>
     public void Said(string session)
     {
         Interlocked.Increment(ref _nudges);
-        _watch?.Said(session);
+        _state.Watch?.Said(session);
     }
 
     /// <summary>
@@ -343,13 +339,10 @@ public sealed class DriverLoop(
     /// plugin about each open pull request, within D148's minute.
     /// No look and no nudge; returns at once, so the window's thread waits on nothing.
     /// </summary>
-    public void Focused() => _focus.Focused();
+    public void Focused() => _state.Focus.Focused();
 
     /// <summary>Whether a focus heard before the watch existed waits to be told to it (FABRIC-END6c), which a test reads.</summary>
-    public bool FocusPending => _focus.Pending;
-
-    // The window's focus, kept until the watch exists (FABRIC-END6c): a start's window takes the focus before the loop makes its watch.
-    private readonly PendingFocus _focus = new();
+    public bool FocusPending => _state.Focus.Pending;
 
     /// <summary>The machine's resume as the shell hears it (FABRIC-EVENT2d); null where the shell hears none, and the watch's overrun rule is all.</summary>
     public PowerResume? Power { get; set; }
@@ -370,24 +363,8 @@ public sealed class DriverLoop(
     /// and the conversations whose turn is in flight. A conversation between turns, a parked session and a terminal are idle.
     /// </summary>
     public UpdateWork Work() => new(
-        _watch?.Running.Running ?? 0,
+        _state.Watch?.Running.Running ?? 0,
         Chat?.InFlight ?? 0);
-
-    /// <summary>
-    /// A session's console lines, as the page's one event for them. The shape is the page's contract,
-    /// so one writer builds it: the relay's batches and a harness action's lines alike (REV3 CLEAN1).
-    /// </summary>
-    /// <param name="live">
-    /// Whether the console still runs as the batch goes out: a session's last words are written after it
-    /// closed, and a batch the page read as live re-marked a finished session so (CONSOLE3c).
-    /// </param>
-    internal static Task EmitOutput(IEventBus bus, string session, IEnumerable<ConsoleLine> lines, bool live = true) =>
-        bus.EmitAsync("DAORIS", "SESSION_OUTPUT", new
-        {
-            Session = session,
-            Lines = lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
-            Live = live,
-        });
 
     /// <summary>One quest as the tick hands it to the page (<see cref="TickShown.Quest"/>).</summary>
     public static object TickConsideration(Consideration consideration, QuestPark? park = null, AccountWait? wait = null) =>
@@ -404,6 +381,16 @@ public sealed class DriverLoop(
 
     /// <summary>What the waits say, as one string (<see cref="TickSignatures.Waits"/>).</summary>
     public static string WaitsSignature(IEnumerable<AccountWait> waits) => TickSignatures.Waits(waits);
+
+    /// <summary>What the kept second-opinion gates say that waits on the person, as one string (<see cref="TickSignatures.Judged"/>).</summary>
+    public static string JudgedSignature(IEnumerable<OpinionJudged> judged) => TickSignatures.Judged(judged);
+
+    /// <summary>What a look moved, as the scopes' own changes (<see cref="LookTold.Scopes"/>).</summary>
+    public static StateScopes LookScopes(bool rulesMoved, bool registryMoved, bool indexMoved) =>
+        LookTold.Scopes(rulesMoved, registryMoved, indexMoved);
+
+    /// <summary>Whether the registry's signature a look read is a change, which wakes the machine's facts (<see cref="LookTold.RegistryHeard"/>).</summary>
+    public static bool RegistryHeard(MachineFacts facts, string? registered, string? last) => LookTold.RegistryHeard(facts, registered, last);
 
     /// <summary>
     /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
@@ -454,18 +441,11 @@ public sealed class DriverLoop(
     /// </summary>
     public QuestionSupervisorDecisions Supervisor
     {
-        get => _supervisor ??= new(Home, new PipeAdmission(this), log);
+        get => _supervisor ??= new(Home, new PipeDecisionAdmission(this), log);
         set => _supervisor = value;
     }
 
     private QuestionSupervisorDecisions? _supervisor;
-
-    /// <summary>The decisions' admission: the served pipe's judge where there is one, else none admitted (SUPERVISOR1a-ii).</summary>
-    private sealed class PipeAdmission(DriverLoop loop) : IDecisionAdmission
-    {
-        public DecisionAdmitted Admit(string repository) =>
-            loop.Pipe?.StandingConfirmation is { } judge ? judge.Admit(repository) : NoDecisionAdmission.Instance.Admit(repository);
-    }
 
     /// <summary>
     /// Ask Daoris's conversation placed and not yet running (HELPSTART1): the press answers once it is placed, and the words said
@@ -495,32 +475,21 @@ public sealed class DriverLoop(
     /// </summary>
     public LastOpinions Judged { get; } = new();
 
-    /// <summary>What the kept second-opinion gates say that waits on the person, as one string (<see cref="TickSignatures.Judged"/>).</summary>
-    public static string JudgedSignature(IEnumerable<OpinionJudged> judged) => TickSignatures.Judged(judged);
-
-    /// <summary>The loop's syncs, once it is up — the ones its tick runs, and the ones *Sync now* runs.</summary>
-    private RemoteSyncSet? _sync;
-
     /// <summary>
     /// One circle's pass now (SYNC6b): the tick's own pass through the loop's own sync set, so the
     /// screen's *Sync now* and `daoris remote sync` run the same thing (D50). Null before the loop is up.
     /// </summary>
     /// <exception cref="DriverException">The circle has no remote on this machine.</exception>
     public Task<SyncReport>? SyncNowAsync(string workspace, CancellationToken ct) =>
-        _sync?.RunOnceAsync(workspace, ct);
+        _state.Sync?.RunOnceAsync(workspace, ct);
 
     public void Start()
     {
-        _loop = Task.Run(RunAsync);
+        _loop = Task.Run(() => new LoopRun(this, _state, eventBus, supervisor, serviceUrl, home, browser, log).RunAsync());
         // PUSH1a (D182): the slices judged from the start, whether or not a window is open, and before the service answers, so a
         // window's first snapshot is read from memory.
-        _pushing = Task.Run(() => Slices.RunAsync(_stopping.Token));
+        _pushing = Task.Run(() => Slices.RunAsync(_state.Stopping.Token));
     }
-
-    /// <summary>The address this Daoris left in its home, or null before the service answered and after the stop.</summary>
-    private RunningAddress? _address;
-
-    private readonly object _announcing = new();
 
     /// <summary>
     /// Leave the service's address in the home, naming this process (FINDDAORIS1, D171 point 1): a terminal outside Daoris's
@@ -528,14 +497,12 @@ public sealed class DriverLoop(
     /// Once while it runs; <see cref="Stop"/> takes it away. Not written is not a failure: a terminal then says Daoris is not
     /// running, and the window runs on.
     /// </summary>
-    public void Announce()
-    {
-        lock (_announcing)
-        {
-            if (_address is not null || _stopping.IsCancellationRequested) return;
-            _address = RunningAddress.Write(Home, serviceUrl, _pipe);
-        }
-    }
+    public void Announce() => Address.Announce();
+
+    /// <summary>The address this Daoris left in its home and the pipe named in it, under one lock with the stop's cancel.</summary>
+    private LoopAddress Address => LazyInitializer.EnsureInitialized(ref _address, () => new LoopAddress(() => Home, serviceUrl, _state.Stopping));
+
+    private LoopAddress? _address;
 
     /// <summary>
     /// The pipe a terminal reaches this Daoris on (RPC1a, D171 point 3): the shell hands its own in, the loop serves it once it
@@ -552,494 +519,14 @@ public sealed class DriverLoop(
     /// </summary>
     public static TimeSpan FirstScreenBound { get; } = TimeSpan.FromSeconds(30);
 
-    private Task? _firstScreen;
-
-    /// <summary>
-    /// The first screen's data in, or <see cref="FirstScreenBound"/> from the first ask (STARTFAST1b): the work held until then runs
-    /// beside the looks, so nothing the page asks for waits on it. A loop with no start's timer (headless, a test) waits for nothing.
-    /// </summary>
-    private Task FirstScreenAsync(CancellationToken ct) =>
-        LazyInitializer.EnsureInitialized(ref _firstScreen, () => Stages?.FirstScreenAsync(FirstScreenBound) ?? Task.CompletedTask)
-            .WaitAsync(ct);
-
-    /// <summary>The machine's facts started once the first screen has its data (STARTFAST1b), or never where the loop stops first.</summary>
-    private async Task StartFactsAsync(CancellationToken ct)
-    {
-        try
-        {
-            await FirstScreenAsync(ct).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-
-        Facts.Start(ct);
-    }
-
     /// <summary>How long a stop lets the presses the pipe runs answer before it goes on (the terminal RPC design §6.3).</summary>
     public TimeSpan PipeDrain { get; init; } = TimeSpan.FromSeconds(15);
 
-    /// <summary>The pipe served, named in the address beside the service, or null before.</summary>
-    private string? _pipe;
-
     /// <summary>
     /// Name the pipe this Daoris now serves in its address (RPC1a, the terminal RPC design §6.3): written only once it is served,
-    /// so a terminal that reads it finds it served. The address is written again whole; the one before it no longer says what it
-    /// wrote, so only the new one is taken away at the stop.
+    /// so a terminal that reads it finds it served; the one before it is taken away no more (<see cref="LoopAddress.AnnouncePipe"/>).
     /// </summary>
-    public void AnnouncePipe(string pipe)
-    {
-        lock (_announcing)
-        {
-            if (_stopping.IsCancellationRequested) return;
-            _pipe = pipe;
-            _address = RunningAddress.Write(Home, serviceUrl, pipe) ?? _address;
-        }
-    }
-
-    private async Task RunAsync()
-    {
-        var ct = _stopping.Token;
-
-        // Whatever happens in here, HostReady must complete — the splash awaits it, and a supervisor
-        // fault that skipped the TrySetResult would leave a permanently dark window, the exact failure
-        // the form's own fallback was written to prevent.
-        var up = false;
-        string? trouble = null;
-        try
-        {
-            // STARTFAST1b: the host the shell began before the window's engine, where it began one (the supervisor marks `host`).
-            up = await supervisor.UpAsync(ct).ConfigureAwait(false);
-            trouble = supervisor.Trouble;
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            trouble = error.Message;
-        }
-        finally
-        {
-            _hostReady.TrySetResult(up);
-        }
-
-        if (!up)
-        {
-            await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = trouble })
-                .ConfigureAwait(false);
-            return;
-        }
-
-        // The service answers, held or adopted: its address goes into the home for a terminal to find (FINDDAORIS1).
-        Announce();
-
-        // The host is up and it is somebody else's, serving a page that is not this install's (case
-        // study 4d). Said once, on the channel a person has to act on — like a parked session, it is
-        // waiting on them — and the loop goes on, because the host does work.
-        if (supervisor.Notice is { } notice)
-        {
-            await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = notice })
-                .ConfigureAwait(false);
-        }
-
-        // The home's own news (D63) on the same channel, for the same reason: a `~/.daoris` that just
-        // moved into the install, or a variable just set for the account, is something the person acts
-        // on once — a terminal opened before it was set does not see it. And an account's home this
-        // install set aside for its own (D105): a terminal still reads the other folder.
-        if (home is { Worth: true })
-        {
-            await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = home.Notice })
-                .ConfigureAwait(false);
-        }
-
-        var homeDirectory = Home;
-        var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
-        // KNOWCENTRAL2d: a session's end hands the service its usage history's turn lines, which its memory rows' models are read from.
-        using var service = new ServiceClient(serviceUrl, key) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };
-        // The service's doors for the one read the client does not carry: the repositories' index sizes (FOUNDATION1s part B).
-        using var doors = new ServiceHttp(service.BaseUrl, key);
-
-        // Every session this loop and its conversations open, move and hear, timed into the machine log
-        // (LOG1b) — declared after the client and before the chat runner, so it hears the runner's
-        // closing moves and lets go before the client does.
-        using var sessionLog = log is null ? null : new SessionLog(log, service, Events);
-
-        // The machine's remotes — one per workspace that has one (D47 §9, D48 §5). The syncs ride the
-        // tick, in the shell exactly as in the headless host. Absence is silent and local.
-        using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, key);
-        _sync = sync;
-        // PUSH1a2: each pass's end, the tick's or *Sync now*'s, asks the sync slice to read where each circle stands again.
-        sync.Passed += HeardPass;
-
-        // Live console lines become IPC events, BATCHED by the library's relay (D49 §2). The shell's
-        // half is only what a batch becomes: the page asks for the backlog once over `TAIL_SESSION`
-        // and takes everything after it from here.
-        using var console = new ConsoleRelay(Output, (session, lines) => EmitOutput(eventBus, session, lines, Output.IsLive(session)));
-
-        // The conversation's events, the same way (D76, CONV1): the page reads the history once over
-        // `SESSION_HISTORY` and takes everything after it from here, asking for a gap it notices.
-        using var conversation = new EventRelay(Events, (session, events) =>
-            eventBus.EmitAsync("DAORIS", "SESSION_EVENTS", new { Session = session, Events = events.ToArray() }));
-
-        // Conversations share everything the loop has — the same service, the same process registry
-        // (so one lock and one "stop" reach both kinds), the same console buffer.
-        // …and the same harness roster, so one probe serves both doors and a login the person just
-        // did is seen by whichever of them asks next.
-        // 🔴 Declared AFTER the client, so it is disposed BEFORE it: disposing the runner ends each
-        // conversation and writes its record through this client, and the language's reverse order is
-        // what guarantees the client is still there. Stopped after the client, a chat open at close was
-        // recorded nowhere and read `working` forever (2026-09-25).
-        // …and the same usage record, so a conversation's end and a driven session's are one writer (USAGE1).
-        // …and the same log, where each plugin server a conversation is handed or withheld is a line (PLUGUI1e).
-        using var chat = new ChatRunner(
-            service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage, browser,
-            plugins: new PluginLog(log, Health));
-        // A conversation's model and effort each time they change (AGT6b, D98), in the shape `SESSION_OPTIONS`
-        // answers with, so a page that asked once follows them. Machine-local, like the queue.
-        chat.OptionsChanged += (session, options) =>
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", ConversationRoutes.OptionsAnswer(session, options));
-        // MODELROLE1d2 (D205 §3.5(b), its `chat.replaced { from, to }`): a conversation whose agent refused its choice at the open went on
-        // in its replacement within the same press, so a window showing the refused one follows it, and the sessions are read again.
-        chat.Replaced += (from, to) =>
-        {
-            _ = eventBus.EmitAsync("DAORIS", ReplacedType, new { From = from, To = to });
-            StatePublisher.Publish(eventBus, StateScopes.Sessions | StateScopes.Help, to);
-        };
-        // HELPWIREDLIVE1b (D183 point 4): told once the start receipt is written, so an open What it has reads a resume's new one.
-        chat.WiredKept += WiredKeptTold(eventBus);
-        await ComeUpAsync(service, chat).ConfigureAwait(false);
-
-        // PARALLEL1a (D181 point 2): the machine's facts judged from here, on their own tasks, the service answering; every loop on the
-        // home keeps them, whoever holds its lease, since a person presses here either way. The watch below tells them its wakes.
-        // STARTFAST1b: once the first screen has its data, since their sessions judge is a third look at the sessions beside the
-        // page's two, and Ask Daoris is not on the first screen; a wake before is kept for the start.
-        _ = StartFactsAsync(ct);
-
-        // NOTIFY2j: the presses waiting at the service's door, told to the windows from one wait on the service, held by every loop
-        // on the home whoever holds its lease, since the windows are this process's either way. It ends with the loop.
-        _ = Task.Run(() => ServiceConfirmations.RunAsync(service.Confirmations, ct), ct);
-
-        // KNOWCENTRAL2e: the memory changes that wait on the person, read on a poll, by every loop on the home for the same reason.
-        _ = Task.Run(() => MemoryWaits.RunAsync(service, ct), ct);
-
-        // FOUNDATION1 l-i (the foundation design §4.1): the service's journal read from this process's come-up, whoever holds the lease, so an end
-        // a headless loop drove reaches this window's slices as a conversation's own does. It ends with the loop.
-        // FOUNDATION1 m-ii: and the news of the conversations, a park among them, told by this shell from a cursor it keeps, so a park made just
-        // before a restart is told once after it. The driven work's is the lease holder's, below.
-        var news = new News(homeDirectory);
-        _ = Task.Run(
-            () => JournalFeed.RunAsync(
-                service,
-                [
-                    new JournalTeller(async batch =>
-                    {
-                        await PartEndRelay.TellAsync(eventBus, batch).ConfigureAwait(false);
-                        if (sessionLog is not null) await sessionLog.TellAsync(batch).ConfigureAwait(false);
-                    }),
-                    NewsFeed("shell", news, service, row => row.Marks.Contains("chat", StringComparer.Ordinal), ct),
-                ],
-                log, ct, heard: present => HearsJournal = present),
-            ct);
-
-        // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
-        // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
-        // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
-        await using var requests = new SessionRequestWatch(homeDirectory, Processes, () => Service)
-        {
-            // A terminal's `sessions say` (MSG1e2) is judged as the box's words are: a conversation the window runs hears it,
-            // kept words are shown at once and the loop nudged, and words said as a session winds up wait here.
-            Say = Words.HoldAsync,
-            // SAIDBACK1c: and `sessions take-back` (the withdrawn note is written in the conversation's record here).
-            TakeBack = Words.HoldTakeBackAsync,
-            // STATEHUB1e (D169 point 8): a terminal's `trees` press, told here, reaches every window as the window's press would,
-            // and the plugins at `state/changed` with it.
-            Told = press => StatePublisher.Publish(eventBus, press),
-            // CLITURN1: a terminal's chat tells its turns; the windows are told its queue as one this process holds would tell it.
-            Turned = session => _ = TurnedAsync(session, ct),
-            // FABRIC-EVENT2: each look the folder woke, with its ms and why.
-            Log = log,
-        };
-
-        // FABRIC-EVENT2d: the shell's power event reopens this watch's roots at a resume; its own overrun rule is the fallback.
-        using var resumeHeard = Power?.Hear(requests.Resumed);
-
-        // FABRIC-EVENT5a: Ask Daoris's proposals, heard by this window's process whoever holds the home's lease (a headless loop may
-        // drive while this shell's page and chats are live, and the connector writes there either way). Told once at the start, since
-        // one written before the watch opened is already in its first read, and again at each arrival and each settle another process
-        // makes (HELP-PROPOSAL-SETTLED1), so a card a terminal settled leaves this window too. Before the lease is waited on.
-        await using var proposals = HomeWatch.ForProposals(
-            homeDirectory, (_, _) => StatePublisher.Publish(eventBus, StateScopes.Help), log: log);
-        proposals.Start();
-        using var proposalsResumed = Power?.Hear(proposals.Resumed);
-        StatePublisher.Publish(eventBus, StateScopes.Help);
-
-        // NOTIFY2f (D196 point 6): the notices' record, read again by this window's process whoever holds the lease, since any process
-        // on the home writes it; another's write is heard, or found at the topic's deadline, and its own wakes nothing, since its writer
-        // pushes it. Before the lease is waited on, as the proposals are.
-        global::Daoris.Driver.Notices.ImportFile(homeDirectory);
-        await using var notices = HomeWatch.ForNotices(homeDirectory, (_, _) => Notices.Slice.Wake(), log: log);
-        notices.Start();
-        using var noticesResumed = Power?.Hear(notices.Resumed);
-
-        // COWORKVIEW1a: the lineage files, heard by this window's process whoever holds the lease, judged by the read's own judge.
-        await using var lineage = HomeWatch.ForWork(homeDirectory, ChildLineage.FileName, AtWork.JudgeFiles, log: log);
-        lineage.Start();
-        using var lineageResumed = Power?.Hear(lineage.Resumed);
-
-        // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
-        // a session's lines and a harness action's lines land in, readable only over this bridge.
-        // What the set does with each plugin goes to the machine log without its words, and into the loop's
-        // record of its health (PLUGUI1d).
-        _hooks = new HookSet(homeDirectory, Output, log: log, health: Health);
-
-        // A plugin observes the pipeline beside it (STATEHUB1g, D169 point 9): each change the publisher tells the windows is told
-        // to the plugins at `state/changed` too, queued by the set, so no press's answer waits on a plugin. Before the home's lock,
-        // as the set is; while another loop drives the home this set runs no plugin, and a change is told to nobody.
-        using var observing = StatePublisher.Observe(eventBus, change => _hooks?.Tell(change));
-
-        // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
-        // headless host reaches the same answer; the shell's half is only what an event BECOMES.
-        // One live driver per home (DRV8a, D104): the loop waits for the home's lock while a headless loop
-        // holds it, and everything above — the host, the page, the conversations — carries on meanwhile.
-        using var held = await HoldHomeAsync(ct).ConfigureAwait(false);
-        if (held is null) return;
-
-        // FOUNDATION1 m-ii: the driven work's news is the lease holder's, told from its own cursor on a wait of its own.
-        _ = Task.Run(
-            () => JournalFeed.RunAsync(
-                service, [NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct)], log, ct),
-            ct);
-
-        // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
-        // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
-        // NOTIFY2f, CONFIRMWAIT1a-i: a press taken back after it was shown, or lost at the close (CONFIRMWAIT1a-ii), is kept in Done and failed.
-        if (Pipe is { } served)
-        {
-            served.Confirmations.Noticed = Notices.Ended;
-            // CONFIRMWAIT1a-i (the confirm-wait design §5.2): a person's press's grounds are read by this loop's readers.
-            served.Grounds = new LoopGrounds(this, served);
-            // TERMTRUST1a (D201 point 2): a finish runs here where this machine's registry says so, and a resume is of a hold the file holds now.
-            served.StandingConfirmation.RunsHere = Processes.AliveOnThisMachine;
-            served.StandingConfirmation.HeldNow = repository =>
-                DriverConfig.Load(ConfigPath).Holds.Contains(repository, StringComparer.OrdinalIgnoreCase);
-            // STEWARDROLE1b (D209 §5.1a): a restart forgets every steward's release, so what an earlier run left in the file is withdrawn
-            // before the first look; the owner's own releases are kept whole.
-            RoleStarts.Sweep(served.StandingConfirmation, ConfigPath);
-            // SUPERVISOR1e (D208 §5): a workspace's supervisor covers what the registry places in it as each act is judged.
-            served.StandingConfirmation.WorkspaceOf = repository => _placed.GetValueOrDefault(repository);
-            // CONFIRMWAIT1a-ii (the confirm-wait design §7.2): the presses that waited when Daoris last stopped come back here, before the pipe
-            // is served, on this home's lease, which makes this loop their records' one writer; whatever Serve then answers, their cards are
-            // back. What could not come back, and what a newer Daoris kept, is said once in Done and failed.
-            served.Confirmations.Restarted = Notices.Restarted;
-            served.Restore();
-        }
-
-        if (Pipe?.Serve() is { } pipe)
-        {
-            AnnouncePipe(pipe);
-            Stages?.Mark(StartStages.Pipe);
-        }
-
-        var attention = new AttentionWatch();
-        // A quest's park is said with its last session's facts, and Overview's row waits from its end (SESSUX1i).
-        var parks = new QuestParkReader();
-        string? lastConsidered = null;
-        var lastWaited = "";
-        var lastJudged = "";
-        var lastSaid = "";
-        string? lastAsked = null;
-        string? lastActive = null;
-        string? lastRegistered = null;
-        var failures = new TickErrors();
-
-        // FOUNDATION1f-ii part a (the foundation design §3.3, §19.1): the conversations' take-up, run beside each look before the limits' wake,
-        // the shell's one periodic place for its conversations: a dead shell's move is taken up, a live one quiet ten minutes said once.
-        var moves = new ConversationMoves(homeDirectory, service, Events, Output);
-
-        // WORKFLOWCLEAN1 1a: a fresh home is seeded once with the copy of the merge workflow, which a place then follows.
-        HomeSeed.Once(ConfigPath, homeDirectory);
-        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser)
-        {
-            // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).
-            Draining = () => Draining?.Invoke() == true,
-            // A look's news kept as a notice (NOTIFY2h): its writer pushes it, as the slice's own writes are.
-            Noticed = () => Notices.Slice.Wake(),
-            // Where a run's failure nothing else awaits is written with its place, not left to the finalizer (ANSWER2).
-            Log = log,
-            // SUPERVISOR1a-i: the one memory of the supervisor's decisions, read by every look.
-            Supervisor = Supervisor,
-            // STEWARDROLE1b (D209 §3.1a, §5.1a): the steward's acts as each look's starts read them, from the judge the pipe holds.
-            Roles = () => Pipe?.StandingConfirmation is { } judge ? new RoleStarts(judge, ConfigPath) : null,
-            // STARTFAST1b: the first look's line-following and tidy wait for the first screen's data, so the page's git-backed pulls
-            // and harness probes are not queued behind them for the background's places.
-            FirstScreen = FirstScreenAsync,
-            // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
-            Reviews = Reviews,
-            // PARALLEL1a: each move the sources hear wakes the facts it moves (a ref its repository's line, a ledger family the rest),
-            // and the slices that hear the moves (PUSH1d2: the sessions' on the ledger's `sessions`).
-            Heard = HeardMove,
-            // MIXAGENT1c: a conversation whose agent asked to hand it over goes on through this shell's chat runner, at once where it
-            // is not talking and at its turn's end where it is, as the person's yes on its page hands it over.
-            HandsOver = (session, agent, token) => chat.HandOverAsync(
-                session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(ConfigPath),
-                onEnded: (ended, state) => Ended(eventBus, ended, state), token),
-            // CHATFLOW1e: a chat run's second-opinion findings reach its conversation through this shell's chat runner, a turn of their own only
-            // between turns, or its ended conversation resumed with them.
-            SendsBack = chat,
-            // SESSCTX1c part B: a closed quest's session whose conversation is proven lost goes on as a conversation in its tree, through
-            // this shell's chat runner, handed Daoris's brief and the person's words.
-            GoesOnLost = (session, why, token) => chat.GoOnLostAsync(
-                session, why, DriverConfig.Load(ConfigPath), onEnded: (ended, state) => Ended(eventBus, ended, state), token),
-            // LIMITRESUME1c (D206 §3.4): the conversations that wait for an account, woken by this shell's chat runner beside each look.
-            Limits = async (looked, token) =>
-            {
-                await moves.LookAsync(token).ConfigureAwait(false);
-                await chat.WakeLimitsAsync(looked, onEnded: (ended, state) => Ended(eventBus, ended, state), token).ConfigureAwait(false);
-                // FOUNDATION1f-v part a: a hand-over the take-up left standing under this run (a dead run's, an older build's box imported)
-                // is taken beside the look, as the come-up takes the ones it finds.
-                await chat.TakeHandOversAsync((ended, state) => Ended(eventBus, ended, state), token).ConfigureAwait(false);
-            },
-        };
-        // TAKEWAITS1: a word said while a conversation move stands is held until it ends, read from the move record.
-        Words.TakeStanding = moves.Stands;
-        // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
-        _focus.Ready(_watch.Focused);
-        // FABRIC-EVENT4: and the record files' watchers, reopened at a resume as the requests folder's are.
-        using var filesResumed = Power?.Hear(_watch.Resumed);
-        await _watch.RunAsync(
-            async (report, ticked) =>
-            {
-                failures.Ran();
-
-                // Observed either way, so turning notifications back on does not then announce
-                // everything that happened while they were off — the switch is about being TOLD.
-                var read = await parks.LookAsync(
-                    report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), ct)
-                    .ConfigureAwait(false);
-                // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
-                var attend = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
-                // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): recording is not telling.
-                Notices.Keep(attend);
-                foreach (var item in attend.Where(each => NotifyRule.Tells(each, ticked.Notify))) await AttendAsync(item).ConfigureAwait(false);
-
-                // Forwarded when the tick has something to say: it did something, or what it says
-                // about the sitting quests CHANGED. The considerations are a standing answer the
-                // Overview renders — "why is this sitting" (D46 §3) — so a change has to reach the
-                // page, and a stable set must not: every tick the page receives refetches four
-                // queries, and a machine with one held quest would otherwise send one every poll.
-                var considered = Considerations.Signature(report.Considerations);
-                // …or the parks were read again (SESSUX1i): a park read a look after its verdict, its first read refused,
-                // still has to reach the row its wait and its number are said on.
-                var changed = considered != lastConsidered || read is not null;
-                lastConsidered = considered;
-                // …or what the waits say (UX6d): an intake held on its accounts, or let go, moves no consideration.
-                var waited = WaitsSignature(report.Waits);
-                changed |= waited != lastWaited;
-                lastWaited = waited;
-                // …or what waits on the person at a second opinion (XAGENT1g3): the route reads the look's judgments, so a changed one
-                // has to reach the page, which asks the route again at the tick.
-                var opinions = report.JudgedOpinions.Cast<OpinionJudged>().ToList();
-                var judged = JudgedSignature(opinions);
-                changed |= judged != lastJudged;
-                lastJudged = judged;
-                // …or what the look said (IDLECPU1): a line said again at every look, a standing hold or a remote that does not
-                // answer, is no change, and an idle machine that forwarded it made the page ask every list again every look.
-                var said = LinesSignature(report.Events);
-                changed |= said != lastSaid;
-                lastSaid = said;
-
-                // What this tick held for trust, kept for the screen's grant to be checked against
-                // (D73) — replaced whole, so a folder the driver stopped holding cannot be granted.
-                Trust.Record(report.Untrusted);
-
-                // And what it parked by its strikes (HELP10), replaced whole the same way, so Ask Daoris proposes a
-                // retry only of a quest the drawer would offer Retry on.
-                Parked.Record(report.Considerations);
-
-                // And all of it, whole, for the session list's groups (SESSUX1a): parked and awaiting reply are its verdicts;
-                // with the cool-offs it held starts on, which a record whose words one holds names (MSG1f2).
-                Look.Record(report.Considerations, report.Waits);
-                // And the second-opinion gates it judged, whole (XAGENT1g3), for *What needs you* to read without running a gate.
-                Judged.Record(opinions);
-                // And the considerations as the page reads them, each with its park and its wait, kept for *What needs you*'s judge
-                // whether or not this tick is forwarded (PUSH1d4), and the same ones the tick below hands the page.
-                var sitting = report.Considerations
-                    .Select(consideration => TickConsideration(
-                        consideration,
-                        parks.Latest.FirstOrDefault(park =>
-                            string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)),
-                        // The wait holding it on a cooling account, if one does (TOOL4g, D125 §4).
-                        report.Waits.FirstOrDefault(wait =>
-                            wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase))))
-                    .ToArray();
-                RecordConsidered(sitting);
-                // And the driver's state judged again (PUSH1a, D182), pushed only where it moved: what runs and what waits for review
-                // move at a look, and a terminal's edit of `driver.json` is read here. A wake only asks; the slice's worker judges.
-                DriverSlice.Wake();
-                // And who needs the person (PUSH1d4): what the look kept above (its trust holds, its considerations, its second opinions)
-                // and the helpers' asks it wrote are read at the slice's judgement, which pushes only a row that moved.
-                Slices.Find(AttentionStateSlice.Name)?.Wake();
-
-                // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
-                // ask made by the other door — a terminal, a teammate's sync — moves nothing above,
-                // so a quiet tick never told the page and the band missed it until a reload. Read
-                // here because the tick reads asks only when an intake is named. A host that answers
-                // no ask door changes nothing.
-                var asked = await AskedAsync(service, ct).ConfigureAwait(false);
-                if (asked is not null && asked != lastAsked)
-                {
-                    changed = true;
-                    lastAsked = asked;
-                }
-
-                // 🔴 And the sessions (UX5 U13), for the same reason: a conversation started or ended
-                // from the main window moves nothing this tick reports, so the monitor and a detached
-                // window, which hear of sessions only by a tick, never showed it. Seen on the window: a
-                // chat opened in `game`, and a minute later the monitor still did not have it.
-                var active = await ActiveAsync(service, ct).ConfigureAwait(false);
-                if (active is not null && active != lastActive)
-                {
-                    changed = true;
-                    lastActive = active;
-                }
-
-                // 🔴 And the registry (FG4): a folder imported from a terminal, a retire, a re-wire —
-                // none moves anything above, and the page said *no workspace yet* over 29 repositories
-                // just registered, until it was reloaded.
-                var registered = await RegisteredAsync(service, ct).ConfigureAwait(false);
-                var registryMoved = false;
-                if (RegistryHeard(Facts, registered, lastRegistered))
-                {
-                    changed = true;
-                    registryMoved = lastRegistered is not null;
-                    lastRegistered = registered;
-                }
-
-                // What this look moved of the rules, the registry and the knowledge index, told as the scopes' own changes (FOUNDATION1s):
-                // the page's tick asks none of them again, since a press's change reaches it the same way. Part B: the rules where their
-                // reading moved, never at each line said about them; the index while it feeds.
-                var indexMoved = IndexRead.Moved(await IndexFeed.ReadAsync(doors, ct).ConfigureAwait(false));
-                if (LookScopes(RulesRead.Read(Home).Moved, registryMoved, indexMoved) is var moved && moved != StateScopes.None)
-                {
-                    StatePublisher.Publish(eventBus, moved);
-                }
-
-                if (report.PlannedAnything || changed)
-                {
-                    await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
-                    {
-                        // What the look considered, the trust holds and the waits are the considerations' slice's, pushed
-                        // when they move (FOUNDATION1s); the tick says only that something moved.
-                        Events = report.Events,
-                    }).ConfigureAwait(false);
-                }
-            },
-            // An unattended loop outlives its service's restarts — say so, wait, look again. Said once
-            // until a tick runs again, and a failure it can name is named (UX5 U30).
-            onError: error => failures.Failed(error) is { } said
-                ? eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { said.Code, said.Message })
-                : Task.CompletedTask,
-            ct).ConfigureAwait(false);
-    }
+    public void AnnouncePipe(string pipe) => Address.AnnouncePipe(pipe);
 
     /// <summary>
     /// A conversation answered the person (NOTIFY1a, <see cref="ChatRunner.Answered"/>): told as the tick's attention is, while
@@ -1056,7 +543,7 @@ public sealed class DriverLoop(
         {
             Workspace = MainWindowScopes.WorkspaceOf(Slices.Find(SessionsStateSlice.Name)?.Snapshot(), null, item.Session, null),
         });
-        return NotifyRule.Tells(item, Notifying()) ? AttendAsync(item) : Task.CompletedTask;
+        return NotifyRule.Tells(item, Notifying()) ? AttentionTold.TellAsync(eventBus, item) : Task.CompletedTask;
     }
 
     /// <summary>
@@ -1067,140 +554,17 @@ public sealed class DriverLoop(
     public bool Notifying() => NotifyRule.SwitchOn(ConfigPath);
 
     /// <summary>
-    /// One news teller as a journal feed's teller (FOUNDATION1 m-ii): its rows claimed from its own cursor, and each claimed piece made the
-    /// attention event the notifier reads, told while the machine's notify switch is on and never while it is off.
+    /// The loop's service, handed to the routes, and the page told <c>DRIVER_READY</c> (LOOK2a): until now every route that reads the
+    /// service refused <i>still coming up</i>, and from now it answers, its conversations with it (<see cref="LoopComeUp"/>). Called by
+    /// the loop once its host answers; public so the tests hold what the page is told.
     /// </summary>
-    private JournalTeller NewsFeed(string name, News news, ServiceClient service, Func<JournalEntry, bool> takes, CancellationToken ct)
-    {
-        var teller = new NewsTeller(
-            news, name, takes, () => DateTimeOffset.UtcNow,
-            async pieces =>
-            {
-                foreach (var piece in pieces)
-                {
-                    var item = await NewsAttention.OfAsync(service, piece, ct).ConfigureAwait(false);
-                    // Kept in Notifications whatever the switch says (NOTIFY2f): recording is not telling.
-                    Notices.Keep([item]);
-                    if (NotifyRule.Tells(item, Notifying())) await AttendAsync(item).ConfigureAwait(false);
-                }
-            })
-        {
-            Incomplete = batch => log?.Warn("news.incomplete", ("teller", name), ("store", batch.Store), ("floor", batch.Floor)),
-            Refused = why => log?.Warn("news.refused", ("teller", name), ("why", why)),
-        };
-        return new JournalTeller(teller.TellAsync, () => news.Cursor(name), position => news.Advance(name, position));
-    }
-
-    private Task AttendAsync(AttentionEvent item) => AttentionTold.TellAsync(eventBus, item);
-
-    /// <summary>
-    /// A conversation another Daoris process runs told its turns anew, or left (CLITURN1): the windows hear its queue as
-    /// <c>SESSION_QUEUED</c>, read the way <c>SESSION_QUEUE</c> reads it. A service that does not answer tells nothing; the next change tells.
-    /// </summary>
-    private async Task TurnedAsync(string session, CancellationToken ct)
-    {
-        try
-        {
-            var reach = await Words.ReachAsync(session, ct).ConfigureAwait(false);
-            await eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach)).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is OperationCanceledException or HttpRequestException or DriverException)
-        {
-            // Nothing known is nothing claimed: the page asks again when it opens the conversation.
-        }
-    }
-
-    /// <summary>
-    /// The loop's service, handed to the routes, and the page told (LOOK2a): until now every route that reads the
-    /// service refused *still coming up*, and from now it answers.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>The page asks again on this, not on a tick.</b> A page opened on a screen that reads the service asks at
-    /// once, is refused, and until LOOK2a kept that refusal until something else asked again: the first tick, which can
-    /// wait on a remote's sync or on another driver's lock (DRV8a). Settings → Workspace said no repository had a line
-    /// until *Bring up to date* happened to ask again. <c>DRIVER_READY</c> is said once, the moment the refusals stop.</para>
-    ///
-    /// <para>The service holds its registry the moment it answers at all (its store is read on each ask), so the
-    /// service being handed over is the whole of being ready. Called by the loop once its host answers; public so the
-    /// tests hold what the page is told.</para>
-    ///
-    /// <para><b>Its conversations come up with it</b> (D49 §3): a chat needs the service that holds its record, so the
-    /// runner is handed over here, and the routes and a terminal's words (MSG1e2) reach it from now. Two things only the
-    /// loop does for them (MSG1c2): a chat the runner takes up by itself announces its end, since no route that started it
-    /// is there to hear it; and the words kept on an ended chat while no shell ran are taken up now, in the background, so
-    /// no look waits on them.</para>
-    /// </remarks>
     /// <param name="chat">The loop's conversations, built over <paramref name="service"/>; null keeps none.</param>
     public async Task ComeUpAsync(ServiceClient service, ChatRunner? chat = null)
     {
-        // Words held while a session winds up are tried the moment its record moves here (MSG1d), and what a word said now
-        // would do is told again as a record moves or a later session of its quest opens (MSG1f2).
-        service.Moved += Words.OnMoved;
-        service.Opened += Words.OnOpened;
-        // FABRIC-EVENT5a: every move of a record here (words taken up on an ended conversation, among them, and the move back where
-        // the words were withdrawn before the run began, which announces no end) tells the windows `sessions` for it, so Ask Daoris's
-        // list is not read again every 1.5 s while words wait, and a page that read `working` is told the record is not.
-        service.Moved += moved => StatePublisher.Publish(eventBus, StateScopes.Sessions, moved.Session);
-        service.ActorKept += session => StatePublisher.Publish(eventBus, StateScopes.Sessions, session);
-        // SETUPSTATE1: a follow that sent a registration (a set-up's line registered by the look, a landing's press, the row's Refresh)
-        // tells the windows `registry`, so a repository set up from its page reads adopted with no reload. No route declares the look's.
-        service.RegistryFollowed += followed =>
-        {
-            if (followed.Sent) StatePublisher.Publish(eventBus, StateScopes.Registry);
-        };
-        Words.Reached += (session, reach) =>
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach));
-
-        // What a person told a driven session, waiting for its turn to end (SESS3), told as the queue is — and `Listening`
-        // false once it stops taking any, so the page takes its box away. An open door's reach rides it (MSG1f2); one that
-        // closed leaves the session winding up, which only its record answers for, so that is told once it has.
-        Processes.HeldChanged += (session, queue) =>
-        {
-            var reach = queue.Taking ? Words.ReachHere(session) : null;
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
-            {
-                Session = session,
-                // Each with the id it is taken back or reworded by (QUEUEEDIT1a).
-                Queued = queue.Queued.Select(ChatMessage.FromAgent).Select(ConversationRoutes.Said).ToArray(),
-                queue.Taking,
-                // An open inbox always has a turn in hand; a closed one tells Idle.
-                Listening = queue.Taking,
-                Reach = ConversationRoutes.ReachOf(reach),
-            });
-            if (reach is null) Words.Tell(session);
-        };
-
+        LoopComeUp.HearService(this, eventBus, service);
         if (chat is not null)
         {
-            // Where a conversation's turns stand, as it moves (CONV4a): whether one is in flight, and what is waiting, which
-            // is in no record until it is sent. Each change is the whole state, so a missed one costs nothing. What a word said
-            // now would do rides it where the conversation runs here (MSG1f2); one that ended is told once its record answers.
-            chat.QueueChanged += (session, queue) =>
-            {
-                var reach = Words.ReachHere(session);
-                _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
-                {
-                    Session = session,
-                    // The words, the names of their files — never where the files are kept — and each one's id (QUEUEEDIT1a).
-                    Queued = queue.Queued.Select(ConversationRoutes.Said).ToArray(),
-                    queue.Taking,
-                    // Whether what waits, waits for the door to open rather than for a turn (HELP4).
-                    queue.Opening,
-                    // When its last turn ended here (RAIL2): the chat's last move, which its record never
-                    // says. Machine-local, like everything this event carries.
-                    LastTurn = queue.LastTurnEnded,
-                    Reach = ConversationRoutes.ReachOf(reach),
-                });
-                if (reach is null) Words.Tell(session);
-            };
-            chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
-            // A conversation that answered the person (NOTIFY1a), judged by the runner as its turns move: told as the tick's attention.
-            chat.Answered += item => _ = AnsweredAsync(item);
-            // A hand-over's or a curve move's take is over (HANDWORDS1): the words held while it was taken go to the conversation
-            // that continues it, and what a word said to the old one now would do is told again.
-            chat.TakeEnded += Words.OnTakeEnded;
-            // An Ask Daoris conversation going on writes its room as an open does (ASKHIST1), from the module's reading.
-            chat.DescribeHelp = ct => DescribeHelp is { } describe ? describe(ct) : Task.FromResult<HelpMachine?>(null);
+            LoopComeUp.HearChat(this, eventBus, chat);
             Chat = chat;
         }
 
@@ -1209,34 +573,17 @@ public sealed class DriverLoop(
 
         if (chat is not null)
         {
-            var stopping = _stopping.Token;
+            var stopping = _state.Stopping.Token;
             _ = Task.Run(() => chat.TakeUpAsync(stopping), stopping);
         }
 
-        // AGENTSPLACE1b2: a place's apply that a stop left uncertain is read by its postcondition, in the background, asking and writing nothing
-        // but the receipt: what it found is the receipt's, and a press of the same plan goes on from there.
-        var counting = _stopping.Token;
-        Settling = Task.Run(() => SettlePlacesAsync(service, counting));
+        // AGENTSPLACE1b2: a place's apply that a stop left uncertain is read by its postcondition, in the background.
+        var counting = _state.Stopping.Token;
+        Settling = Task.Run(() => LoopComeUp.SettlePlacesAsync(this, service, counting));
     }
 
     /// <summary>The come-up's reading of the receipts of places' applies (AGENTSPLACE1b2); complete where it ended or was not begun, so a test holds it.</summary>
     public Task Settling { get; private set; } = Task.CompletedTask;
-
-    private async Task SettlePlacesAsync(ServiceClient service, CancellationToken ct)
-    {
-        try
-        {
-            var config = DriverConfig.Load(ConfigPath);
-            var doors = new PlaceApplyDoors(
-                new PlaceWorld(service), new SetupWorld(service, Home), Home, PluginCatalog.Load(Home, AdapterSet.Built().Names), DriverContext.DoorOf(this, config),
-                () => DriverConfig.Load(ConfigPath), _ => throw new InvalidOperationException("settling writes no configuration"), DateOnly.FromDateTime(DateTime.Now));
-            await PlaceApplies.SettleAllAsync(doors, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            // Unread, and left as it was: the receipt keeps what it said, and a press of its plan reads again.
-        }
-    }
 
     /// <summary>
     /// A conversation's end, as the page's one event for it (D49 §3): the session and the state its record took. One writer,
@@ -1258,13 +605,7 @@ public sealed class DriverLoop(
     /// Whether this process's journal reader was last answered by a host that keeps the journal: false before its first answer, against a
     /// host from before it, and while the host refuses or drops the ask, when a reader of <see cref="PartEndedType"/> keeps its old surface.
     /// </summary>
-    public bool HearsJournal
-    {
-        get => Volatile.Read(ref _hearsJournal);
-        private set => Volatile.Write(ref _hearsJournal, value);
-    }
-
-    private bool _hearsJournal;
+    public bool HearsJournal => _state.HearsJournal;
 
     /// <summary>
     /// A conversation's start refused at its open went on in its replacement (MODELROLE1d2, D205 §3.5(b)): <c>{ from, to }</c>, the refused
@@ -1289,83 +630,6 @@ public sealed class DriverLoop(
     /// <summary>This home's lease, waited for by the loop for its life (<see cref="HomeHold"/>); null when the shell closes first.</summary>
     public Task<HomeLease?> HoldHomeAsync(CancellationToken ct) => HomeHold.WaitAsync(Home, HoldRetry, TellAfter, eventBus, log, ct);
 
-    /// <summary>What the asks say this tick, or null when the host could not answer — never a change.</summary>
-    private static async Task<string?> AskedAsync(ServiceClient service, CancellationToken ct)
-    {
-        try
-        {
-            return Asks.Signature(await service.AsksAsync(ct).ConfigureAwait(false));
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// What a look moved that the page reads by pull or a slice reads by scope, as scopes (FOUNDATION1s, D182 point 7): the rules, where
-    /// their reading moved (<see cref="RulesReading"/>; a retry line said again each look moves nothing); the registry, where its signature
-    /// moved; and the repositories, where the knowledge index fed further (<see cref="IndexFeed"/>). Each first reading is the page's own.
-    /// </summary>
-    public static StateScopes LookScopes(bool rulesMoved, bool registryMoved, bool indexMoved) =>
-        (rulesMoved ? StateScopes.Rules : StateScopes.None)
-        | (registryMoved ? StateScopes.Registry : StateScopes.None)
-        | (indexMoved ? StateScopes.Repositories : StateScopes.None);
-
-    /// <summary>
-    /// Whether the registry's signature the tick read is a change. A change also wakes the machine's facts (REGWAKE1): a repository
-    /// imported from a terminal moves no ledger family, so the pushed lines saw it only at the facts' deadline. The first
-    /// signature heard (null before) is not a change to wake for.
-    /// </summary>
-    public static bool RegistryHeard(MachineFacts facts, string? registered, string? last)
-    {
-        if (registered is null || registered == last) return false;
-        if (last is not null) facts.Wake(HelpFacts.Machine, HelpFacts.Whole);
-        return true;
-    }
-
-    /// <summary>
-    /// The workspace the registry placed each repository in, as the last tick read it (SUPERVISOR1e): what a workspace's appointment
-    /// covers, read by the judge under its lock, which never awaits. Empty until the first tick reads the registry.
-    /// </summary>
-    private volatile IReadOnlyDictionary<string, string> _placed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>What the registry holds, or null when the host could not answer — never a change.</summary>
-    private async Task<string?> RegisteredAsync(ServiceClient service, CancellationToken ct)
-    {
-        try
-        {
-            var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
-            var placed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var each in registry)
-            {
-                if (each.Workspace is { Length: > 0 } workspace) placed.TryAdd(each.Repository, workspace);
-            }
-
-            _placed = placed;
-            // The first answer, and a lane moving, tell the at-work judge: the hint's standing waits on the registry (COWORKVIEW1e-iii).
-            if (HintStanding.Hear(registry)) AtWork.JudgeStandings();
-            return Repositories.Signature(registry);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>Which sessions are active and how, or null when the host could not answer — never a change.</summary>
-    private static async Task<string?> ActiveAsync(ServiceClient service, CancellationToken ct)
-    {
-        try
-        {
-            return ActiveSessions.Signature(await service.ActiveSessionsAsync(ct).ConfigureAwait(false));
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            return null;
-        }
-    }
-
     /// <summary>
     /// Stop, bounded: an in-flight session is ended and recorded `stopped` by the driver itself, and so is
     /// a conversation — the loop's run ends by disposing its chat runner, inside its client's scope.
@@ -1384,12 +648,7 @@ public sealed class DriverLoop(
 
         // Then the address, so a terminal stops finding a service this Daoris is about to let go (FINDDAORIS1), and the lease
         // after it, which the loop lets go as it ends.
-        lock (_announcing)
-        {
-            _address?.Dispose();
-            _address = null;
-            _stopping.Cancel();
-        }
+        Address.Withdraw();
 
         pipe?.Dispose();
 
@@ -1407,7 +666,7 @@ public sealed class DriverLoop(
         // The plugins' processes go with the loop (D64 §4, rule 3): registrations are effects, and
         // the effect ends here. Bounded per plugin by the set itself; a plugin that will not leave is
         // ended rather than waited for.
-        var hooks = Interlocked.Exchange(ref _hooks, null);
+        var hooks = _state.TakeHooks();
         if (hooks is not null)
         {
             try
@@ -1425,6 +684,6 @@ public sealed class DriverLoop(
     {
         Stop();
         Facts.Dispose();
-        _stopping.Dispose();
+        _state.Stopping.Dispose();
     }
 }

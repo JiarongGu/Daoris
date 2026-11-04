@@ -104,7 +104,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
 
         if (_lives.TryGetValue(key, out var life) && life.Action is "login" or "login-new") life.Heard(text, _loop.Log);
-        _ = DriverLoop.EmitOutput(_events, key, [line]);
+        _ = OutputTold.TellAsync(_events, key, [line]);
     }
 
     /// <summary>

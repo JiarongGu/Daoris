@@ -52,8 +52,8 @@ public sealed class DriverLoopAddressTests : Bridge
     [Fact]
     public void The_loop_leaves_the_address_once_the_service_answers()
     {
-        var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs"));
-        var run = source[source.IndexOf("private async Task RunAsync()", StringComparison.Ordinal)..];
+        var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "LoopRun.cs"));
+        var run = source[source.IndexOf("private async Task<bool> HostUpAsync(", StringComparison.Ordinal)..];
 
         // The host the shell began early, or brought up here (STARTFAST1b): either way the supervisor's answer.
         var ensured = run.IndexOf("supervisor.UpAsync(ct)", StringComparison.Ordinal);
@@ -188,13 +188,17 @@ public sealed class DriverLoopAddressTests : Bridge
     [Fact]
     public void The_loop_serves_the_pipe_once_it_holds_the_home_and_names_it_after()
     {
-        var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs"));
-        var run = source[source.IndexOf("private async Task RunAsync()", StringComparison.Ordinal)..];
+        var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "LoopRun.cs"));
+        var run = source[source.IndexOf("public async Task RunAsync()", StringComparison.Ordinal)..];
 
-        var held = run.IndexOf("await HoldHomeAsync(ct)", StringComparison.Ordinal);
-        var served = run.IndexOf("Pipe?.Serve()", StringComparison.Ordinal);
-        var named = run.IndexOf("AnnouncePipe(", StringComparison.Ordinal);
-        Assert.True(held > 0 && served > held && named > served, $"held at {held}, served at {served}, named at {named}");
+        var held = run.IndexOf("await loop.HoldHomeAsync(ct)", StringComparison.Ordinal);
+        var called = run.IndexOf("ServePipe();", StringComparison.Ordinal);
+        var serve = run[run.IndexOf("private void ServePipe()", StringComparison.Ordinal)..];
+        var served = serve.IndexOf("Pipe?.Serve()", StringComparison.Ordinal);
+        var named = serve.IndexOf("AnnouncePipe(", StringComparison.Ordinal);
+        Assert.True(
+            held > 0 && called > held && served > 0 && named > served,
+            $"held at {held}, called at {called}, served at {served}, named at {named}");
     }
 
     private static async Task UntilAsync(Func<bool> condition)

@@ -42,7 +42,7 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
         // The trees domain's two, an entry's or an ask's Accept (ACCEPTALL1), and the clean-up's and bringing up to date's lists a
         // terminal asks for, which say a plugin's own lines into their answer (RPCOPEN1). Ask Daoris hands no branch on (D233).
         Assert.Equal(4, built.Count(call => call.Kind == "LandingPlugins"));
-        Assert.Contains(built, call => call is { Kind: "HookSet", File: "DriverLoop.cs" });
+        Assert.Contains(built, call => call is { Kind: "HookSet", File: "LoopRun.cs" });
         Assert.All(built, call => Assert.True(
             Regex.IsMatch(call.Call, @"\blog:\s") && Regex.IsMatch(call.Call, @"\bhealth:\s"),
             $"{call.File} builds a {call.Kind} without the loop's log and health: {call.Call}"));
@@ -83,7 +83,7 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     [Fact]
     public void The_loops_conversations_are_handed_its_log_for_the_servers_they_are_handed()
     {
-        var source = File.ReadAllText(SourceFiles.Module("DriverLoop.cs"));
+        var source = File.ReadAllText(SourceFiles.Module("LoopRun.cs"));
         var built = Regex.Matches(source, @"new ChatRunner\(").Select(call => source[call.Index..source.IndexOf(';', call.Index)]).ToList();
 
         var call = Assert.Single(built);

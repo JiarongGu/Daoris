@@ -1007,12 +1007,12 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     [Fact]
     public void The_shells_loop_watches_the_requests_with_its_own_registry()
     {
-        var loop = File.ReadAllText(SourceFiles.Module("DriverLoop.cs"));
+        var loop = File.ReadAllText(SourceFiles.Module("LoopRun.cs"));
 
-        Assert.Contains("new SessionRequestWatch(homeDirectory, Processes, () => Service)", loop);
+        Assert.Contains("new SessionRequestWatch(homeDirectory, loop.Processes, () => loop.Service)", loop);
         Assert.True(
             loop.IndexOf("new SessionRequestWatch(", StringComparison.Ordinal) < loop.IndexOf("HoldHomeAsync(ct)", StringComparison.Ordinal),
-            "the watch starts before the loop waits for the home's lock, so a conversation is reached meanwhile");
+            "the watch starts before the loop waits for the home's lock, so a conversation is reached");
     }
 
     /// <summary>
