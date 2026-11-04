@@ -142,8 +142,6 @@
   "src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs": 77912,
   "src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs": 99663,
   "src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs": 72098,
-  "src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs": 103394,
-  "src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs": 74280,
   "src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs": 54422,
   "src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs": 173614,
   "src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs": 46876,
