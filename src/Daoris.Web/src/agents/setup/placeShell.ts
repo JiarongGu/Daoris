@@ -27,14 +27,12 @@ export function roleNameOf(name: Authored | null | undefined, language: string):
 }
 
 /**
- * Where a section opens itself for something that needs the person, and at which row: a held start opens Roles at that work, and a landing
- * that could not be read opens Workflow at Landing. A declaration owed acceptance opens Gates from the answer Workflow reads, not from here:
+ * Where a section opens itself for something that needs the person, and at which row: a held start opens Roles at that work. A declaration owed acceptance opens Gates from the answer Workflow reads, not from here:
  * a folded section reads nothing.
  */
 export function needOpening(row: PlaceRow): { section: PlaceSection; row: string } | null {
   const held = row.works.find((each) => each.held);
-  if (held) return { section: 'roles', row: held.work };
-  return row.needs.some((each) => each.code === 'landing-unread') ? { section: 'workflow', row: 'landing' } : null;
+  return held ? { section: 'roles', row: held.work } : null;
 }
 
 const capital = (text: string) => (text ? text[0]!.toLocaleUpperCase() + text.slice(1) : text);
