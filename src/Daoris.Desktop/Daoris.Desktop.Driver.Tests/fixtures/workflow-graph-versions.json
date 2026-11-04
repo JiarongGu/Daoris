@@ -8,7 +8,7 @@
     "nodes": [
       { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
       { "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "options": { "brief": "Verify the release", "attachmentSchema": "qa-proof@1" } },
-      { "id": "landing", "kind": "land", "version": 1, "reach": "performed" },
+      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
       { "id": "dependency", "kind": "wait.unit", "version": 1, "reach": "waited" },
       { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" } },
       { "id": "close", "kind": "quest.close", "version": 1, "reach": "performed", "inputs": { "delivery": "acme.deploy/receipt@1" } }
@@ -24,7 +24,7 @@
     ]
   },
   "reads": [
-    {"name": "a graph version", "judged": "both", "graph": true, "problem": null, "digest": "gph-29ff7fd7d66f26275b46d704f4100869",
+    {"name": "a graph version", "judged": "both", "graph": true, "problem": null, "digest": "gph-36636c4158d813c1875b5bd27e54cf40",
      "version": {"version": 2, "at": "2026-10-18T09:00:00Z", "door": "terminal", "schema": 2, "graph": "$graph"},
      "older": "v2: its `steps` is a list of at least one."},
     {"name": "a schema-1 version, with no schema named", "judged": "both", "graph": false, "problem": null, "digest": "75906e6bfc40",
@@ -82,7 +82,7 @@
      "version": {"version": 2, "at": "2026-10-18T09:00:00Z", "door": "terminal", "schema": 2,
        "graph": {"schemaVersion": 2, "entries": ["n"], "end": "n", "nodes": [{"id": "n", "kind": "human", "version": 1, "reach": "pressed"}], "wires": []}},
      "older": "v2: its `steps` is a list of at least one."},
-    {"name": "a graph with two landings: a named version's graph has one (FABRIC-CUTOVER1b)", "judged": "both", "graph": false, "digest": null, "problem": "v2: its graph holds 2 landings, `first` and `second`, and a named workflow's graph lands its work once.",
+    {"name": "a graph with two landings: a named version's graph has one (FABRIC-CUTOVER1b)", "judged": "both", "graph": false, "digest": null, "problem": "v2: its graph does not hold: node `second`: `first` and `second` are both a landing, and a graph holds one `land`.",
      "version": {"version": 2, "at": "2026-10-18T09:00:00Z", "door": "terminal", "schema": 2,
        "graph": {"schemaVersion": 2, "entries": ["n"], "end": "second",
          "nodes": [{"id": "n", "kind": "human", "version": 1, "reach": "pressed"}, {"id": "first", "kind": "land", "version": 1, "reach": "performed"}, {"id": "second", "kind": "land", "version": 1, "reach": "performed"}],
@@ -269,7 +269,7 @@
      "problem": "v1: its graph does not hold: the end `nowhere` names no node of this graph.", "result": null, "version": null},
     {"name": "a line before the landing writes nothing (INTEGRATE1n, F47)", "file": null, "id": "docs-to-pr", "workflowName": "Docs", "door": "terminal", "at": "2026-10-30T09:00:00Z",
      "graph": {"schemaVersion": 2, "entries": ["landing", "line"], "end": "landing",
-       "nodes": [{"id": "landing", "kind": "land", "version": 1, "reach": "performed"}, {"id": "line", "kind": "line", "version": 1, "reach": "observed"}], "wires": []},
+       "nodes": [{"id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": {"method": "merge"}}, {"id": "line", "kind": "line", "version": 1, "reach": "observed"}], "wires": []},
      "problem": "v1: its graph does not hold: node `line`: a `line` observes the landing, and a way to it passes no `land` (`landing`), so it would wait for ever before one.",
      "result": null, "version": null},
     {"name": "a verification pipeline's first version writes its mark (FABRIC-PIPELINE1a)", "file": null, "id": "web-verify", "workflowName": "Verify the line", "pipeline": "verification",
@@ -309,11 +309,7 @@
        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "land", "kind": "landing", "form": "merge", "accept": "you"}]},
        {"version": 2, "at": "2026-10-18T09:05:00Z", "door": "screen", "schema": 2, "graph": "$graph"}]}},
     {"name": "a run bound to a graph version at a steps digest reads it unreadable", "digest": "75906e6bfc40", "version": 2, "identity": null,
-     "unreadable": "the run `r1` is bound to v2 at `75906e6bfc40`, and the file's v2 reads as `gph-29ff7fd7d66f26275b46d704f4100869`: a version is never edited, so its file is not the one the run started on.",
-     "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
-       {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "land", "kind": "landing", "form": "merge", "accept": "you"}]},
-       {"version": 2, "at": "2026-10-18T09:05:00Z", "door": "screen", "schema": 2, "graph": "$graph"}]}},
-    {"name": "a run bound to a version of steps keeps its digest, the identity of D157", "digest": "75906e6bfc40", "version": 1, "identity": "75906e6bfc40", "unreadable": null,
+     "unreadable": "the run `r1` is bound to v2 at `75906e6bfc40`, and the file's v2 reads as `gph-36636c4158d813c1875b5bd27e54cf40`: a version is never edited, so its file is not the one the run started on.",
      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "land", "kind": "landing", "form": "merge", "accept": "you"}]},
        {"version": 2, "at": "2026-10-18T09:05:00Z", "door": "screen", "schema": 2, "graph": "$graph"}]}}
