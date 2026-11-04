@@ -100,9 +100,9 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     [Theory]
     [InlineData("""{ "id": "supervisor", "change": "remove" }""", "may-not-be-off")]
     [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "takes": ["build"] } }""", "mixed-shape")]
-    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "authority": ["answer", "defer"], "holder": "agent" } }""", "appointed-not-configurable")]
-    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "authority": ["answer", "defer"], "holder": "terminal" }, "choices": [{ "agent": "claude" }] }""", "appointed-not-configurable")]
-    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "authority": ["answer", "defer"], "holder": "terminal", "window": 12 } }""", null)]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["answer", "defer"], "holder": "agent" } }""", "appointed-not-configurable")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["answer", "defer"], "holder": "terminal" }, "choices": [{ "agent": "claude" }] }""", "appointed-not-configurable")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["answer", "defer"], "holder": "terminal", "window": 12 } }""", null)]
     public void ROLEONE1_the_supervisor_s_own_press_is_a_role_s_press_its_judge_reads(string json, string? code)
     {
         using var press = JsonDocument.Parse(json);

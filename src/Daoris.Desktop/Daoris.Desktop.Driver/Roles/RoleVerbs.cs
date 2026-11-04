@@ -297,6 +297,7 @@ public sealed class RoleVerb : ChoiceVerb
             if (role.Hold is { } hold)
             {
                 payload["role"]!["filled"] = RoleRecord.Appointed;
+                payload["role"]!["kind"] = hold.Kind;
                 payload["role"]!["authority"] = new JsonArray([.. hold.Acts.Select(act => (JsonNode)JsonValue.Create(act))]);
                 payload["role"]!["holder"] = hold.Holder;
                 payload["role"]!["window"] = hold.Window;
@@ -391,7 +392,7 @@ public sealed class RoleVerb : ChoiceVerb
         var name = current?.Name;
         var takes = current?.Takes ?? [];
         var scope = current?.Scope ?? RoleScope.Everywhere;
-        var hold = current?.Hold;
+        var (acts, holder, window, appointed) = (current?.Hold?.Acts, current?.Hold?.Holder, current?.Hold?.Window ?? RoleHold.DefaultWindow, current?.Hold is not null);
         var entries = new List<ActorChoice>();
         var off = false;
         for (var at = 0; at < rest.Count; at++)
@@ -404,11 +405,11 @@ public sealed class RoleVerb : ChoiceVerb
                 case "--zh": name = NameIn(name, $"zh={Value()}"); break;
                 case "--takes": takes = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]; break;
                 case "--scope": scope = Scope(Value()); break;
-                case "--acts": hold = (hold ?? new RoleHold([], null)) with { Acts = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)] }; break;
-                case "--holder": hold = (hold ?? new RoleHold([], null)) with { Holder = Value() is var holder && holder == "none" ? null : holder }; break;
+                case "--acts": (acts, appointed) = ([.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)], true); break;
+                case "--holder": (holder, appointed) = (Value() is var held && held == "none" ? null : held, true); break;
                 case "--window":
-                    var window = Value();
-                    hold = (hold ?? new RoleHold([], null)) with { Window = int.TryParse(window, out var minutes) ? minutes : throw new ChoiceWords($"`--window {window}` is not whole minutes: {Grammar}.") };
+                    var minutes = Value();
+                    (window, appointed) = (int.TryParse(minutes, out var set) ? set : throw new ChoiceWords($"`--window {minutes}` is not whole minutes: {Grammar}."), true);
                     break;
                 case var flag when flag.StartsWith("--", StringComparison.Ordinal): throw new ChoiceWords($"`{flag}` is not a flag of `driver role set`: {Grammar}.");
                 // ONEWAY1a: a role whose work may be off (Intake, Ask Daoris) is set off here, as the retired `driver intake|helper off` did.
@@ -420,8 +421,14 @@ public sealed class RoleVerb : ChoiceVerb
         if (off && entries.Count > 0) throw new ChoiceWords($"`off` is a role's whole staffing, never beside its choices: {Grammar}.");
         if (name is null) throw new ChoiceWords($"a new role names itself (`--name`): {Grammar}.");
         IReadOnlyList<ActorChoice>? choices = off ? [] : entries.Count > 0 ? entries : null;
-        // An appointed role keeps its acts in place of work; the judge refuses a record holding both.
-        if (hold is not null) return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Appointed, takes, scope, hold)), choices);
+        // An appointed role keeps its acts in place of work, its kind its own or the one its acts name; the judge refuses a record holding both.
+        if (appointed)
+        {
+            var kind = current?.Hold?.Kind ?? AppointedRoles.KindOf(acts ?? [])
+                ?? throw new ChoiceWords($"a new appointed role names the supervisor's acts or the steward's (`--acts`): {Grammar}.");
+            return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Appointed, takes, scope, new RoleHold(kind, acts ?? [], holder, window))), choices);
+        }
+
         if (takes.Count == 0) throw new ChoiceWords($"a new role names the work it takes (`--takes`): {Grammar}.");
         return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Always, takes, scope)), choices);
     }

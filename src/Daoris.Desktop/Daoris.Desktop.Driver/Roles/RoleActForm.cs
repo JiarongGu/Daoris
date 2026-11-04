@@ -29,6 +29,9 @@ public static class RoleRoutes
 {
     /// <summary><c>ROLE_ACT { role, act, generation, form, proof }</c>: <c>Role</c> in the pipe's census.</summary>
     public const string Act = "ROLE_ACT";
+
+    /// <summary>The window's start of the terminal that holds a role staffed by the terminal, its own press alone: <c>Window</c>.</summary>
+    public const string StartTerminal = "START_ROLE_TERMINAL";
 }
 
 /// <summary>

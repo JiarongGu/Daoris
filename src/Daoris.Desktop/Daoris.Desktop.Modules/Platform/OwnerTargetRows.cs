@@ -127,8 +127,8 @@ internal static class OwnerTargetRows
         // The owner's own conversation, begun where it names: no quest.
         None(OwnerNone.OwnConversation, "START_CHAT", "START_HELP");
 
-        // An appointment acts on the role, never on the repository it names, so appointing the supervisor on X never holds the steward on X.
-        None(OwnerNone.Appointment, "SET_APPOINTMENT");
+        // A role's terminal acts on the role, never on the repository its scope names, so starting the supervisor on X never holds the steward on X.
+        None(OwnerNone.RoleTerminal, "START_ROLE_TERMINAL");
 
         // What acts on nothing a role acts on: a folder opened, a notice or a proposal dismissed, a channel or news marked, a card answered
         // (whose press is marked as it runs), a rule.

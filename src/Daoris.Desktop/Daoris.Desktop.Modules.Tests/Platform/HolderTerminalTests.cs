@@ -77,7 +77,7 @@ public sealed class HolderTerminalTests : Bridge
     }
 
     private static HolderOpen Open(string holder, IReadOnlyList<string>? living = null, params string[] roles) =>
-        new(holder, Sentinel, roles.Length == 0 ? [Roles.Supervisor] : roles, DateTimeOffset.Parse("2026-10-24T14:02:00Z"), living ?? []);
+        new(holder, Sentinel, roles.Length == 0 ? [AppointedRoles.Supervisor] : roles, DateTimeOffset.Parse("2026-10-24T14:02:00Z"), living ?? []);
 
     [Fact]
     public void The_argument_vector_is_stated_whole_its_settings_arriving_with_their_quotes_and_the_initial_prompt_last()
@@ -103,8 +103,8 @@ public sealed class HolderTerminalTests : Bridge
         }
         // The prompt names no key, no appointment and no particular role.
         Assert.DoesNotContain(HolderKey.Variable, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
-        Assert.DoesNotContain(Roles.Supervisor, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
-        Assert.DoesNotContain(Roles.Steward, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
+        Assert.DoesNotContain(AppointedRoles.Supervisor, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
+        Assert.DoesNotContain(AppointedRoles.Steward, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -198,8 +198,8 @@ public sealed class HolderTerminalTests : Bridge
         var folder = HolderTerminal.Folder(Home, "h1");
         File.WriteAllText(Path.Combine(folder, "session.txt"), "kept");
 
-        string[] roles = [Roles.Steward, Roles.Supervisor];
-        Assert.True(module.TellHolder(tab, HolderTerminal.Added(Roles.Steward, DateTimeOffset.Parse("2026-10-24T14:05:00Z"), roles), HolderTerminal.Title(roles)));
+        string[] roles = [AppointedRoles.Steward, AppointedRoles.Supervisor];
+        Assert.True(module.TellHolder(tab, HolderTerminal.Added(AppointedRoles.Steward, DateTimeOffset.Parse("2026-10-24T14:05:00Z"), roles), HolderTerminal.Title(roles)));
 
         Assert.Single(terminals.Launched);
         Assert.True(File.Exists(Path.Combine(folder, "session.txt")));

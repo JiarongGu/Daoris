@@ -49,9 +49,9 @@ public sealed class RoleDoorTests : IDisposable
 
         (RoleChange Change, IReadOnlyList<ActorChoice>? Choices, string Code)[] cases =
         [
-            (RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), Opus, "appointed-not-configurable"),
-            (RoleChange.Set(Designer() with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), null, "two-roles-one-work"),
-            (RoleChange.Set(Designer() with { Id = "lead", Hold = new RoleHold(["answer"], RoleHolders.Rules) }), Opus, "mixed-shape"),
+            (RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), Opus, "appointed-not-configurable"),
+            (RoleChange.Set(Designer() with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), null, "two-roles-one-work"),
+            (RoleChange.Set(Designer() with { Id = "lead", Hold = new RoleHold(AppointedRoles.Supervisor, ["answer"], RoleHolders.Rules) }), Opus, "mixed-shape"),
             (RoleChange.Set(Designer() with { Id = "lead", Takes = ["gardening"] }), Opus, "unknown-work"),
             (RoleChange.Set(Designer() with { Id = "steward" }), Opus, "mixed-shape"),
             (RoleChange.Remove(AppointedRoles.Supervisor), null, "may-not-be-off"),
@@ -79,7 +79,7 @@ public sealed class RoleDoorTests : IDisposable
         var supervisor = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
         var steward = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward);
         var place = new RoleRecord("supervisor-engine", AuthoredText.Of("Engine's supervisor"), RoleRecord.Appointed, [], new RoleScope(RoleScope.Repository, "engine"),
-            new RoleHold(AppointedRoles.SupervisorActs, RoleHolders.Rules));
+            new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Rules));
 
         RoleDoor.ApplyAll(Staffing, [
             (RoleChange.Set(supervisor with { Hold = supervisor.Hold! with { Holder = RoleHolders.Terminal, Window = 12 } }), null, null),

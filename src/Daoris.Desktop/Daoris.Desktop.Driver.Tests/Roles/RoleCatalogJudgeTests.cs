@@ -30,7 +30,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     private static string? Code(RoleRefusal? refusal) => refusal?.Code;
 
     private static RoleRecord Supervisor(string id, RoleScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow) =>
-        new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? Workspace(), new RoleHold(AppointedRoles.SupervisorActs, holder, window));
+        new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? Workspace(), new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, holder, window));
 
     /// <summary>D233 point 2: the supervisor and the steward are seeded catalogue roles, judged by the one judge as every role is.</summary>
     [Fact]
@@ -59,7 +59,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", window: 61)))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(steward with { Hold = steward.Hold! with { Holder = RoleHolders.Rules } }))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(steward with { Scope = Workspace() }))));
-        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a") with { Hold = new RoleHold(["answer", "drive"], RoleHolders.Terminal) }))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a") with { Hold = new RoleHold(AppointedRoles.Supervisor, ["answer", "drive"], RoleHolders.Terminal) }))));
         Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Supervisor("a") with { Takes = ["build"] }))));
         Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("a", "build") with { Filled = RoleRecord.Appointed }))));
         Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("steward", "design")))));
@@ -93,7 +93,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     [Fact]
     public void A_mixed_shape_and_an_unknown_work_are_refused_each_by_its_code()
     {
-        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Hold = new RoleHold(["answer"], RoleHolders.Rules) }))));
+        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Hold = new RoleHold(AppointedRoles.Supervisor, ["answer"], RoleHolders.Rules) }))));
         Assert.Equal("unknown-work", Code(Seeded.Judge(RoleChange.Set(Working("a", "gardening")))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("Bad Id", "design")))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Takes = [] }))));

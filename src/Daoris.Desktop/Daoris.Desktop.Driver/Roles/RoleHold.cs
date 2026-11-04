@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The two appointed roles of the catalogue (D233 point 2): the supervisor, who answers a parked session's recorded question with one
-/// offered choice or leaves it to the person, and the steward, who makes development's management acts on the person's behalf. Each is
-/// told by the acts it holds, as a working role is by the work it takes.
+/// The two kinds of appointed role in the catalogue (D233 point 2): the supervisor, who answers a parked session's recorded question with
+/// one offered choice or leaves it to the person, and the steward, who makes development's management acts on the person's behalf. A
+/// record names its kind; its acts are of that kind's vocabulary, as a working role's works are of the work vocabulary.
 /// </summary>
 public static class AppointedRoles
 {
@@ -66,14 +66,14 @@ public static class RoleHolders
 }
 
 /// <summary>
-/// What an appointed role's record holds beside its id, name and scope: its acts (<c>authority</c>), its holder (none is a role not
-/// staffed, which acts on nothing), and the supervisor's window, the minutes an answer is held for the person's <i>Overrule</i>.
+/// What an appointed role's record holds beside its id, name and scope: its kind, its acts (<c>authority</c>), its holder (none is a role
+/// not staffed, which acts on nothing), and the supervisor's window, the minutes an answer is held for the person's <i>Overrule</i>.
 /// </summary>
 /// <remarks>
 /// The supervisor's rules always act first and their act stands; its holder says who answers what they leave: <c>rules</c>, no one,
 /// or <c>terminal</c>. An <c>agent</c> holder reads as the record's shape and is refused by the judge until one is built.
 /// </remarks>
-public sealed record RoleHold(IReadOnlyList<string> Acts, string? Holder, int Window = RoleHold.DefaultWindow)
+public sealed record RoleHold(string Kind, IReadOnlyList<string> Acts, string? Holder, int Window = RoleHold.DefaultWindow)
 {
     /// <summary>The window where a record names none, in minutes.</summary>
     public const int DefaultWindow = 5;
@@ -81,18 +81,16 @@ public sealed record RoleHold(IReadOnlyList<string> Acts, string? Holder, int Wi
     /// <summary>The bounds a window keeps, in minutes: never 0.</summary>
     public const int ShortestWindow = 1, LongestWindow = 60;
 
-    /// <summary>The kind its acts make it (<see cref="AppointedRoles.KindOf"/>).</summary>
-    public string? Kind => AppointedRoles.KindOf(Acts);
-
     /// <summary>Whether a terminal holds it.</summary>
     public bool Terminal => Holder == RoleHolders.Terminal;
 
     /// <summary>Whether <paramref name="minutes"/> is a window a supervisor may keep.</summary>
     public static bool InWindow(long minutes) => minutes is >= ShortestWindow and <= LongestWindow;
 
-    /// <summary>The fields a record writes after <c>filled</c>: <c>authority</c>, <c>holder</c> where one holds it, the supervisor's <c>window</c>.</summary>
+    /// <summary>The fields a record writes after <c>filled</c>: <c>kind</c>, <c>authority</c>, <c>holder</c> where one holds it, the supervisor's <c>window</c>.</summary>
     public void Write(Utf8JsonWriter writer)
     {
+        writer.WriteString("kind", Kind);
         writer.WriteStartArray("authority");
         foreach (var act in Acts) writer.WriteStringValue(act);
         writer.WriteEndArray();
@@ -103,6 +101,8 @@ public sealed record RoleHold(IReadOnlyList<string> Acts, string? Holder, int Wi
     /// <summary>The appointed fields of <paramref name="root"/>, or why they do not read.</summary>
     public static (RoleHold? Hold, string? Why) Read(JsonElement root)
     {
+        var kind = root.TryGetProperty("kind", out var named) && named.ValueKind == JsonValueKind.String ? named.GetString() : null;
+        if (kind is null || !AppointedRoles.Kinds.Contains(kind, StringComparer.Ordinal)) return (null, "names no `kind` of `supervisor` or `steward`");
         if (!root.TryGetProperty("authority", out var listed) || listed.ValueKind != JsonValueKind.Array
             || listed.EnumerateArray().Any(act => act.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(act.GetString())))
         {
@@ -110,21 +110,26 @@ public sealed record RoleHold(IReadOnlyList<string> Acts, string? Holder, int Wi
         }
 
         IReadOnlyList<string> acts = [.. listed.EnumerateArray().Select(act => act.GetString()!)];
-        if (AppointedRoles.KindOf(acts) is null) return (null, "holds acts of no one appointed role");
         var holder = root.TryGetProperty("holder", out var held) && held.ValueKind == JsonValueKind.String ? held.GetString() : null;
         if (holder is not null && !RoleHolders.All.Contains(holder, StringComparer.Ordinal)) return (null, $"is held by `{holder}`, a holder this build does not know");
         var window = root.TryGetProperty("window", out var minutes) && minutes.TryGetInt64(out var set) ? set : DefaultWindow;
-        return InWindow(window) ? (new RoleHold(acts, holder, (int)window), null) : (null, $"holds answers {window} minutes, outside {ShortestWindow} to {LongestWindow}");
+        return InWindow(window) ? (new RoleHold(kind, acts, holder, (int)window), null) : (null, $"holds answers {window} minutes, outside {ShortestWindow} to {LongestWindow}");
     }
 
     /// <summary>
-    /// The judge's word on <paramref name="role"/>'s appointed fields, for every door alike, or null where they may be set: acts of one
-    /// kind, a holder that kind takes, the steward on the machine alone, and a window within its bounds.
+    /// The judge's word on <paramref name="role"/>'s appointed fields, for every door alike, or null where they may be set: a known kind,
+    /// acts of its vocabulary, a holder that kind takes, the steward on the machine alone, and a window within its bounds.
     /// </summary>
     public static RoleRefusal? Judge(RoleRecord role)
     {
         if (role.Hold is not { } hold) return new("mixed-shape", $"`{role.Id}` is appointed and holds no acts: a role takes work or holds acts.");
-        if (hold.Kind is not { } kind) return new("bad-record", $"`{role.Id}` holds acts of no one appointed role: the supervisor's ({string.Join(", ", AppointedRoles.SupervisorActs)}) or the steward's ({string.Join(", ", AppointedRoles.StewardActs)}).");
+        var kind = hold.Kind;
+        if (!AppointedRoles.Kinds.Contains(kind, StringComparer.Ordinal)) return new("bad-record", $"`{role.Id}` is of no kind this build knows: `supervisor` or `steward`.");
+        if (hold.Acts.FirstOrDefault(act => !AppointedRoles.ActsOf(kind).Contains(act, StringComparer.Ordinal)) is { } unknown)
+        {
+            return new("bad-record", $"`{unknown}` is no act of the {kind}'s: one of {string.Join(", ", AppointedRoles.ActsOf(kind))}.");
+        }
+
         if (hold.Holder == RoleHolders.Agent)
         {
             return new("appointed-not-configurable", $"`{role.Id}` is held by an agent, which this build does not run yet: a terminal holds it{(kind == AppointedRoles.Supervisor ? ", or your rules alone" : "")}.");

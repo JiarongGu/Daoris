@@ -37,11 +37,11 @@ public static class OwnerNone
     /// <summary>It acts on nothing a role acts on: a folder opened, a notice read or dismissed, a channel marked.</summary>
     public const string ActsOnNothing = "acts-on-nothing";
 
-    /// <summary>The appointment of a role, which acts on the role and never on the repository it names.</summary>
-    public const string Appointment = "appointment";
+    /// <summary>The start of a role's terminal, which acts on the role and never on the repository its scope names.</summary>
+    public const string RoleTerminal = "role-terminal";
 
     /// <summary>Every reason, the closed list.</summary>
-    public static IReadOnlyList<string> All { get; } = [NamesNothing, OwnConversation, MachineSetting, ActsOnNothing, Appointment];
+    public static IReadOnlyList<string> All { get; } = [NamesNothing, OwnConversation, MachineSetting, ActsOnNothing, RoleTerminal];
 }
 
 /// <summary>A payload's field that names a target, its kind, and whether it holds a list.</summary>
@@ -268,14 +268,14 @@ public static class OwnerMarks
     /// <summary>
     /// The owner's step before a handler (§5.4): what <paramref name="named"/> resolves to, its gates taken beside the owner's other
     /// presses in the fixed order, and its targets marked <c>owner-set</c> in <paramref name="judge"/>'s memory, which cancels every act
-    /// and pending operation on them; the handler runs inside, and the gates are released as the answer is disposed. A judge whose build
-    /// offers no steward marks nothing and takes no gate, so a dark build changes nothing the owner uses.
+    /// and pending operation on them; the handler runs inside, and the gates are released as the answer is disposed. A judge whose steward
+    /// no holder holds marks nothing and takes no gate, so an unstaffed steward changes nothing the owner uses.
     /// </summary>
     /// <param name="standing">That the press runs under D201's standing confirmation, whose covered hold keeps its own memory.</param>
     public static async Task<IAsyncDisposable> EnterAsync(
         StandingConfirmation? judge, IOwnerScopes? scopes, IReadOnlyList<OwnerNamed> named, bool standing, CancellationToken ct)
     {
-        if (judge is not { StewardOffered: true } || named.Count == 0) return Nothing.Held;
+        if (judge is not { StewardStaffed: true } || named.Count == 0) return Nothing.Held;
         var resolved = await ResolveAsync(named, scopes, ct).ConfigureAwait(false);
         var held = await judge.Gates.EnterAsync(resolved.Gates, alone: false, ct).ConfigureAwait(false);
         judge.MarkOwner(resolved, standing);

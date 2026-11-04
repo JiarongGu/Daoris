@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a holder is admitted for a session's repository, and the effective appointment's generation (SUPERVISOR1a-i, D208; the
+/// Whether a holder is admitted for a session's repository, and the effective supervisor's generation (SUPERVISOR1a-i, D208; the
 /// supervisor design §11 row 1a-i): asked at the keeping, at the release and at the admission, each time under the session's decision
-/// lock and holding no lock after its synchronous answer. The door's judge (1a-ii) answers it; until then
+/// lock and holding no lock after its synchronous answer. The door's judge answers it; where none is wired
 /// <see cref="NoDecisionAdmission"/> refuses every act, so nothing keeps a decision outside the tests that inject one.
 /// </summary>
 public interface IDecisionAdmission
 {
-    /// <summary>The effective appointment for <paramref name="repository"/>, or why none admits (<c>not-offered</c>, <c>not-appointed</c>).</summary>
+    /// <summary>The effective supervisor's hold for <paramref name="repository"/>, or why none admits (<c>not-staffed</c>, <c>not-started</c>).</summary>
     DecisionAdmitted Admit(string repository);
 }
 
@@ -18,19 +18,19 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
     public static DecisionAdmitted Refused(string why) => new(null, why);
 
     /// <summary>
-    /// The overrule window the effective appointment set (SUPERVISOR1e, the supervisor design §6.3), within
+    /// The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within
     /// <see cref="QuestionSupervisorDecisions.ShortestWindow"/> and <see cref="QuestionSupervisorDecisions.LongestWindow"/>; null keeps
     /// <see cref="QuestionSupervisorDecisions.Window"/>.
     /// </summary>
     public TimeSpan? Window { get; init; }
 }
 
-/// <summary>The production admission until the door lands (1a-ii): the role is not offered, so every act is refused.</summary>
+/// <summary>The admission where no judge is wired: no terminal holds the supervisor, so every act is refused.</summary>
 public sealed class NoDecisionAdmission : IDecisionAdmission
 {
     public static readonly NoDecisionAdmission Instance = new();
 
-    public DecisionAdmitted Admit(string repository) => DecisionAdmitted.Refused(SupervisorWhy.NotOffered);
+    public DecisionAdmitted Admit(string repository) => DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
 }
 
 /// <summary>
@@ -88,11 +88,15 @@ public static class SupervisorStates
 /// <summary>The §3.1 refusals and §6.1's log reasons, in the route's words.</summary>
 public static class SupervisorWhy
 {
-    public const string NotOffered = "not-offered";
-    public const string NotAppointed = "not-appointed";
+    /// <summary>No terminal holds the supervisor or the steward there: its role is held by the person's rules alone, or by no one.</summary>
+    public const string NotStaffed = "not-staffed";
     public const string NotHolder = "not-holder";
-    public const string Dormant = "dormant";
-    public const string AppointmentChanged = "appointment-changed";
+
+    /// <summary>The role is staffed by the terminal and its terminal is not started this run.</summary>
+    public const string NotStarted = "not-started";
+
+    /// <summary>The hold an act names is not the role's now: its terminal was started again, or its role changed.</summary>
+    public const string RoleChanged = "role-changed";
     public const string NotParked = "not-parked";
     public const string NoQuest = "no-quest";
     public const string QuestionChanged = "question-changed";

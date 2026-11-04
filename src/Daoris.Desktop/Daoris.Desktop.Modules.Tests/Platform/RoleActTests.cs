@@ -57,7 +57,7 @@ public sealed class RoleActTests : IDisposable
     {
         var (judge, key) = Appointed();
 
-        Assert.Equal(StewardActs.Offered, ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry"]);
+        Assert.Equal(["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry"], StewardActs.Table.Keys);
         var judged = Act(judge, key, act, form);
         Assert.True(judged.Covered, judged.Why);
     }
@@ -325,7 +325,7 @@ public sealed class RoleActTests : IDisposable
 
         if (between == "revoke")
         {
-            Assert.True(served.Judge.Appoint(RoleKit.Stewarding(on: false, share: null), _ => throw new InvalidOperationException()).Answer.Done);
+            Assert.Single(served.Judge.Unstaffed());
         }
         else
         {
@@ -392,9 +392,9 @@ public sealed class RoleActTests : IDisposable
         Assert.False(served.Judge.StewardActsNow().Single().Standing);
     }
 
-    /// <summary><c>STATE</c>'s answer names the offered acts and the run's acts, newest first, each with its target and moment, never a key.</summary>
+    /// <summary><c>STATE</c>'s answer names the steward's hold and the run's acts, newest first, each with its target and moment, never a key.</summary>
     [Fact]
-    public async Task The_window_reads_the_offered_acts_and_the_run_s_acts()
+    public async Task The_window_reads_the_stewards_hold_and_the_run_s_acts()
     {
         var world = new World();
         await using var served = await ServedAsync(world);
@@ -402,10 +402,9 @@ public sealed class RoleActTests : IDisposable
 
         var now = served.Judge.Now();
 
-        Assert.Equal(StewardActs.Offered, now.StewardActsOffered);
         var hold = Assert.Single(now.StewardActs);
         Assert.Equal(("hold", "engine", true, false), (hold.Act, hold.Repository, hold.Standing, hold.Waiting));
-        Assert.Equal(StewardActs.Offered, now.Appointments!.Single().Acts);
+        Assert.Equal((AppointedRoles.Steward, 1), (now.Holds!.Single().Role, now.Holds!.Single().Answers));
     }
 
     // ——— The kit.
@@ -496,17 +495,16 @@ public sealed class RoleActTests : IDisposable
         public Task<IReadOnlyList<Consideration>> VerdictsAsync(CancellationToken ct) => Task.FromResult(Verdicts);
     }
 
+    /// <summary>A judge whose catalogue staffs the steward with the terminal, its acts the table's eight.</summary>
     private StandingConfirmation Judge() =>
-        new(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: true, walk: new StandingConfirmationTests.Walked())
-        {
-            Drives = _ => true,
-        };
+        new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked())
+            .Staff(RoleKit.Steward([.. StewardActs.Table.Keys]));
 
     private (StandingConfirmation Judge, string Key) Appointed()
     {
         var judge = Judge();
         judge.Load();
-        var (change, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         return (judge, key!);
     }
@@ -514,7 +512,7 @@ public sealed class RoleActTests : IDisposable
     private static RoleJudgement Act(StandingConfirmation judge, string key, string act, string form)
     {
         var nonce = SupervisorProof.Nonce();
-        return RoleKit.JudgeAct(judge, RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, Roles.Steward), act: act, form: form), nonce);
+        return RoleKit.JudgeAct(judge, RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward), act: act, form: form), nonce);
     }
 
     /// <summary>A driver module whose <c>ROLE_ACT</c> is the door's own handler over the stand-in world and reads.</summary>
@@ -542,7 +540,7 @@ public sealed class RoleActTests : IDisposable
             await using var client = await PipeClient.ConnectAsync(pipe.Name!);
             var hello = await client.HelloAsync(HomeIdentity.Read(home)!);
             var nonce = hello.GetProperty("data").GetProperty("nonce").GetString();
-            var payload = RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, Roles.Steward), act: act, form: form);
+            var payload = RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward), act: act, form: form);
             var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act, payload));
             Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
             return answer.GetProperty("data");
@@ -574,7 +572,7 @@ public sealed class RoleActTests : IDisposable
         Assert.NotNull(pipe.Serve());
         module.Pipe = pipe;
         judge.Load();
-        var (change, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         await Task.CompletedTask;
         return new Served(pipe, provider, judge, scopes, world, key!, _home);

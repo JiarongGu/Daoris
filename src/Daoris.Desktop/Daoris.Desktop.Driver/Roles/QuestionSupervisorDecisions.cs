@@ -136,8 +136,8 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             var admitted = admission.Admit(park.Repository);
             if (admitted is not { Why: null, Generation: { } generation } || generation != answer.Generation)
             {
-                log?.Info("supervisor.refused", ("why", SupervisorWhy.AppointmentChanged));
-                return Task.FromResult(new SupervisorKept(false, null, null, SupervisorWhy.AppointmentChanged));
+                log?.Info("supervisor.refused", ("why", SupervisorWhy.RoleChanged));
+                return Task.FromResult(new SupervisorKept(false, null, null, SupervisorWhy.RoleChanged));
             }
 
             // SUPERVISOR1e (§6.3): held for the window the effective appointment set, read with its generation.
@@ -232,7 +232,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             refused ??= Closed(defer.Session, defer.Question);
             if (refused is null && (admission.Admit(park.Repository) is not { Why: null, Generation: { } effective } || effective != defer.Generation))
             {
-                refused = SupervisorWhy.AppointmentChanged;
+                refused = SupervisorWhy.RoleChanged;
             }
 
             if (refused is not null)
@@ -396,7 +396,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     {
         bool Swept(Live each) => each.Generation == generation
                                  && (repository is null || string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
-        var why = repository is null ? SupervisorWhy.Revoked : SupervisorWhy.AppointmentChanged;
+        var why = repository is null ? SupervisorWhy.Revoked : SupervisorWhy.RoleChanged;
         var swept = 0;
         var sessions = _live.Values.Where(Swept).Select(each => each.Session).Distinct(StringComparer.Ordinal).ToList();
         foreach (var session in sessions)
