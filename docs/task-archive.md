@@ -23110,3 +23110,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **GITMOVED1 — a home moved off ambient credentials only when its release says so** (driver): every home is marked moved at its first start and its SSH remotes with no identity held (`DriverWatch.cs:405`), likely why the work workspace's remotes stood held. The owner settles which is right; then the code says it. → `docs/areas/README.md`, choice 7
 
   **Outcome** 2026-11-04: built with SEVEN1 and DOORSONE1 (merge on main); the help-room goldens were edited by hand and are regenerated at SCOPEVERIFY1.
+
+## ROLEONE1 (2026-11-04)
+
+- [x] **ROLEONE1 — the supervisor and the steward as roles of the one role system** (driver, modules, web; D233 point 2): today appointed outside the catalogue, both dark; they become catalogue roles staffed through the role door (an agent, the person's rules, or the terminal), the appointment machinery that duplicates it retired and what it does that the roles lack moved in. After NOCOMPAT1a. → `docs/areas/roles-and-supervision.md`
+
+  **Outcome** 2026-11-04: both are seeded catalogue roles of the appointed shape (`Roles/RoleHold.cs`), staffed through the role door alone; `SET_APPOINTMENT`, the appointment records, the offered flags and `RoleScopes` retired; the page rows left as ROLEONE1b.
