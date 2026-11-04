@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { MonoWell } from '../../design/ui';
 import { StreamTile } from './StreamTile';
 
@@ -21,6 +22,7 @@ const SESSION: Session = {
 };
 
 const QUEST: Quest = {
+  ...aQuest(),
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

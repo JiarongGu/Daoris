@@ -32,7 +32,7 @@ public sealed record QuestSetUpRefWire(string? Machine, long? Sequence);
 /// <summary>The person's verdict, answered only: <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>.</summary>
 /// <param name="Commit">The commit of the set-up it answers; absent on a skip.</param>
 public sealed record QuestReviewVerdictWire(
-    string Said, QuestSetUpRefWire? SetUp, string? Commit, string? Words, DateTimeOffset? At, string? Machine);
+    string Said, QuestSetUpRefResponse? SetUp, string? Commit, string? Words, DateTimeOffset? At, string? Machine);
 
 /// <summary>What the person requires: their words, quoted, and the check that proves them.</summary>
 /// <param name="Evidence">What Daoris reads itself, each item a path or a gate; answered empty for none.</param>
@@ -46,13 +46,6 @@ public sealed record QuestEvidenceReadWire(
     int? Requirement, string? Path, string? Gate, string? Result, string? Object = null, bool? Changed = null,
     string? Spelled = null);
 
-/// <summary>What Daoris read of a done's evidence: the commit, how it was chosen, the session whose end was read, each item.</summary>
-/// <param name="At">When it was read, answered only, as is <paramref name="Machine"/>.</param>
-/// <param name="Submission">The submission it was read for; a done's verdict names none.</param>
-public sealed record QuestEvidenceVerdictWire(
-    string? Commit, string? How, string? Session = null, IReadOnlyList<QuestEvidenceReadWire?>? Items = null,
-    DateTimeOffset? At = null, string? Machine = null, QuestSubmissionRefWire? Submission = null);
-
 /// <summary>A submission by the machine and sequence that made it, as a close names one.</summary>
 public sealed record QuestSubmissionRefWire(string? Machine, long? Sequence);
 
@@ -64,7 +57,7 @@ public sealed record QuestAnswerWire(int? Requirement, string? Met, string? Depa
 /// <param name="Ended">On a settled conflict only: <c>dropped</c> or <c>brought-forward</c>.</param>
 /// <param name="Forward">The bring-forward that settled it, or else this machine's latest that lost again.</param>
 public sealed record QuestConflictResponse(
-    string Machine, string Attempted, string? Note, DateTimeOffset At, long Sequence,
+    string Machine, [property: PageType(QuestPageTypes.Status)] string Attempted, string? Note, DateTimeOffset At, long Sequence,
     bool? LostToTheReopen = null, string? Ended = null, QuestForwardResponse? Forward = null);
 
 /// <summary>A bring-forward's take and where it stands as a claim reads one: <c>held</c>, <c>unconfirmed</c> or <c>lost</c>.</summary>
@@ -98,22 +91,22 @@ public sealed record AskWorkflowChoiceResponse(string? Kind, string? Workflow, D
 /// <param name="Request">The workflow request's key, <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>.</param>
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
-    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
+    [property: PageType(QuestPageTypes.Status)] string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
     IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments,
-    IReadOnlyList<QuestStepWire> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts,
+    IReadOnlyList<QuestStepResponse> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts,
     string? Awaits = null,
     string? PublishedBy = null,
     bool Deletable = false,
     IReadOnlyList<string>? Lanes = null,
-    IReadOnlyList<QuestRequirementWire>? Requirements = null,
-    IReadOnlyList<QuestAnswerWire>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null,
+    IReadOnlyList<QuestRequirementResponse>? Requirements = null,
+    IReadOnlyList<QuestAnswerResponse>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null,
     string? Short = null,
-    string? Hold = null, bool AwaitsEvidence = false, QuestEvidenceVerdictWire? Evidence = null,
-    QuestReviewWire? Review = null, string? SetUpIn = null, IReadOnlyList<QuestSetUpWire>? SetUps = null,
+    string? Hold = null, bool AwaitsEvidence = false, QuestEvidenceVerdictResponse? Evidence = null,
+    QuestReviewChoiceResponse? Review = null, string? SetUpIn = null, IReadOnlyList<QuestSetUpWire>? SetUps = null,
     IReadOnlyList<QuestReviewVerdictWire>? Verdicts = null,
-    JsonElement? NoteParts = null,
+    [property: PageType(QuestPageTypes.NoteParts)] JsonElement? NoteParts = null,
     string? Closure = null, QuestSubmissionWire? Submission = null,
-    QuestSubmissionRefWire? GrewFrom = null, QuestSubmissionRefWire? SourceReopened = null,
+    QuestSubmissionRefResponse? GrewFrom = null, QuestSubmissionRefResponse? SourceReopened = null,
     QuestReopenWire? Reopened = null,
     IReadOnlyList<QuestConflictResponse>? Settled = null, string? Holder = null, string? Here = null,
     IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null,
@@ -123,7 +116,7 @@ public sealed record QuestResponse(
 
 /// <summary>A quest's own reopen, answered only: the reopen by its machine and sequence, the submission it reopened, the person's words.</summary>
 /// <param name="Session">The session that said the reopened submission's ready.</param>
-public sealed record QuestReopenWire(string Machine, long Sequence, QuestSubmissionRefWire Of, string? Note, DateTimeOffset At, string? Session = null);
+public sealed record QuestReopenWire(string Machine, long Sequence, QuestSubmissionRefResponse Of, string? Note, DateTimeOffset At, string? Session = null);
 
 /// <summary>A taker's submission in a closure graph, answered only; its answers are the quest's <c>Answers</c>.</summary>
 /// <param name="Commit">The commit its evidence was read at, where one was.</param>

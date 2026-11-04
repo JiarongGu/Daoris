@@ -3,11 +3,12 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { SessionRelations } from './SessionRelations';
 
 // SESS1: who a session worked with, beyond its chain — each relation a door, as the strip's are.
 
-const quest = (over: Partial<Quest> & { id: string }): Quest => ({
+const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
   from: 'portal-ui', to: 'iothub', title: over.id, body: '', status: 'Open', filed: '2026-09-29T01:00:00Z', updated: '2026-09-29T01:00:00Z',
   ...over,
 });

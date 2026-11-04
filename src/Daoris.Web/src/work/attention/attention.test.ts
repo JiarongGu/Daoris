@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Ask, Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { Consideration } from '../../data/signals';
 import { byTool } from '../../agents/tools';
@@ -28,7 +29,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

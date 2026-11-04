@@ -11,6 +11,16 @@ public sealed class OptionalBodyAttribute : Attribute;
 [AttributeUsage(AttributeTargets.Property, Inherited = false)]
 public sealed class FromQueryAttribute : Attribute;
 
+/// <summary>
+/// The page's type for a value, as TypeScript spells it, where the wire's own type says less than the host keeps to: the words a
+/// status takes, or the shape of a part the host writes as JSON text.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, Inherited = false)]
+public sealed class PageTypeAttribute(string typeScript) : Attribute
+{
+    public string TypeScript { get; } = typeScript;
+}
+
 /// <summary>Where one of a route's values travels.</summary>
 public enum RouteTravel
 {

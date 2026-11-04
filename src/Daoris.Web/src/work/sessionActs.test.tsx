@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { aQuest } from '../quests/aQuest';
 
 // The one owner of each act on a session (SESSUX1d, D126 §3.1): whichever door pressed it, the row's ⋯ or the page
 // header, the act runs here. Over a mocked bridge, as an organism is held (components plan §3).
@@ -239,7 +240,7 @@ describe('the acts on a session', () => {
   it('hands a pause to the frame with the work it names, and resumes the pause that holds its quest over the driver', async () => {
     const doors = { pause: vi.fn() };
     const { result: withDoor } = acts(doors);
-    const asked = { id: 'abc123', from: 'ask #a1b2c3', to: 'engine', title: 'T', body: '', status: 'Taken' as const, filed: '', updated: '' };
+    const asked = aQuest({ id: 'abc123', from: 'ask #a1b2c3', to: 'engine', title: 'T', status: 'Taken' });
     withDoor.current.run('pauseQuest', { session: session({ state: 'working' }), quest: asked });
     withDoor.current.run('pauseAsk', { session: session({ state: 'working' }), quest: asked });
     expect(doors.pause).toHaveBeenNthCalledWith(1, 's1a2b3c4', { scope: 'quest', id: 'abc123' });

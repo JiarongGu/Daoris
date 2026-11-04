@@ -1,4 +1,5 @@
 import type { Ask, Quest, Session } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import type { SessionGrouping } from './groups';
 import type { EntryPart, SessionEntry } from './entries';
 
@@ -81,7 +82,7 @@ export const EVIDENCE_ASKS: Record<string, string> = {
   '841c38': 'Tidy the settings page',
 };
 
-const quest = (id: string, from: string, to: string, title: string): Quest => ({
+const quest = (id: string, from: string, to: string, title: string): Quest => aQuest({
   id, from, to, title, body: title, status: 'Taken', filed: at(300), updated: at(20),
 });
 

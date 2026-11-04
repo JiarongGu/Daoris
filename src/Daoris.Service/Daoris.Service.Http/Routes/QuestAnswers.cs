@@ -33,7 +33,7 @@ public sealed class QuestAnswers(HostWiring host)
         q.Attachments.Select(a => new QuestAttachmentResponse(
             a.Name, a.Sha256, a.Bytes,
             Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
-        q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body, s.SetUpIn)).ToList(),
+        q.Then.Select(s => new QuestStepResponse(s.To, s.Title, s.Body, s.SetUpIn)).ToList(),
         q.Parent,
         q.Conflicts.Select(c => ToConflict(c, taken?.Conflicts.FirstOrDefault(read => read.Conflict.Machine == c.Machine && read.Conflict.Sequence == c.Sequence)))
             .ToList(),
@@ -41,23 +41,23 @@ public sealed class QuestAnswers(HostWiring host)
         q.PublishedBy,
         deletable,
         q.Lanes,
-        q.Requirements.Select(r => new QuestRequirementWire(
-            r.Quote, r.Check, r.Evidence.Select(e => (QuestEvidenceWire?)new QuestEvidenceWire(e.Path, e.Gate)).ToList())).ToList(),
-        q.Answers.Select(a => new QuestAnswerWire(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
+        q.Requirements.Select(r => new QuestRequirementResponse(
+            r.Quote, r.Check, r.Evidence.Select(e => new QuestEvidenceResponse(e.Path, e.Gate)).ToList())).ToList(),
+        q.Answers.Select(a => new QuestAnswerResponse(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
         q.Held,
         q.Accepted,
         q.Name,
         q.Hold is { } hold ? QuestEvidenceCodes.Spell(hold) : null,
         q.AwaitsEvidence,
         q.Evidence is { } read
-            ? new QuestEvidenceVerdictWire(
+            ? new QuestEvidenceVerdictResponse(
                 read.Commit, read.How, read.Session,
-                read.Items.Select(i => (QuestEvidenceReadWire?)new QuestEvidenceReadWire(i.Requirement, i.Path, i.Gate, i.Result, i.Object, i.Changed, i.Spelled)).ToList(),
+                read.Items.Select(i => new QuestEvidenceReadResponse(i.Requirement, i.Path, i.Gate, i.Result, i.Object, i.Changed, i.Spelled)).ToList(),
                 read.At, read.Machine,
-                read.Submission is { } asked ? new QuestSubmissionRefWire(asked.Machine, asked.Sequence) : null)
+                read.Submission is { } asked ? new QuestSubmissionRefResponse(asked.Machine, asked.Sequence) : null)
             : null,
         // A local set-up's address is absent where it came from another machine, as the wire left it.
-        q.Review is { } chosen ? new QuestReviewWire(chosen.Choice, chosen.Words) : null,
+        q.Review is { } chosen ? new QuestReviewChoiceResponse(chosen.Choice, chosen.Words) : null,
         q.SetUpIn,
         q.SetUps.Count == 0
             ? null
@@ -65,18 +65,18 @@ public sealed class QuestAnswers(HostWiring host)
         q.Verdicts.Count == 0
             ? null
             : q.Verdicts.Select(v => new QuestReviewVerdictWire(
-                v.Said, v.SetUp is { } named ? new QuestSetUpRefWire(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList(),
+                v.Said, v.SetUp is { } named ? new QuestSetUpRefResponse(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList(),
         // The note's parts travel uncleaned, as the note itself does.
         NoteParts.Element(q.NoteParts),
         q.Closure,
         q.Submission is { } submitted
             ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note, q.SubmissionCommit, submitted.Session)
             : null,
-        q.GrewFrom is { } grew ? new QuestSubmissionRefWire(grew.Machine, grew.Sequence) : null,
-        q.SourceReopened is { } reopened ? new QuestSubmissionRefWire(reopened.Machine, reopened.Sequence) : null,
+        q.GrewFrom is { } grew ? new QuestSubmissionRefResponse(grew.Machine, grew.Sequence) : null,
+        q.SourceReopened is { } reopened ? new QuestSubmissionRefResponse(reopened.Machine, reopened.Sequence) : null,
         q.Reopened is { } reopen
             ? new QuestReopenWire(
-                reopen.Machine, reopen.Sequence, new QuestSubmissionRefWire(reopen.Of.Machine, reopen.Of.Sequence), reopen.Note, reopen.At,
+                reopen.Machine, reopen.Sequence, new QuestSubmissionRefResponse(reopen.Of.Machine, reopen.Of.Sequence), reopen.Note, reopen.At,
                 reopen.Session)
             : null,
         taken is { Settled.Count: > 0 } ? taken.Settled.Select(read => ToConflict(read.Conflict, read)).ToList() : null,

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { SessionRelations } from './SessionRelations';
@@ -7,7 +8,7 @@ import { SessionRelations } from './SessionRelations';
 // Who a session worked with (SESS1): asked for by another session, carried on after an answer, and
 // what it asked of other repositories, one answered and one not.
 
-const quest = (over: Partial<Quest> & { id: string }): Quest => ({
+const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
   from: 'engine', to: 'game', title: over.id, body: '', status: 'Open', filed: '2026-09-29T01:00:00Z', updated: '2026-09-29T01:00:00Z',
   ...over,
 });

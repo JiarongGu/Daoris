@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import type { SessionGrouping } from '../groups';
 import { leadingAgentOf, nextPress, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
 
@@ -18,7 +19,7 @@ const grouping = (over: Partial<SessionGrouping> = {}): SessionGrouping => ({
   session: 's1a2b3c4', group: 'working', shown: 'working', archived: false, teammate: false, ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: 'e67690366b56', from: 'ask #f6d947', to: 'engine', title: 'Continue the production half', body: 'b',
   status: 'Open', filed: '2026-10-05T06:00:00Z', updated: '2026-10-05T06:00:00Z', ...over,
 });

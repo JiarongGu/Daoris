@@ -56,9 +56,10 @@ describe('the attended session', () => {
     vi.useRealTimers();
     window.localStorage.setItem('daoris.chainWhole', '1');
     const { buildChain } = await import('../map/chain');
+    const { aQuest } = await import('../quests/aQuest');
     const quests = [
-      { id: 'q1', from: 'ask #a1', to: 'engine', title: 'Develop it', body: '', status: 'Done' as const, filed: NOW.toISOString(), updated: NOW.toISOString() },
-      { id: 'q2', from: 'ask #a1', to: 'engine', title: 'Verify it', body: '', status: 'Open' as const, filed: NOW.toISOString(), updated: NOW.toISOString(), parent: 'q1' },
+      aQuest({ id: 'q1', from: 'ask #a1', to: 'engine', title: 'Develop it', status: 'Done', filed: NOW.toISOString(), updated: NOW.toISOString() }),
+      aQuest({ id: 'q2', from: 'ask #a1', to: 'engine', title: 'Verify it', status: 'Open', filed: NOW.toISOString(), updated: NOW.toISOString(), parent: 'q1' }),
     ];
     const driven = session({ kind: 'driven', quest: 'q2' });
     const { rerender } = render(<AttendedSession session={driven} chain={buildChain('q2', quests, [driven])} />);

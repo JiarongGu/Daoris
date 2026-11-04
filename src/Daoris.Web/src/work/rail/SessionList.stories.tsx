@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { offeredActs } from '../acts';
@@ -23,7 +24,7 @@ const session = (over: Partial<Session> & Pick<Session, 'id' | 'state'>): Sessio
   repository: 'engine', adapter: 'claude-code', kind: 'driven', created: at(95), updated: at(6), ...over,
 });
 
-const quest = (id: string, title: string, to = 'engine'): Quest => ({
+const quest = (id: string, title: string, to = 'engine'): Quest => aQuest({
   id, from: 'game', to, title, body: '', status: 'Taken', filed: at(4000), updated: at(60),
 });
 

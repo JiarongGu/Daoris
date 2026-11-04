@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Ask, Quest, Session } from '../data/api';
+import { aQuest } from './aQuest';
 import {
   answered, askStanding, freshest, keptFilters, latestSessions, questFilters, questGroups, questionOf, questStanding, shownStatus,
   sourceReady, standingStep,
@@ -47,7 +48,7 @@ describe("a closure graph's quests as values", () => {
 
 // Quests' list and its memory as values (FRAME1d, D118 §2, §3f): every list a person could have is an argument.
 
-const quest = (over: Partial<Quest>): Quest => ({
+const quest = (over: Partial<Quest>): Quest => aQuest({
   id: 'abc123', from: 'game', to: 'engine', title: 'A quest', body: 'Why.', status: 'Open',
   filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z', ...over,
 });
