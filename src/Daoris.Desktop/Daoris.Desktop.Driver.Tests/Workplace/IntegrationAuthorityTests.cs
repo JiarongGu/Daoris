@@ -4,9 +4,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// INTEGRATE1e part e4b (D215's note; the integration design §5.2 step 8, §8): the requester's authority judged again at promotion, from the
-/// rule as it stands now and the appointment seam. A person's request stands on its own; Daoris's sweep stands while the rule still says
-/// <c>request: done</c>; a steward's stands while the rule still says <c>request: steward</c>, its act names its generation, and the seam says
-/// its appointment is live. The seam's default reads none, so a steward's request is held. Nothing here starts a process.
+/// line's policy as it stands now and the appointment seam. A person's request stands on its own, as does a version's own step; a line's
+/// policy names no requester, so it reads <c>request: owner</c>, and Daoris's sweep and a steward's request lapse under it before the
+/// appointment is asked. Nothing here starts a process.
 /// </summary>
 public sealed class IntegrationAuthorityTests
 {
@@ -15,6 +15,8 @@ public sealed class IntegrationAuthorityTests
     private const string Tip = "1111111111111111111111111111111111111111";
 
     private static readonly LandingIntegrate Stewarded = new(Request: LandingIntegrate.Steward, Batch: 8, Gates: LandingIntegrate.Declared);
+
+    private static readonly LandingIntegrate Gated = new(Batch: 8, Gates: LandingIntegrate.Declared);
 
     private static DriverConfig Rule(LandingIntegrate? integrate) => DriverConfig.Empty.WithLinePolicy("engine", integrate);
 
@@ -38,75 +40,55 @@ public sealed class IntegrationAuthorityTests
         var seam = new Seam("revoked");
 
         Assert.Null(await IntegrationAuthority.LapsedAsync(Request(IntegrationRequester.Card), DriverConfig.Empty, seam, default));
-        Assert.Null(await IntegrationAuthority.LapsedAsync(Request(IntegrationRequester.Card), Rule(new LandingIntegrate(Request: LandingIntegrate.Owner)), seam, default));
+        Assert.Null(await IntegrationAuthority.LapsedAsync(Request(IntegrationRequester.Card), Rule(new LandingIntegrate()), seam, default));
         Assert.Equal(0, seam.Asked);
     }
 
     /// <summary>
     /// INTEGRATE1g: a unit's <c>integrate</c> node asks on its landing's acceptance, which the door judged. The person's Accept stands on its own,
-    /// as their card does; an automatic landing under Current stands while the rule still says <c>request: done</c>; a version's own step,
-    /// whose landing kept the version as its gate proof, stands whatever the rule says, since a bound version is never edited.
+    /// as their card does; a version's own step, whose landing kept the version as its gate proof, stands whatever the line says, since a bound
+    /// version is never edited; an automatic landing with no version behind it lapses, as the line's policy reads <c>request: owner</c>.
     /// </summary>
     [Fact]
     public async Task A_nodes_request_stands_on_the_acceptance_its_landing_recorded()
     {
         IntegrationRequest Node(string acceptedBy, LandingWorkflow? workflow = null) =>
             Request(IntegrationRequester.NodeStart) with { Route = IntegrationRoutes.Node, Proof = new IntegrationProof(acceptedBy) { Workflow = workflow } };
-        var owner = Rule(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        var owner = Rule(Gated);
 
         Assert.Null(await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Person), owner, new Seam("revoked"), default));
-        Assert.Null(await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Auto), Rule(new LandingIntegrate(Request: LandingIntegrate.Done, Batch: 8, Gates: LandingIntegrate.Declared)), new Seam(null), default));
         Assert.Contains("request: owner", await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Auto), owner, new Seam(null), default), StringComparison.Ordinal);
         Assert.Null(await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Auto, new LandingWorkflow("integrated", 1, WorkflowLevels.Repository)), Rule(null), new Seam(null), default));
     }
 
     [Fact]
-    public async Task Daoris_s_sweep_stands_only_while_the_rule_still_integrates_under_request_done()
+    public async Task Daoris_s_sweep_lapses_under_a_lines_policy_and_where_the_line_carries_none()
     {
         var sweep = Request(IntegrationRequester.Sweep);
 
-        Assert.Null(await IntegrationAuthority.LapsedAsync(sweep, Rule(new LandingIntegrate(Request: LandingIntegrate.Done, Batch: 8, Gates: LandingIntegrate.Declared)), new Seam(null), default));
-        Assert.Contains("request: owner", await IntegrationAuthority.LapsedAsync(sweep, Rule(new LandingIntegrate(Request: LandingIntegrate.Owner)), new Seam(null), default), StringComparison.Ordinal);
+        Assert.Contains("request: owner", await IntegrationAuthority.LapsedAsync(sweep, Rule(Gated), new Seam(null), default), StringComparison.Ordinal);
         Assert.Contains("no longer carries `integrate`", await IntegrationAuthority.LapsedAsync(sweep, Rule(null), new Seam(null), default), StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task A_steward_s_request_stands_only_while_the_rule_says_steward_and_its_appointment_is_live()
-    {
-        var request = Request(IntegrationRequester.StewardAct("act-1", 3));
-        var live = new Seam(null);
-
-        Assert.Null(await IntegrationAuthority.LapsedAsync(request, Rule(Stewarded), live, default));
-        Assert.Equal(1, live.Asked);
-
-        var revoked = new Seam("the appointment's generation 3 was revoked");
-        Assert.Equal("the appointment's generation 3 was revoked", await IntegrationAuthority.LapsedAsync(request, Rule(Stewarded), revoked, default));
-        Assert.Equal(1, revoked.Asked);
-    }
-
-    [Fact]
-    public async Task A_steward_s_request_lapses_before_the_appointment_is_asked_where_the_rule_changed_or_the_act_names_no_generation()
+    public async Task A_steward_s_request_lapses_before_the_appointment_is_asked_under_a_lines_policy_or_none()
     {
         var seam = new Seam(null);
         var request = Request(IntegrationRequester.StewardAct("act-1", 3));
 
-        Assert.Contains("request: owner", await IntegrationAuthority.LapsedAsync(request, Rule(new LandingIntegrate(Request: LandingIntegrate.Owner)), seam, default), StringComparison.Ordinal);
+        Assert.Contains("request: owner", await IntegrationAuthority.LapsedAsync(request, Rule(Gated), seam, default), StringComparison.Ordinal);
         Assert.Contains("no longer carries `integrate`", await IntegrationAuthority.LapsedAsync(request, Rule(null), seam, default), StringComparison.Ordinal);
-        var nameless = Request(new IntegrationRequester(IntegrationRequester.Steward, IntegrationDoors.Act));
-        Assert.Contains("names no act", await IntegrationAuthority.LapsedAsync(nameless, Rule(Stewarded), seam, default), StringComparison.Ordinal);
         Assert.Equal(0, seam.Asked);
     }
 
     [Fact]
-    public async Task With_no_appointment_to_read_a_steward_s_request_lapses_and_says_so_and_an_unknown_requester_is_none()
+    public async Task With_no_appointment_to_read_the_seam_says_so_and_an_unknown_requester_is_none()
     {
-        var request = Request(IntegrationRequester.StewardAct("act-1", 3));
-
-        var why = await IntegrationAuthority.LapsedAsync(request, Rule(Stewarded), IntegrationAppointments.Unread, default);
+        var why = await IntegrationAppointments.Unread.LapsedAsync(Request(IntegrationRequester.StewardAct("act-1", 3)), default);
 
         Assert.Contains("nothing in this build reads", why, StringComparison.Ordinal);
         Assert.Contains("act-1", why, StringComparison.Ordinal);
         var stranger = Request(new IntegrationRequester("agent", "somewhere"));
-        Assert.Contains("no requester this build knows", await IntegrationAuthority.LapsedAsync(stranger, Rule(Stewarded), new Seam(null), default), StringComparison.Ordinal);
+        Assert.Contains("no requester this build knows", await IntegrationAuthority.LapsedAsync(stranger, Rule(Gated), new Seam(null), default), StringComparison.Ordinal);
     }
 }
