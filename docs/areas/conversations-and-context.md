@@ -18,7 +18,7 @@ of everything it handed, section by section.
 |---|---|---|
 | `CourseDecision`, `LimitCourse` | `Course/Domain/LineCourse.Decide.cs`, `Course/Domain/LimitCourse.cs` | The one pure decision of how a line goes on, paths A to N, for both loops; the limit paths (D, E, F), the carry-on and the transient bound are `LimitCourse` |
 | `CourseTrigger`, `CourseFacts` | `Course/Domain/CourseTriggers.cs`, `CourseFacts.cs` | What asks the course, and the facts an executor hands it |
-| `MoveStore`, `MoveRecords` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases |
+| `MoveStore`, `MoveRecords` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases. `MoveRows` holds the columns by store version and the row's reading, `MoveImporter` writes a box's move with its receipt, and `MoveTakes` takes or receives a move from a run that goes no further; the store keeps one-line doors to them |
 | `ConversationMoves`, `MoveTakeUp` | `Course/ConversationMoves.cs`, `Course/MoveTakeUp.cs` | The conversations' move holder; takes up a dead shell's moves at come-up and at each look |
 | `MoveDelivery`, `MoveResolve`, `MoveBoxImports` | `Course/` | Delivers moved words; settles a held move; imports an older build's boxes once |
 | `ChatRunner` | `Loop/Chat/ChatRunner.cs` (root, 38 KB) | Wires a conversation's units and the registered executors; keeps the doors callers use, each one line to the unit or executor that does the work |
@@ -46,7 +46,7 @@ of everything it handed, section by section.
 | `ChatServers` | `Loop/Chat/ChatServers.cs` | The servers a conversation is handed at its open: the knowledge connector carrying who it is, and the plugins' servers with the browser brought up for one that drives it |
 | `ChatTold` | `Loop/Chat/ChatTold.cs` | What a new conversation is told with its first message, held from its start: its process, its execution's checks, its standing block's facts |
 | `ChatAccountReads` | `Loop/Chat/ChatAccountReads.cs` | A refused call read for its account: a limit cools it, a refused sign-in signs it out; what a part going on from a limit carries |
-| `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made |
+| `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made. `GoingOnRun` (a go-on judged and started, a chat's or Ask Daoris's) and `GoOnRefusals` (the agent's refusal, words that cannot go on, a lost conversation) are built per call over it, reaching its siblings through the wiring; the executor keeps one-line doors to them |
 | `ChatHelperWords` | `Course/Chat/ChatHelperWords.cs` | Executor `helper-words`: a helper's answer said to the conversation that asked, as its next turn |
 | `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it. `LimitMove`'s ended-conversation move is `EndedLimitMove`, built by it and reaching its siblings through the wiring at run time; `LimitNotes`, `LimitResetWord` and `GoingOn` (the go-on's record of its words) are files of their own |
 | `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | Executor `curve-move`: the usage curve's move of a conversation at its turn's end |
