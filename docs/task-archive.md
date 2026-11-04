@@ -23122,3 +23122,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **NOCOMPAT1d — the last older readings** (driver, modules, web; D232): the page's ~21 `notOffered` branches for older hosts; the accounts' refusals of old forms (`agent account default|join`, `login --join`, `--workspace` on order and use, agent_propose's `default`); `DriverConfig.Strikes` still parsing a key the migration removes; `handed-before-block` with the page's handed cuts; ONEWAY1w's old home places; then the register file and its marker gate deleted. Note: the host's command line runs no migration, so the app's first start after the update converts the home before any terminal use. → `docs/decisions/D232.md`
 
   **Outcome** 2026-11-04: the page's older-host branches, the accounts' old-form refusals, the strikes parse, the old handed codes, the unread state fields and the unmarked refusal deleted; the transitional register, its tests and the marker gate deleted. The old home places wait on HOMELAYOUT5, frozen.
+
+## ROLEONE1b (2026-11-04)
+
+- [x] **ROLEONE1b — the supervisor and the steward drawn in Agents → Setup's Roles** (web): the page's catalogue type carries `hold`; `PlaceRoles` draws their rows and the roles diagram its appointed half. → `docs/areas/roles-and-supervision.md`
+
+  **Outcome** 2026-11-04: the two roles drawn and edited through the one role editor; DiagramDetail's appointed section and the stories' hold rows left.
