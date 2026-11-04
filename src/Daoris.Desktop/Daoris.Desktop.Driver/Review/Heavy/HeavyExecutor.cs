@@ -632,7 +632,7 @@ internal sealed record VerifyRunner(string Run, string? Cwd, bool Clock, bool Re
 {
     internal static VerifyRunner? Of(string? text)
     {
-        if (string.IsNullOrWhiteSpace(text) || IntegrationPromotes.RunnerOf(text) is not { } runner) return null;
+        if (string.IsNullOrWhiteSpace(text) || IntegrationPromoteReads.RunnerOf(text) is not { } runner) return null;
         using var document = JsonDocument.Parse(text);
         var verification = document.RootElement.GetProperty("verification");
         bool Flag(string name) => verification.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;

@@ -1,90 +1,8 @@
 using System.ComponentModel;
-using System.Text.Json;
+using static Daoris.Driver.IntegrationPromoteReads;
+using static Daoris.Driver.IntegrationPromoteWords;
 
 namespace Daoris.Driver;
-
-/// <summary>
-/// What one run of the verdict, the promotion and the settle asks (INTEGRATE1e part e4a): the repository, its workspace, its registered checkout
-/// (where git is asked of the line, and the line's own checkout is found), the line by name, the person's choices the accepted declaration is
-/// read through, and the Daoris home whose admission the gates take their places in.
-/// </summary>
-internal sealed record IntegrationPromoteAsk(string Repository, string Workspace, string Root, string Line, DriverConfig Config, string Home)
-{
-    /// <summary>Signalled when the candidate is dropped: it is handed to the verdict port, which ends its confirm run and answers <c>dropped</c>.</summary>
-    public CancellationToken Drop { get; init; }
-
-    /// <summary>
-    /// Whether a steward act's appointment still stands, read again at promotion (§5.2 step 8, §8). The default reads none, so a steward's request
-    /// is held there: nothing in the driver reads an appointment's liveness until the role is active (STEWARDROLE1d).
-    /// </summary>
-    public IIntegrationAppointments Appointments { get; init; } = IntegrationAppointments.Unread;
-
-    /// <summary>
-    /// The landing's own clean-up, through which the tidy step removes a landed branch the line now holds (§5.2 step 10); null where none was
-    /// handed in, and the tidy then removes nothing. Never a delete of its own.
-    /// </summary>
-    public IntegrationTidy? Tidy { get; init; }
-
-    /// <summary>
-    /// The ledger's sessions and their trees (<see cref="BranchTidying.HoldersAsync"/>), asked inside the checkout's hold, so the move waits
-    /// for a session working in the checkout that has the line out (GITLOCK1); null asks nothing and moves as before.
-    /// </summary>
-    public Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? Beside { get; init; }
-}
-
-/// <summary>What a promote run answered (<see cref="IntegrationPromoteRuns"/>), in words, with the candidate and its members as they now stand.</summary>
-internal sealed record IntegrationPromoteRun(string Kind, string Said)
-{
-    public IntegrationCandidate? Candidate { get; init; }
-
-    public IReadOnlyList<IntegrationMember> Members { get; init; } = [];
-
-    /// <summary>The verdict's action the run acted on (<see cref="VerdictActions"/>); null where none was asked.</summary>
-    public string? Verdict { get; init; }
-}
-
-/// <summary>What a promote run answers.</summary>
-internal static class IntegrationPromoteRuns
-{
-    /// <summary>The line holds the candidate's tip, every member is settled, the landed branches are tidied and the close ended the candidate <c>settled</c>.</summary>
-    public const string Settled = "settled";
-
-    /// <summary>The line holds the tip, and git could not judge a member or keep its work on a recovery ref: the member stands, the candidate stands, and the settle is asked again at the next look.</summary>
-    public const string Unsettled = "unsettled";
-
-    /// <summary>A requester's authority no longer stood at promotion: its member is held, nothing was moved, and the candidate is formed again without it (INTEGRATE1e part e4b).</summary>
-    public const string Lapsed = "lapsed";
-
-    /// <summary>The step could not go on and ended <c>held</c>, said why (a hold verdict, the fence, a checkout that is not clean): tried again at the next look.</summary>
-    public const string Held = "held";
-
-    /// <summary>The line moved under the candidate: nothing was moved and the candidate is formed again.</summary>
-    public const string Moved = "moved";
-
-    /// <summary>The verdict was unknown, busy, not a pass or not for this tip, or the gates could not run: nothing was written, and it is asked again at the next look.</summary>
-    public const string Waiting = "waiting";
-
-    /// <summary>A hand back: each named member was handed back and the rest are formed again.</summary>
-    public const string HandedBack = "handed-back";
-
-    /// <summary>A split: the failing members were handed back and the rest are formed again, one at a time.</summary>
-    public const string Split = "split";
-
-    /// <summary>The line's integration stopped, and the candidate with it.</summary>
-    public const string Stopped = "stopped";
-
-    /// <summary>The candidate was dropped and its requests closed.</summary>
-    public const string Dropped = "dropped";
-
-    /// <summary>A resume found something other than a step to run (the candidate ended, git could not say, the line was moved back): nothing more was written.</summary>
-    public const string Resumed = "resumed";
-
-    /// <summary>git could not say where the line stands: nothing was written.</summary>
-    public const string Unread = "unread";
-
-    /// <summary>The candidate's members are not all replayed yet, or it has no tip: its replay goes first.</summary>
-    public const string Replaying = "replaying";
-}
 
 /// <summary>
 /// The integration run's gates verdict, promotion and settle over git (INTEGRATE1e part e4a, D215; the integration design §5.2 steps 6 to 9,
@@ -397,37 +315,6 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return await AnswerAsync(kind, ended.Said ?? "", claim, action).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// A hand back's or a split's end: each member the verdict names handed back with its request closed, the candidate formed again where any
-    /// member is left (and ended <c>empty</c> where none is). Null where the verdict names no member of this candidate, which is no verdict.
-    /// </summary>
-    private static IntegrationStepEnd? HandedBack(IntegrationStore store, IntegrationVerdict verdict, IReadOnlyList<IntegrationMember> replayed)
-    {
-        var byBranch = replayed.ToDictionary(each => store.Request(each.Request)!.Branch, StringComparer.Ordinal);
-        var named = verdict.HandedBack.Where(each => byBranch.ContainsKey(each.Branch)).ToList();
-        if (named.Count == 0 && (verdict.Action == VerdictActions.HandBack || verdict.Retain.All(each => !byBranch.ContainsKey(each)))) return null;
-
-        var back = named.Select(each => (Member: byBranch[each.Branch], Words: HandBackWords(each))).ToList();
-        var changes = back.Select(each => new IntegrationMemberChange(each.Member.Request, IntegrationMemberStates.HandedBack) { Said = each.Words, Ends = true }).ToList();
-        var handed = back.Select(each => each.Member.Request).ToHashSet(StringComparer.Ordinal);
-        var split = verdict.Action == VerdictActions.Split;
-        return new IntegrationStepEnd(split ? IntegrationStepOutcomes.Split : IntegrationStepOutcomes.HandedBack)
-        {
-            Said = (split ? "split: the members left run one at a time. " : "")
-                   + (back.Count == 0 ? "No member is handed back. " : string.Join(" ", back.Select(each => $"request {each.Member.Request}: {each.Words}")) + " ")
-                   + "The members kept are formed again.",
-            Members = changes,
-            Closes = [.. handed.Select(each => new IntegrationRequestClose(each, IntegrationRequestCloses.HandedBack))],
-            Ends = replayed.All(each => handed.Contains(each.Request)) ? IntegrationCandidateEnds.Empty : IntegrationCandidateEnds.FormedAgain,
-        };
-    }
-
-    private static string HandBackWords(VerdictHandedBack each) =>
-        $"handed back ({each.How}) for {each.Failure}"
-        + (each.With.Count > 0 ? $", with {string.Join(", ", each.With)}" : "")
-        + (each.Interacting.Count > 0 ? $", interacting with {string.Join(", ", each.Interacting)}" : "")
-        + (string.IsNullOrWhiteSpace(each.Why) ? "." : $": {each.Why}");
-
     /// <summary>The candidate formed again where the line moved under it: nothing moves, and its members' requests are queued again (§5.2 step 8).</summary>
     private async Task<IntegrationPromoteRun> FormAgainAsync(IntegrationClaim claim, IntegrationCandidate candidate, string line, CancellationToken ct)
     {
@@ -438,10 +325,6 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             lineCommit: line, ct: ct).ConfigureAwait(false);
         return await AnswerAsync(IntegrationPromoteRuns.Moved, said, claim).ConfigureAwait(false);
     }
-
-    private static string MovedWords(IntegrationCandidate candidate, string line) =>
-        $"`{candidate.Line}` moved under the candidate, from {TextBounds.ShortCommit(candidate.Base, 8)} to {TextBounds.ShortCommit(line, 8)}: nothing was moved, "
-        + "and the candidate is formed again from the requests that are left.";
 
     /// <summary>
     /// The <c>promote</c> step (§5.2 step 8): begun with <paramref name="lineCommit"/>, the line's commit the promotion read before the gates, or, for an
@@ -551,85 +434,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
 
     private static IntegrationStepEnd Held(string said) => new(IntegrationStepOutcomes.Held) { Said = said };
 
-    /// <summary>
-    /// §5.6's fence: who integrates the line, read from the declaration committed at the line's commit being moved, never the working tree or the
-    /// accepted blob. Null where Daoris does (<c>integration.by</c> is <c>daoris</c> or absent, or no declaration is committed); else the words.
-    /// </summary>
-    private static async Task<string?> FenceAsync(string root, string commit, CancellationToken ct)
-    {
-        var at = TextBounds.ShortCommit(commit, 8);
-        if (await IntegrationAcceptance.BlobAtAsync(root, commit, ct).ConfigureAwait(false) is not { } blob)
-        {
-            return $"git could not say which declaration `{at}` holds, so who integrates the line is not known";
-        }
-
-        if (blob == IntegrationAcceptance.None) return null;
-        if (await IntegrationAcceptance.TextAsync(root, blob, ct).ConfigureAwait(false) is not { } text)
-        {
-            return $"the declaration `{at}` holds could not be read, so who integrates the line is not known";
-        }
-
-        var read = IntegrationDeclaration.Read(text);
-        if (read.Problem is { } problem) return $"the declaration `{at}` holds does not read, so who integrates the line is not known: {problem}";
-        return read.Facts?.By == "tool" ? $"the declaration `{at}` holds says `integration.by: tool`: another integrator owns the line" : null;
-    }
-
-    /// <summary>The line's commit as git names it, or the words of git's refusal.</summary>
-    private static async Task<(string? Commit, string Why)> LineAsync(string root, string line, CancellationToken ct)
-    {
-        var (code, output, err) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
-        return code == 0 && output.Trim().Length > 0 ? (output.Trim(), "") : (null, ContentHolds.Said(err));
-    }
-
-    /// <summary>
-    /// The one word the port is handed for an unconfirmed failure (§4.5): the owner's rule for a unit no member reaches and for one a member
-    /// reaches, which the port cannot tell apart before it runs. Where the two differ, the less permissive of them (<c>split</c>, <c>hold</c>,
-    /// <c>land</c>, in that order) stands, so <c>land</c> is only ever the rule saying it for both.
-    /// </summary>
-    internal static string Unconfirmed(LandingIntegrate policy)
-    {
-        var words = new[] { policy.Unconfirmed(reached: false, wholeSet: true), policy.Unconfirmed(reached: true, wholeSet: true) };
-        return words.MinBy(word => Math.Max(0, LandingIntegrate.Unconfirmeds.ToList().IndexOf(word)))!;
-    }
-
-    /// <summary>The declaration's <c>verification</c> runner (D192's key: its command and its folder); none where it declares no command.</summary>
-    internal static VerdictRunner? RunnerOf(string text)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(text);
-            if (document.RootElement.ValueKind != JsonValueKind.Object
-                || !document.RootElement.TryGetProperty("verification", out var verification) || verification.ValueKind != JsonValueKind.Object
-                || !verification.TryGetProperty("run", out var run) || run.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(run.GetString()))
-            {
-                return null;
-            }
-
-            return new VerdictRunner(
-                run.GetString()!.Trim(),
-                verification.TryGetProperty("cwd", out var cwd) && cwd.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(cwd.GetString()) ? cwd.GetString()!.Trim() : null);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static string Said(IntegrationVerdict verdict, string otherwise) => verdict.Why ?? verdict.Said ?? otherwise;
-
-    /// <summary>What a passing verdict says in the promotion's words: the gates passed (flakes read as passes and said), or the confirm run's pass the owner's rule chose.</summary>
-    private static string Words(IntegrationVerdict verdict, LandingIntegrate policy)
-    {
-        if (policy.Gates == LandingIntegrate.NoGates) return "the line's rule integrates with no gates.";
-        var said = verdict.Action == VerdictActions.Land
-            ? $"landed on the confirm run's pass of {string.Join(", ", verdict.PassedOnConfirm)}, as the owner's rule `unconfirmed: land` chose, for an unconfirmed failure that is a sighting."
-            : "the gates passed.";
-        if (verdict.Flaked.Count > 0) said += $" A flake read as a pass: {string.Join(", ", verdict.Flaked)}.";
-        if (verdict.Inherited.Count > 0) said += $" {verdict.Inherited.Count} inherited known {(verdict.Inherited.Count == 1 ? "failure" : "failures")}.";
-        return said;
-    }
-
-    // ——— The requester's authority at promotion (§5.2 step 8, §8).
+    // ——— The requester's authority at promotion.
 
     /// <summary>The replayed members whose requester's authority no longer stands, each with the words that say why; none where every one does.</summary>
     private async Task<List<(IntegrationMember Member, string Why)>> LapsedAsync(
@@ -655,27 +460,6 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
 
         return lapsed;
     }
-
-    /// <summary>
-    /// The promote step's end where authority lapsed: nothing was moved; each lapsed member is held (its request stays open and out of the
-    /// queue, for the steward's or the owner's act) and the candidate is formed again without it, or ended <c>empty</c> where none is left.
-    /// </summary>
-    private static IntegrationStepEnd LapsedEnd(IReadOnlyList<IntegrationMember> replayed, IReadOnlyList<(IntegrationMember Member, string Why)> lapsed) =>
-        new(IntegrationStepOutcomes.Done)
-        {
-            Said = string.Join(" ", lapsed.Select(each => $"request {each.Member.Request}: held at promotion, its requester's authority no longer stands ({each.Why}); nothing was moved.")
-                .Append(lapsed.Count == replayed.Count
-                    ? "No member is left to promote."
-                    : "The candidate is formed again without it.")),
-            Members =
-            [
-                .. lapsed.Select(each => new IntegrationMemberChange(each.Member.Request, IntegrationMemberStates.Held)
-                {
-                    Said = $"held at promotion: its requester's authority no longer stands ({each.Why}); it waits for the steward's or the owner's act.",
-                }),
-            ],
-            Ends = lapsed.Count == replayed.Count ? IntegrationCandidateEnds.Empty : IntegrationCandidateEnds.FormedAgain,
-        };
 
     // ——— The settle (§5.2 step 9, §5.7).
 
@@ -774,23 +558,9 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             async (_, _) =>
             {
                 if (Seam is { } inClose) await inClose("in-close").ConfigureAwait(false);
-                return new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Said = NoteOf(claim.Candidate), Ends = IntegrationCandidateEnds.Settled };
+                return new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Said = NoteOf(store, claim.Candidate), Ends = IntegrationCandidateEnds.Settled };
             },
             ct: ct).ConfigureAwait(false);
         return await AnswerAsync(IntegrationPromoteRuns.Settled, ended.Said ?? "", claim).ConfigureAwait(false);
-    }
-
-    /// <summary>The integration note, from the record alone: a code and its facts (the line's move, each member's end, the pending dispositions).</summary>
-    private string NoteOf(string candidate)
-    {
-        var found = store.Candidate(candidate)!;
-        var members = store.Members(candidate);
-        var parts = members.Select(each =>
-        {
-            var request = store.Request(each.Request)!;
-            var pending = store.Dispositions(each.Request).Count(disposition => disposition.Pending);
-            return $"request {each.Request} (`{request.Branch}`) {each.State}" + (pending > 0 ? $", {pending} superseded {(pending == 1 ? "commit" : "commits")} pending a disposition" : "");
-        });
-        return $"settled: `{found.Line}` moved from {TextBounds.ShortCommit(found.Base, 8)} to {TextBounds.ShortCommit(found.Tip ?? found.Base, 8)}; {string.Join("; ", parts)}.";
     }
 }
