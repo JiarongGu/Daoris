@@ -565,7 +565,7 @@ export type Retired = { repository: string; retired: boolean; message: string };
  */
 import { PAGE_SHOWN } from './results';
 import { onHost } from './host';
-import { ROUTES, type RouteName, type Routes } from './generated/service';
+import { ROUTES, type QuestActionResponse, type QuestResponse, type RouteName, type Routes } from './generated/service';
 
 function qs(params: Record<string, string | number | boolean | null | undefined>): string {
   const pairs = Object.entries(params)
@@ -606,20 +606,40 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return (await answered(await reach(path, { signal }))).json() as Promise<T>;
 }
 
+type Scalar = string | number | boolean | null | undefined;
+
 /**
- * A read the service declares (`generated/service.ts`), by its record's name: each `{name}` of its path filled from the request,
- * the rest its query. Its answer is typed by the declaration, and its response rides along for what its headers say.
+ * A route the service declares (`generated/service.ts`), by its record's name: each `{name}` of its path filled from the request,
+ * then the rest in the query of a read, or in the body of a write, sent with the person key as every write is, but for the values
+ * the route names to travel in its query. Its answer is typed by the declaration, and its response rides along for its headers.
  */
 async function send<N extends RouteName>(name: N, request: Routes[N]['request'], signal?: AbortSignal) {
-  const rest = { ...request } as Record<string, string | number | boolean | null | undefined>;
-  const path = ROUTES[name].path.replace(/\{(\w+)[^}]*\}/g, (_, key: string) => {
+  const route = ROUTES[name];
+  const rest = { ...request } as Record<string, unknown>;
+  const path = route.path.replace(/\{(\w+)[^}]*\}/g, (_, key: string) => {
     const value = rest[key];
     delete rest[key];
     return encodeURIComponent(String(value));
   });
-  const response = await answered(await reach(`${path}${qs(rest)}`, { signal }));
+  if (route.method === 'GET') {
+    const response = await answered(await reach(`${path}${qs(rest as Record<string, Scalar>)}`, { signal }));
+    return { answer: await response.json() as Routes[N]['answer'], response };
+  }
+  const query: Record<string, Scalar> = {};
+  for (const key of route.query as readonly string[]) {
+    query[key] = rest[key] as Scalar;
+    delete rest[key];
+  }
+  const response = await wrote(`${path}${qs(query)}`, rest, route.method as 'POST' | 'DELETE');
   return { answer: await response.json() as Routes[N]['answer'], response };
 }
+
+/**
+ * A quest door's answer as the page reads it. The page reads the host's words for a status, a hold and a conflict's standing
+ * narrower than the wire declares them (`Quest`), so the declared answer is taken as the page's reading here, once.
+ */
+const asQuests = (answer: QuestResponse[]): Quest[] => answer as unknown as Quest[];
+const asAction = (answer: QuestActionResponse): QuestAction => answer as unknown as QuestAction;
 
 /**
  * One second opinion as `GET /api/opinions` lists it (XAGENT1g4c), the fields the join reads: `working` is the session whose
@@ -680,6 +700,11 @@ const write = (path: string, body: unknown, method: 'POST' | 'DELETE') => {
 };
 
 async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
+  return (await wrote(path, body, method)).json() as Promise<T>;
+}
+
+/** A write's response once the host took it: the person key sent, asked again once where it was stale, a refusal thrown. */
+async function wrote(path: string, body: unknown, method: 'POST' | 'DELETE'): Promise<Response> {
   let response = await write(path, body, method);
   // PERSONDOOR1f (design §2.3, §5.2): a key from an earlier start of the host is refused `stale`. The shell is asked again and
   // the write sent once more with the key it holds now; a second refusal is the host's sentence, said as every refusal is.
@@ -699,7 +724,7 @@ async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 
       status: response.status, ...(typeof parsed?.code === 'string' ? { code: parsed.code } : {}),
     });
   }
-  return response.json() as Promise<T>;
+  return response;
 }
 
 /** A nonce for the host's proof of possession (design §2.3): random, in base64url, never kept. */
@@ -764,8 +789,8 @@ export const api = {
   },
   convergence: async (minimumSimilarity: number, workspace: string | null, signal?: AbortSignal) =>
     (await send('FindConvergence', { minimumSimilarity, limit: PAGE_SHOWN + 1, workspace }, signal)).answer,
-  quests: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
-    get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
+  quests: async (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    asQuests((await send('ListQuests', { includeClosed, repository, workspace }, signal)).answer),
   /**
    * One quest's moves, in the order its history replays (FLOWCHART1a2): the service's own door on both hosts, so a browser draws
    * its flowchart as the window does. Null from a host from before the door, which answers it not found: its path is not kept
@@ -773,7 +798,7 @@ export const api = {
    */
   questMoves: async (id: string, signal?: AbortSignal): Promise<QuestMove[] | null> => {
     try {
-      const answer = await get<{ moves?: unknown }>(`/api/quests/${encodeURIComponent(id)}/moves`, signal);
+      const { answer } = await send('ReadQuestMoves', { id }, signal);
       if (!Array.isArray(answer?.moves)) throw new Error('the service answered something other than the quest\'s moves');
       return answer.moves as QuestMove[];
     } catch (error) {
@@ -855,29 +880,29 @@ export const api = {
     links?: string[]; attachments?: { name: string; content: string }[]; then?: QuestStep[];
     /** The person's short title (SESSUX1j), at most 40 characters; the service refuses a longer one in its words. */
     short?: string;
-  }) => post<QuestAction>('/api/quests', quest),
+  }) => send('PublishQuest', quest).then(({ answer }) => asAction(answer)),
   /** Where a kept file is opened — the local host's own route, which answers this machine only. */
   attachmentUrl: (quest: string, sha256: string) =>
     onHost(`/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
-    post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
+    send('RespondQuest', { id, action, reason }).then(({ answer }) => asAction(answer)),
   // The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): what it held goes on. A local
   // host's door, as a delete is; `daoris quest accept` is the terminal's twin.
-  acceptQuest: (id: string) => post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/accept`, {}),
+  acceptQuest: (id: string) => send('AcceptQuest', { id }).then(({ answer }) => asAction(answer)),
   // The person marks a quest done (QUESTCLOSE1, D126's note): their done, with their words where they wrote any, which the
   // service keeps after the sentence saying the done was theirs. A local host's door, as the yes is; `daoris-driver quest
   // done` is the terminal's twin. Never respond's door, which is an agent's done.
   personDone: (id: string, note: string | null) =>
-    post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/done`, note ? { note } : {}),
+    send('MarkQuestDone', { id, ...(note ? { note } : {}) }).then(({ answer }) => asAction(answer)),
   // The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): the submission the page showed, named whole, which the
   // host refuses once another is current, and their words. `daoris quest reopen` is the terminal's twin.
   reopenQuest: (id: string, submission: SubmissionRef, note: string | null) =>
-    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/reopen`, {
-      submission: { machine: submission.machine, sequence: submission.sequence }, ...(note ? { note } : {}),
-    }),
+    send('ReopenQuest', {
+      id, submission: { machine: submission.machine, sequence: submission.sequence }, ...(note ? { note } : {}),
+    }).then(({ answer }) => asAction(answer)),
   // The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): it grows from the source's current
   // submission, refused until that is unheld. `daoris quest go-on` is the terminal's twin; abandoning it is the decline.
-  continueQuest: (id: string) => asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/continue`, {}),
+  continueQuest: (id: string) => send('ContinueQuest', { id }).then(({ answer }) => asAction(answer)),
   // The person's verdict on a review (REVIEWENV1g, D154 point 8; design §3.3, §3.6): `reviewed` or `not-yet` on the set-up their
   // view drew, named whole, which the host refuses as stale where a newer one was shown since (REVIEWENV1b3); a skip names
   // none. `daoris quest review` is the terminal's twin.
@@ -899,7 +924,7 @@ export const api = {
   // the conflict's dismissal marked with it, which the kept session goes on from. A refusal, or a loss again, is a 409 in the host's words.
   // `daoris remote sync forward` is the terminal's twin.
   forwardConflict: (id: string, machine: string, sequence: number) =>
-    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/forward`, { machine, sequence }),
+    send('ForwardConflict', { id, machine, sequence }).then(({ answer }) => asAction(answer)),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
   refresh: () => post<RefreshReport>('/api/refresh', {}),
