@@ -25,7 +25,7 @@ public sealed partial class SayKeysCensusTests
     private static readonly Dictionary<string, (int Calls, string Why)> Legacy = new()
     {
         ["ChannelReach.cs"] = (1, "a channel message's words, kept under the message the ask already holds (SESSONE2e, COWORK1d): the channel is their identity and their queue"),
-        ["SessionsCommand.cs"] = (1, "the terminal's verb where no loop drives the home: it keeps the words on the record for the next loop and holds none itself, so nothing restarts under it"),
+        ["SessionsKeeping.cs"] = (1, "the terminal's verb where no loop drives the home: it keeps the words on the record for the next loop and holds none itself, so nothing restarts under it"),
     };
 
     [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]

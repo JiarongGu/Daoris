@@ -41,7 +41,7 @@ public sealed partial class ContinuedReadersCensusTests
             (How.Own, "the shell's record path: the word said again at the head through the shell's whole judge (the head's inbox, its turns or its record), with its key, level, files and display choice"),
             (How.Own, "the pump: a held word said again at the head once, under its key, off the held file once the head took it; a second `continued` follows the next head, and a walk back to a record asked is said lost"),
         ],
-        ["SessionsCommand.cs"] =
+        ["SessionsKeeping.cs"] =
         [
             (How.Follows, "the terminal's verb where no loop drives the home: the same say at the head, its files carried to the head's folder, the head named in its line"),
         ],
