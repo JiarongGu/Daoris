@@ -14,6 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The parts kit: the quest store builds its registered operations with it, as the driver builds its passes. -->
+    <ProjectReference Include="../../Daoris.Contracts/Daoris.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The FTS5 match-expression builder is tested directly: it is the piece that turns arbitrary
          human text into query syntax, so it is where a malformed input would surface. -->
     <InternalsVisibleTo Include="Daoris.Service.Tests" />

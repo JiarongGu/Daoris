@@ -628,52 +628,6 @@ public static class QuestCloseCodes
 public sealed record QuestClosing(
     QuestCloseRefusal Refusal, Quest? Quest, IReadOnlyList<Quest> Quests, bool Replayed = false, string? On = null);
 
-/// <summary>What a dismissal did: the quest as it now stands (null when there is no such quest), and how many conflicts went.</summary>
-public sealed record QuestDismissal(Quest? Quest, int Dismissed);
-
-/// <summary>Why the person's bring-forward of a lost take wrote nothing (SYNCMERGE1a, D178 point 3), or <see cref="None"/>.</summary>
-public enum QuestForwardRefusal
-{
-    None,
-
-    /// <summary>No quest under that id: never published here, or deleted.</summary>
-    NotFound,
-
-    /// <summary>
-    /// The conflict named is not this machine's take that lost on the quest as it stands: none is so named, it is another machine's, it
-    /// attempted another move than a take, or it went with an earlier publication of the quest (D95). Only the machine whose take lost
-    /// brings it forward.
-    /// </summary>
-    NotOurs,
-
-    /// <summary>The conflict was dismissed already, plainly or brought forward, here or on another machine: a settled conflict authorizes no take.</summary>
-    Settled,
-
-    /// <summary>Another machine holds the step: the claim is exclusive (D68), so the step is not this machine's while that take stands.</summary>
-    TakenElsewhere,
-
-    /// <summary>This machine holds the step already, by a take of its own since: nothing is left to bring forward, and the conflict is the person's to dismiss.</summary>
-    TakenHere,
-
-    /// <summary>The step is closed, done or declined: a closed step takes no take.</summary>
-    Closed,
-
-    /// <summary>The person's reopen holds the work the step grows from (FABRIC-CLOSE1c): withdrawn, it is taken by nobody until that work is ready again.</summary>
-    SourceReopened,
-
-    /// <summary>
-    /// A session here still runs on the quest, the one whose take lost or a later one (SYNCMERGE1c4, D178 point 3): the press waits until
-    /// its process has ended, so a late done, <c>ready</c> or wait of the old session cannot stand on the fresh take. Judged last, once
-    /// the press could otherwise stand.
-    /// </summary>
-    StillRunning,
-}
-
-/// <param name="Refusal"><see cref="QuestForwardRefusal.None"/> when it wrote the take and the dismissal.</param>
-/// <param name="Quest">The quest as it now stands; null for no such id.</param>
-/// <param name="Take">The fresh take it made, which the dismissal is marked with (<see cref="QuestOperation.Forward"/>); null on a refusal.</param>
-public sealed record QuestBringingForward(QuestForwardRefusal Refusal, Quest? Quest, QuestOperationRef? Take = null);
-
 /// <param name="Quest">The quest as it stood when the delete was judged — null when there is no such quest.</param>
 /// <param name="Deleted">Whether THIS call deleted it. False with a quest is the table refusing: it is not open.</param>
 /// <param name="Tombstoned">Whether the delete is an operation that travels, rather than the quest simply going (D95).</param>
@@ -771,6 +725,7 @@ public sealed class QuestStore
     public static Task<QuestStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default, TimeProvider? time = null) =>
         ConnectionGate.For(connection).RunAsync(async () =>
         {
+            _ = Operations;
             var store = new QuestStore(connection, time ?? TimeProvider.System);
             await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
             store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
@@ -1220,7 +1175,7 @@ public sealed class QuestStore
     }
 
     /// <summary>One quest's history, from its row — the operations that replay to exactly what it says.</summary>
-    private async Task<IReadOnlyList<QuestOperation>> GiveHistoryAsync(
+    internal async Task<IReadOnlyList<QuestOperation>> GiveHistoryAsync(
         Quest quest, SqliteTransaction transaction, CancellationToken ct)
     {
         var history = new List<QuestOperation>
@@ -1254,6 +1209,15 @@ public sealed class QuestStore
     private Task<T> InTransactionAsync<T>(
         Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct) =>
         _db.InTransactionAsync(work, ct);
+
+    /// <summary>A registered operation's verb, run in a write transaction (<see cref="InTransactionAsync{T}"/>) handed to it as its <see cref="QuestTx"/>.</summary>
+    private Task<T> WriteAsync<T>(Func<QuestTx, Task<T>> write, CancellationToken ct) =>
+        InTransactionAsync((transaction, inside) => write(new QuestTx(this, transaction, inside)), ct);
+
+    /// <summary>The kinds of operation their modules register; a door reaches a module's verbs by its type.</summary>
+    private static QuestOperations Operations => QuestOperations.Registered;
+
+    internal SqliteCommand Command() => _db.Command();
 
     /// <summary>
     /// A handle derived from who asked, of whom, and for what — twelve hex characters (design §7).
@@ -1394,7 +1358,7 @@ public sealed class QuestStore
     /// handed out again is one a remote already holds: it answers a push of it as a retry, and a fetch brings its own
     /// operation back under it, so the new move is lost without an error (H1).
     /// </remarks>
-    private async Task<QuestOperation> AppendAsync(
+    internal async Task<QuestOperation> AppendAsync(
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
@@ -1402,6 +1366,27 @@ public sealed class QuestStore
         QuestOperationRef? submission = null, string? session = null, QuestOperationRef? forward = null,
         QuestWorkflowChoice? choice = null)
     {
+        // Each field kept only on the kinds that carry it, so the row written and the operation handed back read the same; a publish
+        // carries the quest as asked, open from this moment.
+        var operation = new QuestOperation(
+            quest, kind, Machine, 0, at, note,
+            published is null
+                ? null
+                : published with { Status = QuestStatus.Open, Note = null, NoteParts = null, Filed = at, Updated = at, Conflicts = [] },
+            Dismisses: dismisses,
+            Answers: answers is { Count: > 0 } ? answers : null,
+            WhileOpen: whileOpen && JudgedOpen(kind),
+            Evidence: kind == QuestOperationKind.Evidenced ? evidence : null,
+            SetUp: kind == QuestOperationKind.SetUp ? setUp : null,
+            Verdict: kind == QuestOperationKind.Verdict ? review : null,
+            // Parts only beside a note, as the store keeps them (QUESTCLOSE1b1): what it reads back is what it wrote.
+            NoteParts: note is null ? null : NoteParts.Normalize(NoteParts.Element(noteParts)),
+            Close: kind == QuestOperationKind.Done ? close : null,
+            Submission: Carries(kind) ? submission : null,
+            Session: KeepsSession(kind) ? session : null,
+            Forward: kind == QuestOperationKind.Dismissed ? forward : null,
+            Choice: kind == QuestOperationKind.Chosen ? choice : null);
+
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
@@ -1417,46 +1402,8 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$kind", KindText(kind));
         command.Parameters.AddWithValue("$machine", Machine);
         command.Parameters.AddWithValue("$at", Moments.Write(at));
-        var flagged = whileOpen && JudgedOpen(kind);
-        var verdict = kind == QuestOperationKind.Evidenced ? evidence : null;
-        var shown = kind == QuestOperationKind.SetUp ? setUp : null;
-        var said = kind == QuestOperationKind.Verdict ? review : null;
-        // Parts only beside a note, as the store keeps them (QUESTCLOSE1b1): what it reads back is what it wrote.
-        var parts = note is null ? null : NoteParts.Normalize(NoteParts.Element(noteParts));
-        // A close's provenance is a done's alone (FABRIC-CLOSE1a).
-        var closed = kind == QuestOperationKind.Done ? close : null;
-        // The submission a reopen or a rebind names is theirs alone (FABRIC-CLOSE1c), beside the source a take found (FABRIC-CLOSE1c18).
-        var named = Carries(kind) ? submission : null;
-        // The session that said a ready (FABRIC-CLOSE1c4), or that wrote a done's or a decline's handback (HANDBACK1), is theirs alone.
-        var by = KeepsSession(kind) ? session : null;
-        // The take a dismissal brought forward is that dismissal's alone (SYNCMERGE1a).
-        var brought = kind == QuestOperationKind.Dismissed ? forward : null;
-        // The person's workflow choice is a choice's alone (WORKFLOW1e2).
-        var chosen = kind == QuestOperationKind.Chosen ? choice : null;
-        command.Parameters.AddWithValue(
-            "$payload", PayloadJson(
-                note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed, named, by, forward: brought,
-                choice: chosen));
-        var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
-
-        // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
-        return new QuestOperation(
-            quest, kind, Machine, sequence, at, note,
-            published is null
-                ? null
-                : published with { Status = QuestStatus.Open, Note = null, NoteParts = null, Filed = at, Updated = at, Conflicts = [] },
-            Dismisses: dismisses,
-            Answers: answers is { Count: > 0 } ? answers : null,
-            WhileOpen: flagged,
-            Evidence: verdict,
-            SetUp: shown,
-            Verdict: said,
-            NoteParts: parts,
-            Close: closed,
-            Submission: named,
-            Session: by,
-            Forward: brought,
-            Choice: chosen);
+        command.Parameters.AddWithValue("$payload", PayloadJson(operation));
+        return operation with { Sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) };
     }
 
     /// <summary>The kinds that name a submission (FABRIC-CLOSE1c): a reopen, and a rebind.</summary>
@@ -1503,20 +1450,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$machine", operation.Machine);
         command.Parameters.AddWithValue("$sequence", operation.Sequence);
         command.Parameters.AddWithValue("$at", Moments.Write(operation.At));
-        command.Parameters.AddWithValue(
-            "$payload", PayloadJson(
-                operation.Note, operation.Published, operation.Attempted, operation.Dismisses, operation.Answers,
-                operation.WhileOpen && JudgedOpen(operation.Kind),
-                operation.Kind == QuestOperationKind.Evidenced ? operation.Evidence : null,
-                operation.Kind == QuestOperationKind.SetUp ? operation.SetUp : null,
-                operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null,
-                operation.NoteParts,
-                operation.Kind == QuestOperationKind.Done ? operation.Close : null,
-                Carries(operation.Kind) ? operation.Submission : null,
-                KeepsSession(operation.Kind) ? operation.Session : null,
-                operation.Kind == QuestOperationKind.Conflict && operation.LostToTheReopen,
-                operation.Kind == QuestOperationKind.Dismissed ? operation.Forward : null,
-                operation.Kind == QuestOperationKind.Chosen ? operation.Choice : null));
+        command.Parameters.AddWithValue("$payload", PayloadJson(operation));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -1539,7 +1473,7 @@ public sealed class QuestStore
     /// Write a quest's row as its replay gives it. The row is a cache, so it is written whole: a
     /// replay is the only thing that decides what it says.
     /// </summary>
-    private async Task WriteCacheAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct)
+    internal async Task WriteCacheAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -1651,7 +1585,7 @@ public sealed class QuestStore
     public Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, CancellationToken ct = default) =>
         InGateAsync(() => HistoryAsync(id, transaction: null, ct), ct);
 
-    private async Task<IReadOnlyList<QuestOperation>> HistoryAsync(
+    internal async Task<IReadOnlyList<QuestOperation>> HistoryAsync(
         string id, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
@@ -1886,7 +1820,7 @@ public sealed class QuestStore
     /// in the caller's transaction (FABRIC-CLOSE1c); the step as it then stands, or null where the rule refused it. A publication's is
     /// <paramref name="whileOpen"/>; the person's go-on is not, since their word is what lets a started step go (FABRIC-CLOSE1c15).
     /// </summary>
-    private async Task<Quest?> ReboundInAsync(
+    internal async Task<Quest?> ReboundInAsync(
         string id, QuestOperationRef from, bool whileOpen, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
     {
         var history = await HistoryAsync(id, transaction, ct).ConfigureAwait(false);
@@ -2089,7 +2023,7 @@ public sealed class QuestStore
         }, ct);
 
     /// <summary>The chain's next step <paramref name="quest"/>'s close or submission published, where it stands; else null.</summary>
-    private async Task<Quest?> SuccessorAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
+    internal async Task<Quest?> SuccessorAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
         NextStep(quest, quest.Updated) is { } next ? await FindAsync(next.Step.Id, transaction, ct).ConfigureAwait(false) : null;
 
     /// <summary>
@@ -2227,7 +2161,7 @@ public sealed class QuestStore
     /// standing on that submission, withdrawn by no reopen. Null where none does, so a later <c>ready</c> replaces it, and the close
     /// door reads it unsealed. A step from before names no submission, and seals whichever is current, as it always did.
     /// </summary>
-    private async Task<Quest?> SealingAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
+    internal async Task<Quest?> SealingAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
         quest.Submission is { } current
         && await SuccessorAsync(quest, transaction, ct).ConfigureAwait(false) is { } step
         && Grows(step, new QuestOperationRef(current.Machine, current.Sequence))
@@ -2235,7 +2169,7 @@ public sealed class QuestStore
             : null;
 
     /// <summary>Whether <paramref name="step"/> stands on <paramref name="submission"/> (FABRIC-CLOSE1c): grown from it, no reopen since.</summary>
-    private static bool Grows(Quest step, QuestOperationRef submission) =>
+    internal static bool Grows(Quest step, QuestOperationRef submission) =>
         step.SourceReopened is null && (step.GrewFrom is not { } from || from == submission);
 
     /// <summary>
@@ -2725,131 +2659,15 @@ public sealed class QuestStore
             return new QuestMove(waiting, Moved: true);
         }, ct);
 
-    /// <summary>
-    /// A person dismisses a conflict (SYNC6c) — one named by its machine and sequence, or, naming none,
-    /// every one the quest carries. Each is a <see cref="QuestOperationKind.Dismissed"/> operation,
-    /// committed here and carried by the next pass like any other, so the conflict goes on every
-    /// machine. It moves no status.
-    /// </summary>
-    /// <returns>The quest as it now stands (null: no such quest) and how many conflicts went.</returns>
+    /// <inheritdoc cref="QuestDismissOperation.DismissAsync"/>
     public Task<QuestDismissal> DismissAsync(
         string id, string? machine, long? sequence, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } quest)
-            {
-                // No such quest — or a row the log never saw, which has raced nobody and carries none.
-                return new QuestDismissal(await FindAsync(id, transaction, inside).ConfigureAwait(false), 0);
-            }
+        WriteAsync(tx => Operations.Of<QuestDismissOperation>().DismissAsync(tx, id, machine, sequence, now), ct);
 
-            // Naming NONE is every conflict. A sequence without its machine names none: sequences are
-            // per machine, and reading it as "none named" dismissed every one (REV3).
-            var named = quest.Conflicts
-                .Where(conflict => (machine is null && sequence is null)
-                    || (conflict.Machine == machine && (sequence is null || conflict.Sequence == sequence)))
-                .ToList();
-            var written = new List<QuestOperation>(history);
-            foreach (var conflict in named)
-            {
-                written.Add(await AppendAsync(
-                    id, QuestOperationKind.Dismissed, now, note: null, published: null, transaction, inside,
-                    new QuestOperationRef(conflict.Machine, conflict.Sequence)).ConfigureAwait(false));
-            }
-
-            var standing = QuestLog.Replay(written)!;
-            if (named.Count > 0) await WriteCacheAsync(standing, transaction, inside).ConfigureAwait(false);
-            return new QuestDismissal(standing, named.Count);
-        }, ct);
-
-    /// <summary>
-    /// The person brings this machine's lost take forward (SYNCMERGE1a, D178 point 3): in one write, an ordinary take of the step stamped
-    /// with the source it grows from as it stands (FABRIC-CLOSE1c18), and the dismissal of <paramref name="conflict"/> marked with that take
-    /// (<see cref="QuestOperation.Forward"/>), so the conflict goes only where the take stands. Judged inside the write by the replay's own
-    /// rules, as every verb is: refused while another machine or this one holds the step, once it is closed, while the person's reopen holds
-    /// its source, and where the conflict is not this machine's lost take still on the quest. Pushing the take and awaiting its answer is
-    /// the exchange's (D69); a rebase loses both where another machine's take, or a dismissal of the same conflict, reached the remote first.
-    /// </summary>
-    /// <param name="running">
-    /// That a session here still runs on the quest, as the exchange read the session store (SYNCMERGE1c4): refused
-    /// <see cref="QuestForwardRefusal.StillRunning"/> once every other rule would let the press stand.
-    /// </param>
+    /// <inheritdoc cref="QuestDismissOperation.BringForwardAsync"/>
     public Task<QuestBringingForward> BringForwardAsync(
         string id, QuestOperationRef conflict, DateTimeOffset now, CancellationToken ct = default, bool running = false) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } standing) return new QuestBringingForward(QuestForwardRefusal.NotFound, null);
-
-            // This machine's own take that lost, kept on the quest as it stands; gone from it, either dismissed already or with an earlier
-            // publication of the quest (D95), which the history tells apart.
-            bool Named(QuestOperationRef? named) => named == conflict;
-            if (conflict.Machine != Machine
-                || !history.Any(o => o is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken }
-                                     && Named(new QuestOperationRef(o.Machine, o.Sequence))))
-            {
-                return new QuestBringingForward(QuestForwardRefusal.NotOurs, standing);
-            }
-
-            if (!standing.Conflicts.Any(c => Named(new QuestOperationRef(c.Machine, c.Sequence))))
-            {
-                var settled = history.Any(o => o.Kind == QuestOperationKind.Dismissed && Named(o.Dismisses));
-                return new QuestBringingForward(settled ? QuestForwardRefusal.Settled : QuestForwardRefusal.NotOurs, standing);
-            }
-
-            var refusal = standing switch
-            {
-                { Status: QuestStatus.Done or QuestStatus.Declined } => QuestForwardRefusal.Closed,
-                { Status: QuestStatus.Taken } => QuestLog.Claim(history, Machine) is QuestClaim.Held or QuestClaim.Unconfirmed
-                    ? QuestForwardRefusal.TakenHere
-                    : QuestForwardRefusal.TakenElsewhere,
-                { SourceReopened: not null } => QuestForwardRefusal.SourceReopened,
-                _ => QuestForwardRefusal.None,
-            };
-
-            // The take as MoveAsync makes one: stamped with the step's source as this write finds it, judged by the replay's rule.
-            var found = standing.GrewFrom;
-            if (refusal == QuestForwardRefusal.None
-                && !QuestLog.Applies(standing, new QuestOperation(id, QuestOperationKind.Taken, Machine, 0, now, Submission: found)))
-            {
-                refusal = QuestForwardRefusal.SourceReopened;
-            }
-
-            if (refusal == QuestForwardRefusal.None && running) refusal = QuestForwardRefusal.StillRunning;
-            if (refusal != QuestForwardRefusal.None) return new QuestBringingForward(refusal, standing);
-
-            var take = await AppendAsync(
-                id, QuestOperationKind.Taken, now, note: null, published: null, transaction, inside, submission: found).ConfigureAwait(false);
-            var brought = new QuestOperationRef(Machine, take.Sequence);
-            var mark = await AppendAsync(
-                    id, QuestOperationKind.Dismissed, now, note: null, published: null, transaction, inside, conflict, forward: brought)
-                .ConfigureAwait(false);
-            var taken = QuestLog.Replay([.. history, take, mark])!;
-            await WriteCacheAsync(taken, transaction, inside).ConfigureAwait(false);
-            await KeepPressAsync(id, new QuestForwardPress(conflict, brought, now), transaction, inside).ConfigureAwait(false);
-            return new QuestBringingForward(QuestForwardRefusal.None, taken, brought);
-        }, ct);
-
-    /// <summary>
-    /// Keep this machine's own bring-forward (SYNCMERGE1b0, <see cref="QuestForwardPress"/>) in the write that made it, so a take the rebase
-    /// later loses with its mark still says it was one.
-    /// </summary>
-    private async Task KeepPressAsync(string id, QuestForwardPress press, SqliteTransaction transaction, CancellationToken ct)
-    {
-        await using var command = _db.Command();
-        command.Transaction = transaction;
-        command.CommandText = """
-            INSERT INTO quest_forwards (quest, conflict_machine, conflict_sequence, take_machine, take_sequence, at)
-            VALUES ($quest, $conflictMachine, $conflictSequence, $takeMachine, $takeSequence, $at)
-            """;
-        command.Parameters.AddWithValue("$quest", id);
-        command.Parameters.AddWithValue("$conflictMachine", press.Conflict.Machine);
-        command.Parameters.AddWithValue("$conflictSequence", press.Conflict.Sequence);
-        command.Parameters.AddWithValue("$takeMachine", press.Take.Machine);
-        command.Parameters.AddWithValue("$takeSequence", press.Take.Sequence);
-        command.Parameters.AddWithValue("$at", Moments.Write(press.At));
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+        WriteAsync(tx => Operations.Of<QuestDismissOperation>().BringForwardAsync(tx, id, conflict, now, running), ct);
 
     /// <summary>This machine's bring-forwards on a quest (SYNCMERGE1b0), in the order they were made.</summary>
     private async Task<IReadOnlyList<QuestForwardPress>> PressesAsync(string id, CancellationToken ct)
@@ -3240,6 +3058,7 @@ public sealed class QuestStore
                     submissionLost |= lostClaim;
                 }
 
+                conflicts.AddRange(await LostAsync(operation, quest, lostClaim, transaction, ct).ConfigureAwait(false));
                 continue;
             }
 
@@ -3280,6 +3099,8 @@ public sealed class QuestStore
             {
                 conflicts.AddRange(await ForgetFollowUpsAsync(id, lostClaim, "close", transaction, ct).ConfigureAwait(false));
             }
+
+            conflicts.AddRange(await LostAsync(operation, quest, lostClaim, transaction, ct).ConfigureAwait(false));
         }
 
         // The take's conflict names the waits that went with it, after its own note (WAITCLAIM1). It is rewritten before
@@ -3307,6 +3128,13 @@ public sealed class QuestStore
         else await DropCacheAsync(id, transaction, ct).ConfigureAwait(false);
         return conflicts;
     }
+
+    /// <summary>What else a lost operation's kind takes with it in the rebase's write (<see cref="IQuestOperation.LostAsync"/>).</summary>
+    private async Task<IReadOnlyList<QuestOperation>> LostAsync(
+        QuestOperation operation, Quest? standing, bool takeLost, SqliteTransaction transaction, CancellationToken ct) =>
+        Operations.For(operation.Kind) is { } registered
+            ? await registered.LostAsync(new QuestTx(this, transaction, ct), operation, standing, takeLost).ConfigureAwait(false)
+            : [];
 
     /// <summary>
     /// The circle's quests where this machine holds a done, a decline, a wait or a set-up not yet pushed beside a take of its
@@ -3390,7 +3218,7 @@ public sealed class QuestStore
     /// </remarks>
     /// <param name="published">What published it, as its take's conflict names it: the parent's close, or the yes or verdict that let it go.</param>
     /// <returns>The takes rewritten, as the rebase reports its conflicts.</returns>
-    private Task<IReadOnlyList<QuestOperation>> ForgetFollowUpsAsync(
+    internal Task<IReadOnlyList<QuestOperation>> ForgetFollowUpsAsync(
         string parent, bool takeLost, string published, SqliteTransaction transaction, CancellationToken ct) =>
         ForgetStepsAsync(parent, takeLost, reopened: false, transaction, ct, published);
 
@@ -3520,11 +3348,7 @@ public sealed class QuestStore
         command.CommandText =
             "UPDATE quest_log SET kind = $kind, payload = $payload WHERE position = $position AND remote IS NULL";
         command.Parameters.AddWithValue("$kind", KindText(operation.Kind));
-        // A move rewritten as a conflict keeps its note's parts beside the note (QUESTCLOSE1b1), and a step's take that went with a take
-        // lost to the person's reopen says so (FABRIC-CLOSE1c22).
-        command.Parameters.AddWithValue(
-            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, noteParts: operation.NoteParts,
-                lostToTheReopen: operation.Kind == QuestOperationKind.Conflict && operation.LostToTheReopen));
+        command.Parameters.AddWithValue("$payload", PayloadJson(operation));
         command.Parameters.AddWithValue("$position", position);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
@@ -3898,9 +3722,7 @@ public sealed class QuestStore
                         : operation with { Published = operation.Published with { Workspace = workspaceOf(operation.Published) } };
                     why = filed.Published is { } asked ? judge(asked) : null;
 
-                    // A take that lost to a delete arrives as a conflict on a quest that is gone (D95), and
-                    // is kept like any conflict, so its machine's claim reads lost on every side.
-                    var onDeleted = quest is null && known && filed.Kind == QuestOperationKind.Conflict;
+                    var onDeleted = quest is null && known && Operations.For(filed.Kind) is { KeptOnADeletedQuest: true };
                     if (why is null && !onDeleted && !QuestLog.Applies(quest, filed))
                     {
                         why = quest is null
@@ -4018,7 +3840,7 @@ public sealed class QuestStore
     public Task<Quest?> FindAsync(string id, CancellationToken ct = default) =>
         InGateAsync(() => FindAsync(id, transaction: null, ct), ct);
 
-    private async Task<Quest?> FindAsync(string id, SqliteTransaction? transaction, CancellationToken ct)
+    internal async Task<Quest?> FindAsync(string id, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
         // None handed in keeps the one the command was made in, as HistoryAsync's does.
@@ -4173,19 +3995,36 @@ public sealed class QuestStore
         return QuestEvidenceVerdict.Judged(document.RootElement);
     }
 
-    /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>
+    /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>).</summary>
     private static QuestOperation ReadOperation(SqliteDataReader reader)
     {
-        var quest = reader.GetString(0);
-        var kind = Enum.Parse<QuestOperationKind>(reader.GetString(1), ignoreCase: true);
-        var at = Moments.ReadRequired(reader.GetString(4));
-
         using var document = System.Text.Json.JsonDocument.Parse(reader.GetString(5));
-        var payload = document.RootElement;
+        return ReadPayload(
+            new QuestOperation(
+                reader.GetString(0), Enum.Parse<QuestOperationKind>(reader.GetString(1), ignoreCase: true), reader.GetString(2),
+                reader.GetInt64(3), Moments.ReadRequired(reader.GetString(4)), Number: reader.IsDBNull(6) ? null : reader.GetInt64(6)),
+            document.RootElement);
+    }
+
+    /// <summary>
+    /// A row's payload read onto <paramref name="read"/>, its columns: what every kind reads, then the kind's own, by the operation
+    /// registered for it (<see cref="IQuestOperation.ReadPayload"/>), or below for a kind none is registered for yet.
+    /// </summary>
+    internal static QuestOperation ReadPayload(QuestOperation read, System.Text.Json.JsonElement payload)
+    {
         var note = payload.TryGetProperty("note", out var said) ? said.GetString() : null;
-        QuestStatus? attempted = payload.TryGetProperty("attempted", out var tried)
-            ? Enum.Parse<QuestStatus>(tried.GetString()!, ignoreCase: true)
-            : null;
+        // Absent from every operation before note parts, and from every note written without them (QUESTCLOSE1b1).
+        var parts = note is not null && payload.TryGetProperty("noteParts", out var noted) ? NoteParts.Normalize(noted) : null;
+        // Absent from every done before answers, and from one on a quest with no requirements (DRIFT1d).
+        var answers = payload.TryGetProperty("answers", out var answered) ? ReadAnswers(answered) : null;
+        var common = read with { Note = note, NoteParts = parts, Answers = answers };
+        return Operations.For(read.Kind) is { } registered ? registered.ReadPayload(common, payload) : ReadUnregistered(common, payload);
+    }
+
+    /// <summary>The fields of a kind no module registers yet: a publish's payload is the quest as asked.</summary>
+    private static QuestOperation ReadUnregistered(QuestOperation read, System.Text.Json.JsonElement payload)
+    {
+        var (quest, kind, at) = (read.Quest, read.Kind, read.At);
         var published = kind != QuestOperationKind.Published
             ? null
             : new Quest(
@@ -4221,47 +4060,39 @@ public sealed class QuestStore
                 GrewFrom = payload.TryGetProperty("grewFrom", out var grew) ? ReadRef(grew) : null,
             };
 
-        QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
-            ? new QuestOperationRef(named.GetProperty("machine").GetString() ?? "", named.GetProperty("sequence").GetInt64())
-            : null;
-
-        return new QuestOperation(
-            quest, kind, reader.GetString(2), reader.GetInt64(3), at, note, published, attempted,
-            reader.IsDBNull(6) ? null : reader.GetInt64(6), dismisses,
-            // Absent from every done before answers, and from one on a quest with no requirements (DRIFT1d).
-            payload.TryGetProperty("answers", out var answered) ? ReadAnswers(answered) : null,
+        return read with
+        {
+            Published = published,
             // Absent from every decline before PAUSE1c and from every plain one: a plain decline. Likewise a rebind before
             // FABRIC-CLOSE1c15, and the person's go-on: a plain one.
-            JudgedOpen(kind)
-            && payload.TryGetProperty("whileOpen", out var open) && open.ValueKind == System.Text.Json.JsonValueKind.True,
+            WhileOpen = JudgedOpen(kind)
+                        && payload.TryGetProperty("whileOpen", out var open) && open.ValueKind == System.Text.Json.JsonValueKind.True,
             // An evidenced operation's verdict (EVID1a), which this store wrote only after the exchange judged it.
-            kind == QuestOperationKind.Evidenced && payload.TryGetProperty("evidence", out var read)
-                ? QuestEvidenceVerdict.Judged(read)
+            Evidence = kind == QuestOperationKind.Evidenced && payload.TryGetProperty("evidence", out var found)
+                ? QuestEvidenceVerdict.Judged(found)
                 : null,
             // A set-up and a review's verdict (REVIEWENV1b), each written only after the exchange judged it.
-            kind == QuestOperationKind.SetUp && payload.TryGetProperty("setUp", out var shown) ? Reviews.JudgedSetUp(shown) : null,
-            kind == QuestOperationKind.Verdict && payload.TryGetProperty("verdict", out var given) ? Reviews.JudgedVerdict(given) : null,
-            // Absent from every operation before note parts, and from every note written without them (QUESTCLOSE1b1).
-            note is not null && payload.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null,
+            SetUp = kind == QuestOperationKind.SetUp && payload.TryGetProperty("setUp", out var shown) ? Reviews.JudgedSetUp(shown) : null,
+            Verdict = kind == QuestOperationKind.Verdict && payload.TryGetProperty("verdict", out var given) ? Reviews.JudgedVerdict(given) : null,
             // Absent from every done but a graph's close's (FABRIC-CLOSE1a), which this store wrote whole.
-            kind == QuestOperationKind.Done && payload.TryGetProperty("close", out var close) ? ReadClose(close) : null,
+            Close = kind == QuestOperationKind.Done && payload.TryGetProperty("close", out var close) ? ReadClose(close) : null,
             // A reopen's or a rebind's submission (FABRIC-CLOSE1c), which this store wrote whole. A take's, absent from every take before
             // FABRIC-CLOSE1c18 and from one of a quest with no source: a take judged as before.
-            Carries(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
-            // Absent from every submission before FABRIC-CLOSE1c4, every done and decline before HANDBACK1, and from one no session said.
-            KeepsSession(kind) && payload.TryGetProperty("session", out var speaker)
-            && speaker.ValueKind == System.Text.Json.JsonValueKind.String
-                ? speaker.GetString()
-                : null,
-            // Absent from every conflict before FABRIC-CLOSE1c22, and from every one but a step's take that went with a take lost to the
-            // person's reopen.
-            kind == QuestOperationKind.Conflict && payload.TryGetProperty("lostToTheReopen", out var reopened)
-            && reopened.ValueKind == System.Text.Json.JsonValueKind.True,
-            // Absent from every dismissal before SYNCMERGE1a, and from every plain one; this store wrote a marked one whole.
-            kind == QuestOperationKind.Dismissed && payload.TryGetProperty("forward", out var forward) ? ReadRef(forward) : null,
+            Submission = Carries(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
+            Session = KeepsSession(kind) ? ReadSession(payload) : null,
             // A workflow choice (WORKFLOW1e2), written only after the exchange judged it.
-            kind == QuestOperationKind.Chosen && payload.TryGetProperty("choice", out var choice) ? WorkflowChoices.Judged(choice) : null);
+            Choice = kind == QuestOperationKind.Chosen && payload.TryGetProperty("choice", out var choice) ? WorkflowChoices.Judged(choice) : null,
+        };
     }
+
+    /// <summary>
+    /// The session that said an operation, absent from every submission before FABRIC-CLOSE1c4, every done and decline before HANDBACK1,
+    /// and from one no session said.
+    /// </summary>
+    internal static string? ReadSession(System.Text.Json.JsonElement payload) =>
+        payload.TryGetProperty("session", out var speaker) && speaker.ValueKind == System.Text.Json.JsonValueKind.String
+            ? speaker.GetString()
+            : null;
 
     /// <summary>A close's provenance (FABRIC-CLOSE1a), or null where it is not whole: a key and a token, both strings.</summary>
     internal static QuestClose? ReadClose(System.Text.Json.JsonElement close) =>
@@ -4282,46 +4113,23 @@ public sealed class QuestStore
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
-    private static string KindText(QuestOperationKind kind) => kind.ToString().ToLowerInvariant();
+    internal static string KindText(QuestOperationKind kind) => kind.ToString().ToLowerInvariant();
 
     /// <summary>
-    /// What an operation carries. A publish carries the quest's words and everything it carries — all
-    /// a replay needs to make the quest, on this machine or another — and a move carries its note.
+    /// What an operation's log row carries: its kind's payload, by the operation registered for it
+    /// (<see cref="IQuestOperation.WritePayload"/>), or below for a kind none is registered for yet, each field its kind carries where
+    /// set. A publish carries the quest's words and everything it carries, all a replay needs to make the quest on any machine.
     /// </summary>
-    private static string PayloadJson(
-        string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
-        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
-        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
-        QuestOperationRef? submission = null, string? session = null, bool lostToTheReopen = false, QuestOperationRef? forward = null,
-        QuestWorkflowChoice? choice = null) =>
+    internal static string PayloadJson(QuestOperation operation) =>
         JsonFields.Written(writer =>
     {
-        if (dismisses is not null)
+        if (Operations.For(operation.Kind) is { } registered)
         {
-            // A dismissal carries the conflict it names (SYNC6c), and nothing else but, where it brought that take forward, the fresh
-            // take it made (SYNCMERGE1a): written only when set, so a plain dismissal is recorded exactly as before it.
-            writer.WriteStartObject();
-            writer.WriteStartObject("dismisses");
-            writer.WriteString("machine", dismisses.Machine);
-            writer.WriteNumber("sequence", dismisses.Sequence);
-            writer.WriteEndObject();
-            if (forward is not null) WriteRef(writer, "forward", forward);
-            writer.WriteEndObject();
+            registered.WritePayload(writer, operation);
             return;
         }
 
-        if (attempted is { } lost)
-        {
-            writer.WriteStartObject();
-            writer.WriteString("attempted", lost.ToString());
-            if (note is not null) writer.WriteString("note", note);
-            WriteNoteParts(writer, note, noteParts);
-            // Only when set (FABRIC-CLOSE1c22), for the lanes' reason: every other conflict is recorded exactly as before it.
-            if (lostToTheReopen) writer.WriteBoolean("lostToTheReopen", true);
-            writer.WriteEndObject();
-            return;
-        }
-
+        var (kind, note, published) = (operation.Kind, operation.Note, operation.Published);
         writer.WriteStartObject();
         if (published is not null)
         {
@@ -4382,50 +4190,50 @@ public sealed class QuestStore
         }
 
         if (note is not null) writer.WriteString("note", note);
-        WriteNoteParts(writer, note, noteParts);
+        WriteNoteParts(writer, note, operation.NoteParts);
 
         // Only when set (PAUSE1c), for the lanes' reason: a plain decline is recorded exactly as before it.
-        if (whileOpen) writer.WriteBoolean("whileOpen", true);
+        if (operation.WhileOpen && JudgedOpen(kind)) writer.WriteBoolean("whileOpen", true);
 
         // Only when it answers some (DRIFT1d), for the lanes' reason: a done on a quest with none reads as it did.
-        if (answers is { Count: > 0 })
+        if (operation.Answers is { Count: > 0 } answers)
         {
             writer.WritePropertyName("answers");
             WriteAnswers(writer, answers);
         }
 
         // Only on an evidenced operation (EVID1a): its when and machine are the operation's own columns.
-        if (evidence is not null)
+        if (kind == QuestOperationKind.Evidenced && operation.Evidence is { } evidence)
         {
             writer.WritePropertyName("evidence");
             evidence.Write(writer);
         }
 
         // Only on a set-up or a verdict (REVIEWENV1b), for the evidence's reason: its when and machine are the operation's own.
-        if (setUp is not null)
+        if (kind == QuestOperationKind.SetUp && operation.SetUp is { } setUp)
         {
             writer.WritePropertyName("setUp");
             Reviews.Write(writer, setUp);
         }
 
-        if (review is not null)
+        if (kind == QuestOperationKind.Verdict && operation.Verdict is { } review)
         {
             writer.WritePropertyName("verdict");
             Reviews.Write(writer, review);
         }
 
         // Only on a done the graph's close wrote (FABRIC-CLOSE1a): every other done reads as it did.
-        if (close is not null) WriteClose(writer, close);
+        if (kind == QuestOperationKind.Done && operation.Close is { } close) WriteClose(writer, close);
 
-        // Only on a reopen or a rebind (FABRIC-CLOSE1c), for the lanes' reason: every other operation reads as it did.
-        if (submission is not null) WriteRef(writer, "submission", submission);
+        // Only on a rebind or a take (FABRIC-CLOSE1c, FABRIC-CLOSE1c18), for the lanes' reason: every other operation reads as it did.
+        if (Carries(kind) && operation.Submission is { } submission) WriteRef(writer, "submission", submission);
 
         // Only on a submission, a done or a decline a session said (FABRIC-CLOSE1c4, HANDBACK1), for the lanes' reason: every other
         // operation reads as it did.
-        if (session is not null) writer.WriteString("session", session);
+        if (KeepsSession(kind) && operation.Session is { } session) writer.WriteString("session", session);
 
         // Only on a workflow choice (WORKFLOW1e2), for the evidence's reason: its when is the operation's own.
-        if (choice is not null)
+        if (kind == QuestOperationKind.Chosen && operation.Choice is { } choice)
         {
             writer.WritePropertyName("choice");
             WorkflowChoices.Write(writer, choice);
