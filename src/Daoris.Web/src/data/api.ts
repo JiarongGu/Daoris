@@ -10,6 +10,8 @@ import type {
   AskActionResponse, AskResponse, DeclarationMatchResponse, GoAheadRequestResponse, GoAheadResponse, HitResponse, ProvenanceResponse,
   QuestAnswerResponse, QuestAttachmentResponse, QuestConflictResponse, QuestRequirementResponse,
   OpinionResponse, QuestResponse, QuestSetUpWire, SaidWordResponse, SessionResponse,
+  ConfirmationResponse, EmbeddedResponse, MachineRetiredResponse, RefreshResponse, RegistrationResponse, RetiredResponse,
+  SyncStandingResponse,
 } from './generated/service';
 export type {
   StatusResponse as Status, ProvenanceResponse as Provenance, RepositoryResponse as Repository, HitResponse as Hit,
@@ -115,20 +117,7 @@ export type QuestForward = SubmissionRef & { at: string; standing: 'held' | 'unc
  * Where a circle stands on this machine (SYNC6a), read from its own host without reaching the
  * remote. A circle with no remote here answers `wired: false` and nothing else of use.
  */
-export type SyncStanding = {
-  workspace: string; wired: boolean; ahead: number; behind: string[]; conflicts: string[];
-  /** When a pass last reached the remote; a wall does not move it. */
-  synced?: string | null;
-  /** When a pass last ran, reaching the remote or not. */
-  tried?: string | null;
-  /** The wall the last pass hit, in the host's words; null when it reached the remote. */
-  problem?: string | null;
-  /**
-   * The machines its remote last said had not declared they know a bound quest (FABRIC-CLOSE1i2), as the last pass heard them: empty
-   * where every one did, absent where no pass heard the handshake. Each holds a bind through the remote off until it declares or is retired.
-   */
-  undeclared?: string[];
-};
+export type SyncStanding = SyncStandingResponse;
 /** One step of a chain. `{parent}` in its words becomes the id of the quest it follows. */
 export type QuestStep = { to: string; title: string; body: string };
 /** One module of a repository, as its code map names it (MAP3a). `path` is repository-relative. */
@@ -151,7 +140,7 @@ export type QuestAction = { quest: Quest; message: string };
  * The person's retirement of a machine at a circle's remote (FABRIC-CLOSE1i2): whether the remote retired one (false where it had heard
  * nothing from it), the machines it still counts undeclared after it, and the host's sentence.
  */
-export type MachineRetired = { workspace: string; machine: string; retired: boolean; undeclared: string[]; message: string };
+export type MachineRetired = MachineRetiredResponse;
 /**
  * An ask: a sentence entered at a WORKSPACE rather than at a repository, held as a record of what became of it, as the service
  * declares it (`generated/service.ts`). `tier` names what answered it, on every record; a tier this page has no word for is shown
@@ -175,34 +164,12 @@ export type GoAheadRequest = GoAheadRequestResponse;
  */
 export type GoAhead = GoAheadResponse;
 export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; quest?: Quest | null };
-export type Registration = {
-  repository: string; adopted: boolean; registered: boolean; summary?: string;
-  owns: string[]; accepts: string[]; packs: string[]; entries: number; workspace?: string;
-  /**
-   * The checkout on THIS machine — answered only to a loopback caller of a local host (D46/D47 §4),
-   * so it is absent in a browser over a remote and absent for a teammate's mirrored registration. Its
-   * presence is exactly the question "is there a working tree here to manage".
-   */
-  root?: string;
-  joined?: boolean;
-  sharesKnowledge?: boolean;
-  /**
-   * The repositories it says it uses (D91), from its manifest's `domain.uses`, read by the host's rule.
-   * Absent from a host older than the field, which says the same as empty: nothing declared.
-   */
-  uses?: string[];
-  /**
-   * The lanes it declares (D115 §2.2), each addressed as `repository:id`. Absent from a host older than
-   * the field, which says the same as empty: a quest asks the whole repository.
-   */
-  lanes?: Lane[];
-  /**
-   * Whether a quest can be addressed to it — the exchange's own judgement, answered by the host so no
-   * page re-derives it (D70): an adopter, or a repository registered on that machine with a root, which
-   * a browser is never told. Absent from a host older than D70, where only an adopter could be asked.
-   */
-  addressable?: boolean;
-};
+/**
+ * A registered repository as the service declares it (`generated/service.ts`); `root` is the checkout on this machine, answered to it
+ * alone. The fields a host older than them leaves out read as none.
+ */
+export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>
+  & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>>;
 
 /** Whether a repository can be asked — the host's answer, or adoption where an older host gives none. */
 export const canBeAsked = (registration: Registration): boolean =>
@@ -280,16 +247,13 @@ export const HELP_REPOSITORY = 'daoris:help';
  * they became, how many were longer than the window and split into pieces, and the window, which is the
  * deployment's. Absent when that half did not run, which is never a zero.
  */
-export type RefreshReport = {
-  entries: number; repositories: number; withheld: number; semanticError?: string; absent?: string[];
-  embedded?: Embedded;
-};
+export type RefreshReport = RefreshResponse;
 
 /** One pass of the semantic half (D123), as the refresh answer carries it. */
-export type Embedded = { entries: number; pieces: number; split: number; window: number };
+export type Embedded = EmbeddedResponse;
 
 /** What a retire actually did — and its sentence, which is mostly about what it did NOT do. */
-export type Retired = { repository: string; retired: boolean; message: string };
+export type Retired = RetiredResponse;
 
 /**
  * A query string from the parameters that are actually set — null and undefined are omitted, so a
@@ -333,10 +297,6 @@ async function answered(response: Response): Promise<Response> {
   // (an entry gone since it was found) from a service that failed; the sentence is still the service's own.
   const body = await response.json().catch(() => null);
   throw Object.assign(new Error(body?.error ?? `${response.status} ${response.statusText}`), { status: response.status });
-}
-
-async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  return (await answered(await reach(path, { signal }))).json() as Promise<T>;
 }
 
 type Scalar = string | number | boolean | null | undefined;
@@ -424,10 +384,6 @@ const write = (path: string, body: unknown, method: 'POST' | 'DELETE') => {
   });
 };
 
-async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
-  return (await wrote(path, body, method)).json() as Promise<T>;
-}
-
 /** A write's response once the host took it: the person key sent, asked again once where it was stale, a refusal thrown. */
 async function wrote(path: string, body: unknown, method: 'POST' | 'DELETE'): Promise<Response> {
   let response = await write(path, body, method);
@@ -464,24 +420,11 @@ function nonce(): string {
  * asker withdraws it, and the host makes the request at the Confirm. `session` is the session that asked, absent for a terminal's;
  * once it ends, `ended`, and for one made, the door's `status`, its `answer` and, where it refused, its `reason`. Never its token.
  */
-export type ServiceConfirmation = {
-  id: string; state: string; method: string; path: string; route: string; act: string;
-  values: { name: string; type: string; value: string }[]; fields: { name: string; type: string; value: string }[];
-  asked: string; session?: string | null; ended?: string | null; status?: number | null; answer?: string | null; reason?: string | null;
-};
+export type ServiceConfirmation = ConfirmationResponse;
 
-/**
- * A write only the person may make (D156 §3.2's person-only doors, PERSONDOOR1), as REVIEWENV1g presses them: a review's
- * verdict, their own set-up step, an ask, and what a review is set to.
- *
- * @remarks
- * **The seam where the person's key goes.** `post` sends the key the bridge answered (PERSONDOOR1f, `holdPersonKey`), held in
- * memory, as `Daoris-Person` on every write; these doors refuse without it, so they come through here, and a refusal for want of
- * it is the host's sentence, said as every refusal is. The other person-only doors (the yes, the done, a go-ahead's answer, a
- * delete) call `post` and take the key there with every write. A local host enforces its doors only once its starter hands it a
- * key (PERSONDOOR1a), and the page holds one only where the shell answers one.
- */
-const asThePerson = <T>(path: string, body: unknown): Promise<T> => post<T>(path, body);
+// The person-only doors (D156 §3.2, PERSONDOOR1) go through `send` like every write: `wrote` sends the key the bridge answered
+// (PERSONDOOR1f, `holdPersonKey`), held in memory, as `Daoris-Person`; these doors refuse without it, and a refusal for want of it is
+// the host's sentence. A local host enforces its doors only once its starter hands it a key (PERSONDOOR1a).
 
 export const api = {
   status: async (signal?: AbortSignal) => (await send('ReadStatus', {}, signal)).answer,
@@ -493,14 +436,13 @@ export const api = {
   hostHoldsAKey: async (signal?: AbortSignal): Promise<boolean> =>
     typeof (await send('ReadStatus', { prove: nonce() }, signal)).answer.proof === 'string',
   /** What waits at the service for the person's confirmation (PERSONDOOR1b): a read, whatever key the page holds. */
-  confirmations: (signal?: AbortSignal) => get<ServiceConfirmation[]>('/api/confirmations', signal),
+  confirmations: async (signal?: AbortSignal) => (await send('ListConfirmations', {}, signal)).answer,
   /**
    * The person's Confirm or Refuse of one, a door of theirs alone, which takes the key `post` sends. At a Confirm the host makes the
    * request (ONEWAY1n-i): one its door refused is a 409 with that door's sentence, said as every refusal is.
    */
   answerConfirmation: (id: string, confirm: boolean) =>
-    post<{ confirmation: ServiceConfirmation; message: string }>(
-      `/api/confirmations/${encodeURIComponent(id)}/${confirm ? 'confirm' : 'refuse'}`, undefined),
+    send(confirm ? 'ConfirmConfirmation' : 'RefuseConfirmation', { id }).then(({ answer }) => answer),
   // Every cross-repository read below takes the scope (WSP5; D48 §4): null asks for every circle the
   // deployment holds, and the switcher says so; a name asks for that one, and nothing else is mixed in.
   repositories: async (workspace: string | null, signal?: AbortSignal) => (await send('ListRepositories', { workspace }, signal)).answer,
@@ -559,14 +501,11 @@ export const api = {
   // terminal's twins. A refusal is the service's sentence, verbatim, like every other write's.
   deleteAsk: (id: string) => send('DeleteAsk', { id }).then(({ answer }) => answer),
   deleteQuest: (id: string) => send('DeleteQuest', { id }).then(({ answer }) => answer),
-  registry: (workspace: string | null, signal?: AbortSignal) =>
-    get<Registration[]>(`/api/registry${qs({ workspace })}`, signal),
-  // A repository's own code map (MAP3a), read from its committed file — never written to (D32).
-  codeMap: (repository: string, signal?: AbortSignal) =>
-    get<CodeMapAnswer>(`/api/code-map/${encodeURIComponent(repository)}`, signal),
+  registry: async (workspace: string | null, signal?: AbortSignal) => (await send('ListRegistry', { workspace }, signal)).answer,
+  // A repository's own code map (MAP3a), read from its committed file — never written to (D32). The code map wire is Core's.
+  codeMap: async (repository: string, signal?: AbortSignal) => (await send('ReadCodeMap', { repository }, signal)).answer as CodeMapAnswer,
   // Where a circle stands on this machine (SYNC6a) — the host's store, never the remote itself.
-  syncStanding: (workspace: string, signal?: AbortSignal) =>
-    get<SyncStanding>(`/api/sync${qs({ workspace })}`, signal),
+  syncStanding: async (workspace: string, signal?: AbortSignal) => (await send('ReadSyncStanding', { workspace }, signal)).answer,
   sessions: async (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     (await send('ListSessions', { includeClosed, repository, workspace }, signal)).answer as Session[],
   // The second opinions this machine holds (XAGENT1g4c): which session read which, to say whose work a reviewer's row reads.
@@ -574,24 +513,16 @@ export const api = {
   opinions: async (signal?: AbortSignal) => (await send('ListOpinions', {}, signal)).answer as OpinionRow[],
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine
   // is touched, and adding a repository still needs the shell — a page may not name a machine path.
-  registerRepository: (body: {
-    // Whether the shell found a manifest there (D70): registered is addressable, adopted is disciplined.
-    repository: string; root?: string; workspace?: string; adopted?: boolean;
-    // `uses` (D91) replaces the row's, and absent is none: a door that read the file states it (MANAGE1).
-    domain?: { summary?: string; owns: string[]; accepts: string[]; uses?: string[] };
-    packs?: string[]; join?: boolean; shareKnowledge?: boolean;
-  }) => post<{ repository: string; workspace: string }>('/api/registry', body),
-  wireRepository: (repository: string, workspace: string) =>
-    post<{ repository: string; workspace: string }>(
-      `/api/registry/${encodeURIComponent(repository)}/workspace`, { workspace }),
-  retireRepository: (repository: string) =>
-    post<Retired>(`/api/registry/${encodeURIComponent(repository)}`, undefined, 'DELETE'),
+  // `adopted` is whether the shell found a manifest there (D70): registered is addressable, adopted is disciplined. `domain.uses`
+  // (D91) replaces the row's, and absent is none: a door that read the file states it (MANAGE1).
+  registerRepository: (body: Routes['RegisterRepository']['request']) => send('RegisterRepository', body).then(({ answer }) => answer),
+  wireRepository: (repository: string, workspace: string) => send('WireRepository', { repository, workspace }).then(({ answer }) => answer),
+  retireRepository: (repository: string) => send('RetireRepository', { repository }).then(({ answer }) => answer),
   // `daoris repository import <folder> [--workspace W]`'s screen door (D50, D75, D77): a folder's subdirectories
   // registered at once, into the named workspace when there is one. The answer's `message` is the
   // service's sentence, and it is shown as said.
   importFolder: (folder: string, workspace?: string) =>
-    post<{ folder: string; imported: number; repositories: string[]; message: string; workspace?: string }>(
-      '/api/registry/import', { folder, ...(workspace ? { workspace } : {}) }),
+    send('ImportRepositories', { folder, ...(workspace ? { workspace } : {}) }).then(({ answer }) => answer),
   // Files travel whole to the local host, the only one that serves the platform; a shared one refuses content.
   publishQuest: (quest: {
     from: string; to: string; title: string; body: string;
@@ -629,7 +560,7 @@ export const api = {
   // The person retiring a machine the circle's remote still counts (FABRIC-CLOSE1i2): one whose store was deleted, or that left the
   // workspace, no longer holds its binds off; a push from it counts it again.
   retireMachine: (workspace: string, machine: string) =>
-    asThePerson<MachineRetired>(`/api/sync/machines/${encodeURIComponent(machine)}/retire${qs({ workspace })}`, {}),
+    send('RetireSyncMachine', { machine, workspace }).then(({ answer }) => answer),
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
     send('DismissConflict', { id, machine, sequence }).then(({ answer }) => answer),
@@ -638,5 +569,5 @@ export const api = {
     send('ForwardConflict', { id, machine, sequence }).then(({ answer }) => answer),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
-  refresh: () => post<RefreshReport>('/api/refresh', {}),
+  refresh: () => send('RefreshIndex', {}).then(({ answer }) => answer),
 };

@@ -987,6 +987,6 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Equal(("rejected", "e"), (view.AnswerTo(1)!.Said, view.AnswerTo(1)!.Evidence));
         Assert.Null(view.AnswerTo(2));
         Assert.Equal(20, view.Minutes);
-        Assert.Null(OpinionViews.Read(System.Text.Json.JsonSerializer.Deserialize("""{"id":"x"}""", Daoris.Contracts.ContractJson.Options.GetTypeInfo(typeof(Daoris.Contracts.Review.OpinionResponse))) as Daoris.Contracts.Review.OpinionResponse));
+        Assert.Null(OpinionViews.Read(null));
     }
 }
