@@ -61,7 +61,14 @@ finishes first and the whole set runs once.
    route as `send(name, request)`. The quest doors are `QuestRoutes` (the reads, the publish and the respond, on both hosts) and
    `QuestPersonRoutes` (a local host's person and driver doors: the close, the set-up and review doors, the workflow choice, a
    conflict's dismissal and a delete); the ask doors, a local host's alone, are `AskRoutes`, which answer through `AskAnswers` and
-   send from `AskDoorViews`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). A window
+   send from `AskDoorViews`. The session doors are `SessionRoutes` (the list, the two opens and the state move, on both hosts, with
+   a keyed open's refusal in the answer's own record), `SessionKeepRoutes` (a local host's opens for the conversations the driver
+   starts itself, and what it learned of a start), `SessionStoreRoutes` (a finished tree's record, a session's memory and its
+   delete) and `SessionWordRoutes` (the person's words on a session); a refusal in a record of its own (a say's word, a delete's
+   facts) is `Answer<T>.Else`, and `SessionAnswers` is the one place a record is turned into its answer. The driver sends them
+   from `ServiceClient` as `SendJsonAsync(new Say…)` and reads the list into `SessionView` through the generated
+   `SessionResponse`; the page's `Session` and `SaidWord` are those records. A route not declared there is still mapped by hand in
+   `Program.cs` (CODESHAPE1). A window
    route is its handler's marks in the desktop modules (`[DriverRoute]` and those beside it); the same tool writes from them the
    ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
    publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. A handler takes its

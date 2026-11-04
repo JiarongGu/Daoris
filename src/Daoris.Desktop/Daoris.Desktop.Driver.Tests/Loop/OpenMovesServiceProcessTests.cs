@@ -83,11 +83,10 @@ public sealed class OpenMovesServiceProcessTests : IAsyncLifetime
         var read = (await WaitingAsync(a)).Select(word => word.Id).ToList();
         var late = await _client.SayAsync(a, "a late word", key: "press/late");
         Assert.NotNull(late.Word);
-        const string Body = """{"repository":"engine","adapter":"stub","from":"__a__","fromWhy":"limit","fromBy":"daoris"}""";
-        var body = Body.Replace("__a__", a, StringComparison.Ordinal);
+        var body = new Daoris.Contracts.Sessions.OpenChat("engine", "stub", null, null, null, From: a, FromWhy: "limit", FromBy: "daoris");
         var key = $"limit-move/{a}";
 
-        var opened = await _client.Opens.OpenAsync("/api/sessions/chat", body, key, a, moves: new MoveWords(a, [named.Word.Id!], read));
+        var opened = await _client.Opens.OpenAsync(body, key, a, moves: new MoveWords(a, [named.Word.Id!], read));
 
         Assert.True(opened.Moves, opened.Message);
         var b = opened.SessionId!;
@@ -106,7 +105,7 @@ public sealed class OpenMovesServiceProcessTests : IAsyncLifetime
         }
 
         Assert.True((await _client.TakenAsync(b, [named.Word.Id!, late.Word.Id!])).Ok);
-        var again = await _client.Opens.OpenAsync("/api/sessions/chat", body, key, a, retry: true, moves: new MoveWords(a, [named.Word.Id!], read));
+        var again = await _client.Opens.OpenAsync(body, key, a, retry: true, moves: new MoveWords(a, [named.Word.Id!], read));
 
         Assert.Equal(b, again.SessionId);
         Assert.Equal(opened.Moved, again.Moved);
