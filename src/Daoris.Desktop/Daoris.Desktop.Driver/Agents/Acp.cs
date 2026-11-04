@@ -151,15 +151,7 @@ public sealed class AcpSession(
     /// silent turn of a closed quest (RUNENDS1), and, after them, every word the run was asked to send and never wrote, turned away at its
     /// door as the run ended (<see cref="AcpTurnedAway"/>). Empty otherwise.
     /// </summary>
-    public IReadOnlyList<IAgentWord> HandedBack
-    {
-        get
-        {
-            lock (_promptsGate) return [.. _handedBack, .. _turnedAway];
-        }
-    }
-
-    private IReadOnlyList<IAgentWord> _handedBack = [];
+    public IReadOnlyList<IAgentWord> HandedBack => _open.HandedBack;
 
     /// <summary>
     /// How often a session that waits on its own background work reads its quest again (DONEEND1, D83's note): once it no longer
@@ -196,9 +188,8 @@ public sealed class AcpSession(
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
-    /// <summary>The prompts on the wire and not yet answered, oldest first, and the lock that guards them (STEER1).</summary>
-    private readonly LinkedList<OpenPrompt> _prompts = [];
-    private readonly object _promptsGate = new();
+    /// <summary>The prompts on the wire and not yet answered, and the run's door they pass: every lock of that state is its own.</summary>
+    private readonly OpenPrompts _open = new();
 
     /// <summary>Whether the agent said it takes a prompt during a turn (<see cref="TakesWordsMidTurn"/>).</summary>
     private bool _takesWordsMidTurn;
@@ -232,58 +223,6 @@ public sealed class AcpSession(
     /// <summary>Whose words an episode holds, waits on and carries: a run's inbox, or a conversation's turns.</summary>
     private IEpisodeWords? EpisodeWords => _episodeWords ?? _inbox;
 
-    /// <summary>
-    /// One prompt on the wire: the person's words, or null for the driver's own — and whether the session has taken them.
-    /// </summary>
-    private sealed class OpenPrompt(IAgentWord? words, IReadOnlyList<IAgentWord>? together = null)
-    {
-        public IAgentWord? Words { get; } = words;
-
-        /// <summary>The words a transient try carries after <see cref="Words"/> in the same prompt (AGENTERRORS1a, §5.1), in the order said.</summary>
-        public IReadOnlyList<IAgentWord> Together { get; } = together ?? [];
-
-        /// <summary>Every word this prompt carries, <see cref="Words"/> first.</summary>
-        public IEnumerable<IAgentWord> All => Words is null ? Together : [Words, .. Together];
-
-        public bool Taken { get; set; }
-
-        /// <summary>
-        /// Whether an update of this prompt's turn came while it was the oldest open (AGENTERRORS1a, §5.1): what makes a word whose prompt
-        /// then met an error taken, where none makes it unacknowledged. Read from the turn, never from <see cref="Taken"/> alone.
-        /// </summary>
-        public bool Heard { get; set; }
-
-        /// <summary>Whether it is the run's first prompt (AGENTERRORS1a): a resume's blocks, or a start's target.</summary>
-        public bool Opening { get; init; }
-
-        /// <summary>
-        /// Whether its write returned (Codex's owed read of D210, finding 3): on the wire, so after an episode opened a prompt whose stream
-        /// is lost before any terminal answer is uncertain, never unreached. Set under <c>_promptsGate</c>.
-        /// </summary>
-        public bool Written { get; set; }
-    }
-
-    /// <summary>
-    /// A prompt's way to the wire (RUNENDS1 after review, finding 2): entered when the run is asked to send it, before its words are
-    /// marked on their record; admitted under the write lock as it is written, and gone from the door then; or turned away once the run's
-    /// door has shut, its words handed back. Read and changed under <c>_promptsGate</c>.
-    /// </summary>
-    private sealed class Passage(IReadOnlyList<IAgentWord> words)
-    {
-        /// <summary>The person's words it carries, which go back to the driver where it is turned away.</summary>
-        public IReadOnlyList<IAgentWord> Words { get; set; } = words;
-
-        public bool TurnedAway { get; set; }
-    }
-
-    /// <summary>The passages entered and not yet admitted or turned away, and whether the run's door has shut (<see cref="Shut"/>).</summary>
-    private readonly List<Passage> _passing = [];
-    private bool _shut;
-
-    /// <summary>The words turned away at the run's door, in the order they came to it: handed back after the rest (<see cref="HandedBack"/>).</summary>
-    private readonly List<IAgentWord> _turnedAway = [];
-
-    private int _promptCount;
     private int _updates;
     private string? _sessionId;
 
@@ -538,7 +477,7 @@ public sealed class AcpSession(
                 if (DoorShut)
                 {
                     var waiting = inbox?.Close() ?? [];
-                    lock (_promptsGate) _handedBack = waiting;
+                    _open.HandBack(waiting);
                     break;
                 }
 
@@ -566,7 +505,7 @@ public sealed class AcpSession(
                     if (SetupChanged?.Invoke() == true)
                     {
                         var rest = inbox!.Close();
-                        lock (_promptsGate) _handedBack = [held, .. rest];
+                        _open.HandBack([held, .. rest]);
                         break;
                     }
 
@@ -667,18 +606,7 @@ public sealed class AcpSession(
     private void Shut()
     {
         _inbox?.Settling();
-        lock (_promptsGate)
-        {
-            _shut = true;
-            foreach (var passage in _passing)
-            {
-                passage.TurnedAway = true;
-                _turnedAway.AddRange(passage.Words);
-            }
-
-            // Their prompts were never admitted, so none of them is open.
-            _passing.Clear();
-        }
+        _open.Shut();
     }
 
     /// <summary>The run's door shut at its end (<see cref="Shut"/>), between two writes, never inside one.</summary>
@@ -696,66 +624,7 @@ public sealed class AcpSession(
     }
 
     /// <summary>Whether the run's door has shut, a silent turn left (RUNENDS1): the run ends at once.</summary>
-    private bool DoorShut
-    {
-        get
-        {
-            lock (_promptsGate) return _shut;
-        }
-    }
-
-    /// <summary>
-    /// A prompt asked to go (RUNENDS1 after review): entered at the run's door before its words are marked on their record, so a run that
-    /// ends meanwhile turns it away and hands its words back, rather than lose it.
-    /// </summary>
-    /// <exception cref="AcpTurnedAway">The door has shut: nothing is marked or written, and the words went back.</exception>
-    private Passage Enter(IEnumerable<IAgentWord?> words)
-    {
-        var passage = new Passage([.. words.OfType<IAgentWord>()]);
-        lock (_promptsGate)
-        {
-            if (!_shut)
-            {
-                _passing.Add(passage);
-                return passage;
-            }
-
-            _turnedAway.AddRange(passage.Words);
-        }
-
-        throw new AcpTurnedAway();
-    }
-
-    /// <summary>
-    /// A passage admitted to the wire as its write begins, under the write lock, and its prompt open from then; false where the door shut
-    /// first, or where <paramref name="when"/>, what the prompt was decided on, no longer holds (RUNENDS1, second read), its words then
-    /// going back with the run's.
-    /// </summary>
-    /// <remarks><paramref name="when"/> reads the wake under its own gate before the prompts' gate is taken: the order every look takes.</remarks>
-    private bool Admit(Passage passage, OpenPrompt? open = null, Func<bool>? when = null)
-    {
-        var holds = when?.Invoke() ?? true;
-        lock (_promptsGate)
-        {
-            if (passage.TurnedAway) return false;
-            _passing.Remove(passage);
-            if (!holds)
-            {
-                _turnedAway.AddRange(passage.Words);
-                return false;
-            }
-
-            if (open is not null)
-            {
-                // 🔴 COWORK1c (trap 8): words prompted to an idle session are taken at the first thing the agent does for them, or by
-                // their own answer, never before the wire, as words after an error are (USERSHOWN1).
-                if (open.Words is not null && _prompts.Count == 0) _afterError = true;
-                _prompts.AddLast(open);
-            }
-
-            return true;
-        }
-    }
+    private bool DoorShut => _open.DoorShut;
 
     /// <summary>
     /// Whether the run's own token was cancelled, the person's stop or the driver's shutdown (RUNENDS1, second read, finding 3): the one
@@ -791,20 +660,9 @@ public sealed class AcpSession(
 
     IEpisodeWords? ITurnRetryWiring.EpisodeWords => EpisodeWords;
 
-    List<IAgentWord> ITurnRetryWiring.TakeUnacknowledged()
-    {
-        lock (_promptsGate)
-        {
-            var words = _unacknowledged.ToList();
-            _unacknowledged.Clear();
-            return words;
-        }
-    }
+    List<IAgentWord> ITurnRetryWiring.TakeUnacknowledged() => _open.TakeUnacknowledged();
 
-    void ITurnRetryWiring.ForgetUnacknowledged()
-    {
-        lock (_promptsGate) _unacknowledged.Clear();
-    }
+    void ITurnRetryWiring.ForgetUnacknowledged() => _open.ForgetUnacknowledged();
 
     Task<string> ITurnRetryWiring.TryAsync(TransientEpisode episode, CancellationToken ct) => TryAsync(episode, ct);
 
@@ -817,7 +675,7 @@ public sealed class AcpSession(
         var retry = _retry!;
         var held = EpisodeWords?.TakeHeld() ?? [];
         // RUNENDS1: the held words go through the run's door from here, so a run that ends before the try is written hands them back.
-        var passage = Enter(held);
+        var passage = _open.Enter(held);
         var text = TransientRetry.GoOnText(episode.Words);
         IAgentWord? goOn = null;
         if (episode.Tries == 1 && retry.KeepGoOn is { } keep)
@@ -859,12 +717,7 @@ public sealed class AcpSession(
         var prompt = Blocks(texts, [.. going.SelectMany(word => word.Files)]);
 
         var open = new OpenPrompt(words.FirstOrDefault(), [.. words.Skip(1)]);
-        lock (_promptsGate)
-        {
-            if (passage.TurnedAway) throw new AcpTurnedAway();
-            // A word the record would not mark waits on its record: it is not handed back with the rest.
-            passage.Words = going;
-        }
+        _open.Going(passage, going);
 
         var wrote = words.Select(each => Wrote(null, each)).OfType<Action>().ToList();
         try
@@ -882,7 +735,7 @@ public sealed class AcpSession(
                         foreach (var each in wrote) each();
                         if (goOn?.Id is { } id) episode.GoOnId = id;
                     }),
-                    answered: frame => Answered(open, frame), admit: () => Admit(passage, open, () => !ct.IsCancellationRequested))
+                    answered: frame => Answered(open, frame), admit: () => _open.Admit(passage, open, () => !ct.IsCancellationRequested))
                 .ConfigureAwait(false);
             return result.TryGetProperty("stopReason", out var reason) ? reason.GetString() ?? "unknown" : "unknown";
         }
@@ -910,7 +763,7 @@ public sealed class AcpSession(
     /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a
     /// turn that ended first, a failed one included. The driver keeps them waiting where the door failed; empty until then.
     /// </summary>
-    public IReadOnlyList<IAgentWord> Unreached { get; private set; } = [];
+    public IReadOnlyList<IAgentWord> Unreached => _open.Unreached;
 
     /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted and kept as <see cref="Unreached"/>.</summary>
     /// <remarks>
@@ -921,16 +774,7 @@ public sealed class AcpSession(
     /// </remarks>
     private int Untaken()
     {
-        List<IAgentWord> uncertain;
-        lock (_promptsGate)
-        {
-            var left = _prompts.Where(open => open.Words is not null && !open.Taken).ToList();
-            var written = _retry?.Opened == true ? left.Where(open => open.Written).ToList() : [];
-            Unreached = [.. left.Except(written).Select(open => open.Words!)];
-            uncertain = [.. written.SelectMany(open => open.All).Where(word => !word.IsDaoris)];
-            _prompts.Clear();
-        }
-
+        var uncertain = _open.Untaken(_retry);
         if (uncertain.Count > 0)
         {
             _retry!.Unacknowledged(uncertain);
@@ -1092,17 +936,9 @@ public sealed class AcpSession(
 
         // COWORK1c: a kept word is marked attempted on its record before the wire, in the order asked for, and written only once the record
         // named it marked (FOUNDATION1 row p): its steer says it never reached, and it waits on its record. RUNENDS1: through the run's door.
-        var passage = Enter([words]);
+        var passage = _open.Enter([words]);
         var marked = await Attempted(words).ConfigureAwait(false);
-        lock (_promptsGate)
-        {
-            if (passage.TurnedAway) throw new AcpTurnedAway();
-            if (!marked)
-            {
-                _passing.Remove(passage);
-                throw new AcpWordsUnmarked(AcpWordsUnmarked.Sentence);
-            }
-        }
+        _open.Marked(passage, marked);
 
         // The adapter's own parameters (claude-agent-acp 0.84.0, `parseSteerRequest`, acp-agent.js:215-238): the session, the
         // prompt's content blocks as `session/prompt` carries them, and the steering `_meta`. The priority is the adapter's.
@@ -1117,7 +953,7 @@ public sealed class AcpSession(
                 _calls.CutOpen();
                 Asked(words);
             },
-            admit: () => Admit(passage)).ConfigureAwait(false);
+            admit: () => _open.Admit(passage)).ConfigureAwait(false);
         return Outcome(answer) ?? "unknown";
     }
 
@@ -1216,25 +1052,14 @@ public sealed class AcpSession(
         var prompt = Blocks(texts, files);
         // RUNENDS1 after review (finding 2): through the run's door from before the mark to the write, so a run that ends between the two
         // hands the words back and writes nothing after.
-        var passage = Enter([words]);
+        var passage = _open.Enter([words]);
         // COWORK1c (the message-urgency design §6): a kept word is marked attempted on its record before the wire, in the order the
         // prompts were asked for, so a shell that comes up again never sends it twice. Acknowledged (FOUNDATION1 row p): written only once the
         // record named it marked, else it waits on its record and is said.
         var marked = await Attempted(words).ConfigureAwait(false);
 
-        OpenPrompt open;
-        lock (_promptsGate)
-        {
-            if (passage.TurnedAway) throw new AcpTurnedAway();
-            if (!marked)
-            {
-                _passing.Remove(passage);
-                throw new AcpWordsUnmarked(AcpWordsUnmarked.Sentence);
-            }
-
-            // Open from its admission, under the write lock (Admit): the prompts open are those on the wire, in the order written.
-            open = new OpenPrompt(words) { Opening = Interlocked.Increment(ref _promptCount) == 1 };
-        }
+        // Open from its admission, under the write lock (Admit): the prompts open are those on the wire, in the order written.
+        var open = _open.Opened(passage, marked, words);
 
         JsonElement result;
         try
@@ -1242,7 +1067,7 @@ public sealed class AcpSession(
             result = await RequestAsync(
                 "session/prompt",
                 new { sessionId = _sessionId, prompt },
-                ct, OnWire(open, Wrote(sent, words)), answered: frame => Answered(open, frame), admit: () => Admit(passage, open, when))
+                ct, OnWire(open, Wrote(sent, words)), answered: frame => Answered(open, frame), admit: () => _open.Admit(passage, open, when))
                 .ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -1294,7 +1119,7 @@ public sealed class AcpSession(
     /// <summary>A prompt's write returned: marked on the wire (Codex's finding 3), then what the write's return tells.</summary>
     private Action OnWire(OpenPrompt open, Action? wrote) => () =>
     {
-        lock (_promptsGate) open.Written = true;
+        _open.Written(open);
         wrote?.Invoke();
     };
 
@@ -1339,7 +1164,7 @@ public sealed class AcpSession(
         if (answered)
         {
             // A word an error handed nothing to, answered before the agent did anything else for it: it was taken after all.
-            if (open.Words is not null && TakeLate(open) is { } own) AskedAll(own);
+            if (open.Words is not null && _open.TakeLate(open) is { } own) AskedAll(own);
 
             // A call a steer cut that never heard again ends with the turn it was cut in, as cut (STEER2a).
             CloseCut();
@@ -1365,9 +1190,7 @@ public sealed class AcpSession(
 
             // COWORK1c (the design §7), COMMS1h: the turn that took the words ended, their receipt `ended`: what Daoris saw, never an
             // answer; and only where the words were taken here.
-            bool took;
-            lock (_promptsGate) took = open.Taken;
-            if (took && stopReason == "end_turn" && open.Words?.Id is { } word)
+            if (_open.Took(open) && stopReason == "end_turn" && open.Words?.Id is { } word)
             {
                 Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = word, Receipt = Receipts.Ended });
             }
@@ -1378,36 +1201,8 @@ public sealed class AcpSession(
             TurnStages.Of<AcpMeasure>().Forget();
         }
 
-        OpenPrompt? taken = null;
-        bool last;
-        lock (_promptsGate)
-        {
-            // AGENTERRORS1a (§5.1, round 3's read, R3-O2): a word's disposition is read before its prompt leaves, from its turn. Answered
-            // with an error before any update of its turn, it may or may not be in the agent's conversation: unacknowledged.
-            if (_retry is not null && !answered && !open.Heard)
-            {
-                _unacknowledged.AddRange(open.All.Where(word => !word.IsDaoris));
-                // The opening prompt's blocks (a resume's words) carry no message here: the conclusion takes their disposition from this.
-                if (open.Opening) _retry.OpeningUnacknowledged = true;
-            }
-
-            // AGENTERRORS1a2, shape 2 (§4.2): a word's prompt refused after the word was taken, by its mark as the error came, never by a
-            // later update; read by its mid-turn send, which makes it the turn's prompt failing.
-            if (_retry is not null && !answered && open is { Taken: true, Words: { } refusedTaken }) _refusedTaken.Add(refusedTaken);
-            _prompts.Remove(open);
-            last = _prompts.Count == 0;
-            // 🔴 USERSHOWN1: an error hands the turn to nothing. The install's record kept a word as taken at the instant its
-            // door failed (ECONNRESET), the agent never having read it. The word is taken once the agent does something for
-            // it (TakeLate, a conversation's door going on after the error), or is handed back as never reached.
-            if (answered && _prompts.First?.Value is { Taken: false, Words: not null } head)
-            {
-                head.Taken = true;
-                taken = head;
-            }
-
-            _afterError = !answered;
-        }
-
+        // A word's disposition is read before its prompt leaves, from its turn; the words behind it are taken where it was answered.
+        var taken = _open.Leaves(open, answered, _retry, out var last);
         if (taken is not null) AskedAll(taken);
 
         // 🔴 COWORK1d (trap 3, the design §2.3): the last open prompt is answered, so the turn is over; a claim written from here on would
@@ -1420,53 +1215,13 @@ public sealed class AcpSession(
     }
 
     /// <summary>Whether a prompt is on the wire and not yet answered (STEER1): what the agent says meanwhile is its turn's.</summary>
-    private bool Prompted()
-    {
-        lock (_promptsGate) return _prompts.Count > 0;
-    }
-
-    /// <summary>
-    /// After an error answered the prompt before it (USERSHOWN1), the next word is taken by the first thing the agent does on
-    /// the wire for the session, or by its own answer: told then, before that thing is kept, so the answer never sits above the
-    /// question. The words taken now, where they are <paramref name="only"/>'s (or, null, the first waiting); else null.
-    /// </summary>
-    private OpenPrompt? TakeLate(OpenPrompt? only = null)
-    {
-        lock (_promptsGate)
-        {
-            if (!_afterError || _prompts.First?.Value is not { Taken: false, Words: not null } head)
-            {
-                _afterError = false;
-                return null;
-            }
-
-            if (only is not null && head != only) return null;
-            _afterError = false;
-            head.Taken = true;
-            return head;
-        }
-    }
+    private bool Prompted() => _open.Prompted;
 
     /// <summary>Every word a prompt carries told taken, in the order said (AGENTERRORS1a: a try carries the held words in one prompt).</summary>
     private void AskedAll(OpenPrompt open)
     {
         foreach (var words in open.All) Asked(words);
     }
-
-    /// <summary>
-    /// The person's words whose prompt an error answered before any update of its turn (AGENTERRORS1a, §5.1), gathered as each failure is
-    /// read, under <see cref="_promptsGate"/>: read by the episode, and said by the <c>lost</c> note.
-    /// </summary>
-    private readonly List<IAgentWord> _unacknowledged = [];
-
-    /// <summary>An error answered the prompt before a word, which waits for the agent's next update to be taken (USERSHOWN1).</summary>
-    private bool _afterError;
-
-    /// <summary>
-    /// The person's words sent during a turn whose own prompt an error answered after they were taken (AGENTERRORS1a2, shape 2), under
-    /// <see cref="_promptsGate"/>: each read once by <see cref="MidTurnAsync"/>, by reference.
-    /// </summary>
-    private readonly HashSet<IAgentWord> _refusedTaken = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// A word sent during a running turn (STEER1), as <see cref="SendPromptAsync(string, IReadOnlyList{KeptFile}?, CancellationToken, Action?, IAgentWord?)"/>
@@ -1487,10 +1242,7 @@ public sealed class AcpSession(
     }
 
     /// <summary>Whether this word's prompt was refused after it was taken (shape 2), read once.</summary>
-    private bool RefusedTaken(IAgentWord words)
-    {
-        lock (_promptsGate) return _refusedTaken.Remove(words);
-    }
+    private bool RefusedTaken(IAgentWord words) => _open.RefusedTaken(words);
 
     /// <summary>Tell the run's listener the session took the person's words; its failure costs a line, never the turn.</summary>
     private void Asked(IAgentWord words)
@@ -1734,12 +1486,8 @@ public sealed class AcpSession(
     void ITurnWiring.Heard()
     {
         // AGENTERRORS1a (§5.1): an update of the oldest open prompt's turn shows its words taken, whatever answers it.
-        lock (_promptsGate)
-        {
-            if (_prompts.First?.Value is { } turn) turn.Heard = true;
-        }
-
-        if (TakeLate() is { } late) AskedAll(late);
+        _open.Heard();
+        if (_open.TakeLate() is { } late) AskedAll(late);
     }
 
     bool ITurnWiring.Prompted() => Prompted();
