@@ -38,6 +38,20 @@ public sealed class AcpPartsTests
     }
 
     [Fact]
+    public void The_units_the_session_hands_its_work_to_are_built_on_first_use_and_stand_idle_before_a_run()
+    {
+        var session = new AcpSession(new StringReader(""), TextWriter.Null, _ => { });
+
+        Assert.False(session.WaitsOnOwnWork);
+        Assert.False(session.WaitsOnTransient);
+        Assert.Empty(session.ConfigOptions);
+        Assert.Empty(session.OpeningOptions);
+        Assert.Null(session.NotOffered);
+        Assert.Null(session.CarriesOn);
+        Assert.Null(session.LastAcknowledgedOptions);
+    }
+
+    [Fact]
     public void A_phase_runs_each_stage_after_the_ones_it_names_and_a_cycle_is_refused_by_its_members()
     {
         var order = PartOrder.Of(

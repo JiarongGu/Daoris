@@ -519,7 +519,7 @@ public sealed class AcpSteerTests
     public void Whether_an_agent_takes_prompts_mid_turn_is_its_own_word(string initialized, bool takes)
     {
         using var answer = JsonDocument.Parse(initialized);
-        Assert.Equal(takes, AcpSession.TakesWordsMidTurn(answer.RootElement));
+        Assert.Equal(takes, AcpProtocol.TakesWordsMidTurn(answer.RootElement));
     }
 
     /// <summary>
@@ -841,7 +841,7 @@ public sealed class AcpSteerTests
     public void Whether_send_now_steers_is_the_agents_own_word(string initialized, bool steers)
     {
         using var answer = JsonDocument.Parse(initialized);
-        Assert.Equal(steers, AcpSession.SteersNow(answer.RootElement));
+        Assert.Equal(steers, AcpProtocol.SteersNow(answer.RootElement));
     }
 
     /// <summary>

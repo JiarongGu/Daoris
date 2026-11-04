@@ -3,243 +3,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Contracts.Parts;
+using static Daoris.Driver.AcpProtocol;
 
 namespace Daoris.Driver;
-
-/// <param name="StopReason">What the agent said ended the turn, verbatim from the wire.</param>
-/// <param name="SessionId">The id the agent gave the session, for the cancel verb and the record.</param>
-/// <param name="Updates">How many `session/update` notifications arrived — the timeline's raw count.</param>
-/// <remarks>
-/// <b>None of this moves a session record.</b> The record moves on the exit code and the quest's own
-/// state (D46 §4), because those are the two signals outside work also produces — and because the ACP
-/// wire flattens an aborted, blocked or errored turn to `end_turn`, so its stop reason is a
-/// self-report that cannot be told apart from an ordinary ending. What this carries ENRICHES the
-/// console and the transcript; it never replaces an observation. The one exception is <see cref="AcpOutcome.Refusal"/>
-/// (APIREFUSAL1): the adapter's word that its model's provider refused a call, which is the door saying the work was cut
-/// off, as a failed call is (ACPEND1), and not the session describing its work.
-/// </remarks>
-/// <summary>
-/// What a session consumed, as its harness reported it (TOOL3/D57 §4).
-/// </summary>
-/// <param name="Used">Context the session was holding, in the harness's own units.</param>
-/// <param name="Size">The window it was holding it against.</param>
-/// <remarks>
-/// <para><b>Reported, never computed.</b> Daoris makes no model calls and knows nothing about
-/// tokenization — this is a number somebody else's tool volunteered, carried as it was given. No
-/// price is attached to it either: what a token costs is the deployment's business (D24), and a
-/// price table per model per provider maintained here would be wrong within a month.</para>
-///
-/// <para><b>The high-water mark, not the last reading.</b> Context drops when a session compacts, so
-/// the final number would say a session that nearly filled its window used very little.</para>
-/// </remarks>
-public sealed record AcpUsage(long Used, long Size);
-
-/// <summary>One value a config option offers, in the agent's own words.</summary>
-public sealed record AcpConfigChoice(string Value, string Name, string? Description = null);
-
-/// <summary>
-/// One of a session's config options as the agent offers it (AGT6b, D98): what it is called, what kind
-/// it is, what it is set to, and what it may be set to. Only a choice among values is kept.
-/// </summary>
-/// <param name="Id">What <c>session/set_config_option</c> names it by.</param>
-/// <param name="Name">What the agent calls it — content, never translated.</param>
-/// <param name="Category">
-/// The protocol's word for what it is — <c>mode</c>, <c>model</c>, <c>thought_level</c>, or another —
-/// or null where the agent said none.
-/// </param>
-/// <param name="Current">What it is set to now.</param>
-/// <param name="Choices">What it may be set to, a grouped list flattened: a group is a heading, not a value.</param>
-public sealed record AcpConfigOption(
-    string Id, string Name, string? Category, string Current, IReadOnlyList<AcpConfigChoice> Choices,
-    string? Description = null)
-{
-    /// <summary>
-    /// Whether this is one the person may set from Daoris (D98): the model, and the effort the protocol
-    /// calls a thought level. 🔴 Never the mode — that is the posture Daoris runs a session under
-    /// (D37, D81), and a person widening it from a menu is what D52 refuses. An option with no category
-    /// is not offered: nothing says what it is.
-    /// </summary>
-    public bool ThePersons => Category is "model" or "thought_level";
-
-    /// <summary>
-    /// The options a <c>configOptions</c> list holds, read without trusting its shape: an entry that is not
-    /// a choice among values — a boolean, a malformed one — is left out, never a throw.
-    /// </summary>
-    public static IReadOnlyList<AcpConfigOption> Read(JsonElement list)
-    {
-        if (list.ValueKind != JsonValueKind.Array) return [];
-
-        var read = new List<AcpConfigOption>();
-        foreach (var option in list.EnumerateArray())
-        {
-            if (option.ValueKind != JsonValueKind.Object
-                || Json.Text(option, "type") != "select"
-                || Json.Text(option, "id") is not { Length: > 0 } id
-                || Json.Text(option, "currentValue") is not { } current
-                || !option.TryGetProperty("options", out var values) || values.ValueKind != JsonValueKind.Array)
-            {
-                continue;
-            }
-
-            var choices = new List<AcpConfigChoice>();
-            foreach (var entry in values.EnumerateArray())
-            {
-                if (entry.ValueKind != JsonValueKind.Object) continue;
-                if (entry.TryGetProperty("options", out var grouped) && grouped.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var inner in grouped.EnumerateArray()) Choice(inner, choices);
-                }
-                else
-                {
-                    Choice(entry, choices);
-                }
-            }
-
-            read.Add(new AcpConfigOption(
-                id, Json.Text(option, "name") ?? id, Json.Text(option, "category"), current, choices,
-                Json.Text(option, "description")));
-        }
-
-        return read;
-    }
-
-    private static void Choice(JsonElement entry, List<AcpConfigChoice> into)
-    {
-        if (entry.ValueKind == JsonValueKind.Object && Json.Text(entry, "value") is { Length: > 0 } value)
-        {
-            into.Add(new AcpConfigChoice(value, Json.Text(entry, "name") ?? value, Json.Text(entry, "description")));
-        }
-    }
-}
-
-/// <param name="Usage">
-/// The context pressure the agent reported, or <b>null when it reported none</b> — absent, never
-/// zero. "Nothing was measured" and "it used nothing" are different claims (TOOL3).
-/// </param>
-public sealed record AcpOutcome(
-    string StopReason, string SessionId, int Updates, AcpUsage? Usage = null)
-{
-    /// <summary>
-    /// The stop reason a turn ends with when its model's provider refused it (APIREFUSAL1): seen on the install (2026-10-23) after
-    /// the adapter said the provider's <c>API Error</c>, with its request id, as the agent's message.
-    /// </summary>
-    public const string Refusal = "refusal";
-
-    /// <summary>Whether its last turn ended on its provider's refusal (<see cref="Refusal"/>).</summary>
-    public bool ProviderRefused => StopReason == Refusal;
-
-    /// <summary>The stop of a session its agent's refusal of the choice ended at the open, before any prompt (D205 §3.3).</summary>
-    public const string ChoiceNotOffered = "choice-not-offered";
-
-    /// <summary>The refusal that ended its open before any prompt (D205 §3.3, MODELROLE1c2), or null for every run that prompted.</summary>
-    public ModelRefusal? NotOffered { get; init; }
-
-    /// <summary>How its last turn was cut (CODEXPERM1), or null where it was not: see <see cref="TurnCut"/>.</summary>
-    public TurnCut? Cut { get; init; }
-
-    /// <summary>What the console says of the turn's end: a cut says what cut it, any other end the agent's stop reason.</summary>
-    public string TurnEnd => Cut is { } cut
-        ? $"the turn was cut: its agent ended it `{StopReason}` "
-          + (cut.Call is { } call ? $"after the permission it asked for, {call}, was refused" : "though nobody stopped it")
-          + $", after {Updates} update(s)"
-        : $"the turn ended: {StopReason}, after {Updates} update(s)";
-}
-
-/// <summary>A choice refused at the open with nothing else to set on the same session (D205 §3.3): the open ends before its prompt.</summary>
-public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
-    : DriverException($"the agent did not offer the {refusal.Category} `{refusal.Value}` asked ({refusal.Code}): nothing was prompted.")
-{
-    /// <summary>What it refused.</summary>
-    public ModelRefusal Refusal { get; } = refusal;
-}
-
-/// <summary>
-/// A word a run was to write whose attempt its record did not acknowledge (FOUNDATION1 row p, the design §3.4 rule 5): it is not written, and
-/// waits on its record for the session's next go-on, which sends it once. Thrown before the wire, never after a write.
-/// </summary>
-public sealed class AcpWordsUnmarked(string message) : DriverException(message)
-{
-    /// <summary>The sentence a word left waiting by an unacknowledged mark is said with, and a resumed run's failure carries.</summary>
-    public const string Sentence = "the session's record did not mark the words attempted, so none was written: they wait on it for the session's next go-on";
-}
-
-/// <summary>
-/// A word turned away at a run's door (RUNENDS1 after review, finding 2): the run had ended, or left a silent turn of a closed quest, before
-/// it was written, so it never reached the wire and went back to the driver with the run's other words (<see cref="AcpSession.HandedBack"/>).
-/// Thrown before the wire, never after a write, and never the door's failure: nothing more is said of it.
-/// </summary>
-public sealed class AcpTurnedAway() : DriverException(Sentence)
-{
-    /// <summary>What the words' delivery is told.</summary>
-    public const string Sentence = "the session's run had ended before these words were written: they went back to wait for its next run";
-}
-
-/// <summary>
-/// The agent's refusal of a call: a JSON-RPC error, said as a sentence, with what its <c>data</c> carried kept beside
-/// it (ACPDATA1, D125 §1.2).
-/// </summary>
-/// <remarks>
-/// 🔴 <b>An adapter may put the words that matter in <c>data</c>, not in the message.</b> <c>codex-acp</c> answers a usage
-/// limit with the message <c>Internal error</c> and nothing after it, and the limit's sentence in <c>data.message</c>; Claude
-/// Code's adapter puts its sentence in the message and the SDK's category in <c>data.errorKind</c>
-/// (docs/2026-10-02-limit-signals-evidence.md §3, §4). So the sentence the data carries is said after the message, where
-/// the conclusion and the limit reader read the door's failure, and the kind is kept for a reader that reads a field.
-/// </remarks>
-/// <param name="message">The refusal as a sentence: the error's message, then the data's, where it adds one.</param>
-/// <param name="said">The data's <c>message</c>, or null where it carried none.</param>
-/// <param name="errorKind">The data's <c>errorKind</c>, or null where it carried none.</param>
-/// <param name="code">The error's JSON-RPC <c>code</c>, or null where it gave none (ANSWER1a).</param>
-/// <param name="words">The agent's own sentence, without this client's preface (ANSWER1a); the message where unsaid.</param>
-/// <param name="reason">The data's <c>reason</c>, or null where it carried none (MSG1b).</param>
-public sealed class AcpRefusal(
-    string message, string? said = null, string? errorKind = null, int? code = null, string? words = null, string? reason = null)
-    : DriverException(message)
-{
-    /// <summary>What the error's <c>data.message</c>, or else its <c>data.details</c>, said; null where it said nothing.</summary>
-    public string? Said => said;
-
-    /// <summary>
-    /// The error's <c>data.reason</c> (MSG1b, D137 §1.1): <c>codex-acp</c> says <c>thread_active_writer</c> there when another
-    /// Codex client holds the conversation. A field a reader acts on, where the sentence beside it is only for a person.
-    /// </summary>
-    public string? Reason => reason;
-
-    /// <summary>The error's <c>data.errorKind</c>, or null where it carried none.</summary>
-    public string? ErrorKind => errorKind;
-
-    /// <summary>
-    /// The error's <c>code</c> (ANSWER1a): a resume refused <c>resource_not_found</c> is a conversation the agent no longer
-    /// has, any other a refusal. Null where the error gave none.
-    /// </summary>
-    public int? Code => code;
-
-    /// <summary>The agent's own sentence, as the error and its data said it, without this client's preface.</summary>
-    public string Words => words ?? message;
-
-    /// <summary>
-    /// The refusal a JSON-RPC <c>error</c> member says, read without trusting its shape (REV3): a message that is not
-    /// text is the error as written, and a <c>data</c> that is not an object, or fields in it that are not text, add
-    /// nothing. The data's message is said after the error's only where it adds words the error's did not already say.
-    /// <c>claude-agent-acp</c> puts its sentence in <c>data.details</c> instead (<c>Invalid value for config option model: …</c>,
-    /// MODELROLE1a's evidence), read where the data has no message.
-    /// </summary>
-    internal static AcpRefusal Of(JsonElement error)
-    {
-        var message = Json.Text(error, "message") ?? error.GetRawText();
-        var data = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("data", out var d) ? d : default;
-        var said = (Json.Text(data, "message") ?? Json.Text(data, "details")) is { } words && !string.IsNullOrWhiteSpace(words)
-            ? words.Trim()
-            : null;
-        var sentence = said is null || message.Contains(said, StringComparison.Ordinal) ? message : $"{message}: {said}";
-        var code = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var c)
-                   && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var number)
-            ? number
-            : (int?)null;
-        return new AcpRefusal(
-            $"the ACP agent refused the call: {sentence}", said, Json.Text(data, "errorKind"), code, sentence,
-            Json.Text(data, "reason"));
-    }
-}
 
 /// <summary>
 /// One session held over the Agent Client Protocol (D53): JSON-RPC 2.0 in newline-delimited frames,
@@ -319,7 +85,7 @@ public sealed class AcpSession(
     ISessionStreams? streams = null,
     Action<IReadOnlyList<AcpConfigOption>>? onOptions = null,
     Action<string>? onConversation = null,
-    TimeSpan? wakeQuiet = null) : ITurnWiring
+    TimeSpan? wakeQuiet = null) : ITurnRetryWiring
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -366,15 +132,18 @@ public sealed class AcpSession(
 
     /// <summary>
     /// Asked at a turn's end (LANDBACK1 part 2, D87's note): what the quest and its tree say, so a turn that ended with the quest done and
-    /// the tree uncommitted is carried on rather than the session's end (<see cref="CarryOnAsync"/>). Dirty, with carry-ons left, the run
-    /// also waits for the session's own background work as a park would have it wait (<see cref="Waits"/>), never cutting that wait on
+    /// the tree uncommitted is carried on rather than the session's end (<see cref="AcpWaits.CarryOnAsync"/>). Dirty, with carry-ons left, the run
+    /// also waits for the session's own background work as a park would have it wait (<see cref="AcpWaits.Of"/>), never cutting that wait on
     /// the closed quest. Null never carries on, and the end is as before.
     /// </summary>
-    public Func<CancellationToken, Task<TurnCarry>>? CarriesOn { get; set; }
+    public Func<CancellationToken, Task<TurnCarry>>? CarriesOn
+    {
+        get => Ends.CarriesOn;
+        set => Ends.CarriesOn = value;
+    }
 
-    // LANDBACK1 part 2: the carry-ons written in this run, bounded by TurnCarry.Bound, and whether the bound was said.
-    private int _carried;
-    private bool _boundSaid;
+    private AcpWaits Ends => LazyInitializer.EnsureInitialized(ref _ends, () => new AcpWaits(this));
+    private AcpWaits? _ends;
 
     /// <summary>
     /// The words held for the turn's end that the run handed back unprompted because its setup changed (ACCESSSWAP1b), in the order
@@ -423,19 +192,9 @@ public sealed class AcpSession(
     public IReadOnlyList<string> LeftRunning { get; private set; } = [];
 
     /// <summary>Whether the posture says the person answers this session's permission requests.</summary>
-    private readonly bool _personAnswers = Marks(posture).PersonAnswers;
+    private readonly bool _personAnswers = AcpPosture.Marks(posture).PersonAnswers;
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
-
-    private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
-
-    /// <summary>
-    /// What a request's answer does on the reader's thread, before anything after it is read (STEER1): a prompt's turn
-    /// event, and the words behind it taken, keep the order the wire said them in.
-    /// </summary>
-    private readonly ConcurrentDictionary<int, Action<JsonElement>> _answered = new();
-
-    private readonly SemaphoreSlim _writeLock = new(1, 1);
 
     /// <summary>The prompts on the wire and not yet answered, oldest first, and the lock that guards them (STEER1).</summary>
     private readonly LinkedList<OpenPrompt> _prompts = [];
@@ -447,14 +206,7 @@ public sealed class AcpSession(
     /// <summary>Whether *Send now* steers into the running turn (<see cref="SteersNow"/>, STEER2a).</summary>
     private bool _steersNow;
 
-    /// <summary>
-    /// The tool calls announced and not yet finished, by id, and those a steer cut (STEER2a): open when the steer was answered
-    /// <c>injected</c>, and never heard of since. Guarded by the lock, read and written on the reader's thread.
-    /// </summary>
-    private readonly object _callsGate = new();
-    private readonly HashSet<string> _openCalls = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _finishedCalls = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _cut = new(StringComparer.Ordinal);
+    private readonly StepCalls _calls = new();
 
     /// <summary>
     /// The status the record closes a call with that a steer cut and that never heard again (STEER2a, D136's 2026-10-16 note;
@@ -532,7 +284,6 @@ public sealed class AcpSession(
     private readonly List<IAgentWord> _turnedAway = [];
 
     private int _promptCount;
-    private int _nextId;
     private int _updates;
     private string? _sessionId;
 
@@ -552,13 +303,8 @@ public sealed class AcpSession(
     /// <summary>The background work its harness says still runs, with when each began (FABRIC-PIPELINE1c, <see cref="LongCalls"/>).</summary>
     public IReadOnlyList<RunningTask> BackgroundRunning => _background.RunningSince;
 
-    private bool _waitsOnOwnWork;
-
-    /// <summary>
-    /// Whether no turn runs and the session waits on its own background work (BGWAIT1, the watcher's state C; SESSWATCH1a, the
-    /// session-watch design §1.4): its quiet is judged by whether that work moves, on longer bounds.
-    /// </summary>
-    public bool WaitsOnOwnWork => Volatile.Read(ref _waitsOnOwnWork);
+    /// <summary>Whether no turn runs and the session waits on its own background work (BGWAIT1, SESSWATCH1a): the watcher's state C.</summary>
+    public bool WaitsOnOwnWork => Ends.WaitsOnOwnWork;
 
     /// <summary>The turns its harness starts by itself when that work ends (BGWAIT2), read from the session's opening.</summary>
     private readonly AcpWake _wake = new();
@@ -608,217 +354,59 @@ public sealed class AcpSession(
     /// </summary>
     public event Action<JsonElement>? LimitsSaid;
 
-    /// <summary>The config options as the agent last said them (AGT6b), and the lock that guards them.</summary>
-    private readonly object _optionsGate = new();
-    private IReadOnlyList<AcpConfigOption> _options = [];
+    private AcpOptions Options => LazyInitializer.EnsureInitialized(ref _optionsKept, () => new AcpOptions(
+        onLine, onOptions, (method, args, ct) => RequestAsync(method, args, ct), () => _sessionId));
+    private AcpOptions? _optionsKept;
 
-    /// <summary>
-    /// The session's config options, as the agent last said them (AGT6b, D98) — empty before it opens, or
-    /// where the agent offers none. Every one of them, the mode included: which of them a person may set
-    /// is the caller's to judge (<see cref="AcpConfigOption.ThePersons"/>).
-    /// </summary>
-    public IReadOnlyList<AcpConfigOption> ConfigOptions
+    /// <summary>The session's config options as the agent last said them (AGT6b, D98), the mode included; which a person may set is the caller's to judge (<see cref="AcpConfigOption.ThePersons"/>).</summary>
+    public IReadOnlyList<AcpConfigOption> ConfigOptions => Options.Current;
+
+    private void KeepOptions(IReadOnlyList<AcpConfigOption> options) => Options.Keep(options);
+
+    /// <summary>Change one of the session's config options, mid-conversation (AGT6b, D98): the agent's whole list after it is kept and returned.</summary>
+    public Task<IReadOnlyList<AcpConfigOption>> SetConfigOptionAsync(string configId, string value, CancellationToken ct) =>
+        Options.SetAsync(configId, value, ct);
+
+    /// <summary>The list the last setter returned; null when it returned none (D205).</summary>
+    public IReadOnlyList<AcpConfigOption>? LastAcknowledgedOptions => Options.LastAcknowledged;
+
+    /// <summary>What this start's actor asked, set on the open session by category before the posture and the first prompt (D205 §3.2).</summary>
+    public ActorAsked? Carry
     {
-        get { lock (_optionsGate) return _options; }
+        get => Options.Carry;
+        set => Options.Carry = value;
     }
 
-    /// <summary>Keep what the agent said its options are now, and tell whoever asked.</summary>
-    private void KeepOptions(IReadOnlyList<AcpConfigOption> options)
+    /// <summary>Told what was carried where it differs from <see cref="Carry"/> (D205 §3.3, §5).</summary>
+    public Action<ActorAsked>? Carried
     {
-        lock (_optionsGate) _options = options;
-        try
-        {
-            onOptions?.Invoke(options);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            // A listener's failure is its own: the options are kept, and the turn goes on.
-            onLine($"[the session's options could not be told: {error.Message}]");
-        }
+        get => Options.Carried;
+        set => Options.Carried = value;
     }
 
-    /// <summary>
-    /// Change one of the session's config options (AGT6b, D98): <c>session/set_config_option</c> with the
-    /// session, the option and the value — a model, or an effort, mid-conversation, as the tool's own
-    /// console would. The agent's answer is its whole list after the change (an effort's levels follow the
-    /// model), and that is what is kept and returned.
-    /// </summary>
-    /// <remarks>
-    /// This sends what it is asked to; which options a person may set is the caller's judgement, made
-    /// before it gets here. An answer that carries no list leaves the others as they were and the one set
-    /// at the value asked for, since the agent accepted it.
-    /// </remarks>
-    /// <exception cref="DriverException">The session is not open, or the agent refused the change — in its words.</exception>
-    public async Task<IReadOnlyList<AcpConfigOption>> SetConfigOptionAsync(string configId, string value, CancellationToken ct)
+    /// <summary>Asked where the agent refuses <see cref="Carry"/>'s model at the open: a later choice for this session, or null to end it (<see cref="AcpChoiceNotOffered"/>).</summary>
+    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused
     {
-        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be set on it.");
-
-        var answer = await RequestAsync("session/set_config_option", new { sessionId = _sessionId, configId, value }, ct)
-            .ConfigureAwait(false);
-        var returned = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("configOptions", out var list)
-                    && list.ValueKind == JsonValueKind.Array
-            ? AcpConfigOption.Read(list)
-            : null;
-        LastAcknowledgedOptions = returned;
-        // Preserve the composer's existing reading; provenance below never mistakes this local projection for an acknowledgement.
-        var after = returned ?? [.. ConfigOptions.Select(option => option.Id == configId ? option with { Current = value } : option)];
-        KeepOptions(after);
-        return after;
+        get => Options.ModelRefused;
+        set => Options.ModelRefused = value;
     }
 
-    /// <summary>D205: only the list the last setter actually returned; null when it returned none.</summary>
-    public IReadOnlyList<AcpConfigOption>? LastAcknowledgedOptions { get; private set; }
+    /// <summary>Told the options the open listed, before the posture or any set (D205 §9.2).</summary>
+    public Action<IReadOnlyList<AcpConfigOption>>? OffersRead
+    {
+        get => Options.OffersRead;
+        set => Options.OffersRead = value;
+    }
 
-    /// <summary>
-    /// What this start's actor asked (D205 §3.2, MODELROLE1c): each value an entry names and carries is set on the open session by its
-    /// category, <c>model</c> and then <c>thought_level</c>, before the posture and the first prompt, on a new session and a resumed one
-    /// alike. Null, or account default, sets nothing: today's cascade decides.
-    /// </summary>
-    public ActorAsked? Carry { get; set; }
-
-    /// <summary>
-    /// Told what was carried where it differs from <see cref="Carry"/>: a value the agent offers no option for, refuses, or answers with
-    /// another value it offers, kept as asked and not carried (D205 §3.3, §5), so the record never says a choice was taken that was not.
-    /// </summary>
-    public Action<ActorAsked>? Carried { get; set; }
-
-    /// <summary>
-    /// Asked where the agent does not offer, or refuses, <see cref="Carry"/>'s model at the open, before any prompt (D205 §3.3,
-    /// MODELROLE1c2): the start's re-ask, which keeps the reading and answers what the walk now would. A later choice to set on this same
-    /// session (the same agent on the same account), or null, where the record ends <c>choice-not-offered</c> before any prompt
-    /// (<see cref="AcpChoiceNotOffered"/>). Null keeps MODELROLE1c's reading: the model runs at account default, said as not carried.
-    /// </summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; set; }
-
-    /// <summary>
-    /// Told the options its open listed, as <c>session/new</c> (or the resume) answered them before the posture or any set: the reading
-    /// <c>data/agent-offers.json</c> keeps for its agent, version and account (D205 §9.2).
-    /// </summary>
-    public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; set; }
-
-    /// <summary>
-    /// The options as the open listed them, before the posture or any set, never overwritten (D205 §3.3, round 4, Opus N6): what a refused
-    /// attempt's categories are set back to where the same-account move leaves them at account default. <see cref="ConfigOptions"/> keeps
-    /// only the latest list, which every set and every <c>config_option_update</c> replace.
-    /// </summary>
-    public IReadOnlyList<AcpConfigOption> OpeningOptions { get; private set; } = [];
+    /// <summary>The options as the open listed them, never overwritten (D205 §3.3).</summary>
+    public IReadOnlyList<AcpConfigOption> OpeningOptions => Options.OpeningOptions;
 
     /// <summary>The refusal that ended this session's open before any prompt (D205 §3.3), or null.</summary>
-    public ModelRefusal? NotOffered { get; private set; }
+    public ModelRefusal? NotOffered => Options.NotOffered;
 
-    /// <summary>The opening's snapshot, kept once, and told as the agent's offer reading (D205 §9.2).</summary>
-    private void KeepOpening()
-    {
-        OpeningOptions = ConfigOptions;
-        try
-        {
-            OffersRead?.Invoke(OpeningOptions);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            onLine($"[the session's offers could not be kept: {error.Message}]");
-        }
-    }
+    private void KeepOpening() => Options.KeepOpening();
 
-    /// <summary>
-    /// <see cref="Carry"/> set on the session (D205 §3.2): the model first, then the effort, whose levels follow the model, each found by
-    /// its category (MODELROLE1a: Codex's effort id is <c>reasoning_effort</c>, Claude's <c>effort</c>). Whether anything was set, so the
-    /// posture is set again after it: a model change can move the mode (MODELROLE1a's <c>haiku</c> moved <c>auto</c> to
-    /// <c>acceptEdits</c>).
-    /// </summary>
-    /// <remarks>
-    /// Where <see cref="ModelRefused"/> is given, a model the open's list does not offer, a set the agent refuses, or one answered with another
-    /// value it offers is a refusal of that choice on this account (§3.3): the re-ask answers a later choice to set on this session, each
-    /// category the refused attempt touched and the later choice leaves at account default first set back to its opening value; or the
-    /// open ends before its prompt. An effort not offered runs at account default effort, said as not carried, never a refusal.
-    /// </remarks>
-    /// <exception cref="AcpChoiceNotOffered">The choice was refused and nothing else may run on this session: no prompt was sent.</exception>
-    private async Task<bool> CarryAsync(CancellationToken ct)
-    {
-        var asked = Carry;
-        var set = false;
-        var touched = new HashSet<string>(StringComparer.Ordinal);
-        while (asked is not null)
-        {
-            ModelRefusal? refusal = null;
-            var model = await OneAsync("model", asked.Model, judged: ModelRefused is not null).ConfigureAwait(false);
-            if (refusal is { } refused)
-            {
-                NotOffered = refused;
-                var later = await ModelRefused!(refused).ConfigureAwait(false);
-                if (later is null) throw new AcpChoiceNotOffered(refused);
-
-                // The same agent on the same account (§3.3's first path): what the refused attempt moved is set back where the later
-                // choice leaves it at account default, then the later choice is carried on this same session, no respawn.
-                foreach (var category in touched)
-                {
-                    var leaves = category == "model" ? later.Model : later.Effort;
-                    if (leaves.Source is "entry" or "override") continue;
-                    if (OpeningOptions.FirstOrDefault(option => option.Category == category) is not { Current: { } opening } option) continue;
-                    try
-                    {
-                        await SetConfigOptionAsync(option.Id, opening, ct).ConfigureAwait(false);
-                    }
-                    catch (DriverException back)
-                    {
-                        onLine($"[{category} could not be set back to `{opening}`: {back.Message}]");
-                        throw new AcpChoiceNotOffered(refused);
-                    }
-
-                    if (LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category) is { } now && now.Current != opening)
-                    {
-                        throw new AcpChoiceNotOffered(refused);
-                    }
-                }
-
-                NotOffered = null;
-                touched.Clear();
-                asked = later;
-                continue;
-            }
-
-            var effort = await OneAsync("thought_level", asked.Effort, judged: false).ConfigureAwait(false);
-            if (model != asked.Model || effort != asked.Effort) Carried?.Invoke(asked with { Model = model, Effort = effort });
-            return set;
-
-            async Task<ActorValue> OneAsync(string category, ActorValue value, bool judged)
-            {
-                if (value is not { Source: "entry" or "override", Value: { } wanted, Carried: true }) return value;
-                if (ConfigOptions.FirstOrDefault(option => option.Category == category) is not { } option) return value with { Carried = false };
-                if (option.Current == wanted) return value;
-                // Always asked, never judged by the list alone (MODELROLE1a): Claude's door lists aliases and takes a full id it does not list,
-                // and refuses a model it does not offer at the set, before any prompt. A refusal of a value the list named is `refused`; of
-                // one it did not, `not-offered` (D205 §3.3).
-                var listed = option.Choices.Any(choice => choice.Value == wanted);
-                try
-                {
-                    await SetConfigOptionAsync(option.Id, wanted, ct).ConfigureAwait(false);
-                    // What the attempt moved, which a same-account move sets back where it leaves the category at account default.
-                    touched.Add(category);
-                    set = true;
-                }
-                catch (DriverException refused)
-                {
-                    onLine($"[{category} `{wanted}` was not set: {refused.Message}]");
-                    if (judged) refusal = new ModelRefusal(category, wanted, listed ? AgentOffers.RefusedCode : AgentOffers.NotOffered);
-                    return value with { Carried = false };
-                }
-
-                // A returned value other than the one asked is a refusal only where it is another value the list offers: an asked id the agent
-                // answers with its own alias is taken (round 3, Opus N5; MODELROLE1a: `claude-sonnet-5-5` asked, `sonnet` returned).
-                var now = LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category);
-                if (now is not null && now.Current != wanted && now.Choices.Any(choice => choice.Value == wanted))
-                {
-                    if (judged) refusal = new ModelRefusal(category, wanted, AgentOffers.RefusedCode);
-                    return value with { Carried = false };
-                }
-
-                return value;
-            }
-        }
-
-        return set;
-    }
+    private Task<bool> CarryAsync(CancellationToken ct) => Options.CarryAsync(ct);
 
     /// <summary>
     /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
@@ -930,7 +518,7 @@ public sealed class AcpSession(
                 .ConfigureAwait(false);
 
             // LANDBACK1 part 2: what the loop asks of the quest is its own wait on background work, or a carry-on owed for a done quest's tree.
-            var turnWaits = Waits(waitsOnBackground);
+            var turnWaits = Ends.Of(waitsOnBackground);
 
             // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
             // the turn is waited for until it is answered; one held is prompted now, and a turn stopped to send it ends
@@ -940,7 +528,7 @@ public sealed class AcpSession(
                 // A turn that ended while the session's own background work runs, where its quest would park it on the
                 // person, waits for that work and goes on with a turn that says it ended (BGWAIT1). Words held for the
                 // turn's end go first; words that go at once still go while it waits.
-                if (!Holds(inbox) && await AfterBackgroundAsync(turnWaits, ct).ConfigureAwait(false) is { } wentOn)
+                if (!Holds(inbox) && await Ends.AfterBackgroundAsync(turnWaits, ct).ConfigureAwait(false) is { } wentOn)
                 {
                     stopReason = wentOn;
                     continue;
@@ -955,7 +543,7 @@ public sealed class AcpSession(
                 }
 
                 // LANDBACK1 part 2: the turn ended with its quest done and its tree uncommitted, and nothing of its own runs: not its end.
-                if (!Holds(inbox) && await CarryOnAsync(ct).ConfigureAwait(false) is { } carriedOn)
+                if (!Holds(inbox) && await Ends.CarryOnAsync(ct).ConfigureAwait(false) is { } carriedOn)
                 {
                     stopReason = carriedOn;
                     continue;
@@ -1053,95 +641,6 @@ public sealed class AcpSession(
         }
     }
 
-    /// <summary>
-    /// What the run asks of its quest where a turn ends (BGWAIT1's judgement, and LANDBACK1 part 2's): yes where the quest would park, or
-    /// where it stands closed with its tree uncommitted and carry-ons left, so the run waits for the session's own work first and then
-    /// carries it on, never cutting the wait on the quest's close. Where no carry-on is owed the answer is BGWAIT1's own.
-    /// </summary>
-    private Func<CancellationToken, Task<bool>>? Waits(Func<CancellationToken, Task<bool>>? waitsOnBackground)
-    {
-        if (CarriesOn is not { } carries) return waitsOnBackground;
-        return async token =>
-        {
-            if (waitsOnBackground is not null && await waitsOnBackground(token).ConfigureAwait(false)) return true;
-            // Unread is not a yes: a look that cannot be taken owes nothing, and the end is as it always was.
-            return await LookAsync(carries, token).ConfigureAwait(false) is { Dirty: true } look && Volatile.Read(ref _carried) < look.Limit;
-        };
-    }
-
-    /// <summary>The look at the quest and its tree, or null where it could not be taken (never a failure of the run).</summary>
-    private static async Task<TurnCarry?> LookAsync(Func<CancellationToken, Task<TurnCarry>> carries, CancellationToken ct)
-    {
-        try
-        {
-            return await carries(ct).ConfigureAwait(false);
-        }
-        catch (Exception) when (!ct.IsCancellationRequested)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// A turn that ended with its quest done, or submitted, and its tree holding uncommitted work is not the session's end (LANDBACK1 part
-    /// 2, TURNWAIT1): the session is carried on in Daoris's own words to commit by its repository's conventions or restore what it does not
-    /// want, and the tree is read again at that turn's end. The words are a prompt of the run's, never a card, a say or a Confirm, and
-    /// Daoris commits nothing. Null where nothing is owed: the quest is not closed, the session was stopped, the tree is clean or
-    /// unread, or the look's <see cref="TurnCarry.Limit"/> of carry-ons were written and the bound is said once, so the run ends as it always did.
-    /// </summary>
-    /// <remarks>
-    /// Decided where it is written, as the go-on is (<see cref="WokenOrGoOnAsync"/>): under the write lock, the person's stop is read again
-    /// and no turn of the harness's runs. A turn that took the moment is waited for, never written into (its answer would never come), and
-    /// the tree is read again after it. Reached only once the session's own work has ended and the turn woken for it, which
-    /// <see cref="AfterBackgroundAsync"/> waits for first.
-    /// </remarks>
-    /// <exception cref="DriverException">The agent's stream ended while the session waited to carry on.</exception>
-    private async Task<string?> CarryOnAsync(CancellationToken ct)
-    {
-        if (CarriesOn is not { } carries) return null;
-        while (true)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (await LookAsync(carries, ct).ConfigureAwait(false) is not { Dirty: true } look) return null;
-            if (_carried >= look.Limit)
-            {
-                if (!_boundSaid)
-                {
-                    _boundSaid = true;
-                    Note(BackgroundNotes.CarryBound());
-                }
-
-                return null;
-            }
-
-            try
-            {
-                return await PromptingAsync(
-                        () => SendPromptAsync(
-                            look.Words, files: null, ct,
-                            sent: () =>
-                            {
-                                Interlocked.Increment(ref _carried);
-                                Note(BackgroundNotes.CarriedOn(look.Paths));
-                            },
-                            words: null, when: () => look.Holds?.Invoke() != false && _wake.NoTurnRuns(Prompted)),
-                        ct)
-                    .ConfigureAwait(false);
-            }
-            catch (AcpTurnedAway)
-            {
-                ct.ThrowIfCancellationRequested();
-                // The person stopped it, or the door shut: nothing more is owed. Otherwise a turn of the harness's began, and it is waited for.
-                if (DoorShut || look.Holds?.Invoke() == false) return null;
-                if (!await _wake.IdleOrQuietAsync(Prompted, Clock.GetUtcNow(), QuestDoneQuiet, Ended, ct).ConfigureAwait(false))
-                {
-                    throw StreamEnded(
-                        "the ACP agent's stream ended while the session waited to carry its done quest's work on — the agent exited, or it was ended.");
-                }
-            }
-        }
-    }
-
     /// <summary>The driver's own sentence, on the console and in the record.</summary>
     private void Note(string text) => Note(new Noted(text, []));
 
@@ -1158,310 +657,6 @@ public sealed class AcpSession(
 
     /// <summary>Whether the person's words are held for the turn's end: those go before anything else.</summary>
     private static bool Holds(IAgentInbox? inbox) => inbox?.Holds == true;
-
-    /// <summary>
-    /// A turn that ended while the session's own background work runs (BGWAIT1): not a question. Where the driver says its
-    /// quest would otherwise park it on the person, the session stays open until the harness says that work ended, then until
-    /// the turn its harness woke for it ends (BGWAIT2), whose stop reason this answers. So too a turn that ended after work of its
-    /// own ended unseen, after its agent's last step (BGWAIT3): its harness wakes it with that ending once the turn is over, and the
-    /// session waits for that turn. Null where nothing runs and no ending is owed a wake, or nothing waits.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>The woken turn's end is the turn's end.</b> The harness wakes its agent itself when the work ends, with no prompt
-    /// open (CONSOLE2a), and the adapter answers no prompt for that turn: its end is the autonomous result's
-    /// <c>usage_update</c> (<see cref="AcpWake"/>). It ends here as an answered turn does, a turn in the record, and the run's
-    /// loop reads again what runs and what its quest says, so a real question still parks and work it started is waited for.</para>
-    ///
-    /// <para><b>Daoris's own turn only where none woke.</b> 🔴 BGWAIT1 sent its go-on at once, assuming its answer would come:
-    /// a prompt sent into the woken turn is taken by it and never answered, and the install's session waited 48 minutes for the
-    /// timeout (2026-10-19). It goes now only where nothing was said for <see cref="AcpWake.Quiet"/> with no turn running and no
-    /// prompt open, as a fresh turn the adapter answers. Nothing is cancelled: a cancel is the session's, never one turn's, and
-    /// would land on the person's words as readily as on Daoris's.</para>
-    ///
-    /// <para><b>Bounded by the session's own bounds</b>: the person's stop ends the process, the reader with it, and the wait with
-    /// that; the driver's shutdown cancels it. No time limit ends it (SESSWATCH1a, D200): work that never ends (a dev server), and a
-    /// woken turn whose end is never said, are waited for until the person acts, as a park would have held its tree for them (D83);
-    /// the watcher looks in on such a session once it shows no progress.</para>
-    ///
-    /// <para><b>And by its quest</b> (DONEEND1): while the work runs the quest is read again every <see cref="BackgroundLook"/>,
-    /// and once it no longer waits on that work, with no turn running, the session ends, saying so, and the work ends with it. A turn
-    /// that did nothing for <see cref="QuestDoneQuiet"/> is left (RUNENDS1), judged at the moment the session ends (<see cref="EndAsync"/>).</para>
-    /// </remarks>
-    /// <exception cref="DriverException">The agent's stream ended first: a failure of the door, never a clean turn's end.</exception>
-    private async Task<string?> AfterBackgroundAsync(Func<CancellationToken, Task<bool>>? waits, CancellationToken ct)
-    {
-        if (waits is null) return null;
-        var work = _background.RunningWork;
-        // 🔴 BGWAIT3 (2026-10-21): work that ended after the agent's last step is owed the wake its harness gives it once the turn is
-        // over, as work still running is. Read only as nothing runs: a turn that ends on running work waits for it, and its wake.
-        IReadOnlyList<(string Name, string State)> unseen = work.Count > 0 ? [] : _background.Ended(_wake.Unseen);
-        if (work.Count == 0 && unseen.Count == 0) return null;
-        var running = work.Select(each => each.Name).ToList();
-
-        bool waiting;
-        try
-        {
-            waiting = await waits(ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            // Unread is not a yes: the work ends with the session, as it always did (D105 §3), and the reason is said.
-            Note(BackgroundNotes.Unread(error.Message));
-            return null;
-        }
-
-        if (!waiting) return null;
-
-        const string waited =
-            "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it was "
-            + "ended.";
-
-        // 🔴 BGWAIT3: the install's session's command ended three seconds before its turn did, after its agent's last step, while
-        // the agent wrote that it still ran; nothing ran at the turn's end, so the session closed and parked on the person, five
-        // seconds before its harness would have woken it with the ending. It waits now for that turn, or tells the agent itself.
-        if (work.Count == 0)
-        {
-            Note(BackgroundNotes.Ended(unseen));
-            return await AfterEndedAsync(BackgroundNotes.EndedSaid(unseen), waited, waits, ct).ConfigureAwait(false);
-        }
-
-        Note(BackgroundNotes.Waits(running));
-        // SESSWATCH1a: no turn runs while it waits on its own work, which the watcher reads as state C (the session-watch design §1.4).
-        Volatile.Write(ref _waitsOnOwnWork, true);
-        using var waitingOn = new Disposer(() => Volatile.Write(ref _waitsOnOwnWork, false));
-
-        // 🔴 DONEEND1: the quest is read again while the work runs, never only at the turn's end. Read once, a quest that closed
-        // done during the wait (its agent closing it in a turn its harness woke for one piece of work, while a long test run went
-        // on) held its session working until the timeout killed it, a slot of the cap held all the while (2026-10-20). Once it no
-        // longer waits, and no turn runs, the session ends here and the work still running ends with it (D105 §3).
-        using var looking = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var closed = QuestClosedAsync(waits, looking.Token);
-        var ending = _background.EndedAsync(Ended, cut.Token, work.Select(each => each.Id));
-        DateTimeOffset? closedAt = null;
-        try
-        {
-            if (await Task.WhenAny(ending, closed).ConfigureAwait(false) == closed && closed.IsCompletedSuccessfully)
-            {
-                // RUNENDS1: a turn that speaks is never cut. Work that all ends meanwhile goes on to BGWAIT2's wait, the quest already read.
-                closedAt = closed.Result;
-                // A stream that ends meanwhile ends the work's wait too, which says so below.
-                var could = _wake.IdleOrQuietAsync(Prompted, closed.Result, QuestDoneQuiet, Ended, looking.Token);
-                if (await Task.WhenAny(ending, could).ConfigureAwait(false) == could && could.IsCompletedSuccessfully && could.Result
-                    && _background.Running.Count > 0)
-                {
-                    await cut.CancelAsync().ConfigureAwait(false);
-                    try
-                    {
-                        await ending.ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException cancelled) when (cancelled.CancellationToken == cut.Token && !ct.IsCancellationRequested)
-                    {
-                        // The wait this ended: nothing more is read of the work, which ends with the session.
-                    }
-
-                    ct.ThrowIfCancellationRequested();
-                    if (await EndAsync(closed.Result, waited, ct).ConfigureAwait(false)) Note(BackgroundNotes.TurnLeft());
-                    if (_background.Running is { Count: > 0 } left) Note(BackgroundNotes.WaitOver(left));
-                    return null;
-                }
-            }
-        }
-        finally
-        {
-            await looking.CancelAsync().ConfigureAwait(false);
-        }
-
-        var ended = await ending.ConfigureAwait(false) ?? throw StreamEnded(waited);
-
-        Note(BackgroundNotes.Ended(ended));
-        return await AfterEndedAsync(BackgroundNotes.EndedSaid(ended), waited, waits, ct, closedAt).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Once the session's background work has ended (BGWAIT2): the end of the turn its harness wakes for it, or, where none wakes
-    /// within <see cref="AcpWake.Quiet"/>, the answer to Daoris's go-on, which says <paramref name="said"/>. Null where the quest no
-    /// longer waits (RUNENDS1): it is read again while the session waits, as DONEEND1 reads it while work runs, from
-    /// <paramref name="closedAt"/> where a look already read it closed.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>A closed quest gets no go-on</b>: the go-on is decided on a look taken at its own moment, raced against the running look,
-    /// and is written only where, under the write lock, what it was decided on still holds (<see cref="WokenOrGoOnAsync"/>).</para>
-    ///
-    /// <para><b>A turn that speaks is never cut.</b> Once the quest reads closed, the turn the session waited for (its harness's woken
-    /// turn, or the go-on's) may still end as the agent's. Otherwise the session's own waits end once no turn runs, or a turn is left
-    /// silent for <see cref="QuestDoneQuiet"/> (<see cref="AcpWake.Judge"/>): the wake's, a go-on not yet written, a transient try's.
-    /// Each observes that cut and none puts anything on the wire as it stops (<see cref="Stopped"/>); then <see cref="EndAsync"/> judges
-    /// at the moment it ends, so a turn that acted since is waited for again.</para>
-    ///
-    /// <para><b>Only the cut's own cancellation is swallowed</b>: any other ending of the wait it cut, a failure or a cancellation on
-    /// another token, is the run's.</para>
-    /// </remarks>
-    /// <exception cref="DriverException">The agent's stream ended first, said as <paramref name="waited"/>.</exception>
-    private async Task<string?> AfterEndedAsync(
-        string said, string waited, Func<CancellationToken, Task<bool>> waits, CancellationToken ct, DateTimeOffset? closedAt = null)
-    {
-        using var looking = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var closed = closedAt is { } at ? Task.FromResult(at) : QuestClosedAsync(waits, looking.Token);
-        var wentOn = false;
-        var after = WokenOrGoOnAsync(said, waited, waits, closed, () => wentOn = true, cut.Token);
-        try
-        {
-            DateTimeOffset since;
-            if (await Task.WhenAny(after, closed).ConfigureAwait(false) == after || !closed.IsCompletedSuccessfully)
-            {
-                // The turn it waited for ended; or the go-on's own look read the quest closed, so nothing was sent and nothing runs.
-                if (await after.ConfigureAwait(false) is { } stop) return stop;
-                since = Clock.GetUtcNow();
-            }
-            else
-            {
-                since = closed.Result;
-                var could = _wake.IdleOrQuietAsync(Prompted, since, QuestDoneQuiet, Ended, looking.Token);
-                if (await Task.WhenAny(after, could).ConfigureAwait(false) == after)
-                {
-                    if (await after.ConfigureAwait(false) is { } stop) return stop;
-                }
-                else
-                {
-                    ct.ThrowIfCancellationRequested();
-                    await CutAsync(after, cut, ct).ConfigureAwait(false);
-                    if (!could.Result) throw StreamEnded(waited);
-                }
-            }
-
-            ct.ThrowIfCancellationRequested();
-            if (await EndAsync(since, waited, ct).ConfigureAwait(false)) Note(BackgroundNotes.TurnLeft());
-            else if (!wentOn) Note(BackgroundNotes.QuestClosed());
-            return null;
-        }
-        finally
-        {
-            await looking.CancelAsync().ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>
-    /// The session's own wait cut, and awaited to its end, which the cut bounds since every wait in it observes the cut (RUNENDS1, second
-    /// read, findings 1 and 6): only the cut's own cancellation is swallowed; any other end of it, a failure or a cancellation on another
-    /// token, is the run's, thrown as it came.
-    /// </summary>
-    private static async Task CutAsync(Task after, CancellationTokenSource cut, CancellationToken ct)
-    {
-        await cut.CancelAsync().ConfigureAwait(false);
-        try
-        {
-            await after.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException cancelled) when (cancelled.CancellationToken == cut.Token && !ct.IsCancellationRequested)
-        {
-            // The wait this cut, or the silent go-on's own wait for its answer: the quest closed, and what the agent would have said is not owed.
-        }
-    }
-
-    /// <summary>
-    /// <see cref="AfterEndedAsync"/>'s wait, as BGWAIT2 made it, bounded only by the session's own bounds: the turn its harness woke, or
-    /// Daoris's go-on. Null where the quest read closed and nothing was sent; <paramref name="wentOn"/> is told once the go-on is written.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 <b>The go-on is decided where it is written</b> (RUNENDS1, second read, finding 2). It needs the quest still waiting, read at its
-    /// own moment, since the look and the wake's quiet both run a minute and the running look alone let the quiet run out between a close
-    /// and the look that would read it. That read takes a service's time: the harness may start a turn meanwhile, which takes a prompt and
-    /// may never answer it, or the running look may read the close first. So the read is raced against the running look, and the go-on is
-    /// written only where, under the write lock, nothing was read of the agent since the quiet, no turn its harness started runs, no
-    /// prompt is open and no close was read (<see cref="AcpWake.StillQuiet"/>). Where any of that moved, nothing is written, and the wait
-    /// begins again from the wake.
-    /// </remarks>
-    private async Task<string?> WokenOrGoOnAsync(
-        string said, string waited, Func<CancellationToken, Task<bool>> waits, Task closed, Action wentOn, CancellationToken ct)
-    {
-        while (true)
-        {
-            switch (await _wake.AfterAsync(Prompted, _wakeQuiet, Ended, ct).ConfigureAwait(false))
-            {
-                case true:
-                    // The turn its harness woke has ended, by the adapter's word: a turn's end as an answer's is, with no counts,
-                    // since no answer carried any.
-                    CloseCut();
-                    Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
-                    return WokenStop;
-                case null:
-                    throw StreamEnded(waited);
-            }
-
-            var told = _wake.Told;
-            var reading = StillWaitsAsync(waits, ct);
-            if (await Task.WhenAny(reading, closed).ConfigureAwait(false) == closed || !await reading.ConfigureAwait(false)) return null;
-
-            try
-            {
-                return await PromptingAsync(
-                        () => SendPromptAsync(
-                            $"Your background work has ended: {said}. Go on with your quest from where you left off.",
-                            files: null, ct, sent: wentOn, words: null, when: () => !closed.IsCompleted && _wake.StillQuiet(told, Prompted)),
-                        ct)
-                    .ConfigureAwait(false);
-            }
-            catch (AcpTurnedAway)
-            {
-                // What the go-on was decided on moved during its read: the wait goes on from the wake, or ends with the cut.
-                ct.ThrowIfCancellationRequested();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Whether the quest still waits, read now (RUNENDS1). A look that cannot be read says nothing, so the go-on goes as BGWAIT2 has it:
-    /// an unread look is never the quest's close.
-    /// </summary>
-    private static async Task<bool> StillWaitsAsync(Func<CancellationToken, Task<bool>> waits, CancellationToken ct)
-    {
-        try
-        {
-            return await waits(ct).WaitAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception) when (!ct.IsCancellationRequested)
-        {
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Where a session whose quest no longer waits ends (RUNENDS1 after review, finding 4), judged at the moment it ends, after every wait
-    /// of its own is over: once <see cref="AcpWake.Judge"/> reads it idle, false, and the run's own end follows as DONEEND1's does; once it
-    /// reads a silent turn, true, the turn left and the run's door shut (<see cref="Shut"/>) in the same step. A turn that began, spoke,
-    /// opened a call or asked the person since the session last looked is waited for again, never ended on what was read before.
-    /// </summary>
-    /// <remarks>
-    /// The judgement is taken under the write lock: no prompt is half written as it is read, and none is admitted after the door shuts.
-    /// The wait for it ends with the agent's stream too (RUNENDS1, second read, finding 4): a call left open, or a request, can never close
-    /// once the stream is over.
-    /// </remarks>
-    /// <exception cref="DriverException">The agent's stream ended first, said as <paramref name="waited"/>.</exception>
-    private async Task<bool> EndAsync(DateTimeOffset since, string waited, CancellationToken ct)
-    {
-        while (true)
-        {
-            if (!await _wake.IdleOrQuietAsync(Prompted, since, QuestDoneQuiet, Ended, ct).ConfigureAwait(false)) throw StreamEnded(waited);
-            await _writeLock.WaitAsync(ct).ConfigureAwait(false);
-            try
-            {
-                switch (_wake.Judge(Prompted, since, QuestDoneQuiet).Now)
-                {
-                    case QuestDone.Idle:
-                        return false;
-                    case QuestDone.Quiet:
-                        Shut();
-                        return true;
-                }
-            }
-            finally
-            {
-                _writeLock.Release();
-            }
-        }
-    }
 
     /// <summary>
     /// The run's door shuts (RUNENDS1 after review, finding 2): from here no word of the run's reaches the wire. The inbox holds every word
@@ -1489,14 +684,14 @@ public sealed class AcpSession(
     /// <summary>The run's door shut at its end (<see cref="Shut"/>), between two writes, never inside one.</summary>
     private async Task ShutAsync()
     {
-        await _writeLock.WaitAsync().ConfigureAwait(false);
+        await Wire.WriteLock.WaitAsync().ConfigureAwait(false);
         try
         {
             Shut();
         }
         finally
         {
-            _writeLock.Release();
+            Wire.WriteLock.Release();
         }
     }
 
@@ -1571,9 +766,6 @@ public sealed class AcpSession(
     private CancellationToken _stops;
     private bool _inRun;
 
-    /// <summary>The stop reason of a turn its harness woke, which ends as a turn the agent finished does (BGWAIT2).</summary>
-    private const string WokenStop = "end_turn";
-
     /// <summary>The run's transient retry (AGENTERRORS1a), or null where it was handed none and keeps today's end.</summary>
     private TransientRetry? _retry;
 
@@ -1584,384 +776,37 @@ public sealed class AcpSession(
     /// </summary>
     private Action? _prompted;
 
-    private bool _waitsOnTransient;
+    private AcpEpisodes Episodes => LazyInitializer.EnsureInitialized(ref _episodes, () => new AcpEpisodes(this));
+    private AcpEpisodes? _episodes;
 
-    /// <summary>
-    /// Whether the run waits between a transient episode's tries (AGENTERRORS1a, the design §5.1): on Daoris's own timer, never on its
-    /// agent, so the session watch reads it as a wait that is not the agent's, opening no episode of its own and ending nothing.
-    /// </summary>
-    public bool WaitsOnTransient => Volatile.Read(ref _waitsOnTransient);
+    /// <summary>Whether the run waits between a transient episode's tries, on Daoris's own timer and never on its agent (AGENTERRORS1a, the design §5.1).</summary>
+    public bool WaitsOnTransient => Episodes.WaitsOnTransient;
 
-    /// <summary>
-    /// One of the run's prompts (AGENTERRORS1a, the design §5.1): its stop reason, or, where the run was handed a retry and the agent
-    /// answered it with a failure the reader reads transient, the stop reason of the try that answered. Any other failure is thrown as it
-    /// came, and so is one in a run handed no retry: today's end.
-    /// </summary>
-    private async Task<string> PromptingAsync(Func<Task<string>> prompt, CancellationToken ct)
+    /// <summary>One of the run's prompts, read for a transient failure where the run was handed a retry (AGENTERRORS1a, the design §5.1).</summary>
+    private Task<string> PromptingAsync(Func<Task<string>> prompt, CancellationToken ct) => Episodes.PromptingAsync(prompt, ct);
+
+    private Task<JsonElement> OpeningAsync(Func<Task<JsonElement>> open, CancellationToken ct) => Episodes.OpeningAsync(open, ct);
+
+    TransientRetry? ITurnRetryWiring.Retry => _retry;
+
+    IEpisodeWords? ITurnRetryWiring.EpisodeWords => EpisodeWords;
+
+    List<IAgentWord> ITurnRetryWiring.TakeUnacknowledged()
     {
-        try
-        {
-            return await prompt().ConfigureAwait(false);
-        }
-        catch (AcpRefusal refused) when (_retry is not null)
-        {
-            var read = ReadFailure(refused);
-            if (read.Kind != AgentErrorKind.Transient)
-            {
-                // No episode opened: today's judgement of the words, TURNFAIL1's included (§5.1).
-                lock (_promptsGate) _unacknowledged.Clear();
-                throw;
-            }
-
-            return await EpisodeAsync(read, ct).ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>A prompt's failure read by the handed reader; one the reader could not read is fatal, as today (§3.2).</summary>
-    private AgentError ReadFailure(AcpRefusal refused, string where = DoorWhere.Prompt)
-    {
-        AgentError read;
-        try
-        {
-            read = _retry!.Read(refused);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            onLine($"[the agent's failure could not be read: {error.Message}]");
-            read = new AgentError(AgentErrorKind.Fatal, DoorFailure.OfPrompt(refused), AgentErrors.Unread);
-        }
-
-        if (read.Failure.Where != where) read = read with { Failure = read.Failure with { Where = where } };
-        _retry!.Kept(read);
-        return read;
-    }
-
-    /// <summary>
-    /// The open's own phase (AGENTERRORS1a2, D210, the agent-errors design §5.6): the raw opening operation (<c>session/new</c>,
-    /// <c>session/resume</c> or <c>session/load</c>), and, where the run was handed a retry and the agent refused it with a failure read
-    /// transient, the SAME operation again on the episode's schedule. Never <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> again:
-    /// their handshake runs once per session. Read after D205's choice refusal, which comes later in the open, and the <c>Gone</c> and
-    /// <c>Elsewhere</c> codes, which pass through as they came; anything else not transient is thrown as today.
-    /// </summary>
-    /// <remarks>
-    /// Nothing was asked of the agent yet, so a try sends no go-on: once the operation answers, the run's own first prompt goes once, as
-    /// it would have. Words said meanwhile wait in the inbox, which is not attached until the open is done.
-    /// </remarks>
-    /// <exception cref="AcpTransientExhausted">Every try failed: the run ends past its bound with nothing prompted.</exception>
-    private async Task<JsonElement> OpeningAsync(Func<Task<JsonElement>> open, CancellationToken ct)
-    {
-        TransientEpisode? episode = null;
-        while (true)
-        {
-            try
-            {
-                return await open().ConfigureAwait(false);
-            }
-            catch (AcpRefusal refused) when (_retry is not null && refused.Code != ResourceNotFound
-                                             && !string.Equals(refused.Reason, ActiveWriter, StringComparison.Ordinal))
-            {
-                var read = ReadFailure(refused, DoorWhere.Open);
-                if (read.Kind != AgentErrorKind.Transient) throw;
-                var retry = _retry!;
-                if (episode is null)
-                {
-                    episode = retry.Open(read);
-                    episode.AtOpen = true;
-                    var first = episode;
-                    Said(() => retry.Began?.Invoke(first, retry.Clock.GetUtcNow() + TransientRetry.Delays[0]));
-                }
-
-                if (episode.Tries >= retry.Limit)
-                {
-                    episode.Exhausted = true;
-                    throw new AcpTransientExhausted(episode);
-                }
-
-                await WaitAsync(episode, ct, opening: true).ConfigureAwait(false);
-                // The owner's check (§5.5): no try where no more turn is wanted; nothing was prompted, so the open fails as today.
-                if (!await retry.WantedAsync(ct).ConfigureAwait(false)) throw;
-                episode.Tries++;
-                var next = episode.Tries < retry.Limit ? retry.Clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
-                var trying = episode;
-                Said(() => retry.Tried?.Invoke(trying, trying.Tries, next));
-            }
-        }
-    }
-
-    /// <summary>
-    /// The person's words a failed prompt left unacknowledged (§5.1, round 3's read, R3-O2): D188's COWORK1c uncertain words, kept with
-    /// the episode and said by the <c>lost</c> note under their ids, as <see cref="UncertainWords"/> says one. Never sent again.
-    /// </summary>
-    private void SayUncertain()
-    {
-        List<IAgentWord> words;
         lock (_promptsGate)
         {
-            words = [.. _unacknowledged];
+            var words = _unacknowledged.ToList();
             _unacknowledged.Clear();
+            return words;
         }
-
-        if (words.Count == 0) return;
-        _retry!.Unacknowledged(words);
-        List<string> ids = [.. words.Select(word => word.Id).OfType<string>()];
-        if (ids.Count == 0) return;
-        Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = SessionNotes.LostLine, Words = ids, Code = SessionEventCodes.Lost });
     }
 
-    /// <summary>
-    /// The person's words a limit-refused try carried (AGENTERRORS1b2): taken off the unacknowledged and handed to the retry's owner, which
-    /// holds them for the limit's wake or move. A listener's failure costs a line, never the episode.
-    /// </summary>
-    private void HandRefused(Action<IReadOnlyList<IAgentWord>> hand)
+    void ITurnRetryWiring.ForgetUnacknowledged()
     {
-        List<IAgentWord> words;
-        lock (_promptsGate)
-        {
-            words = [.. _unacknowledged];
-            _unacknowledged.Clear();
-        }
-
-        if (words.Count > 0) Said(() => hand(words));
+        lock (_promptsGate) _unacknowledged.Clear();
     }
 
-    /// <summary>
-    /// A transient episode (AGENTERRORS1a, D210, the design §5.1): the run stays running on the same session, account and choice, and
-    /// tries again in the same conversation after 1, 2, 4, 8 and 16 minutes on the handed clock, each try one prompt of the person's
-    /// held words and then Daoris's go-on. Answers the stop reason of the try that answered, or of the turn's end where the owner's
-    /// check says no more turn is wanted.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>The wire settles first.</b> A word already sent behind the failed turn runs its own turn (<c>promptQueueing</c>): one
-    /// that answers ends the wait, never the episode (round 3's read, R3-O1), since it shows only that the agent answered that word, so
-    /// the go-on follows at once and counts as a try; one that fails transient is that failure and counts as one.</para>
-    ///
-    /// <para><b>Through the wake gate</b> (BGWAIT1): a turn its harness wakes during the wait ends the wait, never the episode; nothing is
-    /// prompted into it, and the go-on goes once it has ended.</para>
-    ///
-    /// <para><b>Only held words are ever sent by a try.</b> A word on the wire is never sent again, on a try or after the episode.</para>
-    ///
-    /// <para>🔴 <b>Settling is bounded</b> (Codex's owed read of D210, finding 2): dispatch is held from the episode's first failure and
-    /// from each try's (<see cref="DrivenInbox.Settling"/>), so the turns it settles are only those already written. Each that fails
-    /// transient takes one of the tries left; once they are spent the rest still settle, since they are written, and count none
-    /// (<see cref="TransientEpisode.SettledPast"/>), and the run ends past its bound with no try after them.</para>
-    ///
-    /// <para>🔴 <b>A hand-over is no recovery</b> (finding 1): a try the adapter answered at a queued word's echo handed its turn to that
-    /// word. The episode and its count are kept through every hand-over, and the try counts as answered only once the turns handed over
-    /// have settled with no transient failure; one that fails is the try's failure.</para>
-    /// </remarks>
-    /// <exception cref="AcpRefusal">A try failed with another kind: the episode is left for that kind's policy, once.</exception>
-    /// <exception cref="AcpTransientExhausted">Every try failed: the run ends past its bound.</exception>
-    private async Task<string> EpisodeAsync(AgentError first, CancellationToken ct)
-    {
-        var retry = _retry!;
-        var clock = retry.Clock;
-        var episode = retry.Open(first);
-        EpisodeWords?.Settling();
-        SayUncertain();
-        Said(() => retry.Began?.Invoke(episode, clock.GetUtcNow() + TransientRetry.Delays[0]));
-        var atOnce = false;
-
-        while (true)
-        {
-            // The wire settles first: each word sent behind the failed turn runs its own turn (§5.1's settling turns), and no word joins it.
-            EpisodeWords?.Settling();
-            if (await SettleAsync(Spent, ct).ConfigureAwait(false) is { } settled) atOnce = settled;
-
-            if (episode.Tries >= retry.Limit)
-            {
-                episode.Exhausted = true;
-                throw new AcpTransientExhausted(episode);
-            }
-
-            if (!atOnce) await WaitAsync(episode, ct).ConfigureAwait(false);
-            atOnce = false;
-
-            // The owner's check (§5.5) and the wake gate at the try's admission: no try where no more turn is wanted, and none into a turn
-            // its harness woke; the run closes as at a turn's end.
-            if (!await AdmitAsync(retry, ct).ConfigureAwait(false))
-            {
-                EpisodeWords?.Waited();
-                return WokenStop;
-            }
-
-            episode.Tries++;
-            var next = episode.Tries < retry.Limit ? clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
-            Said(() => retry.Tried?.Invoke(episode, episode.Tries, next));
-            string answered;
-            try
-            {
-                answered = await TryAsync(episode, ct).ConfigureAwait(false);
-            }
-            catch (AcpRefusal refused)
-            {
-                var read = ReadFailure(refused);
-                // A limit refused the try before the agent took its words (AGENTERRORS1b2): handed to whoever answers the limit, never lost.
-                if (read.Kind == AgentErrorKind.Limit && retry.LimitRefused is { } refusedWords) HandRefused(refusedWords);
-                else SayUncertain();
-                if (read.Kind != AgentErrorKind.Transient) throw;
-                continue;
-            }
-
-            // 🔴 Finding 1: the turns the try handed over settle inside the episode, the try already counted; one failing transient is
-            // the try's failure, and the go-on follows at once where the last of them answered.
-            var failed = false;
-            if (await SettleAsync(() => failed = true, ct, stop => answered = stop).ConfigureAwait(false) is { } handed && failed)
-            {
-                atOnce = handed;
-                continue;
-            }
-
-            return answered;
-        }
-
-        // A settling turn's failure takes one of the tries left, and once they are spent counts none (finding 2).
-        void Spent()
-        {
-            if (episode.Tries < retry.Limit)
-            {
-                episode.Tries++;
-                return;
-            }
-
-            episode.SettledPast++;
-            onLine("[a turn already on the wire failed after every try was spent: it counts none, and no try follows it]");
-        }
-    }
-
-    /// <summary>
-    /// The turns already on the wire, each awaited in the order sent (§5.1's settling turns): <paramref name="failed"/> told for each that
-    /// fails transient, <paramref name="answered"/> for each that answers. Answers whether the last of them answered, or null where none
-    /// was on the wire.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 Bounded by <paramref name="ct"/> (RUNENDS1 after review, finding 1): a word on the wire whose turn never answers was waited on for
-    /// ever, and the cut of a closed quest's silent turn could not end that wait. A word cut short here stays on the wire, open, and is
-    /// said at the run's end as any such word is.
-    /// </remarks>
-    /// <exception cref="AcpRefusal">One failed with another kind: the episode is left for that kind's policy, once.</exception>
-    private async Task<bool?> SettleAsync(Action failed, CancellationToken ct, Action<string>? answered = null)
-    {
-        bool? last = null;
-        while (EpisodeWords?.TakeSent() is { } settling)
-        {
-            try
-            {
-                var stop = await settling.WaitAsync(ct).ConfigureAwait(false);
-                answered?.Invoke(stop);
-                last = true;
-            }
-            catch (Exception thrown) when (thrown is AcpRefusal or AcpWordTurnFailed)
-            {
-                var refused = thrown as AcpRefusal ?? ((AcpWordTurnFailed)thrown).Refusal;
-                var read = ReadFailure(refused);
-                SayUncertain();
-                if (read.Kind != AgentErrorKind.Transient)
-                {
-                    if (thrown is AcpRefusal) throw;
-                    throw refused;
-                }
-
-                failed();
-                last = false;
-            }
-        }
-
-        return last;
-    }
-
-    /// <summary>
-    /// A try's admission (§5.1, §5.5): a turn its harness woke ends the wait, never the episode, and nothing goes into it; where work's end
-    /// is owed a wake, the quiet <see cref="AfterEndedAsync"/> waits for; then the owner's check. Answers false where no more turn is wanted.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 <b>Read again after the check</b> (Codex's owed read of D210, finding 7): the check is awaited, and a wake that began meanwhile
-    /// was never read before the prompt went into it, BGWAIT1's unanswered prompt. The wake is read again once the check answers, and
-    /// the check asked again after any woken turn has ended.
-    /// </remarks>
-    /// <exception cref="DriverException">The agent's stream ended while the gate waited.</exception>
-    private async Task<bool> AdmitAsync(TransientRetry retry, CancellationToken ct)
-    {
-        var quieted = false;
-        while (true)
-        {
-            if (_wake.Running)
-            {
-                // RUNENDS1, second read (finding 4): the stream's end ends this wait too, as every wait of the session's.
-                if (!await _wake.IdleAsync(Prompted, Ended, ct, _wakeQuiet).ConfigureAwait(false))
-                {
-                    throw StreamEnded("the ACP agent's stream ended while the run waited to try again after its provider failed.");
-                }
-
-                CloseCut();
-                Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
-            }
-            else if (!quieted && _wake.Unseen.Count > 0)
-            {
-                quieted = true;
-                switch (await _wake.AfterAsync(Prompted, _wakeQuiet, Ended, ct).ConfigureAwait(false))
-                {
-                    case true:
-                        CloseCut();
-                        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
-                        break;
-                    case null:
-                        throw StreamEnded("the ACP agent's stream ended while the run waited to try again after its provider failed.");
-                }
-            }
-
-            if (!await retry.WantedAsync(ct).ConfigureAwait(false)) return false;
-            if (!_wake.Running) return true;
-        }
-    }
-
-    /// <summary>A listener's failure costs a line, never the episode.</summary>
-    private void Said(Action tell)
-    {
-        try
-        {
-            tell();
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            onLine($"[the retry could not be told: {error.Message}]");
-        }
-    }
-
-    /// <summary>
-    /// The wait before a try (§5.1), read off the handed clock: the schedule's next delay, ended at once by a word of the person's that
-    /// makes a turn, or by a turn its harness woke. Every word is held while it runs. Its end stamps the session heard, through the retry.
-    /// </summary>
-    /// <exception cref="DriverException">The agent's stream ended while it waited.</exception>
-    private async Task WaitAsync(TransientEpisode episode, CancellationToken ct, bool opening = false)
-    {
-        var retry = _retry!;
-        var started = retry.Clock.GetUtcNow();
-        using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        // At the open (§5.6) no session is there to wake and no word flows yet: only the schedule ends the wait.
-        var word = opening ? Task.Delay(Timeout.Infinite, cut.Token) : EpisodeWords?.Waiting() ?? Task.Delay(Timeout.Infinite, cut.Token);
-        var delay = TransientRetry.Delays[Math.Min(episode.Tries, TransientRetry.Bound - 1)];
-        Volatile.Write(ref _waitsOnTransient, true);
-        Said(() => retry.Waits?.Invoke(true));
-        Said(() => retry.WaitsUntil?.Invoke(episode, started + delay));
-        try
-        {
-            var timer = Task.Delay(delay, retry.Clock, cut.Token);
-            var woke = opening ? Task.Delay(Timeout.Infinite, cut.Token) : _wake.WokeAsync(cut.Token);
-            await Task.WhenAny(timer, word, woke, Ended).ConfigureAwait(false);
-            ct.ThrowIfCancellationRequested();
-            if (Ended.IsCompleted && !timer.IsCompleted && !word.IsCompleted && !woke.IsCompleted)
-            {
-                throw StreamEnded("the ACP agent's stream ended while the run waited to try again after its provider failed.");
-            }
-        }
-        finally
-        {
-            await cut.CancelAsync().ConfigureAwait(false);
-            episode.Waited += retry.Clock.GetUtcNow() - started;
-            Volatile.Write(ref _waitsOnTransient, false);
-            Said(() => retry.Waits?.Invoke(false));
-        }
-    }
+    Task<string> ITurnRetryWiring.TryAsync(TransientEpisode episode, CancellationToken ct) => TryAsync(episode, ct);
 
     /// <summary>
     /// One try (§5.1): one prompt of the person's held words, verbatim and in the order said, then Daoris's go-on, kept through the run's
@@ -2062,30 +907,6 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// Completes, with when it read so, once the quest, read again every <see cref="BackgroundLook"/> while the session waits on its own
-    /// background work or on the turn its harness wakes for it, no longer waits on it (DONEEND1, BGWAIT1's own condition, RUNENDS1).
-    /// </summary>
-    /// <remarks>
-    /// A look that cannot be read says nothing, so the session goes on waiting and looks again: silence is never read as the quest's
-    /// close, and a wait cut on a service's hiccup would end a session whose quest still waits, which then parks on the person.
-    /// </remarks>
-    private async Task<DateTimeOffset> QuestClosedAsync(Func<CancellationToken, Task<bool>> waits, CancellationToken ct)
-    {
-        while (true)
-        {
-            await Task.Delay(BackgroundLook, Clock, ct).ConfigureAwait(false);
-            try
-            {
-                if (!await waits(ct).WaitAsync(ct).ConfigureAwait(false)) return Clock.GetUtcNow();
-            }
-            catch (Exception) when (!ct.IsCancellationRequested)
-            {
-                // Unread: the next look reads it again.
-            }
-        }
-    }
-
-    /// <summary>
     /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a
     /// turn that ended first, a failed one included. The driver keeps them waiting where the door failed; empty until then.
     /// </summary>
@@ -2132,49 +953,13 @@ public sealed class AcpSession(
     /// <paramref name="ct"/>, which bounds only the opening: a conversation outlives the request that
     /// started it, and the updates of every later turn arrive on this same reader.
     /// </remarks>
-    public async Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
-    {
-        await HandshakeAsync(ct).ConfigureAwait(false);
-        var offered = Offer(servers);
+    public Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
+        Opening.OpenAsync(cwd, ct, servers);
 
-        // The rules composed for this session ride here when the adapter takes them (PERM1) —
-        // and a session given none sends exactly what it sent before they existed.
-        // AGENTERRORS1a2 (§5.6): a transient refusal of the raw operation is tried again on the schedule, never the handshake.
-        var openMeta = OpenMeta(meta, offered);
-        var created = await OpeningAsync(
-            () => RequestAsync(
-                "session/new",
-                openMeta is null
-                    ? new { cwd, mcpServers = offered }
-                    : (object)new { cwd, mcpServers = offered, _meta = openMeta },
-                ct),
-            ct).ConfigureAwait(false);
-        // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
-        // names this client's own failures, and a conversation waited for a session that never came.
-        _sessionId = created.ValueKind == JsonValueKind.Object && created.TryGetProperty("sessionId", out var id)
-                     && id.ValueKind == JsonValueKind.String
-            ? id.GetString()
-            : null;
-        if (string.IsNullOrEmpty(_sessionId))
-        {
-            throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
-        }
-
-        // What an answer to a park resumes (ANSWER1a), told before the first turn can fail or park.
-        Told(_sessionId);
-
-        // What the agent offers to change about this session — its mode, its model, its effort (AGT6b):
-        // kept as it said them, so a person may be offered the ones that are theirs.
-        KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
-            ? AcpConfigOption.Read(offeredOptions)
-            : []);
-        // The opening's own snapshot and the agent's offer reading, before the posture or any set (D205 §3.3, §9.2).
-        KeepOpening();
-
-        // What its actor asked, before the posture, which a model change can move, and before the first prompt (D205 §3.2).
-        var carried = await CarryAsync(ct).ConfigureAwait(false);
-        await SetPostureAsync(created, ct, again: carried).ConfigureAwait(false);
-    }
+    private AcpOpening Opening => LazyInitializer.EnsureInitialized(ref _opening, () => new AcpOpening(
+        meta, Options, HandshakeAsync, OpeningAsync, (method, args, ct) => RequestAsync(method, args, ct), SetPostureAsync,
+        id => _sessionId = id, replaying => _replaying = replaying, Told));
+    private AcpOpening? _opening;
 
     /// <summary>The reader started and the handshake answered: what every session asks before it is one. The agent's answer.</summary>
     private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
@@ -2196,160 +981,6 @@ public sealed class AcpSession(
         _steersNow = SteersNow(initialized);
         _wake.EndsBySilence = !SaysOrigins(initialized);
         return initialized;
-    }
-
-    /// <summary>
-    /// Whether the agent is Claude Code's adapter (CODEXWAKE1), which stamps the origin of a turn it did not prompt on that turn's end
-    /// (<see cref="AcpWake"/>): <c>agentCapabilities._meta.claudeCode</c> is an object. Another adapter, <c>codex-acp</c> among them,
-    /// says no end for a turn its harness starts.
-    /// </summary>
-    internal static bool SaysOrigins(JsonElement initialized) =>
-        initialized.ValueKind == JsonValueKind.Object
-        && initialized.TryGetProperty("agentCapabilities", out var capabilities) && capabilities.ValueKind == JsonValueKind.Object
-        && capabilities.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
-        && meta.TryGetProperty("claudeCode", out var claudeCode) && claudeCode.ValueKind == JsonValueKind.Object;
-
-    /// <summary>
-    /// Whether the agent says it takes a prompt while one runs (STEER1, D136): <c>agentCapabilities._meta.claudeCode
-    /// .promptQueueing</c> as <c>true</c>, which <c>claude-agent-acp</c> declares, and whose words Claude Code folds into
-    /// the running turn at its next step (docs/2026-10-03-steer-evidence.md §1).
-    /// </summary>
-    /// <remarks>
-    /// 🔴 <b>Its own word, and nothing else.</b> An agent that does not say so is never sent a second prompt during a turn:
-    /// <c>codex-acp</c> resets its running turn on one (evidence §5), and a door's silence is never a licence to guess (the
-    /// posture's rule, ACP3). The steering extension (<c>_session/steering</c>) is not read as this: it interrupts the step
-    /// in flight (evidence §2).
-    /// </remarks>
-    internal static bool TakesWordsMidTurn(JsonElement initialized) =>
-        initialized.ValueKind == JsonValueKind.Object
-        && initialized.TryGetProperty("agentCapabilities", out var capabilities) && capabilities.ValueKind == JsonValueKind.Object
-        && capabilities.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
-        && meta.TryGetProperty("claudeCode", out var claudeCode) && claudeCode.ValueKind == JsonValueKind.Object
-        && claudeCode.TryGetProperty("promptQueueing", out var queueing) && queueing.ValueKind == JsonValueKind.True;
-
-    /// <summary>
-    /// Whether the person's *Send now* steers into the running turn (STEER2a, D136's 2026-10-16 note): an agent that takes a
-    /// prompt during its turn (<see cref="TakesWordsMidTurn"/>) and offers the steering extension, the top-level
-    /// <c>_meta.steering.supported</c> as <c>true</c> (<c>claude-agent-acp</c> 0.84.0, <c>acp-agent.js:1291-1307</c>).
-    /// </summary>
-    /// <remarks>
-    /// Each by its own <c>true</c>. <c>codex-acp</c> offers the extension and not the first, and its <c>turn/steer</c> waits for
-    /// STEER3's measured turn: until then it is a turn-end door, where *Send now* stops the turn keeping the words.
-    /// </remarks>
-    internal static bool SteersNow(JsonElement initialized) =>
-        TakesWordsMidTurn(initialized)
-        && initialized.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
-        && meta.TryGetProperty("steering", out var steering) && steering.ValueKind == JsonValueKind.Object
-        && steering.TryGetProperty("supported", out var supported) && supported.ValueKind == JsonValueKind.True;
-
-    /// <summary>
-    /// How long an adapter is asked to wait, before it answers the open, for the servers it was handed to start (CODEXTOOLS1).
-    /// Codex's adapter answers <c>session/new</c> as soon as its own session exists, and the first catalog could omit a connector
-    /// still starting, which only the next turn then had. Read from codex-acp 2.1.1 (<c>request._meta.mcpStartupAwaitTimeoutMs</c>):
-    /// it waits for the servers raced against this bound and ANSWERS when the time runs out, never failing. The connector host
-    /// answers <c>initialize</c> in a few seconds cold; fifteen leaves room for a slow first start and stays far under the open's
-    /// own ceiling, so a connector that never starts costs a session this long and no more. An agent without the key ignores it.
-    /// </summary>
-    internal static readonly TimeSpan McpStartupAwait = TimeSpan.FromSeconds(15);
-
-    /// <summary>
-    /// The <c>_meta</c> an open or a resume carries: the adapter's rules (PERM1) as composed, and, where servers are
-    /// handed, the wait for their start (CODEXTOOLS1). Null when neither, and then no <c>_meta</c> goes at all.
-    /// </summary>
-    private static JsonNode? OpenMeta(object? rules, object[] offered)
-    {
-        if (offered.Length == 0) return rules is null ? null : JsonSerializer.SerializeToNode(rules);
-        var merged = rules is null ? new JsonObject() : JsonSerializer.SerializeToNode(rules) as JsonObject ?? new JsonObject();
-        merged["mcpStartupAwaitTimeoutMs"] = (long)McpStartupAwait.TotalMilliseconds;
-        return merged;
-    }
-
-    /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
-    private static object[] Offer(IReadOnlyList<AcpMcpServer>? servers)
-    {
-        // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
-        // close its quest over its own connector, and the pipe door only manages that because the
-        // repository's own `.mcp.json` wires it — which an adopted repository may not have, and
-        // which the driver may never reach in and write. The protocol carries the wiring instead,
-        // so this hands the session what it needs with nothing written anywhere.
-        //
-        // An empty list rather than an absent field when there is nothing to offer: a machine
-        // with no host found still drives, and an agent reading `mcpServers.length` must not meet
-        // `undefined`.
-        // Named in lower case explicitly: this serialiser writes property names as they are
-        // spelled, so `server.Name` would go on the wire as `Name` and the agent would read nothing.
-        var offered = (servers ?? []).Select(server => new
-        {
-            name = server.Name,
-            command = server.Command,
-            args = server.Arguments,
-            // An ARRAY of {name,value}, not an object — read from the adapter's own source, which
-            // does `Object.fromEntries(env.map(e => [e.name, e.value]))`.
-            env = server.Environment
-                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                .Select(pair => new { name = pair.Key, value = pair.Value })
-                .ToArray(),
-        }).ToArray();
-        return offered;
-    }
-
-    /// <summary>What this client asks of the agent at <c>initialize</c>.</summary>
-    /// <remarks>
-    /// <para>Declared honestly: this client offers the agent no filesystem and no terminal of its own.
-    /// The session works in `cwd` with the harness's own tools, under the repository's own checked-in
-    /// configuration — the adapter obligation D46 §5 states.</para>
-    ///
-    /// <para><b>A session whose streams are kept asks for them</b> (CONSOLE2), by the spelling that
-    /// arrives: AIR's <c>nativeSubagentSessions</c> and <c>asyncTasks</c>. 🔴 The protocol's own
-    /// <c>subagents</c> alone switches nothing on at ACP SDK 1.4.0, whose schema drops the key before
-    /// the adapter reads it. It is sent too, for when the schema carries it. <c>terminal_output</c> is
-    /// never asked for: it streams nothing, and it moves a command's output out of the field the record
-    /// reads (docs/2026-09-28-console2-streams-evidence.md).</para>
-    ///
-    /// <para><b>Every session asks for its background tasks</b> (BGWAIT3): their frames are what a turn that ends on its own
-    /// background work waits by (BGWAIT1), and the headless loop's sessions, which keep no streams, carried none, so their turns
-    /// parked on work still running. Where no stream takes the frames, the record and the console keep none of them
-    /// (<see cref="AcpRender.Map"/>, <see cref="AcpRender.Render"/>). A subagent's own session is asked for only where streams route it.</para>
-    /// </remarks>
-    internal static object Capabilities(bool streams, bool typedFailures = false)
-    {
-        // CODEXSTATUS1: asked for only by a door declared to mark a terminal failure for such a client alone (the design §4.3, §10).
-        var asked = new List<string>();
-        if (streams) asked.Add("nativeSubagentSessions");
-        asked.Add("asyncTasks");
-        if (typedFailures) asked.Add("sessionFailure");
-        var meta = new { jetbrains = new { air = new { version = 1, capabilities = asked } } };
-        if (streams) return new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false, subagents = new { }, _meta = meta };
-        return new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false, _meta = meta };
-    }
-
-    /// <summary>
-    /// The terminal failure a typed client's prompt was answered with (CODEXSTATUS1, the design §4.3): <c>end_turn</c> with
-    /// <c>_meta.jetbrains.air.sessionFailure</c> at <c>error</c> severity, written as the error frame a refused prompt is, its
-    /// <c>category</c> the error's kind and its <c>title</c> the provider's words, as written. Null for any other answer: a warning
-    /// is an attempt that failed and another follows, and the agent's own message is never read.
-    /// </summary>
-    internal static JsonElement? TypedFailure(JsonElement result)
-    {
-        if (result.ValueKind != JsonValueKind.Object || !result.TryGetProperty("_meta", out var meta)
-            || !meta.TryGetProperty("jetbrains", out var jetbrains) || jetbrains.ValueKind != JsonValueKind.Object
-            || !jetbrains.TryGetProperty("air", out var air) || air.ValueKind != JsonValueKind.Object
-            || !air.TryGetProperty("sessionFailure", out var failure) || failure.ValueKind != JsonValueKind.Object
-            || Json.Text(failure, "severity") != "error" || Json.Text(failure, "category") is not { Length: > 0 } category)
-        {
-            return null;
-        }
-
-        var frame = new JsonObject
-        {
-            ["error"] = new JsonObject
-            {
-                ["message"] = Json.Text(failure, "title") ?? "the agent's turn failed",
-                ["data"] = new JsonObject { ["errorKind"] = category },
-            },
-        };
-        using var document = JsonDocument.Parse(frame.ToJsonString());
-        return document.RootElement.Clone();
     }
 
     /// <summary>
@@ -2483,7 +1114,7 @@ public sealed class AcpSession(
             answered: frame =>
             {
                 if (Outcome(frame) != "injected") return;
-                lock (_callsGate) _cut.UnionWith(_openCalls);
+                _calls.CutOpen();
                 Asked(words);
             },
             admit: () => Admit(passage)).ConfigureAwait(false);
@@ -2554,52 +1185,13 @@ public sealed class AcpSession(
             : null;
     }
 
-    /// <summary>
-    /// The calls a steer cut that never heard again, closed in the record as cut when the turn's prompt is answered (STEER2a),
-    /// before its turn's end, so the page never shows them running. Called on the reader's thread.
-    /// </summary>
+    /// <summary>The calls a steer cut that never heard again, closed in the record as cut when the turn's prompt is answered (STEER2a).</summary>
     private void CloseCut()
     {
-        string[] cut;
-        lock (_callsGate)
-        {
-            if (_cut.Count == 0) return;
-            cut = [.. _cut.Order(StringComparer.Ordinal)];
-            _cut.Clear();
-            _openCalls.ExceptWith(cut);
-            _finishedCalls.UnionWith(cut);
-        }
-
-        foreach (var id in cut) Emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Status = CutStatus });
+        foreach (var id in _calls.TakeCut()) Emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Status = CutStatus });
     }
 
-    /// <summary>
-    /// A call announced or updated (STEER2a): heard again, it was not cut. <c>pending</c> and <c>in_progress</c> open it, as
-    /// does an announcement that says no status, which the protocol reads as <c>pending</c>; any other status finishes it. An
-    /// update that says no status keeps what the call was, so a finished call stays finished and is never closed as cut.
-    /// </summary>
-    private void Track(JsonElement update, SessionEvent? mapped)
-    {
-        if (mapped is not { Kind: SessionEventKind.Tool, Id: { } id }) return;
-        lock (_callsGate)
-        {
-            _cut.Remove(id);
-            switch (mapped.Status)
-            {
-                case "pending" or "in_progress":
-                    _finishedCalls.Remove(id);
-                    _openCalls.Add(id);
-                    break;
-                case null:
-                    if (AcpRender.Kind(update) == "tool_call" && !_finishedCalls.Contains(id)) _openCalls.Add(id);
-                    break;
-                default:
-                    _openCalls.Remove(id);
-                    _finishedCalls.Add(id);
-                    break;
-            }
-        }
-    }
+    private void Track(JsonElement update, SessionEvent? mapped) => _calls.Track(update, mapped);
 
     /// <summary>
     /// One prompt on the open session, answered by the agent's stop reason: the driver's own, or the person's words
@@ -3004,44 +1596,25 @@ public sealed class AcpSession(
     {
         try
         {
-            while (await incoming.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
-            {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
-                JsonElement frame;
-                try
+            await Wire.ReadAsync(
+                incoming,
+                DispatchAsync,
+                raw: line =>
                 {
-                    frame = JsonDocument.Parse(line).RootElement.Clone();
-                }
-                catch (JsonException)
-                {
-                    // Not a frame. A real agent writes diagnostics to stderr, but stdout purity is its
-                    // promise and not this client's guarantee — so the line is shown rather than
-                    // dropped, and the run continues.
                     _console.End();
                     onLine(line);
                     Emit(new SessionEvent { Kind = SessionEventKind.Raw, Raw = line });
-                    continue;
-                }
-
-                try
+                },
+                unreadable: (error, frame) =>
                 {
-                    await DispatchAsync(frame).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is not OperationCanceledException)
-                {
-                    // 🔴 One frame this client could not read is shown, and the reading goes on. A
-                    // throw here used to end the reader, and its `finally` then said the agent's
-                    // stream had ended — a false sentence over a lost exception, which is how the
-                    // first real run died at its first tool call (ACP2, 2026-09-24).
                     _console.End();
                     onLine($"[unreadable frame: {error.Message}] {AcpRender.Compact(frame)}");
                     Emit(new SessionEvent
                     {
                         Kind = SessionEventKind.Raw, Title = "unreadable frame", Text = error.Message, Raw = AcpRender.Compact(frame),
                     });
-                }
-            }
+                },
+                ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -3186,6 +1759,32 @@ public sealed class AcpSession(
 
     void ITurnWiring.KeepOptions(IReadOnlyList<AcpConfigOption> options) => KeepOptions(options);
 
+    void ITurnEndWiring.Note(Noted noted) => Note(noted);
+
+    DriverException ITurnEndWiring.StreamEnded(string sentence) => StreamEnded(sentence);
+
+    Task<string> ITurnEndWiring.PromptingAsync(Func<Task<string>> prompt, CancellationToken ct) => PromptingAsync(prompt, ct);
+
+    Task<string> ITurnEndWiring.SendOwnAsync(string text, CancellationToken ct, Action? sent, Func<bool>? when) =>
+        SendPromptAsync(text, files: null, ct, sent, words: null, when);
+
+    TimeSpan ITurnEndWiring.WakeQuiet => _wakeQuiet;
+
+    bool ITurnEndWiring.DoorShut => DoorShut;
+
+    SemaphoreSlim ITurnEndWiring.WriteLock => Wire.WriteLock;
+
+    void ITurnEndWiring.Shut() => Shut();
+
+    /// <summary>The turn its harness woke ended, by the adapter's word: closed as an answered turn is, with no counts, since no answer carried any.</summary>
+    private void EndWokenTurn()
+    {
+        CloseCut();
+        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = AcpWaits.WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
+    }
+
+    void ITurnEndWiring.EndWokenTurn() => EndWokenTurn();
+
     private readonly RefusedCalls _refused = new();
 
     // Whether this client asked the turn to stop, and how the last turn was cut.
@@ -3209,39 +1808,7 @@ public sealed class AcpSession(
         }
     }
 
-    private void Complete(JsonElement id, JsonElement frame)
-    {
-        if (!id.TryGetInt32(out var key) || !_pending.TryRemove(key, out var waiting)) return;
-
-        // CODEXSTATUS1: a typed client's prompt answered with a terminal failure fails as a prompt answered with an error does (§4.3).
-        if (TypedFailures && _answered.ContainsKey(key) && frame.TryGetProperty("result", out var ended) && TypedFailure(ended) is { } failed)
-        {
-            frame = failed;
-        }
-
-        // What the answer does here, on the reader's thread, before the next frame is read (STEER1).
-        if (_answered.TryRemove(key, out var answered))
-        {
-            try
-            {
-                answered(frame);
-            }
-            catch (Exception failure) when (failure is not OperationCanceledException)
-            {
-                onLine($"[an answer could not be recorded: {failure.Message}]");
-            }
-        }
-
-        if (frame.TryGetProperty("error", out var error))
-        {
-            // Read without trusting the shape (REV3): a throw here left the call it answers waiting. Its `data` is
-            // kept beside its message (ACPDATA1): an adapter may say the words that matter there.
-            waiting.TrySetException(AcpRefusal.Of(error));
-            return;
-        }
-
-        waiting.TrySetResult(frame.TryGetProperty("result", out var result) ? result.Clone() : default);
-    }
+    private void Complete(JsonElement id, JsonElement frame) => Wire.Complete(id, frame);
 
     private async Task AnswerRequestAsync(string? method, JsonElement id, JsonElement frame)
     {
@@ -3262,327 +1829,35 @@ public sealed class AcpSession(
         }).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The permission posture Daoris drives under, expressed as this wire's own mode (ACP2).
-    /// </summary>
-    /// <remarks>
-    /// <para><b>D81 widened it, by decision</b>: a session does as much as the harness would on its
-    /// own, so an adapter may name <c>auto</c>, the mode
-    /// in which the harness judges each action itself, ahead of <c>acceptEdits</c>. What the doctrine
-    /// keeps is kept by the rules handed at spawn (no push, the tree guard), which hold in every mode.
-    /// This door sets a mode, which is what the evaluation observed Claude Code offering on
-    /// `session/new` (§1a).</para>
-    ///
-    /// <para>🔴 <b>Never a mode the adapter did not name, and never one the agent did not offer.</b> The
-    /// wire also offers <c>bypassPermissions</c>; a driver that reached for a neighbouring mode when
-    /// its own was missing is how a permission boundary widens without a decision. An adapter names
-    /// its postures in order, and the first the agent offers is set. An agent that offers no modes is
-    /// left exactly alone — its permissions are its own business, which is the stub's shape and any
-    /// future harness's right.</para>
-    ///
-    /// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
-    /// full access, <see cref="AgentPostures.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
-    /// session's asking or unrestricted permission prompts (AUTONOMY1b, <see cref="DrivenAccess"/>). Left alone, an agent that does
-    /// not offer it would run in its own mode under that label; it fails plainly instead, naming what the agent offers and the
-    /// person's two ways on (<see cref="Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency
-    /// above.</para>
-    /// </remarks>
-    /// <param name="again">Whether a value was set on the session since it answered, which may have moved its mode: set it whatever it said.</param>
-    private async Task SetPostureAsync(JsonElement created, CancellationToken ct, bool again = false)
-    {
-        // An adapter that names no posture asks for none — dsh, whose wire carries no modes, and the
-        // stub, whose permissions are its own business (ACP3).
-        if (posture is not { Length: > 0 }) return;
+    private AcpPosture Posture => LazyInitializer.EnsureInitialized(ref _posture, () => new AcpPosture(
+        posture, () => Unoffered, (method, args, ct) => RequestAsync(method, args, ct), () => _sessionId));
+    private AcpPosture? _posture;
 
-        var (required, _, named) = Marks(posture);
-        DriverException Refused(IReadOnlyCollection<string> offers)
-        {
-            var offered = offers.Count > 0
-                ? $"it offers {string.Join(", ", offers.Order(StringComparer.Ordinal).Select(mode => $"`{mode}`"))}"
-                : "it offers no modes";
-            // A driven start's required posture is its repository's permission prompts' (AUTONOMY1b), said in its setup's words.
-            return new(Unoffered?.Invoke(named, offered)
-                ?? $"the agent does not offer `{named}`, the mode that asks nothing which full access needs ({offered}), so it does not start in "
-                + "a narrower one under that name. Choose restricted access for Ask Daoris (`daoris ask-daoris mode restricted`), or another "
-                + "agent for it.");
-        }
+    private Task SetPostureAsync(JsonElement created, CancellationToken ct, bool again = false) => Posture.SetAsync(created, ct, again);
 
-        // An answer that is no object names no modes (HELPMODE1a4): a resume's may be null, and a required posture fails on it too.
-        if (created.ValueKind != JsonValueKind.Object
-            || !created.TryGetProperty("modes", out var modes)
-            || !modes.TryGetProperty("availableModes", out var available)
-            || available.ValueKind != JsonValueKind.Array)
-        {
-            if (required) throw Refused([]);
-            return;
-        }
+    private AcpWire Wire => LazyInitializer.EnsureInitialized(ref _wire, () => new AcpWire(outgoing, onLine, () => TypedFailures));
+    private AcpWire? _wire;
 
-        var offered = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var mode in available.EnumerateArray())
-        {
-            if (mode.TryGetProperty("id", out var id) && id.GetString() is { } name) offered.Add(name);
-        }
-
-        // The adapter names its postures in order of preference, `|`-separated (D81): the first the
-        // agent offers is the one. None offered is left alone, exactly as a single posture was.
-        var chosen = named.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault(offered.Contains);
-        if (chosen is null)
-        {
-            if (required) throw Refused(offered);
-            return;
-        }
-
-        // Already there is nothing to ask for — and an agent that started in the posture is a fact
-        // worth not overwriting with an identical call.
-        if (!again && modes.TryGetProperty("currentModeId", out var current) && current.GetString() == chosen)
-        {
-            return;
-        }
-
-        await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = chosen }, ct)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// A posture's marks and the modes it names: <see cref="AgentPostures.Required"/> (set, or the session does not open) and
-    /// <see cref="PersonAnswers"/> (its permission requests held for the person), in either order, before the modes.
-    /// </summary>
-    private static (bool Required, bool PersonAnswers, string Named) Marks(string? posture)
-    {
-        var (required, held, at) = (false, false, 0);
-        while (posture is not null && at < posture.Length && posture[at] is AgentPostures.Required or PersonAnswers)
-        {
-            required |= posture[at] == AgentPostures.Required;
-            held |= posture[at] == PersonAnswers;
-            at++;
-        }
-
-        return (required, held, posture?[at..] ?? "");
-    }
-
-    /// <param name="sent">
-    /// Told once the request is on the wire, before its answer is awaited, and always before <paramref name="answered"/>: by the
-    /// reader, where the answer was read before the write returned.
-    /// </param>
-    /// <param name="answered">
-    /// Told the answer's frame on the reader's thread, before the answer is handed back and before anything after it is
-    /// read (STEER1) — never once the caller has stopped waiting for it.
-    /// </param>
-    /// <param name="admit">
-    /// Asked under the write lock as the write begins (RUNENDS1): false where the run's door has shut, and the request is not written at all.
-    /// </param>
-    /// <exception cref="AcpTurnedAway"><paramref name="admit"/> said no: nothing was written.</exception>
-    private async Task<JsonElement> RequestAsync(
+    private Task<JsonElement> RequestAsync(
         string method, object parameters, CancellationToken ct, Action? sent = null, Action<JsonElement>? answered = null,
-        Func<bool>? admit = null)
-    {
-        var id = Interlocked.Increment(ref _nextId);
-        var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
-        // 🔴 The answer can be read before the write's return runs `sent` (a carry-on's turn was kept before its note, 2026-10-31): whichever
-        // comes first tells it, once, and the other waits for it to finish.
-        var told = false;
-        var telling = new object();
-        void Tell()
-        {
-            lock (telling)
-            {
-                if (told) return;
-                told = true;
-                sent?.Invoke();
-            }
-        }
+        Func<bool>? admit = null) =>
+        Wire.RequestAsync(method, parameters, ct, sent, answered, admit);
 
-        if (answered is not null)
-        {
-            _answered[id] = frame =>
-            {
-                try
-                {
-                    Tell();
-                }
-                finally
-                {
-                    answered(frame);
-                }
-            };
-        }
+    private Task NotifyAsync(string method, object parameters) => Wire.NotifyAsync(method, parameters);
 
-        _pending[id] = waiting;
+    private Task SendAsync(JsonNode frame, Func<bool>? admit = null) => Wire.SendAsync(frame, admit);
 
-        try
-        {
-            await SendAsync(
-                new JsonObject
-                {
-                    ["jsonrpc"] = "2.0",
-                    ["id"] = id,
-                    ["method"] = method,
-                    ["params"] = JsonSerializer.SerializeToNode(parameters),
-                },
-                admit).ConfigureAwait(false);
-        }
-        catch (AcpTurnedAway)
-        {
-            _answered.TryRemove(id, out _);
-            _pending.TryRemove(id, out _);
-            throw;
-        }
-
-        Tell();
-
-        try
-        {
-            return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // A caller that stopped waiting is told nothing more about this request, as before its answer was seen.
-            _answered.TryRemove(id, out _);
-            throw;
-        }
-    }
-
-    private Task NotifyAsync(string method, object parameters) => SendAsync(new JsonObject
-    {
-        ["jsonrpc"] = "2.0",
-        ["method"] = method,
-        ["params"] = JsonSerializer.SerializeToNode(parameters),
-    });
-
-    /// <summary>
-    /// One frame, one line. Serialized under a lock because the answer to an agent's request is
-    /// written from the read pump while the caller may be writing a request of its own, and two
-    /// interleaved lines are two frames nobody can parse.
-    /// </summary>
-    /// <remarks>
-    /// Asynchronous throughout, deliberately. The first version blocked on the write and took the
-    /// lock synchronously; a cancellation callback then re-entered it on the very thread that held
-    /// it, and the whole run deadlocked. `SemaphoreSlim` is not reentrant, and the fix that lasts is
-    /// to have no path that can re-enter rather than a lock that tolerates it.
-    /// </remarks>
-    private async Task SendAsync(JsonNode frame, Func<bool>? admit = null)
-    {
-        await _writeLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            // RUNENDS1: a prompt is admitted under the lock its write holds, so the run's door shuts between two writes, never in one.
-            if (admit?.Invoke() == false) throw new AcpTurnedAway();
-            await outgoing.WriteLineAsync(frame.ToJsonString()).ConfigureAwait(false);
-            await outgoing.FlushAsync().ConfigureAwait(false);
-        }
-        finally
-        {
-            _writeLock.Release();
-        }
-    }
-
-    /// <summary>Fault everything still awaiting an answer that will never come.</summary>
-    private void Fail(Exception error)
-    {
-        _answered.Clear();
-        foreach (var key in _pending.Keys)
-        {
-            if (_pending.TryRemove(key, out var waiting)) waiting.TrySetException(error);
-        }
-    }
+    private void Fail(Exception error) => Wire.Fail(error);
 
     // ---- Resuming a conversation (ANSWER1a, D131) ----
-
-    /// <summary>JSON-RPC's <c>resource_not_found</c>, which the adapter answers for a conversation it no longer has.</summary>
-    internal const int ResourceNotFound = -32002;
-
-    /// <summary>
-    /// <c>codex-acp</c>'s <c>data.reason</c> for a thread another Codex client holds (MSG1b, D137 §1.1), read from
-    /// <c>@agentclientprotocol/codex-acp</c> 2.1.1's <c>dist/index.js</c>.
-    /// </summary>
-    internal const string ActiveWriter = "thread_active_writer";
 
     /// <summary>The conversation whose replay is arriving while a <c>session/load</c> is answered, or null.</summary>
     private volatile string? _replaying;
 
-    /// <summary>
-    /// Resume a conversation instead of opening one (ANSWER1a, D131 §1): the reader started, the handshake, then
-    /// <c>session/resume</c> where the agent advertises it, else <c>session/load</c> where it advertises that, on the same
-    /// tree, with the servers and the rules a new session would be handed, and the posture set on its answer.
-    /// </summary>
-    /// <remarks>
-    /// <para><b><c>session/resume</c> first</b>: it resumes without replaying, and the record already holds the
-    /// conversation. A load replays every message as an update before it answers; those are dropped here, so nothing is
-    /// kept twice, and what the agent says after the answer is the conversation going on.</para>
-    ///
-    /// <para><b>Read from the adapter's own source</b> (<c>claude-agent-acp</c> 0.84.0): <c>initialize</c> answers
-    /// <c>agentCapabilities.loadSession</c> and <c>agentCapabilities.sessionCapabilities.resume</c>; both requests answer
-    /// <c>modes</c> and <c>configOptions</c> and no id, the id being the one asked for; a conversation not in the
-    /// account's home is refused <c>resource_not_found</c>.</para>
-    /// </remarks>
+    /// <summary>Resume a conversation instead of opening one (ANSWER1a, D131 §1): <c>session/resume</c> where the agent advertises it, else <c>session/load</c>.</summary>
     /// <exception cref="AcpResumeRefused">The agent offers neither, or refused this one.</exception>
-    public async Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
-    {
-        var initialized = await HandshakeAsync(ct).ConfigureAwait(false);
-        var method = ResumeMethod(initialized)
-            ?? throw new AcpResumeRefused(ContinueWhy.Of(ContinueWhy.Offered), words: null);
-
-        var offered = Offer(servers);
-        var openMeta = OpenMeta(meta, offered);
-        object parameters = openMeta is null
-            ? new { sessionId = conversation, cwd, mcpServers = offered }
-            : new { sessionId = conversation, cwd, mcpServers = offered, _meta = openMeta };
-
-        JsonElement resumed;
-        _replaying = method == "session/load" ? conversation : null;
-        try
-        {
-            // AGENTERRORS1a2 (§5.6): a transient refusal is tried again here, the raw operation alone; past the bound it ends exhausted.
-            resumed = await OpeningAsync(() => RequestAsync(method, parameters, ct), ct).ConfigureAwait(false);
-        }
-        catch (AcpRefusal refused)
-        {
-            // By the error's structure, never its words: another client holding the thread is its data's reason (MSG1b).
-            var why = refused.Code == ResourceNotFound ? ContinueWhy.Gone
-                : string.Equals(refused.Reason, ActiveWriter, StringComparison.Ordinal) ? ContinueWhy.Elsewhere
-                : ContinueWhy.Refused;
-            throw new AcpResumeRefused(ContinueWhy.Of(why), refused.Words);
-        }
-        finally
-        {
-            _replaying = null;
-        }
-
-        _sessionId = conversation;
-        KeepOptions(resumed.ValueKind == JsonValueKind.Object && resumed.TryGetProperty("configOptions", out var options)
-            ? AcpConfigOption.Read(options)
-            : []);
-        KeepOpening();
-        // A resume carries its record's asked choice again: a resumed conversation keeps no model of its own (D205 §4.2; MODELROLE1a).
-        var carried = await CarryAsync(ct).ConfigureAwait(false);
-        // 🔴 HELPMODE1a4 (D183 point 3): set on every answer, an object or not, so a required posture is never skipped here.
-        await SetPostureAsync(resumed, ct, again: carried).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// How this agent resumes, as its <c>initialize</c> answered: <c>session/resume</c>, <c>session/load</c>, or null for
-    /// neither. Read without trusting the shape: a capability of the wrong kind is no capability.
-    /// </summary>
-    internal static string? ResumeMethod(JsonElement initialized)
-    {
-        if (initialized.ValueKind != JsonValueKind.Object
-            || !initialized.TryGetProperty("agentCapabilities", out var capabilities)
-            || capabilities.ValueKind != JsonValueKind.Object)
-        {
-            return null;
-        }
-
-        if (capabilities.TryGetProperty("sessionCapabilities", out var session) && session.ValueKind == JsonValueKind.Object
-            && session.TryGetProperty("resume", out var resume) && resume.ValueKind == JsonValueKind.Object)
-        {
-            return "session/resume";
-        }
-
-        return capabilities.TryGetProperty("loadSession", out var load) && load.ValueKind == JsonValueKind.True
-            ? "session/load"
-            : null;
-    }
+    public Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
+        Opening.ResumeAsync(cwd, conversation, ct, servers);
 
     /// <summary>Whether an update is a load's replay of the conversation being resumed.</summary>
     private bool Replayed(JsonElement parameters) =>

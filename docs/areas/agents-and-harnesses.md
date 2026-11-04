@@ -26,7 +26,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | `Adapters.cs` | The four real doors: spawn arguments, postures, carriers for settings, servers and plugins, toolchain |
 | `SessionTarget`, `TargetPrompt` | `Adapters.cs` | What a spawn carries, and the composed first prompt |
 | `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait, go-on and restart |
-| `AcpSession` | `Acp.cs` (hub, 187 KB) | The protocol door: handshake, prompt, steer, config options, background work; the order and the wiring of its turn's stages |
+| `AcpSession` | `Acp.cs` (hub, 96 KB) | The protocol door: the run's loop, the open and the resume, prompt, steer, the open prompts' state; keeps one-line doors to the units below, and the order and the wiring of its turn's stages |
+| `AcpOutcome`, `AcpConfigOption`, `AcpRefusal` | same names | What a run ends with, one config option as the agent offers it, the agent's refusal of a call (and the small failures a run's door throws) |
+| `AcpProtocol` | same name | What an `initialize` answer declares (origins, mid-turn words, steering, resume), the open's meta and servers, the client's capabilities and the typed failure; pure |
+| `AcpOptions` | same name | The session's config options as last said, the list the open began with, the person's change of one, and the actor's choice carried at the open |
+| `AcpOpening` | same name | A session's start and a conversation's resume: the handshake once, the session asked for with the servers and rules, the options kept, the choice carried, the posture set |
+| `AcpPosture` | same name | The posture's marks and the mode set on the session once it answers the open |
+| `AcpWire` | same name | The frames over the two streams: one line a frame, the requests awaiting their answer, the one writer |
+| `AcpWaits` | same name | What a run does where a turn ends: the wait on its own background work and the harness's woken turn, the go-on, the quest re-read, the carry-on of a done quest's tree; reaches the session through `ITurnEndWiring` |
+| `AcpEpisodes` | same name | A prompt's or an open's transient failure read, and the wait-and-try episode in the same conversation; reaches the session through `ITurnRetryWiring` |
+| `StepCalls` | `Turn/` | The calls announced and not yet finished, and those a steer cut |
 | The turn's stages | `Turn/`, listed in `docs/index/registered.md` | Each stage a module registers (`[TurnStage(name, phase, after)]`, `ITurnStage`), run in the kit's order at its phase's anchor in `DispatchAsync` (Update: each of the session's own updates; Request: the stage that takes the method, else not implemented), built once per session with the session as its `ITurnWiring`; `RefusedCalls` is the state two stages share |
 | `AcpReplay`, `AcpWatch`, `AcpHeard`, `AcpSubagent` | same names | The first Update stages, in that order: a load's replay passed over; the update counted and read by the background work and the wake; a word an error left untold taken once the agent goes on; a subagent's update routed to its own stream and taken there |
 | `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
@@ -175,8 +184,9 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
   `Adapters.cs` today, measured first, with a recorded sentence for any word table.
 - New protocol-door behaviour on a frame: a stage of its own beside `Acp.cs`, marked `[TurnStage]` with its phase and what it
   follows (as `AcpMeasure`, `AcpRender`, `AcpPermission` are); what it reaches of the session goes on `ITurnWiring`, and what it
-  shares with another stage on a state of its own (`RefusedCalls`); `AcpPartsTests` holds the order. Other door behaviour is a
-  unit of its own beside it (as `AcpBackground`, `AcpWake`, `AcpStreams` are). Never more code in the hub.
+  shares with another stage on a state of its own (`RefusedCalls`, `StepCalls`); `AcpPartsTests` holds the order. Other door
+  behaviour is a unit of its own beside it (as `AcpBackground`, `AcpWake`, `AcpStreams`, `AcpWaits`, `AcpEpisodes` are), reaching
+  the session through a wiring interface. Never more code in the hub.
 - How a run starts, waits or goes on: `TransportRun` and `TransportStart`.
 - Which account or binary a start takes: `HarnessRoster` for the walk's facts. The pure ranking goes in `AccountRotation` or
   `Domain/`. Settings shape goes in `HarnessSettings` or `AccountSet`.
