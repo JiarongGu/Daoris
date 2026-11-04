@@ -39,7 +39,7 @@ internal sealed class QuestOperations
         var byKind = new Dictionary<QuestOperationKind, IQuestOperation>();
         foreach (var (declared, operation) in parts.Order.Zip(parts.In(QuestOperationPhase.Log)))
         {
-            var kind = QuestStore.KindText(operation.Kind);
+            var kind = QuestRecordCodec.KindText(operation.Kind);
             if (!string.Equals(kind, declared.Name, StringComparison.Ordinal))
             {
                 throw new PartOrderException(

@@ -19,29 +19,30 @@ internal sealed class QuestCloseOperation : IQuestOperation
     {
         writer.WriteStartObject();
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
-        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
         if (operation.Answers is { Count: > 0 } answers)
         {
             writer.WritePropertyName("answers");
-            QuestStore.WriteAnswers(writer, answers);
+            QuestRecordCodec.WriteAnswers(writer, answers);
         }
 
-        if (operation.Close is { } close) QuestStore.WriteClose(writer, close);
+        if (operation.Close is { } close) QuestRecordCodec.WriteClose(writer, close);
         if (operation.Session is { } session) writer.WriteString("session", session);
         writer.WriteEndObject();
     }
 
     public QuestOperation ReadPayload(QuestOperation read, JsonElement payload) => read with
     {
-        Close = payload.TryGetProperty("close", out var close) ? QuestStore.ReadClose(close) : null,
-        Session = QuestStore.ReadSession(payload),
+        Close = payload.TryGetProperty("close", out var close) ? QuestRecordCodec.ReadClose(close) : null,
+        Session = QuestRecordCodec.ReadSession(payload),
     };
 
     /// <summary>
     /// What this machine did on a follow-up only the lost close published goes with it: a take of it kept as a conflict naming the close,
     /// so its session is stopped (FABRIC-CLOSE1e2).
     /// </summary>
-    public Task<IReadOnlyList<QuestOperation>> LostAsync(QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost) =>
+    public Task<IReadOnlyList<QuestOperation>> LostAsync(
+        QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost, QuestRebaseLosses losses) =>
         tx.ForgetFollowUpsAsync(operation.Quest, takeLost, "close");
 
     /// <summary>

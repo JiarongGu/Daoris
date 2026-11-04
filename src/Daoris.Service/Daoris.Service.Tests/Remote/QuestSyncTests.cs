@@ -1563,7 +1563,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
     [InlineData("A's session. ", new[] { "q2", "q3", "q4" },
         "A's session. This take's waits on #q2, #q3 and #q4 went with it, so this quest does not wait on those questions' answers.")]
     public void A_lost_takes_conflict_names_each_wait_after_its_own_note(string? note, string[] questions, string said) =>
-        Assert.Equal(said, QuestStore.WaitsWentWith(note, questions));
+        Assert.Equal(said, QuestWaitOperation.WaitsWentWith(note, questions));
 
     /// <summary>
     /// A wait on a quest this machine did not take was never part of a take of its own (WAITCLAIM1): the pass that drops

@@ -16,14 +16,14 @@ internal sealed class QuestReopenOperation : IQuestOperation
     {
         writer.WriteStartObject();
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
-        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
-        if (operation.Submission is { } submission) QuestStore.WriteRef(writer, "submission", submission);
+        QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        if (operation.Submission is { } submission) QuestRecordCodec.WriteRef(writer, "submission", submission);
         writer.WriteEndObject();
     }
 
     public QuestOperation ReadPayload(QuestOperation read, JsonElement payload) => read with
     {
-        Submission = payload.TryGetProperty("submission", out var submission) ? QuestStore.ReadRef(submission) : null,
+        Submission = payload.TryGetProperty("submission", out var submission) ? QuestRecordCodec.ReadRef(submission) : null,
     };
 
     /// <summary>
@@ -62,7 +62,7 @@ internal sealed class QuestReopenOperation : IQuestOperation
         }
 
         var step = await tx.SuccessorAsync(standing).ConfigureAwait(false);
-        if (step is { Status: QuestStatus.Done or QuestStatus.Declined } && QuestStore.Grows(step, submission))
+        if (step is { Status: QuestStatus.Done or QuestStatus.Declined } && QuestSubmitOperation.Grows(step, submission))
         {
             return Refused(QuestReopenRefusal.StepClosed, step);
         }
@@ -105,7 +105,7 @@ internal sealed class QuestReopenOperation : IQuestOperation
         // so the step's next submission would never be sealed. Refused as the person's reopen of it is (FABRIC-CLOSE1c19).
         if (standing.Submission is { } closedOn
             && await tx.SuccessorAsync(standing).ConfigureAwait(false) is { Status: QuestStatus.Done or QuestStatus.Declined } closed
-            && QuestStore.Grows(closed, new QuestOperationRef(closedOn.Machine, closedOn.Sequence)))
+            && QuestSubmitOperation.Grows(closed, new QuestOperationRef(closedOn.Machine, closedOn.Sequence)))
         {
             return new QuestReopening(QuestReopenRefusal.StepClosed, standing, closed);
         }

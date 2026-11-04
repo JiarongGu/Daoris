@@ -16,7 +16,7 @@ internal sealed class QuestEvidenceOperation : IQuestOperation
     {
         writer.WriteStartObject();
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
-        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
         if (operation.Evidence is { } evidence)
         {
             writer.WritePropertyName("evidence");

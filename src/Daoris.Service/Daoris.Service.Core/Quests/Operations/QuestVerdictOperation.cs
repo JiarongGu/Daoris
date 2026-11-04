@@ -16,7 +16,7 @@ internal sealed class QuestVerdictOperation : IQuestOperation
     {
         writer.WriteStartObject();
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
-        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
         if (operation.Verdict is { } review)
         {
             writer.WritePropertyName("verdict");
@@ -36,7 +36,8 @@ internal sealed class QuestVerdictOperation : IQuestOperation
     /// A verdict that lost while the step is still held takes the step it published with it, as a lost yes does; one that lost to another
     /// machine's leaves the step the winner published.
     /// </summary>
-    public Task<IReadOnlyList<QuestOperation>> LostAsync(QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost) =>
+    public Task<IReadOnlyList<QuestOperation>> LostAsync(
+        QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost, QuestRebaseLosses losses) =>
         standing is { Held: true }
             ? tx.ForgetFollowUpsAsync(operation.Quest, takeLost, "review verdict")
             : Task.FromResult<IReadOnlyList<QuestOperation>>([]);
