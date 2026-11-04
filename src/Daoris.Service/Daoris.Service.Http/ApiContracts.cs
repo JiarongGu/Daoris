@@ -60,103 +60,6 @@ public sealed record RegistrationResponse(
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
     string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch, bool Addressable,
     IReadOnlyList<string> Uses, IReadOnlyList<LaneWire>? Lanes = null);
-// XAGENT1c (D155 point 11; the second agent design §6.2): a pass the driver asks, every part nullable so one left out is
-// refused by the desk naming which. `minutes` is the rule's bound, said, never defaulted here: the service holds no rule.
-public sealed record OpinionAskRequest(
-    string? Occasion, string? Pass, string? Working, OpinionCandidateWire? Candidate, OpinionReviewerWire? Reviewer,
-    string? Posture, int? Minutes, string? Tree, string? Rechecks = null, IReadOnlyList<string?>? Families = null,
-    string? HarnessVersion = null);
-// The candidate: exactly what a pass reads, by full commit ids.
-public sealed record OpinionCandidateWire(string? Repository, string? Base, string? Tip, IReadOnlyList<string?>? Commits);
-// The reviewer as the driver's walk chose it: its adapter, its label (`another-maker`, `same-agent`, `maker-not-declared`), its
-// declared product and maker, and the account it runs as.
-public sealed record OpinionReviewerWire(
-    string? Adapter, string? Label, string? Product = null, string? Maker = null, string? Account = null);
-// An opinion as this machine keeps it, with where its pass stands (`state`: `reading`, `given`, `failed`, with `why`:
-// `ended` or `out-of-time`), derived when read. Answered only to a caller on this machine.
-public sealed record OpinionResponse(
-    string Id, string Occasion, string Pass, string Working, string Session, string? Rechecks,
-    OpinionCandidateWire Candidate, OpinionReviewerWire Reviewer, IReadOnlyList<string> Families, string? Posture, int Minutes,
-    string Tier, DateTimeOffset Asked, DateTimeOffset Due, string State, string? Why,
-    OpinionGivenResponse? Given, OpinionHandedResponse? Handed, IReadOnlyList<OpinionAnswerResponse> Answers);
-// What the reviewer said, once: its numbered findings, what it read, its limits, and a recheck's word on each first-pass finding.
-public sealed record OpinionGivenResponse(
-    IReadOnlyList<OpinionFindingResponse> Findings, string Read, string? Limits, IReadOnlyList<OpinionRecheckResponse>? Rechecked,
-    DateTimeOffset At);
-public sealed record OpinionFindingResponse(
-    int Number, string Weight, string Where, string Claim, string Consequence, string Reproduce, string Sure, string? Proposal);
-public sealed record OpinionRecheckResponse(int Finding, string Says);
-// Where the findings went: the working session, the word they wait in on its record, and when.
-public sealed record OpinionHandedResponse(string Session, string Word, DateTimeOffset At);
-// The working session's answer to one finding, the latest standing: `fixed` with its commit, `rejected` with its evidence, or
-// `unresolved` with why. A finding with none reads as unresolved, not answered.
-public sealed record OpinionAnswerResponse(int Finding, string Said, string? Commit, string? Evidence, string? Why, DateTimeOffset At);
-// A door's answer: the opinion as it now stands, the desk's sentence, and the reviewer's record a pass opened or the working
-// session the findings went to, with the word they wait in.
-public sealed record OpinionActionResponse(
-    OpinionResponse Opinion, string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null, bool? Waiting = null);
-// MIXAGENT2a-ii (D163 point 2): the driver's helper session opens its record, and hands the helper's answer to the asker. Every
-// part nullable so one left out is refused by the desk naming which. `text` is Daoris's words around the helper's claim.
-public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
-// COWORK1d: `running` true is the driver that runs a working driven asker handing an urgent ask's answer for its run's next step;
-// `level` the ask's, kept beside the word.
-// COAGENT1b (D199 point 2; the co-agent design §2.3 step 5): the driver opens a partner's record for one piece, idempotent by the
-// piece's id: its lead, its agent, its own clone, the account and version it runs on, and the ask's base commit.
-public sealed record PartnerOpenRequest(
-    string? Lead, string? Piece, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
-public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null, bool? Settled = null);
-// CHATFLOW1e (the chat-flow design §6.1 (a), (e)): a first pass's findings handed to a chat run's record the driver names, the line's newest
-// in its tree, live between turns or ended; none for the working session itself, as before.
-// COMMS1b: `settled` true asks to be told a key the line settled, as a say or a helper's hand does.
-public sealed record OpinionHandRequest(string? To = null, bool? Settled = null);
-// A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word. `waiting`
-// (COMMS1b): the answer was waiting already, `session` holds it and `said` is it, and nothing was kept now.
-public sealed record HelperActionResponse(
-    string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null, bool? Waiting = null);
-// BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
-// the desk naming which. `Repository` is the one whose knowledge the packet is frozen from, none for the question alone.
-// ONEWAY1t: `Kind` is `brainstorm` (none) or `meeting`; `Id` the caller's own, which makes the ask idempotent; `Sources` the repository's
-// paths the packet takes in.
-public sealed record BrainstormAskRequest(
-    string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null, string? Kind = null, string? Id = null,
-    IReadOnlyList<string?>? Sources = null);
-// One brainstorm as its records stand: `State` is `asked` before the driver's look froze its packet, then the driver's own
-// (`frozen`, `running`, `ended`); `Packet` the frozen packet's digest, `Sent` the digest the person sent, each null for none.
-// A meeting's carries its `Kind` and the `Round` its state is of; a brainstorm's leaves both out.
-public sealed record BrainstormResponse(
-    string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, string State, string? Code,
-    string? Packet, string? Sent, string? Kind = null, int? Round = null);
-// One brainstorm shown: the packet as frozen, whole and as written (null before the look froze one), and the document's Markdown.
-public sealed record BrainstormShownResponse(BrainstormResponse Brainstorm, JsonElement? Frozen, string? Document);
-// A press's answer: the brainstorm as it now stands, and the desk's sentence.
-public sealed record BrainstormActionResponse(BrainstormResponse? Brainstorm, string Message);
-// HIST1b (D153; the history-clearing design §6.3): why a unit stays, or a piece of it is kept, as SESSUX1f's refusals travel:
-// `error` the desk's sentence, `refusal` its word (`unknown`, `open`, `asked`, `live`, `needs-you`, `awaited`, `unpushed`,
-// `not-ours`), which the driver reads instead of the sentence, and the quest, ask, session, machine or workspace it names.
-// HIST1l: `waits`, beside `needs-you` only, names what waits on the person (`parked`, `held`, `conflict`, `ask`, `proposal`), so
-// the driver says the sentence meant without reading the records again; absent for every other word, and from a host before it.
-// HIST1m, the same way: `stands`, beside `open` only, how the work in progress stands (`open`, `taken`), and `by`, beside
-// `awaited` only, the open work that names it (`question`, `asker`, `step`). The words themselves are unchanged.
-public sealed record HistoryRefusalResponse(
-    string Refusal, string Error, string? Quest = null, string? Ask = null, string? Session = null, string? Origin = null,
-    string? Workspace = null, string? Waits = null, string? Stands = null, string? By = null);
-// One unit (`kind`: `quest`, `ask` or `failed`): what a clear takes, by id, and whether it may go now. `forgotten` is which of
-// its quests a remote numbered, forgotten here rather than simply removed; `teammates` this machine's copies of a teammate's
-// records; `kept` the pieces listed and kept while the unit goes (a teammate's failed session).
-public sealed record HistoryUnitResponse(
-    string Kind, string Id, string? Workspace, bool Clearable, IReadOnlyList<string> Quests, IReadOnlyList<string> Forgotten,
-    IReadOnlyList<string> Asks, IReadOnlyList<string> Sessions, IReadOnlyList<string> Teammates,
-    HistoryRefusalResponse? Refusal, IReadOnlyList<HistoryRefusalResponse> Kept);
-public sealed record HistoryPlanResponse(IReadOnlyList<HistoryUnitResponse> Units);
-// The second press names its units as the first listed them: each `kind` and `id`.
-public sealed record HistoryUnitRequest(string? Kind, string? Id);
-public sealed record HistoryClearRequest(IReadOnlyList<HistoryUnitRequest?>? Units);
-// What the press did to one unit: the unit as judged where it was cleared, whether it went, and the desk's sentence. HIST1j:
-// `failed`, only where a removal failed, names the quests and asks whose kept files the disk would not let go of, so the driver
-// counts them as failed and frees none of their bytes; absent otherwise, so a driver from before reads the answer as it did.
-public sealed record HistoryClearedResponse(HistoryUnitResponse Unit, bool Cleared, string Message, HistoryFailedResponse? Failed = null);
-public sealed record HistoryFailedResponse(IReadOnlyList<string> Quests, IReadOnlyList<string> Asks);
-public sealed record HistoryClearResponse(IReadOnlyList<HistoryClearedResponse> Units);
 // `FirstLine` and `LastLine` (ORIENT2e): the lines of its file an entry is, as `/api/entries` answers them, taken
 // only where they can be its body's; a feed that names none is read as before.
 public sealed record FeedEntryRecord(
@@ -296,22 +199,6 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 [JsonSerializable(typeof(ImportRequest))]
 [JsonSerializable(typeof(ImportedResponse))]
 [JsonSerializable(typeof(IEnumerable<RegistrationResponse>))]
-[JsonSerializable(typeof(OpinionAskRequest))]
-[JsonSerializable(typeof(OpinionResponse))]
-[JsonSerializable(typeof(IEnumerable<OpinionResponse>))]
-[JsonSerializable(typeof(OpinionActionResponse))]
-[JsonSerializable(typeof(HelperOpenRequest))]
-[JsonSerializable(typeof(HelperHandRequest))]
-[JsonSerializable(typeof(OpinionHandRequest))]
-[JsonSerializable(typeof(PartnerOpenRequest))]
-[JsonSerializable(typeof(HelperActionResponse))]
-[JsonSerializable(typeof(BrainstormAskRequest))]
-[JsonSerializable(typeof(IEnumerable<BrainstormResponse>))]
-[JsonSerializable(typeof(BrainstormShownResponse))]
-[JsonSerializable(typeof(BrainstormActionResponse))]
-[JsonSerializable(typeof(HistoryPlanResponse))]
-[JsonSerializable(typeof(HistoryClearRequest))]
-[JsonSerializable(typeof(HistoryClearResponse))]
 [JsonSerializable(typeof(ConfirmationAskRequest))]
 [JsonSerializable(typeof(ConfirmationWithdrawRequest))]
 [JsonSerializable(typeof(ConfirmationResponse))]
