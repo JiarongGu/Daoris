@@ -41,7 +41,7 @@ internal sealed class AcpBackground
     /// <summary>Read one update of the session's own: a task announced, or a task's state. Anything else is not this.</summary>
     public void Take(JsonElement update)
     {
-        switch (AcpSession.Kind(update))
+        switch (AcpRender.Kind(update))
         {
             case "async_task_spawned" when Json.Text(update, "asyncTaskId") is { Length: > 0 } id:
                 lock (_gate)
@@ -49,7 +49,7 @@ internal sealed class AcpBackground
                     // Announced once, whatever the wire repeats.
                     if (_work.Any(work => work.Id == id)) return;
                     _work.Add(new Work(
-                        id, Json.Text(update, "name") is { Length: > 0 } name ? AcpSession.OneLine(name) : id, DateTimeOffset.UtcNow));
+                        id, Json.Text(update, "name") is { Length: > 0 } name ? AcpRender.OneLine(name) : id, DateTimeOffset.UtcNow));
                 }
 
                 break;

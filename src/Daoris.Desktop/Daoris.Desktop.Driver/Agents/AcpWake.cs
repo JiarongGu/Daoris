@@ -98,7 +98,7 @@ internal sealed class AcpWake
         lock (_gate)
         {
             _read++;
-            var kind = AcpSession.Kind(update);
+            var kind = AcpRender.Kind(update);
             if (kind is "tool_call" or "tool_call_update" && !OfSubagent(update)) _step = _read;
             if (kind is { } speaks && Turns(speaks)) _spoke = Clock.GetUtcNow();
             if (kind is "tool_call" or "tool_call_update") Track(update, kind);

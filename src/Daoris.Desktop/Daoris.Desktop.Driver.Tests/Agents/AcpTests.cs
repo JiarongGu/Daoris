@@ -735,7 +735,7 @@ public sealed class AcpTests
         using var update = JsonDocument.Parse(
             $$"""{"sessionUpdate":"tool_call","toolCallId":"c1","title":"Edit src/a.ts","kind":"edit","locations":{{locations}}}""");
 
-        var mapped = AcpSession.Map(update.RootElement)!;
+        var mapped = AcpRender.Map(update.RootElement)!;
 
         Assert.Equal(line, mapped.Line);
         // The line pairs with the first path the event keeps, so an event with no path has no line either.
@@ -2253,8 +2253,8 @@ public sealed class AcpTests
     {
         using var update = JsonDocument.Parse(frame);
 
-        Assert.Null(AcpSession.Map(update.RootElement));
-        Assert.Null(AcpSession.Render(update.RootElement, new Dictionary<string, string>()));
+        Assert.Null(AcpRender.Map(update.RootElement));
+        Assert.Null(AcpRender.Render(update.RootElement, new Dictionary<string, string>()));
     }
 
     /// <summary>
