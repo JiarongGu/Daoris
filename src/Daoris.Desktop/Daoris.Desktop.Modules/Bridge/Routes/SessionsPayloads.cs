@@ -62,6 +62,11 @@ public sealed record SessionSpentRead(IReadOnlyList<string>? Ids);
 
 public sealed record SessionRecordRead(string Id);
 
+/// <summary>The sessions a list shows, each with the tree its record names; a row naming no id or no tree is left out.</summary>
+public sealed record SessionWhereRead(IReadOnlyList<SessionTreeNamed>? Sessions);
+
+public sealed record SessionTreeNamed(string? Id, string? Tree);
+
 public sealed record SessionMemoryRead(string Session);
 
 /// <summary>No ids is every session; the terminal's <c>session list</c> sends its <c>Group</c>, <c>Repository</c> and <c>Json</c> with <c>Said</c>.</summary>

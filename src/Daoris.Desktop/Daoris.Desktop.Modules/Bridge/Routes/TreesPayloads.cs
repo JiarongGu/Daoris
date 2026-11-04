@@ -1,6 +1,30 @@
 namespace Daoris.Desktop;
 
-// The payloads of TreesRoutes' reads, each named for its route.
+// The payloads of TreesRoutes' reads and presses, each named for its route. A flag the terminal's verbs send (`Said`, `Follow`) is
+// read as the page's flags are: true only where it says true.
+
+/// <summary>A reviewed session's landing plan; <c>Branch</c> is the name the person entered in place of the rule's, blank keeping the rule's.</summary>
+public sealed record LandingRead(string Id, string? Branch, bool Said = false);
+
+/// <summary>The landing's press. <c>Answers</c> is the gate's token for what the press showed; <c>Follow</c> registers the lines it moved.</summary>
+public sealed record LandSessionTree(string Id, string? Branch, string? Answers, bool Follow = false);
+
+public sealed record OpinionGateRead(string Id, bool Said = false);
+
+/// <summary><c>SameAgent</c> asks the same agent fresh; an <c>Occasion</c> of <c>failure</c> asks for help with a struck quest.</summary>
+public sealed record AskOpinion(string Id, string? Reviewer, string? Occasion, string? Words, bool SameAgent = false, bool Said = false);
+
+public sealed record OpinionAnyway(string Id, string? Words, bool Said = false);
+
+public sealed record OpinionMyself(string Id, string? Words, bool Said = false);
+
+public sealed record StopOpinion(string Opinion, bool Said = false);
+
+/// <summary>A session by its <c>Id</c>, or a landed <c>Branch</c> as <c>trees hand</c> names it, with its <c>Repository</c> where two hold one.</summary>
+public sealed record HandOffPlan(string? Id, string? Branch, string? Repository, string? Plugin, bool Said = false);
+
+/// <summary>As <see cref="HandOffPlan"/>, the press.</summary>
+public sealed record HandOff(string? Id, string? Branch, string? Repository, string? Plugin);
 
 /// <summary>The <c>Read</c> is the token the call waits under, which the module reads off any request so a later <c>READ_LEAVE</c> can stop it.</summary>
 public sealed record SessionDiff(string Id, string? Read);

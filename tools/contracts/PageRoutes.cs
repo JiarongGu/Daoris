@@ -85,7 +85,7 @@ public static class PageRoutes
     {
         if (!declared.ContainsKey(record.Name))
         {
-            var fields = RoutePayload.Fields(record).Select(field => $"  {field.Name}{FieldType(field)};").ToList();
+            var fields = RoutePayload.Fields(record).Select(field => $"  {field.Name}{FieldType(field, declared)};").ToList();
             declared[record.Name] = fields.Count == 0
                 ? $"export type {record.Name} = Record<string, never>;"
                 : $"export type {record.Name} = {{\n{string.Join('\n', fields)}\n}};";
@@ -94,13 +94,16 @@ public static class PageRoutes
         return record.Name;
     }
 
-    private static string FieldType(PayloadField field) => field.Read switch
+    private static string FieldType(PayloadField field, IDictionary<string, string> declared) => field.Read switch
     {
         PayloadRead.Required => field.Type == typeof(string) ? ": string" : field.Type == typeof(bool) ? ": boolean" : ": number",
         PayloadRead.Text => "?: string | null",
         PayloadRead.Flag => "?: boolean",
         PayloadRead.Choice => "?: boolean | null",
         PayloadRead.Number => "?: number | null",
+        // A shape another reader owns, sent as written; absent and null are told apart.
+        PayloadRead.Json => "?: unknown",
+        PayloadRead.Records => $"?: {Payload(Ours(field.Item), declared)}[] | null",
         _ => "?: string[] | null",
     };
 

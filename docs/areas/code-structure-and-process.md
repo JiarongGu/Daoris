@@ -66,7 +66,10 @@ finishes first and the whole set runs once.
    ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
    publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. A handler takes its
    payload record, named for its route (`SetCap(SetCap press)`), which `RoutePayload` reads off the request by its parameters'
-   types as the hand-written reads did; the record and the handler's answer record are written into `DriverPayloads`, so the
+   types as the hand-written reads did, a `JsonElement?` field as sent and null only where absent (a shape another reader owns,
+   or a field whose sending is the choice), and a list of records each by the same rules. A route serving a plan and its press is
+   two handlers sharing a named helper, never one reading the route's name. The record and the handler's answer record are
+   written into `DriverPayloads`, so the
    page's `call` and `useDriverChange` take that route with no payload type of their own. A handler that still takes the
    `IpcRequest` reads its payload by hand, and the page sends it through the by-hand overloads with a payload type beside its
    hook, until CODESHAPE1 moves it. (from D231, D228)

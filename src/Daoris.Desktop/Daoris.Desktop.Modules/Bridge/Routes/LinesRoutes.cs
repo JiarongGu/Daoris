@@ -39,11 +39,11 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_LINE", "lines", "workspaceLines", Sets = "branch")]
     [Says("SET_LINE", "repository:repository")]
     [Publishes("SET_LINE", Chosen)]
-    private object? SetLine(IpcRequest request)
+    private object? SetLine(SetLine press)
     {
-        var branch = Optional(request, "branch");
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var (repository, workspace) = (press.Repository, press.Workspace);
+        // Sent at all, a branch sets the line, a blank or null one clearing it; a press with a policy and no branch keeps the line.
+        var branch = press.Branch is { ValueKind: JsonValueKind.String } sent && sent.GetString() is { Length: > 0 } text ? text : null;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a line is set for a `repository` or a `workspace` — name one of them.");
@@ -51,15 +51,14 @@ public sealed class LinesRoutes(DriverContext context)
 
         // WORKFLOWCLEAN1 1a: the line's policy (how it is integrated) is edited here beside its branch, set where the press names an object,
         // withdrawn on null; a press that names only a policy leaves the line as it is. Its values are LandingKey's to judge.
-        var named = request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("policy", out _);
+        var named = press.Policy is not null;
         LandingIntegrate? policy = null;
-        if (named)
+        if (press.Policy is { ValueKind: not JsonValueKind.Null } wire)
         {
-            var wire = request.Payload!.Value.GetProperty("policy");
-            if (wire.ValueKind != JsonValueKind.Null) policy = LandingKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
+            policy = LandingKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
         }
 
-        var keepsLine = named && !(request.Payload!.Value.TryGetProperty("branch", out _));
+        var keepsLine = named && press.Branch is null;
         _context.Change(config =>
         {
             if (!keepsLine)
@@ -848,9 +847,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_REVIEW", "reviews", "workspaceReviews")]
     [NotAlready("SET_REVIEW", "merges into the repository's review rule")]
     [Publishes("SET_REVIEW", Chosen)]
-    private async Task<object?> SetReviewAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SetReviewAsync(SetReview press, CancellationToken cancellationToken)
     {
-        var edit = ReviewEditOf(request.Payload);
+        var edit = ReviewRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before the registry is asked anything.
         ReviewRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
 
@@ -868,9 +867,6 @@ public sealed class LinesRoutes(DriverContext context)
         // Only a put looked for anything, so only a put says what the look found.
         return DriverRoutes.State(_loop, reviewed: looked is null ? null : new { looked.Lacking, looked.Unchecked });
     }
-
-    /// <summary>The page's edit, read as the shared table's (<see cref="ReviewRules.EditOf"/>, the terminal's payload read the same way).</summary>
-    internal static ReviewEdit ReviewEditOf(JsonElement? payload) => ReviewRules.EditOf(payload);
 
     /// <summary>
     /// A rule as the bridge carries it: whether it is none here, whether work waits for the person's look, and
@@ -899,9 +895,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_OPINION", "opinions", "workspaceOpinions")]
     [NotAlready("SET_OPINION", "merges into the repository's opinion rule")]
     [Publishes("SET_OPINION", Chosen)]
-    private object? SetOpinion(IpcRequest request)
+    private object? SetOpinion(SetOpinion press)
     {
-        var edit = OpinionRules.EditOf(request.Payload ?? default);
+        var edit = OpinionRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before anything is written.
         OpinionRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => OpinionRules.Apply(config, edit));
@@ -943,9 +939,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_HELPERS", "helpers", "workspaceHelpers")]
     [NotAlready("SET_HELPERS", "merges into the repository's helpers rule")]
     [Publishes("SET_HELPERS", Chosen)]
-    private object? SetHelpers(IpcRequest request)
+    private object? SetHelpers(SetHelpers press)
     {
-        var edit = HelperRules.EditOf(request.Payload ?? default);
+        var edit = HelperRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before anything is written.
         HelperRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => HelperRules.Apply(config, edit));
@@ -962,9 +958,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_HAND_OVER", "handOver", "workspaceHandOver")]
     [NotAlready("SET_HAND_OVER", "merges into the repository's hand-over rule")]
     [Publishes("SET_HAND_OVER", Chosen)]
-    private object? SetHandOver(IpcRequest request)
+    private object? SetHandOver(SetHandOver press)
     {
-        var edit = HandOverRules.EditOf(request.Payload ?? default);
+        var edit = HandOverRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before anything is written.
         HandOverRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => HandOverRules.Apply(config, edit));
@@ -981,9 +977,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_COMMITS", "commits", "workspaceCommits")]
     [NotAlready("SET_COMMITS", "merges into the repository's commits rule")]
     [Publishes("SET_COMMITS", Chosen)]
-    private object? SetCommits(IpcRequest request)
+    private object? SetCommits(SetCommits press)
     {
-        var edit = CommitRules.EditOf(request.Payload ?? default);
+        var edit = CommitRules.EditOf(RuleEdit.Shape(press));
         CommitRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => CommitRules.Apply(config, edit));
         return DriverRoutes.State(_loop);
@@ -1001,9 +997,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_ACCESS", "access", "workspaceAccess")]
     [NotAlready("SET_ACCESS", "merges into the repository's access rule")]
     [Publishes("SET_ACCESS", Chosen)]
-    private object? SetAccess(IpcRequest request)
+    private object? SetAccess(SetAccess press)
     {
-        var edit = AccessRules.EditOf(request.Payload ?? default);
+        var edit = AccessRules.EditOf(RuleEdit.Shape(press));
         // The refusals come first, before anything is written.
         var before = DriverConfig.Load(_loop.ConfigPath);
         AccessRules.Apply(before, edit);
@@ -1027,9 +1023,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_GIT_ACCESS", "gitAccess", "workspaceGitAccess")]
     [NotAlready("SET_GIT_ACCESS", "merges into the repository's git access")]
     [Publishes("SET_GIT_ACCESS", Chosen)]
-    private object? SetGitAccess(IpcRequest request)
+    private object? SetGitAccess(SetGitAccess press)
     {
-        var edit = GitAccessActs.EditOf(request.Payload ?? default);
+        var edit = GitAccessActs.EditOf(RuleEdit.Shape(press));
         GitAccessActs.Apply(_loop.Home, edit);
         return DriverRoutes.State(_loop);
     }

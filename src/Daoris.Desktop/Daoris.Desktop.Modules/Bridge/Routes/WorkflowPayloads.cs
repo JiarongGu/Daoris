@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Daoris.Desktop;
 
 // The payloads of WorkflowRoutes' reads and presses, each named for its route.
@@ -23,5 +25,10 @@ public sealed record WorkflowKind(string? Workspace, string? Kind, string? Label
 
 /// <summary>Exactly one of the three.</summary>
 public sealed record WorkflowRunRead(string? Session, string? Quest, string? Ask);
+
+/// <summary>A version saved under <c>Id</c>, from a preset or a saved workflow, or of the <c>Steps</c> or <c>Graph</c> sent, whose nodes the workflow's reader judges.</summary>
+public sealed record WorkflowSavePress(
+    string? Id, string? From, JsonElement? Steps, JsonElement? Graph, string? Name, long? Base, IReadOnlyList<string>? Authorize, string? Updates,
+    bool WithOpinion = false, bool WithLook = false, bool Plan = false);
 
 public sealed record WorkflowNodePress(string Run, string Node, string Act, string? Words, bool Said = false);
