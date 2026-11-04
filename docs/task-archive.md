@@ -23116,3 +23116,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **ROLEONE1 — the supervisor and the steward as roles of the one role system** (driver, modules, web; D233 point 2): today appointed outside the catalogue, both dark; they become catalogue roles staffed through the role door (an agent, the person's rules, or the terminal), the appointment machinery that duplicates it retired and what it does that the roles lack moved in. After NOCOMPAT1a. → `docs/areas/roles-and-supervision.md`
 
   **Outcome** 2026-11-04: both are seeded catalogue roles of the appointed shape (`Roles/RoleHold.cs`), staffed through the role door alone; `SET_APPOINTMENT`, the appointment records, the offered flags and `RoleScopes` retired; the page rows left as ROLEONE1b.
+
+## NOCOMPAT1d (2026-11-04)
+
+- [x] **NOCOMPAT1d — the last older readings** (driver, modules, web; D232): the page's ~21 `notOffered` branches for older hosts; the accounts' refusals of old forms (`agent account default|join`, `login --join`, `--workspace` on order and use, agent_propose's `default`); `DriverConfig.Strikes` still parsing a key the migration removes; `handed-before-block` with the page's handed cuts; ONEWAY1w's old home places; then the register file and its marker gate deleted. Note: the host's command line runs no migration, so the app's first start after the update converts the home before any terminal use. → `docs/decisions/D232.md`
+
+  **Outcome** 2026-11-04: the page's older-host branches, the accounts' old-form refusals, the strikes parse, the old handed codes, the unread state fields and the unmarked refusal deleted; the transitional register, its tests and the marker gate deleted. The old home places wait on HOMELAYOUT5, frozen.
