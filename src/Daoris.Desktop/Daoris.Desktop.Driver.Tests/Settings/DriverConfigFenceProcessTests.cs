@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// FOUNDATION1w-s part 2 (D212's note, the design §19.15, C8-1.2 and "its bound against an older writer, both orders") across two
-/// processes: the other writer is a Node running the CLI's own keeping write (<c>keeplock.ts</c>, <c>jsonkeep.ts</c>), an older writer that
+/// processes: the other writer is a Node holding the CLI's own lock (<c>keeplock.ts</c>) as its keeping write did, an older writer that
 /// takes a lock a minute old as stale and renames with no second look. The in-process half is <see cref="DriverConfigFenceTests"/>.
 /// </summary>
 /// <remarks>
@@ -36,13 +36,20 @@ public sealed class DriverConfigFenceProcessTests : IDisposable
     private static readonly string KeepLockSource =
         new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "keeplock.ts")).AbsoluteUri;
 
-    private static readonly string KeepingSource =
-        new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "jsonkeep.ts")).AbsoluteUri;
-
-    /// <summary>The older writer's save of Intake turned off, as the CLI's keeping write makes it: the key taken out of the file.</summary>
+    /// <summary>
+    /// The older writer's save of Intake turned off, as the CLI's keeping write made it: under the lock, the file read, the key taken out
+    /// and the rest renamed into place.
+    /// </summary>
     private static readonly string IntakeOff = $$"""
-        import { writeKeeping } from '{{KeepingSource}}';
-        writeKeeping(process.env.KEEP_FILE, true, { cap: 3, intakeAdapter: 'codex-acp' }, { cap: 3 });
+        import { readFileSync, renameSync, writeFileSync } from 'node:fs';
+        import { withKeepLock } from '{{KeepLockSource}}';
+        const file = process.env.KEEP_FILE;
+        withKeepLock(file, () => {
+          const kept = JSON.parse(readFileSync(file, 'utf8'));
+          delete kept.intakeAdapter;
+          writeFileSync(`${file}.older`, JSON.stringify(kept, null, 2) + '\n');
+          renameSync(`${file}.older`, file);
+        });
         """;
 
     private static Process Node(string script, string file, bool input = false)
