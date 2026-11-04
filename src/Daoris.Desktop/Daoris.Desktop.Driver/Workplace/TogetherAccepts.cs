@@ -129,12 +129,12 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
             : landed;
     }
 
-    /// <summary>The form and the target the live rule lands the head by, as its press plans them.</summary>
+    /// <summary>The form and the target the live rule lands the head by, as its press plans them: the run's bound <c>land</c> where it has one.</summary>
     private async Task<(string Form, string Target)> RuleFormAsync(
         TogetherOperation operation, LandingSubject subject, IWorkplaceGate? gate, string repository, string workspace, CancellationToken ct)
     {
         var plan = await lands.PlanAsync(operation.Head.Tree, subject, ct, gate?.Process).ConfigureAwait(false);
-        var rule = LandingRules.Line(context.Config(), repository, workspace).Rule;
+        var rule = gate?.Process is { Named: true } named ? named.Landing.Rule : LandingRules.Line(context.Config(), repository, workspace).Rule;
         return (plan.Form == LandingForm.Merge ? TogetherForms.Merge : rule.Squash ? TogetherForms.Squash : TogetherForms.Branch, plan.Target);
     }
 

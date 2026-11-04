@@ -150,15 +150,17 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
     /// <summary>
     /// An entry's subject named for its first part's work (ACCEPTFOOT2): read from that part's tree where it is here, else from the tip
     /// its landing recorded, in <paramref name="anyTree"/>, a tree of the same repository; so the press, the plan and each part's own
-    /// Accept name the entry's one branch alike, whichever part's tree they are pressed in.
+    /// Accept name the entry's one branch alike, whichever part's tree they are pressed in. Named by the run's <paramref name="process"/>'s
+    /// <c>land</c>, as the plan and the press name it.
     /// </summary>
-    internal async Task<LandingSubject> EntryForWorkAsync(LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct)
+    internal async Task<LandingSubject> EntryForWorkAsync(
+        LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct, IWorkplaceProcess? process = null)
     {
         if (!entry.NamedByOpening) return entry;
         var lead = leadTree is { Length: > 0 } && Directory.Exists(leadTree) ? Path.GetFullPath(leadTree) : null;
         var full = lead ?? Path.GetFullPath(anyTree);
         var (workspace, repository) = context.OwnerOf(full);
-        var landing = LandingRules.Line(context.Config(), repository, workspace);
+        var landing = process is { Named: true } named ? named.Landing : LandingRules.Line(context.Config(), repository, workspace);
         if (lead is not null) return await ForWorkAsync(lead, workspace, repository, landing.Rule, entry, ct).ConfigureAwait(false);
         return context.Recorded.Landing(entry.Session) is { } landed
             ? await ForWorkAsync(full, workspace, repository, landing.Rule, entry, ct, landed.Tip).ConfigureAwait(false)
