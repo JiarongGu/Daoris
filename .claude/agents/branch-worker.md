@@ -42,6 +42,8 @@ when the work moves outside it. What follows is what a worktree adds.
   `git status` or logs between steps.
 - **Hand back at about 150 tool calls**, at the end of the step you are on: commit, say what is done and what is
   left. A fresh builder carries on from your commits for far less than your context costs per turn.
+- **Every compile you ran is clean at the hand-back**, the web typecheck included when a contract or a generated
+  type moved. Errors your branch brings are yours to fix before you stop; the parent merges no red compile.
 
 ## Gates
 
