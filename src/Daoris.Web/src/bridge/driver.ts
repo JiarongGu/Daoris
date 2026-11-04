@@ -221,7 +221,7 @@ export type DriverState = {
  * or nothing for a slice this shell does not push. Every slice's spec reads it here, so the route has one bridge file. A read: it
  * declares nothing and tells nothing.
  */
-export const readSlice = (slice: string) => call<unknown>('STATE_SLICE', { slice });
+export const readSlice = (slice: string) => call('STATE_SLICE', { slice });
 
 /** The partitions the shell pushes the driver's state in (`DriverStateSlice`), composed in this order. */
 const DRIVER_PARTITIONS = ['shell', 'choices', 'running'] as const;
@@ -394,7 +394,7 @@ export type TrustGranted = { folder: string; key: string; changed: boolean; veri
  */
 export const useTrustFolder = () => useMutation({
   mutationFn: (hold: Pick<TrustHold, 'folder' | 'trustFile'>) =>
-    call<TrustGranted>('TRUST_FOLDER', { folder: hold.folder, trustFile: hold.trustFile }),
+    call('TRUST_FOLDER', { folder: hold.folder, trustFile: hold.trustFile }) as Promise<TrustGranted>,
 });
 
 /**
@@ -440,14 +440,14 @@ export const useSetKeep = () => useDriverChange('SET_KEEP');
  * the person's stop holds — whichever the driver's verdict says applies, refused where neither does. `daoris driver
  * retry <quest>` and its `--session` are the terminal's two halves.
  */
-export const useRetryQuest = () => useDriverChange<{ quest: string }>('RETRY_QUEST');
+export const useRetryQuest = () => useDriverChange('RETRY_QUEST');
 
 /**
  * *Show it again* on the strip's review chip (REVIEWENV1d, the review environment design §3.3): the set-up step's newest set-up
  * served to its tab of Daoris's browser again, the tab brought forward where the set-up left it, with no session and no model.
  * Refused in the driver's words wherever it would show anything but that build at the rule's address.
  */
-export const useShowReviewAgain = () => useDriverChange<{ quest: string }>('SHOW_REVIEW_AGAIN');
+export const useShowReviewAgain = () => useDriverChange('SHOW_REVIEW_AGAIN');
 
 /** What *Try again* did (D126 §3.4): RETRY1's mark on a parked quest, or the release of the stop that held it. */
 export type Retried = { quest: string; did: 'marked' | 'released'; session?: string | null };
@@ -647,7 +647,7 @@ export type SyncNowReport = { workspace: string; problem?: string | null; notes:
 export const useSyncNow = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (workspace: string) => call<SyncNowReport>('SYNC_NOW', { workspace }),
+    mutationFn: (workspace: string) => call('SYNC_NOW', { workspace }) as Promise<SyncNowReport>,
     onError: () => {
       // A pass refused as an error publishes nothing (D169 point 5), and one that failed part way may have recorded where it
       // stood: this window, which pressed it, asks again itself. Where the shell pushes the standings, the pass's end pushes them (PUSH1a2).
@@ -695,7 +695,7 @@ export const useHeavyMarks = (repository: string, { enabled = true }: { enabled?
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.heavyMarks(repository),
-    queryFn: () => call<HeavyMarks & { repository: string }>('HEAVY_MARKS', { repository }),
+    queryFn: () => call('HEAVY_MARKS', { repository }) as Promise<HeavyMarks & { repository: string }>,
     enabled: isAvailable && enabled && repository !== '',
   });
 };

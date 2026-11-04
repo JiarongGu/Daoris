@@ -4,6 +4,9 @@ namespace Daoris.Desktop;
 
 // The payloads of WorkflowRoutes' reads and presses, each named for its route.
 
+/// <summary>A saved workflow shown by its <c>Id</c>, at a <c>Version</c> or the newest.</summary>
+public sealed record WorkflowShowRead(string? Id, long? Version);
+
 /// <summary>A repository or a workspace, one of them; the driver refuses both or neither. A <c>Route</c> adds the graph that route follows.</summary>
 public sealed record WorkflowCurrent(string? Repository, string? Workspace, string? Route);
 

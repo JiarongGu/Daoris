@@ -49,8 +49,8 @@ export const useTools = ({ ask = false }: { ask?: boolean } = {}) => {
     queryKey,
     // Told by event (NOBLOCK1): the shell answers what it holds, and its read of the files comes as `ANSWERED`.
     // Nothing held yet reads as null, which the screen draws as loading until the event comes.
-    queryFn: () => askHeld<ToolsShown | null>('TOOLS_LIST', client, queryKey, ask ? { ask: true } : {},
-      (answer) => (isPending(answer) ? null : answer as ToolsShown)),
+    queryFn: () => askHeld('TOOLS_LIST', client, queryKey, ask ? { ask: true } : {},
+      (answer): ToolsShown | null => (isPending(answer) ? null : answer as ToolsShown)),
     enabled: isAvailable,
   });
 };
@@ -66,26 +66,26 @@ export const useTools = ({ ask = false }: { ask?: boolean } = {}) => {
 export const useToolUse = () =>
   useMutation({
     mutationFn: (use: { tool: string; action: 'system' | 'managed' | 'file'; version?: string; file?: string }) =>
-      call<ToolStart>('TOOLS_USE', use),
+      call('TOOLS_USE', use) as Promise<ToolStart>,
   });
 
 /** *Download* (§4.1): fetched and verified, nothing switching. Answered once it has started; its end is `TOOLS_ENDED`. */
 export const useToolDownload = () =>
   useMutation({
-    mutationFn: (target: { tool: string; version: string }) => call<ToolStart>('TOOLS_DOWNLOAD', target),
+    mutationFn: (target: { tool: string; version: string }) => call('TOOLS_DOWNLOAD', target) as Promise<ToolStart>,
   });
 
 /** The person's stop of a tool's download. `stopped: false` is an answer: nothing ran to stop. */
 export const useToolStop = () =>
   useMutation({
-    mutationFn: (tool: string) => call<{ tool: string; stopped: boolean }>('TOOLS_STOP', { tool }),
+    mutationFn: (tool: string) => call('TOOLS_STOP', { tool }) as Promise<{ tool: string; stopped: boolean }>,
   });
 
 /** *Delete* (§3.6): a downloaded version nothing uses, removed with its folder. */
 export const useToolDelete = () =>
   useMutation({
     mutationFn: (target: { tool: string; version: string }) =>
-      call<{ tool: string; version: string }>('TOOLS_DELETE', target),
+      call('TOOLS_DELETE', target) as Promise<{ tool: string; version: string }>,
   });
 
 /**
@@ -103,7 +103,7 @@ export const useToolsLook = () =>
 export const useToolLocation = () =>
   useMutation({
     mutationFn: (change: { action: 'add' | 'remove'; address: string }) =>
-      call<{ address: string; added?: boolean; removed?: boolean }>('TOOLS_LOCATION', change),
+      call('TOOLS_LOCATION', change) as Promise<{ address: string; added?: boolean; removed?: boolean }>,
   });
 
 /**
@@ -113,7 +113,7 @@ export const useToolLocation = () =>
 export const useToolGitSet = () =>
   useMutation({
     mutationFn: (change: { key: 'core.sshCommand'; value?: string }) =>
-      call<{ key: string; value: string | null; version: string | null }>('TOOLS_GIT_SET', change),
+      call('TOOLS_GIT_SET', change) as Promise<{ key: string; value: string | null; version: string | null }>,
   });
 
 /** One act on a git identity (GITAUTH1e, the git-auth design §7.1-§7.2), in the words `daoris git identity` uses. */
@@ -138,7 +138,7 @@ const SIGN_IN_BOUND_MS = 10 * 60_000;
 export const useGitIdentity = () =>
   useMutation({
     mutationFn: (change: GitIdentityChange) =>
-      call<Record<string, unknown>>('GIT_IDENTITY', change, change.action === 'add-https' && !change.token ? { timeoutMs: SIGN_IN_BOUND_MS } : undefined),
+      call('GIT_IDENTITY', change, change.action === 'add-https' && !change.token ? { timeoutMs: SIGN_IN_BOUND_MS } : undefined) as Promise<Record<string, unknown>>,
   });
 
 /** A choice of identity for a scope (§3.2): a repository's remote, a workspace's host or this machine's host; `own` or an id, or none clears it. */
@@ -149,7 +149,7 @@ export type GitUseChange =
 
 /** The screen's half of `daoris git use` (GITAUTH1e). Choosing `own` is a widening, confirmed in the page before it is sent. */
 export const useSetGitUse = () =>
-  useMutation({ mutationFn: (change: GitUseChange) => call<{ scope: string }>('GIT_USE', change) });
+  useMutation({ mutationFn: (change: GitUseChange) => call('GIT_USE', change) as Promise<{ scope: string }> });
 
 /**
  * A git go-ahead answered (GITAUTH1f, the git-auth design §6.6): the screen's half of `daoris git answer`. `waiting` is whether its door
@@ -158,7 +158,7 @@ export const useSetGitUse = () =>
 export const useGitAnswer = () =>
   useMutation({
     mutationFn: (answer: { ask: string; answer: 'allow' | 'refuse' }) =>
-      call<{ ask: string; answer: string; waiting: boolean }>('GIT_ANSWER', answer),
+      call('GIT_ANSWER', answer) as Promise<{ ask: string; answer: string; waiting: boolean }>,
   });
 
 /**
@@ -169,7 +169,7 @@ export const useToolGit = (target: GitTarget | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: target ? gitSwitch(target) : ['tools', 'git', 'none'],
-    queryFn: () => call<GitSwitchShown>('TOOLS_GIT', target ?? undefined),
+    queryFn: () => (target ? call('TOOLS_GIT', target) as Promise<GitSwitchShown> : Promise.reject(new Error('no git target'))),
     enabled: isAvailable && target !== null,
     retry: false,
   });
@@ -184,7 +184,7 @@ export const useToolPick = () =>
     mutationFn: (title: string) => {
       // The dialog is owned by the window this page is in (MAINWINDOWS2c); the first main window names none.
       const window = ownWindowName(globalThis.location?.search ?? '');
-      return call<{ can: boolean; file?: string | null }>('TOOLS_PICK', window === null ? { title } : { title, window }, { timeoutMs: Infinity });
+      return call('TOOLS_PICK', window === null ? { title } : { title, window }, { timeoutMs: Infinity }) as Promise<{ can: boolean; file?: string | null }>;
     },
   });
 

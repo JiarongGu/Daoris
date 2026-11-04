@@ -47,7 +47,7 @@ export const useRuleAction = () => {
       | { action: 'add'; list: RuleListName; rule: string; scope: RuleScopeName; name?: string }
       | { action: 'remove'; rule: string; scope: RuleScopeName; name?: string }
       | { action: 'default'; id: string; on: boolean }) =>
-      call<AgentRulesState>('RULE_ACTION', action),
+      call('RULE_ACTION', action) as Promise<AgentRulesState>,
     onSuccess: (state) => client.setQueryData(keys.rules, state),
   });
 };
@@ -60,7 +60,7 @@ export const useRuleProposal = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (answer: { id: string; accept: boolean; note?: string }) =>
-      call<AgentRulesState>('RULE_PROPOSAL', answer),
+      call('RULE_PROPOSAL', answer) as Promise<AgentRulesState>,
     onSuccess: (state) => client.setQueryData(keys.rules, state),
   });
 };

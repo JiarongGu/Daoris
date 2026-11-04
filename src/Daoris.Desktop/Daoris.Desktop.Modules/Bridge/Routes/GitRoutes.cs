@@ -107,49 +107,49 @@ public sealed class GitRoutes(DriverLoop loop)
 
     // A graph page from the tips named (a branch's whole commit ids, resolved by the list), the commits drawn in date order.
     [DriverRoute("GIT_GRAPH", PipeClass.Open)]
-    private async Task<object?> GitGraphAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> GitGraphAsync(GitGraphRead read, CancellationToken cancellationToken)
     {
-        var tips = Strings(request, "tips");
-        return await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            _gitReads.GraphAsync(root, tips, GitPage(request), Flag(request, "sinceParted"), token));
+        List<string> tips = [.. read.Tips ?? []];
+        return await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            _gitReads.GraphAsync(root, tips, GitPage(read.Page), read.SinceParted, token));
     }
 
     // A commit's page: its fields, whole message and changes against its first parent.
     [DriverRoute("GIT_COMMIT", PipeClass.Open)]
-    private async Task<object?> GitCommitAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            _gitReads.CommitAsync(root, Optional(request, "commit") ?? "", token));
+    private async Task<object?> GitCommitAsync(GitCommitRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            _gitReads.CommitAsync(root, read.Commit ?? "", token));
 
     // A file's history at a commit, following renames, a page at a time.
     [DriverRoute("GIT_HISTORY", PipeClass.Open)]
-    private async Task<object?> GitHistoryAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            _gitReads.HistoryAsync(root, Optional(request, "commit") ?? "", Optional(request, "path") ?? "", GitPage(request), token));
+    private async Task<object?> GitHistoryAsync(GitHistoryRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            _gitReads.HistoryAsync(root, read.Commit ?? "", read.Path ?? "", GitPage(read.Page), token));
 
     // A file as a commit holds it, each line with the commit that last changed it.
     [DriverRoute("GIT_BLAME", PipeClass.Open)]
-    private async Task<object?> GitBlameAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            _gitReads.BlameAsync(root, Optional(request, "commit") ?? "", Optional(request, "path") ?? "", token));
+    private async Task<object?> GitBlameAsync(GitBlameRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            _gitReads.BlameAsync(root, read.Commit ?? "", read.Path ?? "", token));
 
     // Two commits compared: the commits only one side holds, bounded (D147 §2.6: not paged), and the changes.
     [DriverRoute("GIT_COMPARE", PipeClass.Open)]
-    private async Task<object?> GitCompareAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            _gitReads.CompareAsync(root, Optional(request, "left") ?? "", Optional(request, "right") ?? "", Flag(request, "everything"), token));
+    private async Task<object?> GitCompareAsync(GitCompareRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            _gitReads.CompareAsync(root, read.Left ?? "", read.Right ?? "", read.Everything, token));
 
     // The Changes tab's read, three fresh observations of the checkout, kept nowhere across opens. Told by event: it starts git.
     [DriverRoute("GIT_CHANGES", PipeClass.Open)]
     [ByEvent("GIT_CHANGES", Untold = "the checkout's index, tree and untracked files, which no scope tells")]
-    private async Task<object?> GitChangesAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) => GitChanges.ReadAsync(root, token));
+    private async Task<object?> GitChangesAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) => GitChanges.ReadAsync(root, token));
 
     // One file's hunks on a side, with the ids a press must still find equal.
     [DriverRoute("GIT_HUNKS", PipeClass.Open)]
     [ByEvent("GIT_HUNKS", Untold = "the checkout's index and the file's bytes, which no scope tells")]
-    private async Task<object?> GitHunksAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            GitHunks.ReadAsync(root, Optional(request, "path") ?? "", Optional(request, "side") ?? "", token));
+    private async Task<object?> GitHunksAsync(GitHunksRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            GitHunks.ReadAsync(root, read.Path ?? "", read.Side ?? "", token));
 
     // Stage and unstage a file, hunks or lines of it, and Undo of such an act: each one act of the journal under the checkout's
     // lock, on the registered checkout, never a session's tree. A refusal is data (`done: false`), never thrown.
@@ -209,8 +209,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // A file in conflict read by its stages, one conflict at a time. Told by event: it starts git.
     [DriverRoute("GIT_CONFLICT", PipeClass.Open)]
     [ByEvent("GIT_CONFLICT", Untold = "the checkout's index stages and the file's bytes, which no scope tells")]
-    private async Task<object?> GitConflictAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) => GitConflicts.ReadAsync(root, Optional(request, "path") ?? "", token));
+    private async Task<object?> GitConflictAsync(GitConflictRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) => GitConflicts.ReadAsync(root, read.Path ?? "", token));
 
     // *Resolve* (ours, theirs or both per conflict) and *Mark resolved*, each one act of the journal; Undo of either is `GIT_UNDO`.
     [DriverRoute("GIT_RESOLVE", PipeClass.Window)]
@@ -260,9 +260,9 @@ public sealed class GitRoutes(DriverLoop loop)
     // What a commit or an amend would rest on, read fresh. Told by event: it starts git.
     [DriverRoute("GIT_COMMIT_PLAN", PipeClass.Open)]
     [ByEvent("GIT_COMMIT_PLAN", Untold = "the checkout's index, HEAD and hooks, which no scope tells")]
-    private async Task<object?> GitCommitPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            new CommitActs(new ActJournal(_loop.Home)).PlanAsync(root, Optional(request, "verb") == CommitVerbs.Amend ? CommitVerbs.Amend : CommitVerbs.Commit, token));
+    private async Task<object?> GitCommitPlanAsync(GitCommitPlanRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            new CommitActs(new ActJournal(_loop.Home)).PlanAsync(root, read.Verb == CommitVerbs.Amend ? CommitVerbs.Amend : CommitVerbs.Commit, token));
 
     // *Commit* and *Amend* of the staged changes, one commit step of the journal; the repository's hooks run and are never skipped.
     [DriverRoute("GIT_MAKE_COMMIT", PipeClass.Window)]
@@ -300,9 +300,9 @@ public sealed class GitRoutes(DriverLoop loop)
     // What a switch to a branch would rest on, read fresh. Told by event: it starts git.
     [DriverRoute("GIT_SWITCH_PLAN", PipeClass.Open)]
     [ByEvent("GIT_SWITCH_PLAN", Untold = "the checkout's HEAD, branches, index and the other trees, which no scope tells")]
-    private async Task<object?> GitSwitchPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
-            new SwitchActs(new ActJournal(_loop.Home)).PlanAsync(root, Optional(request, "branch") ?? "", token));
+    private async Task<object?> GitSwitchPlanAsync(GitSwitchPlanRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            new SwitchActs(new ActJournal(_loop.Home)).PlanAsync(root, read.Branch ?? "", token));
 
     // *Switch* of the registered checkout to a local branch, never forced; undone by pressing Switch again on the branch it left.
     [DriverRoute("GIT_SWITCH", PipeClass.Window)]
@@ -319,8 +319,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // What a stash Save would rest on, the shared stash's tip among it. Told by event.
     [DriverRoute("GIT_STASH_PLAN", PipeClass.Open)]
     [ByEvent("GIT_STASH_PLAN", Untold = "the checkout's index, tree, untracked files and the shared stash, which no scope tells")]
-    private async Task<object?> GitStashPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
+    private async Task<object?> GitStashPlanAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
             new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token));
 
     // Stash *Save*: `refs/stash` is shared with every linked tree, so a stash that moved since the plan refuses the press.
@@ -472,8 +472,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // Whether *Fetch* is offered on a repository's Branches, and the command a person types. Told by event: it starts git, no network.
     [DriverRoute("GIT_FETCH_PLAN", PipeClass.Open)]
     [ByEvent("GIT_FETCH_PLAN", Untold = "the checkout's origin settings and the install's doors, which no scope tells")]
-    private async Task<object?> GitFetchPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(request, cancellationToken, (root, token) => GitFetchActs.PlanReadAsync(_loop.Home, root, token));
+    private async Task<object?> GitFetchPlanAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) => GitFetchActs.PlanReadAsync(_loop.Home, root, token));
 
     // *Fetch* of origin's branches, one `fetch` step that moves refs/remotes/origin/* alone; a terminal's verb asks it for its words.
     [DriverRoute("GIT_FETCH", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -628,11 +628,11 @@ public sealed class GitRoutes(DriverLoop loop)
     /// too, so the page words it as it words the rest. Writes nothing.
     /// </summary>
     private async Task<object?> GitAnsweredAsync<T>(
-        IpcRequest request, CancellationToken cancellationToken, Func<string, CancellationToken, Task<GitAnswer<T>>> read) where T : class
+        string? named, string? workspace, CancellationToken cancellationToken, Func<string, CancellationToken, Task<GitAnswer<T>>> read) where T : class
     {
-        var repository = Optional(request, "repository") ?? throw new DriverException("a Git read names its repository.");
+        var repository = named ?? throw new DriverException("a Git read names its repository.");
         var service = _loop.Service ?? throw NotReady();
-        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, workspace);
         if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
         {
             return new
@@ -687,17 +687,17 @@ public sealed class GitRoutes(DriverLoop loop)
     }
 
     /// <summary>A page the page asks for: absent is the first, and one past what a count holds is a page the driver refuses.</summary>
-    private static int GitPage(IpcRequest request) =>
-        Number(request, "page") is { } page ? (int)Math.Clamp(page, -1, GitReads.LastPage + 1) : 0;
+    private static int GitPage(long? asked) =>
+        asked is { } page ? (int)Math.Clamp(page, -1, GitReads.LastPage + 1) : 0;
 
     // Try again on a held git remote: every hold on the repositories it names lifted, so the next fetch of each tries once.
     // Nothing connects here: the next act does.
     [DriverRoute("GIT_TRY_AGAIN", PipeClass.Open)]
-    private Task<object?> GitTryAgainAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> GitTryAgainAsync(GitTryAgainPress press, CancellationToken cancellationToken)
     {
-        var repositories = Strings(request, "repositories");
+        var repositories = press.Repositories ?? [];
         if (repositories.Count == 0) throw new DriverException("Try again names the repositories it lifts.");
-        var workspace = Optional(request, "workspace");
+        var workspace = press.Workspace;
         var lifted = repositories.Sum(repository => GitHolds.LiftRepository(_loop.Home, repository, workspace));
         return Task.FromResult<object?>(new { Lifted = lifted });
     }

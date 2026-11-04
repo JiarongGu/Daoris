@@ -27,7 +27,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     private readonly DriverLoop _loop = loop;
 
     [DriverRoute("ACCOUNTS", PipeClass.Open)]
-    private async Task<object?> AccountsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> AccountsAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var running = await RunningAsync(cancellationToken).ConfigureAwait(false);
         return AccountsAnswer(_loop.Harnesses, running, _loop.Harnesses.Clock());
@@ -367,9 +367,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// </summary>
     [DriverRoute("ACCOUNTS_READ", PipeClass.Open)]
     [Publishes("ACCOUNTS_READ", StateScopes.Harnesses)]
-    private async Task<object?> ReadAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ReadAsync(AccountsReadPress press, CancellationToken cancellationToken)
     {
-        var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
+        var harness = press.Harness;
         var owner = OwnerOf(_loop.Harnesses, harness);
         var accounts = Accounts(_loop.Harnesses.Home, owner);
         await _loop.Harnesses
@@ -398,11 +398,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     [Says("ACCOUNT_USE", "harness:agent")]
     [NotAlready("ACCOUNT_USE", "signs in or out of an account")]
     [Publishes("ACCOUNT_USE", StateScopes.Harnesses)]
-    private object? AccountUse(IpcRequest request)
+    private object? AccountUse(AccountUsePress press)
     {
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
-        var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
-        var workspace = Optional(request, "workspace");
+        var (action, harness, workspace) = (press.Action, press.Harness, press.Workspace);
         var owner = OwnerOf(_loop.Harnesses, harness);
         // One set of Daoris's accounts serves every workspace (POOL1a, D197; the account-pool design §5.2): a workspace names nothing.
         if (workspace is not null && action is "order" or "use") throw OneSet(owner, "a workspace");
@@ -410,24 +408,23 @@ public sealed class AccountsRoutes(DriverLoop loop)
         switch (action)
         {
             case "order":
-                var order = InOrder(request, "accounts");
+                IReadOnlyList<string> order = press.Accounts ?? [];
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath,
                     read => OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, order, workspace),
                     agents: _loop.Harnesses.Agents);
                 break;
             case "use":
-                var use = Flag(request, "clear") ? null : UseChangeOf(request);
+                var use = press.Clear ? null : UseChangeOf(press);
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => UseEdited(read, owner, use, workspace), agents: _loop.Harnesses.Agents);
                 break;
             case "said":
                 // Got it (POOL1a, the account-pool design §6.3; Fable's F13): the receipts the page showed, by id, marked said; one
                 // appended after it drew is not among them, and stays.
-                var ids = InOrder(request, "ids");
+                IReadOnlyList<string> ids = press.Ids ?? [];
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithSaid(owner, ids), agents: _loop.Harnesses.Agents);
                 break;
             case "ready":
-                var own = Flag(request, "own");
-                var account = own ? null : Named(request);
+                var account = press.Own ? null : Named(press.Profile);
                 var ended = _loop.Harnesses.Ready(harness, account);
                 _loop.Nudge();
                 return new { Harness = harness, Action = action, Profile = account, Ended = ended };
@@ -566,30 +563,24 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// as <c>profile use --switch</c> and <c>--curve</c> take them (SWITCH1d), each window of the curve set keeping the other, and
     /// <c>noCurve</c> taking it out, as <c>--no-curve</c> does. A curve that breaks a rule is refused here, with the rule.
     /// </summary>
-    private static UseChange UseChangeOf(IpcRequest request)
-    {
-        bool? early = request.Payload is { } payload && payload.TryGetProperty("early", out var flag)
-            ? flag.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
-            : null;
-        var near = Number(request, "near");
-        return new UseChange(
-            Use: Optional(request, "use"),
-            Keep: Optional(request, "keep"),
-            NoKeep: Flag(request, "noKeep"),
-            Early: early,
-            Near: near is null ? null : (int)Math.Clamp(near.Value, int.MinValue, int.MaxValue),
-            Switch: Optional(request, "switch"),
-            Curve: CurveOf(request),
-            NoCurve: Flag(request, "noCurve"));
-    }
+    private static UseChange UseChangeOf(AccountUsePress press) =>
+        new(
+            Use: press.Use,
+            Keep: press.Keep,
+            NoKeep: press.NoKeep,
+            Early: press.Early,
+            Near: press.Near is { } near ? (int)Math.Clamp(near, int.MinValue, int.MaxValue) : null,
+            Switch: press.Switch,
+            Curve: CurveOf(press.Curve),
+            NoCurve: press.NoCurve);
 
     /// <summary>
     /// The curve a <c>use</c> names, or null where it names none (or names it null); one that breaks a rule is refused in its own
     /// code, the rule its <c>context</c> and what it names its values, so the page says it in the reader's language (SWITCH1d).
     /// </summary>
-    private static UseCurve? CurveOf(IpcRequest request)
+    private static UseCurve? CurveOf(JsonElement? sent)
     {
-        if (request.Payload is not { } payload || !payload.TryGetProperty("curve", out var raw) || raw.ValueKind == JsonValueKind.Null) return null;
+        if (sent is not { } raw || raw.ValueKind == JsonValueKind.Null) return null;
         if (UseCurve.ProblemOf(raw) is { } problem)
         {
             var values = new List<(string Key, string Value)> { ("context", problem.Kind), ("said", problem.Sentence) };
@@ -609,10 +600,4 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
         return UseCurve.Read(raw);
     }
-
-    /// <summary>The account names the page sent, in order; a value that is not text is skipped.</summary>
-    private static IReadOnlyList<string> InOrder(IpcRequest request, string name) =>
-        request.Payload is { } payload && payload.TryGetProperty(name, out var names) && names.ValueKind == JsonValueKind.Array
-            ? [.. names.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
-            : [];
 }

@@ -18,7 +18,7 @@ public sealed class AcrossRoutes(DriverContext context)
     // sessions were declared to write into. The workspaces are the registry's, so this waits for the driver
     // as the lines do.
     [DriverRoute("ACROSS", PipeClass.Open)]
-    private async Task<object?> AcrossAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> AcrossAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
@@ -53,19 +53,16 @@ public sealed class AcrossRoutes(DriverContext context)
     [Says("SET_READ_ACROSS", "repository:repository")]
     [NotAlready("SET_READ_ACROSS", "merges into the repository's reading across")]
     [Publishes("SET_READ_ACROSS", StateScopes.Driver)]
-    private object? SetReadAcross(IpcRequest request)
+    private object? SetReadAcross(ReadAcrossPress press)
     {
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var repository = press.Repository;
+        var workspace = press.Workspace;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("reading across is set for a `repository` or a `workspace` — name one of them.");
         }
 
-        bool? read = request.Payload is { } payload && payload.TryGetProperty("read", out var value)
-            && value.ValueKind is JsonValueKind.True or JsonValueKind.False
-                ? value.GetBoolean()
-                : null;
+        var read = press.Read;
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceReadAcross(workspace, read)
             : config.WithReadAcross(repository!, read));
@@ -81,11 +78,11 @@ public sealed class AcrossRoutes(DriverContext context)
     [Says("SET_WRITE_ACROSS", "repository:repository")]
     [NotAlready("SET_WRITE_ACROSS", "adds or removes one repository of the list it writes to")]
     [Publishes("SET_WRITE_ACROSS", StateScopes.Driver)]
-    private object? SetWriteAcross(IpcRequest request)
+    private object? SetWriteAcross(WriteAcrossPress press)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var to = Optional(request, "to") ?? "";
-        var allow = Flag(request, "allow");
+        var repository = press.Repository;
+        var to = press.To ?? "";
+        var allow = press.Allow;
         _context.Change(config => config.WithWriteAcross(repository, to, allow));
         return DriverRoutes.State(_loop);
     }

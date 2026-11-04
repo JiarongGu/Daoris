@@ -57,7 +57,7 @@ export const useAccounts = () => {
  */
 export const useReadAccounts = () =>
   useMutation({
-    mutationFn: ({ harness }: { harness: string }) => call<{ harness: string }>('ACCOUNTS_READ', { harness }),
+    mutationFn: ({ harness }: { harness: string }) => call('ACCOUNTS_READ', { harness }) as Promise<{ harness: string }>,
   });
 
 /**
@@ -82,5 +82,5 @@ export const useAccountUse = () =>
       /** For `said`: the receipts the page showed, by id. */
       ids?: string[];
     } & AccountUseChange) =>
-      call<{ harness: string; action: string; profile?: string | null; ended?: boolean }>('ACCOUNT_USE', { harness, action, ...rest }),
+      call('ACCOUNT_USE', { harness, action, ...rest }) as Promise<{ harness: string; action: string; profile?: string | null; ended?: boolean }>,
   });
