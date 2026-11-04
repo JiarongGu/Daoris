@@ -134,7 +134,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
         foreach (var each in governed)
         {
             if (TipOf(each, tips) is { } tip) tipsTold[each.Unit.Id] = tip;
-            if (each.Scope is { Branch: { } branch } scope && tips.Known(scope.Root, branch.Subject.Artifact ?? "") is { } read) tipsTold[branch.Id] = read;
+            if (each.Scope is { Branch: { } branch } scope && (tips.Known(scope.Root, branch.Subject.Artifact ?? "") ?? _tipsTold.GetValueOrDefault(branch.Id)) is { } read) tipsTold[branch.Id] = read;
             if (records.Read(each.Unit.Id) is not { } record) continue;
             foreach (var id in each.Dispatchable.Concat(each.Observable))
             {

@@ -34,6 +34,7 @@ public sealed class DriverModuleStartWithProcessTests : DriverModuleBridge
         (DriverConfig.Empty with
         {
             Adapter = "stub",
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["chat"] = [new ActorChoice("stub")] },
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", script, heard] },
         }).Save(DriverConfigPath);
 
@@ -83,6 +84,7 @@ public sealed class DriverModuleStartWithProcessTests : DriverModuleBridge
         (DriverConfig.Empty with
         {
             Adapter = "stub",
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["chat"] = [new ActorChoice("stub")] },
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", script] },
         }).Save(DriverConfigPath);
         var loop = Loop();

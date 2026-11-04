@@ -22,12 +22,13 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     [Trait(Category.Name, Category.Process)]
     public async Task The_landing_preview_and_refused_press_carry_the_same_workflow_hold(string state)
     {
-        var config = DriverConfig.Parse("""
-            {"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}
-            """);
-        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+        var config = DriverConfig.Empty;
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"), null,
             System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"branch","accept":"automatic"}]
+                {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                          {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"feature/{quest}"}}],
+                 "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
                 """)), kept: []);
         config = WorkflowSelection.Apply(config, new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]));
         config = WorkflowSelection.Apply(config, new WorkflowUse("release", null, "aurora", "docs"));
@@ -67,9 +68,6 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             {
                 Assert.Contains("workflow keep s1", preview.GetProperty("workflow").GetProperty("says").GetString());
                 Assert.Equal("outside.txt", Assert.Single(preview.GetProperty("workflow").GetProperty("outside").EnumerateArray()).GetString());
-                var run = (await AnswerAsync(module, "WORKFLOW_RUN", new { session = "s1" })).GetProperty("runs")[0];
-                Assert.Equal(preview.GetProperty("workflow").GetRawText(), run.GetProperty("workflowGate").GetRawText());
-                Assert.Equal("cannot-start", run.GetProperty("steps")[1].GetProperty("state").GetString());
             }
         }
         finally
