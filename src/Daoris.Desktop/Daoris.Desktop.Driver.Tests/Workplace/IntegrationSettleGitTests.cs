@@ -450,9 +450,9 @@ public sealed class IntegrationSettleGitTests : LandedFixture
         }
     }
 
-    /// <summary>The person's choices as they stand when the rule still says <c>request: steward</c>.</summary>
-    private static DriverConfig StewardRule() => DriverConfig.Empty
-        .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Steward, Batch: 8, Gates: LandingIntegrate.Declared));
+    /// <summary>The person's choices as they stand when the place's workflow's <c>integrate</c> still says <c>request: steward</c>.</summary>
+    private DriverConfig StewardRule() => IntegratingWorkflow.Follow(
+        Home, DriverConfig.Empty.WithLinePolicy("engine", new LandingIntegrate(Batch: 8, Gates: LandingIntegrate.Declared)), LandingIntegrate.Steward);
 
     /// <summary>
     /// 🔴 A steward's request whose appointment lapsed between the form and the promotion is held at promotion, said why, with nothing moved: the
