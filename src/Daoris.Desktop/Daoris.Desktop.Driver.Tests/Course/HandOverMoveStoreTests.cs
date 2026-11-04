@@ -206,7 +206,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         var old = Talking(context, "c1");
         var runner = new Opening(client, context, wire);
         var moves = new ConversationMoves(_home, client, events, store: Store("run-shell"));
-        var handOver = new ChatHandOver(context, runner) { Moves = moves };
+        var handOver = new ChatHandOver(new ExecutorStand(runner, context)) { Moves = moves };
         var world = new World(context, runner, handOver, moves, ledger, client, old);
         ledger.BeforeRequest = (request, _) =>
         {

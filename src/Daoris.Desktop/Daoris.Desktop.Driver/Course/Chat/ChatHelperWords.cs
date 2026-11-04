@@ -4,11 +4,13 @@ namespace Daoris.Driver;
 /// A helper's answer reaches a conversation that asked (MIXAGENT2a-iii, D163 and its MIXAGENT2a-ii note; the mixed agents design
 /// §3): the driver kept it on the asker's record marked as the helper's and left an event this runner hears. A conversation open
 /// here says it as its next turn, or at its turn's end where it is talking; one that ended goes on with it through its own going-on
-/// (<see cref="ChatRunner.GoOnAsync"/>), which is the path for any word waiting on an ended record. A class over the runner's
-/// context (PART10h, D166).
+/// (<see cref="ChatRunner.GoOnAsync"/>), which is the path for any word waiting on an ended record. A registered executor.
 /// </summary>
-internal sealed class ChatHelperWords(ChatContext context)
+[Executor("helper-words", ExecutorPhase.Move)]
+internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
 {
+    private ChatContext context => wiring.Context;
+
     /// <summary>What the course answered a helper's answer held at the bound, by session (FOUNDATION1h branch 7): a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
 

@@ -50,9 +50,9 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
     private IChatRunning runner => wiring;
 
-    private ChatHandOver handOver => wiring.HandOver;
+    private ChatHandOver handOver => wiring.Of<ChatHandOver>();
 
-    private IChatHelping help => wiring.Help;
+    private IChatHelping help => wiring.Of<IChatHelping>();
 
     /// <summary>What the course answered each briefed move, by session (FOUNDATION1h branch 4): a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;

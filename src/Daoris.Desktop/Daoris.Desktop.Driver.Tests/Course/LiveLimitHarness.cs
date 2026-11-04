@@ -129,10 +129,13 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
         var old = Talking(context, "c1", shows: false);
         var runner = new Opening(Client, context, atTheWrite);
-        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner) { WireWait = Wire }, new NoHelp())
+        var stand = new ExecutorStand(runner, context);
+        stand.Add<IChatHelping>(new NoHelp());
+        stand.Add(new ChatHandOver(stand) { WireWait = Wire });
+        var limit = stand.Add(new LimitMove(stand)
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
-        };
+        });
         var hit = Hook(limit.Moves, cut, atTheCut);
         _moving = Task.Run(async () => (object?)await limit.MoveAsync("c1", ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]), null));
         await ReachedAsync(hit, cut);
@@ -176,10 +179,12 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)) { Clock = () => CurveNow }, events);
         var old = Talking(context, "c1", shows: false);
         var runner = new Opening(Client, context, atTheWrite);
-        var curve = new CurveMove(context, new ChatHandOver(context, runner) { WireWait = Wire })
+        var stand = new ExecutorStand(runner, context);
+        stand.Add(new ChatHandOver(stand) { WireWait = Wire });
+        var curve = stand.Add(new CurveMove(stand)
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
-        };
+        });
         var hit = Hook(curve.Moves, cut, atTheCut);
         _moving = Task.Run(async () => (object?)await curve.MoveAsync("c1", DriverConfig.Empty, null));
         await ReachedAsync(hit, cut);
@@ -218,7 +223,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
         var old = Talking(context, "c1", shows: false);
         var runner = new Opening(Client, context, atTheWrite) { Busy = turn };
-        var handOver = new ChatHandOver(context, runner)
+        var handOver = new ChatHandOver(new ExecutorStand(runner, context))
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
             WireWait = Wire,
@@ -252,10 +257,13 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
         var runner = new Opening(Client, context, atTheWrite);
-        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner) { WireWait = Wire }, new NoHelp())
+        var stand = new ExecutorStand(runner, context);
+        stand.Add<IChatHelping>(new NoHelp());
+        stand.Add(new ChatHandOver(stand) { WireWait = Wire });
+        var limit = stand.Add(new LimitMove(stand)
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
-        };
+        });
         var hit = Hook(limit.Moves, cut, atTheCut);
         _moving = Task.Run(async () => (object?)await limit.MoveEndedAsync("c1", lost: null, ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]), null));
         await ReachedAsync(hit, cut);

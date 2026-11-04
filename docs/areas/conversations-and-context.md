@@ -24,16 +24,17 @@ of everything it handed, section by section.
 | `ChatRunner` | `Loop/Chat/ChatRunner.cs` (hub, 202 KB) | Starts and runs conversations on both doors; composes a first message; builds the registered executors and reaches each through its kind's door |
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
 | `HelpStart` | `Help/HelpStart.cs` | Ask Daoris's start: placed in its workspace's room, the machine read within its bound, run; its replacement's open |
+| `ChatHelp`, `IChatHelping` | `Help/ChatHelp.cs`, `Course/Chat/ChatHelping.cs` | Executor `help-rooms`: a start from an earlier Ask Daoris conversation's words, a workspace's running one set aside, the room as it stands; the course reaches it by its port |
 | `HelpAccessSwap`, `HelpPlacement` | `Help/` | A change of Ask Daoris's access ending its running conversations at their turn's end, and the receipt of what a start was handed; the place Ask Daoris runs in, under its access |
 | `BriefedMove` | `Course/Chat/BriefedMove.cs` | The move to a new part handed Daoris's brief: by itself where a conversation is proven lost, or by the person's press |
 | `WordsStart`, `StartRequests` | `Course/Chat/` | The start on words: *Start a conversation with these words*, and a conversation opened on its first words, a request id answering a retry |
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops |
-| `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | An ended chat goes on with the words kept on its record |
-| `BriefedMove` | `Course/Chat/BriefedMove.cs` | A lost conversation, or *Go on with Daoris's brief*: a new part handed the brief |
-| `LimitMove`, `LimitWaits` | `Course/Chat/` | A limit at a turn's end: the next account now, or a wait woken by the look's `limits` stage |
-| `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | The usage curve's move of a conversation at its turn's end |
-| `HandOver`, `ChatHandOver`, `HandOverQuest` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations and quests' sessions |
+| `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made |
+| `ChatHelperWords` | `Course/Chat/ChatHelperWords.cs` | Executor `helper-words`: a helper's answer said to the conversation that asked, as its next turn |
+| `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it |
+| `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | Executor `curve-move`: the usage curve's move of a conversation at its turn's end |
+| `HandOver`, `ChatHandOver`, `HandOverQuest` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions |
 | `StartFrom`, `StartWith` | `Course/Chat/ChatRunner.StartFrom.cs`, `StartWith.cs` | *Start a conversation with these words*; a conversation opened on its first words |
 | `DrivenCourse`, `LimitResume` | `Course/GoOn/DrivenCourse.cs`, `Course/LimitResume.cs` | A driven line's carry-ons, and its resume after a limit or update |
 | `Continuations`, `ResumeAsk` | `Course/Domain/Continuation.cs`, `ResumeAsk.cs` | Judges whether a record resumes; what a resumed run is told |
@@ -177,7 +178,9 @@ of everything it handed, section by section.
 - **How a line goes on** (a new trigger, path or hold): `Course/Domain/LineCourse.Decide.cs` and its `CourseFacts`. The
   executor that acts goes in `Course/Chat/` for a conversation and `Course/GoOn/` for a driven line, in a unit of its own over
   `ChatContext`. A new kind of conversation run is a module in the subdomain of its job, marked `[Executor(kind, phase, after)]`
-  and built from `IExecutorWiring`; the runner gains only its door. Durable state goes in `MoveStore`, never a new box.
+  and built from `IExecutorWiring`; the runner gains only its door. An executor reaches another only by `Of<T>()` on its wiring
+  (its type, or its port's where a test stands in for it), when it runs; never through a constructor or a callback the runner
+  sets. Durable state goes in `MoveStore`, never a new box.
 - **What a session is told** (brief, block, first message, go-on words): `Context/` for composing. `ChatRunner` and
   `ResumeAsk` only hand it on. A new section needs its `HandedSections`/`HandedCuts` code and both catalogues' twin rows.
 - **Counts:** `Course/Domain/LineCounts.cs` reads them, `Roles/Domain/CountTexts.cs` words them, and the supervisor's

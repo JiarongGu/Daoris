@@ -7,6 +7,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// An executor reads its wiring when it runs, never in its constructor: the runner hands itself as the wiring while it is still being made.
+/// Its <see cref="IExecutorWiring.Context"/> alone is made first, so a default an executor computes as it is built may read it.
 /// </remarks>
 internal interface IExecutor
 {

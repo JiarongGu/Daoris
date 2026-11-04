@@ -23,8 +23,15 @@ namespace Daoris.Driver;
 /// <para><b>Who leaves the wait</b>: one that went on or moved; one the person stopped, or told to stop waiting; one whose refusal waits
 /// for them. Each is read from the record and its events, so a shell that comes up reads what the one before it saw.</para>
 /// </remarks>
-internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn goOn)
+[Executor("limit-wait", ExecutorPhase.Move)]
+internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
 {
+    private ChatContext context => wiring.Context;
+
+    private LimitMove move => wiring.Of<LimitMove>();
+
+    private ChatGoOn goOn => wiring.Of<ChatGoOn>();
+
     // The conversations held, by session: what the stage looks at, read whole once as the runner comes up and kept since.
     private readonly ConcurrentDictionary<string, byte> _held = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _looking = new(1, 1);

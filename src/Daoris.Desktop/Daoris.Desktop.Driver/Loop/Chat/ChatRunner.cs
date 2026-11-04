@@ -68,31 +68,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     // fields stay here too, the same objects, for the front itself (PART10h left them).
     private readonly ChatContext _context;
 
-    // A conversation handed over, and one moved by its account's usage curve: classes over the context, the front keeping its
-    // users' calls (PART10g).
-    private readonly ChatHandOver _handOver;
-
     // CHATFLOW1c: a conversation's chat run, bound when its tree opens or at a turn's end (the chat-flow design §4.3).
     private readonly ChatRunBinds _chatRuns;
 
-    private readonly CurveMove _curve;
-
-    // LIMITGOON1: a conversation whose turn its account's limit refused goes on, in the same conversation, on the next account.
-    private readonly LimitMove _limit;
-
     // What the conversations' turns are judged by (NOTIFY1a): the person's words, their stops and each turn's end.
     private readonly AttentionWatch _answers = new();
-
-    // Ask Daoris's conversations, the helpers' words and an ended chat's going-on: classes over the context too (PART10h). The
-    // go-on holds the runner and reads the other two.
-    private readonly ChatHelp _help;
-
-    private readonly ChatHelperWords _words;
-
-    private readonly ChatGoOn _goOn;
-
-    // LIMITRESUME1c: the conversations that wait for an account to be ready, and the look's limits stage that wakes them.
-    private readonly LimitWaits _waits;
 
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
@@ -135,26 +115,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
 
-        // Before the classes below, whose events may reach an executor as soon as they hear the record.
         Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
-        _handOver = new ChatHandOver(_context, this);
         _chatRuns = new ChatRunBinds(home, service, _events);
-        _curve = new CurveMove(_context, _handOver);
-        _help = new ChatHelp(_context, this);
-        _limit = new LimitMove(_context, this, _handOver, _help);
-        _words = new ChatHelperWords(_context);
-
-        // The go-on hears the record's events from its construction: the person's words to an ended chat (MSG1d, MSG1c).
-        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words, Executors.Of<BriefedMove>(), _limit);
-
-        // LIMITRESUME1c (D206 §3.4, §3.5): a conversation with no other account waits for its limit, and the look wakes it.
-        _waits = new LimitWaits(_context, _limit, _goOn);
-        _limit.Stays = _waits.Wait;
-        _goOn.Waits = _waits.Add;
 
         // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
-        Moves = _limit.Moves;
+        Moves = Executors.Of<LimitMove>().Moves;
+
+        // Once every executor is there to reach: the person's words to an ended chat are taken up as the record hears them (MSG1d, MSG1c).
+        GoOn.Hear();
     }
 
     /// <summary>
@@ -172,7 +141,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     /// <param name="onEnded">Told when a new conversation ends, as a start's is.</param>
     public Task<IReadOnlyList<ChatStart>> TakeHandOversAsync(Func<string, string, Task> onEnded, CancellationToken ct = default) =>
-        _handOver.TakeAllAsync(onEnded, ct);
+        Executors.Of<ChatHandOver>().TakeAllAsync(onEnded, ct);
 
     /// <summary>
     /// The look's <c>limits</c> stage (LIMITRESUME1c, D206 §3.4; <see cref="LimitWaits.LookAsync"/>): each conversation that waits for an
@@ -181,10 +150,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <param name="onEnded">Told when a conversation it woke ends, as a start's is.</param>
     public Task<IReadOnlyList<ChatStart>> WakeLimitsAsync(
         DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _waits.LookAsync(config, onEnded, ct);
+        Waits.LookAsync(config, onEnded, ct);
 
     /// <summary>How many times the limits stage asked the service: a test holds that a look with no wait come asks nothing.</summary>
-    internal int LimitsAsked => _waits.Asked;
+    internal int LimitsAsked => Waits.Asked;
 
     /// <summary>
     /// The conversations' move record this runner's live limit move and curve move write and its come-up takes up (FOUNDATION1f-ii part b,
@@ -193,8 +162,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     internal ConversationMoves Moves
     {
-        get => _limit.Moves;
-        set => _limit.Moves = _curve.Moves = _handOver.Moves = value;
+        get => Executors.Of<LimitMove>().Moves;
+        set => Executors.Of<LimitMove>().Moves = Curve.Moves = Executors.Of<ChatHandOver>().Moves = value;
     }
 
     /// <summary>
@@ -220,7 +189,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             return $"conversation `{sessionId}` does not wait for its account's limit.";
         }
 
-        var record = await _goOn.LimitWordOffAsync(sessionId).ConfigureAwait(false);
+        var record = await GoOn.LimitWordOffAsync(sessionId).ConfigureAwait(false);
         if (record is not { Kind: "chat", Teammate: false }) return $"session `{sessionId}` is no conversation of this machine's.";
         _context.Marks.Mark(sessionId, record.Waiting.Select(word => word.Id).OfType<string>(), GoOnMarks.StoppedWaiting, DateTimeOffset.UtcNow);
         _context.Note(sessionId, LimitNotes.StoppedWaiting());
@@ -261,7 +230,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
         try
         {
-            return await _limit.MoveEndedAsync(sessionId, lost: null, config, onEnded, ct, holding: true, switching: true).ConfigureAwait(false)
+            return await Executors.Of<LimitMove>().MoveEndedAsync(sessionId, lost: null, config, onEnded, ct, holding: true, switching: true).ConfigureAwait(false)
                    ?? new StartedFrom(null, false, null, $"`{sessionId}` did not go on in a new part now.");
         }
         finally
@@ -275,18 +244,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// The ended chats whose words wait from while no runner heard them are taken up, as the shell comes up (MSG1c2,
     /// <see cref="ChatGoOn.TakeUpAsync"/>).
     /// </summary>
-    public Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default) => _goOn.TakeUpAsync(ct);
+    public Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default) => GoOn.TakeUpAsync(ct);
 
     /// <summary>Go on with an ended chat the person wrote to (MSG1c, <see cref="ChatGoOn.GoOnAsync"/>).</summary>
     public Task<ChatStart> GoOnAsync(
         string sessionId, DriverConfig? config = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _goOn.GoOnAsync(sessionId, config, onEnded, ct);
+        GoOn.GoOnAsync(sessionId, config, onEnded, ct);
 
     /// <summary>
     /// The person let an answer the answers-alone bound held go on (COWORK1e, <see cref="ChatGoOn.AnswerGoesOn"/>): said as an open
     /// conversation's next turn, or gone on with where it ended.
     /// </summary>
-    public void AnswerGoesOn(string sessionId) => _goOn.AnswerGoesOn(sessionId);
+    public void AnswerGoesOn(string sessionId) => GoOn.AnswerGoesOn(sessionId);
 
     /// <summary>
     /// A conversation this runner took up by itself ended (MSG1c2): the session and the state its record took, as a start's
@@ -294,8 +263,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     public event Action<string, string>? TakenUpEnded
     {
-        add => _goOn.TakenUpEnded += value;
-        remove => _goOn.TakenUpEnded -= value;
+        add => GoOn.TakenUpEnded += value;
+        remove => GoOn.TakenUpEnded -= value;
     }
 
     /// <summary>
@@ -304,8 +273,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     public event Action<string>? TakeEnded
     {
-        add => _handOver.TakeEnded += value;
-        remove => _handOver.TakeEnded -= value;
+        add => Executors.Of<ChatHandOver>().TakeEnded += value;
+        remove => Executors.Of<ChatHandOver>().TakeEnded -= value;
     }
 
     /// <summary>
@@ -314,8 +283,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp
     {
-        get => _help.DescribeHelp;
-        set => _help.DescribeHelp = value;
+        get => Executors.Of<ChatHelp>().DescribeHelp;
+        set => Executors.Of<ChatHelp>().DescribeHelp = value;
     }
 
     /// <summary>
@@ -333,13 +302,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     public Task<HelpPlaced> PlaceHelpFromAsync(
         string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default,
         IReadOnlyList<ActorEffective>? order = null) =>
-        _help.PlaceHelpFromAsync(earlier, adapter, config, workspace, ct, order);
+        Executors.Of<ChatHelp>().PlaceHelpFromAsync(earlier, adapter, config, workspace, ct, order);
 
     /// <summary>Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1, <see cref="ChatHelp.StartHelpFromAsync"/>).</summary>
     public Task<ChatStart> StartHelpFromAsync(
         string earlier, string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _help.StartHelpFromAsync(earlier, adapter, config, machine, onEnded, ct);
+        Executors.Of<ChatHelp>().StartHelpFromAsync(earlier, adapter, config, machine, onEnded, ct);
 
     /// <inheritdoc cref="WordsStart.StartFromAsync"/>
     public Task<StartedFrom> StartFromAsync(
@@ -377,7 +346,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     public Task<HandedOver> HandOverAsync(
         string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default, string? model = null, string? effort = null) =>
-        _handOver.HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct, model, effort);
+        Executors.Of<ChatHandOver>().HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct, model, effort);
 
     /// <summary>
     /// Judge a conversation by its account's usage curve and, where the decision says so, move it (SWITCH1c-ii,
@@ -385,28 +354,28 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     internal Task<SwitchChoice?> MoveByCurveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
-        _curve.MoveAsync(sessionId, config, onEnded, ct);
+        Curve.MoveAsync(sessionId, config, onEnded, ct);
 
     /// <summary>The curve's move, whose <see cref="CurveMove.Decided"/> a test hears (FOUNDATION1h branch 1): the runner names no course type.</summary>
-    internal CurveMove Curve => _curve;
+    internal CurveMove Curve => Executors.Of<CurveMove>();
 
     /// <summary>The briefed move, whose <see cref="BriefedMove.Decided"/> a test hears (FOUNDATION1h branch 4): the runner names no course type.</summary>
     internal BriefedMove Briefed => Executors.Of<BriefedMove>();
 
     /// <summary>The conversation's go-on, whose <see cref="ChatGoOn.Decided"/> a test hears (FOUNDATION1h branch 7): the runner names no course type.</summary>
-    internal ChatGoOn GoOn => _goOn;
+    internal ChatGoOn GoOn => Executors.Of<ChatGoOn>();
 
     /// <summary>The helper's words, whose <see cref="ChatHelperWords.Decided"/> a test hears (FOUNDATION1h branch 7).</summary>
-    internal ChatHelperWords HelperWords => _words;
+    internal ChatHelperWords HelperWords => Executors.Of<ChatHelperWords>();
 
     /// <summary>The limit's wake, whose <see cref="LimitWaits.Decided"/> a test hears (FOUNDATION1h branch 6): the runner names no course type.</summary>
-    internal LimitWaits Waits => _waits;
+    internal LimitWaits Waits => Executors.Of<LimitWaits>();
 
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, SwitchChoice>? CurveJudged
     {
-        add => _curve.Judged += value;
-        remove => _curve.Judged -= value;
+        add => Curve.Judged += value;
+        remove => Curve.Judged -= value;
     }
 
     /// <summary>
@@ -1235,7 +1204,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // A full-access conversation the person narrowed mid-turn ends as its turn ends (HELPMODE1a5).
             HelpTurnChanged(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
-            _handOver.Due(sessionId, queue, config, onEnded);
+            Executors.Of<ChatHandOver>().Due(sessionId, queue, config, onEnded);
             // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once;
             // one whose turn its account's limit refused goes on, in the same conversation, on the next account (LIMITGOON1), and only that.
             if (CurveMove.TurnJustEnded(queue, judged))
@@ -1243,8 +1212,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 judged = queue.LastTurnEnded;
                 // CHATFLOW1c: a chat whose run is not bound yet (its tree grew before this build, or its bind failed) binds now.
                 if (bindsRun) _ = _chatRuns.TurnEndedAsync(sessionId, workTree, config);
-                if (Interlocked.Exchange(ref limitedTurn, 0) == 1) _limit.Due(sessionId, config, onEnded);
-                else _curve.Due(sessionId, config, onEnded);
+                if (Interlocked.Exchange(ref limitedTurn, 0) == 1) Executors.Of<LimitMove>().Due(sessionId, config, onEnded);
+                else Curve.Due(sessionId, config, onEnded);
             }
 
             // A turn the person's words started has ended (NOTIFY1a): judged last, so a listener's failure moves nothing above.
@@ -1269,7 +1238,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 // On this door the words went once their prompt is on the wire.
                 wentOn: goOn is null ? null : () =>
                 {
-                    if (goOn.Sent(named: false)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
+                    if (goOn.Sent(named: false)) _ = GoOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 })
             {
                 // AGENTERRORS1b (D210, the agent-errors design §5.1, §7): a transient failure of one of its turns is tried again in this same
@@ -1324,7 +1293,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 // On this door the words went once their line is on stdin and the harness has opened the conversation.
                 wentOn: goOn is null ? null : () =>
                 {
-                    if (goOn.Sent(named: true)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
+                    if (goOn.Sent(named: true)) _ = GoOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 })
             {
                 Shown = said => _context.TakeShown(sessionId, said),
@@ -1388,7 +1357,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
             Named = goOn is null ? null : () =>
             {
-                if (goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
+                if (goOn.Named()) _ = GoOn.WentOnAsync(sessionId, goOn, resolved.Name);
             },
             Protocol = chat is null ? null : Held(run, chat, sessionId, workTree, place.Posture ?? resolved.AcpPosture, meta, offered, resolved, Said),
         });
@@ -1413,7 +1382,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 () => RunAsync(
                     actor, sessionId, message, resolved, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)),
                 () => goOn.Ask.Refused is { Lost: true } lost
-                    ? _goOn.LostAsync(goOn.Record, lost, resolved.Name, config, onEnded, held: false, CancellationToken.None)
+                    ? GoOn.LostAsync(goOn.Record, lost, resolved.Name, config, onEnded, held: false, CancellationToken.None)
                     : Task.FromResult(new ChatStart(null, "")));
         }
 
@@ -1463,7 +1432,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // process is among those stopped below rather than spawned after them.
         var atClose = _context.Turned.ToDictionary(pair => pair.Key, pair => pair.Value.Turns.State);
         _context.Close();
-        _goOn.Stop();
+        GoOn.Stop();
         var update = _processes.Close.Build;
         foreach (var (id, chat) in _context.Turned)
         {
@@ -1884,10 +1853,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
         var record = await _context.ReadAgainAsync(ask.Session, ct).ConfigureAwait(false);
         if (record is not { Kind: "chat" }) return new(SendBack.CannotGoOn, ContinueWhy.Of(ContinueWhy.Refused).Code);
-        if (_goOn.CannotGoOnWithFindings(record) is { } never) return new(SendBack.CannotGoOn, never.Code);
+        if (GoOn.CannotGoOnWithFindings(record) is { } never) return new(SendBack.CannotGoOn, never.Code);
         if (await ask.Hand(ask.Session, ct).ConfigureAwait(false) is null) return new(SendBack.Refused);
 
-        var started = await _goOn.GoOnWithFindingsAsync(ask.Session, ask.Answered, ct).ConfigureAwait(false);
+        var started = await GoOn.GoOnWithFindingsAsync(ask.Session, ask.Answered, ct).ConfigureAwait(false);
         // Held, the findings wait on its record: the next word, a wake or the next look goes on with them; refused, the go-on marked why.
         return started.SessionId is not null ? new(SendBack.Reserved) : new(SendBack.Waiting, started.Message);
     }
@@ -2068,9 +2037,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
     ChatContext IExecutorWiring.Context => _context;
 
-    ChatHandOver IExecutorWiring.HandOver => _handOver;
-
-    IChatHelping IExecutorWiring.Help => _help;
+    T IExecutorWiring.Of<T>() => Executors.Of<T>();
 
     Task IExecutorWiring.ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded) =>
         Conclude(sessionId, state, note, onEnded);
@@ -2263,7 +2230,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     {
         // 🔴 CHATGOONWAKE1: declared first, so disposed last: a word shown to its ended record while this run still held it goes on once
         // everything of this run is let go.
-        using var letGo = new Disposer(() => _goOn.LetGo(sessionId));
+        using var letGo = new Disposer(() => GoOn.LetGo(sessionId));
         using var actorLogging = actorLog;
         await using var actorWatching = actorRun;
         using var actorUnbound = new Disposer(() => _context.ActorRuns.TryRemove(sessionId, out _));
@@ -2337,7 +2304,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
             if (goOn?.Ask.Refused is { } refused)
             {
-                await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                await GoOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return false;
             }
 
@@ -2368,7 +2335,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // An agent that would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended.
             if (goOn?.Ask.Refused is { } refused)
             {
-                await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                await GoOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return false;
             }
 

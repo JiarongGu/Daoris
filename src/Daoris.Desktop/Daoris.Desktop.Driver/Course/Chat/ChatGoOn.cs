@@ -81,31 +81,32 @@ internal sealed class GoingOn(PriorSession record, ResumeAsk ask)
 /// up (<see cref="TakeUpAsync"/>), and a chat taken up by itself announces its end (<see cref="TakenUpEnded"/>), since no
 /// route that started it is there to hear it.</para>
 ///
-/// <para><b>It holds the runner</b> as <see cref="ChatHandOver"/> does: a conversation going on runs through the runner's own
-/// run, in the place the runner makes. It hears the record's events from its construction until <see cref="Stop"/>, which
+/// <para><b>A registered executor</b>: a conversation going on runs through the runner's own run, in the place the runner makes. It
+/// hears the record's events from <see cref="Hear"/>, which the runner calls once it is made, until <see cref="Stop"/>, which
 /// <see cref="ChatRunner.StopAll"/> calls first.</para>
 /// </remarks>
-internal sealed class ChatGoOn
+[Executor("go-on", ExecutorPhase.Move)]
+internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
 {
     /// <summary>The endings a chat goes on from: every one but a stand-down, which never goes on (D137 §2.2).</summary>
     private static readonly HashSet<string> Ended = new(StringComparer.OrdinalIgnoreCase) { "completed", "declined", "failed", "stopped" };
 
-    private readonly ChatContext _context;
-    private readonly IChatRunning _runner;
-    private readonly ChatHandOver _handOver;
-    private readonly IChatHelping _help;
-    private readonly ChatHelperWords _words;
+    private ChatContext _context => wiring.Context;
+    private IChatRunning _runner => wiring;
+    private ChatHandOver _handOver => wiring.Of<ChatHandOver>();
+    private IChatHelping _help => wiring.Of<IChatHelping>();
+    private ChatHelperWords _words => wiring.Of<ChatHelperWords>();
 
-    private readonly BriefedMove _move;
+    private BriefedMove _move => wiring.Of<BriefedMove>();
 
     // LIMITRESUME1c: a conversation held by its limit, proven lost at its wake, moves by the limit's own ended-record body (D206 §3.5).
-    private readonly LimitMove _limit;
+    private LimitMove _limit => wiring.Of<LimitMove>();
 
     /// <summary>
     /// An ended chat whose words wait for its own cooling account, or one held by its limit (LIMITRESUME1c, D206 §3.5): told to the look's
     /// <c>limits</c> stage, which wakes it on its own account at the reset.
     /// </summary>
-    internal Action<string>? Waits { get; set; }
+    private void Waits(string session) => wiring.Of<LimitWaits>().Add(session);
 
     /// <summary>What the course answered each conversation's go-on, by session (FOUNDATION1h branch 7): a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
@@ -135,17 +136,9 @@ internal sealed class ChatGoOn
         return course;
     }
 
-    public ChatGoOn(
-        ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help, ChatHelperWords words, BriefedMove move, LimitMove limit)
+    /// <summary>The runner is made: the record's events are heard from now.</summary>
+    public void Hear()
     {
-        _context = context;
-        _runner = runner;
-        _handOver = handOver;
-        _help = help;
-        _words = words;
-        _move = move;
-        _limit = limit;
-
         // The person's words to an ended chat are kept on its record and shown in its conversation by whichever door they
         // were said at (MSG1d); hearing them there is what takes them up at once (MSG1c, D137 §2.2).
         _context.Events.Evented += Heard;
@@ -281,7 +274,7 @@ internal sealed class ChatGoOn
             // FOUNDATION1g part c: held by the record's flag, its events read alone for a record an older build ended.
             if (LimitHeld.Waiting(_context.Events.After(each.Id, 0).Events, record.Limit) is not null)
             {
-                Waits?.Invoke(each.Id);
+                Waits(each.Id);
                 continue;
             }
 
@@ -725,7 +718,7 @@ internal sealed class ChatGoOn
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.ChatDoorOf(sessionId)));
             // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it at the reset.
-            Waits?.Invoke(sessionId);
+            Waits(sessionId);
             return new(null, resume.Selection.Refusal);
         }
 
@@ -837,7 +830,7 @@ internal sealed class ChatGoOn
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.HelpDoorOf()));
             // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it on its own account at the reset.
-            Waits?.Invoke(sessionId);
+            Waits(sessionId);
             return new(null, resume.Selection.Refusal ?? ResumeWords.HelpDoor);
         }
 
