@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
 {
     private const string Pattern = "feature/{quest}-{slug}";
+    private const string Run = "r1";
     private const string Declaration = """{ "gates": [ { "name": "unit", "run": "node check.mjs" } ] }""" + "\n";
 
     private readonly ObservedPort _port = new();
@@ -72,8 +73,12 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
         var version = Assert.Single(new WorkflowFiles(Home).Load("made")!.Read.Versions);
         Assert.True(version.Problem is null, version.Problem);
         Assert.True(WorkflowRunBindings.Bind(Home,
-            new WorkflowRunBinding("q1", "engine", "aurora", "made", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest }));
-        var process = WorkflowProcesses.Read(Home, Config, "engine", "aurora", "q1", new AcceptedGates(["unit"]));
+            new WorkflowRunBinding(Run, "engine", "aurora", "made", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch)
+            {
+                // The open options of its `land`, resolved as a run's bind resolves them.
+                Version = 1, Digest = version.Digest, Land = LandNodes.Resolve(version.Graph!.Nodes.First(node => node.Kind == NodeKinds.Land), null),
+            }));
+        var process = WorkflowProcesses.Read(Home, Config, "engine", "aurora", Run, new AcceptedGates(["unit"]));
         Assert.True(process is { Problem: null, Named: true }, process.Problem);
         return Task.FromResult(process);
     }
@@ -98,7 +103,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
         await CommitAsync(root, LandedGates.File, Declaration, "the declaration");
         var blob = (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
         DriverConfig.Empty.WithLine("engine", "main")
-            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared))
+            .WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.Declared))
             .WithIntegrationGates("engine", blob)
             .Save(ConfigPath);
         var process = await SavedPresetAsync("integrated-no-press");
@@ -110,11 +115,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
         var branch = landed.Branch!;
         var tip = (await GitAsync(root, "rev-parse", branch)).Trim();
 
-        var quest = new WorkUnit("quest:q1", WorkUnitKind.Quest, new WorkOwner("engine", "aurora", WorkRecord.Quests, WorkRecord.ServiceWriter),
-            new WorkSubject("#q1", null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
-        {
-            Records = new WorkUnitRecords(null, [], new QuestView("q1", "", "engine", "Fix the gap", "", "Done")),
-        };
+        var quest = RunHome.QuestUnit(RunHome.Quest(Run, "Done"));
         var recorded = trees.Recorded.Of("engine", branch)!;
         WorkUnit Branch(string? ended = null)
         {
@@ -126,7 +127,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
             return new WorkUnit("branch-a", WorkUnitKind.Branch, new WorkOwner("engine", "aurora", "session-branches.json", WorkRecord.DriverWriter),
                 new WorkSubject(branch, entry.Tip), end, [])
             {
-                Links = [new WorkLink(WorkRelation.ProducedBy, "quest:q1")],
+                Links = [new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(Run))],
                 Records = new WorkUnitRecords(null, [entry], null),
             };
         }
@@ -140,17 +141,17 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
         }, CancellationToken.None);
 
         var first = await Pass(Branch());
-        var seen = Files.Read(RunUnits.IdOf("q1"));
+        var seen = Files.Read(RunUnits.IdOf(Run));
         Assert.True(Store().Open().Count == 1, string.Join("\n", first.Said) + "\n" + string.Join(",", seen?.Statuses.Select(s => s.Key + "=" + s.Value.State) ?? ["no record"]));
         var request = Assert.Single(Store().Open());
-        Assert.Equal((branch, tip, IntegrationRoutes.Node, RunUnits.IdOf("q1")), (request.Branch, request.Tip, request.Route, request.Unit));
+        Assert.Equal((branch, tip, IntegrationRoutes.Node, RunUnits.IdOf(Run)), (request.Branch, request.Tip, request.Route, request.Unit));
         await Poll.Until(() => Store().Open().Count == 0 && Volatile.Read(ref _answered) > 0, () => string.Join("\n", _said));
 
         Assert.True(await HoldsAsync(root, tip), "the line holds the frozen tip");
         await Pass(Branch());
-        var run = Files.Read(RunUnits.IdOf("q1"))!;
+        var run = Files.Read(RunUnits.IdOf(Run))!;
         Assert.Equal(NodeStates.Reached, run.Statuses["integrate"].State);
         await Pass(Branch(ended: tip));
-        Assert.Equal(NodeStates.Reached, Files.Read(RunUnits.IdOf("q1"))!.Statuses["line"].State);
+        Assert.Equal(NodeStates.Reached, Files.Read(RunUnits.IdOf(Run))!.Statuses["line"].State);
     }
 }
