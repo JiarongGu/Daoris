@@ -67,7 +67,7 @@ public sealed class AskAndWaitTickTests : IDisposable
         var resumed = service.Session("s2");
         Assert.Equal("completed", resumed["state"]!.GetValue<string>());
         Assert.Equal("build", resumed["actor"]!.GetValue<string>());
-        Assert.Equal("before", resumed["choice"]!.GetValue<string>());
+        Assert.Equal("1", resumed["choice"]!.GetValue<string>());
         Assert.Null(resumed["ran"]);
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(resumed["tree"]!.GetValue<string>()), ignoreCase: true);
         Assert.Equal("Done", service.Status("q1"));
@@ -152,7 +152,7 @@ public sealed class AskAndWaitTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "stub",
+            Adapter = "stub", Actors = StaffedRoles.On("stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>

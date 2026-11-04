@@ -63,7 +63,7 @@ public sealed class HelperWaitTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub",
+            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             // HELPERWAIT1b (Codex's round-3 #5 on COWORKUX1): one running slot, as the design's cap-one claim says; the default is two.
             Cap = 1,
             TestBound = 1,

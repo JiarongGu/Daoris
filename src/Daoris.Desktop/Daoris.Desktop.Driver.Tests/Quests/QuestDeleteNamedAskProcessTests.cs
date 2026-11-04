@@ -71,10 +71,10 @@ public sealed class QuestDeleteNamedAskProcessTests : IAsyncLifetime, IDisposabl
     {
         var config = (DriverConfig.Empty with
         {
-            Adapter = "stub",
+            Adapter = "stub", Actors = StaffedRoles.On("stub"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
-        }).WithIntake("stub");
+        }).StaffIntake("stub");
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(_host!.Url, null), config, adapters, _home,

@@ -67,7 +67,7 @@ public sealed class AccountReadingTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "acp-stub",
+            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             Cap = 1,
             TestBound = 2,
             PollSeconds = 1,

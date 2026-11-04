@@ -309,6 +309,7 @@ public sealed class PermissionSpawnTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = adapter.Name,
+            Actors = StaffedRoles.On(adapter.Name),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Name] = command },
         };

@@ -596,7 +596,7 @@ public sealed class IntakeTests : IDisposable
         var config = (Config() with
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", LimitedAgent(zone)] },
-        }).WithIntake("acp-stub");
+        }).StaffIntake("acp-stub");
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
 
         var cut = await driver.RunOnceAsync();
@@ -815,7 +815,7 @@ public sealed class IntakeTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", silent] },
         };
         var processes = new SessionProcesses();
-        var driver = Driver(config.WithIntake("acp-stub"), service, processes);
+        var driver = Driver(config.StaffIntake("acp-stub"), service, processes);
 
         var tick = driver.RunOnceAsync();
         await Until(() => processes.Running.Contains("i1"));
@@ -838,12 +838,13 @@ public sealed class IntakeTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Adapter = adapter,
+            Actors = StaffedRoles.On(adapter),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
         };
         await using var service = StandInService.Start(Circle, Ask());
 
-        await Driver(config.WithIntake(adapter), service).RunOnceAsync();
+        await Driver(config.StaffIntake(adapter), service).RunOnceAsync();
 
         Assert.Single(service.Intakes);
         SkillsSpawnProbe.AssertHandedAndRemoved(_home);
@@ -891,9 +892,10 @@ public sealed class IntakeTests : IDisposable
         var config = (DriverConfig.Empty with
         {
             Adapter = "claude-code",
+            Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", claude] },
-        }).WithIntake("claude-code");
+        }).StaffIntake("claude-code");
 
         var report = await Driver(config, service).RunOnceAsync();
 
@@ -926,7 +928,7 @@ public sealed class IntakeTests : IDisposable
         var config = (Config() with
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
-        }).WithIntake(recording.Name);
+        }).StaffIntake(recording.Name);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
@@ -955,7 +957,7 @@ public sealed class IntakeTests : IDisposable
         var config = (Config() with
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
-        }).WithIntake(recording.Name);
+        }).StaffIntake(recording.Name);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
@@ -987,11 +989,12 @@ public sealed class IntakeTests : IDisposable
     private DriverConfig Config() => DriverConfig.Empty with
     {
         Adapter = "stub",
+        Actors = StaffedRoles.On("stub"),
         TestBound = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
     };
 
-    private DriverConfig IntakeOn() => Config().WithIntake("stub");
+    private DriverConfig IntakeOn() => Config().StaffIntake("stub");
 
     private Daoris.Driver.Driver Driver(DriverConfig config, StandInService service, SessionProcesses? processes = null)
     {
