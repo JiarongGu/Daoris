@@ -14,7 +14,11 @@ public sealed class CourseCountsTests : IDisposable
     private static readonly DateTimeOffset At = new(2026, 11, 3, 9, 0, 0, TimeSpan.Zero);
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "course-counts", Guid.NewGuid().ToString("N")[..8]);
 
-    public CourseCountsTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+    public CourseCountsTests()
+    {
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes);
+    }
 
     public void Dispose() => GitSeed.Remove(_home);
 

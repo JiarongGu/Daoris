@@ -47,8 +47,7 @@ public sealed record WorkPolicy(
 /// key moves and an older build reads its keys as before (D205 point 6). Each default is written once, in <see cref="Of"/>'s table.
 /// </summary>
 /// <remarks>
-/// Ask Daoris is on where <c>helperAdapter</c> names an agent and Intake where its actor's first agent is one: the keys their gates read
-/// today, which the actor's write-through keeps aligned (survey §1.3 row 10). The rules that resolve in a subdomain above this one
+/// Intake and Ask Daoris are on where their actor's first agent names one, the gate each start reads. The rules that resolve in a subdomain above this one
 /// (<see cref="OpinionRules"/>, <see cref="BrainstormRules"/>, <see cref="HandOverRules"/>) resolve through this reader.
 /// </remarks>
 public static class WorkPolicies
@@ -88,7 +87,7 @@ public static class WorkPolicies
             case ParticipantWork.Intake:
                 return Keyed(work, ActorChoices.FirstAgent("intake", config));
             case ParticipantWork.AskDaoris:
-                return Keyed(work, config.HelperAdapter);
+                return Keyed(work, ActorChoices.FirstAgent("ask-daoris", config));
             default:
                 var (handOver, source) = HandOver(config, repository ?? "", workspace);
                 return new(work, WorkConsent.On, [], work == ParticipantWork.Chat ? null : config.Cap, null, source, new HandOverRequirement(handOver.Mode, source));

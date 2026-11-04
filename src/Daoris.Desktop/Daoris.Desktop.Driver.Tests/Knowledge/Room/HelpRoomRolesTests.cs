@@ -68,7 +68,7 @@ public sealed class HelpRoomRolesTests : IDisposable
         var sonnet = new ActorChoice("claude-code", "sonnet", "high");
         var opus = new ActorChoice("claude-code", "opus", "high");
         staffing.Set("build", [sonnet, opus]);
-        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(Preset: "weighted"));
+        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed.Single(role => role.Id == "build")), null, null, new RolePolicyPress(Preset: "weighted"));
         var ledger = new StaffLedger(_home, () => StoreSettled.Yes);
         Assert.True(ledger.Record(new StaffStart("s1", "build", StaffKey.Of(sonnet), "weight")));
         Assert.True(ledger.Record(new StaffStart("s2", "build", StaffKey.Of(opus), "weight", StaffConditions.Limit)));

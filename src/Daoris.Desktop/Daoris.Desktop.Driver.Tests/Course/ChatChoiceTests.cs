@@ -129,7 +129,7 @@ public sealed class ChatChoiceTests : IDisposable
         Assert.Equal("other", named);
         Assert.Equal(["other"], picked.Select(entry => entry.Agent));
 
-        Assert.Equal("ghost", ActorChoices.NewChat(DriverConfig.Empty with { Adapter = "ghost" }).Agent);
+        Assert.Contains("Chat is off", Assert.Throws<DriverException>(() => ActorChoices.NewChat(DriverConfig.Empty)).Message);
 
         var unread = Config("talk", "talk") with { ActorErrors = new Dictionary<string, string>(StringComparer.Ordinal) { ["chat"] = "holds no agent" } };
         Assert.Contains("`actors.chat`", Assert.Throws<ActorUnreadableException>(() => ActorChoices.NewChat(unread)).Message);

@@ -98,7 +98,7 @@ public static class MeetingCommand
     {
         if (files.Request(id) is null)
         {
-            output.WriteLine($"daoris-driver: there is no meeting `{id}` on this machine.");
+            output.WriteLine($"daoris: there is no meeting `{id}` on this machine.");
             return 1;
         }
 

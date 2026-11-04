@@ -11,12 +11,12 @@ public sealed class CapSetTests
     [Fact]
     public void A_cap_set_survives_the_file_and_keeps_the_other_settings()
     {
-        var set = DriverConfig.Empty.WithStrikes(2).WithCap(5);
+        var set = DriverConfig.Empty.WithDrivable("engine", true).WithCap(5);
 
         var read = DriverConfig.Parse(set.ToJson());
 
         Assert.Equal(5, read.Cap);
-        Assert.Equal(set.Strikes, read.Strikes);
+        Assert.Equal(["engine"], read.Drivable);
     }
 
     [Theory]

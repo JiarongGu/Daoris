@@ -90,7 +90,7 @@ public sealed class LandedStandingTests
         var said = TreesPlanWords.CleanPlan(plan, [], new TreesAsk(TreesLook.Clean), At.AddHours(29)).Out;
 
         Assert.Contains(said, line => line.Contains("2 files still differ") && line.Contains("landed 29 hours ago, and its quest #q2 is closed"));
-        Assert.Contains(said, line => line.Contains("trees remove feature/q2-fix --repository engine --why"));
+        Assert.Contains(said, line => line.Contains("tree remove feature/q2-fix --repository engine --why"));
     }
 
     // ---- the review of a session whose landing was withdrawn

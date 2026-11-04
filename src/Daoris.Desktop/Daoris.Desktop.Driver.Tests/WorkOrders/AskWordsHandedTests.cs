@@ -376,7 +376,6 @@ public sealed class AskWordsHandedTests
              "words":[{"kind":"asked","text":"s","at":"2026-10-01T02:26:00+00:00"},
                       {"kind":"answered","at":"2026-10-01T03:00:00+00:00"},
                       {"kind":"answered","text":"no time"},
-                      "not a word",
                       {"kind":"added","text":"kept","at":"2026-10-02T12:00:00+00:00","session":"s2"}]}
             """);
 

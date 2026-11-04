@@ -106,7 +106,7 @@ public sealed class PluginsCommandTests : IDisposable
         var (refused, why) = await Run("approve", "acme.tickets", "shell");
         Assert.Equal(2, refused);
         Assert.Contains("`run_command`", why);
-        Assert.Contains("plugins approve <id> <server> [--reads-only | --writes <tool,…>]", PluginsCommand.Usage);
+        Assert.Contains("plugin approve <id> <server> [--reads-only | --writes <tool,…>]", PluginsCommand.Usage);
         // CONFIRMWAIT1b (the confirm-wait design §4.1): an approval and a withdrawal wait on their Confirm, and the usage says for how long.
         Assert.Contains(InstanceDoor.WaitUsage, PluginsCommand.Usage, StringComparison.Ordinal);
     }
@@ -255,8 +255,8 @@ public sealed class PluginsCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Contains("made `acme.made`", said);
-        Assert.Contains("plugins show <id>", PluginsCommand.Usage);
-        Assert.Contains("plugins activity <id>", PluginsCommand.Usage);
+        Assert.Contains("plugin show <id>", PluginsCommand.Usage);
+        Assert.Contains("plugin activity <id>", PluginsCommand.Usage);
     }
 
     // ——— helpers

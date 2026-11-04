@@ -183,8 +183,8 @@ public sealed class WorkflowGraphRunTests
         Assert.Equal((false, false, "q1", "daoris/q1-tree"), (graph.Judged, graph.Unread, graph.Quest, graph.Branch));
         Assert.Equal(6, graph.Wires.Count);
         Assert.Contains(new WorkflowGraphWire("deploy", "handed", WireKinds.After), graph.Wires);
-        Assert.Equal(("branch", "you", WorkflowParticipation.You, WorkflowPress.Accept),
-            ((string?)Step(run, "handed").Step.Settings.Single(setting => setting.Name == "form").Value, (string?)Step(run, "handed").Step.Settings.Single(setting => setting.Name == "accept").Value,
+        Assert.Equal(("branch", "automatic", WorkflowParticipation.Automatic, (string?)null),
+            ((string?)Step(run, "handed").Step.Settings.Single(setting => setting.Name == "method").Value, (string?)Step(run, "handed").Step.Settings.Single(setting => setting.Name == "accept").Value,
              Step(run, "handed").Step.Participation, Step(run, "handed").Step.Press));
         Assert.Equal(
             [

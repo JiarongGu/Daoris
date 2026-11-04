@@ -12,9 +12,7 @@ public sealed class WorkPolicyTests
 {
     private const string Set = """
         {
-          "adapter": "claude-code",
-          "intakeAdapter": "codex-acp",
-          "helperAdapter": "claude-code",
+          "actors": { "intake": [{ "agent": "codex-acp" }], "ask-daoris": [{ "agent": "claude-code" }] },
           "helpers": { "web-app": { "mode": "ask", "agents": ["codex-acp"] } },
           "workspaceHelpers": { "work": { "mode": "off" } },
           "handOver": { "web-app": { "mode": "on" } },
@@ -26,7 +24,7 @@ public sealed class WorkPolicyTests
         }
         """;
 
-    private static readonly DriverConfig Nothing = DriverConfig.Parse("""{ "adapter": "claude-code" }""");
+    private static readonly DriverConfig Nothing = DriverConfig.Parse("{}");
     private static readonly DriverConfig Written = DriverConfig.Parse(Set);
 
     /// <summary>Where nothing is set, each work's default is the reader's table's, and every policy names its work.</summary>
@@ -101,7 +99,7 @@ public sealed class WorkPolicyTests
         Assert.Equal(work == ParticipantWork.Chat ? null : Nothing.Cap, WorkPolicies.Of(Nothing, work, "web-app", "work").Concurrency);
     }
 
-    /// <summary>Intake and Ask Daoris are on where their keys name an agent, the keys today's gates read.</summary>
+    /// <summary>Intake and Ask Daoris are on where their actors name an agent.</summary>
     [Fact]
     public void Intake_and_ask_daoris_are_on_where_their_keys_name_an_agent()
     {

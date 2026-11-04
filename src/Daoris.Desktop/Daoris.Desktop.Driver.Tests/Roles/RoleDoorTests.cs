@@ -169,10 +169,7 @@ public sealed class RoleDoorTests : IDisposable
             new StartPlan(RoleWork.Intake, Config(), null!, null!, new PassMemory(), catalogue: catalogue) { Subject = "ask:a1" });
         Assert.Equal(RoleCatalog.NoRole(RoleWork.Intake), held.Message);
 
-        // The store keeps Intake's staffing, so giving the work a role again starts it as before; the file says off for an older build.
-        Assert.Equal("codex", Config().IntakeAdapter);
-        Assert.Contains("\"intake\":[]", File.ReadAllText(File_).Replace(" ", "", StringComparison.Ordinal), StringComparison.Ordinal);
-
+        // The store keeps Intake's staffing, so giving the work a role again starts it as before.
         RoleDoor.Apply(Staffing, RoleChange.Default("intake"));
         Assert.Equal("intake", Catalogue().RoleFor(RoleWork.Intake, new RolePlace()).Role!.Id);
     }

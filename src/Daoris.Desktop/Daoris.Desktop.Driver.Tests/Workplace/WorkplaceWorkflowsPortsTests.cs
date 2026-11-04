@@ -14,7 +14,11 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 28, 9, 0, 0, TimeSpan.Zero);
-    private const string Steps = """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""";
+    private const string Graph = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"land",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed","options":{"method":"branch"}}],
+         "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"land"}]}
+        """;
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "workplace-workflows-ports", Guid.NewGuid().ToString("N")[..8]);
     private string Tree => DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s1");
 
@@ -26,8 +30,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
     private void Choose()
     {
-        StoredSteps.Add(_home, new WorkflowVersionAdded(
-            "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(Steps)), kept: []);
+        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "docs-to-pr", "Documentation to a pull request", "2026-10-09T09:00:00Z", JsonNode.Parse(Graph)!);
         WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "engine", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }
 
@@ -71,7 +74,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         var process = WorkflowProcesses.Read(_home, Config(), "engine", "aurora", "q1");
         IWorkplaceProcess named = process;
 
-        Assert.Equal((false, "Current", null, null), (current.Named, current.Name, current.BoundRun, current.Record));
+        Assert.Equal((false, "no workflow", null, null), (current.Named, current.Name, current.BoundRun, current.Record));
         Assert.Equal("since nothing names a workflow", current.Decided);
         Assert.Equal((true, "`docs-to-pr` v1", "q1"), (named.Named, named.Name, named.BoundRun));
         Assert.Equal(process.Landing, named.Landing);

@@ -31,12 +31,16 @@ public sealed class WorkflowBindingLookTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static JsonNode Steps() => JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")!;
+    private static JsonNode Graph() => JsonNode.Parse("""
+        {"schemaVersion":2,"entries":["claimed"],"end":"landing",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
+         "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"}]}
+        """)!;
 
     [Fact]
     public async Task A_run_is_bound_at_its_first_start_to_the_repository_s_choice_and_the_look_says_so()
     {
-        StoredSteps.Add(_home, new WorkflowVersionAdded("merge-after", "Merge after you accept", "terminal", "2026-10-09T09:00:00Z", Steps()), kept: []);
+        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "merge-after", "Merge after you accept", "2026-10-09T09:00:00Z", Graph());
         _ledger.Publish("q1", "engine");
         var (watch, runs) = Watch(""" "workflows": { "engine": { "default": "merge-after" } }, """);
         var reports = new List<TickReport>();

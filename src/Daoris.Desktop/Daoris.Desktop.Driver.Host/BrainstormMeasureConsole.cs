@@ -40,7 +40,7 @@ internal static class BrainstormMeasureConsole
         }
         catch (OperationCanceledException)
         {
-            Console.Error.WriteLine("daoris-driver: stopped; nothing is kept of it.");
+            Console.Error.WriteLine("daoris: stopped; nothing is kept of it.");
             return 1;
         }
 

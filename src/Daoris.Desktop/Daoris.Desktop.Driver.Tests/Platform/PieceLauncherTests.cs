@@ -274,7 +274,7 @@ public sealed class PieceLauncherTests
     [Fact]
     public void The_program_is_the_publishs_twin()
     {
-        var publish = File.ReadAllText(Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), "..", "..", "tools", "desktop-publish.mjs"));
+        var publish = File.ReadAllText(Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), "..", "..", "tools", "desktop-publish", "publish-commands.mjs"));
 
         Assert.Contains($"PIECE_START = '{PieceLauncher.Program}'", publish);
     }

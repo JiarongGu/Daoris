@@ -78,7 +78,7 @@ public sealed class RoleCatalogStartTests : IDisposable
     {
         var file = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        File.WriteAllText(file, """{ "adapter": "claude", "intakeAdapter": "codex", "actors": { "build": [ { "agent": "codex", "model": "gpt" } ], "chat": [ { "agent": "claude" } ] } }""");
+        File.WriteAllText(file, """{ "actors": { "build": [ { "agent": "codex", "model": "gpt" } ], "chat": [ { "agent": "claude" } ] } }""");
         var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
         var designer = RoleCatalogTests.Working("designer", ParticipantWork.Design, new RoleScope(RoleScope.Workspace, "w1"));
@@ -95,6 +95,6 @@ public sealed class RoleCatalogStartTests : IDisposable
         SameAsToday(catalog, Machine, config);
         Assert.Equal([new ActorEffective("codex", "gpt", null, "1")], catalog.Order(ParticipantWork.Build, Machine, config));
         Assert.Equal([new ActorEffective("opus-agent", null, null, "1")], catalog.Order(ParticipantWork.Design, new RolePlace(Workspace: "w1"), config));
-        Assert.Equal([new ActorEffective("codex", null, null, "before")], catalog.Order(ParticipantWork.Intake, Machine, config));
+        Assert.Empty(catalog.Order(ParticipantWork.Intake, Machine, config));
     }
 }

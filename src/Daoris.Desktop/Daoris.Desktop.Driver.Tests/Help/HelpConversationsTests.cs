@@ -230,7 +230,8 @@ public sealed class HelpConversationsTests : IDisposable
 
         Assert.True(listed["h2"].Live);
         Assert.Equal(("h1", "brief"), (listed["h2"].From, listed["h2"].Handed));
-        Assert.Null(listed["h1"].From);
+        // The earlier one is replaced by the one that started from it.
+        Assert.DoesNotContain("h1", listed.Keys);
     }
 
     /// <summary>

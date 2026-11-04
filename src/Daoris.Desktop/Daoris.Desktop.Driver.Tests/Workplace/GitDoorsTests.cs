@@ -272,15 +272,15 @@ public sealed class GitDoorsTests : IDisposable
         var grant = GitGrants.Write(Home, "git@github.com:org/engine.git", DateTimeOffset.UtcNow)!;
         var variables = new Dictionary<string, string?> { [GitRouting.HomeVariable] = Home, ["PATH"] = "", [GitRouting.GrantVariable] = grant };
 
-        // Allowed by the grant; with no ssh on this PATH the act is then not reached, which is said too.
+        // Allowed by the grant; with no git identity serving the host the act is then not reached, which is said too.
         var error = new StringWriter();
         GitDoors.Ssh(["git@github.com", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), error, _root);
 
-        Assert.Contains("finds no ssh", error.ToString(), StringComparison.Ordinal);
+        Assert.Contains("has no git identity", error.ToString(), StringComparison.Ordinal);
         var used = Assert.Single(Lines("git.grant.used"));
         Assert.Equal(("landing", "write", "github.com"), (Field(used, "door"), Field(used, "class"), Field(used, "host")));
         var refused = Assert.Single(Lines("git.refused"));
-        Assert.Equal(("unreached", "landing"), (Field(refused, "code"), Field(refused, "door")));
+        Assert.Equal(("no-identity", "landing"), (Field(refused, "code"), Field(refused, "door")));
     }
 
     [Fact]

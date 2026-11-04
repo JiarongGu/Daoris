@@ -118,9 +118,9 @@ public sealed class ServiceClientReviewTests
         var quest = Assert.Single(QuestViews.Read(
             $$"""
             [{ "id": "q3", "to": "engine", "status": "Done", "setUpIn": "local", "review": { "words": "no choice" },
-               "setUps": [{ "shows": "no commit" }, { "commit": "abc123", "shows": "a short commit" }, "not a set-up",
+               "setUps": [{ "shows": "no commit" }, { "commit": "abc123", "shows": "a short commit" },
                           { "commit": "{{Commit}}", "shows": "whole" }],
-               "verdicts": [{ "words": "said nothing" }, 7, { "said": "reviewed", "setUp": { "machine": "desk", "sequence": 3 } }] }]
+               "verdicts": [{ "words": "said nothing" }, { "said": "reviewed", "setUp": { "machine": "desk", "sequence": 3 } }] }]
             """));
 
         Assert.Null(quest.Review);

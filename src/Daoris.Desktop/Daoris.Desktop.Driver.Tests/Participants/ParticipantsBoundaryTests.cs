@@ -107,11 +107,13 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     [Fact]
     public void A_conversation_s_chat_run_binds_under_the_named_workflow_and_says_so_once()
     {
-        StoredSteps.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
+        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "chat-steps", "A conversation's steps", "2026-10-09T09:00:00Z",
             System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"work","kind":"work","checks":"light"},
-                 {"id":"landing","kind":"landing","form":"branch","accept":"you","pattern":"chat/{session}-{slug}","plugin":"none"}]
-                """)), kept: []);
+                {"schemaVersion":2,"entries":["claimed"],"end":"landing",
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed","options":{"checks":"light"}},
+                          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"chat/{session}-{slug}"}}],
+                 "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"}]}
+                """)!);
         var config = DriverConfig.Parse("""{"workflows":{"engine":{"default":"chat-steps"}},"sessionChecks":{"engine":"light"}}""");
         var events = new SessionEvents(Sessions);
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Unanswered()));
