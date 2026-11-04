@@ -20,10 +20,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 |---|---|---|
 | `Driver` | `Loop/Driver.cs` | One look (`LookAsync`) and one quest's start (`RunAsync`): holds, tree, record, spawn, wait, conclusion |
 | The look's passes | `WorkOrders/Look/`, listed in `docs/index/registered.md` | Each pass a module registers (`[LookPass(name, phase, after)]`, `ILookPass`), run at its phase's anchor in `LookAsync` in the kit's order and built with the driver as its `ILookWiring` |
+| `LookState` | `WorkOrders/Look/LookState.cs` | What a look carries from pass to pass on its `LookRound`: the snapshot as each pass shapes it, what a pass marks for the ones after it, and what ended; a member read before the pass that writes it throws, naming that pass |
 | `LookSync`, `LostClaimStop` | `WorkOrders/` | The look's head: the remote sync, then the stop of each session whose take lost |
 | `PluginReload` | `Plugins/PluginReload.cs` | The look's local phase, first: the plugins read fresh, taken up through `IPluginWiring`, the hooks reconciled |
 | `RuleSettling`, `WatchLook`, `MovedLines`, `TogetherSteps` | `WorkOrders/` | The local phase, in this order: the rule proposals settled, the session watch, the lines Daoris moved followed, the operations bringing sessions together stepped |
 | `WorkspacePlansLook` | `Setup/WorkspacePlansLook.cs` | The local phase's last: every workspace plan worked once, through `ISetupWiring` |
+| `SnapshotLook`, `PausedLook`, `SupervisorLook` | `WorkOrders/`, `WorkOrders/Work/` | The read phase, in this order: the roster's mark and the starts opening taken, then the snapshot; the paused work held; the supervisor's decisions moved, its unattributed words taken back, and the look's answers-alone bound left in the state. The stages after them run in `LookAsync`, from what the phase left |
 | `UnresolvedDeliveries` | `Workflows/UnresolvedDeliveries.cs` | The look's end: the deliveries a stopped run left unresolved, settled by the lease's holder |
 | `DriverWatch` | `Loop/DriverWatch.cs` | The loop: when a look runs (pace, nudge, wake), whole look or plan only |
 | `LookStages` | `Platform/LookStages.cs` | Times each stage of a look and the work beside it, says a slow one |
@@ -197,7 +199,7 @@ Put new behaviour in a unit of its own, beside the subdomain below (D231). Do no
 | whether a quest starts, and why it sits | `WorkOrders/Domain/Planner.cs` (a `StartVerdict` and its `SittingFact`) | `WorkOrders/PlannerTests`, `WorkOrders/ParkedQuestsTests`, `WorkOrders/OverlapPlannerTests`, `StrikeTests`, `Loop/CapCountTickTests`, `Loop/PauseTickTests` |
 | how a line goes on after an end, words or a limit | `Course/Domain/LineCourse.Decide.cs` only; executors in `Course/` | `Course/LineCourseTests` with `course-cases.txt`, `Course/CourseCensusTests`, `Course/LimitWaitsTests`, `Course/LimitResumeTickTests`, `Loop/AnswerContinuesTickTests` |
 | what a run's end is | `Events/Domain/Observation.cs`, its code in `Events/NoteCodes.cs`, its class in `Events/PartEnds.cs` | `Events/ObservationTests`, `Events/PartEndedTests`, `Loop/AskAndWaitTickTests`, `Loop/OrphanedSessionTests` |
-| a part of the look | a pass of its own in its subdomain, marked `[LookPass]`; what it reaches of the driver goes on `ILookWiring`, or on its module's own wiring interface where the type sits above Work orders | `Loop/DriverPartsTests`, and the tests of the stage it moves |
+| a part of the look | a pass of its own in its subdomain, marked `[LookPass]`; what it reaches of the driver goes on `ILookWiring`, or on its module's own wiring interface where the type sits above Work orders; what it reads of an earlier pass or leaves for a later one goes on `LookState`, written by one pass | `Loop/DriverPartsTests`, and the tests of the stage it moves |
 | when a look runs | `Loop/DriverWatch.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
 | quiet sessions | `Events/SessionWatch.cs` | `Events/SessionWatchTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests` |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
