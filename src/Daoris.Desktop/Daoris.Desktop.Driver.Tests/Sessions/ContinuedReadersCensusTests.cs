@@ -80,8 +80,11 @@ public sealed partial class ContinuedReadersCensusTests
         ],
         ["ChatRunner.cs"] =
         [
-            (How.Follows, "a refused start's moved words (MODELROLE1d2), the person's: kept at the head of the record they wait on, their files carried"),
             (How.NotOn, "Daoris's restart word to a conversation this shell runs, at its close: the word is this run's, and refused it is logged unkept as any refusal is"),
+        ],
+        ["ChatReplacement.cs"] =
+        [
+            (How.Follows, "a refused start's moved words, the person's: kept at the head of the record they wait on, their files carried"),
         ],
         ["ChatGoOn.cs"] =
         [
