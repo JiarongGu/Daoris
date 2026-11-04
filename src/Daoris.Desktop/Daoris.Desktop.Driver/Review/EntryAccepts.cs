@@ -187,7 +187,7 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
         {
             var leadTree = parts.FirstOrDefault(part => part.Session == lead.Session)?.Tree;
             if (leadTree is null) (leadTree, _) = await service.SessionGroundAsync(lead.Session, cancellationToken).ConfigureAwait(false);
-            subject = await trees.EntryForWorkAsync(subject, leadTree, parts[0].Tree, cancellationToken).ConfigureAwait(false);
+            subject = await trees.EntryForWorkAsync(subject, leadTree, parts[0].Tree, cancellationToken, parts[0].Gate?.Process).ConfigureAwait(false);
         }
 
         return (subject, parts);

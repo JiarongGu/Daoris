@@ -172,7 +172,7 @@ public sealed class LandingTests : IDisposable
         await CommitAsync(opened.Path, "more.txt", "and its test", "Test the cap");
         var subject = new LandingSubject("s1a2b3c4", null, "ok so that is merged now, what about the rest");
 
-        var plan = await trees.PlanAsync(opened.Path, subject);
+        var plan = await PlanAsync(trees,opened.Path, subject);
         var landed = await LandAsync(trees, opened.Path, subject);
 
         Assert.Equal("feature/cap-the-chunk-budget-s1a2b3c4", plan.Target);
@@ -193,7 +193,7 @@ public sealed class LandingTests : IDisposable
         await GitAsync(opened.Path, "commit", "--quiet", "--allow-empty-message", "-m", "");
         await CommitAsync(opened.Path, "more.txt", "and its test", "Add tests");
 
-        var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", null, "ok so that is merged now"));
+        var plan = await PlanAsync(trees,opened.Path, new LandingSubject("s1a2b3c4", null, "ok so that is merged now"));
 
         Assert.Equal("feature/work-s1a2b3c4", plan.Target);
     }
@@ -244,7 +244,7 @@ public sealed class LandingTests : IDisposable
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var plan = await PlanAsync(trees,opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
         Assert.Equal(new LandingPlan(LandingForm.Merge, "main", LandingSource.Default), plan);
 
         var landed = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
@@ -260,7 +260,7 @@ public sealed class LandingTests : IDisposable
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
-        var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"), process: _gate!.Process);
+        var plan = await PlanAsync(trees,opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"));
 
         Assert.Equal((LandingForm.Branch, "feature/0fda18-fix-the-api-gap"), (plan.Form, plan.Target));
     }
@@ -277,7 +277,7 @@ public sealed class LandingTests : IDisposable
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
         var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap") { Entered = "  my/own-name  " };
 
-        var plan = await trees.PlanAsync(opened.Path, subject);
+        var plan = await PlanAsync(trees,opened.Path, subject);
         Assert.Equal("my/own-name", plan.Target);
         Assert.Null(plan.Problem);
 
@@ -315,7 +315,7 @@ public sealed class LandingTests : IDisposable
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
         var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "no good..name" };
 
-        Assert.NotNull((await trees.PlanAsync(opened.Path, subject)).Problem);
+        Assert.NotNull((await PlanAsync(trees,opened.Path, subject)).Problem);
         var landed = await LandAsync(trees, opened.Path, subject);
 
         Assert.False(landed.Landed);
@@ -353,7 +353,7 @@ public sealed class LandingTests : IDisposable
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
         var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "my/own-name" };
 
-        Assert.Contains("merge", (await trees.PlanAsync(opened.Path, subject)).Problem);
+        Assert.Contains("merge", (await PlanAsync(trees,opened.Path, subject)).Problem);
         var landed = await LandAsync(trees, opened.Path, subject);
 
         Assert.False(landed.Landed);
@@ -491,7 +491,7 @@ public sealed class LandingTests : IDisposable
         await GitAsync(root, "branch", "feature/q0-fix-the-gap");
         var theirsTree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(theirsTree.Path, "theirs.txt", "work for a branch somebody made", "work for theirs");
-        var notOurs = await trees.PlanAsync(theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"));
+        var notOurs = await PlanAsync(trees,theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"));
         Assert.True(notOurs.Stands);
         Assert.Contains("Daoris does not move a branch it did not make", notOurs.Problem);
         Assert.StartsWith(notOurs.Problem!, (await LandAsync(trees, theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"))).Message);
@@ -505,7 +505,7 @@ public sealed class LandingTests : IDisposable
         var subject = new LandingSubject("s3", "q1", "Fix the gap");
 
         // Daoris's own, at its recorded tip and checked out nowhere: it moves on, and nothing is said against it.
-        var mayMove = await trees.PlanAsync(next.Path, subject);
+        var mayMove = await PlanAsync(trees,next.Path, subject);
         Assert.Equal((chain, true, (string?)null), (mayMove.Target, mayMove.Stands, mayMove.Problem));
 
         // Somebody moved it since its landing.
@@ -513,13 +513,13 @@ public sealed class LandingTests : IDisposable
         var theirs = (await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture",
             "commit-tree", tree, "-p", tip, "-m", "somebody's commit")).Trim();
         await GitAsync(root, "update-ref", $"refs/heads/{chain}", theirs);
-        Assert.Contains("moved since Daoris landed on it", (await trees.PlanAsync(next.Path, subject)).Problem);
+        Assert.Contains("moved since Daoris landed on it", (await PlanAsync(trees,next.Path, subject)).Problem);
 
         // Checked out in a working tree of the person's.
         await GitAsync(root, "update-ref", $"refs/heads/{chain}", tip);
         var elsewhere = Path.Combine(_scratch, "elsewhere");
         await GitAsync(root, "worktree", "add", "--quiet", elsewhere, chain);
-        var checkedOut = await trees.PlanAsync(next.Path, subject);
+        var checkedOut = await PlanAsync(trees,next.Path, subject);
         Assert.Contains("is checked out at", checkedOut.Problem);
         Assert.StartsWith(checkedOut.Problem!, (await LandAsync(trees, next.Path, subject)).Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
@@ -640,6 +640,9 @@ public sealed class LandingTests : IDisposable
     private IWorkplaceGate? _gate;
 
     private void Rule(string land) => _gate = GraphLand.Gate(_home, land);
+
+    /// <summary>The plan of <paramref name="path"/>, read by the run's bound process where a test bound one, as the press reads it.</summary>
+    private Task<LandingPlan> PlanAsync(SessionTrees trees, string path, LandingSubject subject) => trees.PlanAsync(path, subject, process: _gate?.Process);
 
     /// <summary>The press's landing of <paramref name="path"/>, by the run's bound <c>land</c> where a test bound one.</summary>
     private Task<TreeLanding> LandAsync(SessionTrees trees, string path, LandingSubject subject, string acceptedBy = AcceptedBy.Person) =>

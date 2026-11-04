@@ -38,8 +38,9 @@ internal sealed class TreeLands
         string? pinned = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivering? delivering = null) =>
         merges.MergeAsync(path, ct, replay, uncommitted, here, pinned, beside, delivering);
 
-    internal Task<LandingSubject> EntryForWorkAsync(LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct) =>
-        plans.EntryForWorkAsync(entry, leadTree, anyTree, ct);
+    internal Task<LandingSubject> EntryForWorkAsync(
+        LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct, IWorkplaceProcess? process = null) =>
+        plans.EntryForWorkAsync(entry, leadTree, anyTree, ct, process);
 
     /// <summary>
     /// The press on a reviewed session (WSR1, D87): its work lands as its repository's rule says —
