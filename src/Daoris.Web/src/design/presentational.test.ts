@@ -83,10 +83,32 @@ const ORGANISMS = new Set<string>([
   './work/review/useSessionLanding.ts',
   './work/waits/useAttendedWaits.ts',
   './work/head/useAttendedHead.tsx',
+  // The application's hooks (CODESHAPE1, D231): each holds one part of what the window reads and presses, so the shell composes.
+  './app/shell/useShellState.ts',
+  './app/shell/useFrameDoors.ts',
+  './app/shell/useShellFeeds.ts',
+  './app/shell/useShellFigures.ts',
+  './app/shell/useOpener.ts',
+  './app/shell/useSideViews.tsx',
+  './app/shell/useCommands.ts',
+  './app/shell/useShortcuts.ts',
+  './app/shell/useDoors.ts',
+  './app/shell/useWorkViews.ts',
+  './app/shell/useAttentionDoors.ts',
+  './app/shell/useContextDoors.ts',
+  './app/shell/useViewLayouts.tsx',
+  './app/shell/useScopeAndRefresh.ts',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',
   // Ask Daoris's conversation (HELP1a): the newest help session's record and its composer.
   './help/AskConversation.tsx',
+  // Its parts (CODESHAPE1, D231): the place, the history, the sends, the mode, the proposals and the slot's words, each one hook.
+  './help/ask/useHelpPlace.ts',
+  './help/ask/useHelpHistory.ts',
+  './help/ask/useHelpSend.ts',
+  './help/ask/useHelpMode.tsx',
+  './help/ask/useHelpFollow.tsx',
+  './help/ask/useHelpSlotParts.tsx',
   // The machine as the queries answer it (SETUP1a, D97): one reading for the starters and the setup
   // guide, so the panel, the guide and the steps below them hold no query.
   './help/useMachine.ts',
