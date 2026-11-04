@@ -22,6 +22,7 @@ public sealed class HelpRoomRolesTests : IDisposable
 
     public void Dispose()
     {
+        RoleStaffingPort.Unwire(File_);
         SqliteConnection.ClearAllPools();
         GitSeed.Discard(_home);
     }
@@ -63,7 +64,7 @@ public sealed class HelpRoomRolesTests : IDisposable
     [Fact]
     public void The_facts_are_read_from_the_home_s_policy_and_its_week()
     {
-        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        var staffing = RoleStaffing.Wire(_home, () => StoreSettled.Yes);
         staffing.ImportFile();
         var sonnet = new ActorChoice("claude-code", "sonnet", "high");
         var opus = new ActorChoice("claude-code", "opus", "high");

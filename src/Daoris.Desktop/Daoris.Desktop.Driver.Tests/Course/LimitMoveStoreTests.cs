@@ -190,7 +190,8 @@ public sealed class LimitMoveStoreTests : IDisposable
         var stand = new ExecutorStand(runner, context);
         stand.Add<IChatHelping>(new NoHelp());
         stand.Add(new ChatHandOver(stand));
-        var limit = stand.Add(new LimitMove(stand)
+        stand.Add(new LimitWaits(stand));
+        var limit =stand.Add(new LimitMove(stand)
         {
             Moves = new ConversationMoves(_home, client, events, store: Store("run-shell")),
         });

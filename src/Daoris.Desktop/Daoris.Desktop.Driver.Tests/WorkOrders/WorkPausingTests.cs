@@ -369,6 +369,7 @@ public sealed class WorkPausingTests : IDisposable
             // q11's take is another machine's: its claim here is none, and the teammate's record names whose.
             Claims = { ["q11"] = "none" },
         };
+        SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes);
         (DriverConfig.Empty with { Drivable = ["engine", "game"], Holds = ["game"] })
             .WithPausedAsk("a1", new WorkPause(Now, NoStops))
             .WithPausedQuest("q9", new WorkPause(Now, NoStops))

@@ -61,7 +61,7 @@ public sealed class AccountLimitHoldTests : IDisposable
     };
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster, string adapter = "acp-stub") =>
-        new(service, Config with { Adapter = adapter }, AdapterSet.Built(), _home, harnesses: roster);
+        new(service, Config with { Adapter = adapter, Actors = StaffedRoles.On(adapter) },AdapterSet.Built(), _home, harnesses: roster);
 
     /// <summary>Observation 4's cut-off, as the driver records one: the quest taken, its session failed with a limit.</summary>
     private async Task<string> CutOffAsync(ServiceClient service, bool limit = true)
