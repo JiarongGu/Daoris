@@ -6,6 +6,7 @@ import { Button, Card, CardHeader, Icon, Inline, Prose, SelectField, SettingList
 import { authoredEntries, authoredText, composeAuthored } from '../../locales/authored';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import type { SettingsChoices } from '../tools';
+import { holdDraftOf, holdLine, holdPress } from './appointedHold';
 import { type Draft, type Editing, RoleEditor } from './RoleEditor';
 import { RowMore } from './RowMore';
 import { conversational, fieldsOf, OFFERED_MOVES, policyDraftOf, policyIsDefault, recordOf } from './staffPolicyDraft';
@@ -94,7 +95,8 @@ export function editingOfLine(
     id: line.id, isNew: false, revision: row?.revision ?? null,
     ...nameFields(row?.name, name), takes: row?.takes ?? [],
     work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '',
-    drafts: draftsOf(line, agents, key, keeps ? policy : null), ...(keeps && policy ? { policy: policyDraftOf(policy) } : {}),
+    drafts: row?.hold ? [] : draftsOf(line, agents, key, keeps ? policy : null), ...(keeps && policy ? { policy: policyDraftOf(policy) } : {}),
+    ...(row?.hold ? { hold: holdDraftOf(row.hold) } : {}),
   };
 }
 
@@ -158,7 +160,8 @@ export function policyLine(t: TFunction, read: RolePolicyRow | null | undefined)
 export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null, policy?: RolePolicyRow | null): string {
   if (row.state === 'removed') return t('settings.ai.roles.removed');
   if (row.state === 'unreadable') return t('settings.ai.roles.unreadable', { error: row.error ?? '' });
-  const works = row.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.role.and'));
+  if (row.hold) return `${holdLine(t, row.hold)} · ${placeText(t, row.scopeKind, row.scopeId)}`;
+  const works =row.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.role.and'));
   const choices = row.choices ?? [];
   const order = actor
     ? ` · ${actorSummary(t, actor)}`
@@ -317,11 +320,13 @@ export function RolesCard({
       change: 'set', id, revision: now.revision,
       role: {
         name: composeAuthored(now.name, now.nameIn) ?? '',
-        takes: now.takes[0] === now.work ? now.takes : [now.work],
+        takes: now.hold ? [] : now.takes[0] === now.work ? now.takes : [now.work],
         scope: { kind: now.place, id: now.place === 'machine' ? null : now.placeId.trim() || null },
+        ...(now.hold ? holdPress(now.hold) : {}),
       },
-      choices: off ? [] : now.drafts.length > 0 ? entries(now) : now.isNew ? [] : null,
-      ...(off ? {} : policyPress(now)),
+      // An appointed role's holder holds it: it carries no choices and no policy.
+      ...(now.hold ? {} : { choices: off ? [] : now.drafts.length > 0 ? entries(now) : now.isNew ? [] : null }),
+      ...(off || now.hold ? {} : policyPress(now)),
     }, () => setEditing(null));
   };
   const works = (catalogue?.works ?? []).map((work) => ({ value: work, label: t(`settings.ai.roles.work.${work}`) }));
