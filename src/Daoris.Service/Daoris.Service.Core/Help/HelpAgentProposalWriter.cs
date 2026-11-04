@@ -5,7 +5,7 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// The <c>agent</c> kind's writer (HELP6): an agent's Update, or a pin to one exact version, and how its accounts are used, ordered and
 /// offered again (TOOL4l-a). Since POOL1b (D197 point 6, the account-pool design §5.3) its accounts are one set: a <c>use</c> or an
-/// <c>order</c> is written with <c>set: true</c>, the mark the driver applies only, and names no workspace.
+/// <c>order</c> names no workspace.
 /// </summary>
 internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
 {
@@ -88,8 +88,6 @@ internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
             writer.WriteNull("workspace");
             // A pin's version: what the change sets.
             Nullable(writer, "value", release);
-            // POOL1b (§5.3): a use or an order is written for the one set, and the driver applies only one so marked.
-            if (door is "use" or "order") writer.WriteBoolean("set", true);
             // The use, order and ready doors' own fields (TOOL4l-a): a field left out is no change, and keep none is a null.
             if (door == "ready") writer.WriteString("account", whose);
             if (way is not null) writer.WriteString("use", way);

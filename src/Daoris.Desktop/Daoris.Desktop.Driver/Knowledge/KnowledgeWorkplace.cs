@@ -9,9 +9,7 @@ internal interface IKnowledgeWorkplace
     string TreeGuardEditMatcher { get; }
     IReadOnlyList<string> AcceptanceNotes { get; }
     string LandingsFileName { get; }
-    string AutoLandingsFileName { get; }
     (IReadOnlyList<LandedBranch> Entries, string Path) Landings(string home);
-    IReadOnlyList<AutoLanding> Due(string home);
     Task<(int Code, string Stdout, string Stderr)> GitAsync(string root, IReadOnlyList<string> arguments, TimeSpan patience, CancellationToken ct);
     Task<(int Code, string Stdout, string Stderr)> GitAsync(string root, IReadOnlyList<string> arguments, string input, CancellationToken ct);
     Task<HelpTrees> ReadTreesAsync(string home, HelpTreesPart part, CancellationToken ct, LookTimes? times);

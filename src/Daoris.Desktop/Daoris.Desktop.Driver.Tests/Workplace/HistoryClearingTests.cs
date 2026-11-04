@@ -101,9 +101,6 @@ public sealed class HistoryClearingTests : IDisposable
         new LandedBranches(_home).Gone("engine", ["feature/q1-fix"]);
         new LandedBranches(_home).Record(new LandedBranch("engine", "default", "feature/q2-fix", "main", "def456", "o1", "q2", null, At));
         new LandedBranches(_home).Gone("engine", ["feature/q2-fix"]);
-        var landings = new AutoLandings(_home);
-        landings.Due(new AutoLanding("s1", "q1", "engine", "default", "a tree", At));
-        landings.Tried("s1", new AutoTry(At, AutoLandingCode.Landed), close: true);
         new SessionArchive(_home).Archive(["s2", "o1"], [new SessionGrouping("s2", SessionGroup.Ended, "failed"), new SessionGrouping("o1", SessionGroup.Ended, "completed")], ["s1", "s2", "o1"], At);
         File.WriteAllText(HeldWordsFile.PathOf(_home), """{ "held": [ { "session": "s1", "text": "words", "files": [], "door": "screen" } ] }""");
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q1", At, "screen", "not needed"));
@@ -141,7 +138,6 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.Empty(KeptOf("s2"));
         Assert.NotEmpty(KeptOf("o1"));
         Assert.True(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles,"q2")));
-        Assert.Null(new AutoLandings(_home).Of("s1"));
         Assert.False(File.Exists(HeldWordsFile.PathOf(_home)));
         Assert.Equal(["o1"], new SessionArchive(_home).Marks().Keys);
         Assert.Null(new LandedBranches(_home).Landing("s1"));
@@ -441,19 +437,6 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.Single(outcome.Cleared);
         // The trace names s0 too, whose record is not here either, so nothing it names is held any more.
         Assert.Null(landings.Landing("s1"));
-    }
-
-    /// <summary>An automatic landing still trying keeps the unit as a live one (§2.2): its work is still being landed.</summary>
-    [Fact]
-    public async Task An_automatic_landing_still_trying_keeps_the_unit()
-    {
-        new AutoLandings(_home).Due(new AutoLanding("s1", "q1", "engine", "default", "a tree", At));
-        var service = new StandIn { Records = [Record("s1", "q1")], Quests = [Quest("q1")] };
-        service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], sessions: ["s1"])];
-
-        var keep = Assert.Single((await HistoryClearing.PlanAsync(World(service), HistoryScope.Quest, "q1")).Units).Keep!;
-
-        Assert.Equal((HistoryWords.Live, HistoryContexts.Landing, "s1"), (keep.Word, keep.Context, keep.Session));
     }
 
     /// <summary>A process still running for a session, marked by a driver sharing the home, keeps the unit: stop it first.</summary>

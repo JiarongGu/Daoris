@@ -325,21 +325,13 @@ public static class HistoryClearing
 
     /// <summary>
     /// This machine's half of a unit the service would clear (§1.2), in the order a person meets them: a process still running
-    /// here, an automatic landing still trying, a tree still here, a landing's branch still standing. Null when none holds it.
+    /// here, a tree still here, a landing's branch still standing. Null when none holds it.
     /// </summary>
     private static HistoryKeep? MachineHalf(HistoryUnitView unit, Facts facts, Machine machine)
     {
         foreach (var session in unit.Sessions.Where(machine.Alive))
         {
             return new HistoryKeep(HistoryWords.Live, $"Session `{session}` is still running; stop it first.") { Session = session };
-        }
-
-        foreach (var session in unit.Sessions.Where(machine.Landing))
-        {
-            return new HistoryKeep(HistoryWords.Live, $"Session `{session}`'s work is still being landed.")
-            {
-                Session = session, Context = HistoryContexts.Landing,
-            };
         }
 
         foreach (var session in unit.Sessions.Where(session => machine.TreeHere(facts.Record(session))))
@@ -400,7 +392,6 @@ public static class HistoryClearing
     {
         private readonly SessionTrees _trees = new(world.Home);
         private readonly IReadOnlyList<LandedBranch> _standing = new LandedBranches(world.Home).All();
-        private readonly IReadOnlyList<AutoLanding> _landing = new AutoLandings(world.Home).Open();
 
         public SessionHomeFiles Files { get; } = new(world.Home, world.Remover);
 
@@ -408,10 +399,6 @@ public static class HistoryClearing
 
         /// <summary>A process for it alive on this machine: this shell's, or one another driver sharing the home marked.</summary>
         public bool Alive(string session) => SessionEventText.IsId(session) && world.Processes.AliveOnThisMachine(session);
-
-        /// <summary>An automatic landing of it still trying (LAND2b).</summary>
-        public bool Landing(string session) =>
-            _landing.Any(entry => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>Its own tree still here with anything in it, as D126's delete judges it: a checkout is no tree of its own.</summary>
         public bool TreeHere(SessionRecord? record) =>

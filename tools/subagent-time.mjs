@@ -31,7 +31,7 @@ export function pathClass(path = '') {
 export function commandClass(command = '') {
   const c = command.replace(/\s+/g, ' ');
   if (/\b(sleep|Start-Sleep|Wait-Process)\b/.test(c)) return 'wait';
-  if (/\bnpm run verify\b|check:web-rules|i18n:check|names:check|merge-branch\.mjs|\bdaoris\.mjs check\b|doc-(shapes|duplicates|links|system)|optional-locks|transitional-markers|test-map\.mjs|orient-index\.mjs --check/.test(c)) return 'verify';
+  if (/\bnpm run verify\b|check:web-rules|i18n:check|names:check|merge-branch\.mjs|\bdaoris\.mjs check\b|doc-(shapes|duplicates|links|system)|optional-locks|test-map\.mjs|orient-index\.mjs --check/.test(c)) return 'verify';
   if (/\bdotnet test\b|\bvitest\b|\bnode --test\b|\bplaywright\b|\bnpm (run )?test\b|\bnpm run (test|e2e)/.test(c)) return 'test';
   if (/\bdotnet build\b|\btsc\b|\bnpm run (build|typecheck)\b|\bnpm (ci|install)\b|build-server/.test(c)) return 'build';
   if (/^\s*(cd [^&;]+(&&|;)\s*)?git\b|\bgit (merge|diff|log|status|show|add|commit|checkout|worktree|rev-parse|branch)\b/.test(c)) return 'git';

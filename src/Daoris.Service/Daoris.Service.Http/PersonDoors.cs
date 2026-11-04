@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Daoris.Knowledge;
+using Daoris.Knowledge.Http.Routes;
 
 namespace Daoris.Knowledge.Http;
 
@@ -552,14 +553,14 @@ public sealed class PersonGate(PersonKey? key, MachineLog log)
     /// makes the form. The refusal to answer, or null when the call may go on. A stale key never reaches here: the gate
     /// refused it before the route ran.
     /// </summary>
-    public IResult? Refused(HttpContext http, Door door, bool form)
+    public Refusal? Refused(HttpContext http, Door door, bool form)
     {
         var (@class, act) = form && door.Form is { } made ? (made.Class, made.Act) : (door.Class, door.Act ?? PersonDoors.Unclassified);
         if (!IsAgent(http) || @class is DoorClass.Open or DoorClass.Agent) return null;
 
         var (code, _) = Required(@class, act);
         Write(http, Presented.None, code);
-        return Results.Json(new ErrorResponse(Sentence(code, act), code), statusCode: StatusCodes.Status403Forbidden);
+        return new Refusal(StatusCodes.Status403Forbidden, new ErrorResponse(Sentence(code, act), code));
     }
 
     private static (string Code, string Act) Required(DoorClass @class, string act) =>

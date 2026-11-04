@@ -19,6 +19,9 @@ public sealed record RoleRow(
     /// added role, and on every answer but the window's role read.
     /// </summary>
     public ActorView? Staffing { get; init; }
+
+    /// <summary>An appointed role's acts, holder and window; null for a working role.</summary>
+    public RoleHold? Hold { get; init; }
 }
 
 /// <summary>
@@ -43,7 +46,7 @@ public static class RoleDoor
             ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal),
             slot.Role?.Name, slot.Role?.Takes ?? [], slot.Role?.Scope.Kind ?? slot.Scope?.Kind, slot.Role?.Scope.Id ?? slot.Scope?.Id,
             slot.Revision, slot.Error,
-            slot.State == RoleState.Removed ? null : config.Actors.TryGetValue(slot.Id, out var choices) ? choices : null)),
+            slot.State == RoleState.Removed ? null : config.Actors.TryGetValue(slot.Id, out var choices) ? choices : null) { Hold = slot.Role?.Hold }),
     ];
 
     /// <summary>
@@ -127,9 +130,14 @@ public static class RoleDoor
             var isSeeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
             if (change is RoleChange.SetRole { Role: var role })
             {
-                var staffed = Staffed(catalogue, role.Id, choices);
+                var staffed = Staffed(catalogue, role, choices);
                 if (staffed is not null && isSeeded) seeded.Add((role.Id, staffed));
                 else if (staffed is not null) rows.Add((role.Id, staffed));
+                if (policy is not null && role.Hold is not null)
+                {
+                    throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code, $"`{role.Id}` is an appointed role: a policy shares a working role's choices."));
+                }
+
                 if (policy is not null)
                 {
                     var effective = staffed ?? (held is not null && held.Actors.TryGetValue(role.Id, out var own) ? own : null);
@@ -205,16 +213,26 @@ public static class RoleDoor
         // A place's rules are the rules' judge's, against the store (SupervisorRuleDoor.Judge), never the catalogue's.
         if (change is RoleChange.SetRules) return null;
         if (catalogue.Judge(change) is { } refused) return refused;
-        return change is RoleChange.SetRole { Role: var role } && Staffed(catalogue, role.Id, choices) is { } staffed ? RoleCatalog.Judge(role, staffed) : null;
+        if (change is RoleChange.SetRole { Role.Hold: not null } && choices is not null)
+        {
+            return new RoleRefusal("appointed-not-configurable", $"`{change.Id}` is an appointed role: its holder holds it, never a staffing of choices.");
+        }
+
+        return change is RoleChange.SetRole { Role: var role } && Staffed(catalogue, role, choices) is { } staffed ? RoleCatalog.Judge(role, staffed) : null;
     }
 
-    /// <summary>The staffing a set writes: the choices named, else none for a new added role (off), else what the role has.</summary>
-    private static IReadOnlyList<ActorChoice>? Staffed(RoleCatalog catalogue, string id, IReadOnlyList<ActorChoice>? choices) =>
-        choices ?? (ActorChoices.Ids.Contains(id, StringComparer.Ordinal) || catalogue.Slots.Any(slot => slot.Id == id && slot.Role is not null) ? null : []);
+    /// <summary>
+    /// The staffing a set writes: the choices named, else none for a new added working role (off), else what the role has; none for an
+    /// appointed role, which its holder holds.
+    /// </summary>
+    private static IReadOnlyList<ActorChoice>? Staffed(RoleCatalog catalogue, RoleRecord role, IReadOnlyList<ActorChoice>? choices) =>
+        role.Hold is not null ? null
+        : choices ?? (ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) || catalogue.Slots.Any(slot => slot.Id == role.Id && slot.Role is not null) ? null : []);
 
     /// <summary>
     /// A press's change as <c>SET_ROLE</c>, the verb and a proposal carry it: <c>change</c> (<c>set</c>, <c>remove</c>, <c>default</c> or <c>default-all</c>, which names no id),
-    /// <c>id</c>, for a set its <c>role</c> (<c>name.en</c>, <c>name.zh</c>, <c>takes</c>, <c>scope.kind</c>, <c>scope.id</c>) and its
+    /// <c>id</c>, for a set its <c>role</c> (<c>name.en</c>, <c>name.zh</c>, <c>takes</c>, <c>scope.kind</c>, <c>scope.id</c>; an appointed
+    /// role's <c>filled: appointed</c>, <c>authority</c>, <c>holder</c> and <c>window</c> in place of <c>takes</c>) and its
     /// <c>choices</c> (absent or null leaves them, an empty list is off), and the <c>revision</c> it was made against, if any.
     /// </summary>
     /// <exception cref="DriverException">The press does not read as a change; said.</exception>
@@ -251,6 +269,15 @@ public static class RoleDoor
                 var scope = role.TryGetProperty("scope", out var place) && place.ValueKind == System.Text.Json.JsonValueKind.Object
                     ? new RoleScope(Text(place, "kind") ?? RoleScope.Machine, Text(place, "id"))
                     : RoleScope.Everywhere;
+                if (Text(role, "filled") == RoleRecord.Appointed)
+                {
+                    // The record's own reading, so a press and a stored record are read alike.
+                    var (hold, why) = RoleHold.Read(role);
+                    if (hold is null) throw new RoleRefusedException(new RoleRefusal("bad-record", $"`{id}` {why}."));
+                    var appointed = new RoleRecord(id, name ?? AuthoredText.Of(""), RoleRecord.Appointed, takes, scope, hold);
+                    return new RolePress(RoleChange.Set(appointed), ActorChoices.Payload(press), read, RolePolicyPress.FromPayload(press));
+                }
+
                 var record = new RoleRecord(id, name ?? AuthoredText.Of(""), RoleRecord.Always, takes, scope);
                 return new RolePress(RoleChange.Set(record), ActorChoices.Payload(press), read, RolePolicyPress.FromPayload(press));
             default:

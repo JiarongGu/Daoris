@@ -34,8 +34,6 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build while a delivery is unresolved |
 | `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: numbered steps, the writer stamp, settled-gated imports |
 | `HomeMigration` | `Drv/Install/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
-| `TransitionalRegister` | `Drv/Transitional/Register.cs` | The reads still kept, each with its end and row, until their chunks delete them and the list |
-| Marker gate | `tools/transitional-markers.mjs` | Markers, entries and open rows held together, in `verify` |
 | `Tools` | `Drv/Install/Tools.cs` | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |
 | `ToolInstall`, `ToolResources`, `ToolsCommand` | `Drv/Install/` same names | Download, verify, lay out; the lists and locations; `daoris tool` |
 | Host locators | `Drv/Service/ServiceHostLocator.cs`, `Drv/Knowledge/KnowledgeConnector.cs` | Which HTTP host and connector run: the install's, then the home's `bin` |
@@ -214,12 +212,12 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 
 **Tests that pin the area.** Driver: `Install/StagedBuildTests`, `InstallUpdateTests`, `UpdateDrainTests`,
 `UpdateCommandTests`, `StartConfirmationTests`, `HeldFilesTests`, the `Tool*Tests`; `Platform/DaorisHomeTests`, `HomeLeaseTests`,
-`HomeIdentityTests`; `Store/DesktopStore*Tests`; `Transitional/TransitionalRegisterTests`; `Install/HomeMigrationTests`;
+`HomeIdentityTests`; `Store/DesktopStore*Tests`; `Install/HomeMigrationTests`;
 `Service/ServiceHostLocatorTests`; `PinnedUpdatesTests`. Modules: `Update/InstallHomeTests`,
 `HomePlacingProcessTests`, `AppWorkingFolderProcessTests`, `InstallUpdaterTests`, `UpdateModuleTests`, `UpdateRelaunchGateTests`,
 `UpdateWatchTests`; `Windows/TaskbarIdentityTests`; `EveryModuleChildIsHandedTheToolsTests`. Service:
 `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`, `home-census.test.ts`, `tool-test/desktop-publish.test.ts`,
-`test/deployment-rehearsal.test.ts`. Tools: `tools/transitional-markers.test.mjs`.
+`test/deployment-rehearsal.test.ts`.
 
 **Gates that bite.** `driver`, `modules`, `driver-process`, `modules-process` and `censuses` for the C#; `service` for its twin;
 `cli` (`npm run verify`: the home census, the transitional markers, the size ratchet); `tool-tests` for the publish; and

@@ -19,8 +19,7 @@ public static class LandingForm
 
 /// <summary>
 /// How a session's work lands: a form, for <see cref="LandingForm.Branch"/> the pattern that names the
-/// branch, and whether the tree and its branch go once a press lands the work (<paramref name="Tidy"/>,
-/// D88) — only where git proves the work is on a branch of the person's.
+/// branch.
 /// </summary>
 /// <param name="Plugin">
 /// The plugin a branch rule hands the new branch to (WSR4, D100): spoken to on <see cref="HookPoints.Land"/>
@@ -31,8 +30,7 @@ public static class LandingForm
 /// <i>Accept automatically</i> (LAND2a, D145): a quest's done lands its work as the person's Accept would, and the rule's
 /// plugin pushes it and opens the pull request with no press, the pull request being the last human step. A merge rule takes it
 /// too, since the workflow decides (D145's note of 2026-11-01); off, the default, is the press as it always was. It rides the rule, so a repository's own rule replaces
-/// its workspace's switch with the rest of it. LAND2b acts on it: a session concluding on a done quest becomes due
-/// (<see cref="AutoLandings"/>), and the next look lands it (<see cref="AutoLander"/>).
+/// its workspace's switch with the rest of it.
 /// </param>
 /// <param name="Key">
 /// The shape of the repository's ticket keys (PROCESS1b-i, D164's amendment point 2): a regular expression the pattern's
@@ -46,7 +44,7 @@ public static class LandingForm
 /// default, is the branch at the session's own commits, as it always was. A tree on a branch of its own is never squashed.
 /// </param>
 public sealed record LandingRule(
-    string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null, bool AutoAccept = false, string? Key = null,
+    string Form, string? Pattern = null, string? Plugin = null, bool AutoAccept = false, string? Key = null,
     bool Squash = false)
 {
     public static readonly LandingRule Merge = new(LandingForm.Merge);
@@ -633,8 +631,6 @@ public static class LandingKey
             if (rule.Key is not null) writer.WriteString("key", rule.Key);
             // Written only when named (D100): absent is the branch left for the person to push.
             if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
-            // Written only when on: absent is the tree staying, as it always has.
-            if (rule.Tidy) writer.WriteBoolean("tidy", true);
             // Written only when on (LAND2a): absent is the person's press, as it always was. The CLI writes it here too.
             if (rule.AutoAccept) writer.WriteBoolean("autoAccept", true);
             // Written only when on (PROCESS1b-ii): absent is the branch at the session's own commits. The CLI writes it here too.
@@ -691,11 +687,10 @@ public static class LandingKey
             return null;
         }
 
-        // Only JSON `true` switches the tidy or the automatic acceptance on (LAND2a): `"true"` or 1 is not the person's say-so for a
+        // Only JSON `true` switches the automatic acceptance on (LAND2a): `"true"` or 1 is not the person's say-so for a
         // push with no press.
         var rule = new LandingRule(
             Json.NonEmpty(value, "form") ?? "", Json.NonEmpty(value, "pattern"),
-            value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
             Json.NonEmpty(value, "plugin"),
             value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
             Json.NonEmpty(value, "key"),

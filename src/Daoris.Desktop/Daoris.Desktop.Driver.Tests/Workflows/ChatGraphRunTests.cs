@@ -43,8 +43,8 @@ public sealed class ChatGraphRunTests : AutoLandingFixture
         public IReadOnlyList<WorkStepHeard> TakeSteps() => [];
     }
 
-    private LandingDoor Door() => new(() => new AutoLander(
-        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { Performs = true, HoldsLease = () => true });
+    private LandingDoor Door() => new(() => new LandPerformer(
+        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true });
 
     private NodeRecord Record() => new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf(Run))!;
 

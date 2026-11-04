@@ -32,7 +32,7 @@ export function PlaceDrivingScope({ row, notify, onOpenAppointed, onOpenReposito
   const onError = failure(notify);
   const repository = row.repository ?? '';
   const standing = standingOf(driver.data?.standingConfirmation);
-  const stewardSet = standing?.stewardOffered ? stewardSetAt(standing.stewardActs, repository) : null;
+  const stewardSet = standing ? stewardSetAt(standing.stewardActs, repository) : null;
   const doors = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   return children({
     drivable: row.driven,

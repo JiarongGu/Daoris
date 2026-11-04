@@ -168,9 +168,6 @@ internal sealed record TraceFacts(
     IReadOnlyList<TracedQuest> Quests, string? QuestsUnread,
     IReadOnlyList<LandedBranch> Landings, string? LandingsUnread)
 {
-    /// <summary>This machine's due list (LAND2b, design §8): each session due to land automatically, and each try's code.</summary>
-    public IReadOnlyList<AutoLanding> AutoLandings { get; init; } = [];
-
     /// <summary>
     /// Each quest's moves the chain reached, by its id (FLOWCHART1a2): read once the id is resolved, for the quests the chain reads
     /// through and no other. A quest with none here was not reached.

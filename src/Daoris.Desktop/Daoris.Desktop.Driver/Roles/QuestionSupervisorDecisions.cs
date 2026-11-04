@@ -30,13 +30,13 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission admission, MachineLog? log = null)
 {
-    /// <summary>Row 1's overrule window (§6.3): five minutes from the keeping, where the appointment set none.</summary>
-    public static readonly TimeSpan Window = TimeSpan.FromMinutes(5);
+    /// <summary>Row 1's overrule window (§6.3): five minutes, where the role keeps none.</summary>
+    public static readonly TimeSpan Window = TimeSpan.FromMinutes(RoleHold.DefaultWindow);
 
-    /// <summary>The window an appointment may set (SUPERVISOR1e, §6.3, §12): 1 to 60 minutes, never 0.</summary>
-    public static readonly TimeSpan ShortestWindow = TimeSpan.FromMinutes(1), LongestWindow = TimeSpan.FromMinutes(60);
+    /// <summary>The window the role may keep (<see cref="RoleHold"/>): 1 to 60 minutes.</summary>
+    public static readonly TimeSpan ShortestWindow = TimeSpan.FromMinutes(RoleHold.ShortestWindow), LongestWindow = TimeSpan.FromMinutes(RoleHold.LongestWindow);
 
-    /// <summary>The window a decision is held for: the effective appointment's where it is within the bounds, else <see cref="Window"/>.</summary>
+    /// <summary>The window a decision is held for: the role's where within the bounds, else <see cref="Window"/>.</summary>
     public static TimeSpan WindowOf(DecisionAdmitted admitted) =>
         admitted.Window is { } set && set >= ShortestWindow && set <= LongestWindow ? set : Window;
 
@@ -136,8 +136,8 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             var admitted = admission.Admit(park.Repository);
             if (admitted is not { Why: null, Generation: { } generation } || generation != answer.Generation)
             {
-                log?.Info("supervisor.refused", ("why", SupervisorWhy.AppointmentChanged));
-                return Task.FromResult(new SupervisorKept(false, null, null, SupervisorWhy.AppointmentChanged));
+                log?.Info("supervisor.refused", ("why", SupervisorWhy.RoleChanged));
+                return Task.FromResult(new SupervisorKept(false, null, null, SupervisorWhy.RoleChanged));
             }
 
             // SUPERVISOR1e (§6.3): held for the window the effective appointment set, read with its generation.
@@ -232,7 +232,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             refused ??= Closed(defer.Session, defer.Question);
             if (refused is null && (admission.Admit(park.Repository) is not { Why: null, Generation: { } effective } || effective != defer.Generation))
             {
-                refused = SupervisorWhy.AppointmentChanged;
+                refused = SupervisorWhy.RoleChanged;
             }
 
             if (refused is not null)
@@ -396,7 +396,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     {
         bool Swept(Live each) => each.Generation == generation
                                  && (repository is null || string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
-        var why = repository is null ? SupervisorWhy.Revoked : SupervisorWhy.AppointmentChanged;
+        var why = repository is null ? SupervisorWhy.Revoked : SupervisorWhy.RoleChanged;
         var swept = 0;
         var sessions = _live.Values.Where(Swept).Select(each => each.Session).Distinct(StringComparer.Ordinal).ToList();
         foreach (var session in sessions)

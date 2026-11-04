@@ -23,48 +23,8 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         // The path is answered so the page can tell a person which file its checkboxes edit.
         Assert.Equal(DriverConfigPath, state.GetProperty("configPath").GetString());
         Assert.Equal("claude-code", state.GetProperty("adapter").GetString());
-        // And the home (D63), so the page can say where this machine's Daoris lives — with nothing
-        // to announce on a start that established nothing.
+        // And the home (D63), so the page can say where this machine's Daoris lives.
         Assert.Equal(Home, state.GetProperty("home").GetString());
-        Assert.Equal(JsonValueKind.Null, state.GetProperty("homeNotice").ValueKind);
-        // And what the shell adopted, when it is not its own page — nothing adopted here, so null,
-        // and the field is there for the page to read rather than a toast it can miss.
-        Assert.Equal(JsonValueKind.Null, state.GetProperty("hostNotice").ValueKind);
-    }
-
-    /// <summary>
-    /// What establishing the home did rides the STATE, not only the one-time event: the page
-    /// subscribes after the host answers, and a sentence raised before that reached nobody.
-    /// </summary>
-    [Fact]
-    public async Task What_establishing_the_home_did_is_in_the_state_for_the_page_to_show()
-    {
-        var established = new HomeEstablished(
-            Home, SetForUser: true, Moved: ["driver.json"], Failed: [],
-            Notice: $"Daoris home: {Home} — moved in: driver.json.");
-        var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", established);
-
-        var state = await AnswerAsync(new DriverModule(Bus, loop), "STATE");
-
-        Assert.Equal(established.Notice, state.GetProperty("homeNotice").GetString());
-    }
-
-    /// <summary>
-    /// How the home stands to the account's DAORIS_HOME rides the state as a field (LEFT2), so the page's hint reads
-    /// it rather than a sentence: here a home the account names, and one named for this start alone, which D105
-    /// respects without a notice.
-    /// </summary>
-    [Fact]
-    public async Task How_the_home_stands_to_the_account_is_a_field_of_the_state()
-    {
-        async Task<string?> StandingAsync(string? account) =>
-            (await AnswerAsync(new DriverModule(Bus, new DriverLoop(
-                Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", account: () => account)), "STATE"))
-            .GetProperty("homeAccount").GetString();
-
-        Assert.Equal(HomeAccount.Same, await StandingAsync(Home));
-        Assert.Equal(HomeAccount.ThisStart, await StandingAsync(Path.Combine(Home, "another")));
-        Assert.Equal(HomeAccount.ThisStart, await StandingAsync(null));
     }
 
     /// <summary>

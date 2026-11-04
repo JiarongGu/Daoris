@@ -22,7 +22,7 @@ internal static class HelpRoomFixture
             {
                 Checkout = true, Drivable = true, OwnTree = true,
                 Line = new Line("feature/app", LineSource.Repository),
-                Landing = new Landing(new LandingRule("branch", "feature/{slug}-{quest}", Tidy: true), LandingSource.Workspace),
+                Landing = new Landing(new LandingRule("branch", "feature/{slug}-{quest}"), LandingSource.Workspace),
             },
             new("reports-db", "work")
             {

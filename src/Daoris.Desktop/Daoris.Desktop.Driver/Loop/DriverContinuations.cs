@@ -853,9 +853,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         await ReviewSetUps.PostAsync(service, config, _context.Events, after, sessionId, workTree, quest.Workspace, openedAt, ct, _driver.Reviews)
             .ConfigureAwait(false);
 
-        // LAND2b: as a first run's ending, so a resumed session that closes its quest done is due too. One that went on after
-        // its landing moves its own branch on at the next look (LAND2c). FABRIC-CLOSE1h (§E5): a closure graph's submission reads as its done.
-        await _driver.ConcludedForLandingAsync(sessionId, quest, QuestResults.Status(after) ?? status, conclusion.State, workTree, quest.Workspace, ct)
+        await _driver.ConcludedForOpinionAsync(sessionId, quest, QuestResults.Status(after) ?? status, conclusion.State, workTree, quest.Workspace, ct)
             .ConfigureAwait(false);
 
         return (new StartRun(

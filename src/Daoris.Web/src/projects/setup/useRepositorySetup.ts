@@ -9,7 +9,6 @@ import { type GitAccessEdit, type RepositoryGitAccess, resolveGitAccess } from '
 import type { Answered } from '../../work/InlineConfirm';
 import { canBeAsked, type Registration, SESSION_ACTIVE } from '../../data/api';
 import { useSessions } from '../../data/queries';
-import { workspaceOf } from '../../data/workspaces';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';
 import { sentence } from '../../locales/format';
 import { stewardSetAt } from '../../person/standing';
@@ -41,15 +40,13 @@ type Row<K extends keyof LinesAnswer> = NonNullable<LinesAnswer[K]>[number];
  * the plugins that land work and its Workflow answer's start node. Null for a repository the driver does not know, or while it has not
  * answered. A hook, so a view that shows setup holds it and the molecule stays props.
  */
-export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin, onOpenAppointed, onOpenGit }: {
+export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin, onOpenGit }: {
   registration: Registration | undefined;
   enabled: boolean;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
   /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e); absent, the press is not drawn. */
   onOpenGit?: (host: string) => void;
-  /** Open Agents → Setup → Roles → Appointed roles, where the supervisor is appointed (COMPANYVIEW1e). */
-  onOpenAppointed?: () => void;
 }): RepositorySetupProps | null {
   const { t } = useTranslation();
   const driver = useDriver();
@@ -108,29 +105,10 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
   const ofWorkspace = <R extends { workspace: string }>(rows: R[] | undefined, workspace: string) =>
     (rows ?? []).find((row) => row.workspace.toLowerCase() === workspace.toLowerCase());
 
-  /** When the steward last set this repository's driving and it still stands, where the build offers the steward; else null. */
+  /** When the steward last set this repository's driving and it still stands; else null. */
   const stewardSetOf = (): string | null => {
     const standing = standingOf(state.standingConfirmation);
-    return standing?.stewardOffered ? stewardSetAt(standing.stewardActs, registration.repository) : null;
-  };
-
-  /**
-   * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, which the setup says in a line. It is
-   * appointed under Agents → Setup → Roles (COMPANYVIEW1e). SUPERVISOR1e: with none of its own, the line says its workspace's appointment
-   * that covers it; its own, once made, wins over it.
-   */
-  const supervisorOf = (): Driving['supervisor'] => {
-    const standing = standingOf(state.standingConfirmation);
-    if (!standing) return undefined;
-    const lower = registration.repository.toLowerCase();
-    const workspace = workspaceOf(registration);
-    const supervising = standing.appointments.filter((each) => each.role === 'supervisor');
-    return {
-      // STEWARDROLE1a-i (D209 §2.4): the supervisor's own flag, never the steward's nor D201's.
-      offered: standing.supervisorOffered,
-      appointment: supervising.find((each) => each.repository.toLowerCase() === lower) ?? null,
-      covering: supervising.find((each) => each.workspace !== '' && each.workspace.toLowerCase() === workspace.toLowerCase()) ?? null,
-    };
+    return standing ? stewardSetAt(standing.stewardActs, registration.repository) : null;
   };
 
   const same = (name: string) => name.toLowerCase() === registration.repository.toLowerCase();
@@ -152,9 +130,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
       note: !registration.adopted && door === 'pipe' ? t('projects.outside.directDoor') : undefined,
       // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
       heldStanding: named(standingOf(state.standingConfirmation)?.held, name),
-      supervisor: supervisorOf(),
-      onOpenAppointed,
-      // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory, where the build offers the steward.
+      // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory.
       stewardSet: stewardSetOf(),
     };
   };

@@ -25,7 +25,7 @@ type Bound = { timeoutMs?: number };
  * carries on unheard.
  */
 export function call<R extends TypedRoute>(type: R, payload: Payload<R>, options?: Bound): Promise<Answer<R>>;
-// transitional: route-payload-by-hand
+// A route whose handler still reads the request: the caller names its answer, and its payload goes unchecked.
 export function call<TData>(type: ByHandRoute, payload?: Record<string, unknown>, options?: Bound): Promise<TData>;
 export function call(type: DriverRoute, payload?: Record<string, unknown>, options?: Bound): Promise<unknown> {
   return getBridge().invoke<unknown>('DAORIS.DRIVER', type, {

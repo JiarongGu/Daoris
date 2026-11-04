@@ -58,7 +58,6 @@ internal static class RouteHandlers
     {
         var answer = method.CreateDelegate<Func<T, TPayload, CancellationToken, Task<TAnswer>>>();
         // A handler that reads the request is handed its own task, so one that throws before its first await still throws at once.
-        // transitional: route-payload-by-hand
         if (answer is Func<T, IpcRequest, CancellationToken, Task<object?>> byHand)
         {
             return (handler, request, cancellationToken) => byHand((T)handler, request, cancellationToken);
@@ -70,7 +69,6 @@ internal static class RouteHandlers
     }
 
     /// <summary>The payload's reader, or the request itself for a handler that reads it by hand.</summary>
-    // transitional: route-payload-by-hand
     private static Func<IpcRequest, TPayload> Read<TPayload>() =>
         typeof(TPayload) == typeof(IpcRequest) ? (Func<IpcRequest, TPayload>)(object)(Func<IpcRequest, IpcRequest>)(request => request) : RoutePayload.Reader<TPayload>();
 }

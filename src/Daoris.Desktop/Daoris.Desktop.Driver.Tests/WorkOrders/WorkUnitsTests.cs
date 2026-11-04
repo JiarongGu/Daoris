@@ -37,7 +37,7 @@ public sealed class WorkUnitsTests : IDisposable
 
     private static InventoryFacts Facts(
         GrownBranch[]? branches = null, LandedBranch[]? landings = null, SessionTree[]? trees = null, string[]? inUse = null) =>
-        new(branches ?? [], landings ?? [], trees ?? [], [], [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase), _ => false, Then.AddDays(1));
+        new(branches ?? [], landings ?? [], trees ?? [], [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase), _ => false, Then.AddDays(1));
 
     private static QuestView Quest(string id, string status, string to = "engine", string from = "game") =>
         new(id, from, to, $"The work of #{id}", "Body.", status) { Updated = Then };

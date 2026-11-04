@@ -21,7 +21,6 @@ finishes first and the whole set runs once.
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes and the window routes' marks, and says when they are stale |
-| The transitional register | `Driver/Transitional/Register.cs`, `tools/transitional-markers.mjs` | each kept older reading, with the condition that ends it and the row that deletes it |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
@@ -47,7 +46,9 @@ finishes first and the whole set runs once.
    registered, not written by hand. An HTTP route is its request record in `src/Daoris.Contracts/<Domain>/` (`IRoute<TAnswer>`:
    method, path, answer), which uses the standard library alone. The host finds its `IRouteModule`s by reflection and maps each
    handler through `RouteMap`, whose binder answers a value that does not bind 400 with no body, as the framework's binding
-   did; the driver sends the record through `ServiceClient.SendAsync`. The page's types and `ROUTES` table are written from the
+   did: a body is read only where the record has body values, is 415 when it is not JSON, and is required unless the record
+   is `[OptionalBody]`; a POST's `[FromQuery]` value travels in its query. The driver sends the record through
+   `ServiceClient.SendAsync`, its views read in `Service/Wire/<Domain>Views.cs`. The page's types and `ROUTES` table are written from the
    records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
    first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
    pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. `api.ts` sends a declared
@@ -58,7 +59,8 @@ finishes first and the whole set runs once.
    payload record, named for its route (`SetCap(SetCap press)`), which `RoutePayload` reads off the request by its parameters'
    types as the hand-written reads did; the record and the handler's answer record are written into `DriverPayloads`, so the
    page's `call` and `useDriverChange` take that route with no payload type of their own. A handler that still takes the
-   `IpcRequest` is the `route-payload-by-hand` register entry. (from D231, D228)
+   `IpcRequest` reads its payload by hand, and the page sends it through the by-hand overloads with a payload type beside its
+   hook, until CODESHAPE1 moves it. (from D231, D228)
 8. Drift is the disk against the lock; the canon is reconciled, not imposed. (from D19, D230)
 9. Only what must never reach history blocks a commit. The rest is verified as a local CI beside the work, and its reds are fixed
    forward. An install is staged only from a green run. (from D180)

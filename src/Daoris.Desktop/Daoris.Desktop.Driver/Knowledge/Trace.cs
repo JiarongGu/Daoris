@@ -154,10 +154,7 @@ public static class Trace
         }
 
         var landed = KnowledgeWorkplace.Current.Landings(sources.Home);
-        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries, LandingsProblem(landed.Path))
-        {
-            AutoLandings = KnowledgeWorkplace.Current.Due(sources.Home),
-        };
+        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries, LandingsProblem(landed.Path));
     }
 
     /// <summary>
@@ -319,7 +316,7 @@ public static class Trace
                         .Where(requirement => Text(requirement, "quote") is not null)
                         .Select(requirement => new QuestRequirementView(Text(requirement, "quote")!, Text(requirement, "check") ?? "")
                         {
-                            Evidence = ServiceClient.EvidenceOf(requirement),
+                            Evidence = QuestViews.EvidenceOf(requirement.Deserialize<Daoris.Contracts.Quests.QuestRequirementWire>(Daoris.Contracts.ContractJson.Options)),
                         }),
                 ],
                 Answers =

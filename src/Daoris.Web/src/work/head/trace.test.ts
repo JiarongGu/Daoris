@@ -34,7 +34,6 @@ const FAMILIES = [
   ['work.trace.answer.', 'TraceAnswers'],
   ['work.trace.tree.', 'TraceTrees'],
   ['work.trace.namedBy.', 'TraceNamers'],
-  ['work.trace.try.', 'AutoLandingCode'],
   ['work.trace.acceptedBy.', 'AcceptedBy'],
   ['work.trace.rule.', 'LandingSource'],
 ] as const;
@@ -53,11 +52,10 @@ describe('a trace’s codes, held to both catalogues', () => {
   it('reads the driver’s declarations', () => {
     // A scan that matched nothing would pass on a moved or renamed file: it has to see them.
     expect([...declared('TraceStores').values()].sort())
-      .toEqual(['asks', 'auto-landings', 'config', 'events', 'landings', 'quests', 'rules', 'sessions']);
+      .toEqual(['asks', 'config', 'events', 'landings', 'quests', 'rules', 'sessions']);
     expect([...declared('TraceLandingGaps').values()].sort()).toEqual(['merge-accepted', 'none', 'unknown', 'unread']);
     expect([...declared('AcceptedBy').values()].sort()).toEqual(['auto', 'person']);
     expect([...declared('LandingSource').values()].sort()).toEqual(['default', 'repository', 'workspace']);
-    expect(declared('AutoLandingCode').size).toBeGreaterThanOrEqual(14);
     expect(unreadStores()).toEqual(['landings', 'quests', 'sessions']);
     for (const [, holder] of FAMILIES) expect(declared(holder).size, holder).toBeGreaterThan(0);
   });

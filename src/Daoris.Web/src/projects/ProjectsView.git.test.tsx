@@ -21,7 +21,7 @@ import {
   GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
   GIT_HUNKS_BUDGET, GIT_COMMIT_PLAN_ENGINE, GIT_STASH_PLAN_ENGINE, GIT_SWITCH_PLAN_ENGINE,
 } from './fixtures';
-import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
+import { SHARED_BRANCH, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import { chooseRepository, chooseWorkspace, openSetup, ProjectsView, repositoryMain } from '../test/projectsView';
 
@@ -359,7 +359,7 @@ describe("a repository's Branches and History tabs", () => {
     // The landing record names `s-21` (the list's fixture); a unit of the branch's names another executor, which is never read by.
     const landed = { ...SHARED_BRANCH, branch: LANDED, session: 's-21' };
     const reads = {
-      trace: (payload: Record<string, unknown>) => (payload.id === 's-21' ? traceAnswerOf('s-21', landed, SHARED_DUE) : { chain: null, unread: [] }),
+      trace: (payload: Record<string, unknown>) => (payload.id === 's-21' ? traceAnswerOf('s-21', landed) : { chain: null, unread: [] }),
       work: () => ({ units: [...SHARED_UNITS, { ...SHARED_UNITS[0]!, unit: 'u-elsewhere', repository: 'game' }], recovery: [], unread: [], held: [] }),
     };
 

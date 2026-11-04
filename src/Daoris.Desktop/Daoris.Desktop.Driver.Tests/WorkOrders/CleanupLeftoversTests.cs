@@ -33,7 +33,7 @@ public sealed class CleanupLeftoversTests : IDisposable
 
     private static InventoryFacts Facts(
         GrownBranch[]? branches = null, LandedBranch[]? landings = null, SessionTree[]? trees = null, RecoveryRef[]? refs = null) =>
-        new(branches ?? [], landings ?? [], trees ?? [], [], refs ?? [], new HashSet<string>(StringComparer.OrdinalIgnoreCase), _ => false, Then.AddDays(1));
+        new(branches ?? [], landings ?? [], trees ?? [], refs ?? [], new HashSet<string>(StringComparer.OrdinalIgnoreCase), _ => false, Then.AddDays(1));
 
     private static RecoveryRef Ref(string name, bool? held, DateTimeOffset? dated = null) =>
         new("engine", $"refs/daoris/discarded/{name}") { Commit = "c0ffee00", Dated = dated ?? Then, Held = held };

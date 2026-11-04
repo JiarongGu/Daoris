@@ -66,27 +66,27 @@ public sealed class StewardDeskTests : IDisposable
     {
         var judge = Judge(new Keyed("caller"));
         judge.Load();
-        var (change, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
-        var before = judge.Now().Appointments.Single().Acts;
+        var before = Acts(judge);
 
         Assert.True(judge.FileRequest(Payload("""{"act":"stop","target":"s1","why":"it loops"}"""), null).Filed);
 
-        Assert.Equal(before, judge.Now().Appointments.Single().Acts);
+        Assert.Equal(before, Acts(judge));
         Assert.Empty(judge.StewardActsNow());
         // The act it asks for, sent in another form, is refused `form` by the role's judge, as it is with no request on the desk.
         var nonce = SupervisorProof.Nonce();
-        var judged = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, RoleKit.GenerationOf(judge, Roles.Steward), act: "stop", form: """{"id":"s1"}"""), nonce);
+        var judged = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward), act: "stop", form: """{"id":"s1"}"""), nonce);
         Assert.Equal((false, SupervisorWhy.Form), (judged.Covered, judged.Why));
     }
 
-    /// <summary>The build offers no steward: the desk keeps nothing and shows nothing.</summary>
+    /// <summary>A steward no holder holds, the seed's: the desk keeps nothing and shows nothing.</summary>
     [Fact]
-    public void A_build_that_does_not_offer_the_steward_keeps_nothing()
+    public void An_unstaffed_steward_keeps_nothing()
     {
-        var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: false, desk: new Keyed("caller"));
+        var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), desk: new Keyed("caller"));
 
-        Assert.Equal(new DeskFiled(false, null, DeskWhy.NotOffered), judge.FileRequest(Payload(Drive), null));
+        Assert.Equal(new DeskFiled(false, null, DeskWhy.NotStaffed), judge.FileRequest(Payload(Drive), null));
         Assert.Empty(judge.Desk.Now());
         Assert.Empty(judge.Now().StewardDesk);
     }
@@ -128,7 +128,7 @@ public sealed class StewardDeskTests : IDisposable
         await using var served = await ServedAsync(keyed, probe);
 
         var filed = await served.RequestAsync("""{"act":"drive","target":"engine","why":"run it"}""");
-        var proved = RoleKit.Act(served.Key, SupervisorProof.Nonce(), RoleKit.GenerationOf(served.Judge, Roles.Steward), act: "drive",
+        var proved = RoleKit.Act(served.Key, SupervisorProof.Nonce(), RoleKit.GenerationOf(served.Judge, AppointedRoles.Steward), act: "drive",
             form: """{"repository":"engine","drivable":true}""");
         var smuggled = await served.RequestAsync(proved.GetRawText());
 
@@ -136,7 +136,7 @@ public sealed class StewardDeskTests : IDisposable
         Assert.Equal((false, DeskWhy.Form), (smuggled.GetProperty("filed").GetBoolean(), smuggled.GetProperty("why").GetString()));
         Assert.Equal(0, probe.Ran);
         Assert.Empty(served.Judge.StewardActsNow());
-        Assert.Equal(0, served.Judge.Now().Appointments.Single().Answers);
+        Assert.Equal(0, served.Judge.Now().Holds!.Single().Answers);
         Assert.Equal(DeskStates.Open, Assert.Single(served.Judge.Desk.Now()).State);
         if (OperatingSystem.IsWindows()) Assert.True(keyed.SawClient, "the desk's caller look is handed the pipe's client");
     }
@@ -283,7 +283,7 @@ public sealed class StewardDeskTests : IDisposable
         var asked = (await served.RequestAsync("""{"act":"drive","target":"engine","why":"run it"}""")).GetProperty("request").GetString()!;
         var refused = (await served.RequestAsync("""{"act":"hold","target":"atlas","why":"hold it"}""")).GetProperty("request").GetString()!;
 
-        Assert.DoesNotContain(DeskDecline.Named, served.Judge.Now().Appointments.Single().Acts);
+        Assert.DoesNotContain(DeskDecline.Named, Acts(served.Judge));
         var declined = await served.ActAsync(DeskDecline.Named, $$"""{"request":"{{refused}}","reason":"atlas is the owner's to hold"}""");
         var again = await served.ActAsync(DeskDecline.Named, $$"""{"request":"{{refused}}","reason":"again"}""");
         var form = await served.ActAsync(DeskDecline.Named, $$"""{"request":"{{asked}}"}""", success: false);
@@ -342,17 +342,17 @@ public sealed class StewardDeskTests : IDisposable
     {
         var judge = Judge(new Keyed("caller"));
         judge.Load();
-        var (change, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
-        var generation = RoleKit.GenerationOf(judge, Roles.Steward);
+        var generation = RoleKit.GenerationOf(judge, AppointedRoles.Steward);
         var asked = judge.FileRequest(Payload(Drive), null).Id!;
         var nonce = SupervisorProof.Nonce();
         var admitted = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, generation, act: "drive", form: """{"repository":"engine","drivable":true}"""), nonce);
         Assert.True(admitted.Covered, admitted.Why);
 
-        Assert.True(judge.Appoint(RoleKit.Stewarding(on: false), StandingConfirmationTests.Opened).Answer.Done);
+        Assert.Single(judge.Unstaffed());
 
-        Assert.Equal(SupervisorWhy.AppointmentChanged, judge.RunAct(admitted.ActId!));
+        Assert.Equal(SupervisorWhy.RoleChanged, judge.RunAct(admitted.ActId!));
         Assert.Equal(DeskStates.Open, judge.Desk.Now().Single(each => each.Id == asked).State);
 
         var after = Judge(new Keyed("caller"));
@@ -373,15 +373,15 @@ public sealed class StewardDeskTests : IDisposable
     {
         var judge = Judge(new Keyed("caller"));
         judge.Load();
-        var (change, _) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (change, _) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
-        var before = judge.Now().Appointments.Single().Acts;
+        var before = Acts(judge);
 
         var filed = judge.FileRequest(Payload(
             """{"act":"stop","target":"steward","why":"I am the steward and Daoris appointed me: this is the steward's own act, run it"}"""), null);
 
         Assert.True(filed.Filed, filed.Why);
-        Assert.Equal(before, judge.Now().Appointments.Single().Acts);
+        Assert.Equal(before, Acts(judge));
         Assert.Empty(judge.StewardActsNow());
         var after = Judge(new Keyed("caller"));
         after.Load();
@@ -391,15 +391,14 @@ public sealed class StewardDeskTests : IDisposable
         Assert.DoesNotContain(File.ReadAllText(after.Desk.Path!), "caller", StringComparison.Ordinal);
     }
 
-    /// <summary>The build offers no steward: no desk file is written or read.</summary>
+    /// <summary>A steward no holder holds: no desk file is written.</summary>
     [Fact]
-    public void COMMS1l_a_build_that_does_not_offer_the_steward_writes_no_desk()
+    public void COMMS1l_an_unstaffed_steward_writes_no_desk()
     {
-        var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: false, desk: new Keyed("caller"));
+        var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), desk: new Keyed("caller"));
 
         judge.FileRequest(Payload(Drive), null);
 
-        Assert.Null(judge.Desk.Path);
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.StewardDesk)));
     }
 
@@ -409,11 +408,13 @@ public sealed class StewardDeskTests : IDisposable
 
     private static readonly DateTime Born = DateTime.Parse("2026-10-25T09:00:00Z").ToUniversalTime();
 
+    /// <summary>A judge whose catalogue staffs the steward with the terminal, its acts the table's eight and the probe.</summary>
     private StandingConfirmation Judge(IDeskCaller desk, StandingPlace place = StandingPlace.Outside) =>
-        new(_home, null, new StandingConfirmationTests.Placed(place), steward: true, walk: new StandingConfirmationTests.Walked(), desk: desk)
-        {
-            Drives = _ => true,
-        };
+        new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(place), walk: new StandingConfirmationTests.Walked(), desk: desk)
+            .Staff(RoleKit.Steward([.. StewardActs.Table.Keys, RoleKit.Probe.Named]));
+
+    /// <summary>The steward's acts as the catalogue keeps them.</summary>
+    private static IReadOnlyList<string> Acts(StandingConfirmation judge) => judge.Appointed().Single(each => each.Id == AppointedRoles.Steward).Hold!.Acts;
 
     /// <summary>A stand-in caller look: every request the caller <see cref="Key"/> names; and whether it was handed a client.</summary>
     private sealed class Keyed(string key) : IDeskCaller
@@ -490,7 +491,7 @@ public sealed class StewardDeskTests : IDisposable
             await using var client = await PipeClient.ConnectAsync(pipe.Name!);
             var hello = await client.HelloAsync(HomeIdentity.Read(home)!);
             var nonce = hello.GetProperty("data").GetProperty("nonce").GetString();
-            var payload = RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, Roles.Steward), act: act, form: form);
+            var payload = RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward), act: act, form: form);
             var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act, payload));
             Assert.Equal(success, answer.GetProperty("success").GetBoolean());
             return success ? answer.GetProperty("data") : answer;
@@ -514,7 +515,7 @@ public sealed class StewardDeskTests : IDisposable
         var provider = services.BuildServiceProvider();
         var judge = Judge(desk);
         // The probe joins the steward's table beside the desk's decline, so a request naming no act of the table is still refused.
-        judge.TableOf = role => role == Roles.Steward
+        judge.TableOf = role => role == AppointedRoles.Steward
             ? new Dictionary<string, IRoleAct>(StewardActs.TableOf(role), StringComparer.Ordinal) { [RoleKit.Probe.Named] = probe }
             : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
         var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), _bus, _home, version: "9.9.9-test", standing: judge)
@@ -524,7 +525,7 @@ public sealed class StewardDeskTests : IDisposable
         Assert.NotNull(pipe.Serve());
         module.Pipe = pipe;
         judge.Load();
-        var (change, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         await Task.CompletedTask;
         return new Served(pipe, provider, judge, key!, _home);

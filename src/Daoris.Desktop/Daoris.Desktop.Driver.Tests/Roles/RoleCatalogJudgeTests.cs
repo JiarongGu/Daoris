@@ -29,23 +29,72 @@ public sealed class RoleCatalogJudgeTests : IDisposable
 
     private static string? Code(RoleRefusal? refusal) => refusal?.Code;
 
-    [Fact]
-    public void An_appointed_record_is_refused_before_anything_else_of_it_is_judged()
-    {
-        var appointed = new RoleRecord("supervisor!", AuthoredText.Of(""), RoleRecord.Appointed, ["gardening"], new RoleScope("planet", "x"), ["answer"]);
+    private static RoleRecord Supervisor(string id, RoleScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow) =>
+        new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? Workspace(), new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, holder, window));
 
-        Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(appointed))));
-        Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(appointed with { Id = "steward" }))));
-        Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(Working("a", "build") with { Filled = RoleRecord.Appointed }))));
+    /// <summary>D233 point 2: the supervisor and the steward are seeded catalogue roles, judged by the one judge as every role is.</summary>
+    [Fact]
+    public void The_supervisor_and_the_steward_are_seeded_appointed_roles_judged_by_the_one_judge()
+    {
+        var supervisor = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
+        var steward = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward);
+        Assert.Equal((RoleRecord.Appointed, RoleHolders.Rules, AppointedRoles.Supervisor, RoleScope.Everywhere), (supervisor.Filled, supervisor.Hold!.Holder, supervisor.Hold.Kind, supervisor.Scope));
+        Assert.Equal((RoleRecord.Appointed, (string?)null, AppointedRoles.Steward), (steward.Filled, steward.Hold!.Holder, steward.Hold.Kind));
+        Assert.DoesNotContain(StewardActNames.Setup, steward.Hold.Acts);
+
+        Assert.Null(Seeded.Judge(RoleChange.Set(supervisor with { Hold = supervisor.Hold with { Holder = RoleHolders.Terminal, Window = 60 } })));
+        Assert.Null(Seeded.Judge(RoleChange.Set(steward with { Hold = steward.Hold with { Holder = RoleHolders.Terminal, Acts = [.. steward.Hold.Acts, StewardActNames.Setup] } })));
+        Assert.Null(Seeded.Judge(RoleChange.Remove(AppointedRoles.Steward)));
+        Assert.Null(Seeded.Judge(RoleChange.Set(Supervisor("supervisor-w1"))));
+        Assert.Null(Seeded.Judge(RoleChange.Set(Supervisor("supervisor-engine", new RoleScope(RoleScope.Repository, "engine"), RoleHolders.Rules))));
     }
 
     [Fact]
-    public void A_mixed_shape_an_unknown_work_and_a_reserved_id_are_refused_each_by_its_code()
+    public void An_appointed_role_is_refused_an_agent_holder_a_wrong_holder_scope_or_window_and_acts_of_two_kinds()
     {
-        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Authority = ["answer"] }))));
+        var steward = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward);
+        Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", holder: RoleHolders.Agent)))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", holder: null)))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", window: 0)))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a", window: 61)))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(steward with { Hold = steward.Hold! with { Holder = RoleHolders.Rules } }))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(steward with { Scope = Workspace() }))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("a") with { Hold = new RoleHold(AppointedRoles.Supervisor, ["answer", "drive"], RoleHolders.Terminal) }))));
+        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Supervisor("a") with { Takes = ["build"] }))));
+        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("a", "build") with { Filled = RoleRecord.Appointed }))));
+        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("steward", "design")))));
+        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Supervisor(AppointedRoles.Steward, RoleScope.Everywhere)))));
+    }
+
+    [Fact]
+    public void The_supervisor_stays_on_the_machine_and_two_of_one_kind_never_share_a_scope()
+    {
+        var supervisor = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
+        Assert.Equal("may-not-be-off", Code(Seeded.Judge(RoleChange.Remove(AppointedRoles.Supervisor))));
+        Assert.Equal("may-not-be-off", Code(Seeded.Judge(RoleChange.Set(supervisor with { Scope = Workspace() }))));
+
+        var catalog = RoleCatalog.Of([RoleCatalogTests.Stored(Supervisor("supervisor-w1"))]);
+        Assert.Equal("two-roles-one-work", Code(catalog.Judge(RoleChange.Set(Supervisor("lead-w1")))));
+        Assert.Null(catalog.Judge(RoleChange.Set(Supervisor("lead-w2", Workspace("w2")))));
+        Assert.Equal("supervisor-w1", catalog.Appointed(AppointedRoles.Supervisor, new RolePlace("w1", "engine"))?.Id);
+        Assert.Equal(AppointedRoles.Supervisor, catalog.Appointed(AppointedRoles.Supervisor, new RolePlace("w2", "engine"))?.Id);
+        Assert.Equal(AppointedRoles.Steward, catalog.Appointed(AppointedRoles.Steward, new RolePlace("w1", "engine"))?.Id);
+    }
+
+    [Fact]
+    public void An_appointed_role_takes_no_work_and_holds_no_start()
+    {
+        Assert.Contains("appointed role", Seeded.Named(AppointedRoles.Supervisor, ParticipantWork.Build, new RolePlace()).Held);
+        var unreadable = RoleCatalog.Of([new StoredRole(AppointedRoles.Steward, "set", """{"id":"steward","filled":"appointed"}""", 1)]);
+        Assert.Equal(RoleState.Unreadable, unreadable.Slots.Single(slot => slot.Id == AppointedRoles.Steward).State);
+        Assert.Null(unreadable.RoleFor(ParticipantWork.Build, new RolePlace()).Held);
+    }
+
+    [Fact]
+    public void A_mixed_shape_and_an_unknown_work_are_refused_each_by_its_code()
+    {
+        Assert.Equal("mixed-shape", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Hold = new RoleHold(AppointedRoles.Supervisor, ["answer"], RoleHolders.Rules) }))));
         Assert.Equal("unknown-work", Code(Seeded.Judge(RoleChange.Set(Working("a", "gardening")))));
-        Assert.Equal("reserved-id", Code(Seeded.Judge(RoleChange.Set(Working("steward", "design")))));
-        Assert.Equal("reserved-id", Code(Seeded.Judge(RoleChange.Remove("supervisor"))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("Bad Id", "design")))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Takes = [] }))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Name = AuthoredText.Of(" ") }))));
@@ -124,7 +173,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     {
         Assert.Equal(
             [
-                "appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices",
+                "appointed-not-configurable", "mixed-shape", "unknown-work", "bad-record", "may-not-be-off", "two-roles-one-work", "choices",
                 "policy",
             ],
             RoleCatalog.Codes);

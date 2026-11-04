@@ -107,23 +107,6 @@ export type DriverState = {
   helpSwapping?: string[];
   /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
   home?: string;
-  /**
-   * What establishing the home did on this start, when it is worth saying — state moved in from a
-   * profile directory, the account's environment gaining the variable, or the account's home set aside
-   * for this install's own (D105). Null when nothing was.
-   */
-  homeNotice?: string | null;
-  /**
-   * How that home stands to the account's DAORIS_HOME, which a terminal's daoris reads (LEFT2): the same
-   * folder, overridden by this install's own `data/` (D105; the notice says which), or named for this start
-   * alone (no notice). Absent on a shell older than it.
-   */
-  homeAccount?: 'same' | 'overridden' | 'this-start';
-  /**
-   * The host this shell adopted is serving a page that is not this install's, in the shell's own
-   * sentence — or null. Standing, because it is true for as long as that host runs.
-   */
-  hostNotice?: string | null;
   /** The lines as set (WSR2), by repository — absent on a shell older than them. */
   lines?: { repository: string; branch: string }[];
   /** And by workspace, for each repository there that sets none of its own. */
@@ -419,7 +402,6 @@ export const useTrustFolder = () => useMutation({
  * looks now. The window that pressed writes the state it was answered; every window's state hub asks again on the route's change.
  */
 export function useDriverChange<R extends TypedRoute>(type: R): UseMutationResult<DriverState, Error, Payload<R>>;
-// transitional: route-payload-by-hand
 export function useDriverChange<TVariables extends Record<string, unknown>>(type: ByHandRoute): UseMutationResult<DriverState, Error, TVariables>;
 export function useDriverChange(type: DriverRoute): UseMutationResult<DriverState, Error, Record<string, unknown>> {
   const client = useQueryClient();

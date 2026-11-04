@@ -45,7 +45,7 @@ public sealed class OwnerSetCensusTests
         ["ACCOUNT_USE"] = OwnerNone.MachineSetting, // an agent's account's use, by the account's ids and the workspaces it serves
         ["START_CHAT"] = OwnerNone.OwnConversation, // a conversation begun in a repository: no quest, and its record is a new conversation's
         ["START_HELP"] = OwnerNone.OwnConversation, // Ask Daoris begun in a workspace: no quest
-        ["SET_APPOINTMENT"] = OwnerNone.Appointment, // appointing a role acts on the role, never on the repository it names
+        ["START_ROLE_TERMINAL"] = OwnerNone.RoleTerminal, // a role's terminal acts on the role, never on the repository its scope names
     };
 
     /// <summary>The setting doors that name no repository, workspace or quest (a machine's), each with why.</summary>
@@ -211,7 +211,7 @@ public sealed class OwnerSetCensusTests
                     OwnerNone.ActsOnNothing => mutating,
                     OwnerNone.MachineSetting => handler.Session is not null || (handler.Changes & (RoleScopes & ~StateScopes.Driver)) != 0,
                     OwnerNone.OwnConversation => handler.Session is not null,
-                    OwnerNone.Appointment => route != "SET_APPOINTMENT",
+                    OwnerNone.RoleTerminal => route != "START_ROLE_TERMINAL",
                     _ => true,
                 };
                 if (effects) failures.Add($"{route}: exempt as {reason}, and its handler changes what a role acts on");
@@ -220,7 +220,7 @@ public sealed class OwnerSetCensusTests
 
             if (mutating && names) failures.Add($"{route}: changes what a role acts on, names {string.Join(",", handler.Fields)}, and marks nothing");
             else if (names) failures.Add($"{route}: names {string.Join(",", handler.Fields)}, marks nothing, and is no reviewed exemption");
-            if (mark.None is OwnerNone.ActsOnNothing or OwnerNone.OwnConversation or OwnerNone.Appointment && names)
+            if (mark.None is OwnerNone.ActsOnNothing or OwnerNone.OwnConversation or OwnerNone.RoleTerminal && names)
             {
                 failures.Add($"{route}: {mark.None} is taken only by a reviewed exemption");
             }

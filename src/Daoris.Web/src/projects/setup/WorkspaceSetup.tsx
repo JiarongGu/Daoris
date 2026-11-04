@@ -16,8 +16,6 @@ import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Se
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, SetupSection } from './SetupParts';
-import type { SupervisorLine } from './SupervisorRow';
-import { SupervisorDoor } from './SupervisorDoor';
 import type { WorkspaceSection } from '../tabs';
 import { hostOf } from '../workspace/workspace';
 import type { GitIdentityShown } from '../../settings/git/Git';
@@ -91,13 +89,6 @@ export type WorkspaceSetupProps = {
    */
   /** Its git identities by host (GITAUTH1e) and its git access (GITAUTH1f, §7.3). */
   git?: { hosts: GitHostShown[]; identities: GitIdentityShown[]; acts: GitHostActs; access?: GitAccessSetup | null } | null;
-  /**
-   * The supervisor's appointment for every repository of the workspace (SUPERVISOR1e, D208 §5), a repository's own winning over it;
-   * absent where the shell says no standing confirmation.
-   */
-  supervisor?: SupervisorLine | null;
-  /** The door from the supervisor's line to Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e). */
-  onOpenAppointed?: () => void;
   remote: WorkspaceRemote;
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
@@ -134,7 +125,7 @@ const plain = (text: string) => text.replace(/`/g, '');
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function WorkspaceSetup({
-  workspace, defaults, access: accessAnswered, git, supervisor: supervisorLine, onOpenAppointed, remote, busy = false, open, wiring: startWiring = false,
+  workspace, defaults, access: accessAnswered, git, remote, busy = false, open, wiring: startWiring = false,
   rows = 'all',
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
@@ -145,7 +136,6 @@ export function WorkspaceSetup({
   const { line, review, opinion, commits } = ofLine ? defaults : ({} as WorkspaceDefaults);
   const { language, read, helpers, handOver } = mine ? defaults : ({} as WorkspaceDefaults);
   const access = mine ? accessAnswered : null;
-  const supervisor = rest ? supervisorLine : null;
   const gitShown = mine ? git : null;
 
   const defaultsParts = [
@@ -209,8 +199,8 @@ export function WorkspaceSetup({
     // A host its repositories reach and no identity serves opens it (GITAUTH1e); so does git access set here (GITAUTH1f).
     git: Boolean(gitShown?.hosts.some((each) => !each.chosen && !gitShown.identities.some((identity) => identity.host === each.host && identity.way === each.way))
       || gitShown?.access?.classes.some((each) => each.source === 'workspace')),
-    // An appointment the person made opens it, as a value they set does.
-    supervisor: Boolean(supervisor?.appointment),
+    // The supervisor is a role of the place's Roles (D233 point 2): the Setup draws no section of it.
+    supervisor: false,
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
 
@@ -424,18 +414,6 @@ export function WorkspaceSetup({
           {remote.machines && <Undeclared machines={remote.machines} busy={busy} />}
         </>
       ),
-    });
-  }
-  if (supervisor) {
-    const appointed = supervisor.appointment;
-    sections.push({
-      id: 'supervisor',
-      summary: !appointed
-        ? t(supervisor.offered ? 'projects.supervisor.off' : 'projects.supervisor.notOffered')
-        : appointed.dormant
-          ? t('projects.supervisor.dormant')
-          : t('projects.supervisor.window', { count: appointed.window }),
-      body: <SupervisorDoor workspace={workspace} supervisor={supervisor} onOpen={onOpenAppointed} />,
     });
   }
   if (remoteParts.length > 0) {

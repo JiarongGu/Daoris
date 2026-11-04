@@ -157,7 +157,6 @@ public sealed class PullRequestOccasionTests
         var looks = new[] { "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync" };
         // Each found by name at any depth of its project, so a move into a module's folder keeps it (STRUCT1, D166).
         var loop = SourceFiles.All(SourceFiles.DriverProject, "Driver*.cs")
-            .Append(SourceFiles.Driver("AutoLander.cs"))
             // The loop's classes that are not named Driver* (PART10m, D166), so the code moved out of its parts stays scanned.
             .Append(SourceFiles.Driver("LoopContext.cs"))
             .Append(SourceFiles.Driver("OpinionDeliverer.cs"))

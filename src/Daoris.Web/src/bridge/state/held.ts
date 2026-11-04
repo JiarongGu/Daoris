@@ -22,7 +22,6 @@ const readers = new Map<string, (answer: unknown) => unknown>();
  * reads as empty.
  */
 export async function askHeld<T>(
-  // transitional: route-payload-by-hand
   route: ByHandRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>,
   read: (answer: unknown) => T = (answer) => answer as T,
 ): Promise<T> {

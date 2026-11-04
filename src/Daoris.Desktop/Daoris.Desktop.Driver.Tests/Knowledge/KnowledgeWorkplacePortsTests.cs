@@ -14,7 +14,6 @@ public sealed class KnowledgeWorkplacePortsTests
         Assert.Equal(TreeGuard.EditMatcher, read.TreeGuardEditMatcher);
         Assert.Equal(new[] { LandingRules.PersonAccepted, LandingRules.AutoAccepted, LandingRules.HandNote(new TreeHand(true, "")).Text! }, read.AcceptanceNotes);
         Assert.Equal(LandedBranches.FileName, read.LandingsFileName);
-        Assert.Equal(AutoLandings.FileName, read.AutoLandingsFileName);
         Assert.Equal(CanonicalLine.Judged(DriverConfig.Empty, "app", "default", null, null),
             read.JudgedLine(DriverConfig.Empty, "app", "default", null, null));
         Assert.Equal(LandingRules.Line(DriverConfig.Empty, "app", "default"), read.ChooseLanding(DriverConfig.Empty, "app", "default"));
