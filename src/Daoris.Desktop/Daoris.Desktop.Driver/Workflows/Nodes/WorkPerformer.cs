@@ -2,89 +2,6 @@ using System.Security.Cryptography;
 
 namespace Daoris.Driver;
 
-/// <summary>What the performer did with one start, answer or attempt (<see cref="WorkPerformed.What"/>), for the loop's log and the tests.</summary>
-public static class PerformedWhat
-{
-    /// <summary>The attempt was written and its send acknowledged.</summary>
-    public const string Sent = "sent";
-
-    /// <summary>The start was refused by the one table or the record (<see cref="WorkPerformed.Code"/>): nothing was written or sent.</summary>
-    public const string Refused = "refused";
-
-    /// <summary>The attempt was written, and its send failed or went unanswered: its outcome is unknown until reconciled.</summary>
-    public const string Unknown = "unknown";
-
-    /// <summary>An outcome applied to its attempt's node: reached, failed, or unknown by the plugin's word.</summary>
-    public const string Applied = "applied";
-
-    /// <summary>An outcome its attempt already has: applied once, never again.</summary>
-    public const string Replay = "replay";
-
-    /// <summary>An answer not taken (<see cref="WorkPerformed.Code"/>): no attempt by that invocation, another sender, a stale generation.</summary>
-    public const string NotTaken = "not-taken";
-
-    /// <summary>An earlier attempt's outcome, recorded as a stale attempt's: it lifts the gate and moves nothing (§D3).</summary>
-    public const string Stale = "stale";
-
-    /// <summary>Reconciliation found it never started: delivered again with the same key.</summary>
-    public const string Redelivered = "redelivered";
-
-    /// <summary>Reconciliation found it running: it waits to its deadline.</summary>
-    public const string Running = "running";
-
-    /// <summary>Nothing establishes its outcome by itself: the person's (§D6).</summary>
-    public const string Held = "held";
-
-    /// <summary>A declared retry's delay passed: the node is ready for a new attempt with a new key.</summary>
-    public const string Retry = "retry";
-
-    /// <summary>Reconciliation could not be asked now (the process is not up, or its answer was not taken): asked again later.</summary>
-    public const string Unanswered = "unanswered";
-
-    /// <summary>
-    /// A node that dispatches nothing was started (FABRIC-RUN1): an observed built-in made active with the firings its start consumed, read
-    /// from its records at the next evaluation.
-    /// </summary>
-    public const string Begun = "begun";
-
-    /// <summary>The person's word on a held attempt was recorded (FABRIC-PERFORM1g): the runtime applies it under the node's declaration.</summary>
-    public const string Worded = "worded";
-
-    /// <summary>The person's word was applied (FABRIC-PERFORM1g): the attempt settled by the person, its node moved through the one table.</summary>
-    public const string Resolved = "resolved";
-
-    /// <summary>
-    /// A believed event that establishes nothing (FABRIC-PERFORM1i): an observed step's <c>unknown</c>, which moves no node and is not kept,
-    /// so no later word is ordered behind it.
-    /// </summary>
-    public const string Noted = "noted";
-}
-
-/// <summary>One thing the performer did, on one unit's node.</summary>
-public sealed record WorkPerformed(string Unit, string Node, string What, string? Code = null);
-
-/// <summary>
-/// The attempts one pass may call a plugin's work process about (FABRIC-RUN1e): a new start's send, and each attempt a reconciliation asks
-/// after or delivers again, take one each from the same count, so <see cref="NodeRuntime.SendsPerPass"/> bounds the whole pass, not its
-/// starts alone. What is left over waits for the next pass.
-/// </summary>
-public sealed class WorkSends(int left)
-{
-    /// <summary>No bound: a caller outside a pass (a test, a tool) that asks after every attempt due.</summary>
-    public static WorkSends Unbounded => new(int.MaxValue);
-
-    /// <summary>The calls still allowed in this pass.</summary>
-    public int Left { get; private set; } = left;
-
-    /// <summary>Takes one call, or says none is left.</summary>
-    public bool Take()
-    {
-        if (Left <= 0) return false;
-        Left--;
-        return true;
-    }
-}
-
 /// <summary>
 /// Durable execution of a plugin's performed nodes (FABRIC-PERFORM1b; the fabric events design §D6, §E2): each attempt written on its unit's
 /// record with its start and the trigger firings it consumes before <c>work/perform</c> is sent, one idempotency key per attempt and its
@@ -218,54 +135,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// </summary>
     private readonly HashSet<string> _sentHere = new(StringComparer.Ordinal);
 
-    /// <summary>
-    /// Keeps an evaluation's moves on their units' records (WIRE1e's note: the moves and their history), where each node still stands as it
-    /// stood when evaluated (<paramref name="before"/>): a status another writer moved since is not written over. Compared and written in one
-    /// hold of the record's lock (FABRIC-PERFORM1h).
-    /// </summary>
-    public IReadOnlyList<WorkPerformed> Keep(IReadOnlyDictionary<string, NodeStatus> before, WireEvaluated evaluated)
-    {
-        if (evaluated.Refusal is not null) return [];
-        var done = new List<WorkPerformed>();
-        var now = clock();
-        foreach (var unit in evaluated.Statuses.Values.Select(status => status.Unit).Distinct(StringComparer.Ordinal))
-        {
-            var (refused, kept) = records.Edit<List<WorkPerformed>>(unit, record =>
-            {
-                var said = new List<WorkPerformed>();
-                var statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal);
-                var history = record.History.ToList();
-                var fired = record.Fired.ToList();
-                var changed = false;
-                foreach (var (node, status) in evaluated.Statuses.Where(each => each.Value.Unit == unit))
-                {
-                    var held = statuses.GetValueOrDefault(node) ?? NodeLifecycle.Start(unit, node);
-                    if (!before.TryGetValue(node, out var was) || !Same(held, was))
-                    {
-                        said.Add(new(unit, node, PerformedWhat.Refused, Moved));
-                        continue;
-                    }
+    public IReadOnlyList<WorkPerformed> Keep(IReadOnlyDictionary<string, NodeStatus> before, WireEvaluated evaluated) => Keeping.Keep(before, evaluated);
 
-                    if (Same(held, status) && statuses.ContainsKey(node)) continue;
-                    statuses[node] = status;
-                    changed = true;
-                    foreach (var move in evaluated.Moves.Where(move => move.Node == node && move.Moved.Cleared is not null))
-                    {
-                        history.Add(new NodeHistory(now, move.Why, move.Moved.Cleared!));
-                    }
-
-                    // DECIDE1c: a back wire taken into this node is kept with its move, so it is taken once on its receipt.
-                    fired.AddRange(evaluated.Backs.Where(back => back.Node == node && !fired.Contains(back.Key, StringComparer.Ordinal)).Select(back => back.Key));
-                }
-
-                return (changed ? record with { Statuses = statuses, History = history, Fired = fired } : null, said);
-            });
-            if (refused is not null) done.Add(new(unit, "", PerformedWhat.Refused, refused));
-            else done.AddRange(kept!);
-        }
-
-        return done;
-    }
+    private WorkKeeping Keeping => new(records, clock);
+    private WorkOutcomes Outcomes => new(clock);
+    private WorkReceipting Receipting => new(records, clock, () => Receipts, plugin => Resources(plugin));
+    private WorkHearing Hearing => new(records, port, clock, Receipting, Outcomes);
+    private WorkPersonWord Person => new(records, clock);
 
     /// <summary>
     /// Starts a plugin's performed node on the start the evaluation proposed: the start, its firings and the attempt written first, then sent.
@@ -301,166 +177,15 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return await SendAsync(unit, recorded, node, PerformedWhat.Sent, ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Starts a node that dispatches nothing (FABRIC-RUN1: an observed built-in, read from its records at the next evaluation) on the start
-    /// the evaluation proposed, its firings kept with it (WIRE1c), where the record still holds the node as it was evaluated
-    /// (<paramref name="evaluated"/>): one locked edit, so a start another writer made since is not made again.
-    /// </summary>
-    public WorkPerformed Begin(NodeDeclaration node, WireStart start, NodeStatus evaluated)
-    {
-        if (start.Move.Binding is not { } binding) return new("", start.Node, PerformedWhat.Refused, NodeRefusal.NoBinding);
-        var unit = binding.Unit;
-        var now = clock();
-        return Edited(unit, node.Id, record =>
-        {
-            var held = StatusOf(record, node.Id);
-            if (!Same(held, evaluated)) return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Refused, Moved));
-            var moved = NodeLifecycle.Apply(node, held, start.Move);
-            if (!moved.Moved) return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Refused, moved.Refused));
-            var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
-            return (Kept(record, moved, "start", now) with { Fired = fired }, new WorkPerformed(unit, node.Id, PerformedWhat.Begun));
-        });
-    }
+    public WorkPerformed Begin(NodeDeclaration node, WireStart start, NodeStatus evaluated) => Keeping.Begin(node, start, evaluated);
 
-    /// <summary>
-    /// The step events heard (<see cref="HookSet.TakeSteps"/>): each completion applied to the attempt its invocation names, once
-    /// <see cref="WorkBelief.Completion"/> believes it (FABRIC-PERFORM1c: §C4's five rules, the unit as <paramref name="watched"/> tells it now);
-    /// one not believed moves nothing and is counted by its code (<see cref="IWorkPerformPort.Refused"/>). An event naming no invocation is an
-    /// observed plugin node's, passed over here and judged by <see cref="WorkObserver"/> (FABRIC-PERFORM1i).
-    /// </summary>
     public IReadOnlyList<WorkPerformed> Hear(
         IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, WatchedUnit?> watched) =>
-        Hear(heard, declared, (unit, _) => watched(unit));
+        Hearing.Hear(heard, declared, watched);
 
-    /// <summary>
-    /// <see cref="Hear(IReadOnlyList{WorkStepHeard}, Func{string, string, NodeDeclaration?}, Func{string, WatchedUnit?})"/> with the unit as told
-    /// for each attempt (FABRIC-CUTOVER1c; the cutover design §2.4.1): on a run's record, the subject the attempt was sent for, which may be one the
-    /// run has since left, so its answer still reaches the run's record.
-    /// </summary>
     public IReadOnlyList<WorkPerformed> Hear(
-        IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, NodeAttempt, WatchedUnit?> watched)
-    {
-        var done = new List<WorkPerformed>();
-
-        // §C4: a frame not believed is no answer, counted as a plugin.step line of its code with no words.
-        WorkPerformed Counted(WorkStepHeard each, WorkPerformed result)
-        {
-            if (result is { What: PerformedWhat.NotTaken, Code: { } code }) port.Refused(each.Plugin, code);
-            return result;
-        }
-
-        foreach (var each in heard)
-        {
-            if (each.Step.Invocation is not { } invocation) continue;
-            if (Find(invocation) is not { } found)
-            {
-                done.Add(Counted(each, new("", "", PerformedWhat.NotTaken, NotAttempt)));
-                continue;
-            }
-
-            var (unit, attempt) = found;
-
-            // FABRIC-PERFORM1c: §C4's five rules on the attempt the invocation names, before the one table sees the answer. The sender is the
-            // process the frame was read from, the attempt's plugin's current one; a completion binds to its invocation, not its generation, so
-            // a later process's replay of it is taken (PERFORM1a's review).
-            // FABRIC-CLOSE1b: a close's outcome is its door's answer alone; no plugin's frame speaks for it.
-            var node = declared(unit, attempt.Node);
-            var told = watched(unit, attempt);
-            if ((attempt.Plugin == QuestClosing.Sender
-                    ? WorkRefusals.NotSender
-                    : WorkBelief.Completion(each, attempt, port.GenerationOf(attempt.Plugin), node, told, clock())) is { } code)
-            {
-                done.Add(Counted(each, new(unit, attempt.Node, PerformedWhat.NotTaken, code)));
-                continue;
-            }
-
-            // Applied to the attempt as the record holds it now, under its lock (FABRIC-PERFORM1h): on its binding, or as a stale attempt's where
-            // the work moved past the revision it was dispatched on.
-            var lapsed = WorkBelief.Lapsed(attempt, told!);
-
-            // FABRIC-PERFORM1d (§D3): what the attempt created is taken as receipts first, so a crash before its outcome is kept converges
-            // on the replay, which takes none twice; a completion whose receipts could not be kept is not applied.
-            var resources = each.Step.Outcome.Resources;
-            var believed = node!;
-            if (Receipted(unit, attempt, believed, resources, lapsed) is { } unkept)
-            {
-                done.Add(Counted(each, unkept));
-                continue;
-            }
-
-            var applied = Edited(unit, believed.Id, record => record.Invoked(invocation) is not { } current
-                ? (null, new WorkPerformed(unit, believed.Id, PerformedWhat.NotTaken, NotAttempt))
-                : lapsed ? Lapse(record, current, believed, each.Step.Outcome, each.Generation)
-                : Outcome(record, current, believed, each.Step.Outcome, each.Generation));
-            Supersede(unit, attempt, resources, applied);
-            done.Add(Counted(each, applied));
-        }
-
-        return done;
-    }
-
-    /// <summary>
-    /// An attempt's receipts taken on its unit's resource record (FABRIC-PERFORM1d, §D3) before its outcome is applied: each resource its
-    /// plugin names, once, with the role its manifest declares, and marked superseded where its node has already moved off the attempt (a
-    /// guess the outcome's own judgement corrects, <see cref="Supersede"/>). Null where they were taken or none was named; else what came of
-    /// the completion, which is then not applied: held for the person where the record would keep too many, not taken where the record
-    /// could not be written.
-    /// </summary>
-    private WorkPerformed? Receipted(string unit, NodeAttempt attempt, NodeDeclaration node, IReadOnlyList<WorkResource> resources, bool lapsed)
-    {
-        if (resources.Count == 0 || Receipts is null) return null;
-        var unsettled = attempt.State != AttemptStates.Settled;
-        var superseded = unsettled && (lapsed || records.Read(unit) is not { } now || !OnAttempt(StatusOf(now, node.Id), attempt));
-        var declared = Resources(attempt.Plugin) ?? [];
-        var at = clock();
-        var (refused, code) = Receipts.Edit<string?>(unit, record =>
-        {
-            var fresh = resources.Where(resource => record.Of(attempt.Plugin, resource.Schema, resource.Id) is null).ToList();
-            if (fresh.Count == 0) return (null, null);
-            if (record.Receipts.Count + fresh.Count > ResourceRecord.ReceiptsKept) return (null, TooManyResources);
-            var taken = fresh.Select(resource => new ResourceReceipt(
-                Random("r-", 12), attempt.Plugin, resource.Schema, resource.Id,
-                declared.FirstOrDefault(each => each.Schema == resource.Schema)?.Role ?? ResourceReceipt.Undeclared,
-                attempt.Node, attempt.Attempt, attempt.Call.Invocation, at) { Superseded = superseded });
-            return (record with { Receipts = [.. record.Receipts, .. taken] }, null);
-        });
-        if ((refused ?? code) is not { } why) return null;
-        if (why == TooManyResources && unsettled)
-        {
-            return Edited(unit, node.Id, record => record.Invoked(attempt.Call.Invocation) is { State: not AttemptStates.Settled } current
-                ? Hold(record, current, TooManyResources)
-                : (null, new WorkPerformed(unit, node.Id, PerformedWhat.NotTaken, TooManyResources)));
-        }
-
-        return new(unit, node.Id, PerformedWhat.NotTaken, why);
-    }
-
-    /// <summary>
-    /// The attempt's receipts marked as its outcome was judged (FABRIC-PERFORM1d, §D3): superseded where it came as a stale attempt's, which has
-    /// no result, so what it made is temporary and cleaned at once; else as its declared role. Only an attempt that was not settled before:
-    /// a replay changes nothing it already said.
-    /// </summary>
-    private void Supersede(string unit, NodeAttempt attempt, IReadOnlyList<WorkResource> resources, WorkPerformed applied)
-    {
-        if (resources.Count == 0 || Receipts is null || attempt.State == AttemptStates.Settled) return;
-        if (applied.What is not (PerformedWhat.Applied or PerformedWhat.Stale)) return;
-        var stale = applied.What == PerformedWhat.Stale;
-        Receipts.Edit<bool>(unit, record =>
-        {
-            var changed = false;
-            var receipts = record.Receipts.Select(receipt =>
-            {
-                if (receipt.Invocation != attempt.Call.Invocation || receipt.Superseded == stale || receipt.Settled) return receipt;
-                changed = true;
-                return receipt with { Superseded = stale };
-            }).ToList();
-            return (changed ? record with { Receipts = receipts } : null, changed);
-        });
-    }
-
-    /// <summary>Whether a node still stands on an attempt: its current one, active or unknown, so its outcome is the node's own.</summary>
-    private static bool OnAttempt(NodeStatus status, NodeAttempt attempt) =>
-        status.Attempt == attempt.Attempt && status.State is NodeStates.Active or NodeStates.Unknown;
+        IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, NodeAttempt, WatchedUnit?> watched) =>
+        Hearing.Hear(heard, declared, watched);
 
     /// <summary>
     /// Asks after every attempt whose outcome is not established and is due (§D6: after a restart with an unresolved attempt, after its
@@ -535,209 +260,15 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return done;
     }
 
-    /// <summary>
-    /// The person's word on a held attempt (FABRIC-PERFORM1g, one of <see cref="HeldResolutions"/>), from their door: written on the attempt
-    /// while it is still held and has no word, under the record's lock with the lease asked inside it, so only the lease's holder records it.
-    /// Applied by <see cref="Resolve"/> under the node's declaration, which only the runtime holds.
-    /// </summary>
-    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null)
-    {
-        if (!HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
-        var now = clock();
-        return Edited(unit, node, record =>
-        {
-            var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
+    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null) =>
+        Person.Word(unit, node, attempt, resolution, outcome);
 
-            // FABRIC-PERFORM1k: a failure kept for the person takes their new attempt alone.
-            if (held is not null && KeptFailure(record, held))
-            {
-                if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
-                if (resolution != HeldResolutions.Again) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAgain));
-                return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
-            }
+    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared) => Person.Resolve(declared);
 
-            // FABRIC-CLOSE1j: a close found closed only in part, its node live again, takes the person's stop alone (§E5: the recovery is theirs).
-            if (held is not null && QuestClosing.Partly(record, held))
-            {
-                if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
-                if (resolution != HeldResolutions.Stop) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, PartStop));
-                return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
-            }
+    internal static bool KeptFailure(NodeRecord record, NodeAttempt attempt) => WorkPersonWord.KeptFailure(record, attempt);
 
-            // FABRIC-CLOSE1u: an unknown close its node is still on is the person's too, with a held close's words.
-            if (held is null || (held.State != AttemptStates.Held && !QuestClosing.Unanswered(record, held)))
-            {
-                return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
-            }
+    internal static string? WordRefused(NodeAttempt held, string word) => WorkPersonWord.WordRefused(held, word);
 
-            if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
-
-            // FABRIC-CLOSE1q: each attempt takes its own words. A close's outcome is its door's answer, so a plugin's words are never taken on
-            // it, and `record` only where that answer is kept; a plugin's attempt keeps its three.
-            if (WordRefused(held, resolution) is { } code) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, code));
-            return (With(record, held, held with { Resolution = resolution, ResolvedAt = now, Decision = resolution == HeldResolutions.Happened ? outcome : null }),
-                new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
-        });
-    }
-
-    /// <summary>
-    /// Every word the person gave on a held attempt, applied under the node's declaration (FABRIC-PERFORM1g): the attempt settled by the
-    /// person, never as its plugin's word, and its node moved through the one table. A node no declaration names waits with its word.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Its node still on it</b> (active, or unknown, on that attempt): an active one is first unknown (its outcome did not bind, so
-    /// it cannot be established now), then <i>it happened</i> reaches it on the person's word, <i>it did not</i> fails it and makes it ready
-    /// for the person's new attempt, which the next evaluation starts with a new key, and <i>stop</i> stops it.</para>
-    /// <para><b>Its node moved off it</b> (stopped, skipped, rejected, invalidated): the word settles the attempt as a stale one's (§D3) and
-    /// lifts the gate, moving nothing; <i>stop</i> stops a node still live.</para>
-    /// <para><b>A word the one table refuses</b> (<i>it happened</i> on a node exposing an output or an evidence schema, the plugin's to give)
-    /// leaves the attempt held with the refusal's code and the word taken back, so the person sees why and says another.</para>
-    /// </remarks>
-    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
-    {
-        var done = new List<WorkPerformed>();
-        foreach (var read in records.All().Records)
-        {
-            if (!read.Attempts.Any(HasWord)) continue;
-            var (refused, resolved) = records.Edit<List<WorkPerformed>>(read.Unit, current =>
-            {
-                var said = new List<WorkPerformed>();
-                var record = current;
-                foreach (var attempt in current.Attempts.Where(HasWord))
-                {
-                    if (declared(record.Unit, attempt.Node) is not { } node) continue;
-                    var (next, result) = Settle(record, attempt, node);
-                    record = next;
-                    said.Add(result);
-                }
-
-                return (ReferenceEquals(record, current) ? null : record, said);
-            });
-            if (refused is not null) done.Add(new(read.Unit, "", PerformedWhat.Refused, refused));
-            else done.AddRange(resolved!);
-        }
-
-        return done;
-
-        // FABRIC-CLOSE1q: a close's word is its closer's (QuestCloser.Resolve), never applied here as a plugin's. FABRIC-PERFORM1k: the person's
-        // new attempt is on a settled one, its failure.
-        static bool HasWord(NodeAttempt attempt) =>
-            attempt is { State: AttemptStates.Held, Resolution: not null } or { State: AttemptStates.Settled, Resolution: HeldResolutions.Again }
-            && attempt.Plugin != QuestClosing.Sender;
-    }
-
-    /// <summary>
-    /// Whether <paramref name="attempt"/> is a failure kept for the person (FABRIC-PERFORM1k, RUN1e): a plugin's attempt its node failed on,
-    /// settled, with no retry coming (its code not transient, its tries spent, or a retry the graph governing now refused). Read from the record
-    /// alone, so the lists and the doors agree without a declaration; an observed node's failure dispatched nothing and is none.
-    /// </summary>
-    internal static bool KeptFailure(NodeRecord record, NodeAttempt attempt) =>
-        attempt is { State: AttemptStates.Settled, RetryAt: null } && attempt.Plugin != QuestClosing.Sender
-        && record.Statuses.GetValueOrDefault(attempt.Node) is { State: NodeStates.Failed } status && status.Attempt == attempt.Attempt;
-
-    /// <summary>Why <paramref name="word"/> is not taken on <paramref name="held"/> (FABRIC-CLOSE1q), or null where it is one of its words.</summary>
-    internal static string? WordRefused(NodeAttempt held, string word) =>
-        HeldResolutions.Of(held).Contains(word, StringComparer.Ordinal) ? null
-        : word == HeldResolutions.Again ? NotAgain
-        : held.Plugin != QuestClosing.Sender ? NotOffered
-        : word == HeldResolutions.Record ? NotKept
-        : NotCloseWord;
-
-    /// <summary>One word applied (<see cref="Resolve"/>): the record after it, and what it came to.</summary>
-    private (NodeRecord Next, WorkPerformed Result) Settle(NodeRecord record, NodeAttempt attempt, NodeDeclaration node)
-    {
-        var now = clock();
-        var unit = record.Unit;
-        var word = attempt.Resolution!;
-
-        // FABRIC-PERFORM1k: the person's new attempt on a failure kept for them (§E2's failed → ready by the person), which the next evaluation
-        // starts with a new key. The word is cleared as it is applied: the failure stays its plugin's, and a build before it reads no `again`.
-        // A node that moved off the failure meanwhile (a new revision, a retry) needs no new attempt, so nothing moves.
-        if (word == HeldResolutions.Again && attempt.State == AttemptStates.Settled)
-        {
-            var cleared = With(record, attempt, attempt with { Resolution = null, ResolvedAt = null });
-            if (!KeptFailure(record, attempt)) return (cleared, new(unit, node.Id, PerformedWhat.NotTaken, Moved));
-            var again = NodeLifecycle.Apply(node, StatusOf(record, node.Id), new NodeMove(NodeStates.Ready, NodeCause.Person));
-            if (!again.Moved) return (cleared, new(unit, node.Id, PerformedWhat.Refused, again.Refused));
-            return (Kept(cleared, again, "person-again", now), new(unit, node.Id, PerformedWhat.Resolved, word));
-        }
-
-        // FABRIC-PIPELINE1d (the pipeline design §4.1): a held check's *Run again*, the one table's own: its node stopped and made ready by the
-        // person for a new attempt, the held attempt settled as theirs to answer for. Its *Not now* is the stop below.
-        if (word == HeldResolutions.Again && IsCheck(attempt) && attempt.State == AttemptStates.Held)
-        {
-            var held = StatusOf(record, node.Id);
-            if (NodeStates.Live.Contains(held.State)) record = Kept(record, NodeLifecycle.Apply(node, held, new NodeMove(NodeStates.Stopped, NodeCause.Person)), "person-stop", now);
-            var stopped = StatusOf(record, node.Id);
-            record = With(record, attempt, attempt with { State = AttemptStates.Settled, Outcome = WorkStates.Unknown, Resolution = null, ResolvedAt = null });
-            record = record with { Statuses = With(record.Statuses, NodeLifecycle.Reconciled(stopped, attempt.Attempt)) };
-            var ready = NodeLifecycle.Apply(node, StatusOf(record, node.Id), new NodeMove(NodeStates.Ready, NodeCause.Person));
-            return ready.Moved
-                ? (Kept(record, ready, "person-again", now), new(unit, node.Id, PerformedWhat.Resolved, word))
-                : (record, new(unit, node.Id, PerformedWhat.Refused, ready.Refused));
-        }
-
-        // FABRIC-CLOSE1q: a close's word is never a plugin attempt's; one no door would record is taken back, saying why.
-        if (WordRefused(attempt, word) is { } refused)
-        {
-            return (With(record, attempt, attempt with { Resolution = null, ResolvedAt = null, Code = refused }), new(unit, node.Id, PerformedWhat.Refused, refused));
-        }
-
-        var status = StatusOf(record, node.Id);
-        var current = status.Attempt == attempt.Attempt && status.State is NodeStates.Active or NodeStates.Unknown;
-        var outcome = word switch { HeldResolutions.Happened => WorkStates.Reached, HeldResolutions.DidNot => WorkStates.Failed, _ => WorkStates.Unknown };
-        var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome };
-
-        if (!current || word == HeldResolutions.Stop)
-        {
-            // §D3: a word on an attempt its node moved off settles it as a stale one's; a stop stops a node still live. Either lifts the gate.
-            if (word == HeldResolutions.Stop && NodeStates.Live.Contains(status.State))
-            {
-                record = Kept(record, NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Stopped, NodeCause.Person)), "person-stop", now);
-            }
-
-            var after = StatusOf(record, node.Id);
-            record = With(record, attempt, settled);
-            return (record with { Statuses = With(record.Statuses, NodeLifecycle.Reconciled(after, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Resolved, word));
-        }
-
-        // An outcome that did not bind left its node active: it cannot be established now, so it is unknown before the person settles it.
-        if (status.State == NodeStates.Active)
-        {
-            var unknown = NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Unknown, NodeCause.Daoris) { Attempt = attempt.Attempt });
-            record = Kept(record, unknown, "unknown", now);
-            status = StatusOf(record, node.Id);
-        }
-
-        var move = word == HeldResolutions.Happened
-            ? new NodeMove(NodeStates.Reached, NodeCause.Person)
-            {
-                Source = NodeSource.Person, Attempt = attempt.Attempt,
-                Acceptance = status.Binding is { } binding
-                    ? binding with
-                    {
-                        Evidence = new NodePort(NodeSource.Person, $"{NodeSource.Person}:{attempt.Call.Invocation}", binding.SubjectRevision, null),
-                        Outcome = node.Outcomes.Count > 0 ? attempt.Decision : null,
-                    }
-                    : null,
-            }
-            : new NodeMove(NodeStates.Failed, NodeCause.Person) { Source = NodeSource.Person, Attempt = attempt.Attempt, Code = HeldResolutions.DidNot };
-        var moved = NodeLifecycle.Apply(node, status, move);
-        if (!moved.Moved)
-        {
-            // The word cannot be taken (the one table's refusal): the attempt stays held, saying why, and the word is taken back for another.
-            return (With(record, attempt, attempt with { Code = moved.Refused, Resolution = null, ResolvedAt = null, Decision = null }), new(unit, node.Id, PerformedWhat.Refused, moved.Refused));
-        }
-
-        record = Kept(record, moved, "person-" + word, now);
-        if (word == HeldResolutions.DidNot)
-        {
-            // The person's new attempt (§E2's failed → ready by the person): the next evaluation starts it with a new key.
-            record = Kept(record, NodeLifecycle.Apply(node, moved.Status, new NodeMove(NodeStates.Ready, NodeCause.Person)), "person-again", now);
-        }
-
-        return (With(record, attempt, settled), new(unit, node.Id, PerformedWhat.Resolved, word));
-    }
 
     private static bool Retrying(NodeStatus status) => status is { State: NodeStates.Failed, Transient: true };
 
@@ -779,7 +310,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         if (asked is null) return new(unit, node.Id, PerformedWhat.NotTaken, Moved);
         if (node.Perform is not { } perform || !(perform.Reconcile || perform.Idempotent))
         {
-            return Edited(unit, node.Id, record => Still(record, invocation, node.Id, current => Hold(record, current, NoReconcile)));
+            return records.Edited(unit, node.Id, record => Still(record, invocation, node.Id, current => Hold(record, current, NoReconcile)));
         }
 
         if (!perform.Reconcile)
@@ -787,7 +318,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             // §D6: an idempotent step's redelivery uses the same key, its plugin deduplicates it durably, and its answer comes by `work/step`.
             // Idempotency allows the same key again; it does not say the effect never began (FABRIC-PERFORM1h). So an attempt its node has moved
             // off is held for the person, its gate kept, never settled as not started while its effect may still be running.
-            var decided = Edited(unit, node.Id, record => Still(record, invocation, node.Id, current =>
+            var decided = records.Edited(unit, node.Id, record => Still(record, invocation, node.Id, current =>
             {
                 var status = StatusOf(record, node.Id);
                 if (status.State != NodeStates.Unknown || status.Attempt != current.Attempt) return Hold(record, current, NotCurrent);
@@ -822,19 +353,19 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
 
         // FABRIC-PERFORM1d (§D6's `resources?`): what the attempt created so far, taken before its answer is applied, as a completion's are.
         IReadOnlyList<WorkResource> resources = [.. answer.Resources.Concat(answer.Outcome?.Resources ?? []).Distinct()];
-        if (Receipted(unit, asked, node, resources, lapsed: false) is { } unkept) return unkept;
-        var applied = Edited(unit, node.Id, record => Still(record, invocation, node.Id, current =>
+        if (Receipting.Receipted(unit, asked, node, resources, lapsed: false) is { } unkept) return unkept;
+        var applied = records.Edited(unit, node.Id, record => Still(record, invocation, node.Id, current =>
         {
             var status = StatusOf(record, node.Id);
             var isCurrent = status.Attempt == current.Attempt && status.State == NodeStates.Unknown;
             switch (answer.State)
             {
                 case ReconcileStates.Done when answer.Outcome is { } outcome:
-                    return Outcome(record, current, node, outcome, generation);
+                    return Outcomes.Outcome(record, current, node, outcome, generation);
                 case ReconcileStates.Done:
                     return Hold(record, current, NoOutcome);
                 case ReconcileStates.Failed:
-                    return Outcome(record, current, node, answer.Outcome is { State: WorkStates.Failed } failed ? failed : new WorkOutcome(WorkStates.Failed, NoCode), generation);
+                    return Outcomes.Outcome(record, current, node, answer.Outcome is { State: WorkStates.Failed } failed ? failed : new WorkOutcome(WorkStates.Failed, NoCode), generation);
                 case ReconcileStates.NotStarted when isCurrent:
                     return (Kept(record, NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Active, NodeCause.Daoris)), "redeliver", now),
                         new WorkPerformed(unit, node.Id, PerformedWhat.Redelivered));
@@ -857,118 +388,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     return Hold(record, current with { Generation = generation }, check ? answer.Outcome?.Code ?? ReconcileStates.Unknown : ReconcileStates.Unknown);
             }
         }));
-        Supersede(unit, asked, resources, applied);
+        Receipting.Supersede(unit, asked, resources, applied);
         if (applied.What == PerformedWhat.Running) lock (_sentHere) _sentHere.Add(invocation);
         return applied.What == PerformedWhat.Redelivered ? await SendAsync(unit, asked, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false) : applied;
     }
 
-    /// <summary>
-    /// One outcome applied to its attempt's node through the one table: a reach on its binding with the plugin's evidence and outputs, a
-    /// failure with its code (transient where the step declares it, its retry's deadline persisted), or the plugin's unknown. A settled
-    /// attempt's is a replay; an earlier attempt's is recorded as a stale one's and lifts the gate it held (§D3). Judged on the record an
-    /// edit holds: the record it returns is written, nothing when null.
-    /// </summary>
-    private (NodeRecord? Next, WorkPerformed Result) Outcome(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, WorkOutcome outcome, int generation)
-    {
-        var unit = record.Unit;
-        if (attempt.State == AttemptStates.Settled)
-        {
-            // §C4's fifth rule (FABRIC-PERFORM1c): one outcome is kept per attempt. The same again is a replay, applied once; another came late.
-            return (null, string.Equals(attempt.Outcome, outcome.State, StringComparison.Ordinal)
-                ? new(unit, node.Id, PerformedWhat.Replay)
-                : new(unit, node.Id, PerformedWhat.NotTaken, WorkRefusals.Late));
-        }
-
-        var now = clock();
-        var status = StatusOf(record, node.Id);
-        var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome.State, Code = outcome.Code, Generation = generation };
-        if (status.Attempt != attempt.Attempt || status.State is not (NodeStates.Active or NodeStates.Unknown))
-        {
-            var stale = With(record, attempt, settled);
-            return (stale with { Statuses = With(stale.Statuses, NodeLifecycle.Reconciled(status, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Stale));
-        }
-
-        // FABRIC-PIPELINE1d: a check's reach and failure are its kind's own source, the gates' exits as the executor ran them.
-        var source = IsCheck(attempt) ? NodeSource.Gates : NodeSource.Plugin;
-        NodeMove move;
-        switch (outcome.State)
-        {
-            case WorkStates.Reached:
-                move = new NodeMove(NodeStates.Reached, NodeCause.Authority)
-                {
-                    Source = source, Attempt = attempt.Attempt, Acceptance = status.Binding is { } binding ? Accepted(node, attempt.Call.Invocation, binding, outcome) : null,
-                };
-                break;
-            case WorkStates.Failed:
-                var code = outcome.Code ?? NoCode;
-                settled = settled with { Code = code };
-                move = new NodeMove(NodeStates.Failed, NodeCause.Authority)
-                {
-                    Source = source, Attempt = attempt.Attempt, Code = code, Transient = node.Perform?.Transient.Contains(code, StringComparer.Ordinal) == true,
-                };
-                break;
-            default:
-                if (status.State == NodeStates.Unknown)
-                {
-                    return (With(record, attempt, attempt with { State = AttemptStates.Unknown, Generation = generation }), new(unit, node.Id, PerformedWhat.Applied, WorkStates.Unknown));
-                }
-
-                move = new NodeMove(NodeStates.Unknown, NodeCause.Daoris) { Attempt = attempt.Attempt };
-                settled = attempt with { State = AttemptStates.Unknown, Generation = generation };
-                break;
-        }
-
-        var moved = NodeLifecycle.Apply(node, status, move);
-        if (!moved.Moved) return Hold(record, attempt with { Outcome = outcome.State, Generation = generation }, moved.Refused!);
-        if (moved.Status is { State: NodeStates.Failed, Transient: true } failedStatus && failedStatus.Tries < (node.Retry?.MaxAttempts ?? 1))
-        {
-            // FABRIC-PERFORM1h: the delay of the next try within the binding, as the bound counts it; the attempt's own number keeps growing
-            // across bindings and runs, and would index a later delay.
-            settled = settled with { RetryAt = now + NodeLifecycle.DelayBefore(node, failedStatus.Tries + 1) };
-        }
-
-        return (With(Kept(record, moved, outcome.State, now), attempt, settled), new(unit, node.Id, PerformedWhat.Applied, outcome.State));
-    }
-
-    /// <summary>
-    /// A completion of an attempt whose work moved past the revision it was dispatched on (FABRIC-PERFORM1c, §C4's fourth rule): its own
-    /// outcome, evidence for no current binding. Its node, still on that attempt, is invalidated as the evaluation would (§D4's lapse), and the
-    /// outcome is then a stale attempt's (§D3): it settles the attempt and lifts the gate, reaching nothing, so nothing downstream reads it and
-    /// the node starts again on the new revision. An unknown outcome leaves the attempt unknown, asked after before any new attempt.
-    /// </summary>
-    private (NodeRecord? Next, WorkPerformed Result) Lapse(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, WorkOutcome outcome, int generation)
-    {
-        var status = StatusOf(record, node.Id);
-        if (attempt.State != AttemptStates.Settled && status.Attempt == attempt.Attempt && status.State is NodeStates.Active or NodeStates.Unknown)
-        {
-            record = Kept(record, NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Invalidated, NodeCause.Daoris)), WireWhy.Lapsed, clock());
-        }
-
-        var stale = new WorkPerformed(record.Unit, node.Id, PerformedWhat.Stale, WorkRefusals.Stale);
-        if (attempt.State != AttemptStates.Settled && outcome.State == WorkStates.Unknown)
-        {
-            return (With(record, attempt, attempt with { State = AttemptStates.Unknown, Generation = generation }), stale);
-        }
-
-        var (next, said) = Outcome(record, attempt, node, outcome, generation);
-        return (next, said.What == PerformedWhat.Stale ? stale : said);
-    }
-
-    /// <summary>
-    /// The acceptance a reach is on: its attempt's binding, with the plugin's evidence reference at the schema it names (FABRIC-PERFORM1c,
-    /// <see cref="WorkBelief.Evidence"/>) and its outputs, each at the schema its reference names (§D6's <c>&lt;schema&gt;:&lt;id&gt;</c>), so
-    /// the one table refuses evidence of another schema than the node declares, and an output undeclared or of another schema.
-    /// </summary>
-    /// <param name="word">What stands for the plugin's word where it gave no reference: an attempt's invocation, an event's id (FABRIC-PERFORM1i).</param>
-    internal static NodeAcceptance Accepted(NodeDeclaration node, string word, NodeAcceptance binding, WorkOutcome outcome) => binding with
-    {
-        Evidence = WorkBelief.Evidence(node, word, binding.SubjectRevision, outcome.Evidence),
-        Outcome = outcome.Decision,
-        Outputs = (outcome.Outputs ?? new Dictionary<string, WorkOutput>()).ToDictionary(
-            output => output.Key,
-            output => new NodePort(WorkBelief.SchemaOf(output.Value.Ref) ?? "", output.Value.Ref, output.Value.Revision ?? binding.SubjectRevision, null),
-            StringComparer.Ordinal),
-    };
+    internal static NodeAcceptance Accepted(NodeDeclaration node, string word, NodeAcceptance binding, WorkOutcome outcome) =>
+        WorkOutcomes.Accepted(node, word, binding, outcome);
 
     /// <summary>
     /// One delivery of an attempt, its key unchanged: acknowledged, it is sent by this loop's process of that generation; failed or unanswered,
@@ -1041,27 +467,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         _ => (null, new(record.Unit, node, PerformedWhat.NotTaken, Moved)),
     };
 
-    /// <summary>One edit of a unit's record that says what it did; an edit refused (no lease, a record that does not read) says why.</summary>
-    private WorkPerformed Edited(string unit, string node, Func<NodeRecord, (NodeRecord? Next, WorkPerformed Result)> change)
-    {
-        var (refused, result) = records.Edit(unit, change);
-        return refused is null ? result! : new(unit, node, PerformedWhat.Refused, refused);
-    }
-
     /// <summary>A failure of the call itself, not the loop ending: the attempt's outcome is unknown, never a second blind dispatch.</summary>
     private static bool Unanswered(Exception error) =>
         error is not OperationCanceledException && error is DriverException or IOException or TimeoutException or InvalidOperationException;
-
-    /// <summary>The unit whose record names an invocation, and the attempt as read: what an answer is judged on again under the lock.</summary>
-    private (string Unit, NodeAttempt Attempt)? Find(string invocation)
-    {
-        foreach (var record in records.All().Records)
-        {
-            if (record.Invoked(invocation) is { } attempt) return (record.Unit, attempt);
-        }
-
-        return null;
-    }
 
     /// <summary>
     /// The units whose records name any of <paramref name="invocations"/> (FABRIC-PERFORM1p): what a pass reads the tips of before it hears

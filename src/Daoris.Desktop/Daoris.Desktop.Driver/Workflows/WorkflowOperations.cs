@@ -2,90 +2,9 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.WorkflowUsing;
 
 namespace Daoris.Driver;
-
-/// <summary>One repository a choice reaches (the integration design §17.7): why its declarations cannot carry the version, and whether its line integrates with no gates.</summary>
-public sealed record WorkflowReach(string Repository, IReadOnlyList<string> Cannots, bool NoGates)
-{
-    /// <summary>The saved workflow whose graph reaches the repository, where a place's reach names it.</summary>
-    public string? Workflow { get; init; }
-
-    /// <summary>The sentence the door says of it, or null where it reaches nothing worth saying.</summary>
-    public string? Said => Cannots.Count > 0 ? $"`{Repository}`: cannot start — {string.Join(" ", Cannots)}"
-        : NoGates ? IntegrateCarry.NoGatesSaid(Repository) : null;
-}
-
-/// <summary>What a choice's reach is: the lines the terminal says, each repository's row, and the refusal where one cannot carry the version.</summary>
-public sealed record WorkflowReached(IReadOnlyList<string> Lines, IReadOnlyList<WorkflowReach> Rows, string? Refusal);
-
-/// <summary>A choice made (or found already made): the edit, its words, and the repositories it reaches.</summary>
-/// <param name="Refusal">Why nothing was written, in the twins' words; null where the edit stands.</param>
-/// <param name="Changed">Whether the edit changes what is kept; false is "nothing was written".</param>
-public sealed record WorkflowUsed(
-    WorkflowChoiceEdit? Edit, bool Changed, IReadOnlyList<string> Lines, IReadOnlyList<WorkflowReach> Reach, string? Refusal);
-
-/// <summary>A repository whose workflow a choice changes: what it follows now and after, and what lowers the person's part there.</summary>
-public sealed record WorkflowUsePlace(string Repository, string Was, string Now, IReadOnlyList<string> Lowers);
-
-/// <summary>What clearing a default leaves to the kinds a place still maps: the driver's sentence, and each kind with its workflow.</summary>
-public sealed record WorkflowUseKeeps(string Said, IReadOnlyList<KeyValuePair<string, string>> Kinds);
-
-/// <summary>A choice read as a plan of one (nothing written): the judgement, the places it changes, what lowers, what the kinds keep, and the token a press carries.</summary>
-public sealed record WorkflowUsePlan(
-    WorkflowUsed Used, IReadOnlyList<WorkflowUsePlace> Places, IReadOnlyList<string> Lowers, WorkflowUseKeeps? Keeps, string Expected);
-
-/// <summary>A kind declared or dropped: the edit and its words, or the refusal.</summary>
-public sealed record WorkflowKindSet(WorkflowChoiceEdit? Edit, IReadOnlyList<string> Lines, string? Refusal);
-
-/// <summary>One place a saved workflow is chosen for, which appending a version to it reaches at the next start (<c>WorkflowRunBindings.Plan</c> binds the newest).</summary>
-/// <param name="Level"><c>repository</c> or <c>workspace</c>.</param>
-/// <param name="Role"><c>default</c>, <c>kind</c> or <c>landed</c>.</param>
-public sealed record WorkflowScope(string Level, string Name, string Role, string? Kind)
-{
-    /// <summary>The scope as the person authorizes it.</summary>
-    public string Key => Kind is null ? $"{Level}:{Name}:{Role}" : $"{Level}:{Name}:{Role}:{Kind}";
-}
-
-/// <summary>Where a new version comes from, resolved: steps or a graph, its name, and how the terminal says its source.</summary>
-public sealed record WorkflowVersionSource(string Description, string Name, JsonArray? Steps, JsonObject? Graph, WorkflowGraphPreset? GraphPreset)
-{
-    /// <summary>The default it copies, which the version keeps as <c>from</c>; null for every other source.</summary>
-    public WorkflowFrom? From { get; init; }
-}
-
-/// <summary>A version planned against its base: the file after it, the version read back, and whether it says what the base does.</summary>
-public sealed record WorkflowPlanned(WorkflowAddPlan Plan, NamedVersion? Next, IReadOnlyList<NamedStep>? NextSteps, bool Same);
-
-/// <summary>What a save did, or why it did not.</summary>
-public sealed record WorkflowSaved(
-    string Id, bool Done, string? Refused, string? Message, int? Version, bool Written, bool Appended,
-    IReadOnlyList<WorkflowScope> Scopes, IReadOnlyList<WorkflowReach> Reach)
-{
-    /// <summary>Each refusal of a graph refused, by its code at the step or wire it names (WORKFLOWEDIT1b); empty for every other answer.</summary>
-    public IReadOnlyList<WireProblem> Problems { get; init; } = [];
-}
-
-/// <summary>One saved workflow as the step editor lists it: the newest version's schema, digest and line, and the places that choose it.</summary>
-/// <param name="Schema">1 for steps, 2 for a graph; null where the newest version does not read here.</param>
-public sealed record WorkflowListed(
-    string Id, string? Name, string? Problem, IReadOnlyList<int> Versions, int? Schema, string? Digest, string? Line, string? Pipeline,
-    IReadOnlyList<WorkflowScope> Chosen);
-
-/// <summary>A preset built in, with the line composed from its steps or graph.</summary>
-public sealed record WorkflowPresetListed(string Id, string Name, bool Graph, string Line)
-{
-    /// <summary>A graph preset's graph as a version saves it, which the step editor starts from; null for one of steps.</summary>
-    public JsonNode? Body { get; init; }
-
-    /// <summary>The default itself, for its purpose, order, whether the set-up offers it and its delivery (SETUPUX1a); null for a preset that is no default.</summary>
-    public WorkflowDefault? Default { get; init; }
-}
-
-/// <summary>One version as saved: its steps or its graph, its composed line, and the graph's problems.</summary>
-public sealed record WorkflowShown(
-    string Id, string Name, int Version, bool Newest, IReadOnlyList<int> Versions, string? At, string? Door, string? Digest, int Schema,
-    string Line, JsonNode Body, IReadOnlyList<WireProblem> Problems);
 
 /// <summary>
 /// The typed operations behind <c>daoris workflow new|edit|use|kind</c> (D194 point 4; AGENTSPLACE1c): the terminal's verb and the
@@ -122,245 +41,18 @@ public static class WorkflowOperations
     public static int? NewestOf(string home, string id) =>
         WorkflowNamed.IsId(id) && WorkflowPorts.Store(home).Load(id) is { Read: { Problem: null, Versions: [.., var last] } } ? last.Version : null;
 
-    /// <summary>
-    /// <c>use</c> without <c>--landed</c> (design §4.7): which workflow a repository's or a workspace's work follows, or a kind's. The reach of a
-    /// graph that integrates (INTEGRATE1r part r2; §17.7) is judged first, then the edit; the refusal is the words the terminal prints.
-    /// </summary>
     public static async Task<WorkflowUsed> UseAsync(
-        DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, string? kind, CancellationToken ct)
-    {
-        var pipeline = CheckChosen(home, chosen);
-        var given = new WorkflowUse(chosen, repository, workspace, kind) { Pipeline = pipeline };
-        var reach = await ReachAsync(choices, home, registry, chosen, repository, workspace, ct).ConfigureAwait(false);
-        if (reach.Refusal is not null) return new WorkflowUsed(null, false, [], reach.Rows, reach.Refusal);
+        DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, string? kind, CancellationToken ct) =>
+        await WorkflowUsing.UseAsync(choices, home, registry, chosen, repository, workspace, kind, ct).ConfigureAwait(false);
 
-        string? unchecked_ = null;
-        WorkflowUse edit;
-        if (workspace is not null)
-        {
-            edit = given with { Repository = null };
-        }
-        else if (kind is null || chosen is null)
-        {
-            edit = given;
-        }
-        else
-        {
-            var read = await registry(ct).ConfigureAwait(false);
-            if (read.Checkouts is { } checkouts)
-            {
-                edit = given with { InKnown = true, In = checkouts.FirstOrDefault(each => InScope(each.Repository, repository!)).Workspace };
-            }
-            else
-            {
-                edit = given;
-                unchecked_ = read.Unread;
-            }
-        }
-
-        DriverConfig edited;
-        try
-        {
-            edited = WorkflowSelection.Apply(choices, edit);
-        }
-        catch (DriverException refused)
-        {
-            var declare = kind is not null && refused.Message.Contains("declares no kind", StringComparison.Ordinal)
-                ? $" `daoris workflow kind <workspace> {kind} --label \"…\"` declares one." : "";
-            return new WorkflowUsed(null, false, [], reach.Rows, $"{refused.Message}{declare} Nothing was written.");
-        }
-
-        var lines = new List<string>();
-        var name = (repository ?? workspace)!.Trim();
-        var whose = repository is not null ? $"`{repository}`" : $"the workspace `{workspace}`";
-        var after = ChoiceAt(repository is not null ? edited.Workflows : edited.WorkspaceWorkflows, name);
-        var was = ChoiceAt(repository is not null ? choices.Workflows : choices.WorkspaceWorkflows, name);
-        var forWhat = kind is null ? " as its default" : $" for kind `{kind}`";
-        if (Shape(after, repository is null) == Shape(was, repository is null))
-        {
-            lines.Add($"daoris: {whose} {(chosen is null ? "chose no workflow" : $"chooses `{chosen}` already")}{forWhat}: nothing was written.");
-            return new WorkflowUsed(edit, false, lines, reach.Rows, null);
-        }
-
-        if (chosen is null) lines.Add($"daoris: {whose} no longer chooses a workflow{forWhat}.");
-        else if (chosen == WorkflowSelection.Current) lines.Add($"daoris: {whose} now chooses Current{forWhat}: its rules as they stand, read at each gate.");
-        else
-        {
-            var found = WorkflowPorts.Store(home).Load(chosen)!;
-            var newest = found.Read.Versions[^1];
-            lines.Add($"daoris: {whose} now chooses `{chosen}`{forWhat} — {found.Read.Name}, v{newest.Version} now: {(newest.Graph is { } graph
-                ? $"a graph (schema {WorkflowNamed.GraphSchema}) of {graph.Nodes.Count} nodes and {graph.Wires.Count} wires, digest {newest.Digest}."
-                : WorkflowPresets.Line(newest.Steps!))}");
-        }
-
-        if (repository is not null)
-        {
-            lines.Add(after is null
-                ? $"  `{repository}` names no workflow now, so its workspace's choice reaches it again."
-                : !after.NamesDevelopment
-                    // A landed route alone replaces nothing (FABRIC-PIPELINE1a).
-                    ? $"  `{repository}` names no workflow for its work now, only its landed route, so its workspace's choice reaches it again."
-                    : $"  This replaces the workspace's for every kind: `{repository}` follows its own kinds and its own default, and Current "
-                        + "where it names none.");
-        }
-
-        if (unchecked_ is not null)
-        {
-            lines.Add($"  The registry was not read ({unchecked_}), so kind `{kind}` was not checked against the kinds `{repository}`'s workspace declares.");
-        }
-
-        if (chosen is not null)
-        {
-            lines.AddRange(reach.Lines);
-            lines.Add("  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.");
-        }
-
-        return new WorkflowUsed(edit, true, lines, reach.Rows, null);
-    }
-
-    /// <summary>
-    /// A choice read as a plan of one (SETUPUX1c; the setup UX design §2.3), nothing written: <see cref="UseAsync"/>'s judgement, each place whose
-    /// workflow it changes with what lowers the person's part there, the kinds a cleared default leaves mapped, and a token over all of it that a
-    /// press carries to be refused where anything moved since.
-    /// </summary>
     public static async Task<WorkflowUsePlan> PlanUseAsync(
-        DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, string? kind, CancellationToken ct)
-    {
-        var used = await UseAsync(choices, home, registry, chosen, repository, workspace, kind, ct).ConfigureAwait(false);
-        var places = new List<WorkflowUsePlace>();
-        var seen = new List<string>();
-        WorkflowUseKeeps? keeps = null;
-        if (used is { Changed: true, Edit: { } edit })
-        {
-            var edited = WorkflowSelection.Apply(choices, edit);
-            var store = WorkflowPorts.Store(home);
-            var task = kind is null ? null : new WorkflowTaskChoice(kind, null);
-            foreach (var place in await ReachedByAsync(choices, registry, repository, workspace, ct).ConfigureAwait(false))
-            {
-                if (WorkflowSelection.Resolve(choices, place.Repository, place.Workspace, task).Workflow
-                    == WorkflowSelection.Resolve(edited, place.Repository, place.Workspace, task).Workflow)
-                {
-                    continue;
-                }
+        DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, string? kind, CancellationToken ct) =>
+        await WorkflowUsing.PlanUseAsync(choices, home, registry, chosen, repository, workspace, kind, ct).ConfigureAwait(false);
 
-                var (was, wasSteps) = WorkflowProcesses.Otherwise(store, choices, place.Repository, place.Workspace, kind);
-                var (now, nowSteps) = WorkflowProcesses.Otherwise(store, edited, place.Repository, place.Workspace, kind);
-                IReadOnlyList<string> lowers = wasSteps is null || nowSteps is null
-                    ? [$"what {(wasSteps is null ? was : now)} asks of you could not be read here, so it is taken as more"]
-                    : Involvement.Lowers(nowSteps, wasSteps);
-                places.Add(new WorkflowUsePlace(place.Repository, was, now, lowers));
-            }
-
-            if (chosen is null && kind is null)
-            {
-                var after = ChoiceAt(repository is not null ? edited.Workflows : edited.WorkspaceWorkflows, (repository ?? workspace)!.Trim());
-                var mapped = after?.Kinds.Where(pair => pair.Value.Workflow is not null)
-                    .Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value.Workflow!)).ToList();
-                if (mapped is { Count: > 0 })
-                {
-                    var said = string.Join(", ", mapped.Select(pair => $"kind `{pair.Key}` to `{pair.Value}`"));
-                    keeps = new WorkflowUseKeeps(repository is not null
-                        ? $"`{repository}` still maps {said}: while a repository maps a kind of its own, its default work follows this machine's "
-                            + "default, not the workspace's. Clearing a kind's mapping is that kind's own press."
-                        : $"The workspace `{workspace}` still maps {said}: those kinds keep their own workflows, and only its default work changes.",
-                        mapped);
-                }
-            }
-        }
-
-        if (chosen is not null && chosen != WorkflowSelection.Current && WorkflowNamed.IsId(chosen)
-            && WorkflowPorts.Store(home).Load(chosen)?.Read.Versions is [.., var newest])
-        {
-            seen.Add($"{chosen}@{newest.Version}:{newest.Digest}");
-        }
-
-        var lowered = places.SelectMany(place => place.Lowers).Distinct(StringComparer.Ordinal).ToList();
-        var text = string.Join('\n', new[] { used.Refusal ?? "", used.Changed ? "changed" : "same" }
-            .Concat(used.Lines)
-            .Concat(used.Reach.Select(row => $"{row.Repository}|{row.Workflow}|{string.Join(';', row.Cannots)}|{row.NoGates}"))
-            .Concat(places.Select(place => $"{place.Repository}|{place.Was}|{place.Now}|{string.Join(';', place.Lowers)}"))
-            .Append(keeps?.Said ?? "")
-            .Concat(seen));
-        var expected = "use-" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16].ToLowerInvariant();
-        return new WorkflowUsePlan(used, places, lowered, keeps, expected);
-    }
-
-    // The repositories a use reaches: the one named, or a workspace's whose own choice does not replace it; the registry unread leaves the one named.
-    private static async Task<IReadOnlyList<(string Repository, string? Workspace, string? Root)>> ReachedByAsync(
-        DriverConfig choices, RegistryRead registry, string? repository, string? workspace, CancellationToken ct)
-    {
-        var read = await registry(ct).ConfigureAwait(false);
-        if (read.Checkouts is not { } checkouts) return repository is null ? [] : [(repository, null, null)];
-        if (repository is null) return InWorkspace(choices, checkouts, workspace!, except: null);
-        var own = checkouts.FirstOrDefault(each => InScope(each.Repository, repository));
-        return [own.Repository is null ? (repository, null, null) : own];
-    }
-
-    /// <summary>
-    /// The repositories a choice of a graph that integrates its landing reaches (INTEGRATE1r part r2; the integration design §17.7, F42): a
-    /// repository's own, or a workspace's from the registry, the ones whose own choice does not replace it. It refuses, before anything is
-    /// written, where one cannot carry the version, each case its own sentence; and says, for each, <i>integrates with no gates</i> where its
-    /// rule's <c>integrate.gates</c> is absent or <c>none</c>. Nothing where the version is not a graph that integrates or pushes.
-    /// </summary>
     public static async Task<WorkflowReached> ReachAsync(
-        DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, CancellationToken ct)
-    {
-        if (chosen is null || chosen == WorkflowSelection.Current || !WorkflowNamed.IsId(chosen)) return new([], [], null);
-        if (WorkflowPorts.Store(home).Load(chosen)?.Read.Versions is not [.., { Graph: { } graph } newest] || !IntegrateChoice.Matters(graph)) return new([], [], null);
+        DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, CancellationToken ct) =>
+        await WorkflowUsing.ReachAsync(choices, home, registry, chosen, repository, workspace, ct).ConfigureAwait(false);
 
-        var read = await registry(ct).ConfigureAwait(false);
-        var said = new List<string>();
-        IReadOnlyList<(string Repository, string? Workspace, string? Root)> reached;
-        if (read.Checkouts is not { } checkouts)
-        {
-            if (repository is null)
-            {
-                said.Add($"  The registry was not read ({read.Unread}), so the repositories the workspace `{workspace}` reaches were not checked "
-                    + "for what the version integrates.");
-                return new(said, [], null);
-            }
-
-            reached = [(repository, null, null)];
-        }
-        else if (repository is not null)
-        {
-            var own = checkouts.FirstOrDefault(each => InScope(each.Repository, repository));
-            reached = [own.Repository is null ? (repository, null, null) : own];
-        }
-        else
-        {
-            reached = InWorkspace(choices, checkouts, workspace!, except: null);
-        }
-
-        return await RowsAsync(choices, chosen, newest.Version, graph, reached, said, ct).ConfigureAwait(false);
-    }
-
-    // A repository whose own choice names a workflow replaces its workspace's whole (D157 point 10), so the workspace's does not reach it.
-    private static List<(string Repository, string? Workspace, string? Root)> InWorkspace(
-        DriverConfig choices, IReadOnlyList<(string Repository, string? Workspace, string? Root)> checkouts, string workspace, string? except) =>
-    [
-        .. checkouts
-            .Where(each => each.Repository is not null && string.Equals(RemoteTarget.Workspace(each.Workspace), workspace.Trim(), StringComparison.OrdinalIgnoreCase)
-                && (ChoiceAt(choices.Workflows, each.Repository) is not { NamesDevelopment: true }
-                    || (except is not null && ChoiceAt(choices.Workflows, each.Repository)?.Default == except)))
-            .DistinctBy(each => each.Repository, StringComparer.OrdinalIgnoreCase)
-            .OrderBy(each => each.Repository, StringComparer.OrdinalIgnoreCase),
-    ];
-
-    private static async Task<WorkflowReached> RowsAsync(
-        DriverConfig choices, string id, int version, NodeGraph graph,
-        IReadOnlyList<(string Repository, string? Workspace, string? Root)> reached, List<string> said, CancellationToken ct)
-    {
-        var answers = await IntegrateChoice.ReachAsync(choices, id, version, graph, reached, ct).ConfigureAwait(false);
-        var rows = answers.Select(each => new WorkflowReach(each.Repository, each.Cannots, each.NoGates)).ToList();
-        if (answers.Where(each => each.Cannots.Count > 0).ToList() is { Count: > 0 } refused)
-        {
-            return new(said, rows, IntegrateChoice.Refusal(id, version, refused));
-        }
-
-        said.AddRange(answers.Where(each => each.NoGates).Select(each => $"  {IntegrateCarry.NoGatesSaid(each.Repository)}"));
-        return new(said, rows, null);
-    }
 
     /// <summary>
     /// <c>kind &lt;workspace&gt; &lt;kind&gt; --label "…" [--paths …]</c> and <c>--drop</c> (design §4.2, §4.7): a kind of task a workspace
@@ -411,40 +103,10 @@ public static class WorkflowOperations
         return new WorkflowKindSet(edit, lines, null);
     }
 
-    /// <summary>
-    /// What the choices as they stand do to a place (§17.7): for each repository of it, every graph its default or a kind of its workspace chooses
-    /// that integrates or pushes, answered as a choice of it is, so a combination that cannot start is named before work stalls on it.
-    /// </summary>
     public static async Task<IReadOnlyList<WorkflowReach>> PlaceReachAsync(
-        DriverConfig choices, string home, RegistryRead registry, string? repository, string? workspace, CancellationToken ct)
-    {
-        var read = await registry(ct).ConfigureAwait(false);
-        IReadOnlyList<(string Repository, string? Workspace, string? Root)> places;
-        if (read.Checkouts is not { } checkouts) places = repository is null ? [] : [(repository, null, null)];
-        else if (repository is not null)
-        {
-            var own = checkouts.FirstOrDefault(each => InScope(each.Repository, repository));
-            places = [own.Repository is null ? (repository, null, null) : own];
-        }
-        else places = InWorkspace(choices, checkouts, workspace!, except: null);
+        DriverConfig choices, string home, RegistryRead registry, string? repository, string? workspace, CancellationToken ct) =>
+        await WorkflowUsing.PlaceReachAsync(choices, home, registry, repository, workspace, ct).ConfigureAwait(false);
 
-        var rows = new List<WorkflowReach>();
-        foreach (var place in places)
-        {
-            var kinds = ChoiceAt(choices.WorkspaceWorkflows, RemoteTarget.Workspace(place.Workspace))?.Kinds.Select(pair => pair.Key) ?? [];
-            var chosen = new[] { (WorkflowTaskChoice?)null }.Concat(kinds.Select(kind => new WorkflowTaskChoice(kind, null)))
-                .Select(task => WorkflowSelection.Resolve(choices, place.Repository, place.Workspace, task).Workflow)
-                .Where(id => id != WorkflowSelection.Current && WorkflowNamed.IsId(id)).Distinct(StringComparer.Ordinal);
-            foreach (var id in chosen)
-            {
-                if (WorkflowPorts.Store(home).Load(id)?.Read.Versions is not [.., { Graph: { } graph } newest] || !IntegrateChoice.Matters(graph)) continue;
-                var answers = await IntegrateChoice.ReachAsync(choices, id, newest.Version, graph, [place], ct).ConfigureAwait(false);
-                rows.AddRange(answers.Select(each => new WorkflowReach(each.Repository, each.Cannots, each.NoGates) { Workflow = id }));
-            }
-        }
-
-        return rows;
-    }
 
     /// <summary>The scope of the home's default: every repository that follows it with nothing written.</summary>
     public const string HomeLevel = "home";
@@ -706,39 +368,6 @@ public static class WorkflowOperations
         {
             return Refuse("refused", refused.Message) with { Problems = graph is null ? [] : GraphProblems(home, graph) };
         }
-    }
-
-    /// <summary>
-    /// What a graph appended to a saved workflow does to the repositories that choose it: each one it reaches, answered as a choice of it is
-    /// (§17.7). Nothing where the new version is not a graph that integrates or pushes.
-    /// </summary>
-    private static async Task<WorkflowReached> AppendReachAsync(
-        DriverConfig choices, string home, RegistryRead registry, string id, WorkflowPlanned planned, IReadOnlyList<WorkflowScope> scopes, CancellationToken ct)
-    {
-        if (planned.Next?.Graph is not { } graph || !IntegrateChoice.Matters(graph) || scopes.Count == 0) return new([], [], null);
-        var read = await registry(ct).ConfigureAwait(false);
-        var reached = new List<(string Repository, string? Workspace, string? Root)>();
-        foreach (var scope in scopes.Where(each => each.Role != "landed"))
-        {
-            if (scope.Level == "repository")
-            {
-                var own = read.Checkouts?.FirstOrDefault(each => InScope(each.Repository, scope.Name)) ?? default;
-                reached.Add(own.Repository is null ? (scope.Name, null, null) : own);
-            }
-            else if (scope.Level == HomeLevel)
-            {
-                // Every place that follows the home's default with nothing written.
-                reached.AddRange((read.Checkouts ?? []).Where(each =>
-                    WorkflowSelection.Resolve(choices, each.Repository, each.Workspace, null).Level == WorkflowLevels.Home));
-            }
-            else if (read.Checkouts is { } checkouts)
-            {
-                reached.AddRange(InWorkspace(choices, checkouts, scope.Name, except: null));
-            }
-        }
-
-        return await RowsAsync(choices, id, planned.Next.Version, graph,
-            [.. reached.DistinctBy(each => each.Repository, StringComparer.OrdinalIgnoreCase)], [], ct).ConfigureAwait(false);
     }
 
     /// <summary>

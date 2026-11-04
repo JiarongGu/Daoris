@@ -395,7 +395,11 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Workflows/Domain/WorkflowRun.cs": {
+    "Workflows/Domain/WorkflowChatSteps.cs": {
+      "reads": "other",
+      "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
+    },
+    "Workflows/Domain/WorkflowReviewSteps.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
