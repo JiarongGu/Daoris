@@ -1,7 +1,10 @@
-engine · Current workflow, version 60d7c608c03a · quest #q1 · ask #a1
-  ✓ The work          done                 The agent finished: 1 quest here is done.
-  ✓ Second opinion    done                 Settled: read by another maker's agent, with nothing left disputed.
-  ✓ Your look         done                 You reviewed it in `local` at `01234567`.
-  ✓ The landing       done                 Landed on `work/q1`, accepted by you.
-  ● The pull request  waiting on you       Open: waits for you to merge it on the platform.
-                                           https://example.test/pull/7
+engine · `hosted` v1 workflow · quest #q1 · ask #a1
+  Daoris has not judged its graph yet: its next look does.
+  Its graph observes quest #q1, its newest work here, and `daoris/s1`, the branch its newest session worked.
+  Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.
+  ● The work          not reached
+  ○ Second opinion    not reached
+  ○ Your look         not reached
+  ○ The landing       not reached
+  ○ The push          not reached
+  ○ The pull request  not reached

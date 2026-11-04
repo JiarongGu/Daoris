@@ -87,7 +87,8 @@ internal sealed class NodeIntegrating(
 
             if (carded is null)
             {
-                if (IntegrationCardWait.Waits(waits.Refusal, landing)) _cards[unit] = new IntegrationCardWait(unit, repository, governed.Watched.Workspace, landed.Entry.Branch, landed.Tip, waits.Refusal!, waits.Message, landed.Entry.LandedAt);
+                var asks = PlaceIntegrate.Of(WorkflowPorts.Store(records.Home), settings, repository, governed.Watched.Workspace).Request;
+                if (IntegrationCardWait.Waits(waits.Refusal, asks)) _cards[unit] = new IntegrationCardWait(unit, repository, governed.Watched.Workspace, landed.Entry.Branch, landed.Tip, waits.Refusal!, waits.Message, landed.Entry.LandedAt);
                 else _cards.TryRemove(unit, out _);
                 var line = $"work  {unit}: its integration waits: {waits.Message}";
                 if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);

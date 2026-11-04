@@ -17,13 +17,20 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     private static readonly Func<CancellationToken, Task<IReadOnlySet<string>>> NoneRunning =
         _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
-    /// <summary><c>engine</c>'s line policy, <paramref name="integrate"/> or none; its landings are the fixture's bound <c>land</c>'s.</summary>
-    private void Save(LandingIntegrate? integrate) =>
-        DriverConfig.Empty.WithLinePolicy("engine", integrate).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+    /// <summary>
+    /// <c>engine</c>'s line policy, <paramref name="integrate"/> or none, its place following a workflow whose <c>integrate</c> says
+    /// <paramref name="request"/> where one is given; its landings are the fixture's bound <c>land</c>'s.
+    /// </summary>
+    private void Save(LandingIntegrate? integrate, string? request = null)
+    {
+        var config = DriverConfig.Empty.WithLinePolicy("engine", integrate);
+        if (request is not null) config = IntegratingWorkflow.Follow(Home, config, request);
+        config.Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+    }
 
     /// <summary>The door over this home's own records and settings, read as the driver reads them.</summary>
     private IntegrationRequests Door(IntegrationStore store) =>
-        new(new HomeIntegrationRecords(Home), store, () => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)));
+        new(new HomeIntegrationRecords(Home), store, () => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), new WorkflowFiles(Home));
 
     /// <summary>This home's own request store, in its desktop store (INTEGRATE1e part e2).</summary>
     private IntegrationStore Requests() => new(Home, () => StoreSettled.Yes);
@@ -50,7 +57,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_landing_whose_tree_is_gone_is_requested_from_its_record()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate());
         var trees = new SessionTrees(Home);
         var (branch, tip, tree) = await LandedAsync(trees, root, "q1", treeGone: true);
         Assert.False(Directory.Exists(tree), "the session's tree is gone");
@@ -73,7 +80,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_recorded_landing_whose_branch_moved_is_refused_and_one_the_line_holds_is_never_requested()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate());
         var (branch, tip, _) = await LandedAsync(new SessionTrees(Home), root, "q1");
         await CommitOnAsync(root, branch, "later.txt", "a later commit\n", "a later commit");
         var store = Requests();
@@ -101,7 +108,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_session_branch_is_refused_at_the_records_branch_door_and_a_records_branch_is_requested_with_no_gate()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate());
         var opened = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
         await GitAsync(root, "branch", "notes/records", "main");
@@ -120,14 +127,14 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The come-up sweep under <c>request: done</c> requests each standing landing of the repository once: asked again, it requests
-    /// nothing more, since each has a request open.
+    /// 🔴 The come-up sweep, where the place's workflow's <c>integrate</c> says <c>request: done</c>, requests each standing landing of the
+    /// repository once: asked again, it requests nothing more, since each has a request open.
     /// </summary>
     [Fact]
     public async Task The_sweep_requests_each_standing_landing_once()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
+        Save(new LandingIntegrate(Gates: LandingIntegrate.Declared), LandingIntegrate.Done);
         var trees = new SessionTrees(Home);
         var first = await LandedAsync(trees, root, "q1");
         var second = await LandedAsync(trees, root, "q2");
@@ -150,7 +157,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_landing_and_its_advance_each_write_the_integrate_that_stood_at_its_acceptance()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate());
         var trees = new SessionTrees(Home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the work\n", "the work");
@@ -185,13 +192,13 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     /// INTEGRATE1r part r3's check (the integration design §17.4): a landing under a named version whose graph holds <c>integrate</c> writes
     /// <c>source: version</c> and the node's own <c>request</c>, though <see cref="WorkflowProcess.Of"/> builds its landing rule without the
     /// rule's <c>integrate</c> (the value INTEGRATE1n's <c>LandedIntegrate.Of</c> reads under Current only): the version's step is read from
-    /// its graph. The rule asks <c>done</c> here and the version <c>steward</c>, so a record that took the rule's would say so.
+    /// its graph. The place's workflow asks <c>done</c> here and the bound version <c>steward</c>, so a record that took the place's would say so.
     /// </summary>
     [Fact]
     public async Task A_landing_under_a_named_version_whose_graph_integrates_writes_the_versions_own_provenance()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
+        Save(new LandingIntegrate(Gates: LandingIntegrate.Declared), LandingIntegrate.Done);
         Directory.CreateDirectory(WorkflowStore.FolderOf(Home));
         File.WriteAllText(WorkflowStore.PathOf(Home, "integrated"),
             $$"""{"id":"integrated","name":"Integrated","versions":[{"version":1,"at":"2026-10-30T09:00:00Z","door":"terminal","schema":2,"graph":{{IntegratingGraph}}}]}""");

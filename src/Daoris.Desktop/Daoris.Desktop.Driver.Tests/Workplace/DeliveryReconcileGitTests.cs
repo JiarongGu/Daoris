@@ -204,7 +204,7 @@ public sealed class DeliveryReconcileGitTests : IDisposable
         store.End(claim, DeliveryPhases.Prepared, DeliveryOutcomes.Done, tip, $"the commit merged into `main` is {tip}");
         store.Begin(claim, DeliveryPhases.RefWritten, $"`refs/heads/main` to hold {tip}");
         store.End(claim, DeliveryPhases.RefWritten, DeliveryOutcomes.Withdrawn, null, $"`{tree.Branch}` waits to be merged into `main`, and is tried again at each look");
-        var admitted = new IntegrationRequests(new HomeIntegrationRecords(_home), new IntegrationStore(_home), () => DriverConfig.Empty)
+        var admitted = new IntegrationRequests(new HomeIntegrationRecords(_home), new IntegrationStore(_home), () => DriverConfig.Empty, new WorkflowFiles(_home))
             .Press("engine", "aurora", tree.Branch, tip, "main", delivered: true);
         Assert.True(admitted.Admitted, admitted.Message);
 

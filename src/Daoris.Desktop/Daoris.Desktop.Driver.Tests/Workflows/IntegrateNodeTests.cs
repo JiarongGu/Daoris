@@ -1,23 +1,24 @@
-using System.Diagnostics;
 using Daoris.Driver;
-using Xunit.Abstractions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1n part n2 (D215's note; the integration design §17.4): a unit whose graph holds an <c>integrate</c> node asks row e's one door
-/// for its landed branch, keyed by the unit and the landing's tip, over a stand-in door. It reads the landing's acceptance provenance (a rule
-/// gaining <c>integrate</c> over standing landings requests none; an automatic landing under <c>owner</c> waits for the card), is found again
-/// by its key after a restart, reconciles before any new start, is asked again when a new landing tip invalidates it, the second waiting for
-/// the first's outcome (F41), and waits queued: nothing here runs the integration. The same over real git is
-/// <see cref="IntegrateNodeGitTests"/>.
+/// INTEGRATE1n part n2 (D215's note; the integration design §17.4): a run bound to a graph holding an <c>integrate</c> node asks row e's one
+/// door for its landed branch, keyed by the run's unit and the landing's tip, over a stand-in door. It reads the landing's acceptance
+/// provenance (a landing whose record says neither requests nothing; an automatic landing under <c>owner</c> waits for the card), is found
+/// again by its key after a restart, reconciles before any new start, is asked again when a new landing tip invalidates it, the second waiting
+/// for the first's outcome (F41), and waits queued: nothing here runs the integration. The same over real git is <see cref="IntegrateNodeGitTests"/>.
 /// </summary>
 public sealed class IntegrateNodeTests : IDisposable
 {
+    private const string RunId = "q7";
     private const string Unit = "unit-a";
+    private const string Session = "daoris/s1";
     private const string Branch = "feature/q1-ship";
     private const string T1 = "1111111111111111111111111111111111111111";
     private const string T2 = "2222222222222222222222222222222222222222";
+
+    private static readonly string RunUnit = RunUnits.IdOf(RunId);
 
     private static readonly DateTimeOffset Then = new(2026, 10, 30, 9, 0, 0, TimeSpan.Zero);
 
@@ -27,42 +28,68 @@ public sealed class IntegrateNodeTests : IDisposable
 
     private readonly Door _door = new();
 
-    private IReadOnlyList<WorkUnit> _units = [BranchUnit(Landed())];
+    private readonly Dictionary<string, string> _tips = new(StringComparer.Ordinal) { [Session] = T1 };
+
+    private IReadOnlyList<WorkUnit> _units = Run(Landed());
+
+    /// <summary>The <c>request</c> the bound version's <c>integrate</c> asks with, read when the run is first bound.</summary>
+    private string _request = LandingIntegrate.Owner;
+
+    private bool _bound;
 
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
+    /// <summary>The landing, then the unit's <c>integrate</c> asking with <paramref name="request"/>, then the line.</summary>
+    private static string Graph(string request) => $$$"""
+        {"schemaVersion":2,"entries":["claimed"],"end":"line",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"integrate"}},
+                  {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}},
+                  {"id":"line","kind":"line","version":1,"reach":"observed"}],
+         "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>i","kind":"after","from":"handed","to":"integrate"},
+                  {"id":"i>l","kind":"after","from":"integrate","to":"line"}]}
+        """;
+
     private NodeRecordFiles Files => new(_home, () => true);
 
     private NodeRuntime Runtime(Door? door = null) => new(Files, _port, () => Then, () => true) { Integration = door ?? _door };
 
-    private NodeRecord Record(string unit = Unit) => Files.Read(unit)!;
+    private NodeRecord Record(string unit = "") => Files.Read(unit.Length == 0 ? RunUnit : unit)!;
 
-    private NodeStatus Status(string node = "integrate", string unit = Unit) => Record(unit).Statuses[node];
+    private NodeStatus Status(string node = "integrate", string unit = "") => Record(unit).Statuses[node];
 
     private static DriverConfig Config(string request = LandingIntegrate.Owner) =>
         DriverConfig.Empty.WithLine("engine", "main")
             .WithLinePolicy("engine", new LandingIntegrate(Gates: request == LandingIntegrate.Done ? LandingIntegrate.Declared : null));
 
     private static LandedBranch Landed(string tip = T1, string by = AcceptedBy.Person, string? request = LandingIntegrate.Owner) =>
-        new("engine", "default", Branch, "main", tip, "s1", "q1", null, Then)
+        RunHome.Landing(Unit, Branch, tip, Then, RunId) with
         {
-            Units = [Unit], AcceptedBy = by, Integrate = request is null ? null : new LandedIntegrate(request, LandedIntegrate.Rule),
+            AcceptedBy = by, Integrate = request is null ? null : new LandedIntegrate(request, LandedIntegrate.Version),
         };
 
-    private static WorkUnit BranchUnit(LandedBranch landing, string? revision = null, string id = Unit) => new(id, WorkUnitKind.Branch,
-        new WorkOwner("engine", "default", "session-branches.json", WorkRecord.DriverWriter), new WorkSubject(Branch, revision ?? landing.Tip),
-        new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
-    {
-        Records = new WorkUnitRecords(null, [landing], null),
-    };
+    /// <summary>Run <c>q7</c>'s quest, done, and the branch unit its session worked, carrying <paramref name="landing"/>.</summary>
+    private static IReadOnlyList<WorkUnit> Run(LandedBranch landing) =>
+        [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch(Unit, Session, Then.AddHours(-1), [RunId], landing)];
 
-    private NodeRuntimeLook Look(DriverConfig config, bool whole = true) => new(config, whole)
+    private NodeRuntimeLook Look(DriverConfig config, bool whole = true)
     {
-        Units = _ => Task.FromResult(new NodeUnitsRead(_units, new Dictionary<string, string> { ["engine"] = "checkout" })),
-    };
+        if (!_bound)
+        {
+            RunHome.Bind(_home, RunId, RunHome.SaveGraph(_home, Graph(_request)), Then);
+            _bound = true;
+        }
+
+        return new(config, whole)
+        {
+            Units = _ => Task.FromResult(new NodeUnitsRead(_units, new Dictionary<string, string> { ["engine"] = "checkout" })),
+            Tips = (_, branches, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(
+                branches.Where(_tips.ContainsKey).ToDictionary(branch => branch, branch => _tips[branch], StringComparer.Ordinal)),
+        };
+    }
 
     private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, DriverConfig config, bool whole = true) => runtime.PassAsync(Look(config, whole), CancellationToken.None);
 
@@ -129,8 +156,8 @@ public sealed class IntegrateNodeTests : IDisposable
     }
 
     /// <summary>
-    /// The start asks the one door for the landed branch at the tip <c>handed</c> recorded, by the unit and that tip, as the node route; the
-    /// attempt is kept with its key before the answer; the request waits queued, its node active, and no later pass asks again.
+    /// The start asks the one door for the landed branch at the tip <c>handed</c> recorded, by the run's unit and that tip, as the node route;
+    /// the attempt is kept with its key before the answer; the request waits queued, its node active, and no later pass asks again.
     /// </summary>
     [Fact]
     public async Task A_units_integrate_asks_the_door_for_its_landed_branch_by_its_key_and_waits_queued()
@@ -141,14 +168,14 @@ public sealed class IntegrateNodeTests : IDisposable
         Assert.True(pass.Armed);
         Assert.Equal(NodeStates.Reached, Status("handed").State);
         var ask = Assert.Single(_door.Asked);
-        Assert.Equal((Unit, T1, Branch, IntegrationRoutes.Node, IntegrationRequester.NodeStart), (ask.Unit, ask.Tip, ask.Branch, ask.Route, ask.Requester));
+        Assert.Equal((RunUnit, T1, Branch, IntegrationRoutes.Node, IntegrationRequester.NodeStart), (ask.Unit, ask.Tip, ask.Branch, ask.Route, ask.Requester));
         Assert.Equal("checkout", ask.Root);
         Assert.Contains(pass.Performed, done => (done.Node, done.What) == ("integrate", PerformedWhat.Sent));
 
         var status = Status();
         Assert.Equal((NodeStates.Active, 1, 1), (status.State, status.Attempt, status.Unreconciled));
         var attempt = Assert.Single(Record().Attempts);
-        Assert.Equal((IntegrateNodes.Sender, AttemptStates.Settled, T1, IntegrateNodes.Key(Unit, T1)), (attempt.Plugin, attempt.State, attempt.Call.SubjectRevision, attempt.Call.IdempotencyKey));
+        Assert.Equal((IntegrateNodes.Sender, AttemptStates.Settled, T1, IntegrateNodes.Key(RunUnit, T1)), (attempt.Plugin, attempt.State, attempt.Call.SubjectRevision, attempt.Call.IdempotencyKey));
 
         // Nothing runs it: asked once, and the line's node waits behind it, however many passes.
         await PassAsync(runtime, Config());
@@ -157,21 +184,6 @@ public sealed class IntegrateNodeTests : IDisposable
         Assert.Equal(NodeStates.Active, Status().State);
         Assert.NotEqual(NodeStates.Reached, Status("line").State);
         Assert.Empty(_port.Sent);
-    }
-
-    /// <summary>
-    /// The inventory names an unproven landed branch with no revision (only a proven end carries a tip), and a graph is judged on a revision, so
-    /// the runtime reads the landing's recorded tip as the branch unit's own where its graph holds <c>integrate</c>; else the node never began.
-    /// </summary>
-    [Fact]
-    public async Task A_landed_branch_the_inventory_names_with_no_revision_is_judged_on_its_landings_tip()
-    {
-        _units = [BranchUnit(Landed()) with { Subject = new WorkSubject(Branch, null) }];
-
-        var pass = await PassAsync(Runtime(), Config());
-
-        Assert.DoesNotContain(pass.Said, line => line.Contains("not judged", StringComparison.Ordinal));
-        Assert.Equal(T1, Assert.Single(_door.Asked).Tip);
     }
 
     /// <summary>A runtime nobody gave a door starts none and waits ready, as an install with no row g does.</summary>
@@ -270,8 +282,12 @@ public sealed class IntegrateNodeTests : IDisposable
         await PassAsync(runtime, Config());
         Assert.Equal(T1, Assert.Single(_door.Asked).Tip);
 
-        var advance = new LandedAdvance(T1, T2, Then.AddHours(1), "s2") { AcceptedBy = AcceptedBy.Person, Integrate = new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule) };
-        _units = [BranchUnit(Landed(T2) with { Advances = [advance] }, T2)];
+        var advance = new LandedAdvance(T1, T2, Then.AddHours(1), "s2")
+        {
+            AcceptedBy = AcceptedBy.Person, Integrate = new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Version),
+        };
+        _tips[Session] = T2;
+        _units = Run(Landed(T2) with { Advances = [advance] });
         await PassAsync(runtime, Config());
 
         // The first request is still open: its node was judged again on the new tip, and holds the attempt it may still own.
@@ -287,7 +303,7 @@ public sealed class IntegrateNodeTests : IDisposable
 
         Assert.Equal([T1, T2], _door.Asked.Select(ask => ask.Tip));
         Assert.Equal((NodeStates.Active, 2, 2), (Status().State, Status().Attempt, Status().Unreconciled));
-        Assert.Equal([IntegrateNodes.Key(Unit, T1), IntegrateNodes.Key(Unit, T2)], Record().Attempts.Select(attempt => attempt.Call.IdempotencyKey));
+        Assert.Equal([IntegrateNodes.Key(RunUnit, T1), IntegrateNodes.Key(RunUnit, T2)], Record().Attempts.Select(attempt => attempt.Call.IdempotencyKey));
     }
 
     /// <summary>
@@ -297,42 +313,44 @@ public sealed class IntegrateNodeTests : IDisposable
     [Fact]
     public async Task A_wake_judges_a_unit_owing_only_an_integrate_start_without_waiting_for_the_look()
     {
-        _units = [BranchUnit(Landed(by: AcceptedBy.Auto, request: LandingIntegrate.Owner))];
+        _units = Run(Landed(by: AcceptedBy.Auto, request: LandingIntegrate.Owner));
         var runtime = Runtime();
         await PassAsync(runtime, Config());
         Assert.Equal(NodeStates.Ready, Status().State);
 
         var wake = await PassAsync(runtime, Config(), whole: false);
-        Assert.Equal([Unit], wake.Evaluated);
+        Assert.Equal([RunUnit], wake.Evaluated);
 
-        _units = [BranchUnit(Landed())];
+        _units = Run(Landed());
         await PassAsync(runtime, Config());
         Assert.Equal(NodeStates.Active, Status().State);
     }
 
     /// <summary>
-    /// F40: the start reads the landing's provenance. A rule gaining <c>integrate</c> over a standing landing (a record that says neither)
-    /// requests none of them; an automatic landing under <c>owner</c> waits for the owner's card; each leaves the node ready and writes nothing.
-    /// An automatic landing under <c>done</c>, and a person's Accept under either, is the request.
+    /// F40: the start reads the landing's provenance under the bound version's <c>integrate</c>. A landing whose record says neither requests
+    /// nothing; an automatic landing under <c>owner</c> waits for the owner's card, one under <c>steward</c> for the act; each leaves the node
+    /// ready and writes nothing. An automatic landing under <c>done</c>, and a person's Accept under either, is the request.
     /// </summary>
     [Theory]
-    [InlineData(AcceptedBy.Person, null, LandingIntegrate.Owner, false, false)]
-    [InlineData(AcceptedBy.Auto, LandingIntegrate.Owner, LandingIntegrate.Owner, false, true)]
-    [InlineData(AcceptedBy.Person, LandingIntegrate.Steward, LandingIntegrate.Owner, false, false)]
-    [InlineData(AcceptedBy.Person, LandingIntegrate.Owner, LandingIntegrate.Owner, true, false)]
-    [InlineData(AcceptedBy.Person, LandingIntegrate.Done, LandingIntegrate.Done, true, true)]
-    [InlineData(AcceptedBy.Auto, LandingIntegrate.Done, LandingIntegrate.Done, true, true)]
-    public async Task The_start_reads_the_landings_acceptance_provenance(string by, string? stood, string rule, bool asks, bool autoAccept)
+    [InlineData(AcceptedBy.Person, null, LandingIntegrate.Owner, false)]
+    [InlineData(AcceptedBy.Auto, LandingIntegrate.Owner, LandingIntegrate.Owner, false)]
+    [InlineData(AcceptedBy.Person, LandingIntegrate.Steward, LandingIntegrate.Owner, false)]
+    [InlineData(AcceptedBy.Person, LandingIntegrate.Owner, LandingIntegrate.Owner, true)]
+    [InlineData(AcceptedBy.Person, LandingIntegrate.Done, LandingIntegrate.Done, true)]
+    [InlineData(AcceptedBy.Auto, LandingIntegrate.Done, LandingIntegrate.Done, true)]
+    public async Task The_start_reads_the_landings_acceptance_provenance(string by, string? stood, string request, bool asks)
     {
-        _units = [BranchUnit(Landed(by: by, request: stood))];
+        _request = request;
+        _units = Run(Landed(by: by, request: stood));
 
-        var pass = await PassAsync(Runtime(), Config(rule));
+        var pass = await PassAsync(Runtime(), Config(request));
 
         Assert.Equal(NodeStates.Reached, Status("handed").State);
         Assert.Equal(asks, _door.Asked.Count == 1);
         Assert.Equal(asks ? NodeStates.Active : NodeStates.Ready, Status().State);
         Assert.Equal(asks ? 1 : 0, Record().Attempts.Count);
-        if (!asks) Assert.Contains(pass.Said, line => line.Contains("its integration waits", StringComparison.Ordinal));
+        if (asks) Assert.Equal(request, Assert.Single(_door.Asked).Request);
+        else Assert.Contains(pass.Said, line => line.Contains("its integration waits", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -342,31 +360,41 @@ public sealed class IntegrateNodeTests : IDisposable
     [Fact]
     public async Task A_landing_waiting_for_the_owners_card_is_named_until_the_card_makes_its_request_which_the_node_then_follows()
     {
-        _units = [BranchUnit(Landed(by: AcceptedBy.Auto, request: LandingIntegrate.Owner))];
+        _units = Run(Landed(by: AcceptedBy.Auto, request: LandingIntegrate.Owner));
         var runtime = Runtime();
 
         await PassAsync(runtime, Config());
 
         var wait = Assert.Single(runtime.CardWaits());
-        Assert.Equal((Unit, "engine", Branch, T1, IntegrationRefusals.AwaitsOwner, (DateTimeOffset?)Then), (wait.Unit, wait.Repository, wait.Branch, wait.Tip, wait.Code, wait.Since));
+        Assert.Equal((RunUnit, "engine", Branch, T1, IntegrationRefusals.AwaitsOwner, (DateTimeOffset?)Then), (wait.Unit, wait.Repository, wait.Branch, wait.Tip, wait.Code, wait.Since));
         Assert.Equal(NodeStates.Ready, Status().State);
 
         // The card: the recorded-landing door keeps the request under the landing's unit and tip.
-        _door.Requests[(Unit, T1)] = new IntegrationRequest("request-card", "engine", "default", Branch, T1, IntegrationRoutes.Recorded, "main",
-            IntegrationRequester.Card, new LandingIntegrate().Resolved(), Then) { Unit = Unit };
+        _door.Requests[(RunUnit, T1)] = new IntegrationRequest("request-card", "engine", "default", Branch, T1, IntegrationRoutes.Recorded, "main",
+            IntegrationRequester.Card, new LandingIntegrate().Resolved(), Then) { Unit = RunUnit };
         await PassAsync(runtime, Config());
 
         Assert.Empty(runtime.CardWaits());
         Assert.Equal(NodeStates.Active, Status().State);
         Assert.Empty(_door.Asked);
+    }
 
-        // A rule saying `request: done` leaves a landing that says neither to Daoris's sweep: no wait of the owner's.
-        _units = [BranchUnit(Landed(request: null), id: "unit-b")];
-        var swept = Runtime();
-        await PassAsync(swept, Config(LandingIntegrate.Done));
-        Assert.Empty(swept.CardWaits());
-        await PassAsync(swept, Config());
-        Assert.Equal(IntegrationRefusals.NoRequest, Assert.Single(swept.CardWaits()).Code);
+    /// <summary>
+    /// A landing whose record says neither is no request: it waits for the owner's card, unless the place's workflow's <c>integrate</c> says
+    /// <c>request: done</c>, which leaves it to Daoris's sweep, no wait of the owner's.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_that_says_neither_waits_for_the_card_unless_the_places_workflow_leaves_it_to_the_sweep()
+    {
+        _units = Run(Landed(request: null));
+        var runtime = Runtime();
+
+        await PassAsync(runtime, IntegratingWorkflow.Follow(_home, Config(LandingIntegrate.Done), LandingIntegrate.Done));
+        Assert.Empty(runtime.CardWaits());
+        Assert.Equal(NodeStates.Ready, Status().State);
+
+        await PassAsync(runtime, Config());
+        Assert.Equal(IntegrationRefusals.NoRequest, Assert.Single(runtime.CardWaits()).Code);
     }
 
     /// <summary>A refused ask fails the node with the door's code and words, said once; a door that cannot read git is unknown, never failed.</summary>
@@ -382,7 +410,7 @@ public sealed class IntegrateNodeTests : IDisposable
         Assert.Single(_door.Asked);
 
         // Unread: git could not say. The node is unknown and asked after again, as an unanswered door's is.
-        Directory.Delete(_home, recursive: true);
+        Directory.Delete(NodeRecordFiles.FolderOf(_home), recursive: true);
         _door.Refuses = _ => new IntegrationAdmission(false, "git could not read the branch") { Refusal = IntegrationRefusals.Unread };
         await PassAsync(Runtime(), Config());
         Assert.Equal(NodeStates.Unknown, Status().State);
@@ -441,7 +469,7 @@ public sealed class IntegrateNodeTests : IDisposable
     {
         var runtime = Runtime();
         await PassAsync(runtime, Config());
-        var (refused, _) = Files.Edit<bool>(Unit, record =>
+        var (refused, _) = Files.Edit<bool>(RunUnit, record =>
         {
             var status = record.Statuses["integrate"];
             var stopped = NodeLifecycle.Apply(new NodeDeclaration("integrate", NodeKinds.Integrate, 1, NodeReach.Waited), status, new NodeMove(NodeStates.Stopped, NodeCause.Person));
