@@ -18,6 +18,7 @@ namespace Daoris.Driver;
 /// <c>steward request &lt;act&gt; &lt;target&gt; "&lt;why&gt;"</c> files a request at the desk from any terminal, with no key and no
 /// proof, granting nothing.</para>
 /// </remarks>
+[CommandGroup("steward", "acts", "drive", "undrive", "hold", "resume", "trees", "stop", "finish", "retry", "desk", "request", Whole = true)]
 public static class StewardCommand
 {
     /// <summary>The steward's acts as the pipe's census classes them: one route for every act.</summary>

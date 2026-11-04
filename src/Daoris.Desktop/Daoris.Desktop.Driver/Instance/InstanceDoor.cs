@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What a verb finds when it looks for the running Daoris (RPC1b, the terminal RPC design §7.2's rows).</summary>
+/// <summary>What a verb finds when it looks for the running Daoris (the terminal RPC design §7.2's rows).</summary>
 public enum InstanceFound
 {
     /// <summary>No instance on this home, or a workspace build, which reads no address file: the verb acts alone.</summary>
@@ -19,19 +19,19 @@ public enum InstanceFound
 
     /// <summary>
     /// The hello was refused (<c>protocol</c>, <c>home</c>, <c>stopping</c>), or the pipe refused this terminal as another account's
-    /// or elevation's (PIPEOWNER1): a press is refused, saying which.
+    /// or elevation's: a press is refused, saying which.
     /// </summary>
     Refused,
 }
 
 /// <summary>What a verb found, with the sentence that says it and the connection where the instance answered.</summary>
-/// <param name="Nonce">The hello's nonce for this connection (SUPERVISOR1a-ii), which a holder's proof is bound to; null from an older Daoris.</param>
+/// <param name="Nonce">The hello's nonce for this connection, which a holder's proof is bound to; null from an older Daoris.</param>
 public sealed record InstanceLook(InstanceFound Found, string Why, InstanceClient? Client = null, string? Nonce = null);
 
 /// <summary>
 /// Where a verb looks for the running Daoris, and what it says while it waits: the process's own, or a test's. It is the terminal the
-/// settings' command is said on and pressed from (<see cref="IChoiceTerminal"/>, FOUNDATION1 mod-iii), and the tools' (<see cref="IToolTerminal"/>,
-/// mod-v), pressing through the door.
+/// settings' command is said on and pressed from (<see cref="IChoiceTerminal"/>), and the tools' (<see cref="IToolTerminal"/>), pressing
+/// through the door.
 /// </summary>
 public sealed class InstanceWorld : IToolTerminal
 {
@@ -53,7 +53,7 @@ public sealed class InstanceWorld : IToolTerminal
     /// <summary>Where a refusal is said.</summary>
     public TextWriter Error { get; init; } = Console.Error;
 
-    /// <summary>What the person types or pipes in: <c>agent key</c>'s key, never an argument (PUSH1f2e5).</summary>
+    /// <summary>What the person types or pipes in: <c>agent key</c>'s key, never an argument.</summary>
     public TextReader In { get; init; } = Console.In;
 
     /// <summary>The verb, as its sentences begin (<c>trees</c>).</summary>
@@ -64,7 +64,7 @@ public sealed class InstanceWorld : IToolTerminal
 
     /// <summary>
     /// How long a press is waited on before its answer is asked for by <c>RESULT</c>: <c>--wait &lt;minutes&gt;</c>, which the host's
-    /// entry takes (CONFIRMWAIT1b, the confirm-wait design §4.1). Zero is <c>--no-wait</c>: the verb returns once the instance says the
+    /// entry takes (the confirm-wait design §4.1). Zero is <c>--no-wait</c>: the verb returns once the instance says the
     /// press waits for the window (<c>CONFIRMING</c>), and a press that asks no window, or a read, is waited on as long as by default.
     /// </summary>
     public TimeSpan Wait { get; init; } = InstanceDoor.LongestWait;
@@ -85,8 +85,8 @@ public sealed class InstanceWorld : IToolTerminal
     public Func<int?, bool>? ServedBy { get; init; }
 
     /// <summary>
-    /// Whether this verb runs in a role's terminal (STEWARDROLE1a-i, D209 §3.3): the entry's marker, <see cref="TerminalRole.Held"/>,
-    /// unless a test names its own. Such a verb sends no person's press and acts nothing alone (<see cref="TerminalRole"/>).
+    /// Whether this verb runs in a role's terminal (D209 §3.3): the entry's marker, <see cref="TerminalRole.Held"/>, unless a test
+    /// names its own. Such a verb sends no person's press and acts nothing alone (<see cref="TerminalRole"/>).
     /// </summary>
     public Func<bool> RoleTerminal { get; init; } = () => TerminalRole.Held;
 
@@ -96,10 +96,11 @@ public sealed class InstanceWorld : IToolTerminal
 }
 
 /// <summary>
-/// A verb's door to the running Daoris (RPC1b, D171 point 3, the terminal RPC design §7): it finds the instance as §7.4 says and
-/// switches as §7.2's table does, sending a press's route while the instance answers, acting alone where none runs, and never
-/// acting alone beside one that does not answer, nor after a request was sent.
+/// A verb's door to the running Daoris (D171 point 3, the terminal RPC design §7): it finds the instance as §7.4 says and switches as
+/// §7.2's table does, sending a press's route while the instance answers, acting alone where none runs, and never acting alone beside
+/// one that does not answer, nor after a request was sent; <c>press</c> asks again how a press ended, or takes one back.
 /// </summary>
+[CommandGroup("press", "result", "withdraw")]
 public static class InstanceDoor
 {
     /// <summary>The pipe the dev loop and a rehearsal name, as they name the service (§7.4).</summary>

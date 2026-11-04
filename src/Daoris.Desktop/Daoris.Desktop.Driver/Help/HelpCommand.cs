@@ -57,6 +57,7 @@ public sealed record HelpVerbAsk(string Verb)
 ///
 /// <para>Exit codes are the family's: 0 done or listed · 1 refused · 2 could not, the usage among them.</para>
 /// </remarks>
+[CommandGroup("ask-daoris", "list", "resume", "rename", "pin", "unpin", "delete", "mode")]
 public static class HelpCommand
 {
     public const string Usage =

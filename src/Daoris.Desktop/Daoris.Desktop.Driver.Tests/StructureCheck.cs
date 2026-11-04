@@ -4,15 +4,12 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One subdomain of the driver's map (FOUNDATION1, D212; the design §14.2): its folder, whether it holds a <c>Domain/</c>, whether its
-/// move has landed, and, from its namespace row on, its namespace. The map lists them bottom to top.
+/// One subdomain of the driver's map (D212; the design §14.2): its folder, whether it holds a <c>Domain/</c>, and its namespace where it
+/// has one of its own. The map lists them bottom to top.
 /// </summary>
 internal sealed record Subdomain(string Name, string Folder, bool Domain)
 {
-    /// <summary>Whether the subdomain's move row has landed: every file placed in it sits in its folder.</summary>
-    public bool Moved { get; init; }
-
-    /// <summary>The namespace its files are in once its namespace row has landed, or none.</summary>
+    /// <summary>The namespace its files are in, where it has one of its own.</summary>
     public string? Namespace { get; init; }
 }
 
@@ -26,11 +23,11 @@ internal sealed record EdgeFamily(string Name, string After, IReadOnlyDictionary
 internal sealed record LoopRule(string File, string Member, string After);
 
 /// <summary>
-/// The driver's map, read from <c>fixtures/structure.json</c> (the design §14.5): the subdomains in their order, every file of the driver
-/// placed in one of them, the census of today's exceptions to the rules (the edges against the order, the Domain files' crossings, the rules
-/// Loop holds) and the tests' folders not yet moved.
+/// The driver's map, read from <c>fixtures/structure.json</c> (the design §14.5): the subdomains in their order, the census of today's
+/// exceptions to the rules (the edges against the order, the Domain files' crossings, the rules Loop holds) and the tests' folders not
+/// yet moved. A file's subdomain is the one whose folder is the file's first (<see cref="OwnerOf"/>), so no file is listed.
 /// </summary>
-internal sealed record StructureMap(IReadOnlyList<Subdomain> Subdomains, IReadOnlyDictionary<string, string> Files)
+internal sealed record StructureMap(IReadOnlyList<Subdomain> Subdomains)
 {
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> NoCrossings = new Dictionary<string, IReadOnlyList<string>>();
 
@@ -46,14 +43,12 @@ internal sealed record StructureMap(IReadOnlyList<Subdomain> Subdomains, IReadOn
     /// <summary>The census of the judgements Loop holds, each to leave.</summary>
     public IReadOnlyList<LoopRule> LoopRules { get; init; } = [];
 
-    /// <summary>Today's test folders, listed as not yet moved: the mirror rule passes over them, each mod row moving its subdomain's tests.</summary>
+    /// <summary>Test folders that are no subdomain's, which the mirror rule passes over.</summary>
     public IReadOnlyList<string> TestFolders { get; init; } = [];
 
-    /// <summary>
-    /// The tests of a subdomain that has moved, by file name, with the subdomain whose folder each is to sit under in the driver's tests
-    /// (STRUCT2a). A test not listed is not constrained.
-    /// </summary>
-    public IReadOnlyDictionary<string, string> Tests { get; init; } = new Dictionary<string, string>();
+    /// <summary>The name of the subdomain whose folder is the path's first, or null for a file at the top or in no subdomain's folder.</summary>
+    public string? OwnerOf(string path) =>
+        path.IndexOf('/') is var slash and > 0 ? Subdomains.FirstOrDefault(each => each.Folder == path[..slash])?.Name : null;
 
     /// <summary>The map as <c>structure.json</c> writes it, its subdomains in its order.</summary>
     public static StructureMap Read(string json)
@@ -63,12 +58,11 @@ internal sealed record StructureMap(IReadOnlyList<Subdomain> Subdomains, IReadOn
         var subdomains = root.GetProperty("subdomains").EnumerateArray()
             .Select(each => new Subdomain(each.GetProperty("name").GetString()!, each.GetProperty("folder").GetString()!, each.GetProperty("domain").GetBoolean())
             {
-                Moved = each.TryGetProperty("moved", out var moved) && moved.GetBoolean(),
                 Namespace = each.TryGetProperty("namespace", out var space) ? space.GetString() : null,
             })
             .ToList();
 
-        return new StructureMap(subdomains, Strings(root.GetProperty("files")))
+        return new StructureMap(subdomains)
         {
             Seams = root.GetProperty("seams").EnumerateArray().Select(each => each.GetString()!).ToList(),
             Families = root.GetProperty("edges").EnumerateArray()
@@ -79,12 +73,8 @@ internal sealed record StructureMap(IReadOnlyList<Subdomain> Subdomains, IReadOn
                 .Select(each => new LoopRule(each.GetProperty("file").GetString()!, each.GetProperty("member").GetString()!, each.GetProperty("after").GetString()!))
                 .ToList(),
             TestFolders = root.GetProperty("testFolders").EnumerateArray().Select(each => each.GetString()!).ToList(),
-            Tests = root.TryGetProperty("tests", out var tests) ? Strings(tests) : new Dictionary<string, string>(),
         };
     }
-
-    private static Dictionary<string, string> Strings(JsonElement table) =>
-        table.EnumerateObject().ToDictionary(entry => entry.Name, entry => entry.Value.GetString()!, StringComparer.Ordinal);
 
     private static Dictionary<string, IReadOnlyList<string>> Lists(JsonElement table) =>
         table.EnumerateObject().ToDictionary(
@@ -103,11 +93,8 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// The structure gate's rules (the design §14.5; D166, D212), over a driver's sources as (path, text) pairs, each path relative to the
 /// driver's folder with <c>/</c> between its parts:
 /// <list type="bullet">
-/// <item><c>place</c>: every source is placed in one subdomain, by <c>structure.json</c>'s list of files or, for new code, by the folder
-/// of the subdomain it sits in; a source in no subdomain's folder that the list does not place fails, and so does an entry for a file that
-/// is not there. A subdomain whose move has landed holds every file placed in it, in its folder; its folder may still hold the files of a
-/// subdomain whose move has not (Platform's folder is today's, which the rest leave one row at a time), since a file the map places in
-/// another subdomain is that subdomain's to move.</item>
+/// <item><c>place</c>: every source sits in the folder of the subdomain it is placed in; a source at the top or in no subdomain's
+/// folder fails.</item>
 /// <item><c>module</c>: a subdomain's layer folder is a <c>Domain</c>, in a subdomain the map lets hold one; an <c>Application</c> or an
 /// <c>Infrastructure</c> folder is refused (FLAT1a).</item>
 /// <item><c>direction</c>: a file names only its own subdomain's types and those of the subdomains listed before it, read through Roslyn's
@@ -118,7 +105,7 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// <c>async</c>, but where the census names the crossing.</item>
 /// <item><c>loop</c>: nothing outside <c>Loop</c>'s folder names a type declared in it, with no exception; and a file the map places in Loop
 /// declares no static <c>bool</c> rule the census does not name as moving.</item>
-/// <item><c>mirror</c>: a test folder is a subdomain's, today's not yet moved or support; a test the map lists sits under its subdomain's folder.</item>
+/// <item><c>mirror</c>: a test folder is a subdomain's, one <c>testFolders</c> lists, or support.</item>
 /// <item><c>namespace</c>: no global using names a subdomain's namespace.</item>
 /// </list>
 /// A comment or a string names nothing, a <c>cref</c> included.
@@ -175,23 +162,8 @@ internal static class StructureCheck
         }
 
         var byName = map.Subdomains.GroupBy(subdomain => subdomain.Name, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        var byFolder = map.Subdomains.GroupBy(subdomain => subdomain.Folder, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        var present = sources.Select(source => source.Path).ToHashSet(StringComparer.Ordinal);
 
-        // The map's own entries: a file it places is there, in a subdomain it declares; a census row names a subdomain it declares.
-        foreach (var (file, name) in map.Files)
-        {
-            if (!byName.ContainsKey(name))
-            {
-                breaches.Add(new("structure.json", 0, "map", $"{file} is placed in {name}, which is no subdomain of the map"));
-            }
-
-            if (!present.Contains(file))
-            {
-                breaches.Add(new(file, 0, "place", "structure.json places it, and it is not there: a move gives its entry its new path, and a delete takes it off the list"));
-            }
-        }
-
+        // A census row names a subdomain the map declares.
         foreach (var family in map.Families.Where(family => !byName.ContainsKey(family.After)))
         {
             breaches.Add(new("structure.json", 0, "map", $"the edge family {family.Name} is cut after {family.After}, which is no subdomain of the map"));
@@ -202,12 +174,7 @@ internal static class StructureCheck
             breaches.Add(new("structure.json", 0, "map", $"the rule {rule.Member} of {rule.File} leaves Loop after {rule.After}, which is no subdomain of the map"));
         }
 
-        Subdomain? Place(string path)
-        {
-            if (map.Files.TryGetValue(path, out var name)) return byName.GetValueOrDefault(name);
-            var parts = path.Split('/');
-            return parts.Length > 1 ? byFolder.GetValueOrDefault(parts[0]) : null;
-        }
+        Subdomain? Place(string path) => map.OwnerOf(path) is { } name ? byName[name] : null;
 
         var loopFolder = byName.TryGetValue(Loop, out var loop) ? loop.Folder : Loop;
         foreach (var source in sources)
@@ -217,21 +184,12 @@ internal static class StructureCheck
             if (placed is null)
             {
                 breaches.Add(new(source.Path, 1, "place", parts.Length == 1
-                    ? "a file at the driver's top that structure.json does not place: put it in its subdomain's folder"
-                    : $"the folder {parts[0]} is no subdomain's, and structure.json does not place the file: put it in its subdomain's folder (structure.json's subdomains)"));
+                    ? "a file at the driver's top: put it in its subdomain's folder"
+                    : $"the folder {parts[0]} is no subdomain's: put the file in its subdomain's folder (structure.json's subdomains)"));
             }
-            else
+            else if (parts.Length > 2 && parts[1] == "Domain" && !placed.Domain)
             {
-                var inFolder = parts.Length > 1 && parts[0] == placed.Folder;
-                if (placed.Moved && !inFolder)
-                {
-                    breaches.Add(new(source.Path, 1, "place", $"{placed.Name} has moved, and the map places this file in it: its files sit in {placed.Folder}"));
-                }
-
-                if (inFolder && parts.Length > 2 && parts[1] == "Domain" && !placed.Domain)
-                {
-                    breaches.Add(new(source.Path, 1, "module", $"{placed.Name} holds no Domain layer: its layers are none"));
-                }
+                breaches.Add(new(source.Path, 1, "module", $"{placed.Name} holds no Domain layer: its layers are none"));
             }
 
             if (parts.Length > 2 && parts[1] is "Application" or "Infrastructure")
@@ -388,7 +346,7 @@ internal static class StructureCheck
     /// <summary>Folders of the tests' project that are no subdomain's: fixtures and the build's own output.</summary>
     private static readonly string[] TestSupport = ["fixtures", "golden", "bin", "obj", "TestResults"];
 
-    /// <summary>The <c>mirror</c> rule: a listed test sits under its subdomain's folder, and a test folder is a subdomain's, not yet moved, or support.</summary>
+    /// <summary>The <c>mirror</c> rule: a test folder is a subdomain's, one <c>testFolders</c> lists, or support.</summary>
     private static void Mirror(StructureMap map, List<string> tests, List<StructureBreach> breaches)
     {
         var folders = map.Subdomains.Select(subdomain => subdomain.Folder).ToHashSet(StringComparer.Ordinal);
@@ -404,27 +362,6 @@ internal static class StructureCheck
         foreach (var folder in map.TestFolders.Where(folder => !tests.Any(path => path.StartsWith(folder + "/", StringComparison.Ordinal))))
         {
             breaches.Add(new("structure.json", 0, "map", $"the tests' folder {folder} is listed as not yet moved, and none is there: a move takes its entry off the list"));
-        }
-
-        foreach (var (name, subdomain) in map.Tests)
-        {
-            var folder = map.Subdomains.FirstOrDefault(each => each.Name == subdomain)?.Folder;
-            if (folder is null)
-            {
-                breaches.Add(new("structure.json", 0, "map", $"{name} is a test mapped to {subdomain}, which is no subdomain of the map"));
-            }
-
-            var found = tests.Where(path => path.Split('/')[^1] == name).ToList();
-            if (found.Count == 0)
-            {
-                breaches.Add(new("structure.json", 0, "map", $"{name} is listed under {subdomain}, and no such test is in the tests' tree: a delete takes its entry off the list"));
-            }
-
-            foreach (var path in found.Where(path => folder is not null && (path.Split('/')[0] != folder || !path.Contains('/'))))
-            {
-                var where = path.Contains('/') ? $"under {path.Split('/')[0]}" : "at the top of the tests";
-                breaches.Add(new(path, 0, "mirror", $"sits {where}, and the map lists it under {subdomain}: a test mirrors its subdomain's folder"));
-            }
         }
     }
 

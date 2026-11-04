@@ -46,7 +46,6 @@ group.
 | `brainstorm` | A question put to this machine's agents (D176): `brainstorm "<question>" [--repository R] [--agents A,B] [--source PATH]...`, then `show`, `send`, `stop`, `clear <id>` and `list`; `--kind meeting` makes it a meeting of agents of different makers; `measure <agent>` the account a pass would take |
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`, `links system\|daoris`. **Edits files under the home** |
 | `chat` | A conversation in a repository at this terminal: `chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]` |
-| `convert` | This home's old records converted, every area's part in one plan, through the running Daoris: `--plan` writes nothing, `--apply <digest>` is your press, confirmed in its window (a failed part pressed again, or left with `--leave <part>`), `--undo` takes the latest back |
 | `drive` | The headless loop: `drive [--once \| --until-idle] [--quiet-end <minutes>] [--share]` |
 | `gate` | A checkout's heavy gates under its repository's one slot (`gate run`), and a branch's or a commit's verification (`gate verify`) |
 | `git` | Each repository's branches and their acts (`branches`, `branch`, `tag`, `fetch`, `pick`, `revert`, `rebase`), a session's `review`, and the identities and accesses Daoris's git doors use (`identity`, `use`, `access`, `asks`, `answer`) |
