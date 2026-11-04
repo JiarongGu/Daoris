@@ -53,6 +53,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `EndJudgement`, `EndKeeping` | `Workplace/EndJudgement.cs`, `Workplace/EndKeeping.cs` | Whether a branch's work ended, from git alone, and the one writer of that fact |
 | `Orphans` | `Workplace/Orphans.cs` | The sweep: a record that says it runs with nothing running it is stopped as interrupted |
 | `QuestStore`, `QuestExchange` | `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs` | Quest records and log; every door's judgement; claim by push |
+| The quest log's operations | `Service/Quests/Operations/`, listed in `docs/index/registered.md` | Each kind a module registers (`[QuestOperation(kind, Log)]`, `IQuestOperation`): its log payload written and read, what a lost one takes with it in a rebase, and its verbs on the `QuestTx` the store's one-line door opens; built as the store opens, refusing a kind declared twice or a mark naming another kind |
 | `QuestHandbacks` | `Service/Quests/QuestHandbacks.cs` | A session's closing note on its quest |
 | `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/` | Session records, the ledger's opens, moves and says, the tree lock, a line's head |
 | `AskStore`, `AskDesk` | `Service/Asks/Asks.cs` | Ask records, the person's words on them, publishing and deleting |
@@ -205,6 +206,7 @@ Put new behaviour in a unit of its own, beside the subdomain below (D231). Do no
 | how a line goes on after an end, words or a limit | `Course/Domain/LineCourse.Decide.cs` only; executors in `Course/` | `Course/LineCourseTests` with `course-cases.txt`, `Course/CourseCensusTests`, `Course/LimitWaitsTests`, `Course/LimitResumeTickTests`, `Loop/AnswerContinuesTickTests` |
 | what a run's end is | `Events/Domain/Observation.cs`, its code in `Events/NoteCodes.cs`, its class in `Events/PartEnds.cs` | `Events/ObservationTests`, `Events/PartEndedTests`, `Loop/AskAndWaitTickTests`, `Loop/OrphanedSessionTests` |
 | a part of the look | a pass of its own in its subdomain, marked `[LookPass]`; what it reaches of the driver goes on `ILookWiring`, or on its module's own wiring interface where the type sits above Work orders; what it reads of an earlier pass or leaves for a later one goes on `LookState`, written by one pass | `Loop/DriverPartsTests`, and the tests of the stage it moves |
+| a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/DriverWatch.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
 | quiet sessions | `Events/SessionWatch.cs` | `Events/SessionWatchTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests` |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
