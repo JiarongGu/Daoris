@@ -129,6 +129,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 - [ ] **FLOWCHART2 — a proper flowchart for composing and reading workflows** (web, driver, service; D223): a to g are built; left **h**, the installed window, with SETUPUX1x. → `docs/2026-11-02-flowchart-design.md` §7
 - [ ] **AGENTSPLACE1 — the Agents place made usable** (web, modules, driver): every row but **1l**, the installed window, is built; the place pages' sections wait on SETUPUX1y's lighting. → `docs/2026-11-01-agents-place-design.md` §7
 - [ ] **COMPANYVIEW1 — the agents' structure configured and seen, as a list and a diagram** (web, modules, driver): every row but **1h**, the steward's marks after STEWARDROLE1d, is built. → `docs/2026-10-31-company-view-design.md` §7
+- [ ] **CODECS1 — Daoris's browser plays H.264, AAC and HEVC video** (app; D234): waits on the kit's engine with these codecs (quest `e7160488ae00` to Shenora). Then move the `Shenora.Chromium` pin, add a process check that an H.264/AAC MP4 and an HEVC clip play in the browser, and rewrite the evidence's item 8 and the area's browser rules.
 
 ## Plugins
 
