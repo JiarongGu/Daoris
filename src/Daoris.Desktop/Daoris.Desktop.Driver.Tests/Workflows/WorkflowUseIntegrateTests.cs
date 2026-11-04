@@ -27,17 +27,23 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
 
     private const string Gated ="""{"form":"branch","pattern":"w/{quest}","autoAccept":true,"integrate":{"gates":"declared"}}""";
 
-    /// <summary>The workflow `integrated`: a claimed node, the landing and an integrate asking as <paramref name="request"/>.</summary>
-    private void Stored(string request = "owner", string landing = "{}")
+    /// <summary>
+    /// The workflow `integrated`: a claimed node, the landing and an integrate asking as <paramref name="request"/>; the landing waits on the
+    /// person's <c>review</c> where <paramref name="reviewed"/>.
+    /// </summary>
+    private void Stored(string request = "owner", bool reviewed = false)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(WorkflowStore.PathOf(_home, "integrated"))!);
+        var review = reviewed ? """{"id":"yes","kind":"review","version":1,"reach":"pressed"},""" : "";
+        var before = reviewed ? "yes" : "claim";
+        var wires = reviewed ? """{"id":"c","kind":"after","from":"claim","to":"yes"},""" : "";
         File.WriteAllText(WorkflowStore.PathOf(_home, "integrated"), $$$"""
             {"id":"integrated","name":"Integrated","versions":[{"version":1,"at":"2026-10-21T09:00:00Z","door":"terminal","schema":2,"graph":
             {"schemaVersion":2,"entries":["claim"],"end":"merge-in",
-             "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
-                      {"id":"land","kind":"handed","version":1,"reach":"observed","options":{{{landing}}}},
+             "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{{{review}}}
+                      {"id":"land","kind":"land","version":1,"reach":"performed","options":{"method":"integrate"}},
                       {"id":"merge-in","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}}],
-             "wires":[{"id":"a","kind":"after","from":"claim","to":"land"},{"id":"b","kind":"after","from":"land","to":"merge-in"}]}}]}
+             "wires":[{{{wires}}}{"id":"a","kind":"after","from":"{{{before}}}","to":"land"},{"id":"b","kind":"after","from":"land","to":"merge-in"}]}}]}
             """);
     }
 
@@ -134,7 +140,7 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
     [Fact]
     public async Task Done_is_refused_where_the_accepted_declaration_cannot_be_read_and_a_press_where_the_landing_accepts_by_press()
     {
-        Stored("done", """{"accept":"automatic"}""");
+        Stored("done");
         Rules($$"""{"web-app":{{Gated}}}""");
 
         // No checkout here to read the line's accepted declaration from: nothing is passed on a guess.
@@ -142,8 +148,8 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
         Assert.Contains("whether the declaration the owner accepted names a gate could not be read", _error.ToString());
         Assert.False(Chose());
 
-        // The landing's press: the version says `you`.
-        Stored("steward", """{"accept":"you"}""");
+        // The landing's press: the version holds a `review` before it.
+        Stored("steward", reviewed: true);
         Rules("""{"web-app":{"form":"branch","pattern":"w/{quest}","integrate":{"gates":"none"}}}""");
         _error.GetStringBuilder().Clear();
         Assert.Equal(1, await Run("workflow use integrated --repository web-app", ("web-app", "work", null)));
@@ -157,7 +163,7 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
         File.WriteAllText(WorkflowStore.PathOf(_home, "plain"), """
             {"id":"plain","name":"Plain","versions":[{"version":1,"at":"2026-10-21T09:00:00Z","door":"terminal","schema":2,"graph":
             {"schemaVersion":2,"entries":["claim"],"end":"land",
-             "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],
+             "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}}]}
             """);
         Rules($$"""{"web-app":{{Branch}}}""");

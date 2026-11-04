@@ -142,7 +142,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         // A graph with a `handed`, as an older build stored it: no door saves one now, and a stored one still binds.
         StoredSteps.AddGraph(WorkflowPorts.Store(_home), "web-graph", "A graph", "2026-10-21T09:00:00Z", JsonNode.Parse(
             """{"schemaVersion":2,"entries":["claimed"],"end":"handed","nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},"""
-            + """{"id":"handed","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")!);
+            + """{"id":"handed","kind":"land","version":1,"reach":"performed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")!);
         var graph = Config("""{"workflows":{"web-app":{"default":"web-graph"}}}""");
 
         var graphed = ChatRuns.Bind(graph, _home, "chat-c1a2b3c4", "web-app", null, [], At);
@@ -390,7 +390,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         var digest = RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
-             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
             """);
         RunHome.Bind(_home, "q1", digest, At);

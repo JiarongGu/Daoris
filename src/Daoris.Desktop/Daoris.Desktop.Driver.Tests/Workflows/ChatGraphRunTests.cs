@@ -162,7 +162,7 @@ public sealed class ChatGraphRunTests : AutoLandingFixture
 
         var closing = """
             {"schemaVersion":2,"entries":["land"],"end":"close",
-             "nodes":[{"id":"land","kind":"handed","version":1,"reach":"observed"},{"id":"close","kind":"quest.close","version":1,"reach":"performed"}],
+             "nodes":[{"id":"land","kind":"land","version":1,"reach":"performed"},{"id":"close","kind":"quest.close","version":1,"reach":"performed"}],
              "wires":[{"id":"l>c","kind":"after","from":"land","to":"close"}]}
             """;
         RunHome.SaveGraph(_home, closing);

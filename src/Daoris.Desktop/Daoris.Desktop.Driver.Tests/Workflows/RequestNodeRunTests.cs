@@ -14,7 +14,7 @@ public sealed class RequestNodeRunTests : NodeRunFixture
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                   {"id":"ask","kind":"request","version":1,"reach":"waited",
                    "options":{"to":"game","title":"Expose the frame cap","body":"The game paces on it.","start":"automatic"}},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>a","kind":"after","from":"claimed","to":"ask"},{"id":"a>h","kind":"after","from":"ask","to":"handed"}]}
         """;
 

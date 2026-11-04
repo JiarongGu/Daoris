@@ -168,7 +168,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     {
         const string Graph = """
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
-             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
             """;
         RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, Graph), DateTimeOffset.UtcNow);

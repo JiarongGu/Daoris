@@ -12,14 +12,14 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     /// <summary>The least a named version's graph holds: <c>claimed</c>, then <c>handed</c>.</summary>
     private const string ClaimedThenHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
         """;
 
     /// <summary>The plugin's observed deploy after the landing: a node a wire path leads to from <c>handed</c>.</summary>
     private const string DeployedAfterHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"deployed",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"},
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"},
                   {"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"}],
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>d","kind":"after","from":"handed","to":"deployed"}]}
         """;
@@ -29,7 +29,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"opinion","kind":"opinion","version":1,"reach":"observed"},
                   {"id":"look","kind":"look","version":1,"reach":"observed"},{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"opinion"},{"id":"c>l","kind":"after","from":"claimed","to":"look"},
                   {"id":"c>d","kind":"after","from":"claimed","to":"deploy"},{"id":"o>h","kind":"after","from":"opinion","to":"handed"},
                   {"id":"l>h","kind":"after","from":"look","to":"handed"},{"id":"d>h","kind":"after","from":"deploy","to":"handed"}]}
@@ -265,7 +265,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
             """);
         var serving = new SessionRecord("s1", "engine", "completed") { Quest = RunId };
@@ -304,7 +304,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
             """);
         var serving = new SessionRecord("s1", "engine", "completed") { Quest = RunId };
@@ -448,7 +448,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     private static string Reviewed(bool back) => """
         {"schemaVersion":2,"entries":["work"],"end":"handed",
          "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"review","kind":"review","version":1,"reach":"pressed"},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"w>r","kind":"after","from":"work","to":"review"},{"id":"r>h","kind":"after","from":"review","to":"handed"}
         """ + (back ? """,{"id":"r<w","kind":"back","from":"review","to":"work","on":"rejected"}""" : "") + "]}";
 
@@ -654,7 +654,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         const string Graph = """
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deploy"},{"id":"d>h","kind":"after","from":"deploy","to":"handed"}]}
             """;
         var digest = RunHome.SaveGraph(_home, Graph);

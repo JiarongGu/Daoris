@@ -183,13 +183,13 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
 
     /// <summary>
     /// The <i>Integrated into the line</i> preset's graph (§17.7), its <i>with no press</i> variant, saved as a version the run is bound to:
-    /// <c>claimed</c>, <c>work.requests</c>, <c>handed</c> accepting automatically, <c>integrate</c> under <c>request: done</c>, <c>line</c>.
+    /// <c>claimed</c>, <c>work.requests</c>, <c>land</c> by the integrate method, <c>integrate</c> under <c>request: done</c>, <c>line</c>.
     /// </summary>
     private const string PresetGraph = """
         {"schemaVersion":2,"entries":["work"],"end":"line",
          "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
                   {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
-                  {"id":"landing","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"automatic"}},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate"}},
                   {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"done","conflicts":"session"}},
                   {"id":"line","kind":"line","version":1,"reach":"observed"}],
          "wires":[{"id":"a","kind":"after","from":"work","to":"requests"},{"id":"b","kind":"after","from":"requests","to":"landing"},
