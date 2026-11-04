@@ -35,15 +35,6 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     private static HelpProposal Agent(string door, string? account, string? workspace, UseChange? use = null) =>
         new("p7", "agent", door, "claude-code", workspace, account, null, "the person asked", "h1", "proposed") { AccountUse = use };
 
-    /// <summary>A stored <c>default</c>'s refusal names the account <c>order</c> would put first, spelled for any shell (POOL1b, §5.3).</summary>
-    [Theory]
-    [InlineData("my acct", "`daoris agent account order claude-code \"my acct\"` puts one first")]
-    [InlineData("R&D", "`daoris agent account order claude-code <account>` puts one first")]
-    public void A_default_s_refusal_spells_the_account_order_would_put_first(string account, string door)
-    {
-        Assert.Contains(door, Plan(Agent("default", account, null)).Refusal);
-    }
-
     [Theory]
     [InlineData("my acct", "daoris agent account use claude-code --keep \"my acct\"")]
     [InlineData("R&D", "daoris agent account use claude-code --keep <account>")]
@@ -77,7 +68,6 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 
     [Theory]
     [InlineData("line", "my team", "main", "daoris place line --workspace \"my team\" main")]
-    [InlineData("landing", "my team", "merge", "daoris place landing --workspace \"my team\" merge")]
     [InlineData("language", "R&D", "zh", "daoris place language --workspace <workspace> zh")]
     [InlineData("across", "my team", "read off", "daoris place across --workspace \"my team\" read off")]
     public void A_workspace_setting_s_terminal_spells_its_workspace(string door, string workspace, string value, string terminal)

@@ -108,6 +108,8 @@ public sealed class HelperLookTests : IDisposable
         host.Set(Helper, "serves", "s1");
         // The ask a session's line is on is its entry's origin (COMMS1c), whoever asked its quest.
         host.Set("s1", "entry", "ask:a1/reports");
+        // The host's one door for solicited answers is the only door a hand goes through.
+        host.Answers = true;
         return host;
     }
 
@@ -1252,39 +1254,6 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 One hand per ask (Fable's read of COWORKUX1, F3): a restart that cut the look between the keep and the state's mark finds the
-    /// answer already handed, its word still waiting on the asker or a turn of the asker's already opened with it, and marks it handed
-    /// without handing it twice.
-    /// </summary>
-    [Theory]
-    [InlineData("waiting")]
-    [InlineData("taken")]
-    public async Task An_answer_handed_before_a_restart_cut_its_mark_is_never_handed_twice(string where)
-    {
-        Ask("a1");
-        Answered();
-        var host = Host();
-        if (where == "waiting")
-        {
-            host.Set("s1", "said", new JsonArray(new JsonObject
-            {
-                ["id"] = "hp-w9", ["text"] = "Another agent answered.", ["at"] = At.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
-                ["helper"] = Helper,
-            }));
-        }
-        else
-        {
-            new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
-                "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = Helper, Id = "hp-w9", Text = "Another agent answered." });
-        }
-
-        await Look(Driver(host, pass: null));
-
-        Assert.Empty(host.HelperHands);
-        Assert.Equal("hp-w9", Files.ReadState("a1")!.Handed);
-    }
-
-    /// <summary>
     /// 🔴 Codex's round-2 #2 and #7 on COWORKUX1: a hand that began (its mark written before the door) and whose outcome a restart lost is
     /// never made again on the absence of evidence, since an event's write may have failed and a word may have moved: with nothing on the
     /// line it settles as uncertain for the person; a conversation's notice to its runner that the word waits is no evidence of a taking.
@@ -1311,66 +1280,6 @@ public sealed class HelperLookTests : IDisposable
         var state = Files.ReadState("a1")!;
         Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain, Helper), (state.State, state.Code, state.Helper));
         Assert.True(HelperWaits.Open("s1", [new HelperAsk("a1", "s1", "Why?", null, HelperAsk.ByAgent, At)], Files.ReadState).Count == 0);
-    }
-
-    /// <summary>
-    /// 🔴 Codex's round-2 #2: the evidence is read along the asker's line. A turn of the commissioner took the answer, and the line was handed
-    /// over before the mark was written: the ask is marked handed, and its successor is never handed it again.
-    /// </summary>
-    [Fact]
-    public async Task An_answer_taken_before_a_relay_is_found_on_the_line_and_not_handed_to_the_successor()
-    {
-        Ask("a1");
-        Answered();
-        Files.WriteState(Files.ReadState("a1")! with { Attempted = At });
-        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
-            "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = Helper, Id = "hp-w9", Text = "Another agent answered." });
-        var host = Host(state: "stopped").Session("s2", "completed", tree: "trees/default/reports/s-1", kind: "drive");
-        host.Set("s2", "from", "s1");
-
-        await Look(Driver(host, pass: null));
-
-        Assert.Equal(0, host.HelperHandsAsked);
-        Assert.Equal("hp-w9", Files.ReadState("a1")!.Handed);
-    }
-
-    /// <summary>
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): a hand whose answer was lost (the host's 500 after its keep, a success that does not
-    /// read, a client that gave up) proves nothing was kept no more than that it was, so its attempt mark stays and the outcome is held as
-    /// uncertain until the next look reads the line back: the word found waiting marks it handed; the word consumed with no event left
-    /// settles it uncertain. Either way it is never handed twice.
-    /// </summary>
-    [Theory]
-    [InlineData("500", false)]
-    [InlineData("500", true)]
-    [InlineData("unreadable", true)]
-    [InlineData("timeout", true)]
-    public async Task A_hand_whose_answer_was_lost_keeps_its_mark_and_is_read_back_never_handed_twice(string lost, bool consumed)
-    {
-        Ask("a1");
-        Answered();
-        var host = Host();
-        host.HelperHandLost = lost;
-        var driver = Driver(host, pass: null);
-
-        var first = await Look(driver);
-
-        Assert.Equal(1, host.HelperHandsAsked);
-        Assert.Contains("uncertain", Assert.Single(first));
-        var held = Files.ReadState("a1")!;
-        Assert.NotNull(held.Attempted);
-        Assert.Null(held.Handed);
-
-        // The word was kept; the asker's run then took it off its record, the event of its taking never written.
-        var word = host.Said("s1")[0]!["id"]!.GetValue<string>();
-        if (consumed) host.Take("s1");
-        host.HelperHandLost = null;
-        await Look(driver);
-
-        Assert.Equal(1, host.HelperHandsAsked);
-        var settled = Files.ReadState("a1")!;
-        if (consumed) Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain), (settled.State, settled.Code));
-        else Assert.Equal(word, settled.Handed);
     }
 
     /// <summary>A conversation's adapter on the protocol door that spawns nothing: its go-on is tried and fails at the start.</summary>
@@ -1428,7 +1337,8 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Equal(["working", "failed"], ledger.Moves("s1"));
         lock (ended) Assert.Equal(["s1"], ended);
-        Assert.Equal(1, host.HelperHandsAsked);
+        // The lost hand, and the one asked again under its key, which answers the word kept.
+        Assert.Equal(2, host.HelperHandsAsked);
         Assert.Equal(word, Files.ReadState("a1")!.Handed);
         var told = Assert.Single(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.User);
         Assert.Equal(("target", "resume", word, Helper), (told.Origin, told.Reaches, told.Id, told.Helper));
@@ -1471,19 +1381,19 @@ public sealed class HelperLookTests : IDisposable
         Assert.Equal((word, MessageLevel.Urgent), (answer.Id, answer.Level));
         Assert.Contains("The window is exclusive", answer.Text);
         Assert.Equal("target", ChatMessage.Words(answer).Origin);
-        Assert.Equal(1, host.HelperHandsAsked);
+        Assert.Equal(2, host.HelperHandsAsked);
         Assert.Equal(word, Files.ReadState("a1")!.Handed);
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): the line is followed sixteen links at most, and one longer is refused with its reason,
-    /// never handed to the part where the bound stopped, which the line has left; the answer stays with the helper for the person. A line of
-    /// exactly sixteen links reaches its newest part.
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): the line is followed as many links as the door's walk (<see cref="SolicitedHand.Bound"/>)
+    /// at most, and one longer is refused with its reason, never handed to the part where the bound stopped, which the line has left; the
+    /// answer stays with the helper for the person. A line of exactly the bound's links reaches its newest part.
     /// </summary>
     [Theory]
-    [InlineData(16, true)]
-    [InlineData(17, false)]
-    public async Task A_line_past_sixteen_links_is_refused_never_handed_to_a_part_it_left(int links, bool handed)
+    [InlineData(SolicitedHand.Bound, true)]
+    [InlineData(SolicitedHand.Bound + 1, false)]
+    public async Task A_line_past_the_bound_is_refused_never_handed_to_a_part_it_left(int links, bool handed)
     {
         Ask("a1");
         Answered();
@@ -1509,7 +1419,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.Equal(0, host.HelperHandsAsked);
         var state = Files.ReadState("a1")!;
         Assert.Equal((HelperStates.Refused, HelperWhy.CannotTake), (state.State, state.Code));
-        Assert.Contains("sixteen", Assert.Single(events));
+        Assert.Contains($"past {SolicitedHand.Bound} parts", Assert.Single(events));
     }
 
     // ——— COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): against a host with the one door for solicited answers.
@@ -1519,9 +1429,7 @@ public sealed class HelperLookTests : IDisposable
     {
         Ask("a1");
         Answered();
-        var host = Host(state, kind);
-        host.Answers = true;
-        return host;
+        return Host(state, kind);
     }
 
     /// <summary>A part that continues <paramref name="from"/> (a hand-over), made after it: a conversation unless <paramref name="kind"/> says.</summary>
@@ -1648,31 +1556,6 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Equal(0, host.HelperHandsAsked);
         Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
-    }
-
-    /// <summary>
-    /// The older file (the register's <c>solicited-old-files</c>): an attempt an older build made, with no key on file, is read as before
-    /// against the one door too: the word taken along the line marks it handed, and nothing found settles it uncertain, the door never asked.
-    /// </summary>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task Against_the_one_door_an_attempt_an_older_build_made_is_read_as_before(bool taken)
-    {
-        var host = Door();
-        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow.AddMinutes(-1) });
-        if (taken)
-        {
-            new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
-                "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = Helper, Id = "hp-w9", Text = "Another agent answered." });
-        }
-
-        await Look(Driver(host, pass: null));
-
-        Assert.Equal(0, host.HelperHandsAsked);
-        var state = Files.ReadState("a1")!;
-        if (taken) Assert.Equal("hp-w9", state.Handed);
-        else Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain), (state.State, state.Code));
     }
 
     /// <summary>

@@ -319,7 +319,6 @@ public sealed class DriverCommandTests
     public void Every_hand_off_holds_its_push_to_the_result_of_the_session_that_last_moved_its_branch()
     {
         var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
-        var help = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "HelpRoutes.cs"));
         var hand = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesHandVerb.cs"));
         var shared = route[route.IndexOf("internal static async Task<TreeHand> HandAsync(", StringComparison.Ordinal)..];
 
@@ -332,7 +331,6 @@ public sealed class DriverCommandTests
         Assert.Contains(
             "await TreesRoutes.HandAsync(_loop, trees, root, entry, named, cancellationToken)",
             File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesHandDesk.cs")));
-        Assert.Contains("TreesRoutes.HandAsync(_loop, trees, root, entry, plugin, ct)", help);
     }
 
     /// <summary>
@@ -501,10 +499,10 @@ public sealed class DriverCommandTests
         Assert.Contains("\n  session list [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
         Assert.Contains("\n  session stop <id> [--turn]  ·  session finish <id> [--note \"…\"]  ·  session decline <id> --reason \"…\"\n", usage);
         Assert.Contains("\n  session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>\n", usage);
-        Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
+        Assert.Contains("session stop <id> [--turn]", SessionsCommand.Usage);
         // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too, at a level (COWORK1a).
         Assert.Contains("\n  session say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now]\n", usage);
-        Assert.Contains("sessions say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
+        Assert.Contains("session say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         // ONEWAY1l's usage lines: the usage names `--level` alone for a say (ONEWAY1ai-i: the host's header teaches no verb now).

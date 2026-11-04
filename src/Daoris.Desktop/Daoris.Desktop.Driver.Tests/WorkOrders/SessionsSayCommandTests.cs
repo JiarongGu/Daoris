@@ -137,7 +137,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         Assert.Null(SessionsCommand.Read(args, out var problem));
         Assert.False(string.IsNullOrWhiteSpace(problem));
-        Assert.Contains("sessions say <id>", SessionsCommand.Usage);
+        Assert.Contains("session say <id>", SessionsCommand.Usage);
     }
 
     [Fact]
@@ -1130,7 +1130,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         Assert.Null(SessionsCommand.Read(args, out var problem));
         Assert.False(string.IsNullOrWhiteSpace(problem));
-        Assert.Contains("sessions take-back <id> [<word>]  ·  sessions reword <id> <word> \"…\"", SessionsCommand.Usage);
+        Assert.Contains("session take-back <id> [<word>]  ·  session reword <id> <word> \"…\"", SessionsCommand.Usage);
     }
 
     [Fact]

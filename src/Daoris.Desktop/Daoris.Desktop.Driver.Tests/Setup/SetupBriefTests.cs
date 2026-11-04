@@ -230,7 +230,7 @@ public sealed partial class SetupBriefTests
         foreach (var never in new[]
         {
             "push, merge or open a pull request", "write outside this tree", "publish a request to another repository",
-            "run `daoris repository connect` or `daoris upstream`", "`remote.join` or `remote.knowledge`",
+            "run `daoris connect` or `daoris upstream`", "`remote.join` or `remote.knowledge`",
             "change a `.gitattributes` this repository already has", "change a source, build or CI file",
         })
         {
@@ -394,7 +394,7 @@ public sealed partial class SetupBriefTests
         {
             "Never move, rewrite or delete an index this repository already keeps", "never change another source, build or CI file",
             "push, merge or open a pull request", "write outside this tree", "publish a request to another repository",
-            "run `daoris repository connect` or `daoris upstream`",
+            "run `daoris connect` or `daoris upstream`",
         })
         {
             Assert.Contains(never, body);

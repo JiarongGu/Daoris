@@ -647,7 +647,7 @@ public sealed class SessionsCommandTests : IDisposable
     {
         var ledger = Family();
         Assert.Equal(("stop-turn", "w0rk1ng0"), (SessionsCommand.Read(["stop", "w0rk1ng0", "--turn"], out _)!.Verb, "w0rk1ng0"));
-        Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
+        Assert.Contains("session stop <id> [--turn]", SessionsCommand.Usage);
 
         var (exit, said) = await RunAsync(ledger, ["stop", "w0rk1ng0", "--turn"]);
 

@@ -111,7 +111,7 @@ public sealed class PlacePlanTests
         foreach (var (side, config, store) in new[] { (engine.Before, Config, plain), (engine.After, after, applied.Store!) })
         {
             Assert.Equal(PlaceProjection.ValuesAt(config, "engine", "aurora", PlaceSource.RepositoryLevel), side.Values);
-            Assert.Equal(SetupPresets.LandOf(WorkflowProcesses.Otherwise(store, config, "engine", "aurora").Steps!), side.Land);
+            Assert.Equal(WorkflowProcesses.Otherwise(store, config, "engine", "aurora").Steps is { } steps ? SetupPresets.LandOf(steps) : null, side.Land);
             Assert.Equal(RoleWork.Codes.Select(work => WorkPolicies.Of(config, work, "engine", "aurora").Consent), side.Policies.Select(policy => policy.Consent));
         }
 

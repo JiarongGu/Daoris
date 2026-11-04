@@ -247,7 +247,7 @@ public sealed class GoOnNewTests : IDisposable
         Assert.Null(SessionsCommand.Read(["go-on-new"], out problem));
         Assert.Equal("`go-on-new` takes one session's id.", problem);
         Assert.Null(SessionsCommand.Read(["go-on-new", "s1", "s2"], out _));
-        Assert.Contains("sessions go-on-new <id>", SessionsCommand.Usage);
+        Assert.Contains("session go-on-new <id>", SessionsCommand.Usage);
         Assert.Contains("session go-on-new <id>", DriverCommand.Usage);
     }
 

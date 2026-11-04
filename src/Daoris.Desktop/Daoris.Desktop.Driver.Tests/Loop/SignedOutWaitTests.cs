@@ -65,15 +65,11 @@ public sealed class SignedOutWaitTests : IDisposable
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
     }
 
-    private static DriverConfig Config => DriverConfig.Empty with
-    {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        Adapter = "fake",
-        IntakeAdapter = "fake",
-        Strikes = 1,
-        PollSeconds = 1,
-    };
+    private static DriverConfig Config => ActorChoices.With(
+        ActorChoices.With(
+            DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], Strikes = 1, PollSeconds = 1 },
+            "build", [new ActorChoice("fake")]),
+        "intake", [new ActorChoice("fake")]);
 
     /// <summary>A roster whose every account of the list read signed out a moment ago (TOOL6g), and none cools.</summary>
     private HarnessRoster SignedOut()

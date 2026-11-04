@@ -52,7 +52,7 @@ public sealed class SessionsHelperTests : IDisposable
     [Fact]
     public void The_usage_spells_the_verb_in_both_places_a_person_reads_it()
     {
-        Assert.Contains("sessions helper <id> \"<question>\" [--agent <name>]", SessionsCommand.Usage);
+        Assert.Contains("session helper <id> \"<question>\" [--agent <name>]", SessionsCommand.Usage);
         Assert.Contains("session helper <id> \"<question>\" [--agent <name>]", DriverCommand.Usage);
     }
 
@@ -144,7 +144,7 @@ public sealed class SessionsHelperTests : IDisposable
     [Fact]
     public void The_usage_spells_the_yes_and_the_no_in_both_places()
     {
-        Assert.Contains("sessions helper --approve|--decline <ask>", SessionsCommand.Usage);
+        Assert.Contains("session helper --approve|--decline <ask>", SessionsCommand.Usage);
         Assert.Contains("session helper --approve|--decline <ask>", DriverCommand.Usage);
     }
 

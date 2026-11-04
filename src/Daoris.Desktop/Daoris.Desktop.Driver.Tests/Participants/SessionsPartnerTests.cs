@@ -64,8 +64,8 @@ public sealed class SessionsPartnerTests : IDisposable
     [Fact]
     public void The_usage_spells_the_verb_in_both_places_a_person_reads_it()
     {
-        Assert.Contains("sessions partner <id> \"<piece>\" --agent <name> [--paths <path>…]", SessionsCommand.Usage);
-        Assert.Contains("sessions partner <id> --list  ·  sessions partner <piece> --stop", SessionsCommand.Usage);
+        Assert.Contains("session partner <id> \"<piece>\" --agent <name> [--paths <path>…]", SessionsCommand.Usage);
+        Assert.Contains("session partner <id> --list  ·  session partner <piece> --stop", SessionsCommand.Usage);
         Assert.Contains("session partner <id> \"<piece>\" --agent <name> [--paths <path>…]", DriverCommand.Usage);
         Assert.Contains("session partner <id> --list  ·  session partner <piece> --stop", DriverCommand.Usage);
     }

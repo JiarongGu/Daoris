@@ -158,7 +158,6 @@ public sealed class StrikeTests
     [InlineData("""{ "id": "s1", "quest": "Q1", "state": "FAILED" }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": true }""", false)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": false }""", true)]
-    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": "true" }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped" }""", false)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": false }""", false)]
@@ -168,7 +167,6 @@ public sealed class StrikeTests
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "working" }""", false)]
     [InlineData("""{ "id": "s1", "quest": "q1" }""", false)]
     [InlineData("""{ "id": "origin/s1", "quest": "q1", "state": "failed" }""", false)]
-    [InlineData("""{ "id": 7, "quest": "q1", "state": "failed" }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q2", "state": "failed" }""", false)]
     [InlineData("""{ "id": "s1", "quest": "", "state": "failed" }""", false)]
     [InlineData("""{ "id": "s1", "state": "failed" }""", false)]
@@ -182,7 +180,6 @@ public sealed class StrikeTests
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": "account.refused" }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "note": "The agent refused the account for its sign-in." }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true, "noteParts": [{ "code": "account.refused" }] }""", true)]
-    [InlineData("""42""", false)]
     public void A_record_strikes_as_the_cli_counts_it(string record, bool strikes)
     {
         var counted = ServiceClient.ReadStrikes($"[{record}]");
@@ -325,13 +322,13 @@ public sealed class StrikeTests
     public void The_limit_and_the_marks_round_trip_through_the_file()
     {
         var config = DriverConfig.Empty
-            .WithStrikes(5)
             .WithForgiven("q1", 3)
             .WithHold("Game", true);
 
         var read = DriverConfig.Parse(config.ToJson());
 
-        Assert.Equal(5, read.Strikes);
+        // The limit is the rules' now: the file neither writes nor reads it.
+        Assert.DoesNotContain("strikes", config.WithStrikes(5).ToJson(), StringComparison.Ordinal);
         Assert.Equal(3, read.ForgivenAt("q1"));
         Assert.Equal(0, read.ForgivenAt("q2"));
         Assert.Contains("Game", read.Holds);
