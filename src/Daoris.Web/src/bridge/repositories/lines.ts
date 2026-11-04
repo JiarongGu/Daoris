@@ -242,7 +242,7 @@ export const useSweep = () =>
 export const useDiscardSessionBranch = () =>
   useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
-      call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
+      call('DISCARD_SESSION_BRANCH', { repository, branch, force: true }) as Promise<BranchDiscard>,
   });
 
 /**
@@ -254,7 +254,7 @@ export const useDiscardSessionBranch = () =>
 export const useWithdrawLandingBranch = () =>
   useMutation({
     mutationFn: ({ repository, branch, why }: { repository: string; branch: string; why: string }) =>
-      call<LandedWithdrawal>('WITHDRAW_LANDING_BRANCH', { repository, branch, why }),
+      call('WITHDRAW_LANDING_BRANCH', { repository, branch, why }) as Promise<LandedWithdrawal>,
   });
 
 /**
@@ -265,7 +265,7 @@ export const useWithdrawLandingBranch = () =>
 export const useResolveHeld = () =>
   useMutation({
     mutationFn: ({ unit, node, attempt, resolution }: { unit: string; node: string; attempt: number; resolution: HeldResolution }) =>
-      call<{ done: boolean; refused?: string | null; message: string }>('WORK_HELD', { unit, node, attempt, resolution }),
+      call('WORK_HELD', { unit, node, attempt, resolution }) as Promise<{ done: boolean; refused?: string | null; message: string }>,
   });
 
 /**

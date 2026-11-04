@@ -30,7 +30,7 @@ export const useAcross = ({ enabled = true }: { enabled?: boolean } = {}) => {
 export const useSetReadAcross = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (change: ReadChange) => call<DriverState>('SET_READ_ACROSS', change),
+    mutationFn: (change: ReadChange) => call('SET_READ_ACROSS', change) as Promise<DriverState>,
     onSuccess: (state) => writeAnswered(client, state),
   });
 };
@@ -39,7 +39,7 @@ export const useSetReadAcross = () => {
 export const useSetWriteAcross = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (change: WriteChange) => call<DriverState>('SET_WRITE_ACROSS', change),
+    mutationFn: (change: WriteChange) => call('SET_WRITE_ACROSS', change) as Promise<DriverState>,
     onSuccess: (state) => writeAnswered(client, state),
   });
 };

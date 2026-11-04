@@ -76,8 +76,8 @@ export const useIntegration = (repository: string, enabled = true) => {
   const queryKey = lookKey(repository);
   return useQuery({
     queryKey,
-    queryFn: () => askHeld<IntegrationLook | null>('INTEGRATION', client, queryKey, { repository },
-      (answer) => (isPending(answer) ? null : (answer as { look: IntegrationLook }).look)),
+    queryFn: () => askHeld('INTEGRATION', client, queryKey, { repository },
+      (answer): IntegrationLook | null => (isPending(answer) ? null : (answer as { look: IntegrationLook }).look)),
     enabled: isAvailable && enabled,
   });
 };
@@ -89,8 +89,8 @@ export const useIntegrationHead = (unit: string | null | undefined) => {
   const queryKey = ['integration', 'unit', unit ?? ''] as const;
   return useQuery({
     queryKey,
-    queryFn: () => askHeld<IntegrationHead | null>('INTEGRATION', client, queryKey, { unit },
-      (answer) => (isPending(answer) ? null : ((answer as { head?: IntegrationHead | null }).head ?? null))),
+    queryFn: () => askHeld('INTEGRATION', client, queryKey, { unit },
+      (answer): IntegrationHead | null => (isPending(answer) ? null : ((answer as { head?: IntegrationHead | null }).head ?? null))),
     enabled: isAvailable && Boolean(unit),
   });
 };
@@ -110,5 +110,5 @@ export type IntegrateAct =
  */
 export const useIntegrate = () =>
   useMutation({
-    mutationFn: (act: IntegrateAct) => call<IntegrateAnswer>('INTEGRATE', act),
+    mutationFn: (act: IntegrateAct) => call('INTEGRATE', act) as Promise<IntegrateAnswer>,
   });

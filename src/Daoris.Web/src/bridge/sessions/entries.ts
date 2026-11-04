@@ -42,7 +42,7 @@ export const useEntryLanding = (entry: string | null, open: boolean) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.entryLanding(entry ?? ''),
-    queryFn: () => call<EntryAcceptPlan>('ENTRY_LANDING', { entry }),
+    queryFn: () => call('ENTRY_LANDING', { entry: entry ?? '' }) as Promise<EntryAcceptPlan>,
     enabled: isAvailable && entry !== null && open,
   });
 };
@@ -52,7 +52,7 @@ export const useAskLanding = (ask: string | null, open: boolean) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.askLanding(ask ?? ''),
-    queryFn: () => call<{ ask: string; entries: EntryAcceptPlan[] }>('ASK_LANDING', { ask }),
+    queryFn: () => call('ASK_LANDING', { ask: ask ?? '' }) as Promise<{ ask: string; entries: EntryAcceptPlan[] }>,
     enabled: isAvailable && ask !== null && open,
   });
 };
@@ -66,7 +66,7 @@ export const useLandEntry = () =>
     // Keyed by its route, so every view reads it under way (STATEHUB1c).
     mutationKey: ['LAND_ENTRY'],
     mutationFn: ({ entry, parts, leaveOut }: { entry: string; parts: number; leaveOut: readonly string[] }) =>
-      call<EntryLanded>('LAND_ENTRY', { entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: landsBound(parts) }),
+      call('LAND_ENTRY', { entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: landsBound(parts) }) as Promise<EntryLanded>,
   });
 
 /** An ask's one Accept (`LAND_ASK`): each of its lines of work lands in its own repository, answered per repository. */
@@ -74,5 +74,5 @@ export const useLandAsk = () =>
   useMutation({
     mutationKey: ['LAND_ASK'],
     mutationFn: ({ ask, parts, leaveOut }: { ask: string; parts: number; leaveOut: readonly string[] }) =>
-      call<AskLanded>('LAND_ASK', { ask, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: landsBound(parts) }),
+      call('LAND_ASK', { ask, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: landsBound(parts) }) as Promise<AskLanded>,
   });

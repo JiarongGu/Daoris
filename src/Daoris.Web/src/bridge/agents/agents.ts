@@ -169,7 +169,7 @@ export const useHarnessAction = () =>
       way?: 'browser' | 'device-code';
       /** Whether this sign-in takes the place of the same one running another way, which the driver stops first (CODEXLOGIN1). */
       switch?: boolean;
-    }) => call<{
+    }) => call('HARNESS_ACTION', action) as Promise<{
       harness: string; action: string; exitCode?: number; started?: boolean;
       /**
        * For `key-add`: the account made, and the key's handle; for a sign-in, the account it reaches (ACCT1); for
@@ -178,7 +178,7 @@ export const useHarnessAction = () =>
       profile?: string; key?: string;
       /** For `profile-rename`: its name now, null where it has none (ACCT2). */
       name?: string | null;
-    }>('HARNESS_ACTION', action),
+    }>,
   });
 
 /** How a process action ended — as news, after the request that started it was answered. */
@@ -237,14 +237,14 @@ export const useHarnessEnded = (handler: (ended: HarnessEnded) => void) => {
 export const useHarnessInput = () =>
   useMutation({
     mutationFn: (input: { harness: string; action: string; text: string }) =>
-      call<{ sent: boolean }>('HARNESS_INPUT', input),
+      call('HARNESS_INPUT', input) as Promise<{ sent: boolean }>,
   });
 
 /** Stop a running harness action — a login the person is not going to finish. */
 export const useHarnessCancel = () =>
   useMutation({
     mutationFn: (target: { harness: string; action: string }) =>
-      call<{ cancelled: boolean }>('HARNESS_CANCEL', target),
+      call('HARNESS_CANCEL', target) as Promise<{ cancelled: boolean }>,
   });
 
 /**
@@ -260,10 +260,10 @@ export const useHarnessCancel = () =>
 export const useRefreshHarnesses = () =>
   useMutation({
     mutationFn: (target?: { agent?: string; profile?: string }) =>
-      call<HarnessRoster>('HARNESSES_REFRESH', {
+      call('HARNESSES_REFRESH', {
         ...(target?.agent ? { agent: target.agent } : {}),
         ...(target?.agent && target.profile ? { profile: target.profile } : {}),
-      }),
+      }) as Promise<HarnessRoster>,
   });
 
 /**
@@ -275,12 +275,12 @@ export const useRefreshHarnesses = () =>
 export const useSetAgentSettings = () =>
   useMutation({
     mutationFn: ({ harness, profile, ...change }: { harness: string; profile: string } & AccountSettingsChange) =>
-      call<AccountSettings & { harness: string; profile: string }>('SET_AGENT_SETTINGS', {
+      call('SET_AGENT_SETTINGS', {
         harness, profile,
         ...('model' in change ? { model: change.model ?? null } : {}),
         ...('effort' in change ? { effort: change.effort ?? null } : {}),
         ...(change.perModel && Object.keys(change.perModel).length > 0 ? { perModel: change.perModel } : {}),
-      }),
+      }) as Promise<AccountSettings & { harness: string; profile: string }>,
   });
 
 /** What a start in each of these workspaces would take (MAP1b). Desktop-only: it is this machine's. */
@@ -288,7 +288,7 @@ export const useStarts = (workspaces: string[]) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.starts(workspaces),
-    queryFn: () => call<WiringAnswer>('STARTS', { workspaces }),
+    queryFn: () => call('STARTS', { workspaces }) as Promise<WiringAnswer>,
     enabled: isAvailable && workspaces.length > 0,
   });
 };

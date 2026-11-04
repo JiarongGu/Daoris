@@ -54,7 +54,7 @@ export const useWorkPlan = (target: WorkTarget | null, { enabled = true }: { ena
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: target ? workKey(target) : [...keys.allQuests, 'work', 'none'],
-    queryFn: async () => planOf(await call<unknown>('WORK_PLAN', named(target!))),
+    queryFn: async () => planOf(await call('WORK_PLAN', named(target!))),
     enabled: isAvailable && enabled && target !== null,
     refetchOnWindowFocus: false,
   });
@@ -72,12 +72,12 @@ export const useWorkPlan = (target: WorkTarget | null, { enabled = true }: { ena
 
 /** *Pause…*'s press (`WORK_PAUSE`, design §2.1): what it stopped, and what it could not reach. */
 export const usePauseWork = () => useMutation({
-  mutationFn: (target: WorkTarget) => call<PauseAnswer>('WORK_PAUSE', named(target), { timeoutMs: WORK_BOUND }),
+  mutationFn: (target: WorkTarget) => call('WORK_PAUSE', named(target), { timeoutMs: WORK_BOUND }) as Promise<PauseAnswer>,
 });
 
 /** *Resume*'s press (`WORK_RESUME`, design §2.4): what it released, and what still holds each quest. */
 export const useResumeWork = () => useMutation({
-  mutationFn: (target: WorkTarget) => call<ResumeAnswer>('WORK_RESUME', named(target), { timeoutMs: WORK_BOUND }),
+  mutationFn: (target: WorkTarget) => call('WORK_RESUME', named(target), { timeoutMs: WORK_BOUND }) as Promise<ResumeAnswer>,
 });
 
 /**
@@ -86,5 +86,5 @@ export const useResumeWork = () => useMutation({
  */
 export const useAbandonWork = () => useMutation({
   mutationFn: ({ target, reason, pieces }: { target: WorkTarget; reason: string; pieces: readonly string[] }) =>
-    call<AbandonAnswer>('WORK_ABANDON', { ...named(target), reason, pieces: [...pieces] }, { timeoutMs: WORK_BOUND }),
+    call('WORK_ABANDON', { ...named(target), reason, pieces: [...pieces] }, { timeoutMs: WORK_BOUND }) as Promise<AbandonAnswer>,
 });
