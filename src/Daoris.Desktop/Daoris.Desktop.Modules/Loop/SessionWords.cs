@@ -1,79 +1,6 @@
-using System.Text.Json;
-using static Daoris.Driver.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
-
-/// <summary>
-/// What a person's words to a session do, and what a word said now would do (MSG1d, D137 §2, §5.3): the one answer
-/// <c>SESSION_INPUT</c> and <c>SESSION_QUEUE</c> give, for every state.
-/// </summary>
-/// <param name="Sent">The words are held or taken: they reach the session, now or when it can.</param>
-/// <param name="Reaches">
-/// When they reach it: <c>next-step</c>, <c>turn-end</c> or <c>resume</c>. Null where they are taken at once (a chat between
-/// turns), where the door is not known yet (a driven session still opening), and where nothing takes them.
-/// </param>
-/// <param name="Why">
-/// Where nothing takes them, why, by a code the page words itself: <c>teammate</c>, <c>intake</c>, <c>stood-down</c>,
-/// <c>help</c>, <c>superseded</c>, <c>continued</c>, <c>not-found</c> or <c>no-words</c>. Null where they are taken or held,
-/// except where the person's *Send now* was not carried out (STEER2a): then its <see cref="SendNowWhy"/> code, beside
-/// <c>sent: true</c>.
-/// </param>
-public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
-{
-    /// <summary>
-    /// The person's *Send now* was carried out (STEER2a, D136's 2026-10-16 note): steered into the running turn (reach
-    /// <c>now</c>), held with the turn stopped so they go next (<c>turn-end</c>), or taken at once because no turn ran. False
-    /// where it was not asked, and where the door could do neither, with <see cref="Why"/> saying why.
-    /// </summary>
-    public bool Now { get; init; }
-
-    /// <summary>
-    /// Where <see cref="Why"/> is <c>continued</c> (HANDWORDS1), the conversation it went on in, the latest that continues it: where
-    /// the words go instead. Null otherwise.
-    /// </summary>
-    public string? To { get; init; }
-
-    /// <summary>Whether the words reached a running session's own door, which keeps them on its ask only as it takes them.</summary>
-    public bool Running { get; init; }
-
-    /// <summary>
-    /// The id the record gave words it kept, which its events say again where the session took them: what a terminal's say
-    /// follows to tell whether the same session took them (MSG1e2). Null where nothing kept them yet.
-    /// </summary>
-    public string? Word { get; init; }
-
-    /// <summary>The service's sentence beside its refusal, which a terminal prints for a code it does not word itself.</summary>
-    public string? Message { get; init; }
-
-    /// <summary>
-    /// The line's head that took the words, where the record they were said to went on in it (FOUNDATION1d-ii, the foundation design §3.4 rule 2):
-    /// the shell said them there. Null where the record named took them. The shell's own: the page's answer names <see cref="To"/> alone.
-    /// </summary>
-    public string? At { get; init; }
-
-    /// <summary>
-    /// What a running session's door can do with a word while a turn runs (COWORK1a): whether its agent steers, and whether it has
-    /// the keeping stop. Null where nothing here runs it, its door is not known yet, or it carries only text.
-    /// </summary>
-    public TurnDoor? Door { get; init; }
-
-    /// <summary>
-    /// The person's words waiting on its record (SAIDBACK1b, D137 §2.4), where the record was read: what the queue lists when
-    /// nothing here holds the session, so the composer's *Edit* and *Remove* reach them. Null where the record was not read (a
-    /// session running here, or nothing known); empty on a record that runs again, whose run is taking them.
-    /// </summary>
-    public IReadOnlyList<WaitingWord>? Waiting { get; init; }
-
-    /// <summary>Nothing takes them, for this reason.</summary>
-    public static WordsAnswer Refused(string why, string? message = null) => new(false, null, why) { Message = message };
-}
-
-/// <summary>
-/// One of the person's words waiting on a record (SAIDBACK1b, D137 §2.4), as the queue lists it: the id the record gave it, which
-/// a take-back names it by, its words and its files' names.
-/// </summary>
-public sealed record WaitingWord(string Id, string Text, IReadOnlyList<string> Files);
 
 /// <summary>
 /// The person's words to a session of this machine's, whatever its state (MSG1d, D137 §2): a running session hears them at
@@ -115,13 +42,21 @@ public sealed record WaitingWord(string Id, string Text, IReadOnlyList<string> F
 public sealed class SessionWords : IDisposable
 {
     private readonly DriverLoop _loop;
+    private readonly WordsQueueEdits _edits;
+    private readonly WordsShown _shown;
+    private readonly WordsReach _reach;
+    private readonly HeldWordsQueue _held;
 
     /// <summary>The loop's judge; it reads back the words an earlier shell held and was closed with (MSG1d4).</summary>
     public SessionWords(DriverLoop loop)
     {
         _loop = loop;
+        _edits = new WordsQueueEdits(loop, Tell);
+        _shown = new WordsShown(loop, Tell);
+        _reach = new WordsReach(loop, TakeWaits);
+        _held = new HeldWordsQueue(this, loop, _shown, _stopping.Token);
         _loop.Processes.KeptLeft += OnKeptLeft;
-        Restore();
+        _held.Restore();
     }
 
     /// <summary>
@@ -171,32 +106,6 @@ public sealed class SessionWords : IDisposable
 
     private readonly CancellationTokenSource _stopping = new();
     private readonly object _gate = new();
-    private readonly Dictionary<string, Waiting> _waiting = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>The words held for one session's record to end, in the order said, and what tells them it moved.</summary>
-    private sealed class Waiting
-    {
-        public SemaphoreSlim Turn { get; } = new(1, 1);
-
-        public Queue<Word> Words { get; } = new();
-
-        public TaskCompletionSource Moved { get; set; } = Signal();
-
-        public bool Pumping { get; set; }
-    }
-
-    /// <summary>
-    /// One word as it goes to the say door: its text, the names of its files, the door it was said at, and the answer of its park's
-    /// question it was pressed as (PARKVIEW1), which the conversation shows it under; null for every other word. FOUNDATION1b: it
-    /// keeps its producer's key and the level it was said at wherever it is held, in the held file too, so the record keeps one word
-    /// for a producer's retry and a forward says it as the first say did; a word held before has no key, and the default level.
-    /// COMMS1e: a press keeps the id of the question it answered, so a forward is checked against the head's question.
-    /// </summary>
-    private sealed record Word(
-        string Text, IReadOnlyList<string> Files, string Door, string? Choice = null, string? Key = null,
-        MessageLevel Level = MessageLevel.Urgent, string? Question = null);
-
-    private static TaskCompletionSource Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
     /// A record moved through this machine's client (<see cref="ServiceClient.Moved"/>): words held for it are tried now, and
@@ -204,7 +113,7 @@ public sealed class SessionWords : IDisposable
     /// </summary>
     public void OnMoved(SessionMoved moved)
     {
-        Wake(moved.Session);
+        _held.Wake(moved.Session);
         // FOUNDATION1o: a record a word was kept on for its next part has ended, so it goes on with it.
         if (moved.State is "completed" or "declined" or "failed" or "stopped") GoesOn(moved.Session, move: false);
     }
@@ -217,25 +126,8 @@ public sealed class SessionWords : IDisposable
     /// </summary>
     public void OnTakeEnded(string session)
     {
-        Wake(session);
+        _held.Wake(session);
         GoesOn(session, move: true);
-    }
-
-    /// <summary>The words held for a record are tried now, and what a word said to it now would do is told again (MSG1f2).</summary>
-    private void Wake(string session)
-    {
-        TaskCompletionSource? told = null;
-        lock (_gate)
-        {
-            if (_waiting.TryGetValue(session, out var waiting))
-            {
-                told = waiting.Moved;
-                waiting.Moved = Signal();
-            }
-        }
-
-        told?.TrySetResult();
-        Tell(session);
     }
 
     /// <summary>
@@ -260,7 +152,7 @@ public sealed class SessionWords : IDisposable
                     Tell(earlier.Id);
                 }
             }
-            catch (Exception error) when (Unanswered(error) || error is ObjectDisposedException)
+            catch (Exception error) when (WordsRead.Unanswered(error) || error is ObjectDisposedException)
             {
                 // Nothing told is nothing claimed: the page keeps what it was told, and a word said refuses as before. The
                 // loop closing under it disposes the client, which says nothing either.
@@ -307,7 +199,7 @@ public sealed class SessionWords : IDisposable
                 var reach = await ReachAsync(id, _stopping.Token).ConfigureAwait(false);
                 if (reach is not { Sent: false, Why: null }) Reached?.Invoke(id, reach);
             }
-            catch (Exception error) when (Unanswered(error) || error is ObjectDisposedException)
+            catch (Exception error) when (WordsRead.Unanswered(error) || error is ObjectDisposedException)
             {
                 // The loop is closing, or its service went away: the next move tells it again.
             }
@@ -325,65 +217,11 @@ public sealed class SessionWords : IDisposable
         }
     }
 
-    /// <summary>
-    /// What a word said now to a session that runs here would do, known without reading its record (MSG1f2): an open door's
-    /// reach (D136), or a conversation's turns (MSG1c). Null where only the record can say: nothing here runs it, or its door
-    /// has closed and it winds up.
-    /// </summary>
-    public WordsAnswer? ReachHere(string id)
-    {
-        // MODELROLE1d2: the replacement a refused start moved to answers for it; moving there, a word joins its words.
-        if (_loop.Chat is { } replaced)
-        {
-            id = replaced.CurrentOf(id);
-            if (replaced.Replacing(id)) return new(true, null, null);
-        }
+    /// <summary>What a word said now to a session that runs here would do, known without reading its record (MSG1f2); null where only the record can say.</summary>
+    public WordsAnswer? ReachHere(string id) => _reach.Here(id);
 
-        // What the door can do while a turn runs rides it (COWORK1a): whether its agent steers, and whether it can stop a turn
-        // keeping the session, which the page offers the levels and the keeping stop by.
-        if (_loop.Processes.InboxOf(id) is { State.Taking: true } inbox)
-        {
-            return new(true, Spelled(inbox.Reach), null) { Door = inbox.Reach is null ? null : new TurnDoor(inbox.Steers, inbox.KeepingStop) };
-        }
-
-        // Ask Daoris's conversation still starting (HELPSTART1): a word waits for its door, which opens with it as its first turn.
-        if (_loop.HelpStarting.Queue(id) is not null) return new(true, null, null);
-
-        if (_loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && _loop.Processes.RefusesInput(id) is null)
-        {
-            // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
-            // next step (MSG1c), waits for the turn to end elsewhere, or starts one now (CONV4a).
-            return new(true, _loop.Chat?.Reach(id), null) { Door = _loop.Chat?.Door(id) };
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// What a word said now to this session would do (<c>SESSION_QUEUE</c>, D137 §5.3), for the page to offer the box by, or
-    /// the line saying why nothing takes words. Never a refusal: a page asks of every conversation it shows, and a service
-    /// that does not answer is nothing known, never a claim either way.
-    /// </summary>
-    public async Task<WordsAnswer> ReachAsync(string id, CancellationToken ct)
-    {
-        if (ReachHere(id) is { } here) return here;
-        if (id.Contains('/')) return WordsAnswer.Refused("teammate");
-
-        try
-        {
-            if (await ReadAsync(id, ct).ConfigureAwait(false) is not { } read) return new(false, null, null);
-            if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
-            // The person's words waiting on it, which the queue lists where nothing here holds it (SAIDBACK1b).
-            var waiting = WaitingOn(read.Json, id);
-            // Being handed over or moved (HANDWORDS1): a word said now is held for the take, as SayAsync holds it.
-            if (TakeWaits(record)) return new(true, "resume", null) { Waiting = waiting };
-            return (Never(record, read) ?? new(true, "resume", null)) with { Waiting = waiting };
-        }
-        catch (Exception error) when (Unanswered(error))
-        {
-            return new(false, null, null);
-        }
-    }
+    /// <summary>What a word said now to this session would do (<c>SESSION_QUEUE</c>, D137 §5.3), for the page to offer the box by.</summary>
+    public Task<WordsAnswer> ReachAsync(string id, CancellationToken ct) => _reach.Async(id, ct);
 
     /// <summary>
     /// The person's words to this session (<c>SESSION_INPUT</c>, D137 §5.3): held at a running session's door, kept on a
@@ -410,7 +248,7 @@ public sealed class SessionWords : IDisposable
         MessageLevel level = MessageLevel.Urgent, string? key = null, string? choice = null, string? question = null) =>
         SayAsync(id, text, files, preface, door, ct, level, key, choice, question, new HeadWalk(id));
 
-    private async Task<WordsAnswer?> SayAsync(
+    internal async Task<WordsAnswer?> SayAsync(
         string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
         MessageLevel level, string? key, string? choice, string? question, HeadWalk walk)
     {
@@ -448,7 +286,7 @@ public sealed class SessionWords : IDisposable
                 case { Outcome: InboxKeep.Held, Now: { } sentNow }:
                     return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now, Word = forRun.Said?.Word?.Id };
                 case { Outcome: InboxKeep.Held }:
-                    return new(true, Spelled(forRun.Reach), null) { Running = true, Word = forRun.Said?.Word?.Id };
+                    return new(true, WordsReach.Spelled(forRun.Reach), null) { Running = true, Word = forRun.Said?.Word?.Id };
             }
         }
 
@@ -485,12 +323,12 @@ public sealed class SessionWords : IDisposable
             }
         }
 
-        Read? read;
+        WordsRead? read;
         try
         {
-            read = await ReadAsync(id, ct).ConfigureAwait(false);
+            read = await WordsRead.OfAsync(_loop, id, ct).ConfigureAwait(false);
         }
-        catch (Exception error) when (Unanswered(error))
+        catch (Exception error) when (WordsRead.Unanswered(error))
         {
             throw new DriverException($"the service did not answer for session `{id}`, so your words were not kept: {error.Message}");
         }
@@ -510,11 +348,11 @@ public sealed class SessionWords : IDisposable
         // here, and go to the conversation that continues it once the take is over (PumpAsync). Judged before the nevers, since the
         // successor's record opens before the take is done.
         var holding = TakeWaits(record);
-        if (!holding && Never(record, await JudgedAsync(read, ct).ConfigureAwait(false)) is { } never) return never;
+        if (!holding && (await read.JudgedAsync(_loop, ct).ConfigureAwait(false)).Never(record) is { } never) return never;
 
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
-        var word = new Word(text, [.. kept.Select(file => file.Name)], door, choice, key, level, question);
+        var word = new HeldSay(text, [.. kept.Select(file => file.Name)], door, choice, key, level, question);
         // FOUNDATION1o (the design §3.4 rule 4, §19.11): a host whose marks keep the moving open and the head keeps the word on the record the
         // move leaves, which its open moves, or refuses it naming the head; a host without them, today's hold.
         var keeps = await KeepsAsync(ct).ConfigureAwait(false);
@@ -540,131 +378,26 @@ public sealed class SessionWords : IDisposable
     }
 
     /// <summary>
-    /// The record as the say judges it (FOUNDATION1d-ii, the design §19.12): with the driver's own walk to the conversation it went on in, where the
-    /// host has no <c>head</c> mark, as today; without it where the host has the mark, whose say door judges the line's head inside its own step.
+    /// Take back one of the person's words waiting on a parked or ended record, or reword it (SAIDBACK1b, D76): what
+    /// <c>SESSION_QUEUE_EDIT</c> falls back to once nothing here holds the word. The queue is told again whatever the service
+    /// answers, so a list the page showed stale is read anew.
     /// </summary>
-    private async Task<Read> JudgedAsync(Read read, CancellationToken ct) =>
-        read.Next is not null && _loop.Service is { } service && await service.Opens.HeadAsync(ct).ConfigureAwait(false) >= 1
-            ? read with { Next = null }
-            : read;
+    public Task<QueueEdit> TakeBackAsync(string id, string word, string? text, CancellationToken ct) =>
+        _edits.TakeBackAsync(id, word, text, ct);
 
-    /// <summary>
-    /// Take back one of the person's words waiting on a parked or ended record, or reword it (SAIDBACK1b, D76), through the
-    /// service's take-back door (SAIDBACK1a): what <c>SESSION_QUEUE_EDIT</c> falls back to once nothing here holds the word.
-    /// Done, the conversation settles the old word with the withdrawn line (QUEUEEDIT1a) and shows a reword's new words as the
-    /// person's under their new id, as <see cref="Show"/> shows words kept. Whatever the service answers, the queue is told again
-    /// (<see cref="Tell"/>), so a list the page showed stale, a word a terminal took back meanwhile, is read anew.
-    /// </summary>
-    /// <returns>
-    /// <see cref="QueueEdit.Done"/>; or <see cref="QueueEdit.Taken"/> where nothing holds the word for this machine: no service
-    /// yet, a word no longer on the record, a record that runs again or is gone, or a host without the door, as before it.
-    /// </returns>
-    /// <exception cref="DriverException">The service's refusal, in its sentence (what never goes on); or a service that did not answer.</exception>
-    public async Task<QueueEdit> TakeBackAsync(string id, string word, string? text, CancellationToken ct)
-    {
-        if (await TakeBackToServiceAsync(id, word, text, ct).ConfigureAwait(false) is not { } answer) return QueueEdit.Taken;
-        if (!answer.Done)
-        {
-            return answer.Why is null or "taken" or WordsNever.NotFound ? QueueEdit.Taken : throw new DriverException(answer.Message);
-        }
+    /// <summary>Move one of the person's words held on a part's record to the line's head (LINESTOGETHER1b).</summary>
+    public Task<MoveAnswer> MoveAsync(string id, string word, string to, CancellationToken ct) =>
+        _edits.MoveAsync(id, word, to, ct);
 
-        return QueueEdit.Done;
-    }
-
-    /// <summary>
-    /// Move one of the person's words held on a part's record to the head through the service's move door (LINESTOGETHER1b, the review-flow
-    /// design §2). Moved, the part settles the old word with the withdrawn note and the head shows the person's words under their new id, the
-    /// loop nudged as for words said there; a retry the service answers moved already shows nothing again. Both queues are told again whatever
-    /// it answers. A request whose answer never came is <c>not-known</c>: the move may have happened, and asked again under its key it says.
-    /// </summary>
-    /// <exception cref="DriverException">No service yet, or a host without the door, in its sentence.</exception>
-    public async Task<MoveAnswer> MoveAsync(string id, string word, string to, CancellationToken ct)
-    {
-        var service = _loop.Service ?? throw new DriverException(NotUp);
-        MoveAnswer answer;
-        try
-        {
-            answer = await service.MoveSaidAsync(id, word, to, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (Unanswered(error))
-        {
-            Tell(id);
-            Tell(to);
-            return new MoveAnswer(false, $"the service did not answer for session `{id}`, so whether word `{word}` moved is not known: {error.Message}", NotKnown);
-        }
-
-        Tell(id);
-        if (answer.To is { } at) Tell(at);
-        if (!answer.Moved) return answer.Why is null ? throw new DriverException(answer.Message) : answer;
-        if (answer.Again || answer.To is not { } head) return answer;
-
-        _loop.Output.Append(id, $"— the person moved word {word} to session {head} before this session took it.");
-        _loop.Events.Keep(id, SessionNotes.Withdrawn(word), null);
-        if (answer.Word is { } kept)
-        {
-            _loop.Output.Append(head, $"— the person said, which the same session goes on with: {kept.Text}");
-            _loop.Events.Keep(head, LoopWords.Shown(kept, "screen"), line => _loop.Output.Append(head, line));
-        }
-
-        _loop.Said(head);
-        return answer;
-    }
-
-    /// <summary>The move's answer where the service's never came (LINESTOGETHER1b): not moved, nor refused, but not known.</summary>
-    public const string NotKnown = "not-known";
-
-    /// <summary>
-    /// A terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4): the shell's half, handed to its request watch as
-    /// <see cref="SessionRequestWatch.TakeBack"/>, so the withdrawn note is written in the record of the conversation this shell
-    /// holds, which the page may have open. Answered in the say's shape: sent is done, a refusal's code is <c>why</c>.
-    /// </summary>
-    public async Task<WordsHeld> HoldTakeBackAsync(SessionRequest request, CancellationToken ct)
-    {
-        if (request.Word is not { Length: > 0 } word) return WordsHeld.Failed("a take-back names the word to take back.");
-        var back = await TakeBackToServiceAsync(request.Session, word, request.Text, ct).ConfigureAwait(false);
-        if (back is null) return WordsHeld.Failed(NotUp);
-        if (back.Done) return new WordsHeld(true, null, null) { Word = back.Word?.Id, Message = back.Message };
-        return back.Why is { } why ? WordsHeld.Refused(why, back.Message) : WordsHeld.Failed(back.Message);
-    }
-
-    /// <summary>
-    /// The service's take-back door asked, the queue told again whatever it answers, and, where it is done, the conversation
-    /// settled and a reword's new words shown. Null where there is no service yet.
-    /// </summary>
-    private async Task<TakeBackAnswer?> TakeBackToServiceAsync(string id, string word, string? text, CancellationToken ct)
-    {
-        if (_loop.Service is not { } service) return null;
-
-        TakeBackAnswer answer;
-        try
-        {
-            answer = await service.TakeBackAsync(id, word, text, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (Unanswered(error))
-        {
-            throw new DriverException($"the service did not answer for session `{id}`, so word `{word}` was not taken back: {error.Message}");
-        }
-
-        Tell(id);
-        if (!answer.Done) return answer;
-
-        // QUEUEEDIT1a's line, by its code, which the page words; the one note shape every door keeps (WITHDRAWNLINE1).
-        _loop.Output.Append(id, $"— the person took back word {word} before the session took it.");
-        _loop.Events.Keep(id, SessionNotes.Withdrawn(word), null);
-        if (answer.Word is { } kept)
-        {
-            _loop.Output.Append(id, $"— the person said, which the same session goes on with: {kept.Text}");
-            _loop.Events.Keep(id, LoopWords.Shown(kept, "screen"), line => _loop.Output.Append(id, line));
-        }
-
-        return answer;
-    }
+    /// <summary>A terminal's <c>sessions take-back</c> (SAIDBACK1c), handed to its request watch as <see cref="SessionRequestWatch.TakeBack"/>.</summary>
+    public Task<WordsHeld> HoldTakeBackAsync(SessionRequest request, CancellationToken ct) =>
+        _edits.HoldTakeBackAsync(request, ct);
 
     /// <summary>
     /// Whether a conversation's hand-over or curve move waits or is being taken (HANDWORDS1): its box is kept from the ask until the
     /// take is over, however it came out. A quest's session's box is the driver's look's, which carries its words on itself.
     /// </summary>
-    private bool TakeWaits(SessionRecord record) =>
+    internal bool TakeWaits(SessionRecord record) =>
         record is { Kind: "chat", Teammate: false } && TakeStanding(record.Id);
 
     /// <summary>
@@ -675,31 +408,18 @@ public sealed class SessionWords : IDisposable
     public Func<string, bool> TakeStanding { get; set; } = _ => false;
 
     /// <summary>
-    /// What never goes on, as the answer says it (D137 §2.2): a conversation that went on in another names that one (HANDWORDS1),
-    /// with the terminal's sentence beside the code. Null where the record can go on with words.
-    /// </summary>
-    private static WordsAnswer? Never(SessionRecord record, Read read) =>
-        WordsNever.Judge(record, read.Last, read.Next) switch
-        {
-            null => null,
-            WordsNever.Continued => WordsAnswer.Refused(WordsNever.Continued, WordsNever.WentOn(record.Id, read.Next!)) with { To = read.Next },
-            var never => WordsAnswer.Refused(never),
-        };
-
-    /// <summary>
     /// A word said while its conversation is handed over or moved (HANDWORDS1), held behind any already held for it and tried once
     /// the take is told over (<see cref="OnTakeEnded"/>), or at once where the box went while it was held.
     /// </summary>
-    private async Task<WordsAnswer> HoldForTakeAsync(string id, Word word, CancellationToken ct)
+    private async Task<WordsAnswer> HoldForTakeAsync(string id, HeldSay word, CancellationToken ct)
     {
-        var waiting = WaitingFor(id);
+        var waiting = _held.WaitingFor(id);
         await waiting.Turn.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            TaskCompletionSource moved;
-            lock (_gate) moved = waiting.Moved;
-            Hold(waiting, word);
-            StartPump(id, waiting, moved);
+            var moved = _held.MovedOf(waiting);
+            _held.Hold(waiting, word);
+            _held.StartPump(id, waiting, moved);
         }
         finally
         {
@@ -707,7 +427,7 @@ public sealed class SessionWords : IDisposable
         }
 
         // Taken while it was held: no end will be told for it now.
-        if (!TakeStanding(id)) Wake(id);
+        if (!TakeStanding(id)) _held.Wake(id);
         return new(true, "resume", null);
     }
 
@@ -728,12 +448,12 @@ public sealed class SessionWords : IDisposable
     {
         if (id.Contains('/')) return (WordsAnswer.Refused(WordsNever.Teammate), false);
 
-        Read? read;
+        WordsRead? read;
         try
         {
-            read = await ReadAsync(id, ct).ConfigureAwait(false);
+            read = await WordsRead.OfAsync(_loop, id, ct).ConfigureAwait(false);
         }
-        catch (Exception error) when (Unanswered(error))
+        catch (Exception error) when (WordsRead.Unanswered(error))
         {
             throw new DriverException(
                 $"the service did not answer for session `{id}`, so whether it goes on is not known; its go-ahead is answered: {error.Message}");
@@ -741,7 +461,7 @@ public sealed class SessionWords : IDisposable
 
         if (read is null) throw new DriverException(NotUp);
         if (read.Record is not { } record) return (WordsAnswer.Refused(WordsNever.NotFound), false);
-        if (Never(record, read) is { } never) return (never, false);
+        if (read.Never(record) is { } never) return (never, false);
         if (record.State != "awaiting-person") return (new(false, null, null), false);
         if (!record.Answered) return (new(false, null, null), true);
 
@@ -807,7 +527,7 @@ public sealed class SessionWords : IDisposable
     /// What a door is told while the loop's service is not answering and nothing here runs the session: nothing could keep
     /// the words yet, which is a moment the person can wait out.
     /// </summary>
-    private const string NotUp = "the driver is still coming up — its service is not answering yet. A moment.";
+    internal const string NotUp = "the driver is still coming up — its service is not answering yet. A moment.";
 
     /// <summary>
     /// The words to the say door, behind any already held for this record: kept, shown and the loop nudged; held while the
@@ -820,29 +540,28 @@ public sealed class SessionWords : IDisposable
     /// </param>
     /// <param name="moving">A conversation move stands for the record: the word kept is the move's, which shows it at its destination, never here.</param>
     private async Task<(WordsAnswer? Answer, string? Head)> KeepOrHoldAsync(
-        string id, Word word, CancellationToken ct, bool keeps = false, bool moving = false)
+        string id, HeldSay word, CancellationToken ct, bool keeps = false, bool moving = false)
     {
         var service = _loop.Service ?? throw new DriverException(NotUp);
-        var waiting = WaitingFor(id);
+        var waiting = _held.WaitingFor(id);
         await waiting.Turn.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             // Behind the words already held, so the record keeps them in the order said.
             if (waiting.Words.Count > 0)
             {
-                Hold(waiting, word);
+                _held.Hold(waiting, word);
                 return (new(true, "resume", null), null);
             }
 
             // Taken before the say, so a move while it is on its way is not missed.
-            TaskCompletionSource moved;
-            lock (_gate) moved = waiting.Moved;
+            var moved = _held.MovedOf(waiting);
             SayAnswer said;
             try
             {
                 said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question).ConfigureAwait(false);
             }
-            catch (Exception error) when (Unanswered(error))
+            catch (Exception error) when (WordsRead.Unanswered(error))
             {
                 throw new DriverException($"the service did not answer for session `{id}`, so your words were not kept: {error.Message}");
             }
@@ -865,9 +584,9 @@ public sealed class SessionWords : IDisposable
             if (said.Refusal == "running")
             {
                 // It winds up, or runs where this machine's routes do not reach (D137 §2.1): held for its record to end.
-                Hold(waiting, word);
-                StartPump(id, waiting, moved);
-                if (moving && !TakeStanding(id)) _ = Task.Run(() => Wake(id));
+                _held.Hold(waiting, word);
+                _held.StartPump(id, waiting, moved);
+                if (moving && !TakeStanding(id)) _ = Task.Run(() => _held.Wake(id));
                 return (new(true, "resume", null), null);
             }
 
@@ -882,7 +601,7 @@ public sealed class SessionWords : IDisposable
     }
 
     /// <summary>Whether the loop's host keeps words for a record that winds up or moves (FOUNDATION1o); false with no service yet.</summary>
-    private async Task<bool> KeepsAsync(CancellationToken ct) =>
+    internal async Task<bool> KeepsAsync(CancellationToken ct) =>
         _loop.Service is { } service && await service.Opens.KeepsAsync(ct).ConfigureAwait(false);
 
     // FOUNDATION1o: the records this shell kept a word on for their next part, which the record's end hands to the go-on, and those it kept one
@@ -895,14 +614,14 @@ public sealed class SessionWords : IDisposable
     /// carries and its delivery shows at its destination, so nothing is shown here (FOUNDATION1o). A word kept for a record's next part is noted, so
     /// the record's end, or its move's, hands it to the go-on (<see cref="OnMoved"/>, <see cref="OnTakeEnded"/>).
     /// </summary>
-    private void Kept(string id, SayAnswer said, Word word, bool keeps, bool moving)
+    internal void Kept(string id, SayAnswer said, HeldSay word, bool keeps, bool moving)
     {
         if (keeps)
         {
             lock (_gate) (moving ? _forMove : _forNext).Add(id);
         }
 
-        if (!moving) Show(id, said, word);
+        if (!moving) _shown.Kept(id, said, word);
     }
 
     /// <summary>
@@ -918,417 +637,6 @@ public sealed class SessionWords : IDisposable
 
         _loop.Chat?.AnswerGoesOn(id);
     }
-
-    private Waiting WaitingFor(string id)
-    {
-        lock (_gate)
-        {
-            if (!_waiting.TryGetValue(id, out var waiting)) _waiting[id] = waiting = new Waiting();
-            return waiting;
-        }
-    }
-
-    private void StartPump(string id, Waiting waiting, TaskCompletionSource moved)
-    {
-        if (waiting.Pumping) return;
-        waiting.Pumping = true;
-        _ = Task.Run(() => PumpAsync(id, waiting, moved));
-    }
-
-    /// <summary>
-    /// Held words, tried each time the record moves here or a slow look passes, until the record keeps them all. A word the
-    /// service refuses for good is said in the conversation; one it could not answer for is tried again.
-    /// </summary>
-    private async Task PumpAsync(string id, Waiting waiting, TaskCompletionSource moved)
-    {
-        var ct = _stopping.Token;
-        try
-        {
-            while (true)
-            {
-                await Task.WhenAny(moved.Task, Task.Delay(Poll, ct)).ConfigureAwait(false);
-                ct.ThrowIfCancellationRequested();
-
-                await waiting.Turn.WaitAsync(ct).ConfigureAwait(false);
-                try
-                {
-                    lock (_gate) moved = waiting.Moved;
-                    // HANDWORDS1: while its conversation is being handed over or moved the words wait; once it went on in another,
-                    // they go there, never onto the record that ended.
-                    var (waits, next, moving) = await WhereAsync(id, ct).ConfigureAwait(false);
-                    // FOUNDATION1o: a host with the marks keeps each held word on its record, an older shell's from its file among them.
-                    var keeps = !waits && await KeepsAsync(ct).ConfigureAwait(false);
-                    while (!waits && waiting.Words.TryPeek(out var word))
-                    {
-                        if (next is not null)
-                        {
-                            if (!await PassAsync(id, next, word, ct).ConfigureAwait(false)) break;
-                            Taken(waiting);
-                            continue;
-                        }
-
-                        if (_loop.Service is not { } service) break;
-                        SayAnswer said;
-                        try
-                        {
-                            said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question).ConfigureAwait(false);
-                        }
-                        catch (Exception error) when (Unanswered(error) && !ct.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
-                        // FOUNDATION1d-ii (the design §3.4 rules 1 and 2): the record is no longer its line's head, which the answer names. The
-                        // word is said again there once, under its key, as the forward to a conversation it went on in is said; off the held
-                        // file once the head took it, and tried again where nothing could answer. A second `continued` there follows the next
-                        // head, and a walk that comes back to a record it asked ends, the word said lost.
-                        if (said.Head is { } head)
-                        {
-                            var walk = new HeadWalk(id);
-                            if (!walk.On(head)) Lost(id, WordsNever.Continued, walk.Ended(head));
-                            else if (!await PassAsync(id, head, word, ct, walk).ConfigureAwait(false)) break;
-                            Taken(waiting);
-                            continue;
-                        }
-
-                        if (said.Refusal == "running") break;
-                        // Off the file before it is shown: the record has it now, and a restart must not say it twice.
-                        Taken(waiting);
-                        // Row p (the design §3.4 rule 5): settled, a retry of a word whose first say was kept and taken, its answer lost: off the
-                        // file, and nothing shown, since no word came back and the conversation shows it already.
-                        if (said.Settled is not null) continue;
-                        if (said.Kept) Kept(id, said, word, keeps, moving);
-                        else Lost(id, said);
-                    }
-
-                    if (waiting.Words.Count == 0)
-                    {
-                        waiting.Pumping = false;
-                        return;
-                    }
-                }
-                finally
-                {
-                    waiting.Turn.Release();
-                }
-            }
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            // The loop is closing: what is held stays in its file for the next shell to try (MSG1d4).
-        }
-    }
-
-    /// <summary>
-    /// Where held words go now (HANDWORDS1): nowhere yet while the record's conversation is handed over or moved (its box stands), or
-    /// where the service did not answer; to the conversation it went on in where one did; else to the record itself, as before.
-    /// FOUNDATION1o: a host with the marks keeps them on the moving record, which its open moves (<c>Moving</c>).
-    /// </summary>
-    private async Task<(bool Waits, string? Next, bool Moving)> WhereAsync(string id, CancellationToken ct)
-    {
-        try
-        {
-            if (await ReadAsync(id, ct).ConfigureAwait(false) is not { Record: { } record } read) return (false, null, false);
-            if (TakeWaits(record)) return await KeepsAsync(ct).ConfigureAwait(false) ? (false, null, true) : (true, null, false);
-            // FOUNDATION1d-ii: where the host has the `head` mark, its say door names the head, and the driver's own walk stands aside.
-            return (false, (await JudgedAsync(read, ct).ConfigureAwait(false)).Next, false);
-        }
-        catch (Exception error) when (Unanswered(error) && !ct.IsCancellationRequested)
-        {
-            // Nothing known is nothing claimed: the words are tried again at the record's next move, or the next look.
-            return (true, null, false);
-        }
-    }
-
-    /// <summary>
-    /// A held word said to the conversation its record went on in (HANDWORDS1), at the door it was first said at, with its files read
-    /// back from where they were kept: that conversation's turns take it where it runs here, else its record keeps it and it is shown
-    /// there, as any word said to it would be. True where it is off this record's queue: taken, or refused and said so here. False
-    /// where nothing could answer now, so it is tried again.
-    /// </summary>
-    /// <param name="walk">The records this word was said to on its way to its line's head (FOUNDATION1d-ii); null where it starts at <paramref name="next"/>.</param>
-    private async Task<bool> PassAsync(string id, string next, Word word, CancellationToken ct, HeadWalk? walk = null)
-    {
-        WordsAnswer? said;
-        try
-        {
-            // FOUNDATION1b (X4-1.2): said there as the first say was, with its key, level and display choice; a word held before
-            // the row has no key and says as it did, at the default level.
-            said = await SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct, word.Level, word.Key, word.Choice, word.Question, walk ?? new HeadWalk(next))
-                .ConfigureAwait(false);
-        }
-        catch (DriverException)
-        {
-            // The service did not answer for the conversation it went on in (its files were taken once already): tried again.
-            return false;
-        }
-
-        if (said is null) return false;
-        if (said.Running) KeepOnAsk(said.At ?? next, word.Text);
-        if (!said.Sent) Lost(id, said.Why, said.Message);
-        return true;
-    }
-
-    /// <summary>A held word's files, read back from where its record kept them; one gone since is left out, as a resumed run's is (MSG1d3).</summary>
-    private IReadOnlyList<ChatUpload> Uploads(string id, IReadOnlyList<string> names)
-    {
-        var uploads = new List<ChatUpload>();
-        foreach (var name in names)
-        {
-            try
-            {
-                if (ChatFiles.Find(_loop.Home, id, name) is { } kept) uploads.Add(new ChatUpload(name, File.ReadAllBytes(kept.Path)));
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                // Held open or gone since it was kept: the words still go.
-            }
-        }
-
-        return uploads;
-    }
-
-    /// <summary>A word held behind the others for this record, and the file written with it (MSG1d4).</summary>
-    private void Hold(Waiting waiting, Word word)
-    {
-        lock (_gate)
-        {
-            waiting.Words.Enqueue(word);
-            Save();
-        }
-    }
-
-    /// <summary>The first word held for this record, kept or refused for good, off the queue and the file (MSG1d4).</summary>
-    private void Taken(Waiting waiting)
-    {
-        lock (_gate)
-        {
-            waiting.Words.Dequeue();
-            Save();
-        }
-    }
-
-    /// <summary>
-    /// Every word held, written whole to <see cref="HeldPath"/> beside and renamed, LF, as every file under the home is; the
-    /// file removed once nothing is held (MSG1d4). Called under the gate, where every queue is changed, so the file is never
-    /// written from a queue mid-change. A write that fails costs only the words' surviving a restart: they are still held here.
-    /// </summary>
-    private void Save()
-    {
-        var path = HeldPath(_loop.Home);
-        try
-        {
-            var held = _waiting
-                .SelectMany(pair => pair.Value.Words.Select(word => (Session: pair.Key, Word: word)))
-                .ToList();
-            if (held.Count == 0)
-            {
-                if (File.Exists(path)) File.Delete(path);
-                HomeWrites.Mine(path);
-                return;
-            }
-
-            JsonFile.Write(path, writer =>
-            {
-                writer.WriteStartObject();
-                writer.WriteStartArray("held");
-                foreach (var (session, word) in held)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("session", session);
-                    writer.WriteString("text", word.Text);
-                    writer.WriteStartArray("files");
-                    foreach (var name in word.Files) writer.WriteStringValue(name);
-                    writer.WriteEndArray();
-                    writer.WriteString("door", word.Door);
-                    // FOUNDATION1b: additive, each by name, so an older shell reads the text, files and door as before.
-                    if (word.Key is { Length: > 0 }) writer.WriteString("key", word.Key);
-                    writer.WriteString("level", MessageLevels.Spelled(word.Level));
-                    if (word.Choice is { Length: > 0 }) writer.WriteString("choice", word.Choice);
-                    if (word.Question is { Length: > 0 }) writer.WriteString("question", word.Question);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
-                writer.WriteEndObject();
-            });
-            // The loop's own write: its watch of the file hears it and wakes no look (FABRIC-EVENT4).
-            HomeWrites.Mine(path);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Still held in this process; only a restart before the record keeps them would lose them, as before MSG1d4.
-        }
-    }
-
-    /// <summary>
-    /// The words an earlier shell held and was closed with (MSG1d4), read back as this one starts: each queued for its record
-    /// in the order said, and tried at once, then as any held words are, since the record may well have ended while no shell
-    /// ran. A file that does not read holds nothing, and the next word held replaces it.
-    /// </summary>
-    private void Restore()
-    {
-        List<(string Session, Word Word)> held;
-        try
-        {
-            held = ReadHeld(HeldPath(_loop.Home));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
-        {
-            return;
-        }
-
-        foreach (var words in held.GroupBy(each => each.Session, StringComparer.OrdinalIgnoreCase))
-        {
-            var waiting = WaitingFor(words.Key);
-            lock (_gate)
-            {
-                foreach (var (_, word) in words) waiting.Words.Enqueue(word);
-            }
-
-            var now = Signal();
-            now.SetResult();
-            StartPump(words.Key, waiting, now);
-        }
-    }
-
-    /// <summary>The held words in a file <see cref="Save"/> wrote, in order; an entry missing its session, text or door is skipped.</summary>
-    private static List<(string Session, Word Word)> ReadHeld(string path)
-    {
-        if (!File.Exists(path)) return [];
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
-        if (document.RootElement.ValueKind != JsonValueKind.Object
-            || !document.RootElement.TryGetProperty("held", out var held) || held.ValueKind != JsonValueKind.Array)
-        {
-            return [];
-        }
-
-        var words = new List<(string Session, Word Word)>();
-        foreach (var entry in held.EnumerateArray())
-        {
-            if (entry.ValueKind != JsonValueKind.Object) continue;
-            if (Text(entry, "session") is not { Length: > 0 } session || Text(entry, "text") is not { } text
-                || Text(entry, "door") is not { Length: > 0 } door)
-            {
-                continue;
-            }
-
-            IReadOnlyList<string> files = entry.TryGetProperty("files", out var named) && named.ValueKind == JsonValueKind.Array
-                ? [.. named.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
-                : [];
-            words.Add((session, new Word(
-                text, files, door, Choice: Text(entry, "choice") is { Length: > 0 } choice ? choice : null,
-                Key: Text(entry, "key") is { Length: > 0 } key ? key : null,
-                Level: MessageLevels.Read(Text(entry, "level")) ?? MessageLevel.Urgent,
-                Question: Text(entry, "question") is { Length: > 0 } asked ? asked : null)));
-        }
-
-        return words;
-    }
-
-    /// <summary>
-    /// The kept words in the session's conversation, the moment the record keeps them (D137 §3.1): the person's, under the
-    /// id the record gave them, with the reach <c>resume</c> and the door; then the loop is nudged so a look takes them up
-    /// now rather than at its next interval.
-    /// </summary>
-    private void Show(string id, SayAnswer said, Word word)
-    {
-        if (said.Word is { } kept)
-        {
-            _loop.Output.Append(id, $"— the person said, which the same session goes on with: {kept.Text}");
-            _loop.Events.Keep(id, new SessionEvent
-            {
-                Kind = SessionEventKind.User,
-                // SUPERVISOR1a-i (the supervisor design §6.1): shown as whose the record kept it, never the person's by default.
-                Origin = kept.Persons ? "person" : "target",
-                From = kept.Daoris ? DaorisWords.From : kept.Supervisors ? SupervisorHanded.From : kept.From,
-                Id = kept.Id,
-                Text = kept.Text,
-                Files = kept.Files.Count > 0 ? kept.Files : null,
-                Reaches = "resume",
-                Door = word.Door,
-                // PARKVIEW1 (Fable's read, Q4): pressed as an answer of its park's question, shown as that answer chosen.
-                Choice = word.Choice is { } choice && kept.Text.StartsWith(choice, StringComparison.Ordinal) ? choice : null,
-            }, line => _loop.Output.Append(id, line));
-            // The record's waiting words are the queue's now (SAIDBACK1b): told again, so the box's list offers this one too.
-            Tell(id);
-        }
-
-        _loop.Said(id);
-    }
-
-    /// <summary>Held words the record would not keep once it ended, said where the person wrote them, never dropped silently.</summary>
-    private void Lost(string id, SayAnswer said) =>
-        Lost(id, said.Refusal is { } refusal ? WordsNever.Code(refusal) : null, said.Message);
-
-    /// <summary>Held words nothing would take, by the refusal's code where there is one, said where the person wrote them.</summary>
-    private void Lost(string id, string? why, string? message)
-    {
-        // Both ways: the `Why` makes the page say it cannot go on here (it wins where it reads), and the parts word the line
-        // by code where there is none or the page does not know it (CONVNOTE2d2).
-        var line = WordsNotes.NotKept(message ?? $"nothing takes them ({why ?? "refused"}).");
-        _loop.Output.Append(id, line.Note);
-        _loop.Events.Keep(id, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts, Why = why }, null);
-    }
-
-    /// <summary>
-    /// The records, and this one among them with its quest's last session here and the conversation it went on in; null with no
-    /// service yet.
-    /// </summary>
-    private async Task<Read?> ReadAsync(string id, CancellationToken ct)
-    {
-        if (_loop.Service is not { } service) return null;
-        var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
-        var records = SessionRecords.Parse(json);
-        var record = records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
-        return new Read(record, WordsNever.LastHere(json, record?.Quest), WordsNever.ContinuedIn(records, id), json);
-    }
-
-    /// <summary>
-    /// A record as read, the session its quest last ran in here (D79's reading), and the conversation it went on in (HANDWORDS1),
-    /// each null for none; and the records' answer it was read from, whose words waiting only the queue reads (SAIDBACK1b).
-    /// </summary>
-    private sealed record Read(SessionRecord? Record, string? Last, string? Next, string Json);
-
-    /// <summary>
-    /// The person's words waiting on this record (SAIDBACK1b, D137 §2.4), from the records' answer, in the order said. None on a
-    /// record that runs again (queued, starting, working), whose run is already taking them; and never another agent's words
-    /// waiting there, a second opinion's findings (<c>by</c>) or a helper's answer (<c>helper</c>), which are not the person's to
-    /// take back or reword. A word without its id or its words is skipped, as the driver's client skips it.
-    /// </summary>
-    internal static IReadOnlyList<WaitingWord> WaitingOn(string json, string id)
-    {
-        using var document = JsonDocument.Parse(json);
-        if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
-        foreach (var record in document.RootElement.EnumerateArray())
-        {
-            if (!string.Equals(Text(record, "id"), id, StringComparison.Ordinal)) continue;
-            if (Text(record, "state") is "queued" or "starting" or "working") return [];
-            return
-            [
-                // The person's alone: never another agent's (by, helper), nor Daoris's own words (COWORK1b's from).
-                .. Items(record, "said")
-                    .Where(word => NonEmpty(word, "by") is null && NonEmpty(word, "helper") is null && NonEmpty(word, "from") is null)
-                    .Select(word => NonEmpty(word, "id") is { } said && Text(word, "text") is { } text
-                        ? new WaitingWord(said, text, Strings(word, "files"))
-                        : null)
-                    .OfType<WaitingWord>(),
-            ];
-        }
-
-        return [];
-    }
-
-    /// <summary>A driven inbox's reach in the wire's spelling, as the record's events spell it (D136).</summary>
-    private static string? Spelled(DrivenReach? reach) => reach switch
-    {
-        DrivenReach.NextStep => "next-step",
-        DrivenReach.TurnEnd => "turn-end",
-        _ => null,
-    };
-
-    private static bool Unanswered(Exception error) =>
-        error is HttpRequestException or DriverException or JsonException or OperationCanceledException or TaskCanceledException;
 
     /// <summary>Stop trying held words: the loop is closing. The source is cancelled, never disposed, so a pump still starting reads it.</summary>
     public void Dispose()

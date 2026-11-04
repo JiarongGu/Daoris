@@ -64,7 +64,8 @@ public sealed partial class SayKeysCensusTests
     [Fact]
     public void The_shells_held_word_is_said_with_its_key_on_the_record_path_and_in_the_forward()
     {
-        var source = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.Modules", "SessionWords.cs"));
+        var source = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.Modules", "SessionWords.cs"))
+            + File.ReadAllText(SourceFiles.Find("Daoris.Desktop.Modules", "HeldWordsQueue.cs"));
 
         // FOUNDATION1o: asking `ending` where the host's marks keep the moving open and the head.
         Assert.Equal(2, Regex.Matches(source, Regex.Escape("service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps, question: word.Question)")).Count);
