@@ -1,5 +1,6 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
+using Daoris.Contracts;
+using Daoris.Contracts.Brainstorms;
 
 namespace Daoris.Driver;
 
@@ -10,34 +11,21 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class BrainstormDoor
 {
-    /// <summary>The path of a press on one brainstorm or meeting: <c>send</c>, <c>stop</c> or none for the clear.</summary>
-    public static string PathOf(string id, string? press, bool meeting, int? round = null)
-    {
-        var query = new List<string>();
-        if (meeting) query.Add("kind=meeting");
-        if (round is { } number) query.Add($"round={number}");
-        return $"/api/brainstorms/{Uri.EscapeDataString(id)}{(press is null ? "" : $"/{press}")}{(query.Count == 0 ? "" : $"?{string.Join('&', query)}")}";
-    }
+    /// <summary>The kind a meeting's presses name; a brainstorm's is none.</summary>
+    public const string Meeting = "meeting";
 
-    /// <summary>The body of an ask: the words as typed, which the desk trims and judges.</summary>
-    public static string AskBody(
-        string question, string? repository, IReadOnlyList<string> agents, IReadOnlyList<string> sources, string? id, bool meeting)
-    {
-        var body = new JsonObject { ["question"] = question };
-        if (meeting) body["kind"] = "meeting";
-        if (repository is not null) body["repository"] = repository;
-        body["agents"] = new JsonArray([.. agents.Select(agent => (JsonNode?)agent)]);
-        if (sources.Count > 0) body["sources"] = new JsonArray([.. sources.Select(source => (JsonNode?)source)]);
-        if (id is not null) body["id"] = id;
-        return body.ToJsonString();
-    }
+    /// <summary>The ask: the words as typed, which the desk trims and judges.</summary>
+    public static AskBrainstorm Ask(
+        string question, string? repository, IReadOnlyList<string> agents, IReadOnlyList<string> sources, string? id, bool meeting) =>
+        new(question, repository, agents, meeting ? Meeting : null, id, sources.Count > 0 ? sources : null);
 
     /// <summary>
     /// One press through the service: its sentence printed, 0 where the desk did it, 1 where it refused or no service answers.
     /// <paramref name="doors"/> null finds the service as a terminal does (the variable, else the running desktop's address).
     /// </summary>
-    public static int Press(IServiceDoors? doors, ServiceVerb verb, string path, string? json, TextWriter output)
+    public static int Press<TAnswer>(IServiceDoors? doors, IRoute<TAnswer> route, TextWriter output)
     {
+        var (verb, path, json) = RouteRequest.Of(route);
         var own = false;
         try
         {

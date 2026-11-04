@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Daoris.Contracts.Asks;
 
 namespace Daoris.Driver;
 
@@ -17,30 +17,24 @@ public sealed class AddressedDoors
     /// <exception cref="DriverException">The host answered something other than the list.</exception>
     public async Task<IReadOnlyList<ChannelItemView>?> WaitingAsync(string session, CancellationToken ct = default)
     {
-        var answer = await _service.SendAsync(ServiceVerb.Get, $"/api/channel/addressed?session={Uri.EscapeDataString(session)}", null, ct).ConfigureAwait(false);
-        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
-        if (!answer.Ok) throw new DriverException($"the service would not read what waits for session `{session}`: {answer.Payload}");
+        var sent = await _service.SendAsync(new ReadAddressed(session), ct).ConfigureAwait(false);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!sent.Reply.Ok) throw new DriverException($"the service would not read what waits for session `{session}`: {sent.Reply.Payload}");
 
-        using var document = JsonDocument.Parse(answer.Payload);
-        return document.RootElement.ValueKind == JsonValueKind.Object
-               && document.RootElement.TryGetProperty("messages", out var listed) && listed.ValueKind == JsonValueKind.Array
-            ? [.. listed.EnumerateArray().Select(ChannelView.ReadItem).OfType<ChannelItemView>()]
-            : throw new DriverException($"the service answered something other than what waits for session `{session}`: {answer.Payload}");
+        return sent.Answer?.Messages is { } listed
+            ? [.. listed.Select(ChannelView.ItemOf).OfType<ChannelItemView>()]
+            : throw new DriverException($"the service answered something other than what waits for session `{session}`: {sent.Reply.Payload}");
     }
 
     /// <summary>One part's acknowledgment of the messages to it by their ids; the ids it changed, none from a host without the door.</summary>
     /// <exception cref="DriverException">The host refused the acknowledgment.</exception>
     public async Task<IReadOnlyList<string>> AcknowledgeAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct = default)
     {
-        var body = JsonSerializer.Serialize(new { session, state, messages });
-        var (ok, status, payload, root) = await _service.PostJsonAsync("/api/channel/addressed/ack", body, ct).ConfigureAwait(false);
-        if (status == (int)System.Net.HttpStatusCode.NotFound) return [];
-        if (!ok) throw new DriverException($"the service would not keep session `{session}`'s {state} of the messages to it: {payload}");
+        var sent = await _service.SendAsync(new AcknowledgeAddressed(session, state, messages), ct).ConfigureAwait(false);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return [];
+        if (!sent.Reply.Ok) throw new DriverException($"the service would not keep session `{session}`'s {state} of the messages to it: {sent.Reply.Payload}");
 
-        return root is { ValueKind: JsonValueKind.Object } answered
-               && answered.TryGetProperty("acknowledged", out var changed) && changed.ValueKind == JsonValueKind.Array
-            ? [.. changed.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)]
-            : [];
+        return sent.Answer?.Acknowledged ?? [];
     }
 }
 

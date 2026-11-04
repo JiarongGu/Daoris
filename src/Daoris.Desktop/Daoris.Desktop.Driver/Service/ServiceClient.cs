@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Daoris.Contracts;
+using Daoris.Contracts.History;
 using Daoris.Contracts.Knowledge;
 using Daoris.Contracts.Sessions;
 using static Daoris.Driver.Json;
@@ -1929,15 +1930,12 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     // history would take, and the clear itself. The driver's HistoryClearing calls them, judging this machine's half before and
     // removing the home's files after.
 
-    /// <summary>
-    /// The units a scope holds, each judged by the service, deleting nothing: <paramref name="query"/> is the door's one scope,
-    /// <c>workspace=</c>, <c>quest=</c>, <c>ask=</c> or <c>quest=…&amp;failed=true</c>, escaped.
-    /// </summary>
+    /// <summary>The units a scope holds, each judged by the service, deleting nothing: <paramref name="plan"/> names the one scope.</summary>
     /// <exception cref="DriverException">A host older than the door, or one that refused the scope, in its words.</exception>
-    public async Task<IReadOnlyList<HistoryUnitView>> HistoryAsync(string query, CancellationToken ct = default)
+    public async Task<IReadOnlyList<HistoryUnitView>> HistoryAsync(PlanHistory plan, CancellationToken ct = default)
     {
-        var answer = await _doors.SendAsync(ServiceVerb.Get, $"/api/history?{query}", null, ct).ConfigureAwait(false);
-        var root = Answered(answer.Ok, answer.Status, answer.Payload);
+        var (ok, status, payload, _) = await SendJsonAsync(plan, ct).ConfigureAwait(false);
+        var root = Answered(ok, status, payload);
         return [.. Items(root, "units").Select(ReadHistoryUnit)];
     }
 
@@ -1948,22 +1946,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <exception cref="DriverException">A host older than the door, or one that refused the press, in its words.</exception>
     public async Task<IReadOnlyList<HistoryClearedView>> ClearHistoryAsync(IReadOnlyList<HistoryUnitName> units, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("units");
-            foreach (var unit in units)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("kind", unit.Kind);
-                writer.WriteString("id", unit.Id);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, _) = await PostJsonAsync("/api/history/clear", body, ct).ConfigureAwait(false);
+        var (ok, status, payload, _) = await SendJsonAsync(
+            new ClearHistory([.. units.Select(unit => new HistoryUnitRequest(unit.Kind, unit.Id))]), ct).ConfigureAwait(false);
         var root = Answered(ok, status, payload);
         return
         [

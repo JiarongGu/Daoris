@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Contracts.Participants;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -26,28 +27,15 @@ public sealed class PartnerDoors
         string lead, string piece, string adapter, string tree, string? account, string? harnessVersion, string? baseCommit,
         CancellationToken ct = default)
     {
-        const string Door = "/api/partners";
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("lead", lead);
-            writer.WriteString("piece", piece);
-            writer.WriteString("adapter", adapter);
-            writer.WriteString("tree", tree);
-            if (account is not null) writer.WriteString("account", account);
-            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
-            if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
-            writer.WriteEndObject();
-        }
-
-        var (ok, status, payload, root) = await _service.PostJsonAsync(Door, System.Text.Encoding.UTF8.GetString(stream.ToArray()), ct).ConfigureAwait(false);
-        if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{Door}` door ({status}) — is it older than this driver?");
+        var route = new OpenPartner(lead, piece, adapter, tree, account, harnessVersion, baseCommit);
+        var door = RouteRequest.Of(route).Path;
+        var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
+        if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?");
         if (!ok) return new(null, Text(answer, "error") ?? payload);
 
         var session = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var record) ? record : default;
         var id = Text(session, "id");
-        if (id is null) return new(null, $"the service at {_service.BaseUrl} answered `{Door}` with no record.");
+        if (id is null) return new(null, $"the service at {_service.BaseUrl} answered `{door}` with no record.");
 
         _service.RecordOpened(new SessionOpened(id, OpenedKind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? "")
         {
@@ -63,16 +51,9 @@ public sealed class PartnerDoors
     /// </summary>
     public async Task<SolicitedAnswer> HandAsync(string partner, string text, CancellationToken ct = default)
     {
-        var door = $"/api/partners/{Uri.EscapeDataString(partner)}/hand";
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("text", text);
-            // FOUNDATION1 row p (the design §3.4 rule 5): the hand reads a settled answer, a key its line settled. A host before the row ignores it.
-            writer.WriteBoolean("settled", true);
-            writer.WriteEndObject();
-        }
+        // The hand reads a settled answer, a key its line settled (FOUNDATION1 row p).
+        var route = new HandPartner(partner, text, true);
+        var door = RouteRequest.Of(route).Path;
 
         bool ok;
         int status;
@@ -80,7 +61,7 @@ public sealed class PartnerDoors
         JsonElement? root;
         try
         {
-            (ok, status, payload, root) = await _service.PostJsonAsync(door, System.Text.Encoding.UTF8.GetString(stream.ToArray()), ct).ConfigureAwait(false);
+            (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         }
         catch (Exception lost) when (lost is HttpRequestException || (lost is OperationCanceledException && !ct.IsCancellationRequested))
         {
