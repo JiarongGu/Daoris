@@ -33,8 +33,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary>Each running conversation's run over its process (ONEWAY1h-iii), which a person's finish closes.</summary>
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, TransportRun> _runs = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Each conversation's composer change as last kept (D205 §4.2), which the next change is reconciled with.</summary>
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActorOverride> _overrides = new(StringComparer.Ordinal);
+    private readonly ChatOptions _options;
+
+    private readonly ChatAccountReads _accounts;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _updateCuts = new();
     /// <summary>The shell crossed its close boundary: no further turn starts.</summary>
     public bool Closing => _context.Closing;
@@ -114,6 +115,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
         _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
+        _options = new ChatOptions(_context);
+        _accounts = new ChatAccountReads(_context);
 
         Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
         _chatRuns = new ChatRunBinds(home, service, _events);
@@ -962,8 +965,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // MODELROLE1d (D205 §4.2): a conversation going on re-applies the person's last composer change over its asked choice, so its
         // resume sets what they last left; the record's asked stays as its open set it.
         var overriding = goOn is null ? null : ActorOverride.Read(goOn.Record.Override);
-        if (overriding is not null) _overrides[sessionId] = overriding;
-        else _overrides.TryRemove(sessionId, out _);
+        _options.Kept(sessionId, overriding);
         var carrying = actorAsked.Overlaid(overriding);
 
         // AGENTPROVIDER1m-i (ONEWAY1h-iii): the run over today's transports holds the conversation's process, its capture and its end, its stop
@@ -1267,7 +1269,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 Asked = carrying,
                 Carried = overriding is not null ? null
                     : notCarried => _ = _service.TryKeepActorAsync(sessionId, null, choice, notCarried, ct: CancellationToken.None),
-                OffersRead = options => KeepOffers(resolved.Name, selection, sessionId, options),
+                OffersRead = options => _options.KeepOffers(resolved.Name, selection, sessionId, options),
                 Pending = pending,
                 Shown = said => _context.TakeShown(sessionId, said),
                 ModelRefused = pending is null ? null : async refusal =>
@@ -1920,97 +1922,12 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         return Task.FromResult(TurnStop.Nothing);
     }
 
-    /// <summary>
-    /// A conversation's model and effort, as its agent offered them (AGT6b, D98) — empty for one on a door
-    /// that carries none, one whose agent offered none, one still opening, and one nothing here holds.
-    /// </summary>
-    public IReadOnlyList<AcpConfigOption> Options(string sessionId) =>
-        _context.Turned.TryGetValue(sessionId, out var turned) && turned is ProtocolChat { Session: { } session }
-            ? ThePersons(session.ConfigOptions)
-            : [];
+    /// <inheritdoc cref="ChatOptions.Of"/>
+    public IReadOnlyList<AcpConfigOption> Options(string sessionId) => _options.Of(sessionId);
 
-    /// <summary>
-    /// Change a conversation's model or effort (AGT6b, D98): <c>session/set_config_option</c> on its
-    /// session, as the tool's own console's <c>/model</c> would — and the record says the person did.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 <b>Only the options that are the person's</b>: the model and the thought level. The mode is the
-    /// posture Daoris runs a session under (D37, D81), and a menu that widened it is the approval surface
-    /// D52 refuses, so it is refused here before anything reaches the agent — the page never offers it,
-    /// and this holds whatever a page sends. A value is the agent's to judge: it refuses one it does not
-    /// take, in its own words.
-    /// </remarks>
-    /// <returns>The conversation's options after the change, the person's only.</returns>
-    /// <exception cref="DriverException">Nothing here holds it, its door carries no options, or the option is not the person's.</exception>
-    public async Task<IReadOnlyList<AcpConfigOption>> SetOptionAsync(
-        string sessionId, string configId, string value, CancellationToken ct)
-    {
-        if (!_context.Turned.TryGetValue(sessionId, out var turned) || turned is not ProtocolChat chat)
-        {
-            throw new DriverException(turned is not null || _context.Talking.ContainsKey(sessionId)
-                ? $"conversation `{sessionId}` runs on a door that carries no options to change — only the protocol "
-                  + "door carries the model and effort an agent offers."
-                : $"nothing on this machine holds conversation `{sessionId}` — it has ended, or runs elsewhere.");
-        }
-
-        var session = chat.Session
-            ?? throw new DriverException($"conversation `{sessionId}` is still opening — its options are not known yet.");
-        var option = session.ConfigOptions.FirstOrDefault(offered => offered.Id == configId)
-            ?? throw new DriverException($"the agent offered no option `{configId}` for conversation `{sessionId}`.");
-        if (!option.ThePersons)
-        {
-            throw new DriverException(
-                $"the conversation's `{configId}` is the posture Daoris runs it under (D81), not the person's to change "
-                + "here — its model and its effort are.");
-        }
-
-        var after = await session.SetConfigOptionAsync(configId, value, ct).ConfigureAwait(false);
-        // Only returned configuration is acknowledged. An empty answer says nothing about what the setter asked.
-        var model = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "model")?.Current;
-        var effort = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "thought_level")?.Current;
-        // MODELROLE1d (D205 §4.2): kept as values, reconciled from the returned configuration with the change before it, never merged
-        // blindly: an effort-only change keeps the model, and a model change clears the effort the new model resets.
-        var before = _overrides.TryGetValue(sessionId, out var kept) ? kept : null;
-        var reconciled = ActorOverride.Reconciled(before, option.Category ?? "", session.LastAcknowledgedOptions);
-        if (reconciled is not null && reconciled != before)
-        {
-            _overrides[sessionId] = reconciled;
-            // The agent took the change already: a provenance write that fails is logged, never the press's failure.
-            using (var keepLog = new MachineLog(_home, "driver"))
-            {
-                await _service.TryKeepActorAsync(sessionId, keepLog, changed: reconciled.Written, ct: ct).ConfigureAwait(false);
-            }
-            if (_context.ActorRuns.TryGetValue(sessionId, out var actorRun)) actorRun.Report([], new(DateTimeOffset.UtcNow, model, effort));
-        }
-        // Said as the agent names them, so a reader later knows what ran the turns after this one.
-        var chosen = option.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value;
-        // CONVNOTE2c: the option and its value are the agent's own names, facts the page words the sentence around.
-        var set = Noted.Of(
-            NoteCodes.ChatOptionSet, $"the person set {option.Name} to {chosen} for this conversation.",
-            ("option", option.Name), ("chosen", chosen));
-        _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
-        return ThePersons(after);
-    }
-
-    /// <summary>
-    /// What a conversation's open listed, kept as its agent's offer reading on its account (D205 §9.2, MODELROLE1d), as a driven open's
-    /// is; a reading that cannot be kept is logged, never the conversation's failure.
-    /// </summary>
-    private void KeepOffers(string agent, HarnessSelection selection, string sessionId, IReadOnlyList<AcpConfigOption> options)
-    {
-        IReadOnlyList<string>? Values(string category) =>
-            options.FirstOrDefault(option => option.Category == category) is { } option ? [.. option.Choices.Select(each => each.Value)] : null;
-        if (AgentOffers.Offered(_home, agent, selection.Version, selection.Profile, Values("model"), Values("thought_level"), DateTimeOffset.UtcNow)
-            is { } unkept)
-        {
-            using var log = new MachineLog(_home, "driver");
-            log.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
-        }
-    }
-
-    /// <summary>The options a person may set (<see cref="AcpConfigOption.ThePersons"/>), in the agent's order.</summary>
-    private static IReadOnlyList<AcpConfigOption> ThePersons(IReadOnlyList<AcpConfigOption> options) =>
-        [.. options.Where(option => option.ThePersons)];
+    /// <inheritdoc cref="ChatOptions.SetAsync"/>
+    public Task<IReadOnlyList<AcpConfigOption>> SetOptionAsync(string sessionId, string configId, string value, CancellationToken ct) =>
+        _options.SetAsync(sessionId, configId, value, ct);
 
     // The chat runner's port (Course's IChatRunning): the operations the course's executors call, forwarded as they are. The public ones
     // implement it where they stand; the internal ones, whose places are internal records, answer it here.
@@ -2127,63 +2044,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies, adapter);
     }
 
-    /// <summary>
-    /// A conversation's turn the door refused, read for an account's limit (TOOL4d, D125 §2.3): where the adapter's table
-    /// recognises it, the account the conversation runs as cools, the log says so, and the line for its record comes back
-    /// with its code (CONVNOTE1b), as a session record's cooling line carries it. Null is a refusal as today. The
-    /// conversation goes on: the process is still there, and so is the person.
-    /// </summary>
-    /// <param name="coolOff">The machine's <c>cooloff</c> (TOOL4e), for a limit that names no time; the default when null.</param>
-    /// <param name="byCode">
-    /// The reader's reading of the same failure where it read a limit by its code or kind with no sentence (FOUNDATION1g part a, the
-    /// agent-errors design §3.2), as a driven run passes it: cooled for D125's unstated default. Null reads the sentence alone.
-    /// </param>
-    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null)
-    {
-        (CoolingEntry Entry, LimitSeen Seen)? limited;
-        try
-        {
-            limited = _harnesses.Limited(adapter.Name, profile, failure, sessionId, coolOff, byCode);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
+    /// <inheritdoc cref="ChatAccountReads.Limited"/>
+    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null) =>
+        _accounts.Limited(sessionId, adapter, profile, failure, coolOff, byCode);
 
-        if (limited is not { } read) return null;
+    /// <inheritdoc cref="ChatAccountReads.Carried"/>
+    private RotatedOpening.Carried? LimitCarried(string? carries) => _accounts.Carried(carries);
 
-        _service.AccountSaid(AccountLine.Limited(
-            sessionId, adapter.Name, profile, read.Seen, _events.TurnsEnded(sessionId) + 1, used: null));
-        return CoolingWords.ConversationOf(read.Entry, _harnesses.Zone);
-    }
-
-    /// <summary>
-    /// What a conversation that goes on from a limit carries (LIMITGOON1), for its opening line and <c>account.rotated</c>: the one it
-    /// continues, the turn the limit refused (its last ended, since a conversation's refused turn ends <c>error</c> in its record, after
-    /// <see cref="Limited"/> counted it) and its context there. Null for a start that carries none.
-    /// </summary>
-    private RotatedOpening.Carried? LimitCarried(string? carries) =>
-        carries is null ? null : new RotatedOpening.Carried(carries, _events.TurnsEnded(carries), RotatedOpening.ContextOf(null, _events, carries));
-
-    /// <summary>
-    /// A conversation's call the door refused, read for the account's sign-in (SIGNIN1b, D125 ROSTER1b) by the reader a driven
-    /// start's conclusion uses (<see cref="RefusedAccounts.SignInRefused"/>): where the adapter's table recognises it, the account the
-    /// conversation runs as reads signed out, kept as a reading is, so the next start walks past it, and the line for its record
-    /// comes back. Null is a refusal as today. Read from the door's failure, never from the transcript (AGT3c).
-    /// </summary>
-    internal Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure)
-    {
-        try
-        {
-            return RefusedAccounts.SignInRefused(_harnesses, adapter, profile, failure);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            // A reading not written, or an adapter a plugin no longer declares, costs the next start one more refusal, never
-            // this conversation: this runs inside the refused turn's own handling.
-            return null;
-        }
-    }
+    /// <inheritdoc cref="ChatAccountReads.SignedOut"/>
+    internal Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure) => _accounts.SignedOut(adapter, profile, failure);
 
     /// <summary>What a conversation's watch knows of it beyond its process (MSG1c).</summary>
     /// <param name="Adapter">The adapter it runs on, whose conversation id is kept for it.</param>
@@ -2432,7 +2301,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             Servers = servers,
             TypedFailures = resolved.Toolchain?.ErrorWords?.TypedFailures == true, // CODEXSTATUS1
             // Its model and effort, told each time they change, so the page offers what the agent does (AGT6b).
-            Options = options => OptionsChanged?.Invoke(sessionId, ThePersons(options)),
+            Options = options => OptionsChanged?.Invoke(sessionId, ChatOptions.ThePersons(options)),
             Configure = session =>
             {
                 chat.Configure(session);
