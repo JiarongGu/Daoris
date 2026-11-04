@@ -16,6 +16,7 @@ public sealed class LinesRoutes(DriverContext context)
 {
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
+    private readonly TreesTidyDesk _tidy = new(context.Loop);
 
     /// <summary>
     /// What a press that removes, replays or moves session branches and trees changes: the sessions'
@@ -114,122 +115,11 @@ public sealed class LinesRoutes(DriverContext context)
         return Answer([.. lines.Select(line => new LineRow(line.Repository, line.Workspace, line.Branch, line.Source))], config, _loop.Harnesses.Adapters);
     }
 
-    /// <summary>
-    /// What <c>LINES</c> answers for <paramref name="lines"/>: each repository's line, and how its work lands, the language its
-    /// sessions write in, where its work is reviewed, which other agent reads it, what a helper does, how its work is committed and
-    /// the access setup its sessions start under, each as it resolves from <paramref name="config"/> and where it was set, in arrays keyed by repository and workspace. The lines
-    /// slice pushes each repository's rows of it: one builder for both doors, so the pull and the push cannot drift.
-    /// </summary>
-    /// <param name="adapters">The loop's agents, the machine's plugins among them, which an opinion's <c>sameAgent</c> is judged by.</param>
-    internal static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, AdapterSet adapters)
-    {
-        var gitLevels = GitLevelsOf(config);
-        return new
-        {
-            // The policy that reaches each line (the Line row, WORKFLOWCLEAN1h): its own, else its workspace's; left out where none is set.
-            Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
-            // How each one's work lands, from the same file and the same circles.
-            Landings = lines.Select(line => (line, landing: LandingRules.Line(config, line.Repository, line.Workspace)))
-                .Select(pair => new
-                {
-                    pair.line.Repository,
-                    pair.line.Workspace,
-                    pair.landing.Rule.Form,
-                    pair.landing.Rule.Pattern,
-                    pair.landing.Rule.Plugin,
-                    pair.landing.Rule.AutoAccept,
-                    // The ticket's key and the squash, for the page to show and keep: none is left out.
-                    pair.landing.Rule.Key,
-                    pair.landing.Rule.Squash,
-                    // the rule's `integrate` as the file holds it (null when none), for the editor to start from.
-                    Integrate = IntegrateWire(pair.landing.Rule.Integrate),
-                    pair.landing.Source,
-                })
-                .ToArray(),
-            // What each one's sessions are asked to write to the person in, and where that was set: the driver's
-            // resolution, read rather than recomputed by the page. None leaves the language and its source out.
-            Languages = lines.Select(line => (line, language: SessionLanguages.Resolve(config, line.Repository, line.Workspace)))
-                .Select(pair => new
-                {
-                    pair.line.Repository,
-                    pair.line.Workspace,
-                    Language = pair.language?.Code,
-                    pair.language?.Name,
-                    pair.language?.Source,
-                })
-                .ToArray(),
-            // Where each one's work is reviewed before it lands, and where that was set: the driver's resolution,
-            // read rather than recomputed by the page. Nothing set anywhere leaves the rule and its source out.
-            Reviews = lines.Select(line => (line, review: ReviewRules.Resolve(config, line.Repository, line.Workspace)))
-                .Select(pair => new
-                {
-                    pair.line.Repository,
-                    pair.line.Workspace,
-                    Rule = pair.review is null ? null : ReviewWire(pair.review.Rule),
-                    pair.review?.Source,
-                })
-                .ToArray(),
-            // Which other agent reads each one's work before it lands, and where that was set: the driver's
-            // resolution, read rather than recomputed by the page. Nothing set anywhere leaves the rule and its source out.
-            Opinions = lines.Select(line => (line, opinion: OpinionRules.Resolve(config, line.Repository, line.Workspace)))
-                .Select(pair => new
-                {
-                    pair.line.Repository,
-                    pair.line.Workspace,
-                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, config.Adapter, adapters),
-                    pair.opinion?.Source,
-                })
-                .ToArray(),
-            // What a helper each one's agent asks for does, and how its work is committed, each with where it was set (DOORS1b,
-            // D163 point 3, D164's amendment point 3): the driver's resolution, never null, `default` where nothing is set.
-            Helpers = lines.Select(line => (line, helpers: HelperRules.Resolve(config, line.Repository, line.Workspace)))
-                .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = HelperWire(pair.helpers.Rule), pair.helpers.Source })
-                .ToArray(),
-            // What an agent's ask to hand its session over does, with where it was set, `default` where
-            // nothing is: the driver's resolution, never null.
-            HandOver = lines.Select(line => (line, handOver: HandOverRules.Resolve(config, line.Repository, line.Workspace)))
-                .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = new { pair.handOver.Rule.Mode }, pair.handOver.Source })
-                .ToArray(),
-            Commits = lines.Select(line => (line, commits: CommitRules.Resolve(config, line.Repository, line.Workspace)))
-                .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = CommitWire(pair.commits.Rule), pair.commits.Source })
-                .ToArray(),
-            // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184
-            // point 1): the driver's resolution, never null, `default` where nothing is set, so the page shows where each came from.
-            Access = lines.Select(line => (line, access: AccessRules.Resolve(config, line.Repository, line.Workspace)))
-                .Select(pair => new
-                {
-                    pair.line.Repository,
-                    pair.line.Workspace,
-                    pair.access.Full,
-                    Pauses = pair.access.Pauses.Select(pause => new { pause.Pause, pause.Value, pause.Source }).ToArray(),
-                })
-                .ToArray(),
-            // What a session's git may do on a remote, each class with its value and where it was set; the driver's
-            // resolution, `default` where nothing is set (Write then `as-today`).
-            GitAccess = lines.Select(line => (line, access: GitAccessKeys.Resolve(gitLevels, line.Repository, line.Workspace)))
-                .Select(pair => new
-                {
-                    pair.line.Repository,
-                    pair.line.Workspace,
-                    Classes = pair.access.Classes.Select(each => new { each.Class, each.Value, each.Source }).ToArray(),
-                })
-                .ToArray(),
-        };
-    }
+    /// <summary>What <c>LINES</c> answers for <paramref name="lines"/>, one builder for the pull and the slice (<see cref="LinesWires.Answer"/>).</summary>
+    internal static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, AdapterSet adapters) => LinesWires.Answer(lines, config, adapters);
 
-    /// <summary>A rule's <c>integrate</c> as the file writes it (and a press may send it), each key null where absent; null where the rule has none.</summary>
-    internal static object? IntegrateWire(LandingIntegrate? integrate) => integrate is null ? null : new
-    {
-        integrate.Request,
-        integrate.Commit,
-        integrate.Batch,
-        integrate.Order,
-        integrate.Gates,
-        Unconfirmed = integrate.Unreached is null && integrate.Reached is null ? null : new { integrate.Unreached, integrate.Reached },
-        integrate.Conflicts,
-        integrate.Overlap,
-        integrate.Line,
-    };
+    /// <summary>A rule's <c>integrate</c> as the file writes it (<see cref="LinesWires.IntegrateWire"/>).</summary>
+    internal static object? IntegrateWire(LandingIntegrate? integrate) => LinesWires.IntegrateWire(integrate);
 
     // The clean-up: every session branch here with what it holds — then, on the
     // person's press, those the proof clears, and only those the page listed to go (`only`).
@@ -241,71 +131,14 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SWEEP_PLAN", PipeClass.Open)]
     [OneFlight("SWEEP_PLAN")]
-    private async Task<object?> SweepPlanAsync(SweepPlanRead read, CancellationToken cancellationToken)
-    {
-        // `trees clean --workspace` takes one workspace's checkouts alone, as that workspace's Branches tab does; none takes every one.
-        var workspace = read.Workspace;
-        // the pull-request answers kept before this look, so what its asks wrote reaches the pushed list at once (below).
-        var kept = new LandedBranches(_loop.Home).Entries();
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken, workspace);
-        // a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
-        var pluginLines = new List<string>();
-        var trees = read.Said ? Asking(pluginLines) : new SessionTrees(_loop.Home);
-
-        // LANDRETIRE1 part 2: which quests a landing the line does not hold names are closed, the service's, read once for the list.
-        var closed = await LandedStanding.ClosedAsync(kept, (_loop.Service ?? throw NotReady()).EveryQuestAsync, cancellationToken);
-        var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken, closed);
-        // The person's look asks the plugins and keeps their answers in the landing record, which no watch hears and
-        // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now
-        //, rather than at its next ref move or deadline. Asked of no plugin again: the part reads what was kept.
-        SweepStateSlice.Asked(_loop.Facts, kept, new LandedBranches(_loop.Home).Entries());
-        // the session each kept branch's tree is, so its row says how to land it as that session's page does. The
-        // records are read only where a row could offer one, and records that do not read offer none: the list stands.
-        var records = plan.Sessions.Any(OffersLanding)
-            ? await SessionBranchDoors.RecordsOrNoneAsync(_loop.Service ?? throw NotReady(), cancellationToken)
-            : [];
-        // `trees clean` asks for the verb's words beside the list's fields (`said`); the page does not.
-        return read.Said
-            ? SweepAnswer(plan, records, TreesPlanWords.CleanPlan(plan, records, new TreesAsk(TreesLook.Clean) { Workspace = workspace }).After(pluginLines))
-            : SweepAnswer(plan, records);
-    }
+    private Task<object?> SweepPlanAsync(SweepPlanRead read, CancellationToken cancellationToken) => _tidy.SweepPlanAsync(read, cancellationToken);
 
     // The clean-up's press: those the proof clears, and only those the page listed to go (`only`).
     [DriverRoute("SWEEP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SWEEP", Workspace = "workspace")]
     [GroundRead("SWEEP", nameof(PipeReads.SweepPlan))]
     [Publishes("SWEEP", Moves)]
-    private async Task<object?> SweepAsync(SweepPress press, CancellationToken cancellationToken)
-    {
-        var workspace = press.Workspace;
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken, workspace);
-        var trees = new SessionTrees(_loop.Home);
-        var only = press.Only?.ToHashSet(StringComparer.Ordinal);
-
-        // A workspace the registry does not name is refused, naming the ones it does, rather than clean nothing and say all is well.
-        if (workspace is not null && TreesCommand.Take(
-                await (_loop.Service ?? throw NotReady()).RegistryAsync(cancellationToken), new TreesAsk(TreesLook.Clean) { Workspace = workspace }).Refusal is { } refusal)
-        {
-            return new
-            {
-                Results = Array.Empty<object>(), Landed = Array.Empty<object>(), Folders = Array.Empty<string>(), Removed = 0,
-                Said = TreesWords.Refused($"trees: {refusal}").ToWire(),
-            };
-        }
-
-        var done = await trees.CleanAsync(repositories, inUse, only, cancellationToken);
-        _loop.Nudge();
-        return new
-        {
-            Results = done.Sessions.Select(result => new { Branch = SweepRow(result.Item), result.Removed, result.Message }).ToArray(),
-            Landed = done.Landed.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
-            // The empty folders trees left where something held them open, each removed or still held.
-            Folders = done.Folders ?? [],
-            Removed = done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed),
-            // what `trees clean --yes` prints, each branch removed or kept with why, and the count (§7.3).
-            Said = TreesWords.Clean(done).ToWire(),
-        };
-    }
+    private Task<object?> SweepAsync(SweepPress press, CancellationToken cancellationToken) => _tidy.SweepAsync(press, cancellationToken);
 
     /// <summary>
     /// Discard a failed or superseded attempt's session branch by its name and its repository, with its tree where it still has
@@ -420,39 +253,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// the page listed (`only`). A row not done is an answer with the tree layer's sentence. `workspace` keeps both to its checkouts.
     /// </summary>
     [DriverRoute("TREES_SYNC_PLAN", PipeClass.Open)]
-    private async Task<object?> TreesSyncPlanAsync(TreesSyncPlanRead read, CancellationToken cancellationToken)
-    {
-        var named = read.Repository;
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, named, cancellationToken, read.Workspace);
-        // a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
-        var pluginLines = new List<string>();
-        var trees = read.Said ? Asking(pluginLines) : new SessionTrees(_loop.Home);
-        var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, cancellationToken, SyncScopeOf(named, read.Also, read.All));
-        // `trees sync` asks for the verb's words beside the list's fields (`said`); the page does not.
-        if (read.Said)
-        {
-            var asked = new TreesAsk(TreesLook.Sync) { Repository = named, Workspace = read.Workspace, All = read.All };
-            return new
-            {
-                Lines = plan.Lines.Select(PullRow).ToArray(),
-                Rebases = plan.Rebases.Select(RebaseRow).ToArray(),
-                Deletes = plan.Deletes.Select(LandedRow).ToArray(),
-                Looked = plan.Looked.Select(SyncRepositoryRow).ToArray(),
-                Apart = plan.Apart.Select(SyncRepositoryRow).ToArray(),
-                Said = TreesPlanWords.SyncPlan(plan, asked, DateTimeOffset.UtcNow).After(pluginLines).ToWire(),
-            };
-        }
-
-        return new
-        {
-            Lines = plan.Lines.Select(PullRow).ToArray(),
-            Rebases = plan.Rebases.Select(RebaseRow).ToArray(),
-            Deletes = plan.Deletes.Select(LandedRow).ToArray(),
-            // What the look took, and every other repository with a checkout, listed apart for the person to include.
-            Looked = plan.Looked.Select(SyncRepositoryRow).ToArray(),
-            Apart = plan.Apart.Select(SyncRepositoryRow).ToArray(),
-        };
-    }
+    private Task<object?> TreesSyncPlanAsync(TreesSyncPlanRead read, CancellationToken cancellationToken) => _tidy.TreesSyncPlanAsync(read, cancellationToken);
 
     // The press of the sync list: the rows it listed (`only`), and the repositories the person included besides.
     [DriverRoute("TREES_SYNC", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -460,76 +261,7 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundRead("TREES_SYNC", nameof(PipeReads.SyncPlan))]
     [Says("TREES_SYNC", "repository:repository")]
     [Publishes("TREES_SYNC", Moves)]
-    private async Task<object?> TreesSyncAsync(TreesSyncPress press, CancellationToken cancellationToken)
-    {
-        var named = press.Repository;
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, named, cancellationToken, press.Workspace);
-        var trees = new SessionTrees(_loop.Home);
-        var scope = SyncScopeOf(named, press.Also, press.All);
-        var only = press.Only?.ToHashSet(StringComparer.Ordinal);
-
-        // The sessions in use, asked again while each repository's trees are held for its replays: the
-        // driver may have opened one in a listed tree between the list and this press.
-        var service = _loop.Service ?? throw NotReady();
-
-        // `trees sync --yes` takes the checkouts its words name, as the verb takes them, and says so where it takes none: a
-        // workspace the registry does not name, or no checkout of the repository named.
-        var ask = new TreesAsk(TreesLook.Sync) { Repository = named, Workspace = press.Workspace, All = press.All };
-        if (repositories.Count == 0)
-        {
-            var taken = TreesCommand.Take(await service.RegistryAsync(cancellationToken), ask);
-            return new
-            {
-                Lines = Array.Empty<object>(), Rebases = Array.Empty<object>(), Deletes = Array.Empty<object>(), Changed = 0,
-                Apart = Array.Empty<object>(), Followed = Array.Empty<string>(),
-                Said = TreesWords.Refused(taken.Refusal is { } refusal ? $"trees: {refusal}" : TreesCommand.NothingToSync(ask)).ToWire(),
-            };
-        }
-
-        // The verb fetches as it presses (`fetch`); the page's press acts on what its list fetched, and sends none. The lines the press
-        // moved are followed by the registry at once where the verb asks (`follow`), as the page's next look would.
-        var done = await trees.SyncAsync(repositories, inUse, only, fetch: press.Fetch, cancellationToken,
-            inUseNow: async token => await InUseAsync(service, token), scope: scope, beside: token => BranchTidying.BesideAsync(service, token));
-        _loop.Nudge();
-        var followed = press.Follow
-            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
-            : null;
-        return new
-        {
-            Lines = done.Lines.Select(result => new { Line = PullRow(result.Pull), result.Moved, result.Message }).ToArray(),
-            Rebases = done.Rebases.Select(result => new { Branch = RebaseRow(result.Item), result.Replayed, result.Message }).ToArray(),
-            Deletes = done.Deletes.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
-            Changed = done.Lines.Count(result => result.Moved) + done.Rebases.Count(result => result.Replayed) + done.Deletes.Count(result => result.Removed),
-            // What the press left apart and the lines the registry followed, which the verb says; the page ignores both.
-            Apart = done.Apart.Select(SyncRepositoryRow).ToArray(),
-            Followed = followed?.Out ?? [],
-            Said = TreesWords.Sync(done, DateTimeOffset.UtcNow, followed).ToWire(),
-        };
-    }
-
-    /// <summary>
-    /// Which repositories a sync takes: every one (<c>all</c>), the ones ticked (<c>also</c>) and the one named; the press takes each a
-    /// listed row names besides.
-    /// </summary>
-    private static SyncScope SyncScopeOf(string? named, IReadOnlyList<string>? also, bool all)
-    {
-        if (all) return SyncScope.Everything;
-        var taken = (also ?? []).ToHashSet(StringComparer.Ordinal);
-        if (named is not null) taken.Add(named);
-        return SyncScope.Named(taken);
-    }
-
-    private static object SyncRepositoryRow(SyncRepository each) => new { each.Repository, each.Workspace, each.Holds };
-
-    private static string? Short(string? commit) => commit is null ? null : Daoris.Driver.TextBounds.ShortCommit(commit, 8);
-
-    private static object PullRow(LinePull pull) => new
-    {
-        pull.Repository, pull.Workspace, pull.Line, pull.Kind, From = Short(pull.From), To = Short(pull.To), pull.Commits,
-        pull.Fetch, pull.Detail, pull.Moves,
-        // Where the fetch failed: when this checkout last heard from origin, and how origin is reached.
-        pull.LastFetch, pull.Reach,
-    };
+    private Task<object?> TreesSyncAsync(TreesSyncPress press, CancellationToken cancellationToken) => _tidy.TreesSyncAsync(press, cancellationToken);
 
     // Which repositories a look would take: every one with a checkout here, and whether it holds a branch
     // of Daoris's. Read on the machine, never fetched, so the screen can say what a look will fetch before it is asked.
@@ -598,48 +330,17 @@ public sealed class LinesRoutes(DriverContext context)
         };
     }
 
-    /// <summary>
-    /// One unit's milestone as <c>WORK_STATE</c> answers it and the work slice pushes it: one builder, two doors, so the pull
-    /// and the push cannot drift. A field added here is pushed only once <see cref="WorkStateSlice.Fields"/> names it.
-    /// </summary>
-    public static object WorkUnit(IKnowledgeMilestone unit) => new
-    {
-        unit.Unit, unit.Repository, unit.Branch, unit.Session,
-        End = new { unit.End.State, unit.End.By, unit.End.On, unit.End.Revision, unit.End.At, unit.End.Said },
-        Result = unit.Result.Select(WorkEntry).ToArray(),
-        Cleanup = new { unit.Cleanup.State, Waits = unit.Cleanup.Waits.Select(WorkEntry).ToArray(), Gone = unit.Cleanup.Gone.Select(WorkEntry).ToArray() },
-        Recovery = unit.Recovery.Select(WorkEntry).ToArray(),
-        Entries = unit.Entries.Select(WorkEntry).ToArray(),
-    };
+    /// <summary>The unit's milestone as <c>WORK_STATE</c> answers it (<see cref="WorkWires.WorkUnit"/>).</summary>
+    public static object WorkUnit(IKnowledgeMilestone unit) => WorkWires.WorkUnit(unit);
 
-    /// <summary>
-    /// One inventory entry as <c>WORK_STATE</c> answers it and the work slice pushes it. OVERVIEWNOISE1b, additive: a blocked
-    /// entry's <c>code</c> and the <c>facts</c> the page words it with; a page before them shows its detail as recorded.
-    /// </summary>
-    public static object WorkEntry(InventoryEntry each) =>
-        new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof, each.Repository, each.Commit, each.Code, each.Facts };
+    /// <summary>One inventory entry as <c>WORK_STATE</c> answers it (<see cref="WorkWires.WorkEntry"/>).</summary>
+    public static object WorkEntry(InventoryEntry each) => WorkWires.WorkEntry(each);
 
-    /// <summary>
-    /// The attempts held for the person as the wire carries them: the page words <c>why</c> by its code. FABRIC-CLOSE1q, additive: <c>words</c>,
-    /// the words offered on each (a plugin's three; a held close's recoveries and its stop), which a page before the field reads without.
-    /// FABRIC-PERFORM1k, additive: a failure kept for the person, its <c>why</c> <c>failure-kept</c> or <c>tries-spent</c>, its failure's
-    /// <c>code</c>, and its one word <c>again</c>.
-    /// </summary>
-    public static object[] HeldAnswer(IEnumerable<HeldAttempt> held) =>
-    [
-        .. held.Select(each => new
-        {
-            each.Unit, each.Node, each.Attempt, each.Plugin, each.Step, each.NodeState, each.Why, each.Outcome, each.Revision,
-            At = each.RecordedAt, each.Resolution, each.ResolvedAt, Said = HeldAttempts.WhySaid(each), each.Words, each.Code,
-        }),
-    ];
+    /// <summary>The attempts held for the person (<see cref="WorkWires.HeldAnswer"/>).</summary>
+    public static object[] HeldAnswer(IEnumerable<HeldAttempt> held) => WorkWires.HeldAnswer(held);
 
-    /// <summary>
-    /// The node records that do not read as the wire carries them (FABRIC-PERFORM1j): the file's name, the unit it names where it still
-    /// names one, when it was last written, and the driver's sentence; the page words it in the reader's language.
-    /// </summary>
-    public static object[] UnreadableAnswer(IEnumerable<UnreadableRecord> unreadable) =>
-        [.. unreadable.Select(each => new { each.File, each.Unit, each.At, Said = HeldAttempts.UnreadableSaid(each) })];
+    /// <summary>The node records that do not read (<see cref="WorkWires.UnreadableAnswer"/>).</summary>
+    public static object[] UnreadableAnswer(IEnumerable<UnreadableRecord> unreadable) => WorkWires.UnreadableAnswer(unreadable);
 
     // Open the node records' folder (FABRIC-PERFORM1j): What needs you's press on a record that does not read, which the person mends
     // there. The module names the folder, never the page, and opens it through the window kit's launcher, through the start gate, as a
@@ -666,17 +367,8 @@ public sealed class LinesRoutes(DriverContext context)
         return new { Opened = true };
     }
 
-    /// <summary>
-    /// The closure graphs' ends as the wire carries them (FABRIC-CLOSE1j): <c>kind</c> <c>overridden</c> with the <c>nodes</c> it stopped,
-    /// or <c>partially-closed</c> with the <c>quest</c> lost, its close <c>node</c> and <c>attempt</c>, and <c>words</c> (<c>stop</c>, said
-    /// through <c>WORK_HELD</c>) while that node is live again. A page before the field reads without it. FABRIC-CLOSE1q4, additive: kind
-    /// <c>word-taken-back</c>, the person's <c>word</c> on a close no longer listed, taken back since the <c>quest</c>'s submission moved; a
-    /// page before it says nothing of that kind.
-    /// </summary>
-    public static object[] EndsAnswer(IEnumerable<GraphEnd> ends) =>
-    [
-        .. ends.Select(each => new { each.Unit, each.Kind, each.At, each.Nodes, each.Quest, each.Node, each.Attempt, each.NodeState, each.Resolution, each.Words, each.Word }),
-    ];
+    /// <summary>The closure graphs' ends (<see cref="WorkWires.EndsAnswer"/>).</summary>
+    public static object[] EndsAnswer(IEnumerable<GraphEnd> ends) => WorkWires.EndsAnswer(ends);
 
     // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris work
     // held <unit> <node> <attempt> <word>`. Both doors end in HeldAttempts.Word, which records it under the unit's node record's lock with
@@ -708,78 +400,20 @@ public sealed class LinesRoutes(DriverContext context)
         });
     }
 
-    /// <summary>
-    /// A session branch's row: what the proof found, and whether its discard is offered beside it, by the
-    /// driver's own rule, so the page offers it beside the rows `daoris tree clean` prints its line beside: a
-    /// failed or superseded attempt's commits, which no clean-up takes. The tree's path stays here; the page is told only
-    /// whether there is one.
-    /// </summary>
-    /// <param name="session">
-    /// The session its tree is, or null: named by id and how it ended, with
-    /// whether its landing is offered by the driver's rule (<see cref="SessionBranchDoors.LandingOffered"/>), the line `trees clean`
-    /// prints beside the same row. A clean-up's press answers none.
-    /// </param>
-    public static object SweepRow(SweepItem item, SessionRecord? session = null) => new
-    {
-        item.Repository, item.Workspace, item.Branch, HasTree = item.Tree is not null,
-        item.Kind, item.Commits, item.Where, item.Detail, item.Removable,
-        Discardable = SessionBranchDoors.RemovalOffered(item) is not null,
-        Session = item.Tree is not null && session is not null ? new { session.Id, session.State } : null,
-        Landable = SessionBranchDoors.LandingOffered(item, session) is not null,
-    };
+    /// <summary>A session branch's row (<see cref="SweepWires.SweepRow"/>).</summary>
+    public static object SweepRow(SweepItem item, SessionRecord? session = null) => SweepWires.SweepRow(item, session);
 
-    /// <summary>
-    /// A branch's row in bringing up to date, the list's and the press's alike: what the press does with it, where its own
-    /// commits start, how many it carries, and how many the line already holds, which the replay leaves out (LANDSYNC3b, D87's
-    /// 2026-10-16 note), as `trees sync` says them.
-    /// </summary>
-    public static object RebaseRow(RebaseItem item) => new
-    {
-        item.Repository, item.Workspace, item.Branch, item.Landed, item.Kind, item.Onto, item.Cut, item.CutBy, item.GrewFrom,
-        item.Commits, item.LeftOut, item.Detail, item.Replays,
-    };
+    /// <summary>A branch's row in bringing up to date (<see cref="SweepWires.RebaseRow"/>).</summary>
+    public static object RebaseRow(RebaseItem item) => SweepWires.RebaseRow(item);
 
-    /// <summary>
-    /// The clean-up's list as <c>SWEEP_PLAN</c> answers it and the pushed <c>sweep</c> slice carries each repository's part of it
-    ///: one builder, two doors. A row names its session only where it could offer that
-    /// session's landing (<see cref="OffersLanding"/>), the only rows the door reads the records for, so a row says the same whichever
-    /// other rows stand beside it.
-    /// </summary>
-    /// <param name="records">The sessions' records: the service's at the door, the machine's facts' look in the slice.</param>
-    public static object SweepAnswer(SweepPlan plan, IReadOnlyList<SessionRecord> records) => new
-    {
-        Branches = plan.Sessions
-            .Select(item => SweepRow(item, OffersLanding(item) ? SessionBranchDoors.SessionOfTree(records, item.Tree) : null)).ToArray(),
-        Landed = plan.Landed.Select(LandedRow).ToArray(),
-    };
+    /// <summary>The clean-up's list, one builder for the door and the slice (<see cref="SweepWires.SweepAnswer(SweepPlan, IReadOnlyList{SessionRecord})"/>).</summary>
+    public static object SweepAnswer(SweepPlan plan, IReadOnlyList<SessionRecord> records) => SweepWires.SweepAnswer(plan, records);
 
-    /// <summary>
-    /// The trees' look a terminal asks for: its landing plugins say their own lines into <paramref name="lines"/> as the alone
-    /// path says them on its console, under the plugin's name, and the answer's words carry them first.
-    /// </summary>
-    private SessionTrees Asking(List<string> lines) => new(
-        _loop.Home, new LandingPlugins(_loop.Home, say: (plugin, line) => lines.Add(TreesWords.PluginLine(plugin, line)), log: _loop.Log, health: _loop.Health));
+    /// <summary>The clean-up's list with the words <c>trees clean</c> prints for it (<see cref="SweepWires.SweepAnswer(SweepPlan, IReadOnlyList{SessionRecord}, TreesSaid)"/>).</summary>
+    public static object SweepAnswer(SweepPlan plan, IReadOnlyList<SessionRecord> records, TreesSaid said) => SweepWires.SweepAnswer(plan, records, said);
 
-    /// <summary><see cref="SweepAnswer(SweepPlan, IReadOnlyList{SessionRecord})"/> with the words <c>trees clean</c> prints for it.</summary>
-    public static object SweepAnswer(SweepPlan plan, IReadOnlyList<SessionRecord> records, TreesSaid said) => new
-    {
-        Branches = plan.Sessions
-            .Select(item => SweepRow(item, OffersLanding(item) ? SessionBranchDoors.SessionOfTree(records, item.Tree) : null)).ToArray(),
-        Landed = plan.Landed.Select(LandedRow).ToArray(),
-        Said = said.ToWire(),
-    };
-
-    /// <summary>Whether a kept branch's row could offer its session's landing: unlanded, its tree still here.</summary>
-    private static bool OffersLanding(SweepItem item) => item.Kind == SweepKind.Unlanded && item.Tree is not null;
-
-    /// <summary>A landed branch's row: what the proof found, and the files that keep it where some do.</summary>
-    public static object LandedRow(LandedItem item) => new
-    {
-        item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
-        item.PullRequest, item.Commits, item.Removable,
-        // LANDRETIRE1 part 2: when the landing recorded it, and its quest with whether the service says it is closed.
-        item.LandedAt, item.Quest, item.QuestClosed,
-    };
+    /// <summary>A landed branch's row (<see cref="SweepWires.LandedRow"/>).</summary>
+    public static object LandedRow(LandedItem item) => SweepWires.LandedRow(item);
 
     /// <summary>
     /// Every repository with a checkout here — or the one named, or one workspace's — and the trees sessions still running
@@ -854,17 +488,8 @@ public sealed class LinesRoutes(DriverContext context)
         return DriverRoutes.State(_loop, reviewed: looked is null ? null : new { looked.Lacking, looked.Unchecked });
     }
 
-    /// <summary>
-    /// A rule as the bridge carries it: whether it is none here, whether work waits for the person's look, and
-    /// each environment, the first the default. Rows rather than an object's keys, as every map here: a key policy on the
-    /// bridge would respell a name.
-    /// </summary>
-    internal static object ReviewWire(ReviewRule rule) => new
-    {
-        None = rule.IsNone,
-        rule.Required,
-        Environments = rule.Environments.Select(each => new { each.Name, each.Kind, each.Procedure, each.Address, each.Run }).ToArray(),
-    };
+    /// <summary>A review rule as the bridge carries it (<see cref="LinesWires.ReviewWire"/>).</summary>
+    internal static object ReviewWire(ReviewRule rule) => LinesWires.ReviewWire(rule);
 
     // which other agent reads each repository's work before it lands,
     // the screens' half of `daoris place opinion`, sent by `bridge/lines.ts`. Declared only: nothing here chooses a reviewer,
@@ -890,26 +515,8 @@ public sealed class LinesRoutes(DriverContext context)
         return DriverRoutes.State(_loop);
     }
 
-    /// <summary>
-    /// A rule as the bridge carries it: whether it is none here, its occasions and reviewers in order, each switch,
-    /// the bound of a pass (the default where none is written), and the reviewers of the working agent's own family, judged
-    /// against <paramref name="working"/>, the agent this machine's work runs on, so the page says what the terminal says.
-    /// </summary>
-    /// <param name="adapters">
-    /// The loop's agents, the machine's plugins among them, so a maker a plugin declares counts on the screen as it counts at
-    /// the terminal and at Ask Daoris's door.
-    /// </param>
-    internal static object OpinionWire(OpinionRule rule, string working, AdapterSet adapters) => new
-    {
-        None = rule.IsNone,
-        rule.On,
-        rule.Reviewers,
-        rule.Required,
-        rule.Verify,
-        Minutes = rule.Bound,
-        rule.Recheck,
-        SameAgent = OpinionRules.SameAgent(rule, working, adapters),
-    };
+    /// <summary>A second-opinion rule as the bridge carries it (<see cref="LinesWires.OpinionWire"/>).</summary>
+    internal static object OpinionWire(OpinionRule rule, string working, AdapterSet adapters) => LinesWires.OpinionWire(rule, working, adapters);
 
     // what a helper an agent asks for does, and how work is committed,
     // the screens' half of `daoris place helpers` and `daoris place commits`, sent by `bridge/lines.ts`. Ask Daoris's `setting`
@@ -1016,57 +623,18 @@ public sealed class LinesRoutes(DriverContext context)
         return DriverRoutes.State(_loop);
     }
 
-    /// <summary>The git access levels in the file <paramref name="config"/> was read from; none where it holds none.</summary>
-    internal static GitAccessLevels GitLevelsOf(DriverConfig config)
-    {
-        try
-        {
-            return config.Source is { Length: > 0 } text && System.Text.Json.Nodes.JsonNode.Parse(text) is System.Text.Json.Nodes.JsonObject root
-                ? GitAccessKeys.Of(root)
-                : GitAccessLevels.None;
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return GitAccessLevels.None;
-        }
-    }
+    /// <summary>The git access levels in the file <paramref name="config"/> was read from (<see cref="LinesWires.GitLevelsOf"/>).</summary>
+    internal static GitAccessLevels GitLevelsOf(DriverConfig config) => LinesWires.GitLevelsOf(config);
 
-    /// <summary>A level's git access as set, its classes in order, so the page says where a value came from.</summary>
-    internal static object[] GitClassesWire(IReadOnlyDictionary<string, string> level) =>
-        [.. GitAccessKeys.Classes.Where(level.ContainsKey).Select(name => new { Class = name, Value = level[name] })];
+    /// <summary>A level's git access as set (<see cref="LinesWires.GitClassesWire"/>).</summary>
+    internal static object[] GitClassesWire(IReadOnlyDictionary<string, string> level) => LinesWires.GitClassesWire(level);
 
-    /// <summary>
-    /// A level's access setup as the bridge carries it: whether it is full access, and the pauses it names in their order,
-    /// each with its value, as rows. None set is no pause and not full, which is what setting nothing means.
-    /// </summary>
-    internal static object AccessWire(AccessSetting? setting) => new
-    {
-        Full = setting?.Full ?? false,
-        Pauses = setting is null || setting.Full
-            ? []
-            : AccessRules.Pauses.Where(pause => setting.Pauses.ContainsKey(pause.Name))
-                .Select(pause => new { Pause = pause.Name, Value = setting.Pauses[pause.Name] }).ToArray(),
-    };
+    /// <summary>A level's access setup as the bridge carries it (<see cref="LinesWires.AccessWire"/>).</summary>
+    internal static object AccessWire(AccessSetting? setting) => LinesWires.AccessWire(setting);
 
-    /// <summary>A helpers rule as the bridge carries it: its mode, and the agents in the order they are tried.</summary>
-    internal static object HelperWire(HelperRule rule) => new { rule.Mode, rule.Agents };
+    /// <summary>A helpers rule as the bridge carries it (<see cref="LinesWires.HelperWire"/>).</summary>
+    internal static object HelperWire(HelperRule rule) => LinesWires.HelperWire(rule);
 
-    /// <summary>A commit rule as the bridge carries it: its mode, and the person's convention, left out where none.</summary>
-    internal static object CommitWire(CommitRule rule) => new { rule.Mode, rule.Convention };
-}
-
-/// <summary>
-/// One repository's line as the bridge carries it: which, in which circle, and what said so. The lines slice adds
-/// <see cref="NotReadYet"/> where the checkout's guess was not judged yet: the branch is none and the page says the line
-/// not read yet, never what none would mean. The pull, which asks git, never answers it.
-/// </summary>
-internal sealed record LineRow(string Repository, string Workspace, string? Branch, string Source)
-{
-    /// <summary>The checkout's guess not judged yet: left out where false, so the pull's rows are as they always were.</summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public bool NotReadYet { get; init; }
-
-    /// <summary>The line's integration policy as <see cref="LinesRoutes.IntegrateWire"/> carries it; left out where none is set.</summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public object? Policy { get; init; }
+    /// <summary>A commit rule as the bridge carries it (<see cref="LinesWires.CommitWire"/>).</summary>
+    internal static object CommitWire(CommitRule rule) => LinesWires.CommitWire(rule);
 }

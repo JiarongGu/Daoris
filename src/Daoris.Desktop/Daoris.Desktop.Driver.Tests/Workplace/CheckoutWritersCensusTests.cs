@@ -106,7 +106,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["EntriesRoutes.cs"] = "the window's Accept on an entry, a merge rule's move",
         ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",
         ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
-        ["LinesRoutes.cs"] = "the window's Bring up to date",
+        ["TreesTidyDesk.cs"] = "the window's Bring up to date",
         ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
         ["DriverWatch.cs"] = "the integration transport's promotions",
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",

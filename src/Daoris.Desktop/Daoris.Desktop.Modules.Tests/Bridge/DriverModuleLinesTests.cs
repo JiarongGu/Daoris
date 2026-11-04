@@ -491,7 +491,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     [Fact]
     public void Every_press_of_bringing_up_to_date_asks_the_sessions_in_use_again()
     {
-        var presses = SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
+        var presses = SourceFiles.All(SourceFiles.ModulesProject, "*.cs")
             .SelectMany(path =>
             {
                 var source = File.ReadAllText(path);
@@ -500,7 +500,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             })
             .ToList();
 
-        Assert.Contains(presses, press => press.File == "LinesRoutes.cs");
+        Assert.Contains(presses, press => press.File == "TreesTidyDesk.cs");
         Assert.Contains(presses, press => press.File == "HelpRoutes.cs");
         Assert.All(presses, press => Assert.True(press.Call.Contains("inUseNow:", StringComparison.Ordinal),
             $"{press.File} presses bringing up to date without asking the sessions in use again: {press.Call}"));
