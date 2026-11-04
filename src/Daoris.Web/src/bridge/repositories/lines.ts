@@ -9,7 +9,7 @@ import type { HelperChange, RepositoryHelpers } from '../../settings/repository/
 import type { HandOverChange, RepositoryHandOver } from '../../settings/repository/HandOver';
 import type { LineChange, RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
-import type { LanguageChange, RepositoryLanguage } from '../../settings/repository/Languages';
+import type { RepositoryLanguage } from '../../settings/repository/Languages';
 import type { OpinionChange, RepositoryOpinion } from '../../settings/repository/Opinions';
 import type { RepositoryReview, ReviewChange } from '../../settings/repository/Reviews';
 import type { BranchDiscard, LandedBranch, LandedWithdrawal, SweepBranch } from '../../settings/Sweep';
@@ -459,7 +459,7 @@ export const useSetLine = () => useDriverChange<LineChange>('SET_LINE');
  * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language (LANG1c) —
  * the file `daoris place language` edits (D50). A code the driver's table does not hold is its refusal, its sentence verbatim.
  */
-export const useSetLanguage = () => useDriverChange<LanguageChange>('SET_LANGUAGE');
+export const useSetLanguage = () => useDriverChange('SET_LANGUAGE');
 
 /**
  * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,

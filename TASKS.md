@@ -6,9 +6,10 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 **Standing direction.**
 
-- CONSOLIDATE1 comes first, before any feature (2026-11-04), then CODESHAPE1; SCOPEVERIFY1 closes the scope.
-- Large changes go as big chunks, each designed whole and built as one wave (2026-11-02). The chunks left, in order: CANVAS1,
-  WORKSETUP1, WORKFLOWCLEAN1, ONEWAY1, COMMS1.
+- The order now (2026-11-04): CONSOLIDATE1 and NOCOMPAT1 (D232) are nearly done; CODESHAPE1 next, chunk by chunk
+  (`docs/2026-11-04-codeshape-plan.md`); then SCOPEVERIFY1, the one verification, and the install staged from it; then the daily loop
+  on the install. Inside the scope builders run no tests and merges carry no gates (D180's note); Sonnet takes chunks that follow an
+  exemplar, Opus the plans, reviews and exemplars (the dispatch skill).
 - The foundation, the structure and the agents' work come before optimization (OPTIMIZE1); a defect found on the way is fixed when
   found (2026-11-01).
 - The steward carries the backlog with as little of the owner's input as the grants allow, and treats development speed, token

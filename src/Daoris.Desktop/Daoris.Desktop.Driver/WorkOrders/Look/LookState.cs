@@ -16,6 +16,12 @@ internal sealed class LookState(List<SessionEnded> concluded)
     private long? _mark;
     private IReadOnlyList<StartReservation>? _reservedBefore;
     private AnswersAloneHold? _alone;
+    private Snapshot? _looked;
+    private int? _passes;
+    private IReadOnlyList<Consideration>? _starts;
+    private IReadOnlyList<AskView>? _intakes;
+    private IReadOnlyList<Consideration>? _openedStarts;
+    private List<OpinionJudged>? _judgedOpinions;
 
     /// <summary>
     /// The quests, sessions and records the plan reads: read by the <c>snapshot</c> pass, and set again by each pass that shapes it,
@@ -52,6 +58,48 @@ internal sealed class LookState(List<SessionEnded> concluded)
     {
         get => _alone ?? throw Unwritten(nameof(Alone), "supervisor");
         set => _alone = value;
+    }
+
+    /// <summary>The snapshot as the roster pass left it, which the channel, the reopens, the reviews and the opinions read.</summary>
+    public Snapshot Looked
+    {
+        get => _looked ?? throw Unwritten(nameof(Looked), "roster");
+        set => _looked = value;
+    }
+
+    /// <summary>The slots the look's passes started, counted under the cap: the opinions' write it, and each pass after them adds.</summary>
+    public int Passes
+    {
+        get => _passes ?? throw Unwritten(nameof(Passes), "opinions");
+        set => _passes = value;
+    }
+
+    /// <summary>What the second opinions judged this look, for its report.</summary>
+    public List<OpinionJudged> JudgedOpinions
+    {
+        get => _judgedOpinions ?? throw Unwritten(nameof(JudgedOpinions), "opinions");
+        set => _judgedOpinions = value;
+    }
+
+    /// <summary>The starts the plan chose, each with its line of work on an ask: written by the look's plan, before the Planned phase.</summary>
+    public IReadOnlyList<Consideration> Starts
+    {
+        get => _starts ?? throw Unwritten(nameof(Starts), "plan");
+        set => _starts = value;
+    }
+
+    /// <summary>The asks an intake is begun for, in the slots the quests left.</summary>
+    public IReadOnlyList<AskView> Intakes
+    {
+        get => _intakes ?? throw Unwritten(nameof(Intakes), "intakes");
+        set => _intakes = value;
+    }
+
+    /// <summary>The starts whose session opened in this look or a look before it, written by the look's starts before the Begun phase.</summary>
+    public IReadOnlyList<Consideration> OpenedStarts
+    {
+        get => _openedStarts ?? throw Unwritten(nameof(OpenedStarts), "start");
+        set => _openedStarts = value;
     }
 
     /// <summary>What ended this look: a parked intake it ends, and every session that ended since the last look.</summary>

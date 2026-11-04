@@ -26,10 +26,10 @@ export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true
     : ['workspace' as const, scope.workspace];
   return useQuery({
     queryKey: keys.workflow(kind, name, route),
-    queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', {
+    queryFn: () => call('WORKFLOW_CURRENT', {
       ...(kind === 'repository' ? { repository: name } : { workspace: name }),
       ...(route ? { route } : {}),
-    }),
+    }) as Promise<CurrentWorkflow>,
     enabled: isAvailable && enabled && scope !== null,
     staleTime: 0,
     // A route chosen over another keeps the page drawn until its own answer lands; the holder checks the answer is its place's.
@@ -46,7 +46,7 @@ export const useWorkflowCurrents = (repositories: readonly string[]) => {
   return useQueries({
     queries: repositories.map((name) => ({
       queryKey: keys.workflow('repository', name),
-      queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', { repository: name }),
+      queryFn: () => call('WORKFLOW_CURRENT', { repository: name }) as Promise<CurrentWorkflow>,
       enabled: isAvailable,
       staleTime: 0,
     })),
@@ -94,7 +94,7 @@ export type IntegrationAnswer = { start: WorkflowStart | null; done: boolean; re
 export const useAcceptIntegration = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (variables: { repository: string; gates?: string; clear?: true }) => call<IntegrationAnswer>('INTEGRATION_GATES', variables),
+    mutationFn: (variables: { repository: string; gates?: string; clear?: true }) => call('INTEGRATION_GATES', variables) as Promise<IntegrationAnswer>,
     onSuccess: () => client.invalidateQueries({ queryKey: keys.workflow('repository', '').slice(0, 3) }),
   });
 };
@@ -128,7 +128,7 @@ export type VerifyAnswer = { repository: string; done: boolean; refused: string 
  */
 export const useVerify = () => useMutation({
   mutationFn: ({ repository, branch, commit }: { repository: string; branch?: string; commit?: string }) =>
-    call<VerifyAnswer>('WORKFLOW_VERIFY', { repository, ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) }),
+    call('WORKFLOW_VERIFY', { repository, ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) }) as Promise<VerifyAnswer>,
 });
 
 /**

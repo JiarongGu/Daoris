@@ -24,12 +24,12 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("STOP_SESSION", "id")]
     [Says("STOP_SESSION", "id:session")]
     [Publishes("STOP_SESSION", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> StopSessionAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> StopSessionAsync(StopSession press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         // `sessions stop` sent over the pipe asks for the verb's own words; the page asks for none and its answer keeps its shape.
         // a stop the standing confirmation admitted says so on each record it ends.
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("stop") { Ids = [id], Standing = PipeDoor.Standing }, cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SaidAsync(new SessionsAsk("stop") { Ids = [id], Standing = PipeDoor.Standing }, cancellationToken).ConfigureAwait(false);
 
         // False is an answer, not an error: the session already finished, and its record says how.
         // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
@@ -64,11 +64,9 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("RESOLVE_SESSION", "id")]
     [Says("RESOLVE_SESSION", "id:session", "note:words")]
     [Publishes("RESOLVE_SESSION", StateScopes.Sessions | StateScopes.Quests | StateScopes.Driver, Session = "id")]
-    private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ResolveAsync(ResolveSession press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var state = PayloadHelper.GetRequiredValue<string>(request.Payload, "state");
-        var note = Optional(request, "note");
+        var (id, state, note, said) = press;
 
         if (state is not ("completed" or "declined" or "stopped"))
         {
@@ -85,7 +83,7 @@ public sealed class SessionsRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
 
         // `sessions finish` and `decline` sent over the pipe ask for the verb's own words (`stopped` is the page's alone).
-        if (Flag(request, "said") && state != "stopped")
+        if (said && state != "stopped")
         {
             // a finish the standing confirmation admitted never takes the request folder, and is moved only from awaiting-person.
             return await SaidAsync(
@@ -112,11 +110,11 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_GO_ON_NEW", "id")]
     [Says("SESSION_GO_ON_NEW", "id:session")]
     [Publishes("SESSION_GO_ON_NEW", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SessionGoOnNewAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionGoOnNewAsync(SessionGoOnNew press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var service = _loop.Service ?? throw NotReady();
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("go-on-new") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SaidAsync(new SessionsAsk("go-on-new") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
 
         var answer = await GoOnNew.AskAsync(
                 service, _loop.Home, (adapter, profile) => _loop.Harnesses.CoolingOf(adapter ?? "", profile), id,
@@ -136,14 +134,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_HELPER_ASK", "id")]
     [Says("SESSION_HELPER_ASK", "id:session", "agent:agent", "question:words")]
     [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SessionHelperAskAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionHelperAskAsync(SessionHelperAsk press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var question = (Optional(request, "question") ?? "").Trim();
-        var agent = Optional(request, "agent")?.Trim();
+        var id = press.Id;
+        var question = (press.Question ?? "").Trim();
+        var agent = press.Agent?.Trim();
         var service = _loop.Service ?? throw NotReady();
         // `sessions helper` sent over the pipe asks for the verb's own words, judged by the same code.
-        if (Flag(request, "said") && question.Length > 0)
+        if (press.Said && question.Length > 0)
         {
             return await SaidAsync(new SessionsAsk("helper") { Ids = [id], Text = question, Agent = agent }, cancellationToken).ConfigureAwait(false);
         }
@@ -183,9 +181,9 @@ public sealed class SessionsRoutes(DriverContext context)
     // helper's session once started and the agent it started on. Read off the home's `helpers` folder, the driver's own files;
     // what the state keeps for the driver alone (the last words, the word it was handed as) is not the page's.
     [DriverRoute("SESSION_HELPERS", PipeClass.Open)]
-    private Task<object?> SessionHelpersAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionHelpersAsync(SessionHelpers press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var files = new HelperFiles(_loop.Home);
         var helpers = files.Asks()
             .Where(ask => string.Equals(ask.Asker, id, StringComparison.Ordinal))
@@ -218,17 +216,15 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_PARTNER_ASK", "id")]
     [Says("SESSION_PARTNER_ASK", "id:session", "agent:agent", "piece:words")]
     [Publishes("SESSION_PARTNER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SessionPartnerAskAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionPartnerAskAsync(SessionPartnerAsk press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var piece = (Optional(request, "piece") ?? "").Trim();
-        var agent = Optional(request, "agent")?.Trim();
-        IReadOnlyList<string> paths = request.Payload is { } payload && payload.TryGetProperty("paths", out var named) && named.ValueKind == JsonValueKind.Array
-            ? [.. named.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!)]
-            : [];
+        var id = press.Id;
+        var piece = (press.Piece ?? "").Trim();
+        var agent = press.Agent?.Trim();
+        IReadOnlyList<string> paths = press.Paths ?? [];
         var service = _loop.Service ?? throw NotReady();
         // `sessions partner` sent over the pipe asks for the verb's own words, judged by the same code.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
             return await SaidAsync(new SessionsAsk("partner") { Ids = [id], Text = piece, Agent = agent, Paths = paths }, cancellationToken).ConfigureAwait(false);
         }
@@ -244,9 +240,9 @@ public sealed class SessionsRoutes(DriverContext context)
     // once imported, and the files Daoris read in it with those beyond its paths. Read off the home's `partners` folder, the driver's
     // own files; the partner's own words stay its answer's, which reaches the session as a word.
     [DriverRoute("SESSION_PARTNERS", PipeClass.Open)]
-    private Task<object?> SessionPartnersAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionPartnersAsync(SessionPartners press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         // A read of files, off the window's thread.
         return Task.Run<object?>(() =>
         {
@@ -347,9 +343,9 @@ public sealed class SessionsRoutes(DriverContext context)
     // note (the agent's claim), when, its state, code and the agent it goes to; null where its agent asked none. A read off the home's
     // sessions folder, the driver's own files: it declares nothing, and the look says a change in its report.
     [DriverRoute("SESSION_HAND_OVER_ASK", PipeClass.Open)]
-    private Task<object?> SessionHandOverAskAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionHandOverAskAsync(SessionHandOverAsk press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var files = new HandOverAskFiles(_loop.Home);
         var ask = files.Ask(id);
         var state = ask is null ? null : files.ReadState(id) is { } kept && kept.Id == ask.Id ? kept : null;
@@ -367,9 +363,9 @@ public sealed class SessionsRoutes(DriverContext context)
     // parked (Fable's read, Q7), whatever a file says. A read off the home's sessions folder, the files leaving the window's thread
     // first: it declares nothing, and the page asks it only of a park of this machine's.
     [DriverRoute("SESSION_QUESTION", PipeClass.Open)]
-    private async Task<object?> SessionQuestionAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionQuestionAsync(SessionQuestion press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var record = _loop.Service is { } service ? await service.RecordAsync(id, cancellationToken).ConfigureAwait(false) : null;
         if (record is not { Parked: true }) return new { Question = (object?)null };
         return await Task.Run<object?>(() =>
@@ -412,14 +408,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HAND_OVER_APPROVE", nameof(PipeReads.HandOverAsk))]
     [Says("SESSION_HAND_OVER_APPROVE", "session:session")]
     [Publishes("SESSION_HAND_OVER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHandOverApproveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionHandOverApproveAsync(SessionHandOverApprove press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         // `sessions hand-over <id> --approve` asks for the verb's own words.
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("hand-over-approve") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SaidAsync(new SessionsAsk("hand-over-approve") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
 
         var files = new HandOverAskFiles(_loop.Home);
-        var askId = Optional(request, "ask") ?? files.Ask(session)?.Id ?? "";
+        var askId = press.Ask ?? files.Ask(session)?.Id ?? "";
         var record = _loop.Chat is not null && _loop.Service is { } service
             ? await service.RecordAsync(session, cancellationToken).ConfigureAwait(false)
             : null;
@@ -454,14 +450,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HAND_OVER_DECLINE", nameof(PipeReads.HandOverAsk))]
     [Says("SESSION_HAND_OVER_DECLINE", "session:session")]
     [Publishes("SESSION_HAND_OVER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHandOverDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionHandOverDeclineAsync(SessionHandOverDecline press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         // `sessions hand-over <id> --decline` asks for the verb's own words.
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("hand-over-decline") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SaidAsync(new SessionsAsk("hand-over-decline") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
 
         var files = new HandOverAskFiles(_loop.Home);
-        var askId = Optional(request, "ask") ?? files.Ask(session)?.Id ?? "";
+        var askId = press.Ask ?? files.Ask(session)?.Id ?? "";
         var answer = HandOverAskWord.Decline(files, _loop.Events, _loop.Output, session, askId);
         return new { Declined = answer.Stands, answer.Why, answer.Message };
     }
@@ -474,9 +470,9 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_QUIET_LEAVE", "id")]
     [Says("SESSION_QUIET_LEAVE", "id:session")]
     [Publishes("SESSION_QUIET_LEAVE", StateScopes.Sessions, Session = "id")]
-    private Task<object?> SessionQuietLeaveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionQuietLeaveAsync(SessionQuietLeave press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var left = SessionWatch.Of(_loop.Events).Leave(id);
         return Task.FromResult<object?>(left
             ? new { Left = true, Why = (string?)null, Message = "Daoris looks in again once it is heard from." }
@@ -494,9 +490,9 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_QUIET_CARRY_ON", "id")]
     [Says("SESSION_QUIET_CARRY_ON", "id:session")]
     [Publishes("SESSION_QUIET_CARRY_ON", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private Task<object?> SessionQuietCarryOnAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionQuietCarryOnAsync(SessionQuietCarryOn press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var watch = SessionWatch.Of(_loop.Events);
         object Refused(string why, string message) => new { Stopped = false, Why = (string?)why, Message = message };
         if (watch.RowOf(id) is not { Busy: false } row) return Task.FromResult<object?>(Refused(QuietNot, $"{id} is not quiet now, or something it runs keeps the machine busy: nothing was changed."));
@@ -534,11 +530,9 @@ public sealed class SessionsRoutes(DriverContext context)
     [Owner("SESSION_PERMISSION_ANSWER", Session = "session")]
     [GroundRead("SESSION_PERMISSION_ANSWER", nameof(PipeReads.PermissionWait))]
     [Says("SESSION_PERMISSION_ANSWER", "session:session")]
-    private Task<object?> SessionPermissionAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionPermissionAnswerAsync(SessionPermissionAnswer press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
-        var held = PayloadHelper.GetRequiredValue<string>(request.Payload, "request");
-        var answer = HeldPermissions.Of(_loop.Events).Answer(session, held, Optional(request, "option"));
+        var answer = HeldPermissions.Of(_loop.Events).Answer(press.Session, press.Request, press.Option);
         return Task.FromResult<object?>(new { answer.Answered, answer.Why, answer.Message });
     }
 
@@ -559,10 +553,9 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_ANSWER_ALONE", nameof(PipeReads.AnswerAloneWait))]
     [Says("SESSION_ANSWER_ALONE", "session:session")]
     [Publishes("SESSION_ANSWER_ALONE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private Task<object?> SessionAnswerAloneAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionAnswerAloneAsync(SessionAnswerAlone press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
-        var goOn = PayloadHelper.GetRequiredValue<bool>(request.Payload, "goOn");
+        var (session, goOn) = press;
         var marks = new GoOnMarks(_loop.Home);
         var answer = goOn
             ? AnswersAloneWord.GoOn(marks, _loop.Events, session)
@@ -581,10 +574,9 @@ public sealed class SessionsRoutes(DriverContext context)
     // memory as they stand, and every other read from the session's files as history (`earlier`), granting nothing. A read: `{ decisions }`,
     // oldest first, each its question's snapshot, choice, reasons, holder, state, when it goes on and when it last moved.
     [DriverRoute("SESSION_SUPERVISOR", PipeClass.Open)]
-    private Task<object?> SessionSupervisorAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SessionSupervisorAsync(SessionSupervisor press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        return Task.FromResult<object?>(new { Decisions = _loop.Supervisor.History(id).Select(SupervisorDecisionRow).ToList() });
+        return Task.FromResult<object?>(new { Decisions = _loop.Supervisor.History(press.Id).Select(SupervisorDecisionRow).ToList() });
     }
 
     /// <summary>One decision as the page reads it: never its receipt, its ticket nor its word's text.</summary>
@@ -613,10 +605,9 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SUPERVISOR_OVERRULE", nameof(PipeReads.SupervisorDecision))]
     [Says("SUPERVISOR_OVERRULE", "id:session")]
     [Publishes("SUPERVISOR_OVERRULE", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SupervisorOverruleAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SupervisorOverruleAsync(SupervisorOverrule press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var decision = PayloadHelper.GetRequiredValue<string>(request.Payload, "decision");
+        var (id, decision) = press;
         var service = _loop.Service ?? throw NotReady();
         var state = await _loop.Supervisor.OverruleAsync(
             id, decision,
@@ -799,11 +790,10 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_MEMORY_DECIDE", "session")]
     [Says("SESSION_MEMORY_DECIDE", "session:session")]
     [Publishes("SESSION_MEMORY_DECIDE", StateScopes.Sessions, Session = "session")]
-    private async Task<object?> SessionMemoryDecideAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionMemoryDecideAsync(SessionMemoryDecide press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
-        var op = Optional(request, "op");
-        var yes = op is { Length: > 0 } ? Flag(request, "approve") : Flag(request, "keep");
+        var (session, op, approve, keep) = press;
+        var yes = op is { Length: > 0 } ? approve : keep;
         var service = _loop.Service ?? throw NotReady();
         var (decided, message) = await service.DecideMemoryAsync(session, op, yes, cancellationToken).ConfigureAwait(false);
         return new { Decided = decided, Why = decided ? null : "refused", Message = message };
@@ -1015,18 +1005,18 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_DELETE", "id")]
     [Says("SESSION_DELETE", "id:session", "ids:sessions")]
     [Publishes("SESSION_DELETE", StateScopes.Sessions | StateScopes.Help, Session = "id")]
-    private async Task<object?> SessionDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionDeleteAsync(SessionDelete press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var (id, said, help) = press;
         var service = _loop.Service ?? throw NotReady();
         // `help delete <id> --yes` asks for its own words, its checks that the conversation is Ask Daoris's before the delete's.
-        if (Flag(request, "said") && Flag(request, "help"))
+        if (said && help)
         {
             return await SessionsVerbs.HelpSaidAsync(_context, new HelpVerbAsk("delete") { Id = id, Yes = true }, cancellationToken).ConfigureAwait(false);
         }
 
         // `sessions delete` sent over the pipe asks for the verb's own words, a refusal said with its exit 1 as the alone path says it.
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("delete") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+        if (said) return await SaidAsync(new SessionsAsk("delete") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
 
         var outcome = await new SessionDeletion(_loop.Home)
             .DeleteAsync(service, id, PluginEvents.Screen, _loop.Log, _loop.Events, cancellationToken)
@@ -1143,9 +1133,9 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("SESSION_OPEN_FOLDER", PipeClass.Window)]
     [Owner("SESSION_OPEN_FOLDER", None = OwnerNone.ActsOnNothing)]
-    private async Task<object?> SessionOpenFolderAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionOpenFolderAsync(SessionOpenFolder press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var service = _loop.Service ?? throw NotReady();
         var records = SessionRecords.Parse(await SessionRecords.ReadAsync(
             service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable), ct: cancellationToken).ConfigureAwait(false));
