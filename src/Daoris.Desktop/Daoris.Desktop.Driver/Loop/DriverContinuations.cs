@@ -977,6 +977,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         look.Parked ? look : Continuations.HandedOn(look, await ReadAgainAsync(_context.Service, look.Session, ct).ConfigureAwait(false));
 
     /// <summary>
+    /// The waited quest's result counts on the line a resume carries on (COMMS1g, the comms design §11), reserved before the run is handed
+    /// it and once however often the start is tried. Nothing here holds the start.
+    /// </summary>
+    internal async Task WaitedAsync(PriorSession resumes, string answered, PriorSession? handsOn, CancellationToken ct) =>
+        new AnswersAloneHold(_context.Events, _context.Marks, new ContinuationAdmissions(_context.Home)).Waited(
+            resumes, answered, handsOn?.Waiting ?? [], await AnswersAloneHold.RecordsAsync(_context.Service, ct).ConfigureAwait(false));
+
+    /// <summary>
     /// The record a resume (D79) hands words on from (SAYHELD1, A): the session that asked and ended waiting, as it stands now
     /// (SAIDBACK1f), where any word it is handed waits on it (<see cref="HandedToResume"/>); null where none does. A resume opens a new
     /// session handed the answer, so the words said to the asker meanwhile go there, or they would wait on a record no look takes up

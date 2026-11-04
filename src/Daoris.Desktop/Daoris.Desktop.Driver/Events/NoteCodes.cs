@@ -224,7 +224,7 @@ public static class NoteCodes
     /// HELPERWAIT1 (D163's and D188's notes): it ended its turn cleanly on its own open helper ask, holding its quest as a park would, so
     /// it waits on that helper and not on the person: completed, its helper's answer reopening it once (D188 point 4). A twin: the
     /// service's ledger reads this spelling to bring the session back to the person when the helper ends with no answer
-    /// (<c>SessionLedger.EndedAwaitsHelper</c>).
+    /// (<c>SessionHolders.EndedAwaitsHelper</c>).
     /// </summary>
     public static readonly NoteCode EndedAwaitsHelper = new("ended.awaits-helper", []);
     public static readonly NoteCode EndedAnsweredUnfinished = new("ended.answered-unfinished", ["awaits", "exit"]);
@@ -240,7 +240,7 @@ public static class NoteCodes
     /// <summary>
     /// FABRIC-CLOSE1c2 (§E5): it stopped with its quest still taken, held because the person reopened the work it grew from (`quest`, the
     /// step before). A good ending, as a wait is: the quest goes on in the same tree once the person goes on with it on the new work.
-    /// A twin: the service's ledger reads this spelling to open that carry-on (<c>SessionLedger.EndedSourceReopened</c>, FABRIC-CLOSE1c26).
+    /// A twin: the service's ledger reads this spelling to open that carry-on (<c>SessionOpening.EndedSourceReopened</c>, FABRIC-CLOSE1c26).
     /// </summary>
     public static readonly NoteCode EndedSourceReopened = new("ended.source-reopened", ["quest"]);
 

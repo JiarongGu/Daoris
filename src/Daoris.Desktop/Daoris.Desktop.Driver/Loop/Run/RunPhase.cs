@@ -13,9 +13,33 @@ internal enum RunPhase
     Choose,
 
     /// <summary>
+    /// The tree the session runs in found or grown, with the repository's trees held until the record is open: what may still hold the
+    /// start there leaves the tree it grew to be let go.
+    /// </summary>
+    Grown,
+
+    /// <summary>
     /// Once the tree the session runs in is open and held, before its record opens: what may still hold the start there, a steward's
     /// start outside a tree of this home, the run's workflow binding and a set-up step's procedure and tab. A hold here lets the fresh
     /// tree go.
     /// </summary>
     Placed,
+
+    /// <summary>
+    /// Once placed, before the record opens: what the tree's trust and a record the person's words wait on may still hold the start
+    /// for, or move it to a new session. A hold here lets the fresh tree go only where the stage says so.
+    /// </summary>
+    Cleared,
+
+    /// <summary>
+    /// The record opens through the ledger and says how it was chosen: a refusal of the open is an answer, and the repository's trees
+    /// are let go once it is open.
+    /// </summary>
+    Opened,
+
+    /// <summary>
+    /// The opened record handed to its session, which runs to its conclusion: the one stage here ends in the run's own start however the
+    /// session ended, so nothing runs after it.
+    /// </summary>
+    Handed,
 }

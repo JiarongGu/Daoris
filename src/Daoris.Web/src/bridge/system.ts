@@ -32,14 +32,14 @@ export const useSystemWiring = () => {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: keys.systemWiring,
-    queryFn: () => call<SystemWiring>('SYSTEM_WIRING'),
+    queryFn: () => call('SYSTEM_WIRING', {}) as Promise<SystemWiring>,
     enabled: isAvailable,
     retry: 2,
     refetchInterval: (current) => wiringAgainIn(current.state.data, isAvailable),
   });
   const measure = async () => {
     const asked = Date.now();
-    const answered = await call<SystemWiring>('SYSTEM_WIRING', { measure: true });
+    const answered = (await call('SYSTEM_WIRING', { measure: true })) as SystemWiring;
     // A read that landed while this was on its way is newer than the walk this answer saw start (FABRIC-EVENT5b): the walk's end
     // is told, and its read must not be put back to `measuring`. Where none landed the answer is kept.
     if ((client.getQueryState(keys.systemWiring)?.dataUpdatedAt ?? 0) <= asked) {

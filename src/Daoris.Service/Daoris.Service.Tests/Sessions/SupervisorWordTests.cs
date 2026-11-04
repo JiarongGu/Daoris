@@ -224,9 +224,9 @@ public sealed class SupervisorWordTests : GoAheadFixture
     public void Every_keeping_of_a_persons_word_in_the_service_goes_through_the_one_owner_word_operation()
     {
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
-        HashSet<string> covered = ["SessionLedger.KeepOwnersWordAsync"];
+        HashSet<string> covered = ["SaidKeeping.KeepOwnersWordAsync"];
         // A helper's, a partner's or an opinion's answer is the asker's solicited word, not the person's: its one door keeps it (COMMS1b).
-        HashSet<string> exempt = ["Sessions.KeepSaidAsync", "SessionLedger.SuperviseAsync", "SolicitedAnswers.*"];
+        HashSet<string> exempt = ["Sessions.KeepSaidAsync", "SessionSaidStore.KeepSaidAsync", "SessionSays.SuperviseAsync", "SolicitedAnswers.*"];
         var member = new Regex(@"^\s*(?:public|private|internal|protected)\b[^=;]*?\b(\w+)\s*(?:<[^>]*>)?\s*\(");
 
         var found = new List<string>();
@@ -247,7 +247,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
             }
         }
 
-        Assert.Contains("SessionLedger.KeepOwnersWordAsync", found);
+        Assert.Contains("SaidKeeping.KeepOwnersWordAsync", found);
         Assert.All(found, keeper => Assert.True(
             covered.Contains(keeper) || exempt.Contains(keeper) || exempt.Contains(keeper[..keeper.IndexOf('.')] + ".*"),
             $"`{keeper}` keeps a word outside KeepOwnersWordAsync: give it the owner's supersession, or state why it keeps none of theirs."));
@@ -324,7 +324,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
         var word = new SaidWord("w", SupervisorWord.Handed("The monthly one"), Now, [], From: SaidFrom.Supervisor, Decision: Decision);
         var session = new Session("s", "q", "dashboards", "stub", SessionState.Completed, null, null, null, Now, Now) { Said = [word] };
 
-        var (note, parts) = SessionLedger.WentOnNote(session, null, null, Now);
+        var (note, parts) = SessionAdvances.WentOnNote(session, null, null, Now);
 
         Assert.Contains("Went on with the supervisor's answer", note);
         Assert.DoesNotContain("your words", note);

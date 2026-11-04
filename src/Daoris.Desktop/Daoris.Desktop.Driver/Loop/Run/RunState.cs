@@ -9,8 +9,14 @@ namespace Daoris.Driver;
 /// A member a stage writes is unwritten until that stage runs, and reading it earlier throws, naming the stage that writes it: a
 /// stage declared without the <c>after</c> its reads need fails at its first run, never on a value left over or a default.
 /// </remarks>
-internal sealed class RunState
+internal sealed class RunState : IDisposable, IAsyncDisposable
 {
+    private Slot<CarryOnRecord?> _carry;
+    private Slot<RecordOpened> _opened;
+    private Slot<TreeLock> _starting;
+    private Slot<TreeFound> _tree;
+    private Slot<ISessionAdapter?> _preflight;
+    private Slot<GoOnFound> _goneOn;
     private Slot<string> _agent;
     private Slot<HandedQuest?> _handedQuest;
     private Slot<string?> _stepRole;
@@ -69,7 +75,7 @@ internal sealed class RunState
         set => _handedFrom.Set(value);
     }
 
-    /// <summary>The harness and the account it runs as.</summary>
+    /// <summary>The harness and the account it runs as; written again where the continue stage walks the role's order for the words it hands on.</summary>
     public HarnessSelection Selection
     {
         get => _selection.Get(nameof(Selection), "account");
@@ -149,11 +155,66 @@ internal sealed class RunState
         set => _permissions.Set(value);
     }
 
+    /// <summary>
+    /// The repository's trees, held from the tree's choice until the record is open: the run lets it go there, or with the state on any
+    /// way out before.
+    /// </summary>
+    public TreeLock Starting
+    {
+        get => _starting.Get(nameof(Starting), "tree");
+        set => _starting.Set(value);
+    }
+
+    /// <summary>How the tree the session runs in stands, and what the start goes on with there.</summary>
+    public TreeFound Tree
+    {
+        get => _tree.Get(nameof(Tree), "tree");
+        set => _tree.Set(value);
+    }
+
+    /// <summary>Lets go of the repository's trees where the run never reached the record; once let go, a second does nothing.</summary>
+    public void Dispose() => _starting.Peek()?.Dispose();
+
+    /// <summary>Lets go of the carry-on's move record, ended by its phase unless it is delivered, then of the repository's trees.</summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_carry.Peek() is { } carry) await carry.DisposeAsync().ConfigureAwait(false);
+        Dispose();
+    }
+
+    /// <summary>The carry-on's move record, kept from before its open until the run ends; null where the start keeps none.</summary>
+    public CarryOnRecord? Carry
+    {
+        get => _carry.Get(nameof(Carry), "open");
+        set => _carry.Set(value);
+    }
+
+    /// <summary>The session's record as the service opened it.</summary>
+    public RecordOpened Opened
+    {
+        get => _opened.Get(nameof(Opened), "open");
+        set => _opened.Set(value);
+    }
+
     /// <summary>The tree the session runs in: the one opened for it, the one its earlier session or part went on in, else the checkout.</summary>
     public string WorkTree
     {
         get => _workTree.Get(nameof(WorkTree), "tree");
         set => _workTree.Set(value);
+    }
+
+    /// <summary>The adapter the harness trust is asked of, or null where this machine does not know the agent.</summary>
+    public ISessionAdapter? Preflight
+    {
+        get => _preflight.Get(nameof(Preflight), "trust");
+        set => _preflight.Set(value);
+    }
+
+    /// <summary>What the run settled of the record the person's words wait on.</summary>
+    public GoOnFound GoneOn
+    {
+        get => _goneOn.Get(nameof(GoneOn), "continue");
+        set => _goneOn.Set(value);
     }
 
     /// <summary>The run's workflow binding as the start made it, before its take names a closure graph.</summary>
@@ -184,6 +245,8 @@ internal sealed class RunState
                 ? _value
                 : throw new InvalidOperationException(
                     $"the run's {member} is written by the {stage} stage, which has not run before the stage reading it: that stage runs after {stage}");
+
+        public readonly T? Peek() => _written ? _value : default;
 
         public void Set(T value) => (_value, _written) = (value, true);
     }

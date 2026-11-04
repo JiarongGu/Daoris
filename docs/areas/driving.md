@@ -18,11 +18,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 | Unit | File | Its job |
 |---|---|---|
-| `Driver` | `Loop/Driver.cs` | One look (`LookAsync`) and one quest's start (`RunAsync`), which runs its stages at each phase's anchor and itself grows the tree, opens the record, assembles the spawn and concludes |
+| `Driver` | `Loop/Driver.cs` | One look (`LookAsync`) and one quest's start (`RunAsync`), which runs its stages at each phase's anchor in turn and holds the order and the wiring alone |
 | A run's stages | `Loop/Run/`, listed in `docs/index/registered.md` | Each stage a module registers (`[RunStage(name, phase, after)]`, `IRunStage`), run at its phase's anchor in `RunAsync` in the kit's order and built with the driver as its `IRunWiring`; a stage that returns a `StartRun` holds the start there, and no stage after it runs |
-| `RunState` | `Loop/Run/RunState.cs` | What a run carries from stage to stage on its `RunRound`: the agent, the account and how it was walked, the access setup, the tree, the binding and the set-up step; a member read before the stage that writes it throws, naming that stage |
+| `RunState` | `Loop/Run/RunState.cs` | What a run carries from stage to stage on its `RunRound`: the agent, the account and how it was walked, the access setup, the tree and the repository's trees held until the record is open, the binding, the set-up step, what the continue stage settled and the opened record; a member read before the stage that writes it throws, naming that stage; the state lets go of the held trees and the carry-on's move record with the run |
+| `GrowTree` | `Loop/Run/Tree/` | The `Grown` phase: the tree the session runs in, found where an earlier session worked or grown from the line, with the repository's trees held until the record is open; a hold lets the fresh tree go |
 | `StartAgent`, `CleanCheckout`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, a clean checkout, the account the walk or a resume takes, the access setup |
 | `StewardPlace`, `RunBinding`, `SetUpStep` | `Loop/Run/Placed/` | The `Placed` phase, once the tree is open and held and before the record opens: a steward's start, the workflow binding and the role it names, a set-up step's procedure and tab; a hold lets the fresh tree go |
+| `TrustedTree`, `GoOnRecord` | `Loop/Run/Trust/`, `Loop/Run/Continue/` | The `Cleared` phase: whether the harness trusts the tree (`TrustAsk`, asked again of an account a resume's words walk to), then the record the person's words wait on, continued or handed on in a new session |
+| `OpenRecord` | `Loop/Run/Open/` | The `Opened` phase: the record opened through the ledger, the carry-on's move record fenced before it, and how the account was chosen said on it |
+| `HandToSession`, `RunConclusion`, `RunEndings` | `Loop/Run/Hand/`, `Loop/Run/Conclude/`, `Loop/Run/Ending/` | The `Handed` phase, whose one stage ends the run: the instruction composed and the spawn assembled, the hold's conclusion of the record, and the ends that are not a conclusion (the driver closing, a wire broken after a stop, a failure) |
 | `SessionHold`, `DrivenProtocolDoor` | `Loop/Run/Hold/` | A prepared session started and held to its conclusion for every kind of run the driver starts (`Driver.Holds`), and the protocol door's driven session that hold opens |
 | The look's passes | `WorkOrders/Look/`, listed in `docs/index/registered.md` | Each pass a module registers (`[LookPass(name, phase, after)]`, `ILookPass`), run at its phase's anchor in `LookAsync` in the kit's order and built with the driver as its `ILookWiring` |
 | `LookState` | `WorkOrders/Look/LookState.cs` | What a look carries from pass to pass on its `LookRound`: the snapshot as each pass shapes it, what a pass marks for the ones after it, and what ended; a member read before the pass that writes it throws, naming that pass |
@@ -57,13 +61,20 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `AutoTidies`, `TreeSetAside`, `TreeSweeps` | `Workplace/` | The look's own tidy, the move aside, and the clean-up press's one path |
 | `EndJudgement`, `EndKeeping` | `Workplace/EndJudgement.cs`, `Workplace/EndKeeping.cs` | Whether a branch's work ended, from git alone, and the one writer of that fact |
 | `Orphans` | `Workplace/Orphans.cs` | The sweep: a record that says it runs with nothing running it is stopped as interrupted |
-| `QuestStore`, `QuestExchange` | `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs` | Quest records and log; every door's judgement; claim by push |
+| `QuestStore`, `QuestExchange` | `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs` | Quest records and log; every door's judgement; claim by push; the exchange is a root that wires, each door one line to a part |
+| The exchange's records | `Service/Quests/Records/` | `QuestAsk`, `QuestPublishOutcome` and `QuestPublishRefusal`, `QuestRespondOutcome` and `QuestRespondRefusal`, `QuestCloseOutcome`, `QuestDeleteOutcome` and `QuestDeleteRefusal`, `QuestCarried`, one file each |
+| The exchange's parts | `Service/Quests/` | `QuestPublishing` (a publish judged in order before anything is written), with `QuestLanes`, `QuestChains`, `QuestRequirementJudge`, `QuestCarry` (links and files judged and kept), `QuestWorkflowKinds` (the person's kind and an intake's proposal) and `QuestReceived` (a remote's say over a pushed publish); `QuestResponses` (take, done, decline, wait), `QuestReadies` and `QuestGraphBinds` (the closure graph's ready and bind), `QuestGraphCloses`, `QuestAnswering` (a done's answers and what they hold), `QuestEvidenceReads`, `QuestPersonMoves` (yes, reopen, go on, the person's done), `QuestBringForwards`, `QuestRemoteClaims` (claim by push) and `QuestDeletes`; `QuestWords` holds the sentences they share |
 | The quest log's operations | `Service/Quests/Operations/`, listed in `docs/index/registered.md` | Every kind the log writes is a module (`[QuestOperation(kind, Log)]`, `IQuestOperation`): published, taken, declined, done, conflict, dismissed, waited, bound, submitted, rebound, reopened, accepted, evidenced, setup, verdict, chosen and deleted. Each writes and reads its log payload, says what a lost one takes with it in a rebase (`LostAsync`, a lost wait and a lost submission naming themselves on the take's conflict through `QuestRebaseLosses`), and holds its verbs on the `QuestTx` the store's one-line door opens; built as the store opens, refusing a kind declared twice or a mark naming another kind. The take, the done and the decline share one move verb, on the take. `QuestRecordCodec` reads and writes the quest row, its columns and the payloads' shared parts, and `QuestSchema` makes and upgrades the store's tables as it opens |
 | The quest records | `Service/Quests/Records/` | `Quest`, `QuestStatus`, `QuestMove`, `QuestRequirement` and its answer, `QuestStep`, `QuestAttachment`, `QuestTakeBind`, `QuestTaker`, `QuestSubmission`, `QuestReopen` and `QuestDeletion`, one file each |
 | The store's parts | `Service/Quests/` | `QuestStore` wires and keeps one-line doors; each part is a type of its own over the store's gate: `QuestCache` (the quests table, written whole by a replay, repaired at open), `QuestLogSync` (a machine's pending, accepted and rebase; a remote's fetch, receive and standing; the log rows kept, numbered and rewritten), `QuestIntegrator` (a fetch's replay), `QuestFollowUps` (the follow-up steps a lost parent move rewrites), `QuestChain`, `QuestHistories`, `QuestTakeReadings`, `QuestForgetting`, `QuestReads` (find, list, from, waiting, cursor), `QuestPasses` (the passes and the remote's handshake) and `QuestClaims` |
 | `QuestHandbacks` | `Service/Quests/QuestHandbacks.cs` | A session's closing note on its quest |
-| `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/` | Session records, the ledger's opens, moves and says, the tree lock, a line's head |
-| `AskStore`, `AskDesk` | `Service/Asks/Asks.cs` | Ask records, the person's words on them, publishing and deleting |
+| `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/Sessions.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Lines.cs` | Session records, the ledger's opens, moves and says, the tree lock, a line's head; the store and the ledger are roots that wire, each door one line to a part |
+| The session records | `Service/Sessions/Records/` | `Session`, `SessionState`, `SessionKind`, `SaidWord`, `SaidFrom`, `SaidLevel`, and the ledger's outcomes and refusals (`SessionOpenOutcome`, `SessionAdvanceOutcome`, `SessionSayOutcome`, `SessionTakeOutcome`, `SessionAttemptOutcome`, `AskWordOutcome`, `SessionDeleteOutcome` and their refusals), one file each |
+| The store's parts | `Service/Sessions/` | `SessionSchema` (the table, its triggers and upgrades), `SessionRowCodec` (a row and a word read and written), `SessionReads` (finds, the tree and workspace locks, lists, the sync's reads, the review), `SessionWrites` (create, move, mirror, take, the machine-local keeps, delete, the cursors) and `SessionSaidStore` (words kept, taken, moved, marked and settled) |
+| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a tree, the busy sentence), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes`, with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
+| `AskStore`, `AskDesk` | `Service/Asks/AskStore.cs`, `Service/Asks/AskDesk.cs` | Ask records, the person's words on them, publishing and deleting; the desk is a root that wires, each door one line to a part |
+| The ask records | `Service/Asks/Records/` | `Ask`, `AskState`, `AskWord` and `AskWordKind`, `AskRequest`, `AskDraft`, `AskOutcome` and `AskRefusal`, the review and kind choices and proposals, one file each |
+| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
 
 ## Its rules
 
@@ -204,8 +215,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 ## Where a change goes
 
-Put new behaviour in a unit of its own, beside the subdomain below (D231). Do not grow `Loop/Driver.cs` or
-`Service/Sessions/SessionLedger.cs`: each is over the size budget. `Service/Quests/Quests.cs` is a root that wires.
+Put new behaviour in a unit of its own, beside the subdomain below (D231). Do not grow `Loop/Driver.cs`: it is over the
+size budget. `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Sessions.cs` and `Service/Asks/AskDesk.cs` are roots that wire.
 
 | A new behaviour about | Goes in | Tests that pin it |
 |---|---|---|
@@ -220,7 +231,7 @@ Put new behaviour in a unit of its own, beside the subdomain below (D231). Do no
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests` |
-| a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Asks/Asks.cs` (`AskDesk`) | `Quests/QuestExchangeTests`, `Quests/QuestTakeBindTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
+| a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs` (with the ledger's parts above), `Service/Asks/AskDesk.cs` (with the desk's parts above) | `Quests/QuestExchangeTests`, `Quests/QuestTakeBindTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
 | intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, service `Asks/IntakeTests` |
 
 Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`; service tests under
@@ -239,7 +250,7 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
   where it holds. D189 reads right.
 - D51 rule 2 says a tree is opened for one line and never reused; D214 hands trees from line to line. D214 is proposed
   and unbuilt, and `Workplace/SessionTrees.cs:362-364` follows D51. D51 reads right today.
-- D83 says the person answers a park; `Service/Sessions/SessionLedger.cs:1208-1381` lands an appointed supervisor's
+- D83 says the person answers a park; `Service/Sessions/SessionSays.cs` lands an appointed supervisor's
   attributed word on a park. D208 and D229 read right.
 - D88 counts work on any branch of the person's as landed; `Workplace/EndJudgement.cs:322-326` calls it handed, not
   ended, and `Workplace/TreeSetAside.cs:23-30` makes the look wait for the line; only the press goes on D88's proof.
@@ -250,7 +261,7 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
   `src/Daoris.Service/Daoris.Service.Mcp/ChosenSettingsTools.cs:47-54` keep the retired `timeout` doors, which only
   refuse. The code is today's; ONEWAY1s removes them.
 - D81 sets a driven session's posture to the harness's `auto`; D184 sets it from the repository's access setup,
-  written on the record at the open (`Service/Sessions/Sessions.cs:208-217`). D184 reads right.
+  written on the record at the open (`Service/Sessions/Records/Session.cs`, `Access`). D184 reads right.
 - D131 falls back to a plain carry-on when a conversation cannot resume; D189 hands the new part Daoris's brief
   (`LineCourse.Decide.cs:271-306`). D189 reads right.
 - D65 point 4 says a workflow is a chain of quests; D157 and D190 make it a named, versioned graph that governs a

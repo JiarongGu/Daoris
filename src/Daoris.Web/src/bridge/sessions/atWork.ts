@@ -98,7 +98,9 @@ export async function askAtWorkOf(client: QueryClient, queryKey: QueryKey, targe
   let settled: AtWorkHeld | undefined = client.getQueryData<AtWorkHeld>(queryKey);
   let another = false;
   try {
-    const reply = readAtWork(await call<unknown>('SESSION_AT_WORK', { ...target, held }));
+    // The held key rides beside the read's own fields, as `askHeld` sends it.
+    const asked = { ...target, held };
+    const reply = readAtWork(await call('SESSION_AT_WORK', asked));
     if (reply) {
       const taken = byNumber(settled, reply, true);
       if (typeof taken !== 'string') settled = taken;

@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -60,6 +63,94 @@ internal interface IRunWiring
 
     /// <summary>A move of a line from one choice to another, counted against its role's bound.</summary>
     void CountMove(string line, string role, string condition, ActorEffective from, string? to);
+
+    /// <summary>What starts a prepared session and holds it to its conclusion.</summary>
+    SessionHold Holds { get; }
+
+    /// <summary>The environment the driver reads its home and the remote's variables from.</summary>
+    Func<string, string?> Variable { get; }
+
+    /// <summary>The role a start took and its revision, as the binding names them; null for a continuation.</summary>
+    (string Role, long Revision)? RoleTaken(Consideration start, string? named);
+
+    /// <summary>The process a session starts as, with the notice its harness leaves.</summary>
+    (ProcessStartInfo Info, string? Notice) Prepare(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection);
+
+    /// <summary>The rules one session may run under, composed for its circle and repository and handed as the harness's own settings tier.</summary>
+    (string? File, object? Meta, HandedSection Handed) HandRules(
+        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
+        AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy);
+
+    /// <summary>The maker a carry-on's earlier part ran on, which its brief credits the uncommitted work to; null where none ran.</summary>
+    EarlierMaker? LeftBy(PriorSession prior);
+
+    /// <summary>What a further part of a session is handed of the parts before it.</summary>
+    Task<SessionParts> PartsAsync(
+        EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct);
+
+    /// <summary>The note a carry-on's brief leaves on the record it goes on from.</summary>
+    void SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief);
+
+    /// <summary>The re-ask of a start whose agent refused the model it asked at the open, on the walk's later entries.</summary>
+    Task<(ActorAsked Asked, string Choice)?> ReaskAsync(
+        Consideration start, IReadOnlyList<RepoView> registry, ActorEffective refused, HarnessSelection selection, CancellationToken ct, string? role);
+
+    /// <summary>The re-ask of a handed quest's start whose agent refused the model it asked at the open.</summary>
+    Task<(ActorAsked Asked, string Choice)?> ReaskHandedAsync(
+        Consideration start, string agent, HarnessSelection selection, ModelRefusal refusal, HashSet<string> refused, CancellationToken ct, string? role);
+
+    /// <summary>What the harness's lines of a run say to the session's structure and its console.</summary>
+    Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId);
+
+    /// <summary>Whether a driven run that ends holding its quest waits on its own helper.</summary>
+    Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct);
+
+    /// <summary>A driven record that just concluded: a done whose rule reads it is owed a second opinion, which a later look asks.</summary>
+    Task ConcludedForOpinionAsync(
+        string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct);
+
+    /// <summary>The conclusion of a run its harness refused the account for, said with the harness's own words.</summary>
+    SessionConclusion AccountRefused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended);
+
+    /// <summary>The conclusion of a run whose model its agent refused.</summary>
+    SessionConclusion ModelRefused(
+        SessionConclusion conclusion, string agent, HarnessSelection selection, string? model, HarnessEnding ended, string sessionId);
+
+    /// <summary>The conclusion of a run whose account was signed out.</summary>
+    SessionConclusion AccountSignedOut(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended);
+
+    /// <summary>The conclusion of a run an account's limit cut off, and the limit it read.</summary>
+    (SessionConclusion Conclusion, bool Limit) AccountLimited(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
+        AcpUsage? used, LimitSeen? byCode);
+
+    /// <summary>The reservation that keeps a look from planning a quest again between a start's refused end and its move to another account.</summary>
+    StartReservation MovingReservation(Consideration start);
+
+    /// <summary>The quest handed over at a turn's end where the session's agent asked and the person's rule or yes lets it go; null where none.</summary>
+    Task<string?> HandOverAtTurnEndAsync(string session, string quest, CancellationToken ct);
+
+    /// <summary>The record of a run whose wire broke after a stop made first, ended as that stop's conclusion would have ended it.</summary>
+    Task<SessionConclusion> EndStoppedAsync(string sessionId, SessionStop stop);
+
+    /// <summary>The move record a driven carry-on keeps, decided before its open.</summary>
+    ConversationMoves Moves { get; }
+
+    /// <summary>Told each answer the course gave a driven path as it is decided; a test's, no person's.</summary>
+    Action<LineCourse>? Decided { get; }
+
+    /// <summary>A park's question the disk would not let go at a run's opening or conclusion, logged.</summary>
+    void Questions(string sessionId, QuestionSettle settled);
+
+    /// <summary>The name of the role a design quest's start took, as its opening says it; null where the catalogue will not read.</summary>
+    string? DesignRoleName(Consideration start, string? named);
+
+    /// <summary>The lines resumed in their own conversation on a limit's word, by quest, which the look says once it sees the line go on.</summary>
+    System.Collections.Concurrent.ConcurrentDictionary<string, string> LimitResumed { get; }
+
+    /// <summary>Whether the rules a session would be handed let it call the connector's tool unasked, which a harness that takes no rules cannot.</summary>
+    bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool);
 
     /// <summary>The knowledge server a session is offered, located per run; null where this machine has no connector.</summary>
     AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc);

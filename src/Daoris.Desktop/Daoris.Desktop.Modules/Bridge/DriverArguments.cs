@@ -56,8 +56,8 @@ public static class DriverArguments
     /// The profile a profile verb is about: Agents' account actions and Accounts' <i>Try now</i>. Absent is a refusal, never
     /// a guess.
     /// </summary>
-    internal static string Named(IpcRequest request) =>
-        Optional(request, "profile") is { Length: > 0 } profile
+    internal static string Named(string? named) =>
+        named is { Length: > 0 } profile
             ? profile
             : throw Refusals.Because(
                 Refusals.HarnessProfileNeeded,

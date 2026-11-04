@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The note codes the service's own reading of a session's record judges by (<see cref="ServiceClient.ReadStrikes"/>, <see cref="ServiceClient.NotOffered"/>, and the records
+/// The note codes the service's own reading of a session's record judges by (<see cref="ServiceClient.ReadStrikes"/>, <see cref="SessionReads.NotOffered(SessionResponse)"/>, and the records
 /// <see cref="PriorSession"/>), never by the words: an update's close, a provider's outage past its bound, a choice its agent refused at the open, a
 /// steward's stop, a record that ended waiting on its helper, and the account's own refusals and sign-outs. The vocabulary is the events' (<see cref="NoteCodes"/>, which the page's catalogue is held to, one declaration per line),
 /// so each spelling here is held equal to its declaration there by <c>RecordNotesTests</c>.

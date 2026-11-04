@@ -505,16 +505,40 @@
     "Core/Sessions/SessionLedger.cs": {
       "reads": "tells",
       "row": "1q",
-      "note": "the ledger's own guards by the marks (what a helper, a reviewer or an intake may open or be moved to) and Ask Daoris's one-running rule; the start layer's (§2.3)"
+      "note": "spells Ask Daoris's repository and tells its record by it; the guards by the marks are the parts' below"
+    },
+    "Core/Sessions/SessionAdvances.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "the ledger's guards by the marks on a move out of an ended state (what a helper, a reviewer or an intake may be moved to) and Ask Daoris's one-running rule; the start layer's (§2.3)"
+    },
+    "Core/Sessions/SessionOpening.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "the ledger's opens: Ask Daoris's one-running rule and the intake room's, by the marks; the start layer's (§2.3)"
+    },
+    "Core/Sessions/SessionDeletes.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "the ledger's delete judgement names an intake by the record's ask mark; the start layer's (§2.3)"
+    },
+    "Core/Sessions/SaidAnswers.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "what never goes on (an intake, a reviewer, a helper), judged by the marks for the say and the take-back alike; the start layer's (§2.3)"
+    },
+    "Core/Sessions/SessionRowCodec.cs": {
+      "reads": "other",
+      "note": "reads Ask Daoris's mode for its default; it tells no work"
+    },
+    "Core/Sessions/SessionWrites.cs": {
+      "reads": "other",
+      "note": "writes the marks at the open and the mode of Ask Daoris's record; it tells no work"
     },
     "Core/Sessions/SolicitedAnswers.cs": {
       "reads": "tells",
       "row": "1q",
       "note": "the one door for solicited answers (COMMS1b) refuses an answer to an intake, a second opinion or a helper by the head's marks, the desks' guard taken in (§2.3)"
-    },
-    "Core/Sessions/Sessions.cs": {
-      "reads": "other",
-      "note": "writes the marks at the open and reads Ask Daoris's mode for its default; it tells no work"
     },
     "Http/Program.cs": {
       "reads": "other",

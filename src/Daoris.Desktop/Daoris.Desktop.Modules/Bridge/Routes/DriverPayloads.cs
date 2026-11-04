@@ -34,3 +34,18 @@ public sealed record SetHelpMode(string? Mode);
 
 /// <summary>No grant is housekeeping's, and no operation is the driver's refusal.</summary>
 public sealed record SetHelpGrant(string? Grant, string? Operation, bool Chosen = false);
+
+/// <summary>A state slice by its name.</summary>
+public sealed record StateSliceRead(string Slice);
+
+/// <summary>A heavy-gate read for a <c>Repository</c>; none named is the empty name.</summary>
+public sealed record HeavyRead(string? Repository);
+
+/// <summary>A folder trusted through its trust file.</summary>
+public sealed record TrustFolderPress(string Folder, string TrustFile);
+
+/// <summary>A quest by its id, with or without the <c>#</c>.</summary>
+public sealed record QuestPress(string Quest);
+
+/// <summary>One circle synced now.</summary>
+public sealed record SyncNowPress(string Workspace);

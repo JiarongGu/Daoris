@@ -171,9 +171,9 @@ export function useAnswerConfirmation() {
     mutationFn: async ({ waiting, confirm }: { waiting: Confirmation; confirm: boolean }): Promise<ConfirmationAnswer> => {
       if (waiting.source === 'pipe') {
         const bound = confirmBound(waiting.checkWithin);
-        const answer = await call<{
+        const answer = (await call('PERSON_CONFIRM', { id: waiting.id, confirm }, bound ? { timeoutMs: bound } : undefined)) as {
           answered?: boolean; why?: string | null; message?: string | null; reason?: string | null; values?: Record<string, unknown> | null;
-        }>('PERSON_CONFIRM', { id: waiting.id, confirm }, bound ? { timeoutMs: bound } : undefined);
+        } | null;
         if (answer?.answered === true) return { answered: true };
         const values = Object.fromEntries(Object.entries(answer?.values ?? {}).filter((each): each is [string, string] => typeof each[1] === 'string'));
         return {
@@ -204,7 +204,7 @@ export function useConfirmationShown() {
   return useMutation({
     mutationFn: async (waiting: Confirmation): Promise<boolean> => {
       if (waiting.source !== 'pipe') return false;
-      const answer = await call<{ shown?: boolean }>('PERSON_CONFIRM_SHOWN', { id: waiting.id });
+      const answer = (await call('PERSON_CONFIRM_SHOWN', { id: waiting.id })) as { shown?: boolean } | null;
       return answer?.shown === true;
     },
   });
@@ -330,8 +330,8 @@ function holdersOf(raw: unknown): HolderNow[] {
 export function useStartRoleTerminal() {
   return useMutation({
     mutationFn: async ({ role, share }: { role: string; share?: string }): Promise<RoleTerminalAnswer> => {
-      const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
-        'START_ROLE_TERMINAL', { role, ...(share ? { share } : {}) });
+      const answer = (await call('START_ROLE_TERMINAL', { role, ...(share ? { share } : {}) })) as
+        { done?: boolean; why?: string | null; message?: string | null } | null;
       return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
     },
   });
@@ -346,8 +346,8 @@ export function useStartRoleTerminal() {
 export function useSetStandingConfirmation() {
   return useMutation({
     mutationFn: async (presses: readonly string[]): Promise<StandingAnswer> => {
-      const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
-        'SET_STANDING_CONFIRMATION', { presses: [...presses] });
+      const answer = (await call('SET_STANDING_CONFIRMATION', { presses: [...presses] })) as
+        { done?: boolean; why?: string | null; message?: string | null } | null;
       return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
     },
   });

@@ -22,7 +22,7 @@ export type { Channel, ChannelForwarded, ChannelItem, ChannelPost, ChannelPosted
  */
 export const channelKey = (ask: string) => [...keys.allAsks, 'channel', ask] as const;
 
-const readChannel = async (ask: string) => channelOf(await call<unknown>('CHANNEL_READ', { ask }));
+const readChannel = async (ask: string) => channelOf(await call('CHANNEL_READ', { ask }));
 
 /**
  * An ask's channel as the person reads it (`CHANNEL_READ`), moving no mark. `available` says whether a driver answers at all,
@@ -107,7 +107,7 @@ export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {})
  */
 export const usePostChannel = () =>
   useMutation({
-    mutationFn: async ({ ask, post }: { ask: string; post: ChannelPost }): Promise<ChannelPosted> => postedOf(await call<unknown>(
+    mutationFn: async ({ ask, post }: { ask: string; post: ChannelPost }): Promise<ChannelPosted> => postedOf(await call(
       'CHANNEL_POST',
       { ask, text: post.text, ...(post.to ? { to: post.to } : {}), ...(post.re ? { re: post.re } : {}) },
     )),
@@ -122,7 +122,7 @@ export const usePostChannel = () =>
 export const useForwardChannel = () =>
   useMutation({
     mutationFn: async ({ ask, message, repository }: { ask: string; message: string; repository: string }): Promise<ChannelForwarded> =>
-      forwardedOf(await call<unknown>('CHANNEL_FORWARD', { ask, message, repository })),
+      forwardedOf(await call('CHANNEL_FORWARD', { ask, message, repository })),
   });
 
 /**
@@ -134,7 +134,7 @@ export const useMarkChannel = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async ({ ask, through }: { ask: string; through?: string | null }): Promise<Channel | null> => channelOf(
-      await call<unknown>('CHANNEL_MARK', { ask, ...(through ? { through } : {}) }),
+      await call('CHANNEL_MARK', { ask, ...(through ? { through } : {}) }),
     ),
     onSuccess: (channel, { ask }) => {
       if (channel) client.setQueryData(channelKey(ask), channel);

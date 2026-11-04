@@ -321,7 +321,7 @@ needs you*), and `HeavySlotLine` says it as *waiting for the machine to admit it
 taken, in both languages; an answer without the `admission` field reads as before.
 
 A session's states are drawn at the head of the side bar's *Timeline* view (FLOWCHART1b, D186): `work/head/sessionLife.ts` holds
-the page's copy of the ledger's `SessionLedger.Allowed` and its nine states, which its test reads from the service's source,
+the page's copy of the ledger's `SessionAdvances.Allowed` and its nine states, which its test reads from the service's source,
 and draws the four live states, the working ⇄ awaiting-person return on a lane of its own, one node of outcomes and going on
 as a guarded edge (refused, with its reason, for a record that can never go on). The record keeps where a session stands and
 not how it got there, so the drawing lights the state it is in, in the tone of the word the page shows it as, and draws no path
