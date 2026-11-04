@@ -307,7 +307,7 @@ public sealed class AccountRotationTests : IDisposable
     /// with the list winning: the start begins at the list's first and walks it. D125 held such a start on its default.
     /// </summary>
     [Fact]
-    public async Task A_default_its_list_does_not_hold_is_read_with_the_list_winning()
+    public async Task A_default_its_list_does_not_hold_is_placed_last_by_the_whole_order_and_begins_the_walk()
     {
         Accounts("account-1", "account-2", "personal");
         Wire(s => s.WithDefault("fake", "personal").WithRotation("fake", ["account-1", "account-2"]));
@@ -316,7 +316,7 @@ public sealed class AccountRotationTests : IDisposable
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
-        Assert.Equal(("account-2", "account-1"), (selection.Profile, selection.Rotated?.From));
+        Assert.Equal(("account-2", "personal"), (selection.Profile, selection.Rotated?.From));
     }
 
     /// <summary>

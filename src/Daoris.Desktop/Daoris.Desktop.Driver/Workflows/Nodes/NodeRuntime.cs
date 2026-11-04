@@ -225,7 +225,7 @@ public sealed class NodeRuntime(
     /// </summary>
     public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
     {
-        if (KeepsClosures || ArmsRuns) return false;
+        if (KeepsClosures || ArmsRuns || OwesCleanup) return false;
         if (!Telling.Holding && _governed is null) return true;
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -238,6 +238,19 @@ public sealed class NodeRuntime(
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Whether a plugin is owed a cleanup of what a run created: an ended run's temporary resources stay owed until their plugin settles them,
+    /// so the runtime stays armed for the ask though no run is open.
+    /// </summary>
+    private bool OwesCleanup
+    {
+        get
+        {
+            var ended = _graphRuns.Read().Where(run => run.Ended is not null).Select(run => run.Unit).ToHashSet(StringComparer.Ordinal);
+            return _cleaner.Owed(unit => ended.Contains(unit) ? true : Ended(unit)).Count > 0;
+        }
     }
 
     /// <summary>
@@ -303,6 +316,8 @@ public sealed class NodeRuntime(
                 LastQuests = _quests;
                 var ends = new Dictionary<string, bool>(StringComparer.Ordinal);
                 foreach (var unit in read.Units) ends[unit.Id] = WorkEndState.Over(unit.End.State);
+                // A run is its own unit: its true end is the end its record holds.
+                foreach (var run in runs) ends[run.Unit] = run.Ended is not null;
                 _ends = ends;
                 QuestReads.Keep(home, _quests); // The terminal's `work held` judges on it; the lease is held here.
                 if (_closer is not null) bindings.AddRange(NodeGoverning.Bindings(look.Config, read, _governed));

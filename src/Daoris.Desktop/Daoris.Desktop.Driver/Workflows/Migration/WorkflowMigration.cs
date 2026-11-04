@@ -20,7 +20,8 @@ public sealed record WorkflowMigrated(DriverConfig Config, IReadOnlyList<string>
 /// </summary>
 public static class WorkflowMigration
 {
-    private const string Door = "migration";
+    /// <summary>A saved version names the door it came through, and only the screen, the terminal and Ask Daoris read: the migration runs from the terminal's side.</summary>
+    private const string Door = "terminal";
 
     /// <summary>The step over <paramref name="config"/> as the home's file holds it and <paramref name="registry"/>, the service's repositories.</summary>
     public static WorkflowMigrated Convert(string home, DriverConfig config, IReadOnlyList<RepoView> registry)

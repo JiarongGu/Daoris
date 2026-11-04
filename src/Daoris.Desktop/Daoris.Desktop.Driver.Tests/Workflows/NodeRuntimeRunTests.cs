@@ -361,11 +361,13 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         var kept = NodeRecordFiles.ToJson(Files.Read(RunUnit)!);
 
         File.Delete(WorkflowStore.PathOf(_home, "docs"));
+        // Alone it arms nothing and is not read: a pass says so only when another run, which still reads, arms the look.
         Assert.False((await RunPassAsync(runtime)).Armed);
+        RunHome.Bind(_home, "q8", RunHome.SaveGraph(_home, ClaimedThenHanded, "other"), _now, "other");
         var held = await RunPassAsync(runtime);
 
-        Assert.Empty(held.Evaluated);
-        Assert.Single(held.Said, line => line.StartsWith($"work  {RunUnit}:", StringComparison.Ordinal) && line.Contains("held whole", StringComparison.Ordinal));
+        Assert.DoesNotContain(RunUnit, held.Evaluated);
+        Assert.Single(held.Said,line => line.StartsWith($"work  {RunUnit}:", StringComparison.Ordinal) && line.Contains("held whole", StringComparison.Ordinal));
         Assert.Equal(kept, NodeRecordFiles.ToJson(Files.Read(RunUnit)!));
         Assert.Empty(_port.Sent);
     }

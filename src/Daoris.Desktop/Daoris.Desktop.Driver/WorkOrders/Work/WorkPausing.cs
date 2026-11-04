@@ -389,6 +389,7 @@ public static class WorkPausing
             var config = DriverConfig.Load(world.ConfigPath);
             var snapshot = await PausedWork.LookAsync(
                 world.Service, config, await world.Service.SnapshotAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+            snapshot = snapshot with { FailuresAt = StaffCourse.FailuresAt(new StaffLedger(world.Home), snapshot) };
             var plan = Planner.Plan(snapshot, config, world.Door);
             var work = AskWork.Read(
                 new AskWorkLook(await world.Service.EveryQuestAsync(ct).ConfigureAwait(false),
