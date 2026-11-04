@@ -40,7 +40,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
     /// <summary>
     /// TOOL4l-a: a use door carries exactly the fields the driver reads; keep none is an explicit null, unchanged is absent. Since POOL1b
-    /// (§5.3) it is marked for the set, `set: true`, and names no workspace; it carried `lab` before.
+    /// (§5.3) it names no workspace; it carried `lab` before.
     /// </summary>
     [Fact]
     public void A_use_is_written_with_its_fields_and_keep_none_is_told_from_unchanged()
