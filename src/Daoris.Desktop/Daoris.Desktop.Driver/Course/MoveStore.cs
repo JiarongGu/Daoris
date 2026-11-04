@@ -508,7 +508,7 @@ public sealed class MoveStore(
                 if (move.Phase == to) throw new Unwritten(move);
                 if (move.Phase is not { } from) throw new MoveRefusedException(claim.Move, $"its phase `{move.PhaseWord}` is a newer Daoris's, which this build writes nothing over");
                 if (!MovePhases.Follows(from, to)) throw new MoveRefusedException(claim.Move, $"a move at `{move.PhaseWord}` does not go to `{MovePhases.Word(to)}`");
-                var column = Moments.First(each => each.Phase == to).Column;
+                var column = MoveRows.Moments.First(each => each.Phase == to).Column;
                 Fenced(
                     write, claim, $"phase = $phase, {column} = $at" + (carried is { } set ? $", {set.Column} = $carried" : ""),
                     ("$phase", MovePhases.Word(to)), ("$at", Now()), ("$carried", carried?.Value));
