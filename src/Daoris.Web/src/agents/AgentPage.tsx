@@ -1,25 +1,19 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { clockOf, figure } from '../locales/format';
-import type { Account, AccountSettingsChange, Tool } from './tools';
-import type { UsedBy } from './roles/roleStructure';
-import { UsedLine } from './roles/StructureSections';
-import {
-  Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, SkeletonRows, Tip,
-} from '../design/ui';
+import { type Account, type AccountSettingsChange, type Tool } from './tools';
+import { type UsedBy } from './roles/roleStructure';
+import { Button, Icon, Inline, Menu, type MenuAct, Tip } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/frame/ViewMain';
-import { type AccountScope, type AgentAccounts, machineScope, ownLine } from '../settings/accounts/accounts';
-import { AccountSettingsForm, AccountSettingsSummary } from '../settings/accounts/AccountSettings';
-import { type AccountChoice, type ScopeActs, ScopeEditor } from '../settings/accounts/AccountUse';
-import { AgentRules, type AgentRulesState, type RuleAddition, type RuleScopeName } from '../settings/repository/AgentRules';
-import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
-import { type BackAccount, NameAccount, RenameAccount, ReSignIn } from './AddAccount';
-import {
-  type AccountAct, type AgentPart, type AgentUsage, accountAct, accountLabel, accountName, accountStates, accountWho,
-  doorsSummary, latestRead, nextStartSaid, pooledLines, rulesSummary, whoApart, settingsSummary, usageCells, usageSummary,
-  useSummary, versionOnly,
-} from './agents';
+import { type AccountScope, type AgentAccounts, machineScope } from '../settings/accounts/accounts';
+import { type AccountChoice, type ScopeActs } from '../settings/accounts/AccountUse';
+import { type AgentRulesState, type RuleAddition, type RuleScopeName } from '../settings/repository/AgentRules';
+import { AccountRow } from './AccountRow';
+import { type BackAccount, RenameAccount } from './AddAccount';
+import { type AccountAct, type AgentPart, type AgentUsage, accountAct, accountLabel, accountName, accountStates, accountWho, latestRead, nextStartSaid, whoApart, usageCells, versionOnly } from './agents';
+import { AgentMore } from './page/AgentMore';
+import { AgentDoors } from './page/AgentDoors';
+import { AccountsFold } from './page/AccountsFold';
 
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
 export type AgentSection = 'use' | 'doors' | 'rules' | 'settings' | 'usage' | 'used';
@@ -49,7 +43,7 @@ export type { Answered };
  * The questions that wait on their act's answer: a row's rename, the add flow's last step, the key's field and an account's
  * model and effort (ACCTUX3).
  */
-type Question = 'rename' | 'added' | 'key' | 'settings';
+export type Question = 'rename' | 'added' | 'key' | 'settings';
 
 /** Every press on an agent's page, each the terminal's twin (D50). */
 export type AgentActs = {
@@ -524,350 +518,9 @@ export function AgentPage({
   return (
     <ViewMain header={header}>
       {/* *Add an account…* (D152 §4.5), under the header where it was started: step 1, the sign-in, or step 3. */}
-      {adding && (
-        <div className="mb-4 grid gap-2">
-          {goingBack && !signInNewPanel && !added && (
-            <ReSignIn
-              accounts={back}
-              busy={busy}
-              now={now}
-              onSignIn={(id) => { setGoingBack(false); acts.onSignIn(id); }}
-              onNew={() => { setGoingBack(false); acts.onSignInNew(); }}
-              onClose={() => setGoingBack(false)}
-            />
-          )}
-          {signInNewPanel}
-          {added && (
-            <NameAccount
-              key={added.account}
-              agent={tool.name}
-              account={added.account}
-              title={t(addedKey ? 'harness.profile.addKey' : 'agents.add.title')}
-              signedIn={addedKey ? undefined : addedWho}
-              lead={addedKey ? t('agents.add.keyAdded', { handle: addedKey }) : undefined}
-              offered={offeredName}
-              fallback={addedFallback}
-              busy={busy}
-              refusal={refusalOf('added', added.account)}
-              // The organism closes this step once the name lands (`added` goes); a refusal is said in it.
-              onDone={(answer) => acts.onAddedAnswer(answer, answered('added', added.account))}
-            />
-          )}
-        </div>
-      )}
-
-      {/* The accounts: one list, whatever doors reach the agent (D150 §5.2, TOOL6g), a row each (D152 §4.2). Never folded;
-          an agent not installed has none until it is (§4.6), and no list head stands over nothing. */}
-      {(tool.present || tool.accounts.length > 0) && (
-        <section id="agents-accounts" aria-label={t('harness.accounts')} className="scroll-mt-3">
-          <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <SectionTitle>{t('harness.accounts')}</SectionTitle>
-            <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
-              {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
-              {/* Each account's use, asked of its agent with no prompt (SWITCH1d): no sign-in, so beside *Read again*. */}
-              {tool.present && use?.reads && (
-                <Tip content={t('agents.read.nowTip', { agent: product })}>
-                  <Button variant="ghost" disabled={readingNow || busy} aria-busy={readingNow || undefined} onClick={acts.onReadNow}>
-                    {t('agents.read.now')}
-                  </Button>
-                </Tip>
-              )}
-              {tool.present && (
-                <Tip content={t('agents.read.againTip', { agent: product })}>
-                  <Button variant="ghost" disabled={reading || busy} aria-busy={reading || undefined} onClick={acts.onReadAgain}>
-                    <Icon name="refresh" size={13} />
-                    {reading ? t('agents.read.reading') : t('agents.read.again')}
-                  </Button>
-                </Tip>
-              )}
-            </span>
-          </div>
-          {/* What the fold into one set changed (POOL1a, the account-pool design §4.2, §6.3), one block above the rows while
-              any of it is unsaid, a line per change, each receipt's lines in the reader's language; *Got it* marks the receipts
-              shown said, by id, and the person's acknowledgement is all it is. */}
-          {pooled.length > 0 && (
-            <section
-              aria-label={t('agents.pooled.title', { product })}
-              className="mb-2 flex flex-wrap items-start gap-x-3 gap-y-1.5 border-l-[3px] border-accent bg-page/60 px-3 py-2"
-            >
-              <div className="min-w-0 flex-1 basis-72">
-                <p className="m-0 text-small font-medium text-ink">{t('agents.pooled.title', { product })}</p>
-                <ul className="m-0 mt-1 list-none p-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-                  {pooled.flatMap((receipt) => pooledLines(receipt, labelOf).map((line, at) => (
-                    <li key={`pooled:${receipt.id}:${at}`}>{line}</li>
-                  )))}
-                </ul>
-              </div>
-              <Button disabled={busy} onClick={() => acts.onPooledSaid(pooled.map((receipt) => receipt.id))}>
-                {t('agents.pooled.gotIt')}
-              </Button>
-            </section>
-          )}
-          {/* Which account the next start takes and why, in any workspace, above the rows that answer it in parts (ACCTUX4b; the
-              second opinion's lines 128-133): a light line, not a setting's row, in the words of the fold's *Next start*; what
-              holds the account the order begins on follows in the soft ink, since that is the one a person expects it to take. */}
-          {nextSaid && (
-            <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
-              <span>{nextSaid.takes}</span>
-              {nextSaid.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{nextSaid.held}</span></>}
-            </p>
-          )}
-          <ul className={ACCOUNT_COLUMNS}>
-            {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
-            {tool.accounts.map(accountRow)}
-            {/* Your own sign-in last, outside Daoris's accounts (D152 §4.3; POOL1c, D197 point 3, the account-pool design §3 and
-                §4.2): its name and its ⓘ, which says all of it, and no state, no who, no reading, no act and no ⋯, since Daoris
-                never asks it anything and never changes it. An agent not installed has none. */}
-            {tool.present && <AccountRow name={ownLabel} why={ownLine()} menu={[]} now={now} />}
-          </ul>
-          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph,
-              a target of 28 px (the platform language §6, ACCTUX2) where its line of text was about 16. */}
-          {tool.accounts.length > 0 && (
-            <div className="mt-1">
-              <button
-                type="button"
-                aria-expanded={termsOpen}
-                onClick={() => setTermsOpen((was) => !was)}
-                className="flex min-h-7 items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
-              >
-                {t('agents.terms.show')}
-                <Icon name={termsOpen ? 'chevronDown' : 'chevronRight'} size={12} />
-              </button>
-              {termsOpen && <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.terms')}</p>}
-            </div>
-          )}
-          {keying && (
-            <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>
-              <input
-                autoFocus
-                type="password"
-                autoComplete="off"
-                spellCheck={false}
-                value={keyDraft}
-                onChange={(event) => setKeyDraft(event.target.value)}
-                aria-label={t('harness.profile.keyLabel', { tool: product })}
-                placeholder={t('harness.profile.keyPlaceholder')}
-                className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
-              />
-              <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
-              {/* Held while the key is on its way, so a refusal is never said to nobody (ACCTEDIT1). */}
-              <Button variant="ghost" disabled={busy} onClick={() => askKey(false)}>{t('common.cancel')}</Button>
-              {refusalOf('key', '') && <Refused sentence={refusalOf('key', '')!} />}
-              <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
-            </form>
-          )}
-        </section>
-      )}
-
-      {/* How the accounts are used (TOOL4g; D130 §16.6; POOL1c, the account-pool design §4.2): the one set's order and its one
-          entry of settings, every workspace's. The *Workspaces* fold went with it: there is one scope to say. */}
-      {use && machine && tool.accounts.length > 0 && (
-        <Fold
-          section="use"
-          title={t('harness.use.title')}
-          summary={useSummary(use, tool.accounts.length)}
-          open={open.has('use')}
-          onToggle={toggle}
-        >
-          <ScopeEditor agent={use} product={product} scope={machine} accounts={choices} busy={busy} acts={acts.scope} />
-        </Fold>
-      )}
-
-      {/* The ways in, a property of the agent (D53, D57 §c): each door, its version, its pin, which one driven work starts on. */}
-      <Fold section="doors" title={t('harness.doors')} summary={doorsSummary(tool, adapter)} open={open.has('doors')} onToggle={toggle}>
-        {tool.doors.map((each) => (
-          <div key={each.harness} className="border-t border-line py-2 first:border-t-0">
-            <header className="flex flex-wrap items-center gap-2">
-              <Pill tone="neutral">{t(each.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe')}</Pill>
-              <span className="font-mono text-small text-ink">{each.harness}</span>
-              {each.present
-                ? <span className="font-mono text-small text-ink-faint">{versionOnly(each.version ?? '')}</span>
-                : <span className="text-small text-ink-faint">{t('harness.absent')}</span>}
-              {each.harness === adapter && <Chip accent>{t('harness.spawns')}</Chip>}
-              {each.plugin && (onOpenPlugin
-                // A door to the plugin's page (PLUGUI1c2b, the Plugins design §5): a control, so a button, not a chip.
-                ? <Button variant="ghost" onClick={() => onOpenPlugin(each.plugin!)}>{t('harness.declaredBy', { plugin: each.plugin })}</Button>
-                : <Chip>{t('harness.declaredBy', { plugin: each.plugin })}</Chip>)}
-              <span className="ml-auto flex gap-2">
-                {!each.present && each.installs !== false && <Button disabled={busy} onClick={() => acts.onDoor(each.harness, 'install')}>{t('harness.install')}</Button>}
-                {each.present && (each.updates === 'pin' || each.updates === 'tool') && (
-                  <Tip content={t(each.updates === 'pin' ? 'harness.update.pinTip' : 'harness.update.toolTip')}>
-                    <Button variant="ghost" disabled={busy} onClick={() => acts.onDoor(each.harness, 'update')}>{t('harness.update')}</Button>
-                  </Tip>
-                )}
-              </span>
-            </header>
-            {each.problem && (
-              <Tip content={each.problem}>
-                <p className="mt-1.5 line-clamp-2 text-small text-ink-soft"><Inline text={each.problem} /></p>
-              </Tip>
-            )}
-            {each.pinnable && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-small">
-                {each.pinned ? (
-                  <>
-                    <Pill tone={each.managed ? 'done' : 'declined'}>
-                      {t(each.managed ? 'harness.pin.pinned' : 'harness.pin.missing', { version: each.pinned })}
-                    </Pill>
-                    {each.managed && (
-                      <Tip content={t('harness.pin.managedTip')}>
-                        <span className="min-w-0 flex-1 truncate font-mono text-meta text-ink-faint">{each.managed}</span>
-                      </Tip>
-                    )}
-                    <Button variant="ghost" className="ml-auto" disabled={busy} onClick={() => acts.onDoor(each.harness, 'unpin')}>
-                      {t('harness.pin.unpin')}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-ink-faint">{t(each.present ? 'harness.pin.fromPath' : 'harness.pin.fromPathAbsent')}</span>
-                    <Button
-                      variant="ghost"
-                      className="ml-auto"
-                      aria-expanded={pinOpen === each.harness}
-                      onClick={() => setPinOpen(pinOpen === each.harness ? null : each.harness)}
-                    >
-                      {t('harness.pin.open')}
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-            {each.pinnable && !each.pinned && pinOpen === each.harness && (
-              <form
-                className="mt-2 flex flex-wrap items-center gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const version = (pinning[each.harness] ?? '').trim();
-                  if (version) acts.onPin(each.harness, version);
-                }}
-              >
-                <input
-                  autoFocus
-                  aria-label={t('harness.pin.version', { harness: each.harness })}
-                  value={pinning[each.harness] ?? ''}
-                  onChange={(event) => setPinning((held) => ({ ...held, [each.harness]: event.target.value }))}
-                  placeholder={t('harness.pin.placeholder')}
-                  className="w-32 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
-                />
-                <Button type="submit" disabled={busy || !(pinning[each.harness] ?? '').trim()}>{t('harness.pin.action')}</Button>
-              </form>
-            )}
-            {doorRunning === each.harness && doorConsole}
-          </div>
-        ))}
-      </Fold>
-
-      {/* What it may do (PERM1, D72): the rules every session on this machine is handed, Daoris's defaults and the
-          proposals, only where Daoris hands this agent the rules file (§5.1). */}
-      {rulesShown && (
-        <Fold section="rules" title={t('agents.section.rules')} summary={rulesSummary(rules!)} open={open.has('rules')} onToggle={toggle}>
-          <AgentRules
-            rules={rules!}
-            part="agent"
-            circles={[]}
-            repositories={[]}
-            busy={busy}
-            onSwitchDefault={acts.rules.onSwitchDefault}
-            onRemove={acts.rules.onRemove}
-            onAdd={acts.rules.onAdd}
-            onAnswer={acts.rules.onAnswer}
-          />
-        </Fold>
-      )}
-
-      {/* Each account's own model and effort (AGT6, D98), only where Daoris knows the tool's settings. */}
-      {settingsShown && (
-        <Fold section="settings" title={t('agents.section.settings')} summary={settingsSummary(tool)} open={open.has('settings')} onToggle={toggle}>
-          {/* What an account's own model means now actors choose models (D205 §6.4, MODELROLE1c2): their *account default*. */}
-          <p className="m-0 pb-1.5 text-meta text-ink-soft">{t('agents.settings.roles')}</p>
-          <ul className="m-0 list-none p-0">
-            {tool.accounts.filter((account) => account.settings).map((account) => (
-              <li key={account.home} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-1.5 first:border-t-0">
-                <span className="min-w-0 text-body text-ink [overflow-wrap:anywhere]">{labelOf(account.name)}</span>
-                <AccountSettingsSummary settings={account.settings!} />
-                {tuning !== account.name && (
-                  <Button variant="ghost" className="ml-auto" disabled={busy} onClick={() => askSettings(account.name)}>
-                    {t('harness.settings.open')}
-                  </Button>
-                )}
-                {/* ACCTUX3: open until the save lands, never closed on the press, so a refused one keeps the choice made and
-                    says why under it (ACCTEDIT1's contract). The form holds its own *Never mind* while it saves
-                    (SETTINGSWAIT1), so a refusal is never said to nobody. */}
-                {tuning === account.name && (
-                  <AccountSettingsForm
-                    harness={door.harness}
-                    account={account.name}
-                    accountLabel={labelOf(account.name)}
-                    settings={account.settings!}
-                    choices={tool.settingsChoices!}
-                    busy={settingsBusy}
-                    onSave={(change) => acts.onSaveSettings(account.name, labelOf(account.name), change, answered('settings', account.name, () => {
-                      setTuning((was) => (was === account.name ? null : was));
-                    }))}
-                    onCancel={() => askSettings(null)}
-                  />
-                )}
-                {tuning === account.name && refusalOf('settings', account.name) && (
-                  <Refused sentence={refusalOf('settings', account.name)!} />
-                )}
-              </li>
-            ))}
-          </ul>
-        </Fold>
-      )}
-
-      {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so; an agent not
-          installed has carried nothing here, so it has no usage to fold (§5.1, D152 §4.6). */}
-      {(tool.present || sessions > 0) && (
-        <Fold section="usage" title={t('usage.title')} summary={usage === null ? t('agents.usage.reading') : usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
-          <Prose className="text-small">{t('usage.body')}</Prose>
-          {usage === null && <SkeletonRows rows={2} />}
-          {usage !== null && usage.length > 0 && (
-            <ul className="m-0 mt-2 list-none p-0">
-              {usage.map((account) => {
-                const called = account.profile ? labelOf(account.profile) : ownLabel;
-                return (
-                  <li key={`${account.harness}:${account.profile ?? ''}`} className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0">
-                    <span className="font-mono text-small">{account.harness}</span>
-                    <Chip>{called}</Chip>
-                    <span className="text-small text-ink-soft">{t('usage.sessions', { count: account.sessions })}</span>
-                    <Tip content={t('usage.contextTip')}>
-                      <span className="ml-auto font-mono text-small text-ink-faint">{t('usage.context', { used: figure(account.used) })}</span>
-                    </Tip>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <p className="m-0 mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
-        </Fold>
-      )}
-
-      {/* The roles that lean on it (COMPANYVIEW1d): read from the structure's last readings, so opening the page asks no account. */}
-      {usedBy && (
-        <Fold
-          section="used" title={t('agents.roles.used.title')} open={open.has('used')} onToggle={toggle}
-          summary={usedBy.read === 'failed' ? t('agents.roles.used.failed') : usedBy.read === 'loading' ? t('agents.roles.used.reading')
-            : usedBy.rows.length === 0 ? t('agents.roles.used.none') : t('agents.roles.used.summary', { count: usedBy.rows.length })}
-        >
-          <Prose className="text-small">{t('agents.roles.used.body')}</Prose>
-          {usedBy.read === 'failed' && <p role="alert" className="m-0 mt-2 text-small text-ink-soft">{t('agents.roles.used.failed')}</p>}
-          {usedBy.read === 'ok' && usedBy.rows.length === 0 && <p className="m-0 mt-2 text-small text-ink-soft">{t('agents.roles.used.none')}</p>}
-          {usedBy.read === 'ok' && usedBy.rows.length > 0 && (
-            <ul aria-label={t('agents.roles.used.title')} className="m-0 mt-2 list-none p-0">
-              {usedBy.rows.map((used) => (
-                <li key={`${used.role.id}:${used.from}:${used.model ?? ''}`} className="border-t border-line py-1.5 text-small first:border-t-0">
-                  <UsedLine used={used} product={product} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Fold>
-      )}
-
-      {/* The two doors stay in sight (D50): the agent's id is said here, where the terminal types it; an agent not installed
-          has one door to name, its installer. */}
+      <AccountsFold adding={adding} goingBack={goingBack} signInNewPanel={signInNewPanel} added={added} back={back} busy={busy} now={now} setGoingBack={setGoingBack} acts={acts} tool={tool} t={t} addedKey={addedKey} addedWho={addedWho} offeredName={offeredName} addedFallback={addedFallback} refusalOf={refusalOf} answered={answered} latest={latest} use={use} product={product} readingNow={readingNow} reading={reading} pooled={pooled} labelOf={labelOf} nextSaid={nextSaid} accountRow={accountRow} ownLabel={ownLabel} termsOpen={termsOpen} setTermsOpen={setTermsOpen} keying={keying} addKey={addKey} keyDraft={keyDraft} setKeyDraft={setKeyDraft} askKey={askKey} machine={machine} open={open} toggle={toggle} choices={choices} />
+      <AgentDoors t={t} tool={tool} adapter={adapter} open={open} toggle={toggle} onOpenPlugin={onOpenPlugin} busy={busy} acts={acts} pinOpen={pinOpen} setPinOpen={setPinOpen} pinning={pinning} setPinning={setPinning} doorRunning={doorRunning} doorConsole={doorConsole} />
+      <AgentMore rulesShown={rulesShown} t={t} rules={rules} open={open} toggle={toggle} busy={busy} acts={acts} settingsShown={settingsShown} tool={tool} labelOf={labelOf} tuning={tuning} askSettings={askSettings} door={door} settingsBusy={settingsBusy} answered={answered} setTuning={setTuning} refusalOf={refusalOf} sessions={sessions} usage={usage} ownLabel={ownLabel} usedBy={usedBy} product={product} />
       <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
         {/* An agent Daoris has no installer for is installed with its maker's own tooling, so no `daoris agent install` (INSTALLDOOR1). */}
         <Inline text={t(
@@ -878,37 +531,6 @@ export function AgentPage({
         )} />
       </p>
     </ViewMain>
-  );
-}
-
-/**
- * A section folded to its line (D150 §1 rule 4): its name, the values it holds in a phrase, and a chevron that opens it,
- * since it opens and closes something. The section's id is what a door's part scrolls to.
- */
-function Fold({ section, title, summary, open, onToggle, children }: {
-  section: AgentSection;
-  title: string;
-  summary: string;
-  open: boolean;
-  onToggle: (section: AgentSection) => void;
-  children: ReactNode;
-}) {
-  const { t } = useTranslation();
-  return (
-    <section id={`agents-${section}`} aria-label={title} className="mt-3 scroll-mt-3 border-t border-line pt-2">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-label={t(open ? 'agents.section.hide' : 'agents.section.show', { section: title })}
-        onClick={() => onToggle(section)}
-        className="flex w-full min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-control py-1 text-left hover:bg-accent-soft/40"
-      >
-        <span className="min-w-40 text-small font-semibold text-ink-soft">{title}</span>
-        {!open && <span className="min-w-0 flex-1 text-small text-ink-faint [overflow-wrap:anywhere]">{summary}</span>}
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} className="ml-auto shrink-0 self-center text-ink-faint" />
-      </button>
-      {open && <div className="mt-2">{children}</div>}
-    </section>
   );
 }
 
