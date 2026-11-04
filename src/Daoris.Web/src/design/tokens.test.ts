@@ -603,9 +603,9 @@ describe('the page body', () => {
 
 /**
  * 🔴 **A choice is the platform's own control, never the OS's** (UX5 U5). The start form's three
- * selects and checkbox, and a review file's *viewed*, were native controls beside `ui.tsx`'s own, so
+ * selects and checkbox, and a review file's *viewed*, were native controls beside the atoms', so
  * they wore the OS's look and its accent in a palette that draws its own (platform language §4).
- * `SelectField`, `CheckField` and `Segmented` are the controls; only `ui.tsx` may build one.
+ * `SelectField`, `CheckField` and `Segmented` are the controls; only `FormControls` builds one.
  */
 const NATIVE_CHOICE = /<select\b|type=["']checkbox["']|type=["']radio["']/g;
 
@@ -793,7 +793,7 @@ describe('the forms', () => {
  * UIFIT1d): no `sm:`, `md:`, `lg:`, `max-sm:`, `min-[…]:` or their kin inside a region, which is a container query on
  * the region or the component. The side bar and the list narrow a region without the window changing: a form at 630 px
  * of pane kept its three columns because the window was 1546. What is placed against the window keeps its viewport
- * variants, by its responsibility, not its file, since the toasts share `ui.tsx` with atoms a region draws.
+ * variants, by its responsibility, not its file.
  */
 const VIEWPORT_VARIANT = /(?<![@\w/-])(?:(?:max-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\[[^\]]+\]):(?=[\w[-])/g;
 

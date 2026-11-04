@@ -58,9 +58,3 @@ export const isListed = (view: View): view is View & ListView => (LISTED as Read
  * workspace's or an agent's name never reaches the log.
  */
 export const loggedId = (id: string) => id.split(':')[0]!;
-
-/**
- * The strip's layout toggles, which leave it below the width the seven menus and the caption room need (UX7a, measured
- * on the stories at 680 px and above, `docs/2026-10-05-ux7-design.md` §3.1).
- */
-export const TOGGLES_ROOM = 'flex items-center max-[54rem]:hidden';

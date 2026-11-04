@@ -42,7 +42,7 @@ import { useZoomWheel } from './windowZoom';
 import { ZoomReadout } from '../work/frame/ZoomReadout';
 import { figure } from '../locales/format';
 import { HarnessRuns } from '../agents/harnessRuns';
-import { type Tab, NAV, placeMarks, isListed, loggedId, TOGGLES_ROOM } from './shellHelpers';
+import { type Tab, NAV, placeMarks, isListed, loggedId } from './shellHelpers';
 import { useAttentionDoors } from './shell/useAttentionDoors';
 import { useWorkViews } from './shell/useWorkViews';
 import { useDoors } from './shell/useDoors';
@@ -56,6 +56,12 @@ import { useFrameDoors } from './shell/useFrameDoors';
 import { useShellState } from './shell/useShellState';
 import { useViewLayouts } from './shell/useViewLayouts';
 import { useScopeAndRefresh } from './shell/useScopeAndRefresh';
+
+/**
+ * The strip's layout toggles, which leave it below the width the seven menus and the caption room need (UX7a, measured
+ * on the stories at 680 px and above, `docs/2026-10-05-ux7-design.md` §3.1).
+ */
+const TOGGLES_ROOM = 'flex items-center max-[54rem]:hidden';
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
 const counted = (command: Command): Command => ({
