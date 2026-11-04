@@ -43,7 +43,7 @@ public sealed class ServiceClientClosureTests
     [Fact]
     public void A_quests_closure_and_submission_are_read_and_absent_from_a_host_before_them()
     {
-        var quests = ServiceClient.ReadQuests(
+        var quests = QuestViews.Read(
             """
             [{ "id": "q7", "from": "game", "to": "engine", "title": "Ship it", "body": "", "status": "Taken",
                "closure": "gph-0123", "submission": { "machine": "desk", "sequence": 41, "at": "2026-10-17T09:00:00+00:00", "note": "ready" } },
@@ -63,7 +63,7 @@ public sealed class ServiceClientClosureTests
     [Fact]
     public void A_steps_source_and_its_reopen_are_read_and_absent_from_a_host_before_them()
     {
-        var quests = ServiceClient.ReadQuests(
+        var quests = QuestViews.Read(
             """
             [{ "id": "q8", "from": "game", "to": "engine", "title": "Next", "body": "", "status": "Open", "parent": "q7",
                "grewFrom": { "machine": "desk", "sequence": 41 }, "sourceReopened": { "machine": "desk", "sequence": 41 } },
@@ -85,7 +85,7 @@ public sealed class ServiceClientClosureTests
     [Fact]
     public void A_sources_reopen_and_the_session_that_said_ready_are_read_and_absent_from_a_host_before_them()
     {
-        var quests = ServiceClient.ReadQuests(
+        var quests = QuestViews.Read(
             """
             [{ "id": "q7", "from": "game", "to": "engine", "title": "Ship it", "body": "", "status": "Taken", "closure": "gph-0123",
                "reopened": { "machine": "desk", "sequence": 44, "of": { "machine": "desk", "sequence": 41 },
@@ -121,7 +121,7 @@ public sealed class ServiceClientClosureTests
     [Fact]
     public void A_submissions_commit_is_read_and_absent_from_a_host_before_it()
     {
-        var quests = ServiceClient.ReadQuests(
+        var quests = QuestViews.Read(
             $$"""
             [{ "id": "q7", "from": "game", "to": "engine", "title": "Ship it", "body": "", "status": "Taken", "closure": "gph-0123",
                "submission": { "machine": "desk", "sequence": 41, "note": "ready", "commit": "{{Commit.ToUpperInvariant()}}" } },

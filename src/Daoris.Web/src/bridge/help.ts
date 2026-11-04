@@ -37,8 +37,8 @@ import { useHarnesses } from './agents/agents';
  */
 export const useStartHelp = () =>
   useMutation({
-    mutationFn: (workspace?: string) => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>(
-      'START_HELP', workspace ? { workspace } : undefined),
+    mutationFn: (workspace?: string) => call('START_HELP', workspace ? { workspace } : {}) as Promise<
+      { sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>,
   });
 
 /**
@@ -120,7 +120,7 @@ export const useHelpProposals = (session: string | null, live: boolean) => {
 
 /** One conversation's proposals. Told by event (NOBLOCK1): the shell answers what it holds, and its judgement of each comes as `ANSWERED`. */
 const readProposals = (client: QueryClient, session: string) =>
-  askHeld('HELP_PROPOSALS', client, [...HELP_PROPOSALS, session], { session }, (answer) => {
+  askHeld('HELP_PROPOSALS', client, [...HELP_PROPOSALS, session], { session }, (answer): HelpProposal[] => {
     const proposals = (answer as { proposals?: unknown } | null)?.proposals;
     return Array.isArray(proposals) ? proposals as HelpProposal[] : [];
   });
@@ -241,7 +241,7 @@ export const useHelpConversations = (search: string, enabled = true, workspace: 
   const words = search.trim();
   return useInfiniteQuery({
     queryKey: [...HISTORY, workspace ?? '*', words],
-    queryFn: async ({ pageParam }) => listingPage(await call<unknown>('HELP_CONVERSATIONS', {
+    queryFn: async ({ pageParam }) => listingPage(await call('HELP_CONVERSATIONS', {
       ...(workspace ? { workspace } : {}),
       ...(words ? { q: words } : {}),
       ...(pageParam > 0 ? { offset: pageParam } : {}),
@@ -318,7 +318,7 @@ export const useHelpWired = (session: string | null, enabled = true) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: [...HELP_WIRED, session],
-    queryFn: async () => wiredAnswer(await call<unknown>('HELP_WIRED', { session: session! }), session!),
+    queryFn: async () => wiredAnswer(await call('HELP_WIRED', { session: session! }), session!),
     enabled: isAvailable && session !== null && enabled,
   });
 };
@@ -352,7 +352,7 @@ export const useHelpPublished = (session: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: [...HELP_PUBLISHED, session],
-    queryFn: async () => publishedAnswer(await call<unknown>('HELP_PUBLISHED', { session: session! })),
+    queryFn: async () => publishedAnswer(await call('HELP_PUBLISHED', { session: session! })),
     enabled: isAvailable && session !== null,
     staleTime: Infinity,
   });
@@ -366,13 +366,13 @@ export const useHelpPublished = (session: string | null) => {
 export const useRenameHelp = () =>
   useMutation({
     mutationFn: (rename: { id: string; name: string | null }) =>
-      call<{ session: string; name: string | null }>('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }),
+      call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
   });
 
 /** Pin an Ask Daoris conversation to the top of its history, or unpin it (ASKHIST1). */
 export const usePinHelp = () =>
   useMutation({
-    mutationFn: (pin: { id: string; pinned: boolean }) => call<{ session: string; pinned: string | null }>('HELP_PIN', pin),
+    mutationFn: (pin: { id: string; pinned: boolean }) => call('HELP_PIN', pin) as Promise<{ session: string; pinned: string | null }>,
   });
 
 /**
@@ -383,7 +383,7 @@ export const usePinHelp = () =>
 export const useHelpStartFrom = () =>
   useMutation({
     mutationFn: ({ id, workspace }: { id: string; workspace?: string }) =>
-      call<{ sessionId: string | null; message: string; from: string }>('HELP_START_FROM', workspace ? { id, workspace } : { id }),
+      call('HELP_START_FROM', workspace ? { id, workspace } : { id }) as Promise<{ sessionId: string | null; message: string; from: string }>,
   });
 
 /**
@@ -399,11 +399,15 @@ export const useSettleHelp = () => {
   return useMutation({
     // A draft card's Apply from its editor names each change taken into the draft and each left (FLOWCHART2e, 2f): that settles it.
     mutationFn: (settle: { id: string; apply: boolean; taken?: readonly string[]; left?: readonly string[] }) =>
-      call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS',
-        settle.apply
-          ? { id: settle.id, revision: shownRevision(client, settle.id), ...(settle.taken ? { taken: settle.taken, left: settle.left ?? [] } : {}) }
-          : { id: settle.id },
-        settle.apply ? { timeoutMs: settleBound(client, settle.id) } : undefined),
+      (settle.apply
+        ? call(
+          'HELP_APPLY',
+          {
+            id: settle.id, revision: shownRevision(client, settle.id),
+            ...(settle.taken ? { taken: [...settle.taken], left: [...(settle.left ?? [])] } : {}),
+          },
+          { timeoutMs: settleBound(client, settle.id) })
+        : call('HELP_DISMISS', { id: settle.id })) as Promise<HelpSettled>,
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,
     onSuccess: (answer, settle) => {

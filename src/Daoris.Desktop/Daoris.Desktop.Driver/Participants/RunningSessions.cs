@@ -213,7 +213,7 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Whether nothing runs, no landing pass, remote sync, judge or evaluation pass works beside the looks, and nothing ended or was
+    /// Whether nothing runs, no remote sync, judge or evaluation pass works beside the looks, and nothing ended or was
     /// said that a look has not yet reported.
     /// </summary>
     public bool Idle
@@ -222,7 +222,7 @@ public sealed class RunningSessions
         {
             lock (_gate)
             {
-                return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _landing is null && _syncing is null && _judging.Count == 0
+                return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _syncing is null && _judging.Count == 0
                        && _passing is null && _passSaid.Count == 0;
             }
         }
@@ -314,7 +314,7 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Run a remote sync pass beside the looks (PARALLEL1b, D181 point 3), as a landing pass runs: a remote that does not answer holds
+    /// Run a remote sync pass beside the looks (PARALLEL1b, D181 point 3): a remote that does not answer holds
     /// that pass, never a local start. One pass at a time, since the set's passes share one gate; one asked for while a pass works runs
     /// once after it, however many were asked, so an ending's sync is never lost to the deadline's. What a pass says joins the next
     /// look's report, and wakes a wait as an ending does; a pass that says nothing wakes nothing.
@@ -455,67 +455,6 @@ public sealed class RunningSessions
         }
     }
 
-    // The landing pass beside the looks (LAND2b), while it works: one at a time, since a plugin's two minutes may outlast a look.
-    private Task? _landing;
-
-    /// <summary>Whether a landing pass still works beside the looks (LAND2b): the next look chooses again only once it ended.</summary>
-    public bool Landing
-    {
-        get { lock (_gate) return _landing is not null; }
-    }
-
-    /// <summary>
-    /// Run a landing pass beside the looks (LAND2b, D145 point 2), as a start runs beside the look that began it, so a plugin's
-    /// two minutes never hold one. What it says joins the next look's report, as an ending does, and wakes a wait as one does.
-    /// </summary>
-    /// <param name="ended">
-    /// Told once the pass has ended and <see cref="Landing"/> is false again (FABRIC-END7's review), so what was held back for it can be
-    /// offered at once.
-    /// </param>
-    /// <returns>False where a pass already works: one at a time, and the next look chooses again.</returns>
-    internal bool Beside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct, Action? ended = null)
-    {
-        lock (_gate)
-        {
-            if (_landing is not null) return false;
-            _landing = Task.Run(() => ApartAsync(() => KeepLandingAsync(pass, ct, ended)), CancellationToken.None);
-            return true;
-        }
-    }
-
-    private async Task KeepLandingAsync(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct, Action? ended)
-    {
-        IReadOnlyList<string> said;
-        try
-        {
-            said = await pass(ct).ConfigureAwait(false);
-        }
-        catch (Exception error)
-        {
-            // A closing loop cancels it; anything else past its own catches is said once, in the next report.
-            said = ct.IsCancellationRequested ? [] : [$"landing  the sessions due to land could not be landed this look, and are tried again at the next: {error.Message}"];
-        }
-
-        TaskCompletionSource moved;
-        lock (_gate)
-        {
-            _ended.AddRange(said.Select(line => new StartRun(line, Opened: false)));
-            _landing = null;
-            moved = _moved;
-            _moved = NewSignal();
-        }
-
-        moved.TrySetResult();
-        try
-        {
-            ended?.Invoke();
-        }
-        catch (Exception error) when (error is ObjectDisposedException or InvalidOperationException)
-        {
-            // The loop that would hear it has closed: nothing is held back for a loop that is gone.
-        }
-    }
-
     // The runs the starts bound since a look last took them (FABRIC-CUTOVER1g), which that look's bind says.
     private readonly List<IRunBound> _bound = [];
 
@@ -603,8 +542,8 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once nothing runs: every session concluded and its record written, and no landing pass, remote sync, judge or
-    /// evaluation pass works (LAND2b, PARALLEL1b, PARALLEL1h). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended
+    /// Completes once nothing runs: every session concluded and its record written, and no remote sync, judge or
+    /// evaluation pass works (PARALLEL1b, PARALLEL1h). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended
     /// (REV3, D104).
     /// </summary>
     public async Task SettledAsync()
@@ -614,7 +553,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_running == 0 && _landing is null && _syncing is null && _judging.Count == 0 && _passing is null) return;
+                if (_running == 0 && _syncing is null && _judging.Count == 0 && _passing is null) return;
                 moved = _moved.Task;
             }
 

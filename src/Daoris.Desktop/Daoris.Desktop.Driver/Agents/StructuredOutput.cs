@@ -248,7 +248,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                 case "tool_use":
                     var call = ToolCall(block);
                     // On one line, however long the command — a heredoc printed raw reads as the agent's words.
-                    var named = AcpSession.OneLine(call.Title ?? "a tool");
+                    var named = AcpRender.OneLine(call.Title ?? "a tool");
                     if (call.Id is { } callId)
                     {
                         _titles[callId] = named;
@@ -393,7 +393,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
         var tool = Text(denial, "tool_name") ?? _names.GetValueOrDefault(id);
         var known = _titles.TryGetValue(id, out var title);
-        lines.Add($"  permission refused: {(known ? title : AcpSession.OneLine(tool ?? "a tool"))}{(by is null ? "" : $" ({by})")}");
+        lines.Add($"  permission refused: {(known ? title : AcpRender.OneLine(tool ?? "a tool"))}{(by is null ? "" : $" ({by})")}");
         if (!known) return;
 
         events.Add(new SessionEvent

@@ -1,17 +1,38 @@
 import { getBridge } from '@shenora/react';
+import type { DriverPayloads, DriverRoute } from './generated/routes';
 
 // The bridge's own helper, shared by its domains and re-exported by none: a page reaches the driver
 // through a domain's named calls, never by naming a route itself (MOD3).
 
+/** A route whose handler takes a payload record, which the generated routes carry. */
+export type TypedRoute = keyof DriverPayloads;
+
+/** A route whose handler still reads its request by hand. */
+export type ByHandRoute = Exclude<DriverRoute, TypedRoute>;
+
+/** The record a typed route sends. */
+export type Payload<R extends TypedRoute> = DriverPayloads[R]['payload'];
+
+/** What a typed route answers: its handler's record, or unknown where it answers none. */
+export type Answer<R extends TypedRoute> = DriverPayloads[R]['answer'];
+
+type Bound = { timeoutMs?: number };
+
 /**
- * One call onto the driver's module, with its payload when it has one. A route whose work is long passes its own
- * bound (WSR7): without one the bridge gives up after its default 30 seconds, while the host carries on unheard.
+ * One call onto the driver's module, the route one the module answers, as generated from its marks. A typed route sends its
+ * generated payload and is answered its generated answer; a route read by hand names its answer's type and sends any payload. A
+ * route whose work is long passes its own bound: without one the bridge gives up after its default 30 seconds, while the host
+ * carries on unheard.
  */
-export const call = <TData,>(type: string, payload?: Record<string, unknown>, options?: { timeoutMs?: number }): Promise<TData> =>
-  getBridge().invoke<TData>('DAORIS.DRIVER', type, {
+export function call<R extends TypedRoute>(type: R, payload: Payload<R>, options?: Bound): Promise<Answer<R>>;
+// A route whose handler still reads the request: the caller names its answer, and its payload goes unchecked.
+export function call<TData>(type: ByHandRoute, payload?: Record<string, unknown>, options?: Bound): Promise<TData>;
+export function call(type: DriverRoute, payload?: Record<string, unknown>, options?: Bound): Promise<unknown> {
+  return getBridge().invoke<unknown>('DAORIS.DRIVER', type, {
     ...(payload ? { payload } : {}),
     ...(options?.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
   });
+}
 
 const MINUTE = 60_000;
 

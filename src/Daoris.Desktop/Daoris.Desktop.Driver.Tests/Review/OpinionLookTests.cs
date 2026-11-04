@@ -316,49 +316,6 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h15 (D173's note): an opinion owed on work whose branch is made but whose push its automatic landing holds back is
-    /// asked at the look, as the gate's sentence says, never closed as landed first: the one owed by itself, and the one the person's
-    /// own ask made owed after its due had closed. Once no automatic landing holds that push back, the look closes it as landed and
-    /// asks nothing more.
-    /// </summary>
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task An_opinion_owed_on_work_whose_push_is_held_back_is_asked_at_the_look_and_not_closed_as_landed(bool person)
-    {
-        var (host, tree, _) = await DoneAsync(required: false);
-        var tip = await HeadAsync(tree);
-        var dues = new OpinionDues(_home);
-        if (person)
-        {
-            dues.Close("s1", OpinionRules.Landing, OpinionDueClosed.Off, DateTimeOffset.UtcNow);
-            var asked = await new OpinionPresses(_home, host.Client()).AskAsync("s1", null, sameAgent: false, words: null, "asked");
-            Assert.True(asked.Done, asked.Message);
-        }
-
-        PushHeld(tree, tip);
-        var driver = Driver(host);
-
-        var (_, passes) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
-        await driver.Running.SettledAsync();
-
-        Assert.Equal(1, passes);
-        var (ask, _) = Assert.Single(_passes);
-        Assert.Equal(("s1", tip), (ask.Working, ask.Tip));
-        Assert.Equal(person ? OpinionAskers.Person : OpinionAskers.Look, Assert.Single(new OpinionGates(_home).Read("q1", "reports").Asks).By);
-        Assert.Equal("s1", Assert.Single(dues.Open()).Session);
-
-        // Its push landed and its entry closed: the look closes it as landed, and asks nothing more.
-        new AutoLandings(_home).Tried("s1", new AutoTry(DateTimeOffset.UtcNow, AutoLandingCode.Landed) { Tip = tip }, close: true);
-        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
-        await driver.Running.SettledAsync();
-
-        Assert.Empty(dues.Open());
-        Assert.Equal(OpinionDueClosed.Landed, dues.All()[^1].Why);
-        Assert.Single(_passes);
-    }
-
-    /// <summary>
     /// FABRIC-CUTOVER1d (the cutover design §4): a run bound to a graph version is asked its second opinion only once its record has begun its
     /// <c>opinion</c> node; while a check its graph places before the opinion waits, the look asks nothing, and once the pass begins the opinion
     /// the next look asks it.
@@ -370,7 +327,7 @@ public sealed class OpinionLookTests : IDisposable
         var digest = RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"check","kind":"acme.check/run","version":1,"reach":"performed"},
-                      {"id":"opinion","kind":"opinion","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"opinion","kind":"opinion","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>k","kind":"after","from":"claimed","to":"check"},{"id":"k>o","kind":"after","from":"check","to":"opinion"},
                       {"id":"o>h","kind":"after","from":"opinion","to":"handed"}]}
             """);
@@ -474,18 +431,6 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal(on ?? [OpinionRules.Landing], OpinionLook.Concluded(_home, Config(), "s1",
             new QuestView("q1", "ask #a1", "reports", "Work q1", "", "Done"), "Done", "completed", tree));
         return (host, tree, line);
-    }
-
-    /// <summary>
-    /// s1's automatic landing made its branch at <paramref name="tip"/> and held its push back (FABRIC-CLOSE1h2): its landing recorded,
-    /// not pushed, and its entry open as <c>push-held</c>.
-    /// </summary>
-    private void PushHeld(string tree, string tip)
-    {
-        new LandedBranches(_home).Record(new LandedBranch("reports", "work", "feature/q1-work-q1", "main", tip, "s1", "q1", "Work q1", DateTimeOffset.UtcNow));
-        var due = new AutoLandings(_home);
-        due.Due(new AutoLanding("s1", "q1", "reports", "work", tree, DateTimeOffset.UtcNow));
-        due.Tried("s1", new AutoTry(DateTimeOffset.UtcNow, AutoLandingCode.PushHeld) { Tip = tip, Branch = "feature/q1-work-q1" }, close: false);
     }
 
     private static async Task<string> HeadAsync(string tree) => (await GitAsync(tree, "rev-parse", "HEAD")).Trim();

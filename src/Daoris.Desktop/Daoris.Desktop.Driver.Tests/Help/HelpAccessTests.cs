@@ -78,16 +78,16 @@ public sealed class HelpAccessTests : IDisposable
     [Fact]
     public void Its_place_under_full_access_asks_nothing_and_keeps_the_persons_denies()
     {
-        var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), [new("console-ui", "work", "/work/console-ui")]);
+        var place = HelpPlacement.In(_home, HelpRoom.PathOf(_home), [new("console-ui", "work", "/work/console-ui")]);
         var file = PermissionFile.Empty with
         {
             Machine = new RuleLists(["Bash(npm test:*)"], ["Bash(git commit:*)"], ["WebFetch(domain:secrets.example)"]),
         };
 
-        Assert.Same(place, ChatRunner.HelpUnder(place, HelpAccess.For(HelpModes.Restricted, Adapter("claude-code-acp"))));
+        Assert.Same(place, HelpPlacement.Under(place, HelpAccess.For(HelpModes.Restricted, Adapter("claude-code-acp"))));
         Assert.Equal((true, false, (string?)null), (place.Guarded, place.EveryServer, place.PermissionMode));
 
-        var full = ChatRunner.HelpUnder(place, HelpAccess.For(HelpModes.Full, Adapter("claude-code-acp")));
+        var full = HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, Adapter("claude-code-acp")));
         var rules = full.Rules(file, "s1");
 
         Assert.Empty(rules.Allow);
@@ -98,7 +98,7 @@ public sealed class HelpAccessTests : IDisposable
         Assert.Equal((false, true), (full.Guarded, full.EveryServer));
         Assert.Equal((HelpRoom.Repository, PluginServerTo.Help, true), (full.Name, full.ServersTo, full.Keeps));
 
-        var native = ChatRunner.HelpUnder(place, HelpAccess.For(HelpModes.Full, Adapter("claude-code")));
+        var native = HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, Adapter("claude-code")));
         Assert.Equal("bypassPermissions", native.PermissionMode);
     }
 
@@ -110,24 +110,24 @@ public sealed class HelpAccessTests : IDisposable
     [Fact]
     public void A_start_takes_the_mode_in_the_file_and_says_what_it_got_first()
     {
-        var help = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var help = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []);
         var repository = help with { Name = "engine" };
         var full = DriverConfig.Empty.WithHelpMode(HelpModes.Full);
 
-        Assert.Equal((repository, (string?)null, (string?)null), ChatRunner.UnderHelpMode(repository, Adapter("claude-code-acp"), full));
+        Assert.Equal((repository, (string?)null, (string?)null), HelpPlacement.UnderMode(repository, Adapter("claude-code-acp"), full));
 
-        var (restricted, saidRestricted, restrictedMode) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), DriverConfig.Empty);
+        var (restricted, saidRestricted, restrictedMode) = HelpPlacement.UnderMode(help, Adapter("claude-code-acp"), DriverConfig.Empty);
         Assert.Same(help, restricted);
         Assert.StartsWith("— Ask Daoris runs restricted on `claude-code-acp`", saidRestricted);
         Assert.Equal(HelpModes.Restricted, restrictedMode);
 
-        var (fully, saidFull, fullMode) = ChatRunner.UnderHelpMode(help, Adapter("codex-acp"), full);
+        var (fully, saidFull, fullMode) = HelpPlacement.UnderMode(help, Adapter("codex-acp"), full);
         Assert.Equal("!agent-full-access", fully.Posture);
         Assert.Contains("full access", saidFull);
         Assert.Contains("takes no rules", saidFull);
         Assert.Equal(HelpModes.Full, fullMode);
 
-        var refused = Assert.Throws<DriverException>(() => ChatRunner.UnderHelpMode(help, Adapter("dsh"), full));
+        var refused = Assert.Throws<DriverException>(() => HelpPlacement.UnderMode(help, Adapter("dsh"), full));
         Assert.Contains("`dsh`", refused.Message);
     }
 
@@ -139,13 +139,13 @@ public sealed class HelpAccessTests : IDisposable
     [Fact]
     public void A_conversation_going_on_under_another_mode_says_the_change_first()
     {
-        var help = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var help = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []);
         var full = DriverConfig.Empty.WithHelpMode(HelpModes.Full);
 
-        var (_, widened, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Restricted);
-        var (_, narrowed, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), DriverConfig.Empty, ran: HelpModes.Full);
-        var (_, same, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Full);
-        var (_, before, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Recorded(null));
+        var (_, widened, _) = HelpPlacement.UnderMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Restricted);
+        var (_, narrowed, _) = HelpPlacement.UnderMode(help, Adapter("claude-code-acp"), DriverConfig.Empty, ran: HelpModes.Full);
+        var (_, same, _) = HelpPlacement.UnderMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Full);
+        var (_, before, _) = HelpPlacement.UnderMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Recorded(null));
 
         Assert.StartsWith(
             "— Ask Daoris's mode changed since this conversation last ran: it ran restricted, and goes on with full access. Ask Daoris "

@@ -144,11 +144,11 @@ export function withCall(grouping: SessionGrouping | null | undefined, calls: Re
  */
 export const useResolveSession = () => useMutation({
   mutationFn: (move: { id: string; state: 'completed' | 'declined' | 'stopped'; note?: string }) =>
-    call<{ session: string; state: string; message: string }>('RESOLVE_SESSION', {
+    call('RESOLVE_SESSION', {
       id: move.id,
       state: move.state,
       ...(move.note ? { note: move.note } : {}),
-    }),
+    }) as Promise<{ session: string; state: string; message: string }>,
 });
 
 /**
@@ -169,7 +169,7 @@ export const stopNotice = (answer: StopAnswer) =>
         : 'quests.session.notRunning';
 
 export const useStopSession = () => useMutation({
-  mutationFn: (id: string) => call<StopAnswer>('STOP_SESSION', { id }),
+  mutationFn: (id: string) => call('STOP_SESSION', { id }) as Promise<StopAnswer>,
 });
 
 /**
@@ -193,7 +193,7 @@ const quietOf = (answer: unknown, field: 'stopped' | 'left'): QuietAnswer => {
  * waiting words. `SESSION_QUIET_CARRY_ON`; a refusal is the answer, by its code.
  */
 export const useQuietCarryOn = () => useMutation({
-  mutationFn: async (id: string) => quietOf(await call<unknown>('SESSION_QUIET_CARRY_ON', { id }), 'stopped'),
+  mutationFn: async (id: string) => quietOf(await call('SESSION_QUIET_CARRY_ON', { id }), 'stopped'),
 });
 
 /**
@@ -201,7 +201,7 @@ export const useQuietCarryOn = () => useMutation({
  * `SESSION_QUIET_LEAVE`; a refusal is the answer, by its code.
  */
 export const useQuietLeave = () => useMutation({
-  mutationFn: async (id: string) => quietOf(await call<unknown>('SESSION_QUIET_LEAVE', { id }), 'left'),
+  mutationFn: async (id: string) => quietOf(await call('SESSION_QUIET_LEAVE', { id }), 'left'),
 });
 
 /**
@@ -222,7 +222,7 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
   const answer = useQuery({
     queryKey,
     // Told by event (NOBLOCK1): the shell answers what it holds, and the record's read comes as `ANSWERED`.
-    queryFn: () => askHeld<{ openings?: Record<string, string> }>('SESSION_OPENINGS', client, queryKey, { ids }),
+    queryFn: () => askHeld('SESSION_OPENINGS', client, queryKey, { ids }, (answer) => answer as { openings?: Record<string, string> }),
     enabled: isAvailable && ids.length > 0,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -251,7 +251,7 @@ export const useSessionSpent = (ids: readonly string[] | undefined, least = 2): 
   const asked = [...new Set(ids ?? [])].sort();
   const answer = useQuery({
     queryKey: keys.spent(asked),
-    queryFn: () => call<{ spent?: Record<string, PartSpent> }>('SESSION_SPENT', { ids: asked }),
+    queryFn: () => call('SESSION_SPENT', { ids: asked }) as Promise<{ spent?: Record<string, PartSpent> }>,
     enabled: isAvailable && asked.length >= least,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -285,9 +285,9 @@ export const useSessionWhere = (sessions: readonly Session[] | undefined): Recor
   const queryKey = keys.sessionsWhere(asked.map((session) => session.id));
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld<{ sessions?: ({ session: string } & SessionWhere)[] }>('SESSION_WHERE', client, queryKey, {
+    queryFn: () => askHeld('SESSION_WHERE', client, queryKey, {
       sessions: asked.map((session) => ({ id: session.id, tree: session.tree })),
-    }),
+    }, (answer) => answer as { sessions?: ({ session: string } & SessionWhere)[] }),
     enabled: isAvailable && asked.length > 0,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -306,7 +306,7 @@ export const useSessionRecord = (id: string | null, treeGone: boolean): SessionR
   const queryKey = keys.sessionRecord(id ?? '');
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld<{ record?: SessionRecord | null }>('SESSION_RECORD', client, queryKey, { id }),
+    queryFn: () => askHeld('SESSION_RECORD', client, queryKey, { id: id ?? '' }, (answer) => answer as { record?: SessionRecord | null }),
     enabled: isAvailable && id !== null && treeGone,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -324,7 +324,7 @@ export const useSessionMemory = (session: string | null | undefined): MemoryRow[
   const queryKey = ['sessions', 'memory', session ?? ''] as const;
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld<{ ops?: MemoryRow[] }>('SESSION_MEMORY', client, queryKey, { session }),
+    queryFn: () => askHeld('SESSION_MEMORY', client, queryKey, { session: session ?? '' }, (answer) => answer as { ops?: MemoryRow[] }),
     enabled: isAvailable && Boolean(session),
     staleTime: 30_000,
   });
@@ -341,7 +341,7 @@ export type MemoryDecided = { decided: boolean; why: string | null; message: str
  */
 export const useDecideSessionMemory = () => useMutation({
   mutationFn: async (decision: { session: string; op: string; approve: boolean } | { session: string; keep: boolean }): Promise<MemoryDecided> => {
-    const answer = await call<{ decided?: unknown; why?: unknown; message?: unknown } | null>('SESSION_MEMORY_DECIDE', decision);
+    const answer = (await call('SESSION_MEMORY_DECIDE', decision)) as { decided?: unknown; why?: unknown; message?: unknown } | null;
     return { decided: answer?.decided === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
@@ -356,7 +356,7 @@ export const useSessionRelatedRead = (session: string | null | undefined, enable
   const queryKey = ['sessions', 'related', session ?? ''] as const;
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld<{ related?: RelatedRow[]; own?: { readAt?: string | null } | null }>('SESSION_RELATED', client, queryKey, { session }),
+    queryFn: () => askHeld('SESSION_RELATED', client, queryKey, { session: session ?? '' }, (answer) => answer as { related?: RelatedRow[]; own?: { readAt?: string | null } | null }),
     enabled: isAvailable && enabled && Boolean(session),
     staleTime: 30_000,
   });
@@ -544,7 +544,7 @@ const readEntries = (answer: unknown): SessionEntry[] | undefined => (Array.isAr
   : undefined);
 
 const askGroups = async (ids?: readonly string[]): Promise<GroupsAnswer> => {
-  const answer = await call<{ sessions?: SessionGrouping[]; entries?: unknown }>('SESSION_GROUPS', ids ? { ids: [...new Set(ids)] } : undefined);
+  const answer = (await call('SESSION_GROUPS', ids ? { ids: [...new Set(ids)] } : {})) as { sessions?: SessionGrouping[]; entries?: unknown };
   return { sessions: Array.isArray(answer?.sessions) ? answer.sessions : [], entries: readEntries(answer?.entries) };
 };
 
@@ -582,7 +582,7 @@ export type ArchiveAnswer = {
 export const useArchiveSessions = () =>
   useMutation({
     mutationFn: (move: { ids: readonly string[]; archived: boolean }) =>
-      call<ArchiveAnswer>('SESSION_ARCHIVE', { ids: [...new Set(move.ids)], archived: move.archived }),
+      call('SESSION_ARCHIVE', { ids: [...new Set(move.ids)], archived: move.archived }) as Promise<ArchiveAnswer>,
   });
 
 /**
@@ -597,7 +597,7 @@ export type DeleteAnswer = { deleted: string; removed?: string[]; stayed?: strin
  * their groups among them, are asked again by the state hub (STATEHUB1d).
  */
 export const useDeleteSession = () => useMutation({
-  mutationFn: (id: string) => call<DeleteAnswer>('SESSION_DELETE', { id }),
+  mutationFn: (id: string) => call('SESSION_DELETE', { id }) as Promise<DeleteAnswer>,
 });
 
 /**
@@ -606,7 +606,7 @@ export const useDeleteSession = () => useMutation({
  * never prints a path (platform language §4). It changes nothing, so nothing is asked again.
  */
 export const useOpenSessionFolder = () => useMutation({
-  mutationFn: (id: string) => call<{ opened: boolean }>('SESSION_OPEN_FOLDER', { id }),
+  mutationFn: (id: string) => call('SESSION_OPEN_FOLDER', { id }) as Promise<{ opened: boolean }>,
 });
 
 /**
@@ -618,7 +618,7 @@ export const useOpenSessionFolder = () => useMutation({
  */
 export const useGoOnNew = () => useMutation({
   mutationFn: async (id: string): Promise<NewSessionAnswer> => {
-    const answer = await call<{ sent?: boolean; why?: string | null; message?: string } | null>('SESSION_GO_ON_NEW', { id });
+    const answer = (await call('SESSION_GO_ON_NEW', { id })) as { sent?: boolean; why?: string | null; message?: string } | null;
     return {
       sent: answer?.sent === true,
       why: typeof answer?.why === 'string' ? answer.why : null,
@@ -646,9 +646,9 @@ const word = (value: unknown): string | null => (typeof value === 'string' && va
  */
 export const useAskHelper = () => useMutation({
   mutationFn: async (ask: { session: string; question: string; agent?: string | null }): Promise<HelperAsked> => {
-    const answer = await call<{ asked?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HELPER_ASK', {
+    const answer = (await call('SESSION_HELPER_ASK', {
       id: ask.session, question: ask.question, ...(ask.agent ? { agent: ask.agent } : {}),
-    });
+    })) as { asked?: unknown; why?: unknown; message?: unknown } | null;
     return { asked: word(answer?.asked), why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
@@ -686,7 +686,7 @@ export const useSessionHelpers = (session: string | null | undefined) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: helpersKey(session ?? ''),
-    queryFn: async () => readHelpers(await call<unknown>('SESSION_HELPERS', { id: session })),
+    queryFn: async () => readHelpers(await call('SESSION_HELPERS', { id: session ?? '' })),
     enabled: isAvailable && Boolean(session),
     refetchOnWindowFocus: false,
   });
@@ -704,9 +704,9 @@ export type PartnerAsked = { asked: string | null; why: string | null; message: 
  */
 export const useAskPartner = () => useMutation({
   mutationFn: async (ask: { session: string; piece: string; agent: string; paths?: readonly string[] }): Promise<PartnerAsked> => {
-    const answer = await call<{ asked?: unknown; why?: unknown; message?: unknown } | null>('SESSION_PARTNER_ASK', {
-      id: ask.session, piece: ask.piece, agent: ask.agent, ...(ask.paths && ask.paths.length > 0 ? { paths: ask.paths } : {}),
-    });
+    const answer = (await call('SESSION_PARTNER_ASK', {
+      id: ask.session, piece: ask.piece, agent: ask.agent, ...(ask.paths && ask.paths.length > 0 ? { paths: [...ask.paths] } : {}),
+    })) as { asked?: unknown; why?: unknown; message?: unknown } | null;
     return { asked: word(answer?.asked), why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
@@ -720,7 +720,7 @@ export const useSessionPartners = (session: string | null | undefined) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: ['sessions', 'partners', session ?? ''] as const,
-    queryFn: async () => readPieces(await call<unknown>('SESSION_PARTNERS', { id: session })),
+    queryFn: async () => readPieces(await call('SESSION_PARTNERS', { id: session ?? '' })),
     enabled: isAvailable && Boolean(session),
     refetchOnWindowFocus: false,
   });
@@ -733,9 +733,9 @@ export const useSessionPartners = (session: string | null | undefined) => {
  */
 export const useApproveHelper = () => useMutation({
   mutationFn: async (yes: { session: string; ask: string }): Promise<HelperApproved> => {
-    const answer = await call<{ approved?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HELPER_APPROVE', {
+    const answer = (await call('SESSION_HELPER_APPROVE', {
       session: yes.session, ask: yes.ask,
-    });
+    })) as { approved?: unknown; why?: unknown; message?: unknown } | null;
     return { approved: answer?.approved === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
@@ -747,9 +747,9 @@ export const useApproveHelper = () => useMutation({
  */
 export const useDeclineHelper = () => useMutation({
   mutationFn: async (no: { session: string; ask: string }): Promise<HelperDeclined> => {
-    const answer = await call<{ declined?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HELPER_DECLINE', {
+    const answer = (await call('SESSION_HELPER_DECLINE', {
       session: no.session, ask: no.ask,
-    });
+    })) as { declined?: unknown; why?: unknown; message?: unknown } | null;
     return { declined: answer?.declined === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
@@ -764,7 +764,7 @@ export const useSessionHandOverAsk = (session: string | null | undefined) => {
   return useQuery({
     queryKey: ['sessions', 'handOverAsk', session ?? ''] as const,
     queryFn: async (): Promise<HandOverAskRow | null> => {
-      const ask = (await call<{ ask?: unknown } | null>('SESSION_HAND_OVER_ASK', { id: session }))?.ask as Record<string, unknown> | null;
+      const ask = ((await call('SESSION_HAND_OVER_ASK', { id: session ?? '' })) as { ask?: unknown } | null)?.ask as Record<string, unknown> | null;
       if (!ask || typeof ask !== 'object' || word(ask.id) === null || typeof ask.note !== 'string') return null;
       return {
         id: ask.id as string, note: ask.note, at: typeof ask.at === 'string' ? ask.at : '',
@@ -786,7 +786,7 @@ export const useSessionQuestion = (session: string | null | undefined) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: ['sessions', 'question', session ?? ''] as const,
-    queryFn: async (): Promise<ParkQuestion | null> => readQuestion(await call<unknown>('SESSION_QUESTION', { id: session })),
+    queryFn: async (): Promise<ParkQuestion | null> => readQuestion(await call('SESSION_QUESTION', { id: session ?? '' })),
     enabled: isAvailable && Boolean(session),
     refetchOnWindowFocus: false,
   });
@@ -802,9 +802,9 @@ export type HandOverWord = { stands: boolean; why: string | null; message: strin
  */
 export const useApproveHandOver = () => useMutation({
   mutationFn: async (yes: { session: string; ask: string }): Promise<HandOverWord> => {
-    const answer = await call<{ approved?: unknown; why?: unknown; message?: unknown; agent?: unknown } | null>('SESSION_HAND_OVER_APPROVE', {
+    const answer = (await call('SESSION_HAND_OVER_APPROVE', {
       session: yes.session, ask: yes.ask,
-    });
+    })) as { approved?: unknown; why?: unknown; message?: unknown; agent?: unknown } | null;
     return {
       stands: answer?.approved === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '',
       agent: word(answer?.agent),
@@ -815,9 +815,9 @@ export const useApproveHandOver = () => useMutation({
 /** The person's no to their session's agent's ask to hand it over (MIXAGENT1c): refused `declined`, its note on the record, at once. */
 export const useDeclineHandOver = () => useMutation({
   mutationFn: async (no: { session: string; ask: string }): Promise<HandOverWord> => {
-    const answer = await call<{ declined?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HAND_OVER_DECLINE', {
+    const answer = (await call('SESSION_HAND_OVER_DECLINE', {
       session: no.session, ask: no.ask,
-    });
+    })) as { declined?: unknown; why?: unknown; message?: unknown } | null;
     return { stands: answer?.declined === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '', agent: null };
   },
 });
@@ -933,9 +933,9 @@ export const useAnswerPermission = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (answer: { session: string; request: string; option?: string | null }): Promise<PermissionAnswered> => {
-      const said = await call<{ answered?: unknown; why?: unknown; message?: unknown } | null>('SESSION_PERMISSION_ANSWER', {
+      const said = (await call('SESSION_PERMISSION_ANSWER', {
         session: answer.session, request: answer.request, ...(answer.option ? { option: answer.option } : {}),
-      });
+      })) as { answered?: unknown; why?: unknown; message?: unknown } | null;
       return { answered: said?.answered === true, why: word(said?.why), message: typeof said?.message === 'string' ? said.message : '' };
     },
     onSettled: () => client.invalidateQueries({ queryKey: PERMISSION_WAITS_KEY }),
@@ -982,9 +982,9 @@ export const useAnswerAlone = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (answer: { session: string; goOn: boolean }): Promise<AnswerAloneAnswered> => {
-      const said = await call<{ answered?: unknown; why?: unknown; message?: unknown } | null>('SESSION_ANSWER_ALONE', {
+      const said = (await call('SESSION_ANSWER_ALONE', {
         session: answer.session, goOn: answer.goOn,
-      });
+      })) as { answered?: unknown; why?: unknown; message?: unknown } | null;
       return { answered: said?.answered === true, why: word(said?.why), message: typeof said?.message === 'string' ? said.message : '' };
     },
     onSettled: () => client.invalidateQueries({ queryKey: ANSWER_WAITS_KEY }),
@@ -1033,12 +1033,12 @@ export const useSessionSearch = (query: string, session?: string) => {
   return useInfiniteQuery({
     queryKey: keys.sessionSearch(q, session),
     // Within one session, where one is named (SESS1 S9): its words and its calls by their titles.
-    queryFn: ({ pageParam }) => call<SearchAnswer>('SESSION_SEARCH', {
+    queryFn: ({ pageParam }) => call('SESSION_SEARCH', {
       q,
       ...(session ? { session } : {}),
       limit: SEARCH_PAGE,
       ...(pageParam > 0 ? { offset: pageParam } : {}),
-    }),
+    }) as Promise<SearchAnswer>,
     initialPageParam: 0,
     getNextPageParam: (page: SearchAnswer) => countOf(page.next),
     select: joinSearch,

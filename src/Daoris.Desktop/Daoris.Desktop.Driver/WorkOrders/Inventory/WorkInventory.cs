@@ -133,7 +133,6 @@ public static partial class WorkInventory
 
         var recoveries = new List<InventoryEntry>();
         var trees = AttachTrees(facts, drafts, recoveries, out var treeOf);
-        AttachAutoLandings(facts, drafts, treeOf);
         AttachRefs(facts, drafts, recoveries);
         AttachUnrecorded(facts, drafts);
 
@@ -255,30 +254,6 @@ public static partial class WorkInventory
         return facts.Recorded
             .Where(recorded => recorded.Session.Length > 0 && recorded.Tree.Length > 0 && string.Equals(Full(recorded.Tree), full, StringComparison.OrdinalIgnoreCase))
             .Select(recorded => recorded.Session);
-    }
-
-    private static void AttachAutoLandings(InventoryFacts facts, Dictionary<string, Draft> drafts, Dictionary<string, string> treeOf)
-    {
-        foreach (var auto in facts.AutoLandings)
-        {
-            var draft = drafts.Values.FirstOrDefault(each => each.Sessions.Contains(auto.Session))
-                ?? (treeOf.TryGetValue(Full(auto.Tree), out var id) ? drafts[id] : null);
-            if (draft is null)
-            {
-                draft = new Draft($"session:{auto.Session}", auto.Repository, auto.Workspace);
-                drafts[draft.Id] = draft;
-            }
-
-            draft.Sessions.Add(auto.Session);
-            var entry = auto.Closed is { } closed
-                ? new InventoryEntry(draft.Id, InventoryKind.AutoLanding, auto.Session, InventoryRole.Evidence, InventoryDisposition.Kept,
-                    $"its due entry closed {Minute(closed)} UTC" + (auto.Last is { } last ? $" ({last.Code})" : ""))
-                : new InventoryEntry(draft.Id, InventoryKind.AutoLanding, auto.Session, InventoryRole.Temporary, InventoryDisposition.Pending,
-                    auto.Last is { } tried
-                        ? $"due since {Minute(auto.DueAt)} UTC; last tried {Minute(tried.At)} UTC: {tried.Code}; it goes when the unit ends"
-                        : $"due since {Minute(auto.DueAt)} UTC and not tried yet; it goes when the unit ends");
-            draft.Extra.Add(entry);
-        }
     }
 
     [GeneratedRegex(@"-\d+$")]
@@ -428,7 +403,7 @@ public static partial class WorkInventory
             : branch is not null ? SessionBranches.FileName
             : draft.Landings.Count > 0 ? LandedBranches.FileName
             : draft.Joined ? WorkRecord.Sessions
-            : AutoLandings.FileName;
+            : null;
         var quests = draft.Landings.SelectMany(landing => QuestsOf(landing, draft.Id))
             .Select(quest => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(quest))).Distinct().ToList();
         return new WorkUnit(

@@ -14,6 +14,12 @@ test('CONSOLIDATE1: a path and a command are classed by what they touch and run'
   assert.equal(bucketOf('Edit', { file_path: '/docs/FIX-LOG.md' }), 'edit:records');
 });
 
+test('a builder\'s worktree path is classed by the path inside its worktree', () => {
+  assert.equal(pathClass('D:\\r\\.claude\\worktrees\\agent-a1\\src\\Daoris.Service\\Program.cs'), 'code');
+  assert.equal(pathClass('D:/r/.claude/worktrees/agent-a1/docs/areas/x.md'), 'records');
+  assert.equal(pathClass('D:/r/.claude/agents/branch-worker.md'), 'records');
+});
+
 test('CONSOLIDATE1: a call is timed from its ask to its result, and the model from a result to its next ask', () => {
   const lines = [
     { type: 'user', timestamp: '2026-11-04T00:00:00Z', message: { content: 'go' } },

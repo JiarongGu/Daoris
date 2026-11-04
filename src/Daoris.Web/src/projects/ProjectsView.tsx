@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration } from '../data/api';
 import { sentence } from '../locales/format';
-import { setupLit } from '../agents/modes';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
 import { RepositoryIntegration } from './integration/RepositoryIntegration';
-import { useRepositorySetup } from './setup/useRepositorySetup';
-import { useWorkflowTab } from './useWorkflowTab';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './workspace/WorkspaceView';
 import { useQuests, useRegistry, useRepositories, useSessions } from '../data/queries';
@@ -57,7 +54,7 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onOpenPlugin, onOpenGit, onOpenSetup, onOpenWorkspaceSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenSetup, onOpenWorkspaceSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -137,10 +134,6 @@ export function useProjectsView({
     const line = (Array.isArray(lines.data?.lines) ? lines.data.lines : []).find((one) => one.repository === repository);
     return line?.branch ? line : undefined;
   };
-  // A repository's Setup is the Agents place's page once its Setup mode is lit (AGENTSPLACE1f): its tab goes, and every door into it
-  // opens that page (`placeOpening`). Dark, the tab stays, so nothing usable is lost.
-  const setupLives = !setupLit();
-  const setupShown = active && driver.data !== undefined && tab === 'setup' && chosenRepository !== null && setupLives;
   // Who holds its heavy-run slot and who waits (HEAVYSLOT1), for its Details' row, asked while its Details shows; the sessions and
   // quests that name them are the rail's own reads, asked only while someone holds or waits.
   const detailsShown = active && driver.data !== undefined && tab === 'details' && chosenRepository !== null;
@@ -152,10 +145,6 @@ export function useProjectsView({
     const session = (heavySessions.data ?? []).find((row) => row.id === id);
     return session ? sessionTitle(session, session.quest ? (heavyQuests.data ?? []).find((row) => row.id === session.quest) : null) : id;
   };
-  // How its work moves (WORKFLOW1b): its Current, asked only while its Workflow tab shows.
-  // Once the Setup mode is lit its Workflow is the Agents place's page (AGENTSPLACE1h), and the tab goes with it.
-  const workflowShown = active && driver.data !== undefined && tab === 'workflow' && chosenRepository !== null && setupLives;
-  const workflowOf = useWorkflowTab({ repository: chosenRepository, enabled: workflowShown, ready: driver.data !== undefined, notify });
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
   const sweep = useSweepPlan();
@@ -205,15 +194,6 @@ export function useProjectsView({
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
   const named = (names: string[] | undefined, repository: string) =>
     (names ?? []).some((name) => name.toLowerCase() === repository.toLowerCase());
-  // Its Setup tab's props, dark only (AGENTSPLACE1f): lit, the Agents place's page reads them.
-  const setupProps = useRepositorySetup({
-    registration: chosenRepository ? rows.find((row) => row.repository === chosenRepository) : undefined,
-    enabled: setupShown,
-    notify,
-    onOpenPlugin,
-    onOpenGit,
-  });
-
   /** Its standing on this machine: the driver's choices and whether a checkout is here, where a shell answers. */
   const standing = (registration: Registration) => driver.data && {
     drivable: named(driver.data.drivable, registration.repository),
@@ -254,8 +234,8 @@ export function useProjectsView({
           notify={notify}
           onOpenRepository={onChoose}
           // A repository that sets rules of its own opens at its own workflow (WORKFLOW1b).
-          // Once the Setup mode is lit that is the repository's place (AGENTSPLACE1h): the application opens it, as it does for a Setup door.
-          onOpenRepositoryWorkflow={(repository) => { if (setupLives) { onChoose(repository); onTab?.('workflow'); } else onOpenSetup?.(repository); }}
+          // That is the repository's place (AGENTSPLACE1h): the application opens it, as it does for a Setup door.
+          onOpenRepositoryWorkflow={(repository) => onOpenSetup?.(repository)}
           // A branch in its Branches opens on its repository's page, so its way back is that repository's Branches (UX6h3b).
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
@@ -306,12 +286,7 @@ export function useProjectsView({
           here={attached ? Boolean(shown.root) : undefined}
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
-          setup={setupLives ? setupProps : null}
-          onOpenSetup={!setupLives && onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
-          // A step its workspace set opens the workspace's Setup, whose defaults open by themselves wherever a rule is set there.
-          workflow={setupLives
-            ? workflowOf(shown, (workspace) => ({ workspaceSetup: () => { onChoose(workspaceItem(workspace)); onWorkspaceTab?.('setup'); } }))
-            : null}
+          onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
           // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).
           branches={attached
             ? (

@@ -3,7 +3,7 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { LandingLifeFlow } from './LandingFlow';
 import {
-  OLDER_BRANCH, SHARED_BRANCH, SHARED_DUE, SHARED_UNITS, WAITING_BRANCH, WAITING_DUE, WAITING_UNITS,
+  OLDER_BRANCH, SHARED_BRANCH, SHARED_UNITS, WAITING_BRANCH, WAITING_UNITS,
 } from './landingFixtures';
 
 // How a landed branch landed, drawn as a flowchart (FLOWCHART1c; the flowchart design §2.7, §3.6): the due entry and its tries,
@@ -22,10 +22,10 @@ type Story = StoryObj<typeof LandingLifeFlow>;
 
 const light = [atWidths(), inLight];
 
-const SHARED = { name: SHARED_BRANCH.branch, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS };
-const WAITING = { name: WAITING_BRANCH.branch, branch: WAITING_BRANCH, due: WAITING_DUE, units: WAITING_UNITS };
+const SHARED = { name: SHARED_BRANCH.branch, branch: SHARED_BRANCH, units: SHARED_UNITS };
+const WAITING = { name: WAITING_BRANCH.branch, branch: WAITING_BRANCH, units: WAITING_UNITS };
 
-/** Three sessions' work on one branch: held three times then landed, moved on once by `s3` and three times by `s4`, its pull request merged. */
+/** Three sessions' work on one branch: landed, moved on once by `s3` and three times by `s4`, its pull request merged. */
 export const Shared: Story = { args: { landing: SHARED }, decorators: light };
 /** The same in dark. */
 export const SharedDark: Story = { args: { landing: SHARED }, decorators: [atWidths(), inDark] };
@@ -39,6 +39,6 @@ export const WaitingChinese: Story = { args: { landing: WAITING }, decorators: [
 export const Older: Story = { args: { landing: { name: OLDER_BRANCH.branch, branch: OLDER_BRANCH } }, decorators: light };
 /** A landing into the line, from the trace's gap: merged and accepted, no branch kept, nothing pushed. */
 export const MergedIntoTheLine: Story = {
-  args: { landing: { name: 'main', branch: null, gap: 'merge-accepted', due: WAITING_DUE, units: WAITING_UNITS } },
+  args: { landing: { name: 'main', branch: null, gap: 'merge-accepted', units: WAITING_UNITS } },
   decorators: light,
 };

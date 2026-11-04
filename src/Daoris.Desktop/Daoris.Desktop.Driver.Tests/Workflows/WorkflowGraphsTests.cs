@@ -186,7 +186,6 @@ public sealed class WorkflowGraphsTests : IDisposable
     [InlineData(WorkflowKinds.Work, NodeKinds.Claimed, NodeReach.Observed)]
     [InlineData(WorkflowKinds.Opinion, NodeKinds.Opinion, NodeReach.Observed)]
     [InlineData(WorkflowKinds.Look, NodeKinds.Look, NodeReach.Observed)]
-    [InlineData(WorkflowKinds.Landing, NodeKinds.Handed, NodeReach.Observed)]
     [InlineData(WorkflowKinds.PullRequest, NodeKinds.PullRequest, NodeReach.Observed)]
     [InlineData(WorkflowKinds.GoAhead, NodeKinds.GoAhead, NodeReach.Pressed)]
     [InlineData(WorkflowKinds.Check, "acme.ci/work.checks", NodeReach.Observed)]

@@ -16,11 +16,10 @@ public sealed class AtWorkRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SESSION_AT_WORK", PipeClass.Open)]
     [ByEvent("SESSION_AT_WORK", Numbered = true, Untold = "each part's lineage file, this window's lineage tokens and the helper, piece and hand-over files, which the read's own judge watches")]
-    private async Task<object?> SessionAtWorkAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionAtWorkAsync(SessionAtWorkRead press, CancellationToken cancellationToken)
     {
-        // An ask's view (COWORKVIEW1d) is keyed `{ ask }`, a session's `{ session }`.
-        var ask = PayloadHelper.GetOptionalValue<string>(request.Payload, "ask");
-        var session = ask is { Length: > 0 } ? "" : PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var ask = press.Ask;
+        var session = ask is { Length: > 0 } ? "" : ActField.Needs(press.Session, "session");
         await Task.CompletedTask;
         var slices = _loop.Slices;
         AtWorkHeld Compose() => ask is { Length: > 0 }

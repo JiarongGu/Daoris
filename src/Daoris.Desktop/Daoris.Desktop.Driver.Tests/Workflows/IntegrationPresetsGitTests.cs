@@ -62,16 +62,12 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
     };
 
     /// <summary>
-    /// The preset's graph saved into the home with its <c>land</c> read as the observed <c>handed</c> it replaces, then read back as the version
-    /// the run binds: nothing performs a <c>land</c> yet (LANDNODE1h; the performer is the land node design's row 1c2), and the terminal's own
-    /// verb saving the preset is held by <see cref="WorkflowGraphPresetsTests"/>.
+    /// The preset's graph saved into the home, then read back as the version the run binds; the terminal's own verb saving the preset is held by
+    /// <see cref="WorkflowGraphPresetsTests"/>.
     /// </summary>
     private Task<WorkflowProcess> SavedPresetAsync(string preset)
     {
-        var graph = WorkflowPresets.GraphOf(preset)!.GraphJson.Replace(
-            "\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"integrate\"",
-            "\"kind\":\"handed\",\"version\":1,\"reach\":\"observed\",\"options\":{\"form\":\"branch\"", StringComparison.Ordinal);
-        Assert.DoesNotContain("\"land\"", graph);
+        var graph = WorkflowPresets.GraphOf(preset)!.GraphJson;
         StoredSteps.AddGraph(WorkflowPorts.Store(Home), "made", "Integrated", "2026-10-31T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(graph)!);
         var version = Assert.Single(new WorkflowFiles(Home).Load("made")!.Read.Versions);
         Assert.True(version.Problem is null, version.Problem);

@@ -1,212 +1,10 @@
-/**
- * The shell's state publisher, for a mocked shell (STATEHUB1f, D169): a test that presses a hook reads what the press moved
- * through the state hub, as a window does, since the hooks ask nothing again themselves. What each press declares it changes is
- * D169's tables, held route by route by the modules' `StatePublisherTests`; the presses the tests make are named here, and
- * every press STATEHUB1h declared, whose hooks ask nothing again themselves since it.
- *
- * A copy of the routes' `[Publishes]` marks, which `StatePublisherTests` reads from this file and holds press by press to the
- * mark (PUBLISHTWIN1), and every mark to a copy here (PUBLISHTWIN2): change a press's scopes or session field on both sides, or
- * declare a route and leave it out here, and that test fails. A press added here keeps
- * this shape, `ROUTE: { scopes: [...], session: '...' }`, which the test reads.
- */
-export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; session?: string; subject?: string }>> = {
-  LAND_SESSION_TREE: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], session: 'id' },
-  // A line of work's one Accept and its ask's (ACCEPTALL1): every part's landing, so no one session's; under way for its entry or
-  // its ask (ACCEPTALL1e).
-  LAND_ENTRY: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], subject: 'entry' },
-  LAND_ASK: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], subject: 'ask' },
-  DISCARD_SESSION_TREE: { scopes: ['sessions', 'landing', 'diff', 'sweep', 'treesSync'], session: 'id' },
-  HANDOFF: { scopes: ['handOff', 'sweep'], session: 'id' },
-  SWEEP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
-  DISCARD_SESSION_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
-  // LANDRETIRE1: a landing's branch the line will never hold, withdrawn; it moves what the clean-up lists and the work state reads.
-  WITHDRAW_LANDING_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
-  // INTEGRATE1h: the owner's act on a repository's integration.
-  INTEGRATE: { scopes: ['sessions', 'landing', 'integration'] },
-  // RECOVERYDROP1: the person's delete of the recovery refs nothing holds; the work state asks again with the landings and the sweep.
-  RECOVERY_DROP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
-  TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
-  // FABRIC-PERFORM1g: the person's word on a held attempt; the work state, which lists what is held, asks again with the sessions.
-  WORK_HELD: { scopes: ['sessions'] },
-  // FABRIC-CUTOVER1f: the person's skip or stop of a run's node; the run's view, read under the driver's key, asks again.
-  WORKFLOW_NODE: { scopes: ['driver'] },
-  // AGENTSPLACE1c: a workflow saved, a place's choice and a workspace's kinds; the workflow page's reads, under the driver's key, ask again.
-  WORKFLOW_SAVE: { scopes: ['driver'] },
-  WORKFLOW_USE: { scopes: ['driver'] },
-  WORKFLOW_KIND: { scopes: ['driver'] },
-  // FABRIC-PIPELINE1d: a person's verification bound for the running driver; the run's and the tab's reads, under the driver's key, ask again.
-  WORKFLOW_VERIFY: { scopes: ['driver'] },
-  // INTEGRATE1d: the person's acceptance of a repository's integration declaration; the start node, read under the driver's key, asks again.
-  INTEGRATION_GATES: { scopes: ['driver'] },
-  // The second opinion's presses, the landing's setting, the sessions' and work's moves, the rules' presses, a history clear and
-  // a sync (PUBLISHTWIN2: every mark has its copy here, held two ways by `StatePublisherTests`).
-  ASK_OPINION: { scopes: ['sessions', 'landing'], session: 'id' },
-  OPINION_ANYWAY: { scopes: ['sessions', 'landing'], session: 'id' },
-  OPINION_MYSELF: { scopes: ['sessions', 'landing'], session: 'id' },
-  STOP_OPINION: { scopes: ['sessions', 'landing'] },
-  START_CHAT: { scopes: ['sessions', 'driver'] },
-  SESSION_START_FROM: { scopes: ['sessions', 'driver'], session: 'id' },
-  SESSION_GO_ON_BRIEF: { scopes: ['sessions', 'driver'], session: 'id' },
-  SESSION_STOP_WAITING: { scopes: ['sessions', 'driver'], session: 'id' },
-  SESSION_HAND_OVER: { scopes: ['sessions', 'driver'], session: 'id' },
-  STOP_SESSION: { scopes: ['sessions', 'driver'], session: 'id' },
-  RESOLVE_SESSION: { scopes: ['sessions', 'quests', 'driver'], session: 'id' },
-  SESSION_GO_ON_NEW: { scopes: ['sessions', 'driver'], session: 'id' },
-  WORK_PAUSE: { scopes: ['sessions', 'quests', 'asks', 'driver'] },
-  WORK_RESUME: { scopes: ['sessions', 'quests', 'asks', 'driver'] },
-  WORK_ABANDON: { scopes: ['sessions', 'quests', 'asks', 'driver'] },
-  RULE_ACTION: { scopes: ['rules'] },
-  RULE_PROPOSAL: { scopes: ['rules'] },
-  HISTORY_CLEAR: { scopes: ['sessions', 'quests', 'asks', 'driver', 'history'] },
-  SYNC_NOW: { scopes: ['sessions', 'quests', 'sync', 'registry'] },
-  SESSION_ARCHIVE: { scopes: ['sessions'] },
-  SESSION_INPUT: { scopes: ['sessions', 'help'], session: 'id' },
-  SESSION_DELETE: { scopes: ['sessions', 'help'], session: 'id' },
-  END_CHAT: { scopes: ['sessions'], session: 'id' },
-  // A helper asked of a session, and the person's yes to an agent's ask (MIXAGENT2b): files the loop's next look takes; and
-  // their no (HELPERNO1), the ask refused and its note written at once.
-  SESSION_HELPER_ASK: { scopes: ['sessions', 'driver'], session: 'id' },
-  SESSION_HELPER_APPROVE: { scopes: ['sessions', 'driver'], session: 'session' },
-  SESSION_HELPER_DECLINE: { scopes: ['sessions', 'driver'], session: 'session' },
-  // A piece asked of another agent for a session (COAGENT1b): a file the loop's next look takes.
-  SESSION_PARTNER_ASK: { scopes: ['sessions', 'driver'], session: 'id' },
-  // The person's word on a third answer alone held for them (COWORK1e): the mark taken away or kept, the look nudged.
-  SESSION_ANSWER_ALONE: { scopes: ['sessions', 'driver'], session: 'session' },
-  // SUPERVISOR1a-i: the owner's overrule of a supervisor's decision.
-  SUPERVISOR_OVERRULE: { scopes: ['sessions', 'driver'], session: 'id' },
-  SUPERVISOR_ANSWER: { scopes: ['sessions', 'driver'], session: 'id' },
-  // SUPERVISOR1b: the holder's leaving a question to the owner.
-  SUPERVISOR_DEFER: { scopes: ['sessions', 'driver'], session: 'id' },
-  // STEWARDROLE1a-i: a role's act, the steward's one route.
-  ROLE_ACT: { scopes: ['sessions', 'driver'] },
-  // STEWARDROLE1c: a request at the steward's desk, which the Notifications line shows.
-  STEWARD_REQUEST: { scopes: ['driver'] },
-  // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish; and since HELPMODE1c3 the driver's, whose
-  // helpGrants draws Ask Daoris's browser grant from the plugin's approval.
-  PLUGIN_ACTION: { scopes: ['driver', 'plugins', 'harnesses'] },
-  PLUGIN_UPDATE: { scopes: ['driver', 'plugins', 'harnesses'] },
-  PLUGIN_TOOLS: { scopes: ['plugins'] },
-  PLUGIN_TOOL_FIX: { scopes: ['plugins'] },
-  PLUGIN_INSTALL: { scopes: ['driver', 'plugins', 'harnesses'] },
-  PLUGIN_ADD: { scopes: ['driver', 'plugins', 'harnesses'] },
-  // The remaining presses (STATEHUB1h): the standing choices, a go-ahead, a turn stopped and a word taken back, and what the
-  // accounts, agents, asks, across, registry, tools and help domains press.
-  SET_DRIVABLE: { scopes: ['driver'] },
-  SET_HOLD: { scopes: ['driver'] },
-  SET_TREES: { scopes: ['driver'] },
-  SET_CHECKOUT_WRITES: { scopes: ['driver'] },
-  // GITAPP2h: the Changes tab's acts on the checkout's index.
-  GIT_STAGE: { scopes: ['checkouts'] },
-  GIT_UNSTAGE: { scopes: ['checkouts'] },
-  GIT_UNDO: { scopes: ['checkouts'] },
-  // GITAPP2j: a conflict resolved, and the file marked resolved.
-  GIT_RESOLVE: { scopes: ['checkouts'] },
-  GIT_MARK_RESOLVED: { scopes: ['checkouts'] },
-  // GITAPP2i: a commit moves the checkout's index and the branch it has out.
-  GIT_MAKE_COMMIT: { scopes: ['driver', 'checkouts'] },
-  GIT_AMEND: { scopes: ['driver', 'checkouts'] },
-  // GITAPP2k: a switch moves HEAD and the checkout's files; a stash Save moves the shared stash and the tracked files.
-  GIT_SWITCH: { scopes: ['driver', 'checkouts'] },
-  GIT_STASH: { scopes: ['driver', 'checkouts'] },
-  GIT_STASH_APPLY: { scopes: ['driver', 'checkouts'] },
-  GIT_REF_CREATE: { scopes: ['driver'] },
-  GIT_REF_UNDO: { scopes: ['driver'] },
-  GIT_REF_DELETE: { scopes: ['driver'] },
-  GIT_REF_RENAME: { scopes: ['driver'] },
-  GIT_REF_FINISH: { scopes: ['driver'] },
-  GIT_FETCH: { scopes: ['driver'] },
-  GIT_HISTORY_EDIT: { scopes: ['driver'] },
-  SET_STANDING: { scopes: ['driver'] },
-  SET_HEAVY_GATES: { scopes: ['driver'] },
-  SET_SESSION_CHECKS: { scopes: ['driver'] },
-  SET_NOTIFY: { scopes: ['driver'] },
-  SET_COOLOFF: { scopes: ['driver'] },
-  SET_CAP: { scopes: ['driver'] },
-  SET_KEEP: { scopes: ['driver', 'wiring'] },
-  SET_ROLE: { scopes: ['driver', 'harnesses'] },
-  SET_ROLES: { scopes: ['driver', 'harnesses'] },
-  SET_HELP_MODE: { scopes: ['driver'] },
-  SET_HELP_GRANT: { scopes: ['driver'] },
-  TRUST_FOLDER: { scopes: ['driver'] },
-  RETRY_QUEST: { scopes: ['sessions', 'driver'] },
-  SHOW_REVIEW_AGAIN: { scopes: ['driver'] },
-  SET_LINE: { scopes: ['driver'] },
-  SET_LANGUAGE: { scopes: ['driver'] },
-  SET_REVIEW: { scopes: ['driver'] },
-  SET_OPINION: { scopes: ['driver'] },
-  SET_COMMITS: { scopes: ['driver'] },
-  SET_HELPERS: { scopes: ['driver'] },
-  SET_HAND_OVER: { scopes: ['driver'] },
-  SESSION_HAND_OVER_APPROVE: { scopes: ['sessions', 'driver'], session: 'session' },
-  SESSION_HAND_OVER_DECLINE: { scopes: ['sessions', 'driver'], session: 'session' },
-  SESSION_QUIET_CARRY_ON: { scopes: ['sessions', 'driver'], session: 'id' },
-  SESSION_QUIET_LEAVE: { scopes: ['sessions'], session: 'id' },
-  SET_ACCESS: { scopes: ['driver'] },
-  SET_GIT_ACCESS: { scopes: ['driver'] },
-  // TERMTRUST1a (D201 point 5): the person's grant or revoke of the standing confirmation, in the window alone.
-  SET_STANDING_CONFIRMATION: { scopes: ['driver'] },
-  START_ROLE_TERMINAL: { scopes: ['sessions', 'driver'] },
-  SET_READ_ACROSS: { scopes: ['driver'] },
-  SET_WRITE_ACROSS: { scopes: ['driver'] },
-  SESSION_GO_AHEAD: { scopes: ['sessions', 'asks'], session: 'id' },
-  CANCEL_TURN: { scopes: ['sessions'], session: 'id' },
-  SESSION_QUEUE_EDIT: { scopes: ['sessions'], session: 'session' },
-  SESSION_QUEUE_MOVE: { scopes: ['sessions'], session: 'session' },
-  SESSION_MEMORY_DECIDE: { scopes: ['sessions'], session: 'session' },
-  // LINESTOGETHER1d: the head's presses on an operation bringing sessions together.
-  TOGETHER_PRESS: { scopes: ['sessions'], session: 'session' },
-  TOGETHER_ASK_AGAIN: { scopes: ['sessions'], session: 'session' },
-  TOGETHER_LET_GO: { scopes: ['sessions'], session: 'session' },
-  ACCOUNT_USE: { scopes: ['harnesses'] },
-  // The accounts' *Read now* and the read as Agents opens (SWITCH1d): each account's use read into its windows.
-  ACCOUNTS_READ: { scopes: ['harnesses'] },
-  HARNESS_ACTION: { scopes: ['harnesses'] },
-  HARNESSES_REFRESH: { scopes: ['harnesses'] },
-  SET_AGENT_SETTINGS: { scopes: ['harnesses'] },
-  CHANNEL_POST: { scopes: ['asks'] },
-  CHANNEL_MARK: { scopes: ['asks'] },
-  // NOTIFY2f: the person's notices read or dismissed, which the notices slice pushes.
-  NOTICES_READ: { scopes: ['notices'] },
-  NOTICE_DISMISS: { scopes: ['notices'] },
-  // COWORK1d: the person's *Send to its session*, whose receipts the ask's channel shows.
-  CHANNEL_FORWARD: { scopes: ['asks'] },
-  REGISTRY_REFRESH: { scopes: ['registry'] },
-  // A place's apply: the configuration, an adoption's asks and quests, and the rules.
-  PLACE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
-  // A reconcile asked: its quest and ask, its admission alone, and its rules.
-  RECONCILE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
-  // The conversion of the old records, and its undo: the configuration, the rules and each place's lines.
-  TOOLS_USE: { scopes: ['tools'] },
-  TOOLS_DOWNLOAD: { scopes: ['tools'] },
-  TOOLS_DELETE: { scopes: ['tools'] },
-  // CACHECLEAR1: the Downloads row's press; the agents' and tools' pages and This Daoris's sizes ask again.
-  SYSTEM_DOWNLOADS_CLEAR: { scopes: ['harnesses', 'tools', 'wiring'] },
-  SYSTEM_SPACE_FREE: { scopes: ['harnesses', 'tools', 'wiring'] },
-  TOOLS_LOOK: { scopes: ['tools'] },
-  TOOLS_LOCATION: { scopes: ['tools'] },
-  TOOLS_GIT_SET: { scopes: ['tools'] },
-  // GITAUTH1e: Settings → Git's identities are the tools list's; a pointer is also read in the checkouts' remote rows.
-  GIT_IDENTITY: { scopes: ['tools'] },
-  GIT_USE: { scopes: ['driver', 'tools'] },
-  GIT_ANSWER: { scopes: ['tools'] },
-  START_HELP: { scopes: ['sessions'] },
-  HELP_RENAME: { scopes: ['sessions', 'help'], session: 'id' },
-  HELP_PIN: { scopes: ['sessions', 'help'], session: 'id' },
-  HELP_START_FROM: { scopes: ['sessions', 'help'], session: 'id' },
-  HELP_DISMISS: { scopes: ['help'] },
-  HELP_APPLY: {
-    scopes: ['sessions', 'quests', 'asks', 'driver', 'rules', 'history', 'registry', 'plugins', 'harnesses', 'help', 'browser'],
-  },
-  // The browser module's presses (BROWSERPUBLISH1), `DAORIS.BROWSER`'s, which the publisher reads beside the driver's.
-  ADD_FAVORITE: { scopes: ['browser'] },
-  REMOVE_FAVORITE: { scopes: ['browser'] },
-  SET_EXTENSIONS: { scopes: ['browser'] },
-  SET_BROWSER: { scopes: ['browser'] },
-  SET_LINKS: { scopes: ['browser'] },
-};
+import { PUBLISHES } from '../bridge/generated/routes';
 
-/** The modules whose routes carry marks the publisher reads: the driver's, and the browser module's. */
-const PUBLISHING = new Set(['DAORIS.DRIVER', 'DAORIS.BROWSER']);
+/**
+ * The shell's state publisher, for a mocked shell: a test that presses a hook reads what the press moved through the state hub,
+ * as a window does, since the hooks ask nothing again themselves. What each press declares it changes is its `[Publishes]` mark,
+ * generated into `PUBLISHES` by module and route.
+ */
 
 type Invoke = (module: string, type: string, options?: { payload?: unknown }) => Promise<unknown>;
 
@@ -214,9 +12,9 @@ type Invoke = (module: string, type: string, options?: { payload?: unknown }) =>
 export type Hear = (type: 'STATE_CHANGED' | 'UNDER_WAY', payload: unknown) => void;
 
 /**
- * `invoke` answered as the shell answers with `StatePublisher` in its pipeline: a declared press of the driver's is told under way,
- * whole and numbered, from its send until it answers or throws, and what it changed is published once it answered, a refusal
- * answered as data among it and one thrown not. Each reaches `hear` on a later turn, as the kit's pump delivers it.
+ * `invoke` answered as the shell answers with `StatePublisher` in its pipeline: a declared press is told under way, whole and
+ * numbered, from its send until it answers or throws, and what it changed is published once it answered, a refusal answered as
+ * data among it and one thrown not. Each reaches `hear` on a later turn, as the kit's pump delivers it.
  */
 export function publishing(invoke: Invoke, hear: Hear): Invoke {
   const underWay: { route: string; session?: string; subject?: string }[] = [];
@@ -224,7 +22,7 @@ export function publishing(invoke: Invoke, hear: Hear): Invoke {
   const tell = (type: 'STATE_CHANGED' | 'UNDER_WAY', payload: unknown) => { setTimeout(() => hear(type, payload), 0); };
   const telling = () => tell('UNDER_WAY', { seq: ++seq, presses: [...underWay] });
   return async (module, type, options) => {
-    const declared = PUBLISHING.has(module) ? DECLARED[type] : undefined;
+    const declared = PUBLISHES[module]?.[type];
     if (!declared) return invoke(module, type, options);
     const field = (name?: string) => {
       const named = name ? (options?.payload as Record<string, unknown> | undefined)?.[name] : undefined;

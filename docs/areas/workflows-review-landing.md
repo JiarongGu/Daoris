@@ -29,14 +29,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Node runtime | `Workflows/Nodes/NodeRuntime.cs`, `WorkPerformer.cs`, `WorkObserver.cs`, `WireEvaluation.cs`, `NodeRecordFiles.cs` | One pass at a time: evaluate each governed unit, keep its moves, start what it proposes |
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs` | `land`'s options, their resolution at the bind, the intent a run lands by |
-| Landing door | `Workplace/LandingDoor.cs`, `Workplace/AutoLander.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key |
+| Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land` |
 | Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs`, `Workplace/Landing.cs` | The merge, the branch and the squash; the plan and its refusals; `LandingRules`, a landing's shape and the line's landing outside a run |
 | Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
 | Landed branches, pull requests | `Workplace/LandedBranches.cs`, `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestBounds.cs`, `BranchTidying.cs` | `landings.json`, a pull request's state from its plugin, the look's tidy |
 | Integration | `Workflows/Nodes/IntegrateNode.cs`, `Workflows/IntegrationTransport.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement |
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs`, `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
-| Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part |
+| Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan |
 | Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Review/Heavy/HeavyExecutor.cs` | The `check` node performed by Daoris, off the pass, under the heavy slots |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
@@ -60,16 +60,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    and chooses it, in one receipt-kept Apply. (from D221, D227)
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (from D157)
-7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `handed` (`handed-refused`), a `land`
+7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `land`
    with no method (`land-method`) and an `accept` option (`accept`). Only a graph version binds and runs. (from D227, D232)
-8. A graph holds at most 24 authored nodes and 96 wires, and one landing: one `land` or one stored `handed`, never both.
-   (from D190, D227)
+8. A graph holds at most 24 authored nodes and 96 wires, and one landing: one `land`. There is no `handed` kind.
+   (from D190, D227, D232)
 9. The holds, the opinion, the look and the `review` each come before every landing and are wired straight into it. No landing
    may start before a hold or a look has passed. The opinion need not come before the look. (from D157, D190)
 10. A `land` method brings its tail: `pull-request` brings `pushed` then `pull-request`; `push` brings `pushed`; `integrate`
     brings one `integrate`; `merge` and `branch` bring nothing. (from D215, D227)
 11. A workflow file marks its pipeline: development (absent) or verification. A verification version holds at least one `check`
-    and no `claimed`, `opinion`, `look`, `go-ahead`, `handed` or `quest.close`. (from D192)
+    and no `claimed`, `opinion`, `look`, `go-ahead`, `land` or `quest.close`. (from D192)
 12. A change that lowers the person's part applies only by the person's press; an agent's stays a proposal. Editing the home
     default's copy asks the consent of every place that follows it. (from D157, D192, D227)
 13. Ask Daoris proposes against the open draft's fingerprint (`workflow_propose`'s `draft`). Its proposal is drawn as a diff. It
@@ -98,8 +98,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     is judged again before the first effect. (from D145, D227)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for the landing.
     Past that it answers *accepted; landing*. The person's press is also the try again. (from D227)
-24. An entry's or an ask's one Accept keeps each part's word and lands the rest in place, oldest first. `TOGETHER_PRESS` brings
-    sessions together and lands nothing. (from D167, D227)
+24. An entry's or an ask's one Accept keeps each part's word where its run's `land` is the runtime's, and lands it at the pass. A
+    part no `land` node performs is held, said. `TOGETHER_PRESS` brings sessions together and lands nothing. (from D167, D227, D232)
 25. The look is the person's verdict in a review environment; no agent or card gives it. Under a saved graph the `look` node says
     whether one is needed; the environment is still the `reviews` rule's. `SET_REVIEW required` there is refused. (from D154, D227)
 26. A second opinion is another maker's read-only reading before the landing. Its findings reach the working session once. What
@@ -153,8 +153,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     left, said. There is no door, receipt or undo. (from D232)
 45. No landing rule or work cycle is read or written: `driver.json` holds no `landings`, `workspaceLandings` or work cycles, and no
     door sets one. A hand-off pushes to the plugin its card names. (from D232)
-46. Each old way still read is registered with the condition that ends it and the row that deletes it: the auto lander's look ends
-    with WORKFLOWCLEAN1z. (from D227, D228)
+46. Each old way still read is registered with the condition that ends it and the row that deletes it. There is no auto lander,
+    no look that lands, no due list, and no landing rule's `tidy`; the performer of a run's `land` is the only lander. (from D227, D228, D232)
 
 **Drawing**
 
@@ -171,7 +171,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **Which workflow work follows:** `Workflows/Domain/WorkflowSelection.cs`, held cell for cell by `fixtures/workflow-selection.json`.
 - **A shipped workflow or delivery:** a JSON file under `Defaults/workflows/`; `WorkflowDefaults` reads it, and the presets derive.
 - **How a landing behaves:** the method's options in `LandNodes.cs`; the act in `Workplace/` (`LandingDoor`, `SessionTrees`,
-  `TreeLands`, the delivery files). Nothing new goes into `AutoLander`'s choosing: it is transitional.
+  `TreeLands`, the delivery files, `LandPerformer`).
 - **Integration:** `Workplace/Integration*.cs` and `Review/Integration/`; the node's half in `Workflows/Nodes/IntegrateNode.cs`.
 - **A gate or a hold at landing:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs` (the graph's part).
 - **An old shape to convert:** the release migration's workflow step, `Workflows/Migration/WorkflowMigration.cs`.
@@ -189,7 +189,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 ## Contradictions
 
-- D190 point 4 (a named version holds one `handed`) vs `NodeGraphs.cs` `handed-refused`: a new version lands by `land`. D227 reads right.
+- D190 point 4 (a named version holds one `handed`) vs `NodeKinds` (no `handed` kind): a version lands by `land`. D227 and D232 read right.
 - D190 point 8 (no look starts with no opinion passed) vs `NodeGraphs.cs:352-391` (gates only before the landing): the code and D190 point 5 read right.
 - D190 point 1 and D157 point 7 (never a migration) vs `Conversion/` and `CONVERT_APPLY`: D227 point 3 reads right.
 - D190 "Not settled: FABRIC-CLOSE1k" vs `NodeRuntime.cs:178-179` (a bound quest closed by its bound graph): the code reads right.
@@ -212,11 +212,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 - **SETUPUX1i:** the place page's tree.
 - **SETUPUX1x:** the installed sitting of the place page, and its fixes.
-- **SETUPUX1y:** `daoris.agents.setup` lit by default (`src/agents/modes.ts:40` is still off); the old Workflow and Setup tabs, Roles mode and opener removed.
+- **SETUPUX1y:** Setup is the Agents place's default and its tree of places is always drawn. The repository page's Workflow and Setup tab
+  props (`ProjectPage`'s `setup` and `workflow`, which `ProjectsView` passes `null`, with their stories and tests) are still to remove;
+  the opener's `roleSection` names Appointed roles or All roles only.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **WORKFLOWCLEAN1z (NOCOMPAT1b2):** the auto lander's look, the presses' in-place landing, `handed`, a landing's `tidy` field, and the
-  old Workflow and Setup tabs; the runtime suites still driven by work cycles in `driver.json` (`NodeRuntime*Tests`, `ObservedEvent*`,
-  `IntegrateNodeTests`) rebound onto graph runs.
+- **WORKFLOWCLEAN1z (NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`NodeRuntime*Tests`,
+  `ObservedEvent*`, `IntegrateNodeTests`, `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs;
+  the `handed` node in about 22 test files and in `workflow-graph-versions.json` and `workflow-graphs.json`, whose digests are
+  regenerated with the kind.
 - **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
 - **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.

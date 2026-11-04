@@ -37,7 +37,7 @@ public sealed class HelpRoomTests : IDisposable
         var agents = File.ReadAllText(Path.Combine(room, "AGENTS.md"));
         // The circles and their repositories, each with how it is driven, its line and how its work lands.
         Assert.Contains("### Workspace `work`", agents);
-        Assert.Contains("| `console-ui` | driven, in its own tree | `feature/app` (set for it) | on a branch `feature/{slug}-{quest}`, tree removed once landed (the old landing rule, its workspace's rule) |", agents);
+        Assert.Contains("| `console-ui` | driven, in its own tree | `feature/app` (set for it) | on a branch `feature/{slug}-{quest}` (the old landing rule, its workspace's rule) |", agents);
         Assert.Contains("| `reports-db` | driven, held | `main` (the checkout's own) | merged into the line (the old landing rule, the default) |", agents);
         Assert.Contains("| `engine` | not driven, no checkout here | none git can name | merged into the line (the old landing rule, the default) |", agents);
         // What drives, and what waits on the person.
@@ -244,7 +244,7 @@ public sealed class HelpRoomTests : IDisposable
                 { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
                 { "name": "docs", "command": ["docs"] } ] }
             """);
-        var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var place = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []);
 
         Assert.True(place.Plugins);
         Assert.Equal(PluginServerTo.Help, place.ServersTo);

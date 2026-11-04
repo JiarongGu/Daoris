@@ -1,5 +1,6 @@
 import { hashKey, type QueryClient, type QueryKey } from '@tanstack/react-query';
-import { call } from '../call';
+import type { DriverRoute } from '../generated/routes';
+import { type ByHandRoute, call, type Payload, type TypedRoute } from '../call';
 
 // The page's half of the reads the shell answers from what it holds (NOBLOCK1, D56's NOBLOCK1 note): the route answers at once,
 // its work runs on a .NET task of its own, and what the work answers comes back as `DAORIS.ANSWERED`, naming the query it is for.
@@ -21,13 +22,19 @@ const readers = new Map<string, (answer: unknown) => unknown>();
  * page shows what it held until the event comes; with nothing held either, it is the pending answer read, which each reader
  * reads as empty.
  */
+export function askHeld<R extends TypedRoute, T = unknown>(
+  route: R, client: QueryClient, queryKey: QueryKey, payload: Payload<R>, read?: (answer: unknown) => T,
+): Promise<T>;
+export function askHeld<T>(
+  route: ByHandRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>, read?: (answer: unknown) => T,
+): Promise<T>;
 export async function askHeld<T>(
-  route: string, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>,
+  route: DriverRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>,
   read: (answer: unknown) => T = (answer) => answer as T,
 ): Promise<T> {
   const held = hashKey(queryKey);
   readers.set(held, read);
-  const answer = await call<unknown>(route, { ...payload, held });
+  const answer = await (call as (type: DriverRoute, payload: Record<string, unknown>) => Promise<unknown>)(route, { ...payload, held });
   if (!isPending(answer)) return read(answer);
   const kept = client.getQueryData<T>(queryKey);
   return kept === undefined ? read(answer) : kept;

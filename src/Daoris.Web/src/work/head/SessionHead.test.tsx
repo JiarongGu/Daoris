@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { GoAhead, Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { Answered } from '../InlineConfirm';
 import { DETAIL, GATES } from '../gates/opinionFixtures';
@@ -40,7 +41,7 @@ const INTAKE: Partial<Session> = {
   tree: 'C:/somewhere/data/intake/default',
 };
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

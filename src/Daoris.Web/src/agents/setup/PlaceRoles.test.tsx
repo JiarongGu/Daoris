@@ -69,7 +69,6 @@ describe('A place page, Roles', () => {
     chain = CHAIN;
     roles = CATALOGUE;
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.agents.setup', 'on');
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Convergence, Quest, Registration, Session } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import { fitRadius, frameMap, placeLabel, ringAt } from './ring';
 import { textWidth } from './measure';
 import { said } from '../test/said';
@@ -12,7 +13,7 @@ const repo = (repository: string, extra: Partial<Registration> = {}): Registrati
   repository, adopted: true, registered: true, owns: [], accepts: [], packs: [], entries: 0, ...extra,
 });
 
-const quest = (id: string, from: string, to: string, status: Quest['status'] = 'Open'): Quest => ({
+const quest = (id: string, from: string, to: string, status: Quest['status'] = 'Open'): Quest => aQuest({
   id, from, to, title: `quest ${id}`, body: '', status, filed: '2026-09-23T00:00:00Z', updated: '2026-09-23T00:00:00Z',
 });
 

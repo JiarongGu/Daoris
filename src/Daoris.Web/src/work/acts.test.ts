@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Quest, Session } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import type { SessionGrouping } from './groups';
 import { folderOf, handOverLabel, offeredActs, primaryAct, stopAsk, workTargetOf } from './acts';
 import { said } from '../test/said';
@@ -20,7 +21,7 @@ const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' |
   session: 's1a2b3c4', archived: false, teammate: false, ...over,
 });
 
-const quest = (status: Quest['status']): Quest => ({
+const quest = (status: Quest['status']): Quest => aQuest({
   id: 'abc123', from: 'game', to: 'engine', title: 'Expose a streaming budget', body: 'A body.', status,
   filed: '2026-10-01T00:00:00Z', updated: '2026-10-01T00:00:00Z',
 });

@@ -13,6 +13,7 @@
     "build":"node scripts/i18n-check.mjs && node scripts/names-check.mjs --strict && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/i18n-check.mjs",
+    "prenames:check": "node ../../tools/contracts.mjs --if-stale",
     "names:check": "node scripts/names-check.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

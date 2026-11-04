@@ -115,25 +115,6 @@ public sealed class SupervisorRuleBookTests : IDisposable
     }
 
     [Fact]
-    public void CONTEXTDRIVE1e_the_save_writes_no_strikes_the_file_did_not_hold_and_keeps_one_it_did()
-    {
-        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, """{ "adapter": "claude" }""");
-
-        DriverConfig.Load(path).WithNotify(false).Save(path);
-        Assert.DoesNotContain("\"strikes\"", File.ReadAllText(path));
-        Assert.Equal(3, DriverConfig.Load(path).Strikes);
-        Assert.False(SupervisorRuleCensus.StrikesHeld(_home));
-
-        DriverConfig.Load(path).WithStrikes(5).Save(path);
-        DriverConfig.Load(path).WithNotify(true).Save(path);
-        Assert.Contains("\"strikes\"", File.ReadAllText(path));
-        Assert.Equal(5, DriverConfig.Load(path).Strikes);
-        Assert.True(SupervisorRuleCensus.StrikesHeld(_home));
-    }
-
-    [Fact]
     public void CONTEXTDRIVE1e_a_fresh_home_s_first_start_writes_its_rules_and_a_home_with_a_file_is_left_to_the_conversion()
     {
         Assert.True(SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes));

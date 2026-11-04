@@ -39,11 +39,11 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_LINE", "lines", "workspaceLines", Sets = "branch")]
     [Says("SET_LINE", "repository:repository")]
     [Publishes("SET_LINE", Chosen)]
-    private object? SetLine(IpcRequest request)
+    private object? SetLine(SetLine press)
     {
-        var branch = Optional(request, "branch");
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var (repository, workspace) = (press.Repository, press.Workspace);
+        // Sent at all, a branch sets the line, a blank or null one clearing it; a press with a policy and no branch keeps the line.
+        var branch = press.Branch is { ValueKind: JsonValueKind.String } sent && sent.GetString() is { Length: > 0 } text ? text : null;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a line is set for a `repository` or a `workspace` — name one of them.");
@@ -51,15 +51,14 @@ public sealed class LinesRoutes(DriverContext context)
 
         // WORKFLOWCLEAN1 1a: the line's policy (how it is integrated) is edited here beside its branch, set where the press names an object,
         // withdrawn on null; a press that names only a policy leaves the line as it is. Its values are LandingKey's to judge.
-        var named = request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("policy", out _);
+        var named = press.Policy is not null;
         LandingIntegrate? policy = null;
-        if (named)
+        if (press.Policy is { ValueKind: not JsonValueKind.Null } wire)
         {
-            var wire = request.Payload!.Value.GetProperty("policy");
-            if (wire.ValueKind != JsonValueKind.Null) policy = LandingKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
+            policy = LandingKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
         }
 
-        var keepsLine = named && !(request.Payload!.Value.TryGetProperty("branch", out _));
+        var keepsLine = named && press.Branch is null;
         _context.Change(config =>
         {
             if (!keepsLine)
@@ -81,11 +80,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_LANGUAGE", "languages", "workspaceLanguages", Sets = "language")]
     [Says("SET_LANGUAGE", "repository:repository")]
     [Publishes("SET_LANGUAGE", Chosen)]
-    private object? SetLanguage(IpcRequest request)
+    private object? SetLanguage(SetLanguage press)
     {
-        var language = Optional(request, "language");
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var (language, repository, workspace) = press;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a session language is set for a `repository` or a `workspace` — name one of them.");
@@ -103,7 +100,7 @@ public sealed class LinesRoutes(DriverContext context)
     //; this pull stays for a page that does not read the slice.
     [DriverRoute("LINES", PipeClass.Open)]
     [OneFlight("LINES")]
-    private async Task<object?> LinesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> LinesAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
@@ -139,7 +136,6 @@ public sealed class LinesRoutes(DriverContext context)
                     pair.line.Workspace,
                     pair.landing.Rule.Form,
                     pair.landing.Rule.Pattern,
-                    pair.landing.Rule.Tidy,
                     pair.landing.Rule.Plugin,
                     pair.landing.Rule.AutoAccept,
                     // The ticket's key and the squash, for the page to show and keep: none is left out.
@@ -322,27 +318,25 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundBranch("DISCARD_SESSION_BRANCH", "repository", "branch", "named")]
     [Says("DISCARD_SESSION_BRANCH", "repository:repository")]
     [Publishes("DISCARD_SESSION_BRANCH", Moves)]
-    private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DiscardBranchAsync(DiscardBranchPress press, CancellationToken cancellationToken)
     {
-        // `trees remove <named>` names a session or a branch by one name, as the verb takes it, with `repository` only where it
-        // must say which; the page's `repository` and `branch` read as they always did.
-        var named = Optional(request, "named");
-        var force = Flag(request, "force");
+        var named = press.Named;
+        var force = press.Force;
         if (named is not null)
         {
             var kept = _loop.Service ?? throw NotReady();
             var asked = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardNamedAsync(
-                kept, named, Optional(request, "repository"), force, cancellationToken);
+                kept, named, press.Repository, force, cancellationToken);
             _loop.Nudge();
             return new
             {
-                Repository = Optional(request, "repository"), Branch = (string?)null, Done = asked.Removed, asked.Message,
+                Repository = press.Repository, Branch = (string?)null, Done = asked.Removed, asked.Message,
                 Said = TreesWords.Remove(asked).ToWire(),
             };
         }
 
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
+        var repository = ActField.Needs(press.Repository, "repository");
+        var branch = ActField.Needs(press.Branch, "branch");
         var service = _loop.Service ?? throw NotReady();
 
         var removal = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardAsync(service, repository, branch, force, cancellationToken);
@@ -361,12 +355,10 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundBranch("WITHDRAW_LANDING_BRANCH", "repository", "branch")]
     [Says("WITHDRAW_LANDING_BRANCH", "repository:repository", "why:words")]
     [Publishes("WITHDRAW_LANDING_BRANCH", Moves)]
-    private async Task<object?> WithdrawLandingBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WithdrawLandingBranchAsync(WithdrawLandingBranchPress press, CancellationToken cancellationToken)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
-        var why = Optional(request, "why") ?? "";
-        var plan = Flag(request, "plan");
+        var (repository, branch, plan) = (press.Repository, press.Branch, press.Plan);
+        var why = press.Why ?? "";
         var service = _loop.Service ?? throw NotReady();
 
         var withdrawal = await new LandedBranchWithdrawal(new SessionTrees(_loop.Home), _loop.Home)
@@ -657,7 +649,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <remarks>Nothing machine-local comes back: whether it opened. With no record kept there is no folder, which is refused and said.</remarks>
     [DriverRoute("WORK_RECORDS_FOLDER", PipeClass.Window)]
     [Owner("WORK_RECORDS_FOLDER", None = OwnerNone.ActsOnNothing)]
-    private async Task<object?> WorkRecordsFolderAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkRecordsFolderAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var folder = NodeRecordFiles.FolderOf(_loop.Home);
         if (!Directory.Exists(folder)) throw new DriverException("no unit keeps a node record here now, so there is no folder to open.");
@@ -702,12 +694,9 @@ public sealed class LinesRoutes(DriverContext context)
     [Owner("WORK_HELD", Unit = "unit")]
     [GroundRead("WORK_HELD", nameof(PipeReads.HeldAttempt))]
     [Publishes("WORK_HELD", StateScopes.Sessions)]
-    private Task<object?> WorkHeldAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> WorkHeldAsync(WorkHeldPress press, CancellationToken cancellationToken)
     {
-        var unit = PayloadHelper.GetRequiredValue<string>(request.Payload, "unit");
-        var node = PayloadHelper.GetRequiredValue<string>(request.Payload, "node");
-        var attempt = PayloadHelper.GetRequiredValue<int>(request.Payload, "attempt");
-        var word = PayloadHelper.GetRequiredValue<string>(request.Payload, "resolution");
+        var (unit, node, attempt, word) = (press.Unit, press.Node, press.Attempt, press.Resolution);
         _ = _loop.Service ?? throw NotReady();
 
         var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word);
@@ -851,9 +840,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_REVIEW", "reviews", "workspaceReviews")]
     [NotAlready("SET_REVIEW", "merges into the repository's review rule")]
     [Publishes("SET_REVIEW", Chosen)]
-    private async Task<object?> SetReviewAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SetReviewAsync(SetReview press, CancellationToken cancellationToken)
     {
-        var edit = ReviewEditOf(request.Payload);
+        var edit = ReviewRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before the registry is asked anything.
         ReviewRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
 
@@ -871,9 +860,6 @@ public sealed class LinesRoutes(DriverContext context)
         // Only a put looked for anything, so only a put says what the look found.
         return DriverRoutes.State(_loop, reviewed: looked is null ? null : new { looked.Lacking, looked.Unchecked });
     }
-
-    /// <summary>The page's edit, read as the shared table's (<see cref="ReviewRules.EditOf"/>, the terminal's payload read the same way).</summary>
-    internal static ReviewEdit ReviewEditOf(JsonElement? payload) => ReviewRules.EditOf(payload);
 
     /// <summary>
     /// A rule as the bridge carries it: whether it is none here, whether work waits for the person's look, and
@@ -902,9 +888,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_OPINION", "opinions", "workspaceOpinions")]
     [NotAlready("SET_OPINION", "merges into the repository's opinion rule")]
     [Publishes("SET_OPINION", Chosen)]
-    private object? SetOpinion(IpcRequest request)
+    private object? SetOpinion(SetOpinion press)
     {
-        var edit = OpinionRules.EditOf(request.Payload ?? default);
+        var edit = OpinionRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before anything is written.
         OpinionRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => OpinionRules.Apply(config, edit));
@@ -946,9 +932,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_HELPERS", "helpers", "workspaceHelpers")]
     [NotAlready("SET_HELPERS", "merges into the repository's helpers rule")]
     [Publishes("SET_HELPERS", Chosen)]
-    private object? SetHelpers(IpcRequest request)
+    private object? SetHelpers(SetHelpers press)
     {
-        var edit = HelperRules.EditOf(request.Payload ?? default);
+        var edit = HelperRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before anything is written.
         HelperRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => HelperRules.Apply(config, edit));
@@ -965,9 +951,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_HAND_OVER", "handOver", "workspaceHandOver")]
     [NotAlready("SET_HAND_OVER", "merges into the repository's hand-over rule")]
     [Publishes("SET_HAND_OVER", Chosen)]
-    private object? SetHandOver(IpcRequest request)
+    private object? SetHandOver(SetHandOver press)
     {
-        var edit = HandOverRules.EditOf(request.Payload ?? default);
+        var edit = HandOverRules.EditOf(RuleEdit.Shape(press));
         // The twin's refusals come first, in its words, before anything is written.
         HandOverRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => HandOverRules.Apply(config, edit));
@@ -984,9 +970,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_COMMITS", "commits", "workspaceCommits")]
     [NotAlready("SET_COMMITS", "merges into the repository's commits rule")]
     [Publishes("SET_COMMITS", Chosen)]
-    private object? SetCommits(IpcRequest request)
+    private object? SetCommits(SetCommits press)
     {
-        var edit = CommitRules.EditOf(request.Payload ?? default);
+        var edit = CommitRules.EditOf(RuleEdit.Shape(press));
         CommitRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => CommitRules.Apply(config, edit));
         return DriverRoutes.State(_loop);
@@ -1004,9 +990,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_ACCESS", "access", "workspaceAccess")]
     [NotAlready("SET_ACCESS", "merges into the repository's access rule")]
     [Publishes("SET_ACCESS", Chosen)]
-    private object? SetAccess(IpcRequest request)
+    private object? SetAccess(SetAccess press)
     {
-        var edit = AccessRules.EditOf(request.Payload ?? default);
+        var edit = AccessRules.EditOf(RuleEdit.Shape(press));
         // The refusals come first, before anything is written.
         var before = DriverConfig.Load(_loop.ConfigPath);
         AccessRules.Apply(before, edit);
@@ -1030,9 +1016,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_GIT_ACCESS", "gitAccess", "workspaceGitAccess")]
     [NotAlready("SET_GIT_ACCESS", "merges into the repository's git access")]
     [Publishes("SET_GIT_ACCESS", Chosen)]
-    private object? SetGitAccess(IpcRequest request)
+    private object? SetGitAccess(SetGitAccess press)
     {
-        var edit = GitAccessActs.EditOf(request.Payload ?? default);
+        var edit = GitAccessActs.EditOf(RuleEdit.Shape(press));
         GitAccessActs.Apply(_loop.Home, edit);
         return DriverRoutes.State(_loop);
     }

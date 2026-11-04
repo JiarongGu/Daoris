@@ -8,12 +8,12 @@
  *
  * `docs/index/`, every file generated and none edited by hand: `README.md` (the indexes kept by hand first, then
  * what each generated file answers, and every large file), `routes.md`, `verbs.md`, `catalogues.md`, `fixtures.md`,
- * `decisions.md`, and `outlines/<path>.md` for each file over `LARGE`. The README's order is the canon's
+ * `decisions.md`, `registered.md`, and `outlines/<path>.md` for each file over `LARGE`. The README's order is the canon's
  * `templates/index.md`: an index kept by hand is named, never restated.
  *
  * By kind, not by lane: a lookup starts from what is sought (a route, a verb, a key, a fixture), and the
  * route table joins two lanes, the page's call and the module's handler. An outline is a file of its own,
- * because one large file's outline can fill a page and the driver lane alone holds two dozen large files.
+ * because one large file's outline can fill a page.
  *
  * ## Written in each checkout, never committed
  *
@@ -37,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 import { byNumber, declaredDecisions, fenced, isNoteLabel } from './doc-duplicates.mjs';
 import { isMain, repositoryFiles as listFiles, writeAtomic } from './fsx.mjs';
 import { LANES_FILE, laneMatcher, readLanes } from './merge-branch.mjs';
+import { registeredPage } from './orient-registered.mjs';
 
 export const INDEX = 'docs/index';
 /** A file over this many bytes (LF endings) gets an outline: past it, reading the file whole is the cost measured. */
@@ -57,8 +58,8 @@ const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
 const DRIVER_CODE = ['src/Daoris.Desktop/Daoris.Desktop.Driver.Host/', DRIVER];
 
 /**
- * The one file of this name under the driver's folder, at any depth, or null (STRUCT1, D166): the driver's sources move into
- * module folders one module per branch, so the index finds `DriverCommand.cs` by its name wherever the driver keeps it.
+ * The one file of this name under the driver's folder, at any depth, or null: the index finds `DriverCommand.cs` by its name
+ * wherever the driver's module folders keep it.
  */
 function driverFileIn(ctx, name) {
   const found = ctx.files.filter((path) => path.startsWith(DRIVER) && path.slice(path.lastIndexOf('/') + 1) === name);
@@ -724,7 +725,7 @@ function sends(text, senders) {
  * `DriverModuleRoutesTests.Forwarders`, for the driver's alone).
  */
 function pageCalls(ctx) {
-  // STRUCT5c-ii: the bridge is cut into scope folders, so a domain file sits at any depth under it.
+  // The bridge is cut into scope folders, so a domain file sits at any depth under it.
   const files = ctx.files.filter((path) => path.startsWith(BRIDGE) && /\.ts$/.test(path.slice(BRIDGE.length)) && !path.endsWith('.test.ts'));
   for (const shell of ctx.files.filter((path) => path.startsWith(WEB_SRC) && path.endsWith(SHELL) && !files.includes(path))) files.push(shell);
   const sources = files.map((file) => {
@@ -1144,7 +1145,7 @@ function fixturesPage(ctx) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The decisions digest (ORIENT1b)
+// The decisions digest
 
 /**
  * A note's label: the emphasised span that opens its line, when it is dated or in one of the forms the record writes
@@ -1157,7 +1158,7 @@ export function noteLabel(line) {
 
 /**
  * A note's label in full, whitespace flattened: the emphasised span that opens its line when the line is a note's.
- * The digest cuts it to a row; a mark's `replacing "<label>"` quote names it whole (KNOWFRESH1a-i).
+ * The digest cuts it to a row; a mark's `replacing "<label>"` quote names it whole.
  */
 export function noteSpan(line) {
   let span = null;
@@ -1221,7 +1222,7 @@ export function readDecision(id, lines) {
 }
 
 /**
- * What a note's label says of a later record (KNOWFRESH1a-i; the knowledge-freshness design's §3.1): `Amended by D<n>` or
+ * What a note's label says of a later record: `Amended by D<n>` or
  * `Superseded by D<n>` opening it, the rest free; or, with no decision named, the same decision's own amendment, which
  * carries a `, replacing "<label>"` quote. Null for any other label. `quotes` are the quoted texts the label can be read
  * to hold, longest last: a quoted label may itself hold a quote mark, so the reading tries each place it could end.
@@ -1267,7 +1268,7 @@ function readDecisions(ctx) {
 }
 
 /**
- * What a mark gets wrong, as `{ file, line, fact }` (KNOWFRESH1a-i): a decision it names that is no file of the folder, or
+ * What a mark gets wrong, as `{ file, line, fact }`: a decision it names that is no file of the folder, or
  * is numbered no higher than the one it sits in (a higher number rules out a cycle), and a quote naming no earlier note
  * of the record it sits in. `--check` fails on each, so a record's standing can be read from its marks.
  */
@@ -1287,7 +1288,7 @@ export function markFindings(root, files = listFiles(root)) {
 }
 
 /**
- * The digest (ORIENT1b): every decision's title with its entry's own lines, then every dated note with its lines, so a
+ * The digest: every decision's title with its entry's own lines, then every dated note with its lines, so a
  * session reads the decision or the one note it needs and not the file. Titles first, so they read in one go.
  */
 function decisionsPage(ctx) {
@@ -1320,7 +1321,7 @@ function decisionsPage(ctx) {
 const CODE_MAP = 'docs/code-map.json';
 
 /**
- * The indexes kept elsewhere, each named only when the tree holds it (ORIENT2a2, the canon's `templates/index.md`).
+ * The indexes kept elsewhere, each named only when the tree holds it (the canon's `templates/index.md`).
  * `byHand` are the README's *Kept by hand* rows, listed before the generated files because nothing below restates
  * theirs: the router, then the lanes map, whose lanes group the large files below. `generated` are the indexes
  * another tool writes, named in the opening as the template names the knowledge's: the doctrine's `INDEX.md` and
@@ -1374,6 +1375,7 @@ function readmePage(ctx, large) {
     '| `catalogues.md` | which catalogue file holds a key, by area; the glossary\'s sections, kinds and terms by line |',
     '| `fixtures.md` | the test fixtures, stand-ins and kits by name, with file and line |',
     '| `decisions.md` | each decision\'s title with its entry\'s lines, then each dated note with its lines |',
+    '| `registered.md` | each root\'s parts by seam, in the order it runs them, with each mark\'s file and line |',
     `| \`outlines/<path>.md\` | the declarations or headings of a file over ${LARGE / 1024} KB, each with its line range |`,
     '',
     `## Files over ${LARGE / 1024} KB (${large.length})`,
@@ -1416,6 +1418,7 @@ export function planIndex(root, files = listFiles(root)) {
     [`${INDEX}/catalogues.md`, cataloguesPage(ctx)],
     [`${INDEX}/fixtures.md`, fixturesPage(ctx)],
     [`${INDEX}/decisions.md`, decisionsPage(ctx)],
+    [`${INDEX}/registered.md`, registeredPage(ctx, GENERATED)],
   ]);
   for (const file of large) planned.set(`${INDEX}/outlines/${file.path}.md`, outlinePage(file, outlineOf(file.path, ctx.read(file.path)) ?? []));
   return planned;

@@ -20,8 +20,8 @@ finishes first and the whole set runs once.
 | The size ratchet | `tools/size-ratchet.mjs`, `tools/size-ratchet.json` | a file over 40 KB does not grow; a new one does not start over it |
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
-| The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes, and says when they are stale |
-| The transitional register | `Driver/Transitional/Register.cs`, `tools/transitional-markers.mjs` | each kept older reading, with the condition that ends it and the row that deletes it |
+| The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes and the window routes' marks, and says when they are stale |
+| The parts kit | `src/Daoris.Contracts/Parts/`, each root's `<Root>PartsTests`, `docs/index/registered.md` | a module's parts registered with its seam's `PartAttribute`, found, ordered and built by the root that runs them |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
@@ -37,7 +37,12 @@ finishes first and the whole set runs once.
 2. New behaviour goes in a unit of its own: a named type in the subdomain that owns it, never a `partial` of a hub. (from D231,
    D166)
 3. A composition root wires units and holds no rule. A domain's logic is a module that registers its parts at start, each with its
-   phase and what it follows. (from D231)
+   phase and what it follows. A seam is a sealed `PartAttribute` subclass with its own phase enum, marking each part as
+   `[Seam("name", Phase.X, "after", …)]`. The root reads the marks with `Parts.Declared` and orders them with `PartOrder.Of`: by
+   phase, then each part after the ones it names, with ties broken by name. A name declared twice, an unknown or later part named
+   after, and a cycle are refused there. The root builds each part with itself as the wiring (`Parts.Build`) and runs each phase's
+   parts at that phase's anchor. A part names only its seam's wiring interface, never the root, so it lives in its own subdomain.
+   `tools/orient-index.mjs` writes the order to `docs/index/registered.md`. (from D231)
 4. A file over 40 KB does not grow, and a new file does not start over it. The ratchet's list only tightens. (from D231)
 5. Comments say what the code cannot: why a choice was made, a trap, a boundary's contract. Row ids, decision numbers and history
    live in the commits and the decisions. (from D231)
@@ -47,12 +52,27 @@ finishes first and the whole set runs once.
    registered, not written by hand. An HTTP route is its request record in `src/Daoris.Contracts/<Domain>/` (`IRoute<TAnswer>`:
    method, path, answer), which uses the standard library alone. The host finds its `IRouteModule`s by reflection and maps each
    handler through `RouteMap`, whose binder answers a value that does not bind 400 with no body, as the framework's binding
-   did; the driver sends the record through `ServiceClient.SendAsync`. The page's types and `ROUTES` table are written from the
+   did: a body is read only where the record has body values, is 415 when it is not JSON, and is required unless the record
+   is `[OptionalBody]`; a POST's `[FromQuery]` value travels in its query. The driver sends the record through
+   `ServiceClient.SendAsync`, its views read in `Service/Wire/<Domain>Views.cs`. The page's types and `ROUTES` table are written from the
    records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
    first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
    pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. `api.ts` sends a declared
-   route as `send(name, request)`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). (from
-   D231, D228)
+   route as `send(name, request)`. The quest doors are `QuestRoutes` (the reads, the publish and the respond, on both hosts) and
+   `QuestPersonRoutes` (a local host's person and driver doors: the close, the set-up and review doors, the workflow choice, a
+   conflict's dismissal and a delete); the ask doors, a local host's alone, are `AskRoutes`, which answer through `AskAnswers` and
+   send from `AskDoorViews`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). A window
+   route is its handler's marks in the desktop modules (`[DriverRoute]` and those beside it); the same tool writes from them the
+   ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
+   publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. A handler takes its
+   payload record, named for its route (`SetCap(SetCap press)`), which `RoutePayload` reads off the request by its parameters'
+   types as the hand-written reads did, a `JsonElement?` field as sent and null only where absent (a shape another reader owns,
+   or a field whose sending is the choice), and a list of records each by the same rules. A route serving a plan and its press is
+   two handlers sharing a named helper, never one reading the route's name. The record and the handler's answer record are
+   written into `DriverPayloads`, so the
+   page's `call` and `useDriverChange` take that route with no payload type of their own. A handler that still takes the
+   `IpcRequest` reads its payload by hand, and the page sends it through the by-hand overloads with a payload type beside its
+   hook, until CODESHAPE1 moves it. (from D231, D228)
 8. Drift is the disk against the lock; the canon is reconciled, not imposed. (from D19, D230)
 9. Only what must never reach history blocks a commit. The rest is verified as a local CI beside the work, and its reds are fixed
    forward. An install is staged only from a green run. (from D180)

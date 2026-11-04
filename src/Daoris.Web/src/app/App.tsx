@@ -37,7 +37,6 @@ import {
   askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, placeOpening, planOpening, questsItem,
   workspaceItem,
 } from './opener';
-import { setupLit } from '../agents/modes';
 import { PlaceDrivingScope } from '../agents/setup/PlaceDriving';
 import { PlaceSessions, PlaceWorkflow } from '../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../agents/setup/PlaceSetUpPanel';
@@ -679,8 +678,8 @@ export function App() {
    * own AI, the remote Workspace, the driver Driver, where each once opened the whole page at its top.
    */
   const apply = (planned: Opening) => {
-    // Lit, a door into a repository's Setup tab opens the place's page instead (AGENTSPLACE1f).
-    const plan = placeOpening(planned, setupLit(), (repository) => {
+    // A door into a repository's Setup tab opens the place's page instead (AGENTSPLACE1f).
+    const plan = placeOpening(planned, (repository) => {
       const row = (machineRegistry.data ?? []).find((each) => each.repository === repository);
       return row ? workspaceOf(row) : DEFAULT_WORKSPACE;
     });
@@ -688,7 +687,6 @@ export function App() {
     // is then chosen now, never a remembered choice.
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
-    if (plan.roleSection) agentsModes.onSection(plan.roleSection);
     // SETUPUX1h: a door to a place names the section and the row it opens at.
     if (plan.place) agentsModes.onPlaceAt(plan.place, plan.placeAt ?? {});
     // Ask Daoris's place card (AGENTSPLACE1k): the place's *Set up…* opens on the ask, once the Agents place has the place chosen.

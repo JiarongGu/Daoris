@@ -16,9 +16,9 @@ public sealed class TogetherRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("TOGETHER", PipeClass.Open)]
     [ByEvent("TOGETHER", Untold = "the operations file, which the look rewrites at each look and the presses rewrite")]
-    private async Task<object?> TogetherAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> TogetherAsync(TogetherRead read, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = read.Session;
         await Task.CompletedTask;
         try
         {
@@ -39,12 +39,10 @@ public sealed class TogetherRoutes(DriverContext context)
     [GroundSession("TOGETHER_PRESS", "session")]
     [Says("TOGETHER_PRESS", "session:session")]
     [Publishes("TOGETHER_PRESS", StateScopes.Sessions, Session = "session")]
-    private async Task<object?> TogetherPressAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> TogetherPressAsync(TogetherPressAsk press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
-        var members = request.Payload is { } payload && payload.TryGetProperty("members", out var named) && named.ValueKind == JsonValueKind.Array
-            ? [.. named.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!).Distinct(StringComparer.Ordinal)]
-            : Array.Empty<string>();
+        var session = press.Session;
+        var members = (press.Members ?? []).Distinct(StringComparer.Ordinal).ToArray();
         var service = _loop.Service ?? throw NotReady();
         var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
@@ -69,9 +67,9 @@ public sealed class TogetherRoutes(DriverContext context)
     [GroundSession("TOGETHER_ASK_AGAIN", "session")]
     [Says("TOGETHER_ASK_AGAIN", "session:session")]
     [Publishes("TOGETHER_ASK_AGAIN", StateScopes.Sessions, Session = "session")]
-    private async Task<object?> TogetherAskAgainAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> TogetherAskAgainAsync(TogetherAskAgain press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var service = _loop.Service ?? throw NotReady();
         var refused = await Press(service).AskHeadAgainAsync(session, cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
@@ -84,9 +82,9 @@ public sealed class TogetherRoutes(DriverContext context)
     [GroundSession("TOGETHER_LET_GO", "session")]
     [Says("TOGETHER_LET_GO", "session:session")]
     [Publishes("TOGETHER_LET_GO", StateScopes.Sessions, Session = "session")]
-    private async Task<object?> TogetherLetGoAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> TogetherLetGoAsync(TogetherLetGo press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var refused = await Press(_loop.Service ?? throw NotReady()).LetGoAsync(session, cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
         return new { Done = refused is null, Refused = refused };

@@ -49,13 +49,13 @@ public sealed class LandingKeyTests
     [Fact]
     public void A_map_reads_the_first_rule_of_a_name_that_lands_and_writes_each_as_kept()
     {
-        const string text = """{"landings":{"a":{"form":"branch","pattern":"feature/{quest}","plugin":"example.pr","tidy":true},"A":{"form":"merge"},"b":{"form":"merge","plugin":"x"},"c":{"form":"merge","pattern":"ignored"}}}""";
+        const string text = """{"landings":{"a":{"form":"branch","pattern":"feature/{quest}","plugin":"example.pr"},"A":{"form":"merge"},"b":{"form":"merge","plugin":"x"},"c":{"form":"merge","pattern":"ignored"}}}""";
         using var document = JsonDocument.Parse(text);
 
         var map = LandingKey.RuleMap(document.RootElement, "landings");
 
         Assert.Equal(["a", "c"], map.Keys.Order());
-        Assert.True(map["a"].Tidy);
+        Assert.Equal("example.pr", map["a"].Plugin);
         Assert.Null(map["c"].Pattern);
 
         using var buffer = new MemoryStream();
@@ -66,7 +66,7 @@ public sealed class LandingKeyTests
             writer.WriteEndObject();
         }
 
-        Assert.Equal("""{"landings":{"a":{"form":"branch","pattern":"feature/{quest}","plugin":"example.pr","tidy":true},"c":{"form":"merge"}}}""",
+        Assert.Equal("""{"landings":{"a":{"form":"branch","pattern":"feature/{quest}","plugin":"example.pr"},"c":{"form":"merge"}}}""",
             System.Text.Encoding.UTF8.GetString(buffer.ToArray()));
     }
 

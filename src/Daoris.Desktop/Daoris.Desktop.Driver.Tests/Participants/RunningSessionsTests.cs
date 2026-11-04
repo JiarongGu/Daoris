@@ -138,76 +138,6 @@ public sealed class RunningSessionsTests
     }
 
     /// <summary>
-    /// LAND2b: the landing pass runs beside the looks, one at a time; while it works nothing is idle, what it says joins the next
-    /// report and wakes the wait as an ending does, and a closing driver waits for it.
-    /// </summary>
-    [Fact]
-    public async Task A_landing_pass_runs_beside_the_looks_one_at_a_time_and_its_lines_join_the_next_report()
-    {
-        var running = new RunningSessions();
-        var release = new TaskCompletionSource();
-
-        Assert.True(running.Beside(async _ =>
-        {
-            await release.Task;
-            return ["landing  session s1 (#q1 → engine): accepted automatically when its quest was done: its work is on `feature/q1`."];
-        }, CancellationToken.None));
-
-        Assert.True(running.Landing);
-        Assert.False(running.Idle);
-        Assert.False(running.Beside(_ => Task.FromResult<IReadOnlyList<string>>(["a second pass"]), CancellationToken.None));
-        var settled = running.SettledAsync();
-        var waiting = running.NextAsync(TimeSpan.FromMinutes(5), CancellationToken.None);
-        Assert.False(settled.IsCompleted);
-
-        release.SetResult();
-        await waiting.WaitAsync(Poll.Patience);
-        await settled.WaitAsync(Poll.Patience);
-
-        Assert.False(running.Landing);
-        var said = Assert.Single(running.Drain());
-        Assert.StartsWith("landing  session s1", said.Line);
-        Assert.Null(said.Ended);
-        Assert.True(running.Idle);
-    }
-
-    /// <summary>A pass that fails past its own catches is said once, in the next report; one a closing loop cancelled says nothing.</summary>
-    [Fact]
-    public async Task A_landing_pass_that_fails_is_said_once_and_a_cancelled_one_says_nothing()
-    {
-        var running = new RunningSessions();
-        running.Beside(_ => throw new InvalidOperationException("the record would not write"), CancellationToken.None);
-        await running.SettledAsync().WaitAsync(Poll.Patience);
-        Assert.Contains("the record would not write", Assert.Single(running.Drain()).Line);
-
-        using var closing = new CancellationTokenSource();
-        await closing.CancelAsync();
-        running.Beside(token => Task.FromCanceled<IReadOnlyList<string>>(token), closing.Token);
-        await running.SettledAsync().WaitAsync(Poll.Patience);
-        Assert.Empty(running.Drain());
-        Assert.True(running.Idle);
-    }
-
-    /// <summary>
-    /// FABRIC-END7's review: a landing pass's end is told once it no longer runs, whether it said something or nothing, so what a look
-    /// held back for it is offered again at once rather than at the next wake.
-    /// </summary>
-    [Fact]
-    public async Task A_landing_pass_s_end_is_told_once_it_no_longer_runs()
-    {
-        var running = new RunningSessions();
-        var release = new TaskCompletionSource<IReadOnlyList<string>>();
-        var told = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        Assert.True(running.Beside(_ => release.Task, CancellationToken.None, ended: () => told.TrySetResult(running.Landing)));
-        Assert.False(told.Task.IsCompleted);
-        release.SetResult([]);
-
-        Assert.False(await told.Task.WaitAsync(Poll.Patience), "told while the pass still counted as running");
-        Assert.Empty(running.Drain());
-    }
-
-    /// <summary>
     /// LOOKWAIT1b (D181 point 6): work kept beside the looks is never the stage that began it, which does not wait on it. Its git
     /// waiting for a place while that stage still runs is not the stage's queue: said nowhere, or to a span of its own.
     /// </summary>
@@ -215,7 +145,6 @@ public sealed class RunningSessionsTests
     [InlineData("judge")]
     [InlineData("sync")]
     [InlineData("pass")]
-    [InlineData("landing")]
     public async Task Work_begun_beside_a_stage_waits_for_its_places_apart_from_that_stage(string beside)
     {
         long now = 0;
@@ -247,8 +176,7 @@ public sealed class RunningSessionsTests
                 {
                     "judge" => running.Judge("opinion", "q1", 1, work, CancellationToken.None),
                     "sync" => running.SyncBeside(work, CancellationToken.None),
-                    "pass" => running.PassBeside(work, CancellationToken.None),
-                    _ => running.Beside(work, CancellationToken.None),
+                    _ => running.PassBeside(work, CancellationToken.None),
                 });
                 await waiting.Task.WaitAsync(Poll.Patience);
                 Interlocked.Add(ref now, 2000);

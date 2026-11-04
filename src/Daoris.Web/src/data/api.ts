@@ -6,7 +6,11 @@
 
 // The knowledge reads' shapes are the service's declarations (`generated/service.ts`, written from src/Daoris.Contracts),
 // under the names the page reads them by.
-import type { HitResponse, ProvenanceResponse } from './generated/service';
+import type {
+  AskActionResponse, AskResponse, DeclarationMatchResponse, GoAheadRequestResponse, GoAheadResponse, HitResponse, ProvenanceResponse,
+  QuestAnswerResponse, QuestAttachmentResponse, QuestConflictResponse, QuestRequirementResponse,
+  QuestResponse, QuestSetUpWire,
+} from './generated/service';
 export type {
   StatusResponse as Status, ProvenanceResponse as Provenance, RepositoryResponse as Repository, HitResponse as Hit,
   EntryResponse as Entry, ConvergenceEntryResponse as ConvergenceEntry, ConvergenceResponse as Convergence,
@@ -22,120 +26,15 @@ export type SearchAnswer = { hits: HitResponse[]; tier: string | null };
  * opened" and never shows the path itself: a page does not name a machine path. Where the shell pushes
  * the quests and the asks (PUSH1d3), the path is never pushed and `kept` says the same; `fileKept` reads either.
  */
-export type QuestAttachment = { name: string; sha256: string; bytes: number; path?: string; kept?: boolean };
+export type QuestAttachment = QuestAttachmentResponse & { kept?: boolean };
 /** Whether this machine keeps a file's bytes, so it can be opened: a path pulled, or `kept` pushed (PUSH1d3). */
 export const fileKept = (file: QuestAttachment): boolean => Boolean(file.path) || file.kept === true;
-export type Quest = {
-  id: string; from: string; to: string; title: string; body: string;
-  status: 'Open' | 'Taken' | 'Done' | 'Declined';
-  note?: string; filed: string; updated: string; workspace?: string;
-  /**
-   * The note's lines beside its English (QUESTCLOSE1b1, D142 point 2), which the page words in the reader's language
-   * (QUESTCLOSE1b2). Absent from a host older than the field, and from a note written before parts: shown as kept.
-   */
-  noteParts?: NotePart[] | null;
-  /** Absent from a host older than D65 — the same as carrying nothing. */
-  links?: string[];
-  attachments?: QuestAttachment[];
-  /** What this quest's close publishes next (D65 §4), in order — the service does it, not the page. */
-  then?: QuestStep[];
-  /** The quest whose close published this one, when it is a step of a chain. */
-  parent?: string;
-  /**
-   * Moves another machine made that reached the remote second (D68 §5): kept on the quest for a
-   * person, never merged. Absent from a host older than the sync, which is the same as none.
-   */
-  conflicts?: QuestConflict[];
-  /**
-   * The question its taker asked another repository and waits on (D79) — a quest id — or absent. A
-   * taken quest carrying one is waiting, not stuck: the driver resumes it once that quest closes.
-   */
-  awaits?: string | null;
-  /**
-   * The session whose connector published it (SESS1) — absent for a person's publish, a chain step,
-   * and a host older than the field, which all say the same: no session asked.
-   */
-  publishedBy?: string | null;
-  /**
-   * Whether the host would delete it (D95): open, and nobody has started on it. The service's own
-   * judgement, so the page offers *Delete* only where the door would take it. Absent from a host older
-   * than the field, and false at a shared deployment, which has no delete door.
-   */
-  deletable?: boolean;
-  /**
-   * The lanes of `to` it addresses (D115 §2.2), sorted — asked as `repository:lane+lane`. `to` stays the
-   * repository. Absent or empty is a quest to the whole repository, which every older quest is.
-   */
-  lanes?: string[];
-  /** INTEGRATE1l: the repository-relative globs its publisher declared it touches. Absent or empty is none, as from an older host. */
-  paths?: string[];
-  /** INTEGRATE1p: the key of the workflow request that published it, `<run>/<node>/<n>`. Absent for every other quest. */
-  request?: string | null;
-  /**
-   * What the person requires of it (DRIFT1c, D133 §3), in the service's order, the numbers its done answers by: each their
-   * own words and the check that proves them. Absent or empty is a quest that names none, and a host older than the field.
-   */
-  requirements?: QuestRequirement[];
-  /** How its done answered each requirement (DRIFT1d, §4), by number; absent or empty before a done answered. */
-  answers?: QuestAnswer[];
-  /**
-   * Whether a departure holds it for the person's yes (DRIFT1d): closed done, departing from what they required, so the
-   * chain's next step and a quest waiting on it wait. Absent is false. `accepted` is when the person gave the yes.
-   */
-  held?: boolean;
-  accepted?: string | null;
-  /**
-   * What a list calls it (SESSUX1j, D126 §9): its publisher's short title, or the name the service read from its own
-   * words. Absent from a host older than the field, and then its title names it (`questName`).
-   */
-  short?: string | null;
-  /**
-   * Why it is held (EVID1a, D144 §6): `departed`, `evidence-unread`, `evidence-missing`, or `unreviewed`, a set-up step's done
-   * waiting for the person's review (REVIEWENV1b). Absent where it is not held, and from a host older than the field.
-   */
-  hold?: QuestHold | null;
-  /** Its chain's review choice (REVIEWENV1b, D154 point 3): `off`, `on` or an environment's name, with the words it was set on. */
-  review?: { choice: string; words?: string | null } | null;
-  /** The environment a set-up step shows its chain's work in (REVIEWENV1b); absent on every other quest. */
-  setUpIn?: string | null;
-  /** What a set-up step showed, oldest first (REVIEWENV1b, design §2.6); absent where nothing was. */
-  setUps?: QuestSetUp[];
-  /** The person's verdicts on it, oldest first (REVIEWENV1b, design §3.5); absent where they gave none. */
-  verdicts?: QuestVerdict[];
-  /**
-   * The digest of the graph that closes it (FABRIC-CLOSE1a, the fabric events design §E5), and its taker's current submission:
-   * the agent's `ready`, its result while it stays taken. Both absent for a quest no closure graph holds, which is every quest
-   * on an install that binds none, and from a host before them.
-   */
-  closure?: string | null;
-  submission?: QuestSubmission | null;
-  /**
-   * The submission of its parent a chain's step grew from, and the one the person reopened under it while that holds it
-   * (FABRIC-CLOSE1c; `hold` then reads `source-reopened`). Both absent for every other quest, every step from before, and from
-   * a host before them.
-   */
-  grewFrom?: SubmissionRef | null;
-  sourceReopened?: SubmissionRef | null;
-  /**
-   * The person's last reopen of its own submission that no later submission answered (FABRIC-CLOSE1c4, §E5): absent for a quest
-   * never reopened, once its next `ready` answered it, and from a host before it, so a reopened source, which has no `submission`,
-   * is told from one whose taker has not said `ready` yet.
-   */
-  reopened?: QuestReopen | null;
-  /**
-   * SYNCMERGE1b0 (D178 point 7), each absent where unset and from a host before it: the conflicts settled on it, in order, each with
-   * how it `ended`; the machine whose take holds the step while it is taken; and this machine's id, answered only to a page on a local
-   * host's own machine, which tells this machine's lost take, the one it may bring forward, from another machine's.
-   */
-  settled?: QuestConflict[];
-  holder?: string | null;
-  here?: string | null;
-  /**
-   * The person's kind and workflow choices on a quest no ask published, made before it started (WORKFLOW1e2, workflow design §4.1
-   * row 1), oldest first, the latest standing, an ask's shape. Absent where they made none, and from a host before it.
-   */
-  workflowChoices?: { kind?: string | null; workflow?: string | null; at: string; words?: string | null }[];
-};
+/**
+ * A quest as every door answers it: the service's declaration (`generated/service.ts`), whose status and note parts it types as the
+ * page reads them. A host older than a field leaves it out, which reads as carrying nothing. `kept` is what the shell pushes in
+ * place of a path (PUSH1d3).
+ */
+export type Quest = Omit<QuestResponse, 'attachments'> & { attachments: QuestAttachment[] };
 /** A submission by the machine and sequence that made it (FABRIC-CLOSE1a): what a reopen names it by. */
 export type SubmissionRef = { machine: string; sequence: number };
 /**
@@ -179,11 +78,7 @@ export type QuestHold =
  * served or a review run's command, the session that said it (absent for the person's own), whether it was local, and when.
  * `machine` and `sequence` are what a verdict names it by (REVIEWENV1b3).
  */
-export type QuestSetUp = {
-  commit: string; look?: string | null; shows?: string | null; again?: string | null; served?: string | null;
-  run?: string | null; session?: string | null; local?: boolean; at?: string | null; machine?: string | null;
-  sequence?: number | null;
-};
+export type QuestSetUp = QuestSetUpWire;
 /** Which set-up a verdict answers, whole: the machine that kept it and its sequence there (REVIEWENV1b3). */
 export type SetUpRef = { machine: string; sequence: number };
 /**
@@ -198,30 +93,19 @@ export type QuestVerdict = {
 /** A review's verdict as the person gives it at the quest's door (REVIEWENV1b), in the service's words. */
 export type Verdict = 'reviewed' | 'not-yet' | 'skipped';
 /** One thing the person requires (DRIFT1c): their words, quoted as they said them, and the check that proves them. */
-export type QuestRequirement = { quote: string; check: string };
+export type QuestRequirement = QuestRequirementResponse;
 /**
  * How a done answered one requirement (DRIFT1d): `met` with how its check was met, or `departed` with the reason and
  * `quote`, the person's words it turns on, each in the done's words. The host leaves the absent half out.
  */
-export type QuestAnswer = { requirement: number; met?: string | null; departed?: string | null; quote?: string | null };
+export type QuestAnswer = QuestAnswerResponse;
 /** One lane a repository declares (D115 §2.2), as the registry answers it: its words, never its paths. */
 export type Lane = { id: string; title: string; summary: string; steward: boolean };
 /**
  * A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its
  * own words, verbatim. `machine` and `sequence` name it on every machine — what a dismissal names.
  */
-export type QuestConflict = {
-  machine: string; sequence: number; attempted: Quest['status']; note?: string | null; at: string;
-  /** Its take lost to the person's reopen of the work its step grew from (SYNCMERGE1b0), not to another machine's take. */
-  lostToTheReopen?: boolean;
-  /** On a settled conflict only: dropped (a plain dismissal) or brought forward (D178 point 5). */
-  ended?: 'dropped' | 'brought-forward' | (string & {});
-  /**
-   * The bring-forward that settled it, or, on one still open, this machine's latest bring-forward of it that lost again, whose fresh
-   * take is then a conflict of its own on the quest, named by this.
-   */
-  forward?: QuestForward | null;
-};
+export type QuestConflict = QuestConflictResponse;
 /**
  * A bring-forward's fresh take (SYNCMERGE1b0, D178 points 3 and 8): its machine and sequence, when it was made, and how it stands as a
  * claim reads one: `held` once a remote numbered it, `unconfirmed` while it is only here, `lost` where it lost again.
@@ -269,86 +153,28 @@ export type QuestAction = { quest: Quest; message: string };
  */
 export type MachineRetired = { workspace: string; machine: string; retired: boolean; undeclared: string[]; message: string };
 /**
- * An ask (D65 §1a): a sentence entered at a WORKSPACE rather than at a repository, held as a record of
- * what became of it. `tier` names what answered it, on every record (`model-decoupling`); a tier this
- * page has no word for is shown as the service wrote it. Optional fields are absent rather than null
- * on the wire — the host leaves nulls out.
+ * An ask: a sentence entered at a WORKSPACE rather than at a repository, held as a record of what became of it, as the service
+ * declares it (`generated/service.ts`). `tier` names what answered it, on every record; a tier this page has no word for is shown
+ * as the service wrote it. A part a host older than its field leaves out reads as none. Its files' `kept` is what the shell pushes in
+ * place of a path (PUSH1d3).
  */
+export type Ask = Omit<AskResponse, 'attachments'> & { attachments: QuestAttachment[] };
 /**
- * `Done` is derived by the service (USE1c): the ask became quests and every one of them has closed.
- * The default list leaves it out, as it leaves out a closed one.
+ * `Done` is derived by the service: the ask became quests and every one of them has closed. The default list leaves it out, as it
+ * leaves out a closed one.
  */
-export type AskState = 'Open' | 'Proposed' | 'Published' | 'Done' | 'Closed';
+export type AskState = Ask['state'];
 /** A repository the declarations tier proposed, with the words its declarations share with the ask. */
-export type DeclarationMatch = { repository: string; score: number; matched: string[] };
-export type Ask = {
-  id: string; workspace: string; sentence: string; state: AskState; tier: string;
-  asked: string; updated: string;
-  /** Who asked, when the door knows; absent is this machine's person. */
-  asker?: string | null;
-  /** Why it was closed, or the service's sentence about the receiver it named — verbatim. */
-  note?: string | null;
-  links: string[];
-  /** Its files, by name — kept on this machine until the ask becomes quests. `path` is never shown. */
-  attachments: QuestAttachment[];
-  proposal: DeclarationMatch[];
-  /** The quests it became, in the order they were published. */
-  quests: string[];
-  /** The intake session that served it (D65 §1b), once one opened — absent for every other ask. */
-  intake?: string | null;
-  /**
-   * The short title its asker gave (HEAD2e, D162 point 4), as a quest's (SESSUX1j): at most 40 characters, as written. Absent
-   * for an ask with none, every ask from before it, and a host older than the field.
-   */
-  short?: string | null;
-  /**
-   * Whether the host would delete it, with every quest asked by it (D95): nothing stands on any of
-   * them. The service's judgement, like a quest's; absent from a host older than the field.
-   */
-  deletable?: boolean;
-  /**
-   * The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, one per act; absent from a host
-   * older than them.
-   */
-  goAheads?: GoAhead[];
-  /**
-   * The person's review choices on it (REVIEWENV1b, design §1.5), oldest first, the latest standing: `off`, `on` or an
-   * environment's name, with their words. Absent where they made none, and from a host older than the field.
-   */
-  reviewChoices?: { choice: string; at: string; words?: string | null }[];
-  /**
-   * Its intake's review proposals (REVIEWENV1b, design §1.5–§1.6), each with its reason and the quest it came with: only the
-   * person's press applies one. Absent where there is none.
-   */
-  reviewProposals?: { choice: string; reason: string; at: string; session?: string | null; quest?: string | null }[];
-  /**
-   * The person's kind choices on it (WORKFLOW1i-c, workflow design §4.3), oldest first, the latest standing: a kind, a workflow,
-   * or both. Absent where they made none.
-   */
-  workflowChoices?: { kind?: string | null; workflow?: string | null; at: string; words?: string | null }[];
-  /**
-   * Its intake's kind proposals (WORKFLOW1i-c), each with its reason, the person's words as quoted: only the person's press
-   * applies one. Absent where there is none.
-   */
-  workflowProposals?: { kind: string; reason: string; at: string; session?: string | null; quest?: string | null }[];
-};
+export type DeclarationMatch = DeclarationMatchResponse;
 /** One session's request for a go-ahead: who asked, on which quest, when, and why, in its words. */
-export type GoAheadRequest = { session: string; quest?: string | null; at: string; why: string };
+export type GoAheadRequest = GoAheadRequestResponse;
 /**
- * A go-ahead (KNOWUSE1a): the person's yes for one act outside a repository, asked once on the ask. `kind` is the
- * service's word (write, release, push, sign-in, run); `on` and `act` are the session's words for where it lands and
- * what it touches, shown as written. `answer` is absent while it waits on the person.
+ * A go-ahead: the person's yes for one act outside a repository, asked once on the ask. `kind` is the service's word (write,
+ * release, push, sign-in, run); `on` and `act` are the session's words for where it lands and what it touches, shown as written.
+ * `answer` is absent while it waits on the person.
  */
-export type GoAhead = {
-  number: number; kind: string; on: string; act: string; state: 'asked' | 'approved' | 'refused';
-  asked: GoAheadRequest[];
-  answer?: { approved: boolean; words?: string | null; at: string } | null;
-  /** The go-ahead whose words it shared where they could not tell, when that is why it was asked again. */
-  near?: number | null;
-};
-export type AskAction = { ask: Ask; message: string; quest?: Quest | null };
-/** What a delete did (D95): the record it removed, and the service's sentence, shown as said. */
-export type Deleted = { id: string; message: string };
+export type GoAhead = GoAheadResponse;
+export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; quest?: Quest | null };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
   owns: string[]; accepts: string[]; packs: string[]; entries: number; workspace?: string;
@@ -606,18 +432,30 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return (await answered(await reach(path, { signal }))).json() as Promise<T>;
 }
 
+type Scalar = string | number | boolean | null | undefined;
+
 /**
- * A read the service declares (`generated/service.ts`), by its record's name: each `{name}` of its path filled from the request,
- * the rest its query. Its answer is typed by the declaration, and its response rides along for what its headers say.
+ * A route the service declares (`generated/service.ts`), by its record's name: its path filled from the request, the rest in a
+ * read's query or a write's body (but for what it names for its query), a write sent as every write is. Typed by the declaration.
  */
 async function send<N extends RouteName>(name: N, request: Routes[N]['request'], signal?: AbortSignal) {
-  const rest = { ...request } as Record<string, string | number | boolean | null | undefined>;
-  const path = ROUTES[name].path.replace(/\{(\w+)[^}]*\}/g, (_, key: string) => {
+  const route = ROUTES[name];
+  const rest = { ...request } as Record<string, unknown>;
+  const path = route.path.replace(/\{(\w+)[^}]*\}/g, (_, key: string) => {
     const value = rest[key];
     delete rest[key];
     return encodeURIComponent(String(value));
   });
-  const response = await answered(await reach(`${path}${qs(rest)}`, { signal }));
+  if (route.method === 'GET') {
+    const response = await answered(await reach(`${path}${qs(rest as Record<string, Scalar>)}`, { signal }));
+    return { answer: await response.json() as Routes[N]['answer'], response };
+  }
+  const query: Record<string, Scalar> = {};
+  for (const key of route.query as readonly string[]) {
+    query[key] = rest[key] as Scalar;
+    delete rest[key];
+  }
+  const response = await wrote(`${path}${qs(query)}`, rest, route.method as 'POST' | 'DELETE');
   return { answer: await response.json() as Routes[N]['answer'], response };
 }
 
@@ -680,6 +518,11 @@ const write = (path: string, body: unknown, method: 'POST' | 'DELETE') => {
 };
 
 async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
+  return (await wrote(path, body, method)).json() as Promise<T>;
+}
+
+/** A write's response once the host took it: the person key sent, asked again once where it was stale, a refusal thrown. */
+async function wrote(path: string, body: unknown, method: 'POST' | 'DELETE'): Promise<Response> {
   let response = await write(path, body, method);
   // PERSONDOOR1f (design §2.3, §5.2): a key from an earlier start of the host is refused `stale`. The shell is asked again and
   // the write sent once more with the key it holds now; a second refusal is the host's sentence, said as every refusal is.
@@ -699,7 +542,7 @@ async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 
       status: response.status, ...(typeof parsed?.code === 'string' ? { code: parsed.code } : {}),
     });
   }
-  return response.json() as Promise<T>;
+  return response;
 }
 
 /** A nonce for the host's proof of possession (design §2.3): random, in base64url, never kept. */
@@ -764,16 +607,12 @@ export const api = {
   },
   convergence: async (minimumSimilarity: number, workspace: string | null, signal?: AbortSignal) =>
     (await send('FindConvergence', { minimumSimilarity, limit: PAGE_SHOWN + 1, workspace }, signal)).answer,
-  quests: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
-    get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
-  /**
-   * One quest's moves, in the order its history replays (FLOWCHART1a2): the service's own door on both hosts, so a browser draws
-   * its flowchart as the window does. Null from a host from before the door, which answers it not found: its path is not kept
-   * there, which is no failure (the flowchart design §7, trap 18). The door answers every id, so its own answer is never a 404.
-   */
+  quests: async (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    (await send('ListQuests', { includeClosed, repository, workspace }, signal)).answer,
+  /** One quest's moves, in the order its history replays, on both hosts; null from a host without the door, which answers 404. */
   questMoves: async (id: string, signal?: AbortSignal): Promise<QuestMove[] | null> => {
     try {
-      const answer = await get<{ moves?: unknown }>(`/api/quests/${encodeURIComponent(id)}/moves`, signal);
+      const { answer } = await send('ReadQuestMoves', { id }, signal);
       if (!Array.isArray(answer?.moves)) throw new Error('the service answered something other than the quest\'s moves');
       return answer.moves as QuestMove[];
     } catch (error) {
@@ -783,8 +622,8 @@ export const api = {
   },
   // Asks (D65 §1a), a local host's doors: the screen twin of `daoris ask` (INT4c, D50). Files
   // travel whole, as a quest's do, because the host keeps them until the ask becomes quests.
-  asks: (includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
-    get<Ask[]>(`/api/asks${qs({ includeClosed, workspace })}`, signal),
+  asks: async (includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    (await send('ListAsks', { includeClosed, workspace }, signal)).answer,
   ask: (body: {
     workspace: string; sentence: string; links?: string[]; attachments?: { name: string; content: string }[];
     to?: string;
@@ -792,29 +631,27 @@ export const api = {
     review?: string; reviewWords?: string;
     /** The person's short title for it (HEAD2e), at most 40 characters; the service refuses a longer one in its words. */
     short?: string;
-  }) => asThePerson<AskAction>('/api/asks', body),
+  }) => send('PostAsk', body).then(({ answer }) => answer),
   // The person's review choice on an ask's page, or its intake's proposal applied (REVIEWENV1b, design §1.5): the latest stands.
   chooseAskReview: (id: string, choice: string, words?: string) =>
-    asThePerson<AskAction>(`/api/asks/${encodeURIComponent(id)}/review`, { choice, ...(words ? { words } : {}) }),
+    send('ChooseAskReview', { id, choice, ...(words ? { words } : {}) }).then(({ answer }) => answer),
   // An intake's kind proposal applied (WORKFLOW1i-c, design §4.3): a post replaces the latest choice whole, so the workflow it
   // has is sent again. No words: the reason is the agent's quoting, not the person's act.
   chooseAskWorkflow: (id: string, kind: string, workflow?: string | null) =>
-    asThePerson<AskAction>(`/api/asks/${encodeURIComponent(id)}/workflow`, { kind, ...(workflow ? { workflow } : {}) }),
-  publishAsk: (id: string, to: string) =>
-    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/publish`, { to }),
-  closeAsk: (id: string, reason: string) =>
-    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/close`, { reason }),
+    send('ChooseAskWorkflow', { id, kind, ...(workflow ? { workflow } : {}) }).then(({ answer }) => answer),
+  publishAsk: (id: string, to: string) => send('PublishAsk', { id, to }).then(({ answer }) => answer),
+  closeAsk: (id: string, reason: string) => send('CloseAsk', { id, reason }).then(({ answer }) => answer),
   // The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a), with their words where they give any;
   // `daoris ask go-ahead` is the terminal's twin. `goesOn` false says no park goes on with the answer (GOAHEAD2's door):
   // a stale go-ahead's refusal runs nothing (GOAHEADSTALE1). Absent, the host reads it as true, as it always has.
   answerGoAhead: (id: string, number: number, approved: boolean, words?: string, goesOn = true) =>
-    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/go-aheads/${number}`, {
-      answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}), ...(goesOn ? {} : { goesOn: false }),
-    }),
+    send('AnswerGoAhead', {
+      id, number: String(number), answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}), ...(goesOn ? {} : { goesOn: false }),
+    }).then(({ answer }) => answer),
   // Deleting a record made by mistake (D95) — `daoris ask delete` and `quest delete` are the
   // terminal's twins. A refusal is the service's sentence, verbatim, like every other write's.
-  deleteAsk: (id: string) => post<Deleted>(`/api/asks/${encodeURIComponent(id)}`, undefined, 'DELETE'),
-  deleteQuest: (id: string) => post<Deleted>(`/api/quests/${encodeURIComponent(id)}`, undefined, 'DELETE'),
+  deleteAsk: (id: string) => send('DeleteAsk', { id }).then(({ answer }) => answer),
+  deleteQuest: (id: string) => send('DeleteQuest', { id }).then(({ answer }) => answer),
   registry: (workspace: string | null, signal?: AbortSignal) =>
     get<Registration[]>(`/api/registry${qs({ workspace })}`, signal),
   // A repository's own code map (MAP3a), read from its committed file — never written to (D32).
@@ -848,58 +685,50 @@ export const api = {
   importFolder: (folder: string, workspace?: string) =>
     post<{ folder: string; imported: number; repositories: string[]; message: string; workspace?: string }>(
       '/api/registry/import', { folder, ...(workspace ? { workspace } : {}) }),
-  // Files travel WHOLE to the local host, which keeps them under this machine's home (D65 §2); a
-  // shared deployment refuses content outright, and the platform is only ever served by a local one.
+  // Files travel whole to the local host, the only one that serves the platform; a shared one refuses content.
   publishQuest: (quest: {
     from: string; to: string; title: string; body: string;
     links?: string[]; attachments?: { name: string; content: string }[]; then?: QuestStep[];
     /** The person's short title (SESSUX1j), at most 40 characters; the service refuses a longer one in its words. */
     short?: string;
-  }) => post<QuestAction>('/api/quests', quest),
+  }) => send('PublishQuest', quest).then(({ answer }) => answer),
   /** Where a kept file is opened — the local host's own route, which answers this machine only. */
   attachmentUrl: (quest: string, sha256: string) =>
     onHost(`/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
-    post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
-  // The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): what it held goes on. A local
-  // host's door, as a delete is; `daoris quest accept` is the terminal's twin.
-  acceptQuest: (id: string) => post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/accept`, {}),
-  // The person marks a quest done (QUESTCLOSE1, D126's note): their done, with their words where they wrote any, which the
-  // service keeps after the sentence saying the done was theirs. A local host's door, as the yes is; `daoris-driver quest
-  // done` is the terminal's twin. Never respond's door, which is an agent's done.
+    send('RespondQuest', { id, action, reason }).then(({ answer }) => answer),
+  // The person's yes to a done's departure from what they required: what it held goes on.
+  acceptQuest: (id: string) => send('AcceptQuest', { id }).then(({ answer }) => answer),
+  // The person's own done, with their words where they wrote any; never respond's door, which is an agent's done.
   personDone: (id: string, note: string | null) =>
-    post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/done`, note ? { note } : {}),
-  // The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): the submission the page showed, named whole, which the
-  // host refuses once another is current, and their words. `daoris quest reopen` is the terminal's twin.
+    send('MarkQuestDone', { id, ...(note ? { note } : {}) }).then(({ answer }) => answer),
+  // The person's reopen of the submission the page showed, named whole, which the host refuses once another is current.
   reopenQuest: (id: string, submission: SubmissionRef, note: string | null) =>
-    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/reopen`, {
-      submission: { machine: submission.machine, sequence: submission.sequence }, ...(note ? { note } : {}),
-    }),
-  // The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): it grows from the source's current
-  // submission, refused until that is unheld. `daoris quest go-on` is the terminal's twin; abandoning it is the decline.
-  continueQuest: (id: string) => asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/continue`, {}),
+    send('ReopenQuest', {
+      id, submission: { machine: submission.machine, sequence: submission.sequence }, ...(note ? { note } : {}),
+    }).then(({ answer }) => answer),
+  // The person's word to go on with a step its source's reopen held, refused until the source's submission is unheld.
+  continueQuest: (id: string) => send('ContinueQuest', { id }).then(({ answer }) => answer),
   // The person's verdict on a review (REVIEWENV1g, D154 point 8; design §3.3, §3.6): `reviewed` or `not-yet` on the set-up their
   // view drew, named whole, which the host refuses as stale where a newer one was shown since (REVIEWENV1b3); a skip names
   // none. `daoris quest review` is the terminal's twin.
   reviewQuest: (id: string, verdict: Verdict, words?: string | null, setUp?: SetUpRef | null) =>
-    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/review`, {
-      verdict, ...(words ? { words } : {}), ...(setUp && verdict !== 'skipped' ? { setUp } : {}),
-    }),
+    send('ReviewQuest', {
+      id, verdict, ...(words ? { words } : {}), ...(setUp && verdict !== 'skipped' ? { setUp } : {}),
+    }).then(({ answer }) => answer),
   // The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): a set-up step published following a done quest.
   setUpStep: (id: string, environment: string) =>
-    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/set-up-step`, { environment }),
+    send('PublishSetUpStep', { id, environment }).then(({ answer }) => answer),
   // The person retiring a machine the circle's remote still counts (FABRIC-CLOSE1i2): one whose store was deleted, or that left the
   // workspace, no longer holds its binds off; a push from it counts it again.
   retireMachine: (workspace: string, machine: string) =>
     asThePerson<MachineRetired>(`/api/sync/machines/${encodeURIComponent(machine)}/retire${qs({ workspace })}`, {}),
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
-    post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),
-  // The person bringing this machine's lost take forward (SYNCMERGE1a, D178 point 3), by the conflict's name: a fresh take of the step and
-  // the conflict's dismissal marked with it, which the kept session goes on from. A refusal, or a loss again, is a 409 in the host's words.
-  // `daoris remote sync forward` is the terminal's twin.
+    send('DismissConflict', { id, machine, sequence }).then(({ answer }) => answer),
+  // The person bringing this machine's lost take forward by the conflict's name; a refusal, or a loss again, is a 409.
   forwardConflict: (id: string, machine: string, sequence: number) =>
-    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/forward`, { machine, sequence }),
+    send('ForwardConflict', { id, machine, sequence }).then(({ answer }) => answer),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
   refresh: () => post<RefreshReport>('/api/refresh', {}),

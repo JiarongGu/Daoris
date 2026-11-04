@@ -100,11 +100,11 @@ public sealed class HelpChosenSettingsTests : IDisposable
     {
         var file = PermissionRules.Load(_home);
         Assert.DoesNotContain(HelpRoom.Allowed, rule => rule.Contains("__settings_", StringComparison.Ordinal));
-        Assert.DoesNotContain(ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []).Rules(file, "h1").Allow,
+        Assert.DoesNotContain(HelpPlacement.In(_home, HelpRoom.PathOf(_home), []).Rules(file, "h1").Allow,
             rule => rule.Contains("__settings_", StringComparison.Ordinal));
 
         Choose("""{ "settings": ["cooloff", "notify"] }""");
-        var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var place = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []);
 
         Assert.Equal([ConfiguredAccess.Notify, ConfiguredAccess.CoolOff], place.Settings);
         var allow = place.Rules(file, "h1").Allow;

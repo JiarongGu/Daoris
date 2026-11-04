@@ -156,7 +156,7 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
 
         var commit = Assert.Single(posted)["commit"]!.GetValue<string>();
         Assert.Equal(await RevAsync(source.Path, "HEAD"), commit);
-        var sourceView = ServiceClient.ReadQuests(
+        var sourceView = QuestViews.Read(
             $$$"""[{"id":"q1","from":"game","to":"engine","title":"The source","body":"","status":"Taken","closure":"gph-0123","submission":{"machine":"desk","sequence":43,"commit":"{{{commit}}}"}}]""")[0];
         var stepView = new QuestView("q2", "engine", "engine", "The step", "Body", "Taken") { Parent = "q1", GrewFrom = new QuestSubmissionRef("desk", 43) };
 
@@ -231,7 +231,7 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
         };
         var start = new Consideration(step, StartVerdict.Start, "carrying on")
         {
-            Resumes = new PriorSession("s1", tree, "stood-down", Daoris.Driver.Driver.LostClaimToReopen),
+            Resumes = new PriorSession("s1", tree, "stood-down", LostClaimStop.LostClaimToReopen),
             BroughtForward = new ForwardTake("desk", 44, DateTimeOffset.UnixEpoch, "held"),
         };
         return (step, source, start);

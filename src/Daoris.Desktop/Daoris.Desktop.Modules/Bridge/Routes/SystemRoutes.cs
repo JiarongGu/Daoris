@@ -22,10 +22,9 @@ public sealed class SystemRoutes(DriverContext context)
     // OWNSPACE2 (D175 point 3): its `toolHome` lists what Daoris's sessions left in the person's own tool home, read-only. There
     // is no press: removing them is OWNSPACE2e's, hardened, and until then a person removes a folder by hand.
     [DriverRoute("SYSTEM_WIRING", PipeClass.Open)]
-    private async Task<object?> WiringAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WiringAsync(WiringRead press, CancellationToken cancellationToken)
     {
-        var measure = request.Payload is { ValueKind: JsonValueKind.Object } payload
-            && payload.TryGetProperty("measure", out var asked) && asked.ValueKind == JsonValueKind.True;
+        var measure = press.Measure;
         var world = await WorldWithOriginsAsync(cancellationToken).ConfigureAwait(false);
         return await Task.Run(() =>
         {

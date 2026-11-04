@@ -20,8 +20,8 @@ import { proposalChange } from '../settings/repository/proposals';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
 import { type AgentPart, accountLabel, agentRows } from './agents';
-import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
-import { type AgentsMode, isRoleSection, MACHINE, readAgentsMode, repositoryId, type RoleSection, setupLit, storeAgentsMode } from './modes';
+import { AgentsModes, AgentsStrip } from './AgentsModes';
+import { type AgentsMode, MACHINE, readAgentsMode, repositoryId, storeAgentsMode } from './modes';
 import { AllRoles } from './roles/AllRoles';
 import { MachineNotes } from './setup/MachineNotes';
 import { ReconcileNote } from './setup/ReconcileNote';
@@ -30,10 +30,9 @@ import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
 import { type PlaceAt, type PlaceEdit, type PlaceFlowHold, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
 import { findPlace, placeAsk, rowOfFound, SetupList, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
-import { RoleSectionList } from './roles/RoleSections';
-import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
+import { type RoleOpeners, useRolesPage } from './roles/RolesView';
 import { usedByAgent } from './roles/roleStructure';
-import { useStructureMarks, useStructureRead } from './roles/structureRead';
+import { useStructureRead } from './roles/structureRead';
 import type { ListPanes } from '../work/frame/listPanes';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
@@ -44,11 +43,10 @@ const STALE_AFTER = 60_000;
 
 /**
  * The Agents place's mode as the application holds it (COMPANYVIEW1b): the one it was left in, remembered for the place, and a change of
- * it; and the Roles section last left (`daoris.list.roles.chosen`), Working roles where none is kept.
+ * it; and the place Setup last chose (`daoris.list.roles.chosen`).
  *
  * @remarks
- * **A switch to Agents is a door that names no item** (UX6b, D150 §1 rule 6): the agent chosen is read again before it is shown. A
- * section never closes or goes, so a switch to Roles reopens nothing.
+ * **A switch to Agents is a door that names no item** (UX6b, D150 §1 rule 6): the agent chosen is read again before it is shown.
  */
 export function useAgentsMode(lists: ListPanes) {
   const [mode, setMode] = useState<AgentsMode>(readAgentsMode);
@@ -60,11 +58,7 @@ export function useAgentsMode(lists: ListPanes) {
     setMode(next);
     storeAgentsMode(next);
   }, [reopen]);
-  const kept = lists.pane('roles').chosen;
-  const section: RoleSection = isRoleSection(kept) ? kept : 'working';
-  const onSection = useCallback((next: RoleSection) => choose('roles', next), [choose]);
-  // Lit, Setup keeps the place chosen under the same memory, which a section id is never mistaken for.
-  const place = kept && !isRoleSection(kept) ? kept : null;
+  const place = lists.pane('roles').chosen || null;
   const onPlace = useCallback((next: string) => choose('roles', next), [choose]);
   // AGENTSPLACE1k: an ask Ask Daoris proposed for a place's *Set up…*, held until the place's page has opened on it.
   const [seeded, setSeeded] = useState<{ place: string; ask: PlaceAsk } | null>(null);
@@ -77,7 +71,7 @@ export function useAgentsMode(lists: ListPanes) {
     setArrival(at.section || at.row || at.back || at.edit ? { place: next, at } : null);
   }, [choose]);
   const onArrived = useCallback(() => setArrival(null), []);
-  return { mode, onMode, section, onSection, place, onPlace, onPlaceAt, arrival, onArrived, seeded, onSeed, onSeeded };
+  return { mode, onMode, place, onPlace, onPlaceAt, arrival, onArrived, seeded, onSeed, onSeeded };
 }
 
 /**
@@ -137,8 +131,8 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
    * and the section chosen in the Roles mode and a change of it. Absent, the place is the Agents list alone, as a browser's is.
    */
   modes?: {
-    mode: AgentsMode; onMode: (mode: AgentsMode) => void; section: RoleSection; onSection: (section: RoleSection) => void;
-    /** The place Setup has chosen, once lit, and a change of it. */
+    mode: AgentsMode; onMode: (mode: AgentsMode) => void;
+    /** The place Setup has chosen, and a change of it. */
     place: string | null; onPlace: (place: string) => void;
     /** A door's section and row at a place, and the way back (SETUPUX1h), which the page opens on once. */
     onPlaceAt?: (place: string, at: PlaceAt) => void;
@@ -166,18 +160,15 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
 }): ViewLayout {
   const { t } = useTranslation();
   const roster = useHarnesses();
-  // A start held marks its section's row in the Roles list (COMPANYVIEW1d); read only while the Roles mode is in front.
-  const lit = setupLit();
   const inSetup = modes?.mode === 'setup';
-  const marks = useStructureMarks(active && inSetup && !lit);
-  const places = useSetupPlaces(active && inSetup && lit);
+  const places = useSetupPlaces(active && inSetup);
   // The Roles page's state lives here, so a door out of it and the way back find the selection and the scope as left.
   const rolesPage = useRolesPage();
   const setUpPage = useSetUpPage();
   // AGENTSPLACE1k: a place's *Set up…* opens on the ask Ask Daoris proposed. The page plans it on opening, and Apply stays the person's.
   const seeded = modes?.seeded ?? null;
   const onSeeded = modes?.onSeeded;
-  const seededHere = active && lit && inSetup && seeded !== null && seeded.place === modes?.place;
+  const seededHere = active && inSetup && seeded !== null && seeded.place === modes?.place;
   useEffect(() => {
     if (!seededHere || !seeded) return;
     setUpPage.open(seeded.place, seeded.ask.repositories, draftOfAsk(seeded.ask));
@@ -187,7 +178,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   const shell = usePlaceShell();
   const arrival = modes?.arrival ?? null;
   const onArrived = modes?.onArrived;
-  const arrivedHere = active && lit && inSetup && arrival !== null && arrival.place === modes?.place;
+  const arrivedHere = active && inSetup && arrival !== null && arrival.place === modes?.place;
   const { arrive } = shell;
   useEffect(() => {
     if (!arrivedHere || !arrival) return;
@@ -195,7 +186,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     onArrived?.();
   }, [arrivedHere, arrival, arrive, onArrived]);
   // A not-driven repository's row is not in the list's page: its own, read whole (`detail`), once it is chosen.
-  const chosenPlace = active && lit && inSetup ? findPlace(places.read, modes?.place ?? null) : null;
+  const chosenPlace = active && inSetup ? findPlace(places.read, modes?.place ?? null) : null;
   const importedDetail = usePlaces(
     chosenPlace?.kind === 'imported' ? { detail: { workspace: chosenPlace.workspace, repository: chosenPlace.repository } } : {},
     { enabled: chosenPlace?.kind === 'imported' },
@@ -232,7 +223,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
 
   // A first answer still on its way; an answer that is no roster (a shell older than this place) lists nothing.
   const loading = active && roster.data === undefined && roster.isPending;
-  if (modes && inSetup && lit) {
+  if (modes && inSetup) {
     const placed = findPlace(places.read, modes.place);
     const setUpPlace = setUp ? setUpPlaceOf(placed, modes.place, places.read) : null;
     const row = rowOfFound(placed, importedDetail.data?.detail ?? null);
@@ -327,26 +318,6 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
             : undefined}
         />
       ),
-    };
-  }
-  if (modes && inSetup) {
-    return {
-      list: {
-        view: 'agents',
-        // The section chosen is the Roles list's memory; the pane's closing and width are the place's.
-        chosenIn: 'roles',
-        name: t('nav.agents'),
-        labels: { open: t('agents.list.open'), close: t('agents.list.close'), resize: t('agents.list.resize') },
-        head: <AgentsModes mode={modes.mode} onMode={modes.onMode} />,
-        strip: (
-          <AgentsStrip mode={modes.mode} onMode={modes.onMode}>
-            <RoleSectionStrip section={modes.section} onSection={modes.onSection} />
-          </AgentsStrip>
-        ),
-        chosen: modes.section,
-        body: <RoleSectionList section={modes.section} onSection={modes.onSection} held={{ work: marks.work, repository: marks.repository }} />,
-      },
-      main: <RolesMode section={modes.section} notify={notify} doors={{ ...roleDoors, section: modes.onSection }} page={rolesPage} />,
     };
   }
   return {

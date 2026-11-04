@@ -26,7 +26,7 @@ public sealed class BuiltInNodesTests
 
     private static WorkUnit Unit(GrownBranch? branch = null, params LandedBranch[] landings) =>
         Assert.Single(WorkInventory.Units(new InventoryFacts(
-            branch is null ? [] : [branch], landings, [], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
+            branch is null ? [] : [branch], landings, [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
 
     private static NodeDeclaration Node(string kind) => new(kind, kind, 1, NodeReach.Observed);
 
@@ -58,7 +58,7 @@ public sealed class BuiltInNodesTests
 
         foreach (var (kind, source, evidence) in new[]
         {
-            (NodeKinds.Handed, NodeSource.Git, "landings.json#feature/x"),
+            (NodeKinds.Land, NodeSource.Landing, "landings.json#feature/x"),
             (NodeKinds.Line, NodeSource.Git, "landings.json#feature/x"),
             (NodeKinds.PullRequest, NodeSource.Plugin, "landings.json#feature/x"),
         })
@@ -118,18 +118,18 @@ public sealed class BuiltInNodesTests
     public void Not_yet_is_no_outcome_and_an_unknown_owner_is_unknown()
     {
         var unit = Unit(Grown());
-        foreach (var kind in new[] { NodeKinds.Handed, NodeKinds.Line, NodeKinds.PullRequest })
+        foreach (var kind in new[] { NodeKinds.Land, NodeKinds.Line, NodeKinds.PullRequest })
         {
             var observed = BuiltInNodes.Observe(unit, Node(kind), Graph, 1);
             Assert.Equal((kind, (string?)null, (NodeMove?)null), (kind, observed.Outcome, observed.Move));
             Assert.False(string.IsNullOrWhiteSpace(observed.Said));
         }
 
-        var merged = Applied(Unit(Grown(Held())), NodeKinds.Handed);
+        var merged = Applied(Unit(Grown(Held())), NodeKinds.Land);
         Assert.Equal((NodeStates.Reached, "session-branches.json#daoris/s1"), (merged.Status.State, merged.Status.Current?.Evidence?.Ref));
 
         var unowned = Assert.Single(WorkInventory.Units(new InventoryFacts(
-            [], [], [new SessionTree(Path.GetFullPath(Path.Combine("node-trees", "stray")), "default", "engine", "feature/stray")], [], [],
+            [], [], [new SessionTree(Path.GetFullPath(Path.Combine("node-trees", "stray")), "default", "engine", "feature/stray")], [],
             new HashSet<string>(), _ => false, Then)));
         Assert.Equal(NodeStates.Unknown, Applied(unowned, NodeKinds.Line).Status.State);
     }
@@ -195,21 +195,21 @@ public sealed class BuiltInNodesTests
     {
         var squash = Landed() with { Tip = "s1", Squashed = "t1" };
         var unit = Unit(Grown(), squash);
-        var bound = new NodeAcceptance("run:r", "t1", Graph, NodeKinds.Handed, 1, 1) { Subject = unit.Id };
+        var bound = new NodeAcceptance("run:r", "t1", Graph, NodeKinds.Land, 1, 1) { Subject = unit.Id };
 
-        var seen = BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), bound);
+        var seen = BuiltInNodes.Observe(unit, Node(NodeKinds.Land), bound);
         Assert.Equal((NodeStates.Reached, bound.Id, "s1"), (seen.Outcome, seen.Acceptance?.Id, seen.Acceptance?.Evidence?.Revision));
-        var moved = NodeLifecycle.Apply(Node(NodeKinds.Handed),
-            new NodeStatus("run:r", NodeKinds.Handed, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = bound }, seen.Move!);
+        var moved = NodeLifecycle.Apply(Node(NodeKinds.Land),
+            new NodeStatus("run:r", NodeKinds.Land, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = bound }, seen.Move!);
         Assert.Equal(((string?)null, NodeStates.Reached), (moved.Refused, moved.Status.State));
 
         foreach (var other in new[] { squash with { Squashed = "t0" }, squash with { Squashed = null } })
         {
-            Assert.Null(BuiltInNodes.Observe(Unit(Grown(), other), Node(NodeKinds.Handed), bound).Move);
+            Assert.Null(BuiltInNodes.Observe(Unit(Grown(), other), Node(NodeKinds.Land), bound).Move);
         }
 
-        Assert.Equal(("s1", "s1"), (BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), Graph, 1).Acceptance?.SubjectRevision,
-            BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), Graph, 1).Acceptance?.Evidence?.Revision));
+        Assert.Equal(("s1", "s1"), (BuiltInNodes.Observe(unit, Node(NodeKinds.Land), Graph, 1).Acceptance?.SubjectRevision,
+            BuiltInNodes.Observe(unit, Node(NodeKinds.Land), Graph, 1).Acceptance?.Evidence?.Revision));
     }
 
     /// <summary>An observer reads only its own unit's kind, and only the observed kinds: a pressed, performed or waited node is its row's.</summary>
@@ -238,22 +238,22 @@ public sealed class BuiltInNodesTests
     {
         var unit = Unit(Grown(Held()), Landed(held: Held()));
         var qa = new NodeAcceptance(unit.Id, "t1", Graph, "qa", 1, 1);
-        var binding = Binding(unit, NodeKinds.Handed) with { PrerequisiteReceipts = [qa.Id] };
+        var binding = Binding(unit, NodeKinds.Land) with { PrerequisiteReceipts = [qa.Id] };
 
-        var observed = BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding);
+        var observed = BuiltInNodes.Observe(unit, Node(NodeKinds.Land), binding);
         Assert.Equal(new[] { qa.Id }, observed.Acceptance?.PrerequisiteReceipts);
-        var moved = NodeLifecycle.Apply(Node(NodeKinds.Handed), Observing(unit, NodeKinds.Handed) with { Binding = binding }, observed.Move!);
+        var moved = NodeLifecycle.Apply(Node(NodeKinds.Land), Observing(unit, NodeKinds.Land) with { Binding = binding }, observed.Move!);
         Assert.Equal(((string?)null, NodeStates.Reached, binding.Id), (moved.Refused, moved.Status.State, moved.Status.Current?.Id));
         Assert.Contains(NodeAcceptances.Invalidate([qa, moved.Status.Current!], each => each.Id == qa.Id ? NodeLapse.Revision : null),
             each => each.Acceptance == binding.Id && each.Upstream == qa.Id);
 
         var newer = binding with { SubjectRevision = "t2" };
-        var stale = NodeLifecycle.Apply(Node(NodeKinds.Handed), Observing(unit, NodeKinds.Handed) with { Binding = newer },
-            BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), newer).Move!);
+        var stale = NodeLifecycle.Apply(Node(NodeKinds.Land), Observing(unit, NodeKinds.Land) with { Binding = newer },
+            BuiltInNodes.Observe(unit, Node(NodeKinds.Land), newer).Move!);
         Assert.Equal(NodeRefusal.NotBound, stale.Refused);
 
-        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding with { Unit = "unit-b" }).Refused);
-        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding with { Node = NodeKinds.Line }).Refused);
-        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding with { NodeVersion = 2 }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Land), binding with { Unit = "unit-b" }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Land), binding with { Node = NodeKinds.Line }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Land), binding with { NodeVersion = 2 }).Refused);
     }
 }

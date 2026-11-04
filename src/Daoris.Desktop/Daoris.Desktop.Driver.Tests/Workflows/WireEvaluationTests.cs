@@ -628,7 +628,7 @@ public sealed class WireEvaluationTests
             Units = [Unit], Pushed = true, PushedTip = "t1", Plugin = "acme-pr",
         };
         var grown = new GrownBranch("engine", "default", "daoris/s1", "main", "f0", null, Then) { Unit = Unit };
-        var unit = Assert.Single(WorkInventory.Units(new InventoryFacts([grown], [landing], [], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
+        var unit = Assert.Single(WorkInventory.Units(new InventoryFacts([grown], [landing], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
         Assert.Equal((Unit, WorkUnitKind.Branch), (unit.Id, unit.Kind));
         return unit;
     }
@@ -866,7 +866,7 @@ public sealed class WireEvaluationTests
     /// <summary>A named version's graph as a run binds it: <c>claimed</c>, the opinion and the look beside it into <c>handed</c>, a push and a release after.</summary>
     private static readonly NodeDeclaration[] RunNodes =
     [
-        Node("claimed", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("handed", NodeKinds.Handed),
+        Node("claimed", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("handed", NodeKinds.Land),
         Node("pushed", NodeKinds.Pushed), Node("release"),
     ];
 
@@ -1097,7 +1097,7 @@ public sealed class WireEvaluationTests
         [
             new GoAheadView(1, "write", "production", Act, [new GoAheadRequestView("s1", "q1", Then, "to ship")]) { Answer = new GoAheadAnswerView(true, null, Then) },
         ];
-        var g = new Graph([go, Node("handed", NodeKinds.Handed)], [After("g>h", "go", "handed")], RunRecord)
+        var g = new Graph([go, Node("handed", NodeKinds.Land)], [After("g>h", "go", "handed")], RunRecord)
         {
             Run = new WireRun("graph-1", "r")
             {

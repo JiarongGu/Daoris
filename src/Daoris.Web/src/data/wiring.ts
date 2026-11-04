@@ -251,7 +251,12 @@ export type RoleRow = {
   takes: string[]; scopeKind?: string | null; scopeId?: string | null; revision: number; error?: string | null; choices?: RoleChoice[] | null;
   /** A seeded role's order as it runs; absent for an added role. */
   staffing?: ActorRow | null;
+  /** An appointed role's kind, acts, holder and window (D233 point 2); absent for a working role. */
+  hold?: RoleHoldRead | null;
 };
+
+/** What an appointed role holds: its kind, its acts, who holds it (none is a role not staffed) and the supervisor's window in minutes. */
+export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number };
 
 /** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
 export type SuggestedRole = { id: string; name: Authored; takes: string[]; scopeKind: string; choices: RoleChoice[] };
@@ -304,7 +309,11 @@ export type RoleCatalogue = {
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, given back its seed, or every seeded role given back (`default-all`, whose id is `*`). */
 export type RoleChangePress = {
   change: 'set' | 'remove' | 'default' | 'default-all'; id: string; revision?: number | null;
-  role?: { name: Authored; takes: string[]; scope: { kind: string; id?: string | null } };
+  role?: {
+    name: Authored; takes: string[]; scope: { kind: string; id?: string | null };
+    /** An appointed role's record: `filled`, its acts (`authority`), its holder (null is none) and the supervisor's window. */
+    filled?: 'appointed'; authority?: string[]; holder?: string | null; window?: number;
+  };
   choices?: RoleChoice[] | null;
   /** A preset's name, a record, or null to clear (STAFFPOLICY1b); absent leaves the policy as it is. Only `SET_ROLE`/`SET_ROLES` write it. */
   policy?: string | StaffPolicy | null;

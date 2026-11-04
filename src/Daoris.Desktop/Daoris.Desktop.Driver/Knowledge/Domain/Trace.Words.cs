@@ -491,7 +491,6 @@ internal static class TraceWords
     private static void Landing(StringBuilder text, TraceLanding landing)
     {
         foreach (var branch in landing.Branches) text.Append($"  landing: {Landed(branch)}\n");
-        if (landing.Due is { } due) DueToLand(text, due);
         text.Append(landing.Missing switch
         {
             null => "",
@@ -623,26 +622,6 @@ internal static class TraceWords
                 + (opinion.Disputes > 0 ? $" over {opinion.Disputes} disputed" : "") + (opinion.Unread > 0 ? $" with {opinion.Unread} commit(s) unread" : ""),
             _ => $"; landed with no second opinion ({opinion.Code ?? "none"}), which its rule did not require",
         };
-    }
-
-    /// <summary>
-    /// Its entry on the due list (LAND2b, design §8), where it has one: when it became due, and each try by its code, with the
-    /// branch it made or met. A session never due has none, and says nothing here.
-    /// </summary>
-    private static void DueToLand(StringBuilder text, TraceDue due)
-    {
-        text.Append($"  due to land automatically since {When(due.Since)} ({KnowledgeWorkplace.Current.AutoLandingsFileName}, this machine's)")
-            .Append(due.Closed is { } closed ? $", closed {When(closed)}\n" : ", still waiting\n");
-        if (due.Tries.Count == 0) text.Append("    not tried yet\n");
-        foreach (var tried in due.Tries)
-        {
-            text.Append($"    {When(tried.At)} · {tried.Code}")
-                .Append(tried.Branch is { } branch ? $" · branch {branch}" : "")
-                .Append(tried.Commits is { } commits ? $" · {commits} commit(s)" : "")
-                .Append(tried.Uncommitted is { } paths ? $" · {paths} uncommitted path(s)" : "")
-                .Append(tried.Tip is { } tip ? $" · at {TextBounds.ShortCommit(tip, 12)}" : "")
-                .Append('\n');
-        }
     }
 
     /// <summary>

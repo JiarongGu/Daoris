@@ -73,8 +73,8 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     }
 
     /// <summary>The runtime's door, landing as the performer does: over the fixture's world, trees and faked plugin.</summary>
-    private LandingDoor Door() => new(() => new AutoLander(
-        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { Performs = true, HoldsLease = () => true });
+    private LandingDoor Door() => new(() => new LandPerformer(
+        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true });
 
     /// <summary>A branch made for the person, no plugin asked.</summary>
     private const string BranchLand = """{"method":"branch","plugin":"none","pattern":"feature/{quest}-{slug}"}""";
@@ -108,9 +108,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree, held: true);
         Assert.Equal((NodeStates.Active, NodeStates.Blocked), (Status("holds").State, Status("landing").State));
 
-        var said = await LookAsync();
-        Assert.Contains(said, each => each.Contains("its run's `land` performs it now", StringComparison.Ordinal));
-        Assert.Equal(AutoLandingCode.Performed, Assert.Single(new AutoLandings(_home).All()).Last!.Code);
         Assert.Equal(line, await HeadAsync(root));
     }
 
@@ -195,13 +192,10 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         var root = await RepositoryAsync("engine");
         await CopyAsync("merge-automatic");
         var tree = await NamedDoneAsync(root, "s1", "q1");
-        // WORKFLOWCLEAN1 1c: the conclusion wrote no due entry, and the look chooses nothing; the runtime's pass starts the `land`.
-        Assert.Empty(new AutoLandings(_home).All());
         var door = Door();
         await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree, door: door);
         var commit = await HeadAsync(tree);
         await door.IdleAsync();
-        await LookAsync();
 
         Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
         Assert.True(LandOutcomes.Of(RunUnits.IdOf("q1"), commit)?.Landed);

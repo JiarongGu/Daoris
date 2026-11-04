@@ -22,8 +22,7 @@ namespace Daoris.Driver;
 /// since the service's <c>agent_propose</c> writes all three (TOOL4l-a).</para>
 ///
 /// <para>Since POOL1b (D197 point 6, the account-pool design §5.3) an agent's accounts are one set: <c>use</c> and <c>order</c> act on
-/// it, each applied only where the service marked it so (<c>set: true</c>); a stored
-/// proposal without the mark, whose <c>order</c> may have meant <i>only these accounts</i>, is refused at its Apply.</para>
+/// it.</para>
 /// </remarks>
 internal sealed partial class HelpAgentProposals : IHelpProposalKind
 {
@@ -43,12 +42,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         if (file.ValueKind != JsonValueKind.Object) return proposal;
         proposal = ReadUse(proposal, file);
         if (proposal.Kind != "agent") return proposal;
-
-        // POOL1b: the service's mark that the proposal was written for the one set (§5.3).
-        if (proposal.Door is "use" or "order")
-        {
-            proposal = proposal with { ForSet = file.TryGetProperty("set", out var set) && set.ValueKind == JsonValueKind.True };
-        }
 
         if (proposal.Door == "order")
         {
@@ -97,7 +90,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
-        if (proposal.Door is "use" or "order" && !proposal.ForSet) return Unmarked(proposal);
         if (proposal.Door == "use") return Use(proposal, facts);
         if (proposal.Door == "order") return Order(proposal, facts);
         if (proposal.Door == "ready") return Ready(proposal, facts);
@@ -172,12 +164,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             + (door.Pinned is { Length: > 0 } was && was != version ? $" in place of {was}." : "."),
             terminal, null);
     }
-
-    /// <summary>
-    /// A stored <c>use</c> or <c>order</c> written before the <c>set</c> mark (POOL1b, §5.3): for the machine's or a workspace's list, and
-    /// an <c>order</c> of it may have said which accounts alone may run, so it is refused, never applied to the set.
-    /// </summary>
-    private static HelpPlan Unmarked(HelpProposal proposal) => new($"this `{proposal.Door}` was {OneSetWords.Unmarked}.", "", "", null);
 
     /// <summary>The set's order as the facts read it (the projection, POOL1a2): every account of the owner's; none where nothing was read.</summary>
     private static IReadOnlyList<string> SetOf(HarnessSettings? wiring, string owner) => wiring?.Set(owner).List ?? [];
@@ -394,13 +380,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     {
         var (proposal, plan, id) = (applying.Proposal, applying.Plan, applying.Id);
         var harness = proposal.Target!.Trim();
-        // POOL1b (§5.3): an unmarked list's proposal is never applied to the set, whatever judged it.
-        if (proposal.Door is "use" or "order" && !proposal.ForSet)
-        {
-            var why = $"this `{proposal.Door}` was {OneSetWords.Unmarked}.";
-            return applying.Settled(false, $"Not applied: `#{id}` — {why}", why);
-        }
-
         if (proposal.Door == "ready")
         {
             var account = proposal.ReadyAccount?.Trim() is { } named && named != OwnSignIn ? named : null;

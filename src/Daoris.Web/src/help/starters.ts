@@ -1,5 +1,6 @@
 import type { AgentPart } from '../agents/agents';
-import type { AgentsMode, RoleSection } from '../agents/modes';
+import type { AgentsMode } from '../agents/modes';
+import type { RoleDoor } from '../app/opener';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { PlaceEdit } from '../agents/setup/placeShell';
 import type { View } from '../menus/commands';
@@ -28,8 +29,8 @@ export type StarterDoor = {
   agentPart?: AgentPart;
   /** The Agents place's mode (COMPANYVIEW1b): a door into Roles. */
   agentsMode?: AgentsMode;
-  /** The Roles section to open (COMPANYVIEW1e): a door to Appointed roles. */
-  roleSection?: RoleSection;
+  /** The part of This machine's page to open: a door to Appointed roles, or to All roles. */
+  roleSection?: RoleDoor;
   /**
    * A workspace page's tab and the Setup section to open (UX6g, D150 §4.3): a door into a workspace's defaults, its remote
    * or its clean-up. One that names no workspace in `item` opens the workspace in view.

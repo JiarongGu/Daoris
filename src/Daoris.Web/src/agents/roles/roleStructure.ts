@@ -16,7 +16,6 @@ import type { RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
 import type { CurrentWorkflow } from '../../workflow/current';
 import { accountStates, agentRows, latestRead } from '../agents';
-import type { RoleSection } from '../modes';
 import type { Tool } from '../tools';
 
 /** The shared filters of the three sections (§3): the workspace, one work, one agent, a name, and *Needs a look*. */
@@ -657,15 +656,6 @@ export function nodeOfRow(structure: Structure, id: string): string | null {
     return drawn(workspace) ? workspace : null;
   }
   return null;
-}
-
-/** The section a node's row is in: so choosing a node of another kind moves the section, and *Show as list* lands on its row. */
-export function sectionOf(node: string): RoleSection {
-  if (node === placeId({})) return 'work';
-  if (node.startsWith('place:')) return 'repository';
-  if (node.startsWith('appointed:')) return 'appointed';
-  if (node.startsWith('agent:')) return 'accounts';
-  return 'working';
 }
 
 /** Each role that leans on an agent at this machine, for the agent's page (*Used by*): the roles at their choices' positions. */

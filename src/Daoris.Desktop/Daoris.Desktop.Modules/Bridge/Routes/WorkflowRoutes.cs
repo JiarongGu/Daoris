@@ -25,10 +25,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     // follow something else, or none where the registry is not up yet. An optional `route` (`default`, `kind:<name>` or `landed`) adds
     // `effective`: the graph that route follows, read and never written.
     [DriverRoute("WORKFLOW_CURRENT", PipeClass.Open)]
-    private async Task<object?> WorkflowCurrentAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowCurrentAsync(WorkflowCurrent press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var (repository, workspace, route) = press;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a workflow is drawn for a `repository` or a `workspace` — name one of them.");
@@ -37,7 +36,6 @@ public sealed class WorkflowRoutes(DriverContext context)
         var config = DriverConfig.Load(_loop.ConfigPath);
         // The plugins beside the file, switched on and sound, as the landing's and the terminal's doors read them.
         var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
-        var route = Optional(request, "route");
         var drawn = new CurrentWorkflow(WorkflowSteps.StartHolds(plugins), [], "");
 
         if (repository is not null)
@@ -167,12 +165,12 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("WORKFLOW_VERIFY", "repository:repository")]
     [NotAlready("WORKFLOW_VERIFY", "starts a run of the accepted gates beside the route, and sets no value")]
     [Publishes("WORKFLOW_VERIFY", StateScopes.Driver)]
-    private async Task<object?> WorkflowVerifyAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowVerifyAsync(WorkflowVerify press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository")?.Trim();
+        var repository = press.Repository?.Trim();
         if (string.IsNullOrEmpty(repository)) throw new DriverException("a verification is asked for a `repository` — name it.");
-        var branch = Optional(request, "branch")?.Trim();
-        var commit = Optional(request, "commit")?.Trim();
+        var branch = press.Branch?.Trim();
+        var commit = press.Commit?.Trim();
         if (!string.IsNullOrEmpty(branch) && !string.IsNullOrEmpty(commit)) throw new DriverException("`verify` verifies a branch or a commit, not both.");
 
         var service = _loop.Service ?? throw NotReady();
@@ -204,17 +202,17 @@ public sealed class WorkflowRoutes(DriverContext context)
     [GroundRead("WORKFLOW_LANDED", nameof(PipeReads.LandedRoute))]
     [Says("WORKFLOW_LANDED", "repository:repository")]
     [NotAlready("WORKFLOW_LANDED", "reads the gates at the line's tip and accepts them by their blob")]
-    private async Task<object?> WorkflowLandedAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowLandedAsync(WorkflowLandedPress press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var repository = press.Repository;
+        var workspace = press.Workspace;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a landed route is set for a `repository` or a `workspace` — name one of them.");
         }
 
-        var workflow = Optional(request, "workflow");
-        var expected = Optional(request, "gates");
+        var workflow = press.Workflow;
+        var expected = press.Gates;
         if (expected is not null && !IntegrationGatesKey.IsAcceptance(expected)) throw new DriverException(IntegrationGatesKey.Problem);
         var config = DriverConfig.Load(_loop.ConfigPath);
         var inWorkspace = workspace;
@@ -281,16 +279,16 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("INTEGRATION_GATES", "repository:repository")]
     [NotAlready("INTEGRATION_GATES", "reads the declaration at the line's tip and accepts it by its blob")]
     [Publishes("INTEGRATION_GATES", StateScopes.Driver)]
-    private async Task<object?> IntegrationGatesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> IntegrationGatesAsync(IntegrationGates press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository")?.Trim();
+        var repository = press.Repository?.Trim();
         if (string.IsNullOrEmpty(repository))
         {
             throw new DriverException("an integration's declaration is accepted for a `repository` — name it.");
         }
 
-        var named = Optional(request, "gates");
-        var clear = Flag(request, "clear");
+        var named = press.Gates;
+        var clear = press.Clear;
         if (clear && named is not null) throw new DriverException("an integration's acceptance takes the blob read or withdraws it — name `gates` or `clear`, not both.");
         if (named is not null && !IntegrationGatesKey.IsAcceptance(named)) throw new DriverException(IntegrationGatesKey.Problem);
 
@@ -349,10 +347,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     private static object Refused(string code, string message, IReadOnlyList<WorkflowReach>? reach = null) =>
         new { Done = false, Refused = code, Message = message, Changed = false, Reach = ReachRows(reach ?? []), Start = (object?)null };
 
-    private static JsonNode? NodeOf(IpcRequest request, string name) =>
-        request.Payload is { } payload && payload.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.Array or JsonValueKind.Object
-            ? JsonNode.Parse(value.GetRawText())
-            : null;
+    private static JsonNode? NodeOf(JsonElement? sent) =>
+        sent is { ValueKind: JsonValueKind.Array or JsonValueKind.Object } value ? JsonNode.Parse(value.GetRawText()) : null;
 
     /// <summary>
     /// A version saved: <c>{id}</c> and one of <c>from</c> (a preset, a saved
@@ -369,19 +365,16 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("WORKFLOW_SAVE", "id:form", "from:form", "name:words")]
     [NotAlready("WORKFLOW_SAVE", "adds a version beside the ones kept, or makes a workflow")]
     [Publishes("WORKFLOW_SAVE", StateScopes.Driver)]
-    private async Task<object?> WorkflowSaveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowSaveAsync(WorkflowSavePress press, CancellationToken cancellationToken)
     {
-        var id = Optional(request, "id")?.Trim();
+        var id = press.Id?.Trim();
         if (string.IsNullOrEmpty(id)) throw new DriverException("a workflow is saved under an `id` — name it.");
-        var authorize = request.Payload is { } payload && payload.TryGetProperty("authorize", out var listed) && listed.ValueKind == JsonValueKind.Array
-            ? listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToList()
-            : null;
         var saved = await WorkflowOperations.SaveAsync(
-            DriverConfig.Load(_loop.ConfigPath), _loop.Home, Registry, id, Optional(request, "from"), NodeOf(request, "steps"), NodeOf(request, "graph"),
-            Flag(request, "withOpinion"), Flag(request, "withLook"), Optional(request, "name"),
-            Number(request, "base") is { } baseVersion ? baseVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
-            authorize, Flag(request, "plan"), DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
-            cancellationToken, Optional(request, "updates")).ConfigureAwait(false);
+            DriverConfig.Load(_loop.ConfigPath), _loop.Home, Registry, id, press.From, NodeOf(press.Steps), NodeOf(press.Graph),
+            press.WithOpinion, press.WithLook, press.Name,
+            press.Base is { } baseVersion ? baseVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
+            press.Authorize?.ToList(), press.Plan, DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            cancellationToken, press.Updates).ConfigureAwait(false);
         return new
         {
             saved.Id,
@@ -413,32 +406,32 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("WORKFLOW_USE", "repository:repository", "workflow:form", "kind:form")]
     [NotAlready("WORKFLOW_USE", "merges into the place's choice, which keeps its other kinds and its landed route")]
     [Publishes("WORKFLOW_USE", StateScopes.Driver)]
-    private async Task<object?> WorkflowUseAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowUseAsync(WorkflowUsePress press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var repository = press.Repository;
+        var workspace = press.Workspace;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a workflow is chosen for a `repository` or a `workspace` — name one of them.");
         }
 
-        var workflow = Optional(request, "workflow");
-        var kind = Optional(request, "kind");
+        var workflow = press.Workflow;
+        var kind = press.Kind;
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var expected = Optional(request, "expected");
+        var expected = press.Expected;
         WorkflowUsed used;
         try
         {
-            if (workflow is { } named && named != WorkflowSelection.Current && Number(request, "version") is { } read
+            if (workflow is { } named && named != WorkflowSelection.Current && press.Version is { } read
                 && WorkflowOperations.NewestOf(_loop.Home, named) is { } newest && newest != read)
             {
                 return Refused("stale", $"`{named}` is at v{newest} now, not v{read}: read it again and choose that. Nothing was written.");
             }
 
-            if (Flag(request, "plan") || expected is not null)
+            if (press.Plan || expected is not null)
             {
                 var planned = await WorkflowOperations.PlanUseAsync(config, _loop.Home, Registry, workflow, repository, workspace, kind, cancellationToken).ConfigureAwait(false);
-                if (Flag(request, "plan")) return PlanAnswer(planned);
+                if (press.Plan) return PlanAnswer(planned);
                 if (planned.Expected != expected)
                 {
                     return Refused("moved", "What this choice does has moved since you read its plan: read the plan again and choose then. Nothing was written.");
@@ -502,17 +495,15 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("WORKFLOW_KIND", "kind:form", "label:words")]
     [NotAlready("WORKFLOW_KIND", "merges into the workspace's kinds, keeping the others")]
     [Publishes("WORKFLOW_KIND", StateScopes.Driver)]
-    private async Task<object?> WorkflowKindAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowKindAsync(WorkflowKind press, CancellationToken cancellationToken)
     {
-        var workspace = Optional(request, "workspace");
-        var kind = Optional(request, "kind");
+        var workspace = press.Workspace;
+        var kind = press.Kind;
         if (workspace is null || kind is null) throw new DriverException("a kind is declared for a `workspace` and a `kind` — name both.");
-        var label = Optional(request, "label");
-        var drop = Flag(request, "drop");
+        var label = press.Label;
+        var drop = press.Drop;
         if (drop == (label is not null)) throw new DriverException("a kind is declared with a `label`, or dropped with `drop: true` — one of them.");
-        var paths = request.Payload is { } payload && payload.TryGetProperty("paths", out var listed) && listed.ValueKind == JsonValueKind.Array
-            ? listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!.Trim()).Where(each => each.Length > 0).ToList()
-            : [];
+        var paths = (press.Paths ?? []).Select(each => each.Trim()).Where(each => each.Length > 0).ToList();
         if (drop && paths.Count > 0) throw new DriverException("a dropped kind takes no `paths`.");
 
         var config = DriverConfig.Load(_loop.ConfigPath);
@@ -611,9 +602,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     // words name, and the driver's English sentence: the page words a code it knows in the
     // reader's language and shows the sentence for one it does not. Read-only, and a run is never kept as a copy.
     [DriverRoute("WORKFLOW_RUN", PipeClass.Open)]
-    private async Task<object?> WorkflowRunAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowRunAsync(WorkflowRunRead press, CancellationToken cancellationToken)
     {
-        var asked = new WorkflowRunAsk(Optional(request, "session"), Optional(request, "quest"), Optional(request, "ask"));
+        var asked = new WorkflowRunAsk(press.Session, press.Quest, press.Ask);
         if (new[] { asked.Session, asked.Quest, asked.Ask }.Count(each => each is not null) != 1)
         {
             throw new DriverException("a run is read for a `session`, a `quest` or an `ask` — name one of them.");
@@ -648,17 +639,14 @@ public sealed class WorkflowRoutes(DriverContext context)
     [GroundWait("WORKFLOW_NODE", "workflow-node", "run", "node")]
     [Says("WORKFLOW_NODE", "run:quest", "act:form", "words:words")]
     [Publishes("WORKFLOW_NODE", StateScopes.Driver)]
-    private async Task<object?> WorkflowNodeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowNodeAsync(WorkflowNodePress press, CancellationToken cancellationToken)
     {
-        var run = PayloadHelper.GetRequiredValue<string>(request.Payload, "run");
-        var node = PayloadHelper.GetRequiredValue<string>(request.Payload, "node");
-        var act = PayloadHelper.GetRequiredValue<string>(request.Payload, "act");
-        var words = Optional(request, "words");
+        var (run, node, act, words) = (press.Run, press.Node, press.Act, press.Words);
         _ = _loop.Service ?? throw NotReady();
         var records = new NodeRecordFiles(_loop.Home);
 
         // The terminal's verb, confirmed in this window: its own path, so its lines are the alone path's; never a session's terminal here.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
             var said = await TerminalSaid.RunAsync(output =>
                 WorkflowNodeCommand.RunAsync(new WorkflowNodeAsk(act, run, node, words), records, output, instance: null, _ => null, ct: cancellationToken))

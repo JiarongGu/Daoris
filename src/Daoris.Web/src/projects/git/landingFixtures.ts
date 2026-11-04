@@ -1,5 +1,5 @@
 import type { MilestoneEntry, MilestoneUnit } from '../../work/head/milestone';
-import type { TraceAnswer, TraceBranch, TraceDue } from '../../work/head/trace';
+import type { TraceAnswer, TraceBranch } from '../../work/head/trace';
 
 // A landed branch's landing as the trace and the work's milestones answer it (FLOWCHART1c): the fixtures `landingLife.test.ts`, the
 // branch page's tests and its stories draw. Neutral names only: a repository `engine`, sessions `s2`..`s4`, a placeholder address.
@@ -11,7 +11,7 @@ const entry = (unit: string, kind: string, resource: string, role: string, dispo
 });
 
 /**
- * A landing that carries three sessions' work: due at its quest's done, held for the person's yes three times, then landed and pushed
+ * A landing that carries three sessions' work: landed and pushed
  * by `github`, whose pull request completed; moved on once by session `s3` and three times by `s4`.
  */
 export const SHARED_BRANCH: TraceBranch = {
@@ -28,18 +28,6 @@ export const SHARED_BRANCH: TraceBranch = {
     { from: 'd4d4d40000', to: 'e5e5e50000', at: at(34), session: 's4', acceptedBy: 'auto', unit: 'u-s4', quest: 'q8' },
   ],
   units: ['u-s2', 'u-s3', 'u-s4'],
-};
-
-/** Its own session's due entry: uncommitted work once, held three times for the person's yes, then landed. */
-export const SHARED_DUE: TraceDue = {
-  since: at(0), source: 'auto-landings', closed: at(5),
-  tries: [
-    { at: at(1), code: 'uncommitted', uncommitted: 2, tip: '9f8e7d6c5b4a' },
-    { at: at(2), code: 'held' },
-    { at: at(3), code: 'held' },
-    { at: at(4), code: 'held' },
-    { at: at(5), code: 'landed', branch: 'review/q6-asset-cache', commits: 3, tip: 'a19c5b00' },
-  ],
 };
 
 const ended = (unit: string, session: string): MilestoneUnit => ({
@@ -70,11 +58,6 @@ export const WAITING_BRANCH: TraceBranch = {
   session: 's5', advances: [], units: ['u-s5'],
 };
 
-export const WAITING_DUE: TraceDue = {
-  since: at(30), source: 'auto-landings', closed: at(40),
-  tries: [{ at: at(31), code: 'held' }, { at: at(33), code: 'held' }, { at: at(35), code: 'unreviewed' }],
-};
-
 export const WAITING_UNITS: MilestoneUnit[] = [{
   unit: 'u-s5', repository: 'engine', branch: 'daoris/s5', session: 's5',
   end: { state: 'handed', said: 'its pull request is open' },
@@ -93,8 +76,8 @@ export const OLDER_BRANCH: TraceBranch = {
   branch: 'review/q2-shader-cache', tip: '0e4b9c0000000000000000000000000000000000', at: at(10), line: 'main', plugin: 'github', pushed: false,
 };
 
-/** The trace's answer for a session whose landing names `branch`, with its due entry: what the branch page reads. */
-export const traceAnswerOf = (session: string, branch: TraceBranch | null, due: TraceDue | null = null, missing: string | null = null): TraceAnswer => ({
+/** The trace's answer for a session whose landing names `branch`: what the branch page reads. */
+export const traceAnswerOf = (session: string, branch: TraceBranch | null, missing: string | null = null): TraceAnswer => ({
   unread: [],
   chain: {
     kind: 'session', id: session, unread: [],
@@ -102,7 +85,7 @@ export const traceAnswerOf = (session: string, branch: TraceBranch | null, due: 
       kind: 'session',
       session: {
         id: session, source: 'sessions', kind: 'driven', state: { state: 'completed' }, agent: { adapter: 'claude-code' },
-        landing: { source: 'landings', missing, branches: branch ? [branch] : [], due },
+        landing: { source: 'landings', missing, branches: branch ? [branch] : [] },
       },
     }],
   },

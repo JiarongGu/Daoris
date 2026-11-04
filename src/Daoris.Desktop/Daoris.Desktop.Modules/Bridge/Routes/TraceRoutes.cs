@@ -16,10 +16,10 @@ public sealed class TraceRoutes(DriverLoop loop)
     // each link with its store and a missing one with why. It writes nothing. What a failed read said, and a tree's path,
     // are the terminal's alone (D47 §4): the chain's records keep them off the wire.
     [DriverRoute("TRACE", PipeClass.Open)]
-    private async Task<object?> TraceAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> TraceAsync(TraceRead asked, CancellationToken cancellationToken)
     {
-        var kind = PayloadHelper.GetRequiredValue<string>(request.Payload, "kind");
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id").Trim();
+        var kind = asked.Kind;
+        var id = asked.Id.Trim();
         if (!TraceEntry.All.Contains(kind)) throw new DriverException($"a trace starts from a commit, a session or a quest, not `{kind}`.");
         if (id.Length == 0) throw new DriverException($"a trace names the {kind} it starts from.");
         if (kind == TraceEntry.Commit && !CommitNames.IsCommit(id.TrimStart('#')))

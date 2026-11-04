@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A declared route's request as the host binds it: the record's path values in its path, the rest in the query of a GET or
-/// DELETE or in the body otherwise. A value left null is not sent, so the host reads its default.
+/// DELETE or in the body otherwise, but for a <see cref="FromQueryAttribute"/> value, which travels in the query. A value left null is not sent, so the host reads its default.
 /// </summary>
 internal static class RouteRequest
 {
@@ -24,19 +24,15 @@ internal static class RouteRequest
         var type = ContractJson.Options.GetTypeInfo(request.GetType());
         var values = type.Properties.ToDictionary(property => property.Name, property => property.Get?.Invoke(request), StringComparer.OrdinalIgnoreCase);
         var path = route.PathWith(name => Text(values.GetValueOrDefault(name)));
-        bool InPath(string name) => route.PathNames.Contains(name, StringComparer.OrdinalIgnoreCase);
-
-        if (route.TakesBody)
-        {
-            var body = JsonSerializer.SerializeToNode(request, type) as JsonObject ?? new JsonObject();
-            foreach (var named in body.Select(pair => pair.Key).Where(InPath).ToList()) body.Remove(named);
-            return (verb, path, body.ToJsonString(ContractJson.Options));
-        }
-
         var query = string.Join('&', type.Properties
-            .Where(property => values[property.Name] is not null && !InPath(property.Name))
+            .Where(property => values[property.Name] is not null && route.Travels(property.Name) == RouteTravel.Query)
             .Select(property => $"{property.Name}={Uri.EscapeDataString(Text(values[property.Name]))}"));
-        return (verb, query.Length == 0 ? path : $"{path}?{query}", null);
+        var address = query.Length == 0 ? path : $"{path}?{query}";
+        if (!route.TakesBody) return (verb, address, null);
+
+        var body = JsonSerializer.SerializeToNode(request, type) as JsonObject ?? new JsonObject();
+        foreach (var named in body.Select(pair => pair.Key).Where(name => route.Travels(name) != RouteTravel.Body).ToList()) body.Remove(named);
+        return (verb, address, body.ToJsonString(ContractJson.Options));
     }
 
     private static string Text(object? value) => value switch

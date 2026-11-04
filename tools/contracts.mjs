@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 /**
- * The page's types for the service's routes, written from what `src/Daoris.Contracts` declares by `tools/contracts/`, so a
- * route's path and wire names are written once, in its record, and the page's typecheck finds a field that is gone.
+ * The page's types, written by `tools/contracts/` from what `src/Daoris.Contracts` declares (the service's routes) and from the
+ * window routes' marks in the desktop modules, so a route's name, path and wire names are written once, beside its handler, and
+ * the page's typecheck finds one that is gone.
  *
- *   node tools/contracts.mjs              build and run the generator, writing src/Daoris.Web/src/data/generated/service.ts
- *   node tools/contracts.mjs --if-stale   the same, only where the file is missing or stale (the web's pre-scripts)
- *   node tools/contracts.mjs --check      say whether it is missing or stale, building nothing (`npm run quick`, `verify`)
+ *   node tools/contracts.mjs              build and run the generator, writing both OUTPUTS
+ *   node tools/contracts.mjs --if-stale   the same, only where a file is missing or stale (the web's pre-scripts)
+ *   node tools/contracts.mjs --check      say whether one is missing or stale, building nothing (`npm run quick`, `verify`)
  *
- * The file is ignored and written in each checkout. Its first line stamps a hash of the declaring sources, the contracts and
- * the generator, read here in Node with LF endings, so a check needs no .NET and a CRLF checkout stamps what the runner does.
+ * The files are ignored and written in each checkout. Each one's first line stamps a hash of the declaring sources, the
+ * contracts, the desktop modules and the generator, read here in Node with LF endings, so a check needs no .NET and a CRLF
+ * checkout stamps what the runner does. A payload or answer record the window routes name is declared in the modules, so the
+ * hash covers it.
  *
  * Exit codes: 0 written or fresh · 1 missing or stale · 2 a tool error (usage, no `dotnet`, the generator failed).
  */
@@ -19,8 +22,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
 
-export const OUTPUT = 'src/Daoris.Web/src/data/generated/service.ts';
-export const SOURCES = Object.freeze(['src/Daoris.Contracts/', 'tools/contracts/']);
+export const OUTPUTS = Object.freeze({
+  service: 'src/Daoris.Web/src/data/generated/service.ts',
+  routes: 'src/Daoris.Web/src/bridge/generated/routes.ts',
+});
+export const SOURCES = Object.freeze(['src/Daoris.Contracts/', 'src/Daoris.Desktop/Daoris.Desktop.Modules/', 'tools/contracts/']);
 const GENERATOR = 'tools/contracts';
 const SOURCE_FILE = /\.(?:cs|csproj)$/;
 const SKIPPED = new Set(['bin', 'obj']);
@@ -60,24 +66,26 @@ export function sourceHash(files, read) {
   return hash.digest('hex');
 }
 
-/** Why the written file is not the sources' (`text` null for none), or null where it is. */
-export function staleness(text, hash) {
-  if (text === null) return `${OUTPUT} is not written: run \`${WRITE}\``;
+/** Why the file written at `output` is not the sources' (`text` null for none), or null where it is. */
+export function staleness(text, hash, output) {
+  if (text === null) return `${output} is not written: run \`${WRITE}\``;
   const stamped = STAMP.exec(text.slice(0, text.indexOf('\n') < 0 ? text.length : text.indexOf('\n')))?.[1];
   if (stamped === hash) return null;
-  return `${OUTPUT} is stale: the contracts changed since it was written. Run \`${WRITE}\``;
+  return `${output} is stale: the contracts changed since it was written. Run \`${WRITE}\``;
 }
 
 function standing(root) {
   const hash = sourceHash(sourceFiles(root), (path) => readFileSync(join(root, path), 'utf8'));
-  const output = join(root, OUTPUT);
-  return { hash, why: staleness(existsSync(output) ? readFileSync(output, 'utf8') : null, hash) };
+  const why = Object.values(OUTPUTS)
+    .map((output) => staleness(existsSync(join(root, output)) ? readFileSync(join(root, output), 'utf8') : null, hash, output))
+    .find((reason) => reason !== null) ?? null;
+  return { hash, why };
 }
 
 /** Build and run the generator. No build server outlives it, so a pre-script leaves nothing running. */
 function generate(root, hash) {
   try {
-    execFileSync('dotnet', ['run', '--project', GENERATOR, '--', '--out', join(root, OUTPUT), '--stamp', hash], {
+    execFileSync('dotnet', ['run', '--project', GENERATOR, '--', '--out', join(root, OUTPUTS.service), '--routes', join(root, OUTPUTS.routes), '--stamp', hash], {
       cwd: root, stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true, maxBuffer: 64 * 1024 * 1024,
       env: { ...process.env, MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' },
     });
@@ -105,7 +113,7 @@ function main(argv) {
   }
   if (mode === '--if-stale' && !why) return 0;
   if (!generate(root, hash)) return 2;
-  console.log(`contracts: wrote ${OUTPUT}`);
+  console.log(`contracts: wrote ${Object.values(OUTPUTS).join(' and ')}`);
   return 0;
 }
 

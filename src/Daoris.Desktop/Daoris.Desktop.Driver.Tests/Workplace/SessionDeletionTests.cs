@@ -88,9 +88,6 @@ public sealed class SessionDeletionTests : IDisposable
             Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
             File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.mcp.json"), "{}");
             File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
-            var landings = new AutoLandings(_home);
-            landings.Due(new AutoLanding(id, "q1", "engine", "default", "a tree", DateTimeOffset.UtcNow));
-            landings.Tried(id, new AutoTry(DateTimeOffset.UtcNow, AutoLandingCode.Landed), close: true);
         }
 
         File.WriteAllText(HeldWordsFile.PathOf(_home), """
@@ -107,19 +104,17 @@ public sealed class SessionDeletionTests : IDisposable
         var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
 
         Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
-        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "mark", "choice", "spawn", "held", "landing", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "mark", "choice", "spawn", "held", "archived"], outcome.Removed);
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + GoOnMarks.Suffix)));
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + NewSessionChoices.Suffix)));
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c1.mcp.json")));
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c1.settings.json")));
-        Assert.Null(new AutoLandings(_home).Of("c1"));
         Assert.DoesNotContain("c1", File.ReadAllText(HeldWordsFile.PathOf(_home)));
 
         Assert.True(AnyKept("c2"));
         Assert.True(File.Exists(Path.Combine(Sessions, "c2" + GoOnMarks.Suffix)));
         Assert.True(File.Exists(Path.Combine(Sessions, "c2" + NewSessionChoices.Suffix)));
         Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c2.settings.json")));
-        Assert.NotNull(new AutoLandings(_home).Of("c2"));
         Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
     }
 
@@ -300,18 +295,6 @@ public sealed class SessionDeletionTests : IDisposable
         foreach (var file in inside.Where(file => !Held(file))) File.Delete(file);
         throw new IOException($"`{inside.First(Held)}` is held.");
     };
-
-    /// <summary>An automatic landing still trying is no leftover: the helper leaves an open entry, which a clear refuses before it.</summary>
-    [Fact]
-    public void The_helper_leaves_an_automatic_landing_still_open()
-    {
-        new AutoLandings(_home).Due(new AutoLanding("c1", "q1", "engine", "default", "a tree", DateTimeOffset.UtcNow));
-
-        var removed = new SessionHomeFiles(_home).Remove(["c1"], events: null);
-
-        Assert.DoesNotContain("landing", removed.Went["c1"]);
-        Assert.NotNull(new AutoLandings(_home).Of("c1"));
-    }
 
     /// <summary>Ask Daoris's conversation is said as its own kind in the log, as its open is (LOG1b).</summary>
     [Fact]

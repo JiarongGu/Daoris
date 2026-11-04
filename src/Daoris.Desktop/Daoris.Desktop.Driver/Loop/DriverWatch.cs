@@ -3,27 +3,6 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which part of the look a look runs (FABRIC-EVENT3a, the fabric events design §A3, §C5, §C6 link 5). The whole look's only
-/// further parts are the remote sync at its head and the lost-claim stop after it, so a wake defers those to the <c>look</c>
-/// topic's deadline and skips no judgement the whole look would have made.
-/// </summary>
-public enum LookPart
-{
-    /// <summary>
-    /// The <c>look</c> topic's: the remote sync and the lost-claim stop, then the local plan. At the topic's deadline
-    /// (<c>pollSeconds</c> after the last whole look), at the loop's start, after a failed look's pace, and on a plain nudge.
-    /// </summary>
-    Look,
-
-    /// <summary>
-    /// A wake's (a <c>ledger</c> family moved, a terminal's words kept, a session's end): the local plan alone, every part of the
-    /// look but the remote sync and the lost-claim stop, the sync after an ending it reports included. PARALLEL1b: the stop is a
-    /// plan's too where a sync beside the looks ended since the last look asked, while a session here held a quest.
-    /// </summary>
-    Plan,
-}
-
-/// <summary>
 /// The watch loop, owned once by the library — the headless host and the desktop shell both ran the
 /// same algorithm (re-read the config, tick, wait) as two copies, four six-argument constructions
 /// between them. Each host keeps only its reporting half: what a tick report BECOMES (console lines,
@@ -343,42 +322,12 @@ public sealed class DriverWatch(
     // that counts it is whole, whatever topic's wake came after it and replaced `_woke`.
     private int _everything;
 
-    // The wakes since the last look, which a plan's landing looks at alone (FABRIC-END7); the whole look takes them and lands on all.
-    private readonly LandingWakes _landing = new();
-
-    /// <summary>The wakes the landing has not judged with yet (FABRIC-END7), which a test reads.</summary>
-    internal LandingWakes Landing => _landing;
-
-    /// <summary>
-    /// A look's landing did not judge with the wakes it took (FABRIC-END7's review): they go back, and where a landing still ran, its end
-    /// offers them again. A landing that ended before they went back found nothing held, so they are offered here.
-    /// </summary>
-    private void Unspent(LandingTaken taken, bool busy)
-    {
-        _landing.Unspent(taken, heldBack: busy);
-        if (busy && !Running.Landing) Reoffered();
-    }
-
-    /// <summary>
-    /// A landing pass ended (FABRIC-END7's review): the wakes held back while it ran wake a plan now, as a session's end does, rather than
-    /// wait for the next wake or the whole look. Nothing held back wakes nothing.
-    /// </summary>
-    private void Reoffered()
-    {
-        if (_landing.Reoffer()) Woken(LandingEnd, heard: false);
-    }
-
-    /// <summary>What <c>watch.looked</c> says woke a plan a landing's end offered its held wakes to: the ledger's sessions, as a session's end.</summary>
-    private static readonly Wake LandingEnd = new(ChangeTopics.Ledger, "sessions");
-
-    /// <param name="heard">False for a wake the landing already holds (<see cref="Reoffered"/>), which is not heard a second time.</param>
-    private void Woken(Wake? wake, bool heard = true)
+    private void Woken(Wake? wake)
     {
         if (wake is null) Interlocked.Exchange(ref _everything, 1);
-        else if (heard) _landing.Hear(wake.Topic, wake.Subject);
 
         // PARALLEL1a: a move is told to the facts' judges too; a ref's is told where the ref watch hears it, so not twice.
-        if (wake is not null && heard && wake.Topic != ChangeTopics.Refs) Heard?.Invoke(wake.Topic, wake.Subject, false);
+        if (wake is not null && wake.Topic != ChangeTopics.Refs) Heard?.Invoke(wake.Topic, wake.Subject, false);
         Volatile.Write(ref _woke, wake);
         // FABRIC-END4a: what can unblock a refused tidy wakes link 2 too: a press (a plain nudge), the home's files, a ledger family.
         _refs?.Unblocked(wake is null ? ChainEvents.Press
@@ -534,12 +483,8 @@ public sealed class DriverWatch(
             },
         };
         await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log,
-            heard: (repository, mine) =>
-            {
-                LandingWakes.Moved(home, repository, Nudge); // FABRIC-END7: a due tree that moved wakes its landing.
-                // PARALLEL1a: and the facts that repository's refs move; OWNMOVES1: past their rest where Daoris moved them itself.
-                Heard?.Invoke(ChangeTopics.Refs, repository, mine);
-            },
+            // PARALLEL1a: the facts that repository's refs move; OWNMOVES1: past their rest where Daoris moved them itself.
+            heard: (repository, mine) => Heard?.Invoke(ChangeTopics.Refs, repository, mine),
             // DRAINHOLD1: a tidy of a ref move removes a branch and its tree, which the drain does not wait on: refused while it drains.
             tidy: new DrainHeldEffect(effect, DrainsNow));
         _refs = refs;
@@ -608,8 +553,8 @@ public sealed class DriverWatch(
         {
             var landingPlugins = new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: hooks?.Log);
             nodes.Landing = new LandingDoor(
-                () => new AutoLander(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, landingPlugins),
-                    events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Performs = true },
+                () => new LandPerformer(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, landingPlugins),
+                    events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid),
                 said => Log?.Info("landing.run", ("said", said)), () => HomeLease.HeldHere(home) && !DrainsNow());
         }
 
@@ -783,22 +728,17 @@ public sealed class DriverWatch(
         async Task<TickReport> LookAsync(LookPart part, CancellationToken token)
         {
             var draining = Draining?.Invoke() == true;
-            // FABRIC-END7's review: the wakes this look's landing judges with, put back unless it did judge with them.
-            var taken = _landing.Take(whole: part == LookPart.Look);
             var driver = new Driver(
                     service, draining ? InstallUpdate.Drained(config) : config, _adapters, home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
                     Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
-                    Part = part, Woke = taken.Woke,
-                    LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
+                    Part = part, Wanted = token => WantedAsync(part, token),
                     // FABRIC-CUTOVER1c: an ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
                     RunReturned = run =>
                     {
                         if (_nodes?.Return(run) == true) NodesWoken("returned");
                     },
-                    // FABRIC-CUTOVER1d: the look's automatic landing held by a run's graph asks for a whole pass, waiting for none.
-                    PassAsked = () => _ = PassWholeAsync(TimeSpan.Zero, CancellationToken.None),
                     // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
                     ConfigPath = configPath,
                 };
@@ -816,7 +756,6 @@ public sealed class DriverWatch(
             finally
             {
                 NodesDue(supervisorDue, Supervisor.NextGoesOn());
-                if (!driver.WokeSpent) Unspent(taken, driver.LandingBusy);
             }
         }
 
@@ -881,9 +820,6 @@ public sealed class DriverWatch(
                         // SUPERVISOR1a-i (the supervisor design §3.4): the decisions an earlier run left closed before this first look's
                         // carry-ons, held and released ones stale and admitted ones interrupted; their waiting words the look takes back.
                         Supervisor.SweepAtStart(DateTimeOffset.UtcNow);
-                        // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
-                        // before the crash is due, and this first look lands it.
-                        await OrphansDueAsync(orphans, config, ct).ConfigureAwait(false);
                         // FOUNDATION1f-iv part b (the foundation design §3.3): a loop that died with a carry-on's move standing is taken up here, at the
                         // slot where uncertain words are settled and before it, so the move says the `lost` note of a word it moved and never sent, and
                         // the carry-ons the look plans are no longer held by it. Through a driver's holder, whose scope is the lease holder's.
@@ -1261,36 +1197,6 @@ public sealed class DriverWatch(
                 return null;
             }
         }, CancellationToken.None);
-
-    /// <summary>
-    /// Each record the sweep ended that served a quest, read against its repository's rule (LAND2b): its done under the switch
-    /// is due. Only a done is acted on: the sweep's stop is an interruption, carried on at the next start (D104), so an end that
-    /// is not a done says nothing here.
-    /// </summary>
-    private async Task OrphansDueAsync(IReadOnlyList<OrphanEnded> orphans, DriverConfig config, CancellationToken ct)
-    {
-        foreach (var ended in orphans.Where(ended => ended.Quest is not null && ended.Tree is { Length: > 0 }))
-        {
-            QuestView? quest;
-            try
-            {
-                quest = await service.FindQuestAsync(ended.Quest!, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-            {
-                // Not due, then: its work waits for the person's Accept, as it would have before the switch.
-                continue;
-            }
-
-            // FABRIC-CLOSE1h (§E5): a closure graph's submission reads as its done.
-            if (!QuestResults.Judged(quest)) continue;
-            // WORKFLOW1f: its run's named workflow, where it has one, says whether it lands with no press.
-            var process = await AutoLander.ProcessAsync(home, config, new ServiceReviewWorld(service), quest, ended.Tree!, quest.Workspace, ct)
-                .ConfigureAwait(false);
-            AutoLander.Concluded(home, config, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), ended.Id, quest,
-                QuestResults.Status(quest), "stopped", ended.Tree!, quest.Workspace, process: process);
-        }
-    }
 
     /// <summary>The standing choices, or the reader's sentence about why they could not be read and what the loop does about it.</summary>
     private static DriverConfig Load(string path)

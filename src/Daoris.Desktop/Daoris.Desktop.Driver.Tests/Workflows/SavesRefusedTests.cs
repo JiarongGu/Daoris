@@ -16,39 +16,11 @@ public sealed class SavesRefusedTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    private const string Handed = """{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""";
-
     private const string NoMethod = """{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""";
 
     private const string Steps = """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""";
 
     private static IReadOnlyList<WireProblem> Saved(string graph) => NodeGraphs.Read(graph, onSave: true).Problems;
-
-    [Fact]
-    public void A_handed_is_refused_when_saved_naming_the_node_and_what_to_choose()
-    {
-        var said = Assert.Single(Saved(Handed));
-
-        Assert.Equal((GraphRefusal.HandedRefused, "land"), (said.Code, said.Node));
-        Assert.Equal("node `land` is a `handed`, which only watches a landing some door made, and is no longer saved: a `land` step performs the landing. "
-            + "Choose its method (merge, a branch, a push, a pull request, or integrated into the line) and the steps after it come with it.", said.Words);
-    }
-
-    [Fact]
-    public void A_stored_handed_is_not_refused_when_read_or_shown()
-    {
-        Assert.Empty(NodeGraphs.Read(Handed).Problems);
-        Assert.Empty(NodeGraphs.Problems(NodeGraphs.Read(Handed).Graph!, onSave: false));
-        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "old", "Old", "2026-10-09T09:00:00Z", JsonNode.Parse(Handed)!);
-
-        var read = WorkflowStore.Load(_home, "old")!.Read;
-        Assert.Null(read.Problem);
-        Assert.Null(read.Versions[0].Problem);
-        Assert.NotNull(read.Versions[0].Graph);
-
-        var shown = WorkflowOperations.Show(_home, "old", null);
-        Assert.Empty(shown.Problems);
-    }
 
     [Fact]
     public void A_land_with_no_method_is_refused_when_saved_and_a_stored_one_still_reads()
@@ -109,17 +81,6 @@ public sealed class SavesRefusedTests : IDisposable
     }
 
     [Fact]
-    public async Task The_window_s_save_refuses_a_handed_graph_at_its_node()
-    {
-        var saved = await WorkflowOperations.SaveAsync(DriverConfig.Empty, _home, _ => Task.FromResult(new ChoicesRegistry(null, "unread")), "docs", null,
-            null, JsonNode.Parse(Handed), false, false, null, null, null, false, "2026-10-09T09:00:00Z", CancellationToken.None);
-
-        Assert.False(saved.Done);
-        Assert.Contains(saved.Problems, problem => problem is { Code: GraphRefusal.HandedRefused, Node: "land" });
-        Assert.Null(WorkflowStore.Load(_home, "docs"));
-    }
-
-    [Fact]
     public async Task The_window_s_save_refuses_a_copy_of_a_stored_steps_version_and_a_step_preset()
     {
         StoredSteps.Add(WorkflowPorts.Store(_home), "old", "Old", "2026-10-09T09:00:00Z", JsonNode.Parse(Steps)!);
@@ -142,7 +103,6 @@ public sealed class SavesRefusedTests : IDisposable
         var palette = WorkflowPalette.Build([]);
         string Offered(string kind) => palette.Kinds.Single(each => each.Kind == kind).Offered;
 
-        Assert.Equal(PaletteKind.Retired, Offered(NodeKinds.Handed));
         Assert.Equal("tail:push", Offered(NodeKinds.Pushed));
         Assert.Equal("tail:pull-request", Offered(NodeKinds.PullRequest));
         Assert.Equal("tail:integrate", Offered(NodeKinds.Integrate));

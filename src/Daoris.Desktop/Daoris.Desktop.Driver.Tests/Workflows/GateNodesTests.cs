@@ -206,7 +206,7 @@ public sealed class GateNodesTests
         var observers = new (string Kind, WorkUnit Unit, Func<WorkUnit, NodeAcceptance, NodeObservation> Observe)[]
         {
             (NodeKinds.Claimed, quest, (unit, binding) => BuiltInNodes.Observe(unit, Node(NodeKinds.Claimed), binding)),
-            (NodeKinds.Handed, Branch(Landed()), (unit, binding) => BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding)),
+            (NodeKinds.Land, Branch(Landed()), (unit, binding) => BuiltInNodes.Observe(unit, Node(NodeKinds.Land), binding)),
             (NodeKinds.Opinion, Branch(), (unit, binding) =>
                 OpinionNode.Observe(unit, Node(NodeKinds.Opinion), binding, new OpinionGateState(OpinionGateStates.Settled, "engine") { Tip = Tip })),
             (NodeKinds.Look, Branch(), (unit, binding) => LookNode.Observe(unit, Node(NodeKinds.Look), binding, reviewed)),
@@ -230,7 +230,7 @@ public sealed class GateNodesTests
     [Fact]
     public void The_evaluation_moves_a_look_and_a_go_ahead_on_their_records_and_their_wires_follow()
     {
-        NodeDeclaration[] nodes = [Node(NodeKinds.Look), Node(NodeKinds.GoAhead), new("land", NodeKinds.Handed, 1, NodeReach.Observed)];
+        NodeDeclaration[] nodes = [Node(NodeKinds.Look), Node(NodeKinds.GoAhead), new("land", NodeKinds.Land, 1, NodeReach.Observed)];
         Wire[] wires =
         [
             new("a", WireKinds.After, new WireEnd(NodeKinds.Look), new WireEnd("land")),

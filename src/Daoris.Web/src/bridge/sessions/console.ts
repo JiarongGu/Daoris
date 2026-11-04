@@ -207,5 +207,5 @@ export function useSessionStreams(sessionId: string | null): SessionStreamRow[] 
  * nothing — and the tab changes when the wire says how the task ended, not when this answers.
  */
 export const useStopTask = () => useMutation({
-  mutationFn: ({ id, key }: { id: string; key: string }) => call<{ stopped: boolean }>('STOP_TASK', { id, key }),
+  mutationFn: ({ id, key }: { id: string; key: string }) => call('STOP_TASK', { id, key }) as Promise<{ stopped: boolean }>,
 });

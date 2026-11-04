@@ -15,18 +15,18 @@ public sealed class DriverRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     [DriverRoute("STATE", PipeClass.Open)]
-    private object? GetState(IpcRequest request) => State(_loop);
+    private object? GetState(NoPayload _) => State(_loop);
 
     /// <summary>What is under way, numbered as the last <c>UNDER_WAY</c> telling, for a window opened mid-press.</summary>
     [DriverRoute("UNDER_WAY", PipeClass.Open)]
-    private object? GetUnderWay(IpcRequest request) => _loop.UnderWay.Now();
+    private object? GetUnderWay(NoPayload _) => _loop.UnderWay.Now();
 
     /// <summary>
     /// A slice's snapshot, read from memory as last judged, never judged for the asking, so a second window judges nothing.
     /// </summary>
     [DriverRoute("STATE_SLICE", PipeClass.Open)]
-    private object? GetStateSlice(IpcRequest request) =>
-        _loop.Slices.Find(PayloadHelper.GetRequiredValue<string>(request.Payload, "slice"))?.Snapshot();
+    private object? GetStateSlice(StateSliceRead press) =>
+        _loop.Slices.Find(press.Slice)?.Snapshot();
 
     [DriverRoute("SET_DRIVABLE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_DRIVABLE", Repository = "repository")]
@@ -34,11 +34,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundListed("SET_DRIVABLE", "drivable", "drivable")]
     [Says("SET_DRIVABLE", "repository:repository")]
     [Publishes("SET_DRIVABLE", StateScopes.Driver)]
-    private object? SetDrivable(IpcRequest request)
+    private object? SetDrivable(SetDrivable press)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var drivable = PayloadHelper.GetRequiredValue<bool>(request.Payload, "drivable");
-        _context.Change(config => config.WithDrivable(repository, drivable));
+        _context.Change(config => config.WithDrivable(press.Repository, press.Drivable));
         return State(_loop);
     }
 
@@ -48,13 +46,11 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundListed("SET_HOLD", "holds", "held")]
     [Says("SET_HOLD", "repository:repository")]
     [Publishes("SET_HOLD", StateScopes.Driver)]
-    private object? SetHold(IpcRequest request)
+    private object? SetHold(SetHold press)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var held = PayloadHelper.GetRequiredValue<bool>(request.Payload, "held");
         // A hold changed by anything but the standing confirmation is no longer one a covered resume may release.
-        if (!PipeDoor.Standing) _loop.Pipe?.StandingConfirmation.Forget(repository);
-        _context.Change(config => config.WithHold(repository, held));
+        if (!PipeDoor.Standing) _loop.Pipe?.StandingConfirmation.Forget(press.Repository);
+        _context.Change(config => config.WithHold(press.Repository, press.Held));
         return State(_loop);
     }
 
@@ -64,11 +60,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundListed("SET_TREES", "trees", "ownTree")]
     [Says("SET_TREES", "repository:repository")]
     [Publishes("SET_TREES", StateScopes.Driver)]
-    private object? SetTrees(IpcRequest request)
+    private object? SetTrees(SetTrees press)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var ownTree = PayloadHelper.GetRequiredValue<bool>(request.Payload, "ownTree");
-        _context.Change(config => config.WithTrees(repository, ownTree));
+        _context.Change(config => config.WithTrees(press.Repository, press.OwnTree));
         return State(_loop);
     }
 
@@ -79,11 +73,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundListed("SET_CHECKOUT_WRITES", "checkoutWrites", "allow")]
     [Says("SET_CHECKOUT_WRITES", "repository:repository")]
     [Publishes("SET_CHECKOUT_WRITES", StateScopes.Driver)]
-    private object? SetCheckoutWrites(IpcRequest request)
+    private object? SetCheckoutWrites(SetCheckoutWrites press)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var allow = PayloadHelper.GetRequiredValue<bool>(request.Payload, "allow");
-        _context.Change(config => config.WithCheckoutWrites(repository, allow));
+        _context.Change(config => config.WithCheckoutWrites(press.Repository, press.Allow));
         return State(_loop);
     }
 
@@ -94,11 +86,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundRead("SET_STANDING", nameof(PipeReads.StandingAnswer))]
     [Says("SET_STANDING", "repository:repository")]
     [Publishes("SET_STANDING", StateScopes.Driver)]
-    private object? SetStanding(IpcRequest request)
+    private object? SetStanding(SetStanding press)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var says = Optional(request, "says");
-        _context.Change(config => config.WithStanding(repository, says, DateTimeOffset.UtcNow));
+        _context.Change(config => config.WithStanding(press.Repository, press.Says, DateTimeOffset.UtcNow));
         return State(_loop);
     }
 
@@ -132,13 +122,12 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundRead("SET_SESSION_CHECKS", nameof(PipeReads.SessionChecks))]
     [Says("SET_SESSION_CHECKS", "repository:repository")]
     [Publishes("SET_SESSION_CHECKS", StateScopes.Driver)]
-    private object? SetSessionChecks(IpcRequest request)
+    private object? SetSessionChecks(SetSessionChecks press)
     {
-        var repository = Optional(request, "repository") ?? "";
-        var checks = Optional(request, "checks");
+        var repository = press.Repository ?? "";
         // The refusals come first, before anything is written.
-        SessionChecks.Apply(DriverConfig.Load(_loop.ConfigPath), repository, checks);
-        _context.Change(config => config.WithSessionChecks(repository, checks));
+        SessionChecks.Apply(DriverConfig.Load(_loop.ConfigPath), repository, press.Checks);
+        _context.Change(config => config.WithSessionChecks(repository, press.Checks));
         return State(_loop);
     }
 
@@ -147,9 +136,9 @@ public sealed class DriverRoutes(DriverContext context)
     /// with no git, null with <c>refusal</c> where it cannot be told.
     /// </summary>
     [DriverRoute("HEAVY_MARKS", PipeClass.Open)]
-    private async Task<object?> HeavyMarksAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HeavyMarksAsync(HeavyRead press, CancellationToken cancellationToken)
     {
-        var repository = (Optional(request, "repository") ?? "").Trim();
+        var repository = (press.Repository ?? "").Trim();
         var service = _loop.Service ?? throw NotReady();
         var root = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken), repository, null)
             .Select(row => row.Root).FirstOrDefault(path => Directory.Exists(path));
@@ -173,9 +162,9 @@ public sealed class DriverRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("HEAVY_SLOT", PipeClass.Open)]
     [ByEvent("HEAVY_SLOT", Untold = "a run's records beside the slot and whether its process lives")]
-    private async Task<object?> HeavySlotAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HeavySlotAsync(HeavyRead press, CancellationToken cancellationToken)
     {
-        var repository = (Optional(request, "repository") ?? "").Trim();
+        var repository = (press.Repository ?? "").Trim();
         var service = _loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken);
         // Files and processes, off the window's thread (UIFREEZE1).
@@ -258,10 +247,9 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_NOTIFY", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_NOTIFY", nameof(PipeReads.Notify))]
     [Publishes("SET_NOTIFY", StateScopes.Driver)]
-    private object? SetNotify(IpcRequest request)
+    private object? SetNotify(SetNotify press)
     {
-        var notify = PayloadHelper.GetRequiredValue<bool>(request.Payload, "notify");
-        _context.Change(config => config.WithNotify(notify));
+        _context.Change(config => config.WithNotify(press.Notify));
         return State(_loop);
     }
 
@@ -271,10 +259,9 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_COOLOFF", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_COOLOFF", nameof(PipeReads.CoolOff))]
     [Publishes("SET_COOLOFF", StateScopes.Driver)]
-    private object? SetCoolOff(IpcRequest request)
+    private object? SetCoolOff(SetCoolOff press)
     {
-        var minutes = Number(request, "minutes")
-            ?? throw new DriverException(DriverConfig.CoolOffRefusal);
+        var minutes = press.Minutes ?? throw new DriverException(DriverConfig.CoolOffRefusal);
         _context.Change(config => config.WithCoolOff((int)Math.Clamp(minutes, int.MinValue, int.MaxValue)));
         return State(_loop);
     }
@@ -288,21 +275,11 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundRead("SET_KEEP", nameof(PipeReads.KeepRule))]
     [NotAlready("SET_KEEP", "merges into a kind's keeping rule")]
     [Publishes("SET_KEEP", StateScopes.Driver | StateScopes.Wiring)]
-    private object? SetKeep(IpcRequest request)
+    private object? SetKeep(SetKeep press)
     {
-        var whole = request.Payload is { } payload && payload.TryGetProperty("whole", out var said)
-            ? said.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => (bool?)false, _ => null }
-            : null;
-        var set = new KeepSet(
-            PayloadHelper.GetRequiredValue<string>(request.Payload, "kind"),
-            Number(request, "days") is { } days ? (int)Math.Clamp(days, int.MinValue, int.MaxValue) : null,
-            Flag(request, "never"),
-            whole,
-            Flag(request, "default"),
-            // KEEP1f: the floor's size in GB, its share, or `off`, a size judged against half the Daoris folder's volume as read here.
-            Number(request, "gb") is { } gb ? (int)Math.Clamp(gb, int.MinValue, int.MaxValue) : null,
-            Number(request, "percent") is { } percent ? (int)Math.Clamp(percent, int.MinValue, int.MaxValue) : null,
-            Flag(request, "off"));
+        static int? Clamped(long? value) => value is { } number ? (int)Math.Clamp(number, int.MinValue, int.MaxValue) : null;
+        // A floor's size in GB, its share, or `off`: a size is judged against half the Daoris folder's volume as read here.
+        var set = new KeepSet(press.Kind, Clamped(press.Days), press.Never, press.Whole, press.Default, Clamped(press.Gb), Clamped(press.Percent), press.Off);
         if ((KeepRules.IsFloor(set.Kind) || KeepRules.IsAllowance(set.Kind)) && set.Gb is not null) set = set with { Volume = SpaceVolumes.Read(DaorisHome.FolderOf(_loop.Home).Folder)?.Total };
         _context.Change(config => KeepRules.Apply(config, set));
         return State(_loop);
@@ -314,10 +291,9 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_CAP", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_CAP", nameof(PipeReads.Cap))]
     [Publishes("SET_CAP", StateScopes.Driver)]
-    private object? SetCap(IpcRequest request)
+    private object? SetCap(SetCap press)
     {
-        var cap = Number(request, "cap")
-            ?? throw new DriverException(DriverConfig.CapRefusal);
+        var cap = press.Cap ?? throw new DriverException(DriverConfig.CapRefusal);
         _context.Change(config => config.WithCap((int)Math.Clamp(cap, int.MinValue, int.MaxValue)));
         return State(_loop);
     }
@@ -327,7 +303,7 @@ public sealed class DriverRoutes(DriverContext context)
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES", PipeClass.Open)]
     [ByEvent("ROLES", Untold = "the store's roles, role policies, rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
-    private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> RolesAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
         // Each role's last seven days: names and counts from the machine log's actor.chose lines; a role with no start is not listed.
@@ -537,9 +513,9 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_HELP_MODE", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_HELP_MODE", nameof(PipeReads.HelpMode))]
     [Publishes("SET_HELP_MODE", StateScopes.Driver)]
-    private object? SetHelpMode(IpcRequest request)
+    private object? SetHelpMode(SetHelpMode press)
     {
-        var mode = Optional(request, "mode")
+        var mode = press.Mode
             ?? throw new DriverException($"Ask Daoris's mode is `{HelpModes.Restricted}` or `{HelpModes.Full}`; the press named none.");
         _context.Change(config => config.WithHelpMode(mode));
         _loop.Chat?.HelpAccessChosen(HelpModes.Named(mode)!);
@@ -556,13 +532,11 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("SET_HELP_GRANT", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_HELP_GRANT", nameof(PipeReads.HelpGrant))]
     [Publishes("SET_HELP_GRANT", StateScopes.Driver)]
-    private object? SetHelpGrant(IpcRequest request)
+    private object? SetHelpGrant(SetHelpGrant press)
     {
-        var grant = Optional(request, "grant") ?? ConfiguredAccess.HousekeepingGrant;
-        var operation = Optional(request, "operation")
+        var operation = press.Operation
             ?? throw new DriverException("A grant's press names the operation it chooses; this one named none.");
-        var chosen = request.Payload is { } payload && payload.TryGetProperty("chosen", out var value) && value.ValueKind == JsonValueKind.True;
-        ConfiguredAccess.Choose(_loop.Home, grant, operation, chosen);
+        ConfiguredAccess.Choose(_loop.Home, press.Grant ?? ConfiguredAccess.HousekeepingGrant, operation, press.Chosen);
         _loop.Chat?.HelpAccessChosen(DriverConfig.Load(_loop.ConfigPath).HelpMode);
         return State(_loop);
     }
@@ -575,10 +549,9 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("TRUST_FOLDER", None = OwnerNone.MachineSetting)]
     [GroundWait("TRUST_FOLDER", "trust", "folder", "trustFile")]
     [Publishes("TRUST_FOLDER", StateScopes.Driver)]
-    private object? TrustFolder(IpcRequest request)
+    private object? TrustFolder(TrustFolderPress press)
     {
-        var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
-        var trustFile = PayloadHelper.GetRequiredValue<string>(request.Payload, "trustFile");
+        var (folder, trustFile) = (press.Folder, press.TrustFile);
         var hold = _loop.Trust.Holding(folder, trustFile)
             ?? throw new DriverException(
                 $"the driver is not holding `{folder}` for this agent's trust, so there is nothing "
@@ -630,9 +603,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundQuest("RETRY_QUEST", "quest")]
     [Says("RETRY_QUEST", "quest:quest")]
     [Publishes("RETRY_QUEST", StateScopes.Sessions | StateScopes.Driver)]
-    private async Task<object?> RetryQuestAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> RetryQuestAsync(QuestPress press, CancellationToken cancellationToken)
     {
-        var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
+        var quest = press.Quest.Trim().TrimStart('#');
         var config = DriverConfig.Load(_loop.ConfigPath);
         var considered = _loop.Look.Latest
             ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken, _loop.Home)
@@ -658,9 +631,9 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("SHOW_REVIEW_AGAIN", PipeClass.Window)]
     [Owner("SHOW_REVIEW_AGAIN", Quest = "quest")]
     [Publishes("SHOW_REVIEW_AGAIN", StateScopes.Driver)]
-    private async Task<object?> ShowReviewAgainAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ShowReviewAgainAsync(QuestPress press, CancellationToken cancellationToken)
     {
-        var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
+        var quest = press.Quest.Trim().TrimStart('#');
         var desk = _loop.Reviews
                    ?? throw new DriverException("this window carries no browser to show a review in, so nothing was shown again.");
         var service = _loop.Service ?? throw NotReady();
@@ -671,7 +644,7 @@ public sealed class DriverRoutes(DriverContext context)
 
     // "Look now": a person who just published a quest should not watch a poll countdown.
     [DriverRoute("NUDGE", PipeClass.Open)]
-    private async Task<object?> NudgeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> NudgeAsync(NoPayload _, CancellationToken cancellationToken)
     {
         _loop.Nudge();
         // The one verb with nothing to answer — and `await` keeps this method honestly async.
@@ -685,10 +658,9 @@ public sealed class DriverRoutes(DriverContext context)
     // the quests and sessions it fed, and the registry, and a wall it hit is answered as its report (STATEHUB1d, D169).
     [DriverRoute("SYNC_NOW", PipeClass.Open)]
     [Publishes("SYNC_NOW", StateScopes.Sessions | StateScopes.Quests | StateScopes.Sync | StateScopes.Registry)]
-    private async Task<object?> SyncNowAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SyncNowAsync(SyncNowPress press, CancellationToken cancellationToken)
     {
-        var workspace = RemoteTarget.Workspace(
-            PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace"));
+        var workspace = RemoteTarget.Workspace(press.Workspace);
         var pass = _loop.SyncNowAsync(workspace, cancellationToken)
             ?? throw NotReady();
         var report = await pass;
@@ -726,10 +698,6 @@ public sealed class DriverRoutes(DriverContext context)
             // Where this machine's Daoris lives (D63), and what establishing it did this start — a
             // machine-local path, answered only over this bridge, like every path here.
             loop.Home,
-            loop.HomeNotice,
-            // How that home stands to the account's DAORIS_HOME (LEFT2): what the page's hint says of a terminal.
-            loop.HomeAccount,
-            loop.HostNotice,
             config.Drivable,
             config.Holds,
             // TERMTRUST1a (D201, the terminal-trust design §6.1): the person's standing confirmation as This Daoris's row and the line in

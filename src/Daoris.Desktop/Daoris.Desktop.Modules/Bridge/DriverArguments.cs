@@ -15,50 +15,49 @@ namespace Daoris.Desktop;
 public static class DriverArguments
 {
     /// <summary>A string the page may send, or null — blank is absent.</summary>
-    internal static string? Optional(IpcRequest request, string name) =>
-        request.Payload is { } payload
-        && payload.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.String
-        && value.GetString() is { Length: > 0 } text
-            ? text
-            : null;
+    internal static string? Optional(IpcRequest request, string name) => Optional(request.Payload, name);
+
+    internal static string? Optional(JsonElement? payload, string name) =>
+        Sent(payload, name) is { ValueKind: JsonValueKind.String } value && value.GetString() is { Length: > 0 } text ? text : null;
 
     /// <summary>A flag the page may send: true only when it says true.</summary>
-    internal static bool Flag(IpcRequest request, string name) =>
-        request.Payload is { } payload
-        && payload.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.True;
+    internal static bool Flag(IpcRequest request, string name) => Flag(request.Payload, name);
 
-    /// <summary>
-    /// A conversation's tree choice (D51, NEW1a): absent is the driver's own, true a tree of its own, false the checkout.
-    /// <see cref="Flag"/> cannot tell absent from false.
-    /// </summary>
-    public static bool? TreeChoice(IpcRequest request) =>
-        request.Payload is { } payload && payload.TryGetProperty("ownTree", out var value)
-            ? value.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
-            : null;
+    internal static bool Flag(JsonElement? payload, string name) => Sent(payload, name) is { ValueKind: JsonValueKind.True };
+
+    /// <summary>A conversation's tree choice: absent is the driver's own, true a tree of its own, false the checkout.</summary>
+    public static bool? TreeChoice(IpcRequest request) => Choice(request.Payload, "ownTree");
+
+    /// <summary>A yes or no the page may leave out: true or false as said, null otherwise; <see cref="Flag(JsonElement?, string)"/> cannot tell absent from false.</summary>
+    internal static bool? Choice(IpcRequest request, string name) => Choice(request.Payload, name);
+
+    internal static bool? Choice(JsonElement? payload, string name) =>
+        Sent(payload, name)?.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null };
 
     /// <summary>A list of strings the page may send, or null where it sends none; an item that is not a string is left out.</summary>
-    internal static IReadOnlyList<string>? Listed(IpcRequest request, string name) =>
-        request.Payload is { } payload && payload.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+    internal static IReadOnlyList<string>? Listed(IpcRequest request, string name) => Listed(request.Payload, name);
+
+    internal static IReadOnlyList<string>? Listed(JsonElement? payload, string name) =>
+        Sent(payload, name) is { ValueKind: JsonValueKind.Array } value
             ? [.. value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
             : null;
 
     /// <summary>A whole number the page may send, or null.</summary>
-    internal static long? Number(IpcRequest request, string name) =>
-        request.Payload is { } payload
-        && payload.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.Number
-        && value.TryGetInt64(out var number)
-            ? number
-            : null;
+    internal static long? Number(IpcRequest request, string name) => Number(request.Payload, name);
+
+    internal static long? Number(JsonElement? payload, string name) =>
+        Sent(payload, name) is { ValueKind: JsonValueKind.Number } value && value.TryGetInt64(out var number) ? number : null;
+
+    /// <summary>The field as sent, a JSON null included; null only where the payload is no object or does not name it.</summary>
+    internal static JsonElement? Sent(JsonElement? payload, string name) =>
+        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) ? value : null;
 
     /// <summary>
     /// The profile a profile verb is about: Agents' account actions and Accounts' <i>Try now</i>. Absent is a refusal, never
     /// a guess.
     /// </summary>
-    internal static string Named(IpcRequest request) =>
-        Optional(request, "profile") is { Length: > 0 } profile
+    internal static string Named(string? named) =>
+        named is { Length: > 0 } profile
             ? profile
             : throw Refusals.Because(
                 Refusals.HarnessProfileNeeded,

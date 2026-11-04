@@ -74,8 +74,6 @@ public sealed class NodeGraphsTests
 
     public static TheoryData<string> CaseNames() => GraphProblemsTable.Names("graphs");
 
-    public static TheoryData<string> FragmentCaseNames() => GraphProblemsTable.Names("fragments");
-
     public static TheoryData<string> UnreadableNames() => GraphProblemsTable.Names("unreadable");
 
     [Fact]
@@ -100,7 +98,7 @@ public sealed class NodeGraphsTests
     public void Each_refusal_is_named_alone_with_its_code_and_words(string name)
     {
         var row = GraphProblemsTable.Row("graphs", name);
-        // The table is the graph rules'; the save's own two refusals (a `handed`, a `land` with no method) are proved by their tests below.
+        // The table is the graph rules'; the save's own refusal (a `land` with no method) is proved by its test below.
         Assert.Equal(GraphProblemsTable.Expected(row), GraphProblemsTable.Said(NodeGraphs.Problems(GraphProblemsTable.Graph(row)).Where(GraphProblemsTable.IsRule)));
     }
 
@@ -154,11 +152,7 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// Each row of the shared table's <c>fragments</c>, through the landing rule that holds the cycle: a fragment's own refusal alone, a
-    /// cycle's graph that does not hold under its rule's landing, and the cycles that hold.
-    /// </summary>
-    /// <summary>
-    /// INTEGRATE1n, F47: the refusal of a node that observes the landing before any <c>handed</c> is the save's alone. The same graph read
+    /// INTEGRATE1n, F47: the refusal of a node that observes the landing before any <c>land</c> is the save's alone. The same graph read
     /// from a file that kept it still reads, as a stored version that read before is never made unreadable by a rule added after it.
     /// </summary>
     [Fact]
@@ -182,7 +176,7 @@ public sealed class NodeGraphsTests
         Assert.Equal(codes.Count, codes.Distinct().Count());
         Assert.Empty(codes.Intersect(typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!)));
         // The save's own refusals (WORKFLOWCLEAN1 1b) are proved apart from the rows, by SavesRefusedTests.
-        Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except([GraphRefusal.HandedRefused, GraphRefusal.LandMethod]));
+        Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except([GraphRefusal.LandMethod]));
     }
 
     /// <summary>
@@ -194,7 +188,7 @@ public sealed class NodeGraphsTests
     public void The_protected_order_holds_on_every_way_to_the_landing()
     {
         IEnumerable<string> Order(NodeGraph graph) => NodeGraphs.Problems(graph).Where(problem => problem.Code == GraphRefusal.ProtectedOrder).Select(problem => problem.Node!);
-        NodeDeclaration[] nodes = [Node("look", NodeKinds.Look), Node("press", NodeKinds.Human), Node("landing", NodeKinds.Handed)];
+        NodeDeclaration[] nodes = [Node("look", NodeKinds.Look), Node("press", NodeKinds.Human), Node("landing", NodeKinds.Land)];
         Wire Any(string id, string from) => After(id, from, "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) };
 
         Assert.Empty(Order(new NodeGraph(nodes, [After("a", "look", "landing"), After("b", "press", "landing")], ["look", "press"], "landing")));
@@ -211,7 +205,7 @@ public sealed class NodeGraphsTests
     [Fact]
     public void A_graph_wiring_each_gate_into_each_later_one_holds_and_so_do_observed_nodes_of_different_steps()
     {
-        NodeDeclaration[] gates = [Node("work", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("press", NodeKinds.GoAhead), Node("landing", NodeKinds.Handed)];
+        NodeDeclaration[] gates = [Node("work", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("press", NodeKinds.GoAhead), Node("landing", NodeKinds.Land)];
         Wire[] wires = [After("a", "work", "opinion"), After("b", "opinion", "look"), After("c", "look", "press"), After("d", "press", "landing"),
             After("e", "opinion", "landing"), After("f", "look", "landing")];
         var graph = new NodeGraph(gates, wires, ["work"], "landing");

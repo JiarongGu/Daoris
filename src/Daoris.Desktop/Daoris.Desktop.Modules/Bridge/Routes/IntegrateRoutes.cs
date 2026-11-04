@@ -22,11 +22,11 @@ public sealed class IntegrateRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("INTEGRATION", PipeClass.Open)]
     [ByEvent("INTEGRATION", Untold = "the integration record, a file the window's ask must not wait on")]
-    private Task<object?> IntegrationAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> IntegrationAsync(IntegrationRead press, CancellationToken cancellationToken)
     {
         var store = new IntegrationStore(_loop.Home);
-        if (Optional(request, "unit") is { Length: > 0 } unit) return Task.FromResult<object?>(new { Head = IntegrationLooks.HeadOf(store, unit) });
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        if (press.Unit is { Length: > 0 } unit) return Task.FromResult<object?>(new { Head = IntegrationLooks.HeadOf(store, unit) });
+        var repository = ActField.Needs(press.Repository, "repository");
         var waiting = _loop.CardWaits.Where(wait => string.Equals(wait.Repository, repository, StringComparison.OrdinalIgnoreCase)).Select(IntegrationLookWaiting.Of);
         return Task.FromResult<object?>(new { Look = IntegrationLooks.Of(store, repository) with { Waiting = [.. waiting] } });
     }
@@ -42,21 +42,20 @@ public sealed class IntegrateRoutes(DriverContext context)
     [Owner("INTEGRATE", Repository = "repository")]
     [GroundRepository("INTEGRATE", "repository")]
     [Publishes("INTEGRATE", Moves)]
-    private async Task<object?> IntegrateAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> IntegrateAsync(IntegratePress press, CancellationToken cancellationToken)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var act = PayloadHelper.GetRequiredValue<string>(request.Payload, "act");
+        var (repository, act) = (press.Repository, press.Act);
         var store = new IntegrationStore(_loop.Home);
         switch (act)
         {
             case "request":
             {
-                var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
+                var branch = ActField.Needs(press.Branch, "branch");
                 var service = _loop.Service ?? throw NotReady();
                 var root = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken), repository, null)
                     .Where(row => row.Root is not null && Directory.Exists(row.Root)).FirstOrDefault();
                 if (root.Root is null) return new Answered(false, "no-checkout", $"`{repository}` has no checkout here, so nothing was requested.");
-                var route = Flag(request, "landed") ? IntegrationRoutes.Recorded : IntegrationRoutes.Records;
+                var route = press.Landed ? IntegrationRoutes.Recorded : IntegrationRoutes.Records;
                 var home = _loop.Home;
                 var admitted = await new IntegrationRequests(new HomeIntegrationRecords(home), store, () => DriverConfig.Load(_loop.ConfigPath))
                     .AdmitAsync(new IntegrationAsk(repository, root.Workspace, root.Root, branch, route, IntegrationRequester.Card), cancellationToken)
@@ -66,7 +65,7 @@ public sealed class IntegrateRoutes(DriverContext context)
             }
             case "drop":
             {
-                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "request");
+                var id = ActField.Needs(press.Request, "request");
                 try
                 {
                     return store.Close(id, IntegrationRequestCloses.Dropped)
@@ -83,8 +82,8 @@ public sealed class IntegrateRoutes(DriverContext context)
                 return new Answered(true, null, $"`{repository}`'s line is looked at now.");
             case "decide":
             {
-                var candidate = PayloadHelper.GetRequiredValue<string>(request.Payload, "candidate");
-                var decide = PayloadHelper.GetRequiredValue<string>(request.Payload, "decide");
+                var candidate = ActField.Needs(press.Candidate, "candidate");
+                var decide = ActField.Needs(press.Decide, "decide");
                 if (!IntegrationDecides.All.Contains(decide))
                 {
                     return new Answered(false, "decide", $"`{decide}` is no decide: one of {string.Join(", ", IntegrationDecides.All)}. Nothing was changed.");
@@ -107,8 +106,8 @@ public sealed class IntegrateRoutes(DriverContext context)
             }
             case "order":
             {
-                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "request");
-                var place = PayloadHelper.GetRequiredValue<string>(request.Payload, "place");
+                var id = ActField.Needs(press.Request, "request");
+                var place = ActField.Needs(press.Place, "place");
                 if (!IntegrationOrders.All.Contains(place))
                 {
                     return new Answered(false, "place", $"`{place}` is no place in a queue: first or last. Nothing was changed.");
@@ -128,9 +127,9 @@ public sealed class IntegrateRoutes(DriverContext context)
             }
             case "answer":
             {
-                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "request");
-                var commit = PayloadHelper.GetRequiredValue<string>(request.Payload, "commit");
-                var word = PayloadHelper.GetRequiredValue<string>(request.Payload, "answer");
+                var id = ActField.Needs(press.Request, "request");
+                var commit = ActField.Needs(press.Commit, "commit");
+                var word = ActField.Needs(press.Answer, "answer");
                 if (store.Request(id) is { } found && !string.Equals(found.Repository, repository, StringComparison.OrdinalIgnoreCase))
                 {
                     return new Answered(false, "gone", $"Request {id} is not `{repository}`'s: nothing was changed.");

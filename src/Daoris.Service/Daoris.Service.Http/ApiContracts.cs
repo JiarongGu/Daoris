@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Daoris.Contracts.Asks;
 using Daoris.Knowledge;
 
 namespace Daoris.Knowledge.Http;
@@ -7,314 +8,10 @@ namespace Daoris.Knowledge.Http;
 // The wire shapes not yet declared in Daoris.Contracts beside their routes, and their source-generated serializer
 // context. A domain's shapes move there with its routes.
 
-// What a quest carries (D65 §2) travels on every read: links whole, files by name. `Path` is where
-// THIS machine keeps a file — answered only to a caller on this machine, like a transcript (D47 §4),
-// and only when the bytes are actually here: a file of a quest published on another machine is named
-// and not held, and a null path is how a reader, and the driver, learn that rather than guess it.
-public sealed record QuestAttachmentResponse(string Name, string Sha256, long Bytes, string? Path);
-// A chain's step (D65 §4), the same shape both ways. Nullable on the way in and judged by the
-// exchange, which refuses a step without its words naming which step it was. `SetUpIn` (REVIEWENV1b) makes it a set-up step,
-// naming the environment it shows the chain's work in; absent on every other step.
-public sealed record QuestStepWire(string? To, string? Title, string? Body, string? SetUpIn = null);
-// A chain's review choice (REVIEWENV1b, D154 point 3): `off`, `on` or an environment's name, and the person's words it was set
-// on — the same shape both ways, judged by the exchange.
-public sealed record QuestReviewWire(string? Choice, string? Words = null);
-// A set-up on a set-up step (REVIEWENV1b, D154 point 9), answered only: the commit Daoris read, where to look (absent on another
-// machine for a local one, whose tab is on the machine that showed it), what it shows, how to show it again, the folder served
-// and a review run's command where there were any, the session that said it (absent for the person's own), whether it was
-// local, and when, where and as which operation it was kept: `Machine` and `Sequence` are what a verdict names it by.
-public sealed record QuestSetUpWire(
-    string Commit, string? Look, string? Shows, string? Again, string? Served, string? Run, string? Session, bool Local,
-    DateTimeOffset? At, string? Machine, long? Sequence);
-// Which set-up a verdict answers, by the machine and sequence that name it everywhere (REVIEWENV1b).
-public sealed record QuestSetUpRefWire(string? Machine, long? Sequence);
-// The person's verdict (REVIEWENV1b, D154 point 8), answered only: `reviewed`, `not-yet` or `skipped`, the set-up it answers and
-// that set-up's commit (absent on a skip), their words, and when and where it was given.
-public sealed record QuestReviewVerdictWire(
-    string Said, QuestSetUpRefWire? SetUp, string? Commit, string? Words, DateTimeOffset? At, string? Machine);
-// A requirement (DRIFT1c, D133 §3): the person's words, quoted, and the check that proves them — the same
-// shape both ways. Nullable on the way in and judged by the exchange, which refuses one missing a half.
-// `Evidence` (EVID1a, D144 §2): what Daoris reads itself, each item a `path` or a `gate`; answered `[]` for none.
-public sealed record QuestRequirementWire(string? Quote, string? Check, IReadOnlyList<QuestEvidenceWire?>? Evidence = null);
-// One evidence item (EVID1a): exactly one of the two, judged by the exchange, which names the requirement at fault.
-public sealed record QuestEvidenceWire(string? Path, string? Gate = null);
-// What Daoris read of a done's evidence (EVID1a, D144 §3, §5): the commit, how it was chosen (`session-end`, `sweep`,
-// `terminal`), the session whose end was read, and each item's code — the same shape both ways. `At` and `Machine` are
-// answered only: when and where it was read, which the operation keeps. Nullable on the way in and judged by the exchange.
-public sealed record QuestEvidenceReadWire(
-    int? Requirement, string? Path, string? Gate, string? Result, string? Object = null, bool? Changed = null,
-    string? Spelled = null);
-// `Submission` (FABRIC-CLOSE1e) is the submission it was read for, both ways: a submission's verdict names it, and a done's names
-// none, so it is absent for every verdict from before.
-public sealed record QuestEvidenceVerdictWire(
-    string? Commit, string? How, string? Session = null, IReadOnlyList<QuestEvidenceReadWire?>? Items = null,
-    DateTimeOffset? At = null, string? Machine = null, QuestSubmissionRefWire? Submission = null);
-// Which submission a verdict was read for, by the machine and sequence that made it, as a close names one (FABRIC-CLOSE1e).
-public sealed record QuestSubmissionRefWire(string? Machine, long? Sequence);
-// How a done answers one requirement (DRIFT1d, D133 §4): its number, and `Met` with how its check was met, or
-// `Departed` with the reason and `Quote`, the person's words it turns on — the same shape both ways. Nullable on the
-// way in and judged by the exchange, which refuses one that says both or neither, naming which.
-public sealed record QuestAnswerWire(int? Requirement, string? Met, string? Departed = null, string? Quote = null);
-// `Then` is what this quest's close will publish next; `Parent` the quest whose close published it;
-// `Conflicts` the moves that lost to another machine's (D68 §5), kept for a person.
-// `Machine` and `Sequence` name the conflict on every machine — what a dismissal names (SYNC6c).
-// SYNCMERGE1b0 (D178 point 7), each absent where unset and from a host before it: `LostToTheReopen`, true where the take lost to the
-// person's reopen of the work its step grew from (FABRIC-CLOSE1c18, CLOSE1c22's mark); `Ended`, on a settled conflict only, `dropped`
-// (a plain dismissal) or `brought-forward`; `Forward`, the bring-forward that settled it, or else this machine's latest that lost again.
-public sealed record QuestConflictResponse(
-    string Machine, string Attempted, string? Note, DateTimeOffset At, long Sequence,
-    bool? LostToTheReopen = null, string? Ended = null, QuestForwardResponse? Forward = null);
-// A bring-forward's take (SYNCMERGE1b0, D178 points 3 and 8): the machine and sequence that name it, when it was made, and where it stands
-// as a claim reads one: `held` once a remote numbered it, `unconfirmed` while it is only here, `lost` where it lost again.
-public sealed record QuestForwardResponse(string Machine, long Sequence, DateTimeOffset At, string Standing);
-public sealed record QuestResponse(
-    string Id, string From, string To, string Title, string Body,
-    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
-    IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments,
-    IReadOnlyList<QuestStepWire> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts,
-    // The question its taker waits on (D79), or null.
-    string? Awaits = null,
-    // The session whose connector published it (SESS1), or null: a person's publish, or a chain step.
-    string? PublishedBy = null,
-    // Whether this host would delete it (D95): the exchange's own judgement, so no page re-derives it.
-    // Always false at a shared deployment, which has no delete door.
-    bool Deletable = false,
-    // The lanes of `To` it addresses (D115 §2.2), sorted; empty for a quest to the whole repository.
-    IReadOnlyList<string>? Lanes = null,
-    // What the person requires (DRIFT1c), each their words and its check; empty for a quest that names none.
-    IReadOnlyList<QuestRequirementWire>? Requirements = null,
-    // How its done answered each (DRIFT1d); `Held` whether a departure holds it for the person's yes, and
-    // `Accepted` when they gave it. Empty, false and null for a quest no departure ever held.
-    IReadOnlyList<QuestAnswerWire>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null,
-    // What a list calls it (SESSUX1j): its publisher's short title, else a name read from its own words. A host from
-    // before the field answers none, and a reader names it by its title.
-    string? Short = null,
-    // Why it is held (EVID1a, D144 §6): `departed`, `evidence-unread`, `evidence-missing` or `unreviewed` (REVIEWENV1b), null
-    // when `Held` is false. `AwaitsEvidence` whether its done waits for Daoris to find its evidence, a departure beside it or not;
-    // `Evidence` what was last read of it, null while nothing was. A host from before answers none of the three.
-    string? Hold = null, bool AwaitsEvidence = false, QuestEvidenceVerdictWire? Evidence = null,
-    // The review on the record (REVIEWENV1b): its chain's choice, the environment a set-up step shows its work in, the set-ups
-    // said on it and the person's verdicts, oldest first. Each absent where there is none, so a quest no review touches is
-    // answered as it was, and a host from before answers none.
-    QuestReviewWire? Review = null, string? SetUpIn = null, IReadOnlyList<QuestSetUpWire>? SetUps = null,
-    IReadOnlyList<QuestReviewVerdictWire>? Verdicts = null,
-    // The note's parts beside `Note` (QUESTCLOSE1b1, D142 point 2): Daoris's lead by its code, then someone's words. Absent
-    // for a note written without them, which is every quest from before, and from a host from before; `Note` is unchanged.
-    JsonElement? NoteParts = null,
-    // FABRIC-CLOSE1a (the fabric events design §E5): the digest of the graph that closes it, and its taker's current submission,
-    // its result while it stays Taken. Both absent for a quest no closure graph holds, which is every quest from before, and from
-    // a host from before: a reader that knows neither reads a submitted quest as Taken, as it is.
-    string? Closure = null, QuestSubmissionWire? Submission = null,
-    // FABRIC-CLOSE1c (§E5): the submission of its parent a chain's step grew from, and the one the person reopened under it, while
-    // that holds it (`hold` then reads `source-reopened`). Both absent for every other quest, every step from before, and from a host
-    // from before.
-    QuestSubmissionRefWire? GrewFrom = null, QuestSubmissionRefWire? SourceReopened = null,
-    // FABRIC-CLOSE1c4 (§E5): the person's last reopen of its own submission that no later submission answered, read from the log as
-    // every machine reads it. Absent for a quest never reopened, once a later ready answered it, and from a host from before, so a
-    // reader tells a reopened source, with no `submission`, from one whose taker has not said `ready` yet.
-    QuestReopenWire? Reopened = null,
-    // SYNCMERGE1b0 (D178 point 7), read from the log, each absent where unset and from a host before it: the conflicts settled on it, in the
-    // order they were, each with how it `ended`; the machine whose take holds the step, an id no person gave, while it is taken; and, to a
-    // caller on a local host's own machine, that machine's id, which tells a conflict and a take of its own from another machine's.
-    IReadOnlyList<QuestConflictResponse>? Settled = null, string? Holder = null, string? Here = null,
-    // WORKFLOW1e2 (the workflow design §4.1 row 1): the person's kind and workflow choices on a quest published with no ask, made on
-    // its page before it started, oldest first, the latest standing, one naming neither a choice cleared; an ask's shape. Absent where
-    // there is none, which is every quest an ask published, and from a host before it.
-    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null,
-    // FOUNDATION1x: the mark on the work, `design` or `exact`, a fact of the work carrying no path or name. Absent for an unmarked quest and
-    // from a host before it, which a reader starts on Build's order.
-    string? Weight = null,
-    // INTEGRATE1l: the repository-relative globs its publisher declared it touches, a fact of the work naming no machine's path. Empty
-    // where it declared none; absent from a host before it, which a reader reads as none.
-    IReadOnlyList<string>? Paths = null,
-    // INTEGRATE1p: the workflow request's key, `<run>/<node>/<n>`, ids naming no path; absent for a quest no request published and from a
-    // host before it.
-    string? Request = null);
-// The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2): either, both, or neither to clear them.
-public sealed record QuestWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
-// A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
-// the person's words, and when. FABRIC-CLOSE1c8: and the session that said the reopened submission's ready, a name as
-// `submission.session` is; absent where none did and from a host before it.
-public sealed record QuestReopenWire(string Machine, long Sequence, QuestSubmissionRefWire Of, string? Note, DateTimeOffset At, string? Session = null);
-// The person's reopen of a sealed submission (FABRIC-CLOSE1c): the submission, by the machine and sequence a close names it by, and
-// their words. A half left out arrives blank and is refused naming it.
-public sealed record ReopenQuestRequest(QuestSubmissionRefWire? Submission, string? Note = null);
-// A taker's submission in a closure graph (FABRIC-CLOSE1a), answered only: the operation that made it, by the machine and
-// sequence a close names it by, when, and its note. Its answers are the quest's `Answers`. `Commit` (FABRIC-CLOSE1c5): the commit
-// its evidence was read at, added after the rest and absent where none was read; a host before it answers none. `Session`
-// (FABRIC-CLOSE1c4): the session its ready came from, the one a reopen of it is told to; absent where no session said it, and from a
-// host before it.
-public sealed record QuestSubmissionWire(
-    string Machine, long Sequence, DateTimeOffset At, string? Note, string? Commit = null, string? Session = null);
-// The driver's bind of a taken quest to the graph that closes it (FABRIC-CLOSE1a): the graph's digest.
-// `atTake` (FABRIC-CLOSE1l): the graph an open quest binds at its take, named as the driver opens its first session; a host before it
-// reads it as absent, and refuses the open quest's bind as not taken. `session` (FABRIC-CLOSE1o): the session the graph is named for,
-// whose take alone binds it; a bind at the take that names none is refused, so a driver before it is told its quest closes by its done.
-public sealed record BindQuestRequest(string? Graph, bool? AtTake = null, string? Session = null);
-// The graph's close (FABRIC-CLOSE1a, §E5 step 2): its key, which a second send of the same close repeats, its close token, and
-// every quest of the chain it closes, each with the submission it judged. Nullable on the way in and judged by the exchange.
-public sealed record CloseQuestRequest(string? Key, string? Token, IReadOnlyList<QuestCloseItemWire?>? Quests);
-public sealed record QuestCloseItemWire(string? Id, string? Machine, long? Sequence);
-// What a close did: every quest it named as it now stands, and the sentence.
-public sealed record QuestCloseResponse(IReadOnlyList<QuestResponse> Quests, string Message);
-// An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
-// array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
-// decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
-public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, string? Sha256, long? Bytes);
-public sealed record PublishQuestRequest(
-    string From, string To, string Title, string Body,
-    IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
-    IReadOnlyList<QuestStepWire?>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
-    string? Short = null, QuestReviewWire? Review = null,
-    // FOUNDATION1x: the mark on the work, `design` or `exact`, judged by the exchange with every other door's; absent for none.
-    string? Weight = null,
-    // INTEGRATE1l: the paths the work declares it touches, repository-relative globs judged by the exchange; absent for none.
-    IReadOnlyList<string>? Paths = null,
-    // INTEGRATE1p: a workflow request's key, which widens the quest's id so the same key posted again is the same quest; absent for none.
-    string? Request = null);
-// A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
-// or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
-public sealed record QuestSetUpRequest(
-    string? Commit, string? Kind, string? Session = null, string? Look = null, string? Shows = null, string? Again = null);
-// The person's verdict (REVIEWENV1b, design §3.3–§3.6): `reviewed`, `not-yet` or `skipped`, their words (a `not-yet`'s always),
-// and the set-up it answers, as their view showed it: a `reviewed`'s and a `not-yet`'s always, whole (REVIEWENV1b3); a skip's never.
-public sealed record QuestReviewRequest(string? Verdict, string? Words = null, QuestSetUpRefWire? SetUp = null);
-// The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): the environment the set-up step shows the work in.
-public sealed record SetUpStepRequest(string? Environment);
-// `On` is the question a `wait` waits on (D79); `Answers` how a done answers each requirement (DRIFT1d);
-// `WhileOpen` a decline that applies only while the quest is open (PAUSE1c), an abandon's.
-public sealed record RespondQuestRequest(
-    string? Action, string? Reason, string? On = null, IReadOnlyList<QuestAnswerWire?>? Answers = null,
-    bool? WhileOpen = null);
-// The person's done (QUESTCLOSE1): their words, kept on the quest after the sentence that says the done was theirs.
-public sealed record PersonDoneRequest(string? Note);
-// A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
-public sealed record DismissConflictRequest(string? Machine, long? Sequence);
-// The person bringing their machine's lost take forward (SYNCMERGE1a): the conflict it resolves, named whole as the quest answers it.
-public sealed record ForwardConflictRequest(string? Machine, long? Sequence);
-// An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
-// and `To` is the asker naming the receiver, which publishes at once.
-// `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
-// `Kind`, `Workflow` and `WorkflowWords` (WORKFLOW1e, the workflow design §4.3): the person's kind and workflow for its work.
-// `Short` (HEAD2e): the asker's short title, at most 40 characters, judged as a quest's is; absent for none.
-// `Paths` (INTEGRATE1l): the paths the asker declares the work touches, judged as a quest's are; each quest it publishes carries them.
-public sealed record AskRequestBody(
-    string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
-    IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
-    string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
-    IReadOnlyList<string>? Paths = null);
-// A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
-// names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own. Its
-// `Requirements` quote the person (DRIFT1c), judged against the ask's words. `Review` is the chain's choice, an intake's only on
-// the person's quoted words; `ReviewProposal` an intake's proposal with its reason, kept on the ask (REVIEWENV1b).
-public sealed record AskPublishRequest(
-    string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
-    IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire?>? Then = null,
-    string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null,
-    QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null, WorkflowProposalWire? WorkflowProposal = null,
-    // INTEGRATE1l: the paths an intake declares, added to the ask's own and never in place of them.
-    IReadOnlyList<string>? Paths = null);
-// An intake's review proposal (REVIEWENV1b, design §1.5): a choice and its reason, at most 300 characters.
-public sealed record ReviewProposalWire(string? Choice, string? Reason);
-// An intake's kind proposal (WORKFLOW1i, design §4.3): a kind and its reason, the person's own words it quotes, at most 300 characters.
-public sealed record WorkflowProposalWire(string? Kind, string? Reason);
-// The person's review choice on an ask's page (REVIEWENV1b, design §1.5), and their words with it.
-public sealed record AskReviewRequest(string? Choice, string? Words = null);
-// The person's kind and workflow on an ask (WORKFLOW1e, the workflow design §4.3): either, both, or neither to clear them.
-public sealed record AskWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
-public sealed record AskCloseRequest(string? Reason);
-public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
-// `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is
-// the session that served it (D65 §1b), once one opened — the record a reader follows to its question.
-// `State` is the desk's reading of it, `Done` included (USE1c); `Deletable` whether the desk would delete
-// it with every quest asked by it (D95).
-// `Words` (DRIFT1a, D133 §1) is every word the person gave on it, oldest first: its sentence, then each
-// answer and each message added to a session, with when, the session and its quest. `WordsKeptFrom` is
-// said only of an ask made before the words were kept: from when they are, since nothing is back-filled.
-// `GoAheads` (KNOWUSE1a, D135 §2) is every go-ahead its sessions asked the person for, oldest first, one per act.
-// `ReviewChoices` (REVIEWENV1b, design §1.5) is the person's review choices on it, oldest first, the latest standing;
-// `ReviewProposals` its intake's proposals, each with its reason and the quest it came with. Each absent where there is none.
-// `WorkflowChoices` (WORKFLOW1e, the workflow design §4.3) is the person's kind and workflow choices on it, oldest first, the
-// latest standing, one naming neither a choice cleared; absent where there is none. `WorkflowProposals` (WORKFLOW1i) is its intake's
-// kind proposals, each with its reason and the quest it came with, kept beside the choices and applied only by the person's press;
-// absent where there is none. `Short` (HEAD2e) is the asker's short title, null for none (every ask from before).
-public sealed record AskResponse(
-    string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
-    DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
-    IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
-    IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
-    IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
-    IReadOnlyList<GoAheadResponse>? GoAheads = null,
-    IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
-    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null,
-    string? Short = null,
-    // INTEGRATE1l: the paths its asker declared, empty for none; absent from a host before it.
-    IReadOnlyList<string>? Paths = null);
-public sealed record AskWorkflowProposalResponse(string Kind, string Reason, DateTimeOffset At, string? Session, string? Quest);
-public sealed record AskReviewChoiceResponse(string Choice, DateTimeOffset At, string? Words);
-public sealed record AskWorkflowChoiceResponse(string? Kind, string? Workflow, DateTimeOffset At, string? Words);
-public sealed record AskReviewProposalResponse(string Choice, string Reason, DateTimeOffset At, string? Session, string? Quest);
-// One word (DRIFT1a): `kind` is `asked`, `answered`, `added` or `reopened` (MSG1a: said after its session ended, which
-// went on with it), or a review's `reviewed`, `not-yet` or `skipped` (REVIEWENV1b); the ask's own sentence names no session.
-public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
-// An ask's channel (SESSONE2a, D167 points 6 to 8). The person's post: `to` is one of the ask's repositories or `everyone`, `re` the id
-// of a message it answers.
-// COWORK1d: `urgent` false keeps the person's message ordinary; absent, it is their default, urgent (D188 point 2).
-public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null, bool? Urgent = null);
-// Moves an entry's read mark (the person's, `person`, when `entry` is left out) to `through`, else to the newest item.
-public sealed record ChannelReadRequest(string? Entry = null, DateTimeOffset? Through = null);
-// One item of the channel, in time order: a `message` or one of Daoris's coded `line`s, read from the ask's quests and never stored. A
-// message's `to` absent is everyone; `person` true is the person's own words, a session's that agent's claim; `urgent` absent only on
-// one from before. Read for an entry, its `ack` and `ackSession`; for the person, `receipts`, one per repository it addresses. A message
-// to one part names its `part`, its `channel` and, for the person, its `receipt`.
-public sealed record ChannelItemResponse(
-    string Kind, DateTimeOffset At, string? Id = null, bool? Person = null, string? Session = null, string? Repository = null,
-    string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
-    bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null,
-    bool? Urgent = null, string? Ack = null, string? AckSession = null, IReadOnlyList<ChannelReceiptResponse>? Receipts = null,
-    string? Part = null, string? Channel = null, string? Receipt = null);
-// What a message reached in one repository it addresses (COWORK1d): `waiting`, `held`, `sent`, `taken`, `read`, `partly`, `answered`
-// or `not-reached`, never more than was observed.
-public sealed record ChannelReceiptResponse(string Repository, string State);
-// An entry's acknowledgment of messages by id (COWORK1d): `taking` claims each for `session`'s part, one part's only; `released` lets a
-// claim go; `sent`, `taken`, `read` and `partly` raise what the entry holds, never lowering it. Answers the ids it changed.
-public sealed record ChannelAckRequest(string? Entry, string? Session, string? State, IReadOnlyList<string>? Messages);
-public sealed record ChannelAckResponse(IReadOnlyList<string> Acknowledged);
-// The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none). The
-// person's `unread` (NOTIFY2g) counts only what an agent or a teammate wrote, never their own posts nor Daoris's lines.
-public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark)
-{
-    // For the person, the messages to one part each, never among `items`, which an older page reads as to everyone.
-    public IReadOnlyList<ChannelItemResponse>? Addressed { get; init; }
-}
-public sealed record ChannelPostResponse(ChannelItemResponse Message);
-// The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. There is no ask record here,
-// so no title: `workspace` is from the messages, `origins` the machines they came from, `unread` is against the person's local mark,
-// counted as the person's channel `unread` is (NOTIFY2g).
-public sealed record ElsewhereAskResponse(
-    string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
-public sealed record ElsewhereAsksResponse(IReadOnlyList<ElsewhereAskResponse> Asks);
-// One go-ahead (KNOWUSE1a): the act by its `kind` (write, release, push, sign-in, run), where it lands (`on`) and what it
-// touches (`act`); `state` is `asked`, `approved` or `refused`; `asked` is each session's request, oldest first; `answer`
-// the person's, absent while it waits; `near` the go-ahead whose words it shared where they could not tell.
-public sealed record GoAheadResponse(
-    int Number, string Kind, string On, string Act, string State, IReadOnlyList<GoAheadRequestResponse> Asked,
-    GoAheadAnswerResponse? Answer, int? Near);
-public sealed record GoAheadRequestResponse(string Session, string? Quest, DateTimeOffset At, string Why);
-public sealed record GoAheadAnswerResponse(bool Approved, string? Words, DateTimeOffset At);
-// The person's answer to a go-ahead (KNOWUSE1a): `answer` is `approved` or `refused`; `words` theirs, where they give any.
-// `goesOn` false leaves a parked session that waited on it to its caller, which answers that park itself (GOAHEAD2, the
-// session page's door); absent or true, the answer that leaves none of a park's go-aheads waiting is its answer.
-public sealed record GoAheadAnswerRequest(string? Answer, string? Words, bool? GoesOn = null);
-public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 // DRIFT1a: what the person added to a running session, as its driver reports it.
 public sealed record AddedRequest(string? Text);
 // `Kept` false is no error: the session is on no ask, and the message says so. `Ask` is the ask it was kept on.
 public sealed record AddedResponse(bool Kept, string Message, AskResponse? Ask);
-public sealed record QuestActionResponse(QuestResponse Quest, string Message);
-// What a delete did (D95): the record it removed, and the service's sentence, verbatim — which says
-// whether the delete travels, and whether the remote has taken it yet.
-public sealed record DeletedResponse(string Id, string Message);
 // `Embedded` is what the semantic half made of the entries (D123): how many, the vectors they became, how
 // many were longer than the window and split. Absent when it did not run, and `semanticError` says why.
 public sealed record RefreshResponse(
@@ -772,27 +469,6 @@ public sealed record MachineRetiredResponse(
 // was made, on its machine's clock; null while it is not taken, and absent from a host before it.
 public sealed record QuestClaimResponse(
     string Quest, string Claim, string? Why = null, QuestForwardResponse? Forward = null, DateTimeOffset? Taken = null);
-// FLOWCHART1a2 (D186; the flowchart design §2.1): one quest's moves, in the order its history replays, on both hosts. Each move by
-// allow-list (Core's `QuestMoveReading`): its kind as the wire spells it, when and on which machine it was made, its sequence there,
-// the remote's number (absent while pending), whether the replay applied it, and the status it reached the quest at (absent before
-// the publish). Its kind's own field: a conflict's `attempted`, a dismissal's `dismisses`, a wait's `waitsOn`, a submission's
-// `session`, and the codes of an evidence read (`found`, `missing`, `commit`), a set-up (`local`, `deployed`) and a verdict. `hold`:
-// the hold an applied move set (its code) or let go (`none`). Never the publish's payload, a note's body, the answers or a path: a
-// field a move does not keep is absent, which a reader says is not recorded. An id with no history answers no moves.
-public sealed record QuestMovesResponse(string Quest, IReadOnlyList<QuestMoveResponse> Moves)
-{
-    public static QuestMovesResponse Of(string quest, IReadOnlyList<QuestMoveReading> moves) =>
-        new(quest, [.. moves.Select(move => new QuestMoveResponse(
-            QuestMoves.Spell(move.Kind), move.At, move.Machine, move.Sequence, move.Number, move.Applied, move.From?.ToString(),
-            move.Attempted?.ToString(), move.Dismisses is { } named ? new QuestMoveRefResponse(named.Machine, named.Sequence) : null,
-            move.WaitsOn, move.Session, move.Evidence, move.SetUp, move.Verdict, move.Hold))]);
-}
-public sealed record QuestMoveResponse(
-    string Kind, DateTimeOffset At, string Machine, long Sequence, long? Number, bool Applied, string? From = null,
-    string? Attempted = null, QuestMoveRefResponse? Dismisses = null, string? WaitsOn = null, string? Session = null,
-    string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null);
-// An operation by the machine and sequence that name it everywhere: what a dismissal names its conflict by.
-public sealed record QuestMoveRefResponse(string Machine, long Sequence);
 // HANDBACK1 (D219): one quest's handback as `GET /api/handbacks/{id}` answers it, by the quest's id or the id of the session that
 // served it, in any state. `Found`: whether the id named a quest or a session here, so a client tells this door's answer from an older
 // host's 404. `Session`: the session the id named, absent for a quest's id. `Quest`: the quest, with its own note as it keeps it.
@@ -871,40 +547,8 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 
 [JsonSerializable(typeof(ChangesResponse))]
 [JsonSerializable(typeof(JournalPage))]
-[JsonSerializable(typeof(IEnumerable<QuestResponse>))]
-[JsonSerializable(typeof(PublishQuestRequest))]
-[JsonSerializable(typeof(RespondQuestRequest))]
-[JsonSerializable(typeof(PersonDoneRequest))]
-[JsonSerializable(typeof(DismissConflictRequest))]
-[JsonSerializable(typeof(ForwardConflictRequest))]
-[JsonSerializable(typeof(QuestEvidenceVerdictWire))]
-[JsonSerializable(typeof(QuestSetUpRequest))]
-[JsonSerializable(typeof(BindQuestRequest))]
-[JsonSerializable(typeof(CloseQuestRequest))]
-[JsonSerializable(typeof(ReopenQuestRequest))]
-[JsonSerializable(typeof(QuestCloseResponse))]
-[JsonSerializable(typeof(QuestReviewRequest))]
-[JsonSerializable(typeof(SetUpStepRequest))]
-[JsonSerializable(typeof(QuestWorkflowRequest))]
-[JsonSerializable(typeof(AskReviewRequest))]
-[JsonSerializable(typeof(AskWorkflowRequest))]
-[JsonSerializable(typeof(AskRequestBody))]
-[JsonSerializable(typeof(AskPublishRequest))]
-[JsonSerializable(typeof(AskCloseRequest))]
-[JsonSerializable(typeof(AskActionResponse))]
-[JsonSerializable(typeof(AskResponse))]
-[JsonSerializable(typeof(IEnumerable<AskResponse>))]
-[JsonSerializable(typeof(GoAheadAnswerRequest))]
-[JsonSerializable(typeof(ChannelPostRequest))]
-[JsonSerializable(typeof(ChannelReadRequest))]
-[JsonSerializable(typeof(ChannelResponse))]
-[JsonSerializable(typeof(ChannelPostResponse))]
-[JsonSerializable(typeof(ChannelAckRequest))]
-[JsonSerializable(typeof(ChannelAckResponse))]
 [JsonSerializable(typeof(AddedRequest))]
 [JsonSerializable(typeof(AddedResponse))]
-[JsonSerializable(typeof(QuestActionResponse))]
-[JsonSerializable(typeof(DeletedResponse))]
 [JsonSerializable(typeof(RefreshResponse))]
 [JsonSerializable(typeof(RegisterRequest))]
 [JsonSerializable(typeof(RegisteredResponse))]
@@ -964,7 +608,6 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 [JsonSerializable(typeof(SyncStandingResponse))]
 [JsonSerializable(typeof(MachineRetiredResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
-[JsonSerializable(typeof(QuestMovesResponse))]
 [JsonSerializable(typeof(HandbackResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]

@@ -305,10 +305,7 @@ internal static class TreesConsole
                 var accepts = new EntryAccepts(
                     service, home,
                     new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log)),
-                    new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), (_, line) => Console.Error.WriteLine($"trees: {line}"),
-                    async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
-                        .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase),
-                    log, ReviewDoors.Terminal, token => BranchTidying.BesideAsync(service, token));
+                    new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
                 var (found, rows) = await SessionEntries.LookAsync(
                     service, config, SessionsConsole.Wire(config), lastLook: null, waits: null, home,
                     ask.IsAsk ? entry => entry.Origin == $"ask:{ask.Id}" : entry => entry.Key == ask.Id, default).ConfigureAwait(false);
@@ -350,7 +347,7 @@ internal static class TreesConsole
 
                 Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);
                 // The plugins' lines and the notes were said as they came; the sentences and the exit are the routes' words too (RPC1b4).
-                var said = TreesWords.EntryLand(landings, [], []);
+                var said = TreesWords.EntryLand(landings, []);
                 said.Print(Console.Out, Console.Error);
                 await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
                 return said.Code;
@@ -385,7 +382,7 @@ internal static class TreesConsole
                 {
                     if (args.Contains("--plan"))
                     {
-                        var landedPlan = TreesPlanWords.LandedPlan(session, before, new AutoLandings(home).Of(session));
+                        var landedPlan = TreesPlanWords.LandedPlan(session, before);
                         landedPlan.Print(Console.Out, Console.Error);
                         return landedPlan.Code;
                     }

@@ -4,7 +4,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { BranchPage, type BranchGraph, type BranchRead } from './BranchPage';
 import { GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE } from '../fixtures';
-import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS } from './landingFixtures';
+import { SHARED_BRANCH, SHARED_UNITS } from './landingFixtures';
 
 // A branch's page (UX6h3b, the built-in Git design §2.3) in Repositories' main area, opened from a branch's name in Branches:
 // each kind (a session's with its state and title, landed in step with an open pull request, landed and gone from origin after
@@ -128,11 +128,11 @@ export const LandedHowItLandedFolded: Story = {
 };
 
 /**
- * How it landed, opened by a door into it (the work's milestone, a run's landing step): its tries with three holds stacked, the
+ * How it landed, opened by a door into it (the work's milestone, a run's landing step): the
  * landing and its advances, the push, the pull request, the end, the clean-up and the recovery.
  */
 export const LandedHowItLanded: Story = {
-  args: { ...Landed.args, landing: { open: true, onToggle: nothing, landing: { name: SHARED_BRANCH.branch, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS } } },
+  args: { ...Landed.args, landing: { open: true, onToggle: nothing, landing: { name: SHARED_BRANCH.branch, branch: SHARED_BRANCH, units: SHARED_UNITS } } },
 };
 
 export const LandedHowItLandedChinese: Story = { args: LandedHowItLanded.args, decorators: [chinese] };

@@ -33,11 +33,11 @@ public sealed class HistoryRoutes(DriverLoop loop)
     /// Changes nothing. One quest or ask this machine does not hold is refused.
     /// </summary>
     [DriverRoute("HISTORY_PLAN", PipeClass.Open)]
-    private async Task<object?> HistoryPlanAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HistoryPlanAsync(HistoryPlanRead press, CancellationToken cancellationToken)
     {
         // RPC1e: `history` and a clear's list without `--yes`, in the verb's words.
-        if (Flag(request, "said")) return await SaidAsync(SaidAsk(request, yes: false), cancellationToken).ConfigureAwait(false);
-        var (scope, id) = HistoryNamed(request);
+        if (press.Said) return await SaidAsync(SaidAsk(press, yes: false), cancellationToken).ConfigureAwait(false);
+        var (scope, id) = HistoryNamed(press.Workspace, press.Quest, press.Ask, press.Failed);
         var plan = await HistoryClearing.PlanAsync(WorldOf(_loop), scope, id, cancellationToken).ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && plan.Units is [{ Keep.Word: HistoryWords.Unknown } unknown]) throw HistoryKept(unknown.Keep!);
 
@@ -59,18 +59,18 @@ public sealed class HistoryRoutes(DriverLoop loop)
     [Owner("HISTORY_CLEAR", Workspace = "workspace", Quest = "quest", Ask = "ask")]
     [GroundRead("HISTORY_CLEAR", nameof(PipeReads.HistoryPlan))]
     [Publishes("HISTORY_CLEAR", StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver | StateScopes.History)]
-    private async Task<object?> HistoryClearAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HistoryClearAsync(HistoryClearPress press, CancellationToken cancellationToken)
     {
         // RPC1e: a terminal's `--yes`, which lists again and clears what may go, as the verb does alone; a kept unit is its exit 1.
-        if (Flag(request, "said"))
+        var (scope, id) = HistoryNamed(press.Workspace, press.Quest, press.Ask, press.Failed);
+        if (press.Said)
         {
-            var said = await SaidAsync(SaidAsk(request, yes: true), cancellationToken).ConfigureAwait(false);
+            var said = await SaidAsync(new HistoryAsk(scope, id) { Clear = true, Yes = true }, cancellationToken).ConfigureAwait(false);
             _loop.Nudge();
             return said;
         }
 
-        var (scope, id) = HistoryNamed(request);
-        var units = HistoryUnits(request);
+        var units = HistoryUnits(press.Units);
         var outcome = await HistoryClearing.ClearAsync(WorldOf(_loop), scope, id, units, PluginEvents.Screen, cancellationToken)
             .ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && outcome is { Cleared.Count: 0, Changed: [var stayed] }) throw HistoryKept(stayed.Keep!);
@@ -90,21 +90,21 @@ public sealed class HistoryRoutes(DriverLoop loop)
     /// What the terminal asked, read from the route's payload (RPC1e): a clear's list (<c>clear: true</c>) or its press names its scope as
     /// the page's does; the reading names a workspace or none, and <c>json</c> for the route's own answer.
     /// </summary>
-    private static HistoryAsk SaidAsk(IpcRequest request, bool yes)
+    private static HistoryAsk SaidAsk(HistoryPlanRead press, bool yes)
     {
-        if (!yes && !Flag(request, "clear"))
+        if (!yes && !press.Clear)
         {
-            return new HistoryAsk(HistoryScope.Workspace, Optional(request, "workspace")?.Trim()) { Json = Flag(request, "json") };
+            return new HistoryAsk(HistoryScope.Workspace, press.Workspace?.Trim()) { Json = press.Json };
         }
 
-        var (scope, id) = HistoryNamed(request);
+        var (scope, id) = HistoryNamed(press.Workspace, press.Quest, press.Ask, press.Failed);
         return new HistoryAsk(scope, id) { Clear = true, Yes = yes };
     }
 
     /// <summary>The scope a history route names: exactly one of <c>workspace</c>, <c>quest</c> and <c>ask</c>; <c>failed</c> only beside a quest.</summary>
     /// <exception cref="DriverException">Neither, more than one, or <c>failed</c> without a quest: the driver's sentence, said verbatim.</exception>
-    private static (HistoryScope Scope, string Id) HistoryNamed(IpcRequest request) =>
-        (Optional(request, "workspace"), Optional(request, "quest"), Optional(request, "ask"), Flag(request, "failed")) switch
+    private static (HistoryScope Scope, string Id) HistoryNamed(string? inWorkspace, string? ofQuest, string? ofAsk, bool onlyFailed) =>
+        (inWorkspace, ofQuest, ofAsk, onlyFailed) switch
         {
             ({ } workspace, null, null, false) => (HistoryScope.Workspace, workspace.Trim()),
             (null, { } quest, null, var failed) => (failed ? HistoryScope.Failed : HistoryScope.Quest, quest.Trim().TrimStart('#')),
@@ -115,16 +115,10 @@ public sealed class HistoryRoutes(DriverLoop loop)
 
     /// <summary>The units the first press listed: each a <c>kind</c> and an <c>id</c>, which a second press must send.</summary>
     /// <exception cref="DriverException">No list: the driver's sentence, said verbatim.</exception>
-    private static IReadOnlyList<HistoryUnitName> HistoryUnits(IpcRequest request) =>
-        request.Payload is { ValueKind: JsonValueKind.Object } payload
-        && payload.TryGetProperty("units", out var units) && units.ValueKind == JsonValueKind.Array
-            ? [.. units.EnumerateArray()
-                .Where(unit => unit.ValueKind == JsonValueKind.Object)
-                .Select(unit => new HistoryUnitName(UnitText(unit, "kind") ?? "", UnitText(unit, "id") ?? ""))]
-            : throw new DriverException("a clear sends the units its list held: the first press's `units`, each its `kind` and `id`.");
-
-    private static string? UnitText(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    private static IReadOnlyList<HistoryUnitName> HistoryUnits(IReadOnlyList<HistoryUnit>? units) =>
+        units is null
+            ? throw new DriverException("a clear sends the units its list held: the first press's `units`, each its `kind` and `id`.")
+            : [.. units.Select(unit => new HistoryUnitName(unit.Kind ?? "", unit.Id ?? ""))];
 
     /// <summary>
     /// The loop's world for a clear: its service, its home, its file, its processes, its conversations and its log. Ask Daoris's

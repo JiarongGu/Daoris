@@ -26,7 +26,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | `Adapters.cs` | The four real doors: spawn arguments, postures, carriers for settings, servers and plugins, toolchain |
 | `SessionTarget`, `TargetPrompt` | `Adapters.cs` | What a spawn carries, and the composed first prompt |
 | `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait, go-on and restart |
-| `AcpSession` | `Acp.cs` (hub, 224 KB) | The protocol door: handshake, prompt, steer, config options, held permissions, background work |
+| `AcpSession` | `Acp.cs` (hub, 187 KB) | The protocol door: handshake, prompt, steer, config options, background work; the order and the wiring of its turn's stages |
+| The turn's stages | `Turn/`, listed in `docs/index/registered.md` | Each stage a module registers (`[TurnStage(name, phase, after)]`, `ITurnStage`), run in the kit's order at its phase's anchor in `DispatchAsync` (Update: each of the session's own updates; Request: the stage that takes the method, else not implemented), built once per session with the session as its `ITurnWiring`; `RefusedCalls` is the state two stages share |
+| `AcpReplay`, `AcpWatch`, `AcpHeard`, `AcpSubagent` | same names | The first Update stages, in that order: a load's replay passed over; the update counted and read by the background work and the wake; a word an error left untold taken once the agent goes on; a subagent's update routed to its own stream and taken there |
+| `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
+| `AcpMeasure`, `AcpRender`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; a permission request refused, or held for the person, and released |
 | `HarnessCapture`, `ClaudeStreams`, `StructuredOutput`, `NativePrompt` | same names | The native door: capture, `stream-json` mapping, the prompt written on stdin |
 | `HarnessRoster` | `HarnessRoster.cs` (hub, 149 KB) | One judgement for every start: binary, account walk, holds, usage questions, the Agents page's report |
 | `HarnessSettings`, `AccountSet`, `PoolReceipts` | same names | `harnesses.json`: pins, each agent's one account set, its order and use settings, the fold and its receipts |
@@ -169,8 +173,10 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
   contract. Do not add another `ISessionAdapter` class; those end at row t.
 - A new fact about an existing real agent (a flag, a posture, a word table entry): its adapter or `HarnessToolchain` in
   `Adapters.cs` today, measured first, with a recorded sentence for any word table.
-- New protocol-door behaviour: a unit of its own beside `Acp.cs` (as `AcpBackground`, `AcpWake`, `AcpStreams` are), never more
-  code in the hub.
+- New protocol-door behaviour on a frame: a stage of its own beside `Acp.cs`, marked `[TurnStage]` with its phase and what it
+  follows (as `AcpMeasure`, `AcpRender`, `AcpPermission` are); what it reaches of the session goes on `ITurnWiring`, and what it
+  shares with another stage on a state of its own (`RefusedCalls`); `AcpPartsTests` holds the order. Other door behaviour is a
+  unit of its own beside it (as `AcpBackground`, `AcpWake`, `AcpStreams` are). Never more code in the hub.
 - How a run starts, waits or goes on: `TransportRun` and `TransportStart`.
 - Which account or binary a start takes: `HarnessRoster` for the walk's facts. The pure ranking goes in `AccountRotation` or
   `Domain/`. Settings shape goes in `HarnessSettings` or `AccountSet`.
@@ -181,8 +187,8 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 **Tests that pin the area** (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`):
 - contract: `ProviderCensusTests`, `ProviderConformanceTests` (and its process and live cases), `ProviderRegistryTests`,
   `ProvidersBuiltTests`, `StandInShimProcessTests`;
-- doors: `AcpTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`, `HarnessRunTests`,
-  `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`;
+- doors: `AcpTests`, `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`,
+  `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`;
 - spawn: `ToolsAtTheStartTests` and its census, `OwnContextTests`, `OwnSpaceTests`, `SpawnSkillsTests`, `PermissionSpawnTests`,
   `StandingHandedTests`, `TargetPromptGoldenTests`;
 - accounts: `AccountRotation*Tests`, `AccountSetTests`, `AccountNextStartTests`, `SwitchDecisionTests`, `UsageCurvesTests`,

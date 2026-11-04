@@ -249,7 +249,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
             $$$"""
             {"schemaVersion":2,"entries":["claim"],"end":"merge-in",
              "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
-                      {"id":"land","kind":"handed","version":1,"reach":"observed","options":{{{landing}}}},
+                      {"id":"land","kind":"land","version":1,"reach":"performed","options":{{{landing}}}},
                       {"id":"merge-in","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}}],
              "wires":[{"id":"a","kind":"after","from":"claim","to":"land"},{"id":"b","kind":"after","from":"land","to":"merge-in"}]}
             """)!);
@@ -552,16 +552,6 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(
             "there is no workflow `docs-to-pr` on this machine: a new workflow names no base.",
             HelpProposals.Plan(Propose(Merge, @base: 1), DriverConfig.Empty, Here()).Refusal);
-    }
-
-    /// <summary>WORKFLOWCLEAN1 1b: a graph the editor would not save is refused in its words, naming the node (a `handed` is no longer saved).</summary>
-    [Fact]
-    public void A_graph_the_editor_would_not_save_is_refused_in_its_words()
-    {
-        var handed = """{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""";
-        var plan = HelpProposals.Plan(Propose(null, graph: handed), DriverConfig.Empty, Here());
-
-        Assert.StartsWith("v1: its graph does not hold: node `land` is a `handed`, which only watches a landing some door made", plan.Refusal, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -9,7 +9,7 @@ import { type LandingIntegrate, policySays } from './IntegratePolicy';
  * request's branch to one commit (PROCESS1b-ii). The driver answers `squash` false, and `key` absent where none is set.
  */
 export type LandingRule = {
-  form: string; pattern?: string; tidy?: boolean; plugin?: string; autoAccept?: boolean; key?: string | null; squash?: boolean;
+  form: string; pattern?: string; plugin?: string; autoAccept?: boolean; key?: string | null; squash?: boolean;
   integrate?: LandingIntegrate | null;
 };
 

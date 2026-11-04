@@ -36,9 +36,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     [DriverRoute("SESSION_DIFF", PipeClass.Open)]
     [OneFlight("SESSION_DIFF", By = "id")]
-    private async Task<object?> DiffAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DiffAsync(SessionDiff press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -65,8 +65,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     [DriverRoute("READ_LEAVE", PipeClass.Window)]
     [Owner("READ_LEAVE", None = OwnerNone.NamesNothing)]
-    private object? LeaveRead(IpcRequest request) =>
-        new { Left = _reads.Leave(PayloadHelper.GetRequiredValue<string>(request.Payload, "read")) };
+    private object? LeaveRead(ReadLeave press) => new { Left = _reads.Leave(press.Read) };
 
     /// <summary>Whether <paramref name="tree"/> is one this home opened for a session, which ran in it alone; a person's checkout is not.</summary>
     private static bool OwnTree(SessionTrees trees, string? tree) => SessionReviews.OwnTree(trees, tree);
@@ -82,9 +81,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// press of Accept reads; a rule changed since the session's start was not told to it.
     /// </remarks>
     [DriverRoute("SESSION_PROCESS", PipeClass.Open)]
-    private async Task<object?> ProcessAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ProcessAsync(SessionProcess press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
@@ -112,7 +111,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
                 Workspace = workspace,
                 landing.Rule.Form,
                 landing.Rule.Pattern,
-                landing.Rule.Tidy,
                 landing.Rule.Plugin,
                 landing.Rule.AutoAccept,
                 landing.Rule.Key,
@@ -258,9 +256,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// doors expand as typed (`docs/2026-09-25-message-content-evidence.md`).
     /// </remarks>
     [DriverRoute("SESSION_FILES", PipeClass.Open)]
-    private async Task<object?> FilesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> FilesAsync(SessionFiles press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -299,10 +297,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// left for a session with neither its tree nor the landing's branch here.</para>
     /// </remarks>
     [DriverRoute("SESSION_FILE", PipeClass.Open)]
-    private async Task<object?> FileAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> FileAsync(SessionFile press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var path = PayloadHelper.GetRequiredValue<string>(request.Payload, "path");
+        var (id, path) = press;
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -420,13 +417,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [GroundFiles("DISCARD_SESSION_TREE", "tree", "id", "path", "force")]
     [Says("DISCARD_SESSION_TREE", "id:session")]
     [Publishes("DISCARD_SESSION_TREE", Discards, Session = "id")]
-    private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DiscardTreeAsync(DiscardSessionTree press, CancellationToken cancellationToken)
     {
         // `trees remove <path>` names a tree by its path, where the page names its session. A tree by its path is removed as
         // the verb removes it, and its session, where the records name one, is answered; the page's `id` is read as it always was.
-        var path = Optional(request, "path");
-        var id = path is null ? PayloadHelper.GetRequiredValue<string>(request.Payload, "id") : null;
-        var force = Flag(request, "force");
+        var path = press.Path;
+        var id = path is null ? press.Id ?? throw new DriverException("a tree is discarded by its session `id`, or by its `path` — name one.") : null;
+        var force = press.Force;
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -460,8 +457,10 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// The branch name the page entered, which the landing takes in place of the rule's; blank or absent is
     /// the rule's, as before. The plan and the press both read it, so what the page shows is what the press does.
     /// </summary>
-    public static LandingSubject Entering(LandingSubject subject, IpcRequest request) =>
-        subject with { Entered = Optional(request, "branch") };
+    public static LandingSubject Entering(LandingSubject subject, string? branch) => subject with { Entered = branch };
+
+    /// <summary>What the landing's plan or its press asked: the plan with <c>Said</c> for the verb's words, the press with its answers and follow.</summary>
+    private sealed record LandAsk(string Id, string? Branch, bool Press, bool Said = false, string? Answers = null, bool Follow = false);
 
     // How a reviewed session's work lands: what a press WOULD do, said before it —
     // merge into the line, or the branch the rule names for this session — and the press, which
@@ -475,6 +474,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// A refusal is an answer, as the merge door's are.
     /// </remarks>
     [DriverRoute("LANDING", PipeClass.Open)]
+    private Task<object?> LandingAsync(LandingRead read, CancellationToken cancellationToken) =>
+        LandAsync(new LandAsk(read.Id, read.Branch, Press: false, read.Said), cancellationToken);
+
     [DriverRoute("LAND_SESSION_TREE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("LAND_SESSION_TREE", Session = "id")]
     [GroundSession("LAND_SESSION_TREE", "id")]
@@ -482,23 +484,26 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [GroundRead("LAND_SESSION_TREE", nameof(PipeReads.TreeLanding))]
     [Says("LAND_SESSION_TREE", "id:session")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
-    private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> LandSessionTreeAsync(LandSessionTree press, CancellationToken cancellationToken) =>
+        LandAsync(new LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), cancellationToken);
+
+    private async Task<object?> LandAsync(LandAsk asked, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = asked.Id;
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
-        var press = request.Type == "LAND_SESSION_TREE";
+        var press = asked.Press;
         // `trees land --plan` asks for the verb's words (`said`) in place of the page's fields, and gets them for the two
         // cases the verb answers before it plans, as its alone path does: a landing its review reads as landed, and no tree to land.
-        var terminal = !press && Flag(request, "said");
+        var terminal = !press && asked.Said;
         LandedReview? earlier = null;
         if (terminal)
         {
             earlier = await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken);
             if (earlier is not null && earlier.ReadsAsLanded(TreeFolders.TreeGone(tree)))
             {
-                return new { Session = id, Said = TreesPlanWords.LandedPlan(id, earlier, new AutoLandings(_loop.Home).Of(id)).ToWire() };
+                return new { Session = id, Said = TreesPlanWords.LandedPlan(id, earlier).ToWire() };
             }
 
             if (string.IsNullOrWhiteSpace(tree)) return new { Session = id, Said = TreesWords.NoTreeToLand(id).ToWire() };
@@ -549,7 +554,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // every part at one captured tip, asks the opinion where it is not asked, and lands that tip pinned.
         if (press && chatRun is not null)
         {
-            return await ChatPressAsync(request, service, id, tree, chatRun, records, recordsJson, Landing(), pluginLines, cancellationToken);
+            return await ChatPressAsync(asked, service, id, tree, chatRun, records, recordsJson, Landing(), pluginLines, cancellationToken);
         }
 
         // The landing gate: the second opinion, then the review. What holds the press says so before it,
@@ -563,10 +568,10 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var quests = new PressQuests(service.FindQuestAsync);
         var subject = Entering(await trees.OwnSubjectAsync(
             tree, id, questId, records, quest => quests.FindAsync(quest, cancellationToken),
-            named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), request);
+            named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), asked.Branch);
         var lead = EntryLead(records, id);
 
-        if (request.Type == "LANDING")
+        if (!press)
         {
             // How it lands, by the process the gate read: a named workflow's landing step, or the rule.
             var plan = await trees.PlanAsync(tree, subject, cancellationToken, gate.Process);
@@ -593,14 +598,14 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var shown = gate;
         // where the run's graph waits on its review, this press is the person's Accept, kept on the run's record for the pass.
         gate = await GraphPasses.PressAsync(
-            token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, Optional(request, "answers"), tree, questId, token),
+            token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, asked.Answers, tree, questId, token),
             token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken,
             (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done));
         // WORKFLOWCLEAN1 1c (the cleanup design §2.2): a run whose `land` the runtime performs is landed by that node, never by this press: the
         // press was the Accept (the review's word, above), and it waits within the bound for the landing the pass starts.
         if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed)
         {
-            return await PerformedPressAsync(request, id, gate, performed, cancellationToken);
+            return await PerformedPressAsync(asked, id, gate, performed, cancellationToken);
         }
 
         // FABRIC-CLOSE1h3: the result the press is made on, its quest as read for its name, judged again under the tree's
@@ -632,7 +637,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         _loop.Nudge();
         // the lines this landing moved are registered at once where the verb asks (`follow`), as the page's next look would
         //; the lines it says ride in `followed` and after the sentence in `said`.
-        var followed = Flag(request, "follow")
+        var followed = asked.Follow
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
             : null;
         return carry is null
@@ -647,7 +652,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// again), asks a whole pass, and waits within <see cref="GraphPasses.Bound"/> for the landing that pass starts; it answers what the landing
     /// came to, or <i>accepted; landing</i> past the bound. A workflow with no review needs no Accept, and this press is only that try.
     /// </summary>
-    private async Task<object?> PerformedPressAsync(IpcRequest request, string id, LandingGate gate, WorkflowProcess process, CancellationToken ct)
+    private async Task<object?> PerformedPressAsync(LandAsk asked, string id, LandingGate gate, WorkflowProcess process, CancellationToken ct)
     {
         PressSteps.Reach(PressSteps.Landing);
         var unit = RunUnits.IdOf(process.BoundRun!);
@@ -662,7 +667,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             : carried ? outcome with { Message = "Accepted; its session was carried on to clear its tree, and it lands when the tree is clean." }
             : outcome;
         _loop.Nudge();
-        var followed = Flag(request, "follow") && landed.Landed
+        var followed = asked.Follow && landed.Landed
             ? await TreesWords.FollowMovedAsync(_loop.Service ?? throw NotReady(), _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, ct)
             : null;
         return Pressed(id, landed, gate, TreesWords.Land(landed, []).Followed(followed), followed?.Out ?? []);
@@ -679,15 +684,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return new TreeLanding(false, TreesWords.NotJudged(id).Error.FirstOrDefault() ?? "nothing was judged.");
 
         var unit = RunUnits.IdOf(process.BoundRun!);
-        AutoLander.Retry(_loop.Home, id, unit, tip);
-        await _loop.PassWholeAsync(GraphPasses.Bound, ct);
-        var deadline = DateTimeOffset.UtcNow + GraphPasses.Bound;
-        TreeLanding? outcome;
-        while ((outcome = LandOutcomes.Of(unit, tip)) is null && DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
-        }
-
+        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
         var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
                       && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
         return outcome is null ? new TreeLanding(false, "Accepted; landing. Daoris lands it at its pass, and this window shows it when it has.")
@@ -701,7 +698,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// landing pinned to that tip. It answers as every press does.
     /// </summary>
     private async Task<object?> ChatPressAsync(
-        IpcRequest request, ServiceClient service, string id, string tree, string chatRun, IReadOnlyList<SessionRecord> records, string recordsJson,
+        LandAsk asked, ServiceClient service, string id, string tree, string chatRun, IReadOnlyList<SessionRecord> records, string recordsJson,
         SessionTrees trees, List<string> pluginLines, CancellationToken cancellationToken)
     {
         var (workspace, repository) = trees.Owner(tree);
@@ -716,7 +713,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             // after the candidate it submitted, and the press's Accept the review's word.
             async (tip, token) => await GraphPasses.PressAsync(
                 async held => await presses.PressedAsync(
-                    id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), Optional(request, "answers"), tree, null, held, chatRun),
+                    id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), asked.Answers, tree, null, held, chatRun),
                 held => trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), _loop.PassWholeAsync, token,
                 (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done)),
             async (gate, token) =>
@@ -725,7 +722,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
                 if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed) return await PerformedLandingAsync(id, gate, performed, token);
                 var subject = Entering(await trees.OwnSubjectAsync(
                     tree, id, null, records, quest => quests.FindAsync(quest, token),
-                    named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, token), request);
+                    named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, token), asked.Branch);
                 PressSteps.Reach(PressSteps.Landing);
                 // a landing of this tree still under way holds the press for up to five minutes, and the conversation with it.
                 using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
@@ -743,7 +740,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         }
 
         _loop.Nudge();
-        var followed = Flag(request, "follow") && landed.Landed
+        var followed = asked.Follow && landed.Landed
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
             : null;
         return Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [], pressed.Code);
@@ -921,81 +918,83 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// judgement no agent has made. Each answers the gate as it then stands, in <see cref="Opinion"/>'s shape.
     /// </remarks>
     [DriverRoute("OPINION_GATE", PipeClass.Open)]
+    private async Task<object?> OpinionGateAsync(OpinionGateRead read, CancellationToken cancellationToken) => read.Said
+        ? await OpinionSaidAsync(new("show", read.Id), pressed: false, cancellationToken)
+        : OpinionAnswer(read.Id, await Presses().GateAsync(read.Id, cancellationToken), pressed: false);
+
     [DriverRoute("ASK_OPINION", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [DriverRoute("OPINION_ANYWAY", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [DriverRoute("OPINION_MYSELF", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [DriverRoute("STOP_OPINION", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("ASK_OPINION", Session = "id")]
-    [Owner("OPINION_ANYWAY", Session = "id")]
-    [Owner("OPINION_MYSELF", Session = "id")]
-    [Owner("STOP_OPINION", Session = "id")]
     [GroundSession("ASK_OPINION", "id")]
     [GroundHead("ASK_OPINION", "id")]
-    [GroundSession("OPINION_ANYWAY", "id")]
-    [GroundRead("OPINION_ANYWAY", nameof(PipeReads.OpinionGate))]
-    [GroundSession("OPINION_MYSELF", "id")]
-    [GroundRead("OPINION_MYSELF", nameof(PipeReads.OpinionGate))]
-    [GroundWait("STOP_OPINION", "opinion", "opinion")]
-    [Says("STOP_OPINION", "id:session", "words:words")]
     [Publishes("ASK_OPINION", Gates, Session = "id")]
-    [Publishes("OPINION_ANYWAY", Gates, Session = "id")]
-    [Publishes("OPINION_MYSELF", Gates, Session = "id")]
-    [Publishes("STOP_OPINION", Gates)]
-    private async Task<object?> OpinionPressAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> AskOpinionAsync(AskOpinion press, CancellationToken cancellationToken)
     {
-        var service = _loop.Service ?? throw NotReady();
-        var presses = new OpinionPresses(_loop.Home, service);
-        // `daoris session opinion …` sent over the pipe asks for the verb's own words, a refusal among them as its exit 1.
-        if (Flag(request, "said"))
+        var failure = press.Occasion == "failure";
+        if (press.Said)
         {
-            var said = await TerminalSaid.RunAsync(output => OpinionCommand.RunAsync(
-                OpinionAsked(request), presses, service, _loop.Processes, output, cancellationToken)).ConfigureAwait(false);
-            if (request.Type != "OPINION_GATE") _loop.Nudge();
-            return said;
+            return await OpinionSaidAsync(
+                new("ask", press.Id) { Reviewer = press.Reviewer, SameAgent = press.SameAgent, Failure = failure, Words = press.Words }, pressed: true, cancellationToken);
         }
 
-        if (request.Type == "STOP_OPINION")
-        {
-            var opinion = PayloadHelper.GetRequiredValue<string>(request.Payload, "opinion");
-            var stopped = await presses.StopAsync(opinion, _loop.Processes, cancellationToken);
-            _loop.Nudge();
-            return new { Opinion = opinion, Done = stopped.Done, stopped.Message };
-        }
-
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var words = Optional(request, "words");
-        var pressed = request.Type switch
-        {
-            "ASK_OPINION" => await presses.AskAsync(
-                id, Optional(request, "reviewer"), Flag(request, "sameAgent"), words,
-                Optional(request, "occasion") == "failure" ? "failure" : "asked", cancellationToken),
-            "OPINION_ANYWAY" => await presses.AnywayAsync(id, words, ReviewDoors.Screen, cancellationToken),
-            "OPINION_MYSELF" => await presses.MyselfAsync(id, words, ReviewDoors.Screen, cancellationToken),
-            _ => await presses.GateAsync(id, cancellationToken),
-        };
-        if (request.Type != "OPINION_GATE") _loop.Nudge();
-        return new
-        {
-            Session = id, Done = pressed.Done, pressed.Message,
-            Opinion = pressed.Gate is { } gate ? Opinion(gate.Opinion) : null,
-            // What the review's *Second opinion* draws: the findings with their answers, beside the state.
-            Detail = pressed.Gate is { } read ? OpinionDetail(read.Opinion, session => _loop.Usage.Of(session)) : null,
-        };
+        var asked = await Presses().AskAsync(press.Id, press.Reviewer, press.SameAgent, press.Words, failure ? "failure" : "asked", cancellationToken);
+        return OpinionAnswer(press.Id, asked, pressed: true);
     }
 
-    /// <summary>What <c>daoris session opinion</c> asked, read from the route it sent and its payload.</summary>
-    private static OpinionCommandAsk OpinionAsked(IpcRequest request) => request.Type switch
+    [DriverRoute("OPINION_ANYWAY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("OPINION_ANYWAY", Session = "id")]
+    [GroundSession("OPINION_ANYWAY", "id")]
+    [GroundRead("OPINION_ANYWAY", nameof(PipeReads.OpinionGate))]
+    [Publishes("OPINION_ANYWAY", Gates, Session = "id")]
+    private async Task<object?> OpinionAnywayAsync(OpinionAnyway press, CancellationToken cancellationToken) => press.Said
+        ? await OpinionSaidAsync(new("anyway", press.Id) { Words = press.Words }, pressed: true, cancellationToken)
+        : OpinionAnswer(press.Id, await Presses().AnywayAsync(press.Id, press.Words, ReviewDoors.Screen, cancellationToken), pressed: true);
+
+    [DriverRoute("OPINION_MYSELF", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("OPINION_MYSELF", Session = "id")]
+    [GroundSession("OPINION_MYSELF", "id")]
+    [GroundRead("OPINION_MYSELF", nameof(PipeReads.OpinionGate))]
+    [Publishes("OPINION_MYSELF", Gates, Session = "id")]
+    private async Task<object?> OpinionMyselfAsync(OpinionMyself press, CancellationToken cancellationToken) => press.Said
+        ? await OpinionSaidAsync(new("myself", press.Id) { Words = press.Words }, pressed: true, cancellationToken)
+        : OpinionAnswer(press.Id, await Presses().MyselfAsync(press.Id, press.Words, ReviewDoors.Screen, cancellationToken), pressed: true);
+
+    [DriverRoute("STOP_OPINION", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("STOP_OPINION", Session = "id")]
+    [GroundWait("STOP_OPINION", "opinion", "opinion")]
+    [Says("STOP_OPINION", "id:session", "words:words")]
+    [Publishes("STOP_OPINION", Gates)]
+    private async Task<object?> StopOpinionAsync(StopOpinion press, CancellationToken cancellationToken)
     {
-        "STOP_OPINION" => new("stop", PayloadHelper.GetRequiredValue<string>(request.Payload, "opinion")),
-        "OPINION_GATE" => new("show", PayloadHelper.GetRequiredValue<string>(request.Payload, "id")),
-        "ASK_OPINION" => new("ask", PayloadHelper.GetRequiredValue<string>(request.Payload, "id"))
+        if (press.Said) return await OpinionSaidAsync(new("stop", press.Opinion), pressed: true, cancellationToken);
+        var stopped = await Presses().StopAsync(press.Opinion, _loop.Processes, cancellationToken);
+        _loop.Nudge();
+        return new { press.Opinion, Done = stopped.Done, stopped.Message };
+    }
+
+    private OpinionPresses Presses() => new(_loop.Home, _loop.Service ?? throw NotReady());
+
+    /// <summary>`daoris session opinion …` sent over the pipe: the verb's own words, a refusal among them as its exit 1.</summary>
+    private async Task<object?> OpinionSaidAsync(OpinionCommandAsk asked, bool pressed, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var said = await TerminalSaid.RunAsync(output => OpinionCommand.RunAsync(
+            asked, new OpinionPresses(_loop.Home, service), service, _loop.Processes, output, cancellationToken)).ConfigureAwait(false);
+        if (pressed) _loop.Nudge();
+        return said;
+    }
+
+    /// <summary>The gate as it stands after a read or a press, in <see cref="Opinion"/>'s shape; a press first has the loop look.</summary>
+    private object OpinionAnswer(string id, OpinionPressed answered, bool pressed)
+    {
+        if (pressed) _loop.Nudge();
+        return new
         {
-            Reviewer = Optional(request, "reviewer"), SameAgent = Flag(request, "sameAgent"),
-            Failure = Optional(request, "occasion") == "failure", Words = Optional(request, "words"),
-        },
-        "OPINION_ANYWAY" => new("anyway", PayloadHelper.GetRequiredValue<string>(request.Payload, "id")) { Words = Optional(request, "words") },
-        _ => new("myself", PayloadHelper.GetRequiredValue<string>(request.Payload, "id")) { Words = Optional(request, "words") },
-    };
+            Session = id, Done = answered.Done, answered.Message,
+            Opinion = answered.Gate is { } gate ? Opinion(gate.Opinion) : null,
+            // What the review's *Second opinion* draws: the findings with their answers, beside the state.
+            Detail = answered.Gate is { } read ? OpinionDetail(read.Opinion, session => _loop.Usage.Of(session)) : null,
+        };
+    }
 
     /// <summary>
     /// The second opinion as the review draws it: the reviewer, the candidate and whether it
@@ -1077,7 +1076,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// waiting a whole poll, and the tick the loop forwards when what waits changes has the page ask again.</para>
     /// </remarks>
     [DriverRoute("OPINION_WAITS", PipeClass.Open)]
-    private Task<object?> OpinionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> OpinionWaitsAsync(NoPayload none, CancellationToken cancellationToken)
     {
         _ = _loop.Service ?? throw NotReady();
         return Task.FromResult<object?>(new { Waits = OpinionWaits(_loop.Judged.Latest) });
@@ -1131,6 +1130,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// tidied away; a repository with no checkout here is answered in the same sentence form.
     /// </remarks>
     [DriverRoute("HANDOFF_PLAN", PipeClass.Open)]
+    private Task<object?> HandOffPlanAsync(HandOffPlan plan, CancellationToken cancellationToken) =>
+        HandOffAsync(new HandAsk(plan.Id, plan.Branch, plan.Repository, plan.Plugin, Press: false, plan.Said), cancellationToken);
+
     [DriverRoute("HANDOFF", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HANDOFF", Session = "id")]
     [GroundSession("HANDOFF", "id")]
@@ -1139,16 +1141,23 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [GroundRead("HANDOFF", nameof(PipeReads.HandoffPlan))]
     [Says("HANDOFF", "repository:repository")]
     [Publishes("HANDOFF", StateScopes.HandOff | StateScopes.Sweep, Session = "id")]
-    private async Task<object?> HandOffAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> HandOffPressAsync(HandOff press, CancellationToken cancellationToken) =>
+        HandOffAsync(new HandAsk(press.Id, press.Branch, press.Repository, press.Plugin, Press: true), cancellationToken);
+
+    /// <summary>What the hand-off's plan or its press asked: the plan with <c>Said</c> for the verb's words.</summary>
+    private sealed record HandAsk(string? Id, string? Branch, string? Repository, string? Plugin, bool Press, bool Said = false);
+
+    private async Task<object?> HandOffAsync(HandAsk hand, CancellationToken cancellationToken)
     {
         // `trees hand <branch>` names a landed branch (and its repository where two hold one) where the page names a session.
         // The page's `id` reads as it always did; a `branch` is found as the verb finds it, by the record's session or branch.
-        var branch = Optional(request, "branch");
-        var id = branch is null ? PayloadHelper.GetRequiredValue<string>(request.Payload, "id") : Optional(request, "id");
-        var named = Optional(request, "plugin");
+        var branch = hand.Branch;
+        var id = branch is null ? hand.Id ?? throw new DriverException("a hand-off names a session's `id`, or a landed `branch`.") : hand.Id;
+        var named = hand.Plugin;
         var service = _loop.Service ?? throw NotReady();
+        var asksPlan = !hand.Press;
         // `trees hand --plan` asks for the verb's words (`said`) where the page asks for the plan's fields.
-        var terminal = request.Type == "HANDOFF_PLAN" && Flag(request, "said");
+        var terminal = asksPlan && hand.Said;
         // The plugin's lines go into the answer too (`said`), so a terminal that sent the press prints them as the alone path does.
         var pluginLines = new List<string>();
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
@@ -1162,14 +1171,14 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         }
         else
         {
-            var found = trees.Recorded.Find(branch ?? id!, Optional(request, "repository"));
+            var found = trees.Recorded.Find(branch ?? id!, hand.Repository);
             var repositories = found.Select(each => each.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             if (repositories.Count > 1)
             {
                 // A branch name in two repositories means the person says which, as the verb says (`--repository`).
                 var several = TreesWords.NamesSeveral(branch ?? id!, repositories);
                 if (terminal) return new { Session = id, Said = TreesWords.HandRefused(several).ToWire() };
-                return request.Type == "HANDOFF_PLAN"
+                return asksPlan
                     ? new { Session = id, Branch = (string?)null }
                     : (object)new { Session = id, Done = false, Message = several, Branch = (string?)null, Said = TreesWords.HandRefused(several).ToWire() };
             }
@@ -1181,7 +1190,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         {
             var asked = branch ?? id!;
             if (terminal) return new { Session = id, Said = TreesWords.HandRefused(TreeHand.NotLanded(asked)).ToWire() };
-            return request.Type == "HANDOFF_PLAN"
+            return asksPlan
                 ? new { Session = id, Branch = (string?)null }
                 : (object)new { Session = id, Done = false, Message = TreeHand.NotLanded(asked), Branch = (string?)null, Said = TreesWords.HandRefused(TreeHand.NotLanded(asked)).ToWire() };
         }
@@ -1192,12 +1201,12 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         {
             var none = TreesWords.HandNoCheckout(entry.Repository, entry.Branch);
             if (terminal) return new { Session = id, Said = TreesWords.HandRefused(none).ToWire() };
-            return request.Type == "HANDOFF_PLAN"
+            return asksPlan
                 ? new { Session = id, Branch = (string?)entry.Branch, entry.Repository, Plugin = (string?)null, Problem = (string?)none, entry.PullRequest, Commits = 0 }
                 : (object)new { Session = id, Done = false, Message = none, Branch = (string?)entry.Branch, Said = TreesWords.HandRefused(none).ToWire() };
         }
 
-        if (request.Type == "HANDOFF_PLAN")
+        if (asksPlan)
         {
             var plan = await trees.HandPlanAsync(root, entry, named, cancellationToken);
             if (terminal) return new { Session = id, Said = TreesPlanWords.HandPlan(plan, pluginLines).ToWire() };

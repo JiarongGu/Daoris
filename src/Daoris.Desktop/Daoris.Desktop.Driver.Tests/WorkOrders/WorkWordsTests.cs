@@ -28,7 +28,7 @@ public sealed class WorkWordsTests : IDisposable
     }
 
     private static InventoryFacts Facts(GrownBranch[] branches, LandedBranch[]? landings = null, SessionTree[]? trees = null, string[]? inUse = null) =>
-        new(branches, landings ?? [], trees ?? [], [], [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase), _ => false, Then);
+        new(branches, landings ?? [], trees ?? [], [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase), _ => false, Then);
 
     [Fact]
     public void A_merged_and_cleaned_unit_is_said_end_result_cleanup_and_recovery()

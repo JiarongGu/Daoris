@@ -3,6 +3,8 @@ import { Button, FormField, FormGrid, FormRow, Icon, SelectField, WhyGlyph } fro
 import { Refused } from '../../work/InlineConfirm';
 import type { RoleNext, StaffCondition } from '../../data/wiring';
 import type { SettingsChoices } from '../tools';
+import { type HoldDraft, holdReads } from './appointedHold';
+import { HoldFields } from './HoldFields';
 import { OfferedField } from './OfferedField';
 import { HowItChooses, LimitsFold, MovesFold, WeightField } from './RolePolicy';
 import { aimOf, conversational, type PolicyDraft, type PolicyFields, type PolicyMove, type Preset, withPreset } from './staffPolicyDraft';
@@ -22,6 +24,8 @@ export type Draft = { key: number; agent: string; model: string; effort: string 
 export type Editing = {
   id: string; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;
   place: string; placeId: string; drafts: Draft[]; policy?: PolicyDraft | null;
+  /** An appointed role's acts, holder and window, which the editor sets in place of its choices. */
+  hold?: HoldDraft;
 };
 
 export type RoleEditorProps = {
@@ -134,7 +138,8 @@ export function RoleEditor({
           onPreset={(preset: Preset) => onEditing((was) => withPreset(was, preset, conversation))}
         />
       )}
-      <FormGrid columns={columns} floor="40rem">
+      {now.hold && <HoldFields hold={now.hold} disabled={locked} onChange={(hold) => set({ hold })} />}
+      {!now.hold && <FormGrid columns={columns} floor="40rem">
         <FormRow head>
           <span className="text-meta text-ink-faint">{t('settings.ai.role.field.agent')}</span>
           <span className="text-meta text-ink-faint">{t('settings.ai.role.field.model')}</span>
@@ -214,17 +219,19 @@ export function RoleEditor({
             </FormRow>
           );
         })}
-      </FormGrid>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" disabled={busy || now.drafts.length >= MOST} onClick={add}>
-          <Icon name="plus" size={12} />
-          {t('settings.ai.role.add')}
-        </Button>
-        <span className="inline-flex items-center gap-1 text-small text-ink-soft">
-          <WhyGlyph why={how} />
-          {t('settings.ai.roles.editor.how')}
-        </span>
-      </div>
+      </FormGrid>}
+      {!now.hold && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" disabled={busy || now.drafts.length >= MOST} onClick={add}>
+            <Icon name="plus" size={12} />
+            {t('settings.ai.role.add')}
+          </Button>
+          <span className="inline-flex items-center gap-1 text-small text-ink-soft">
+            <WhyGlyph why={how} />
+            {t('settings.ai.roles.editor.how')}
+          </span>
+        </div>
+      )}
       {policy && (
         <MovesFold
           policy={policy} rule={rule} fields={fields} conversation={conversation} disabled={policyLocked}
@@ -260,7 +267,7 @@ export function RoleEditor({
             </FormField>
           ))}
           <Button variant="ghost" onClick={() => set({ nameIn: [...now.nameIn, ['', '']] })}>{t('settings.ai.roles.field.nameInAdd')}</Button>
-          {shared ? (
+          {now.hold ? null : shared ? (
             <p className="m-0 text-small text-ink-soft">
               {t('settings.ai.roles.field.takesAll', { works: now.takes.map(labelOf).join(t('settings.ai.role.and')) })}
             </p>
@@ -273,7 +280,7 @@ export function RoleEditor({
       </details>
       <p className="m-0 text-small text-ink-soft">{consequence}</p>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={locked}>{t('settings.ai.role.save')}</Button>
+        <Button type="submit" disabled={locked || (!!now.hold && !holdReads(now.hold))}>{t('settings.ai.role.save')}</Button>
         {mayOff && !isOff && !now.isNew && (
           <Button variant="ghost" disabled={locked} onClick={() => onSave(true)}>{t('settings.ai.role.off')}</Button>
         )}

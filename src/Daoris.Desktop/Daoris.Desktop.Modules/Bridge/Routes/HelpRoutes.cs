@@ -38,7 +38,7 @@ public sealed class HelpRoutes(DriverContext context)
     [Owner("START_HELP", None = OwnerNone.OwnConversation)]
     [GroundRepository("START_HELP", "workspace")]
     [Publishes("START_HELP", StateScopes.Sessions)]
-    private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> StartHelpAsync(StartHelp press, CancellationToken cancellationToken)
     {
         // Asked first: no service answer changes it, and it says what to do.
         var config = DriverConfig.Load(_loop.ConfigPath);
@@ -49,7 +49,7 @@ public sealed class HelpRoutes(DriverContext context)
                 + "`daoris role set ask-daoris \"<agent>\"`. Its starters need none.");
         }
 
-        var named = WorkspaceAsked(request);
+        var named = WorkspaceAsked(press.Workspace);
         var circle = RemoteTarget.Workspace(named);
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
@@ -111,10 +111,7 @@ public sealed class HelpRoutes(DriverContext context)
     internal static readonly TimeSpan FinishingBound = TimeSpan.FromSeconds(5);
 
     /// <summary>The workspace a start's press names, trimmed; null where it names none, which is <c>default</c>'s.</summary>
-    private static string? WorkspaceAsked(IpcRequest request) =>
-        PayloadHelper.GetOptionalValue<string>(request.Payload, "workspace") is { } named && !string.IsNullOrWhiteSpace(named)
-            ? named.Trim()
-            : null;
+    private static string? WorkspaceAsked(string? workspace) => string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
 
     /// <summary>
     /// The workspace as this machine spells it, or refused where it does not hold it, naming those it does:
@@ -396,9 +393,9 @@ public sealed class HelpRoutes(DriverContext context)
     // the service's facts held the window up to 1.3 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("HELP_PROPOSALS", PipeClass.Open)]
     [ByEvent("HELP_PROPOSALS", Untold = "each proposal judged against the checkouts' git and the service's records, which no scope tells")]
-    private async Task<object?> HelpProposalsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpProposalsAsync(HelpProposalsRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var service = _loop.Service ?? throw NotReady();
         var pending = HelpProposals.Pending(_loop.Home, session);
         var (config, facts) = await HelpFactsAsync(service, pending, cancellationToken).ConfigureAwait(false);
@@ -504,15 +501,15 @@ public sealed class HelpRoutes(DriverContext context)
     [Owner("HELP_APPLY", ByPlan = true)]
     [GroundWait("HELP_APPLY", "help", "id", "revision")]
     [Publishes("HELP_APPLY", Applies)]
-    private async Task<object?> HelpApplyAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpApplyAsync(HelpApply press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var service = _loop.Service ?? throw NotReady();
         var proposal = HelpProposals.Find(_loop.Home, id)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
         // The card's revision: without one there is no card this Apply stands for.
-        var shown = PayloadHelper.GetOptionalValue<string>(request.Payload, "revision");
+        var shown = press.Revision;
         if (string.IsNullOrEmpty(shown)) throw new DriverException($"proposal `#{id}` was pressed with no card to stand for; its revision is missing, so it is drawn again.");
 
         // One Apply at a time: a second window's press of the same card waits for nothing and runs nothing.
@@ -522,7 +519,7 @@ public sealed class HelpRoutes(DriverContext context)
         proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
         // the editor's press on a draft card names each change it took into the draft and each it left.
-        proposal = proposal with { Taken = Listed(request, "taken"), Left = Listed(request, "left") };
+        proposal = proposal with { Taken = press.Taken, Left = press.Left };
 
         var (config, facts) = await HelpFactsAsync(service, [proposal], cancellationToken).ConfigureAwait(false);
         var plan = HelpProposals.Plan(proposal, config, facts);
@@ -594,9 +591,9 @@ public sealed class HelpRoutes(DriverContext context)
     [Owner("HELP_DISMISS", None = OwnerNone.ActsOnNothing)]
     [GroundWait("HELP_DISMISS", "help", "id")]
     [Publishes("HELP_DISMISS", StateScopes.Help)]
-    private async Task<object?> HelpDismissAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpDismissAsync(HelpDismiss press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var proposal = HelpProposals.Find(_loop.Home, id)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
@@ -1187,9 +1184,9 @@ public sealed class HelpRoutes(DriverContext context)
     // asks and sessions. A read of this machine's home, off the window's thread: it declares nothing, and its key is under
     // `help`, which an Apply publishes. Desktop-only, as the conversation is.
     [DriverRoute("HELP_PUBLISHED", PipeClass.Open)]
-    private Task<object?> HelpPublishedAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> HelpPublishedAsync(HelpPublishedRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var home = _loop.Home;
         return Task.Run<object?>(() => PublishedAnswer(session, new HelpPublished(home).Read(session)), cancellationToken);
     }
@@ -1213,19 +1210,19 @@ public sealed class HelpRoutes(DriverContext context)
     // terminal's `--workspace`: that workspace's conversations, searched and counted
     // before the page; none named is every workspace's, as the list was and as `--all` says, each row naming its own.
     [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
-    private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpConversationsAsync(HelpConversationsRead press, CancellationToken cancellationToken)
     {
         // `help list` in the verb's words, `--json` its own answer.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
             var listed = new HelpVerbAsk("list")
             {
-                Search = Optional(request, "q")?.Trim(),
-                Offset = (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
-                Limit = Number(request, "limit") is { } limit ? (int)Math.Clamp(limit, 1, HelpConversations.PageLimit) : null,
-                Workspace = Optional(request, "workspace"),
-                All = Flag(request, "all"),
-                Json = Flag(request, "json"),
+                Search = press.Q?.Trim(),
+                Offset = (int)Math.Clamp(press.Offset ?? 0, 0, int.MaxValue),
+                Limit = press.Limit is { } limit ? (int)Math.Clamp(limit, 1, HelpConversations.PageLimit) : null,
+                Workspace = press.Workspace,
+                All = press.All,
+                Json = press.Json,
             };
             return await SessionsVerbs.HelpSaidAsync(_context, listed, cancellationToken).ConfigureAwait(false);
         }
@@ -1233,10 +1230,10 @@ public sealed class HelpRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var records = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false));
         var listing = new HelpConversations(_loop.Home).List(
-            records, _loop.Events, Resumes, Optional(request, "q"),
-            (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
-            (int)Math.Clamp(Number(request, "limit") ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit),
-            Optional(request, "workspace"));
+            records, _loop.Events, Resumes, press.Q,
+            (int)Math.Clamp(press.Offset ?? 0, 0, int.MaxValue),
+            (int)Math.Clamp(press.Limit ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit),
+            press.Workspace);
         return HistoryAnswer(listing);
     }
 
@@ -1262,9 +1259,9 @@ public sealed class HelpRoutes(DriverContext context)
     // `recorded: false`. Read from the home alone, off the window's thread, answered as the file's own JSON so a null is
     // kept. A read: it declares nothing. Desktop-only: its folders are this machine's, and no shared host or feed carries it.
     [DriverRoute("HELP_WIRED", PipeClass.Open)]
-    private Task<object?> HelpWiredAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> HelpWiredAsync(HelpWiredRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var home = _loop.Home;
         return Task.Run<object?>(() => HelpWired.Answer(session, new HelpWired(home).Read(session)), cancellationToken);
     }
@@ -1275,20 +1272,18 @@ public sealed class HelpRoutes(DriverContext context)
     [Owner("HELP_RENAME", Session = "id")]
     [Timeless("HELP_RENAME", "a conversation's name")]
     [Publishes("HELP_RENAME", Kept, Session = "id")]
-    private async Task<object?> HelpRenameAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpRenameAsync(HelpRename press, CancellationToken cancellationToken)
     {
         // `help rename <id> "…"` or `--clear`, said in the verb's words, a conversation that is not Ask Daoris's among them.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
-            var name = Optional(request, "name");
-            var renamed = new HelpVerbAsk("rename") { Id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), Text = name, Clear = name is null };
+            var renamed = new HelpVerbAsk("rename") { Id = press.Id, Text = press.Name, Clear = press.Name is null };
             return await SessionsVerbs.HelpSaidAsync(_context, renamed, cancellationToken).ConfigureAwait(false);
         }
 
-        var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
-            .ConfigureAwait(false);
+        var id = await HelpConversationOfAsync(press.Id, cancellationToken).ConfigureAwait(false);
         var kept = new HelpConversations(_loop.Home);
-        kept.Rename(id, Optional(request, "name"));
+        kept.Rename(id, press.Name);
         return new { Session = id, kept.Read(id).Name };
     }
 
@@ -1297,22 +1292,18 @@ public sealed class HelpRoutes(DriverContext context)
     [Owner("HELP_PIN", Session = "id")]
     [Timeless("HELP_PIN", "a conversation's pin")]
     [Publishes("HELP_PIN", Kept, Session = "id")]
-    private async Task<object?> HelpPinAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpPinAsync(HelpPin press, CancellationToken cancellationToken)
     {
         // `help pin <id>` and `unpin`, said in the verb's words.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
-            var pin = new HelpVerbAsk(PayloadHelper.GetRequiredValue<bool>(request.Payload, "pinned") ? "pin" : "unpin")
-            {
-                Id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id"),
-            };
+            var pin = new HelpVerbAsk(press.Pinned ? "pin" : "unpin") { Id = press.Id };
             return await SessionsVerbs.HelpSaidAsync(_context, pin, cancellationToken).ConfigureAwait(false);
         }
 
-        var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
-            .ConfigureAwait(false);
+        var id = await HelpConversationOfAsync(press.Id, cancellationToken).ConfigureAwait(false);
         var kept = new HelpConversations(_loop.Home);
-        kept.Pin(id, PayloadHelper.GetRequiredValue<bool>(request.Payload, "pinned"), DateTimeOffset.UtcNow);
+        kept.Pin(id, press.Pinned, DateTimeOffset.UtcNow);
         return new { Session = id, kept.Read(id).Pinned };
     }
 
@@ -1323,7 +1314,7 @@ public sealed class HelpRoutes(DriverContext context)
     [Owner("HELP_START_FROM", Session = "id")]
     [GroundSession("HELP_START_FROM", "id")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
-    private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpStartFromAsync(HelpStartFrom press, CancellationToken cancellationToken)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
         if (config.HelperAdapter is not { Length: > 0 } helper)
@@ -1333,13 +1324,12 @@ public sealed class HelpRoutes(DriverContext context)
                 + "`daoris role set ask-daoris \"<agent>\"`. Its starters need none.");
         }
 
-        var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
-            .ConfigureAwait(false);
+        var id = await HelpConversationOfAsync(press.Id, cancellationToken).ConfigureAwait(false);
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
 
         // in the workspace its press names, as START_HELP's, whatever the earlier one's was; its running one set aside.
-        var named = WorkspaceAsked(request);
+        var named = WorkspaceAsked(press.Workspace);
         var circle = RemoteTarget.Workspace(named);
         var spelled = HeldWorkspace(await service.SnapshotAsync(cancellationToken).ConfigureAwait(false), circle);
 

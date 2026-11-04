@@ -26,10 +26,10 @@ export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true
     : ['workspace' as const, scope.workspace];
   return useQuery({
     queryKey: keys.workflow(kind, name, route),
-    queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', {
+    queryFn: () => call('WORKFLOW_CURRENT', {
       ...(kind === 'repository' ? { repository: name } : { workspace: name }),
       ...(route ? { route } : {}),
-    }),
+    }) as Promise<CurrentWorkflow>,
     enabled: isAvailable && enabled && scope !== null,
     staleTime: 0,
     // A route chosen over another keeps the page drawn until its own answer lands; the holder checks the answer is its place's.
@@ -46,7 +46,7 @@ export const useWorkflowCurrents = (repositories: readonly string[]) => {
   return useQueries({
     queries: repositories.map((name) => ({
       queryKey: keys.workflow('repository', name),
-      queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', { repository: name }),
+      queryFn: () => call('WORKFLOW_CURRENT', { repository: name }) as Promise<CurrentWorkflow>,
       enabled: isAvailable,
       staleTime: 0,
     })),
@@ -75,7 +75,7 @@ export const useSetLanded = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (variables: ({ repository: string } | { workspace: string }) & { workflow: string | null; gates?: string }) =>
-      call<LandedAnswer>('WORKFLOW_LANDED', variables),
+      call('WORKFLOW_LANDED', variables) as Promise<LandedAnswer>,
     onSuccess: () => client.invalidateQueries({ queryKey: keys.workflow('repository', '').slice(0, 3) }),
   });
 };
@@ -94,7 +94,7 @@ export type IntegrationAnswer = { start: WorkflowStart | null; done: boolean; re
 export const useAcceptIntegration = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (variables: { repository: string; gates?: string; clear?: true }) => call<IntegrationAnswer>('INTEGRATION_GATES', variables),
+    mutationFn: (variables: { repository: string; gates?: string; clear?: true }) => call('INTEGRATION_GATES', variables) as Promise<IntegrationAnswer>,
     onSuccess: () => client.invalidateQueries({ queryKey: keys.workflow('repository', '').slice(0, 3) }),
   });
 };
@@ -112,7 +112,7 @@ export const useWorkflowRun = (scope: RunScope | null, { enabled = true }: { ena
     : 'quest' in scope ? ['quest' as const, scope.quest] : ['ask' as const, scope.ask];
   return useQuery({
     queryKey: keys.workflowRun(kind, id),
-    queryFn: () => call<WorkflowRunAnswer>('WORKFLOW_RUN', { [kind]: id }),
+    queryFn: () => call('WORKFLOW_RUN', { [kind]: id }) as Promise<WorkflowRunAnswer>,
     enabled: isAvailable && enabled && scope !== null && id !== '',
     staleTime: 0,
   });
@@ -128,7 +128,7 @@ export type VerifyAnswer = { repository: string; done: boolean; refused: string 
  */
 export const useVerify = () => useMutation({
   mutationFn: ({ repository, branch, commit }: { repository: string; branch?: string; commit?: string }) =>
-    call<VerifyAnswer>('WORKFLOW_VERIFY', { repository, ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) }),
+    call('WORKFLOW_VERIFY', { repository, ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) }) as Promise<VerifyAnswer>,
 });
 
 /**
@@ -138,7 +138,7 @@ export const useVerify = () => useMutation({
  */
 export const useRunNodeWord = () => useMutation({
   mutationFn: async ({ run, node, act, words }: NodeWordAsk): Promise<NodeWordAnswer> => {
-    const answer = await call<Partial<NodeWordAnswer> | null>('WORKFLOW_NODE', { run, node, act, ...(words ? { words } : {}) });
+    const answer = (await call('WORKFLOW_NODE', { run, node, act, ...(words ? { words } : {}) })) as Partial<NodeWordAnswer> | null;
     return {
       run: answer?.run ?? run, node: answer?.node ?? node, act: answer?.act ?? act, done: answer?.done === true,
       refused: answer?.refused ?? null, message: answer?.message ?? null,
@@ -150,5 +150,5 @@ export const useRunNodeWord = () => useMutation({
  * `WORKFLOW_SAVE` and `WORKFLOW_USE` (AGENTSPLACE1c), this domain's writes as `WorkflowRoutes.cs` answers them: a version saved, or
  * judged unsaved with `plan`, and a version chosen for a place. The step editor's bridge (`workflowEdit.ts`) presses them through these.
  */
-export const askWorkflowSave = (ask: WorkflowSaveAsk) => call<WorkflowSaveAnswer>('WORKFLOW_SAVE', ask);
-export const askWorkflowUse = (ask: WorkflowUseAsk) => call<WorkflowUseAnswer>('WORKFLOW_USE', ask);
+export const askWorkflowSave = (ask: WorkflowSaveAsk) => call('WORKFLOW_SAVE', ask) as Promise<WorkflowSaveAnswer>;
+export const askWorkflowUse = (ask: WorkflowUseAsk) => call('WORKFLOW_USE', ask) as Promise<WorkflowUseAnswer>;

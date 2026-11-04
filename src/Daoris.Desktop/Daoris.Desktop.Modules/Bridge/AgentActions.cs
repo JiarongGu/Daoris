@@ -601,10 +601,8 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>The action running under `harness:action`, or the refusal that names it.</summary>
-    internal HarnessRun Running(IpcRequest request)
+    internal HarnessRun Running(string harness, string action)
     {
-        var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
         return _actions.TryGetValue($"{harness}:{action}", out var run)
             ? run
             : throw Refusals.Because(
@@ -614,10 +612,10 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>Stop the action running under `harness:action`, its end then told to the log as cancelled (SIGNIN1).</summary>
-    internal void Cancel(IpcRequest request)
+    internal void Cancel(string harness, string action)
     {
-        var run = Running(request);
-        var key = $"{PayloadHelper.GetRequiredValue<string>(request.Payload, "harness")}:{PayloadHelper.GetRequiredValue<string>(request.Payload, "action")}";
+        var run = Running(harness, action);
+        var key = $"{harness}:{action}";
         if (_lives.TryGetValue(key, out var life)) life.Cancelled = true;
         run.Cancel();
     }

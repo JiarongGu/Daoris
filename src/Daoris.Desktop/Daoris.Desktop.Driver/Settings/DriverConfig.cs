@@ -44,9 +44,6 @@ public sealed record DriverConfig(
     /// </summary>
     public int Strikes { get; init; } = Math.Max(0, Strikes);
 
-    /// <summary>Whether the save writes <c>strikes</c>: as the file held it or a press set it, never from the default.</summary>
-    public bool StrikesHeld { get; init; } = Strikes != 3;
-
     /// <summary>
     /// Quests the person has restarted, and the failure count they were restarted at. A mark rather
     /// than an erasure: the records still say what happened, and the next three failures park it
@@ -100,7 +97,7 @@ public sealed record DriverConfig(
     }
 
     /// <summary>How many failures park a quest on this machine.</summary>
-    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes), StrikesHeld = true };
+    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes) };
 
     /// <summary>
     /// The quests the person released from their stop (SESSUX1b, D126 §3.4), each against the session they stopped: a
@@ -1020,7 +1017,6 @@ public sealed record DriverConfig(
             if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("pollSeconds", PollSeconds);
-            if (StrikesHeld) writer.WriteNumber("strikes", Strikes);
             // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
             if (CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
             writer.WriteStartObject("forgiven");
@@ -1446,16 +1442,10 @@ public sealed record DriverConfig(
             // field, and reading silence as "off" would ship the feature switched off everywhere it
             // matters most — a machine that has been driving for a while.
             Notify: Bool(root, "notify") ?? Empty.Notify,
-            // 🔴 Absent means the DEFAULT, not off — the opposite reading from `notify` and for the
-            // opposite reason. A machine that predates this field is exactly the one that has been
-            // driving unattended longest, and reading silence as "never park" would leave it doing
-            // the thing this field exists to stop.
-            Strikes: Int(root, "strikes") ?? Empty.Strikes,
             Forgiven: ForgivenMap(root))
         {
             // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
             Source = json,
-            StrikesHeld = root.TryGetProperty("strikes", out _),
             // Read only to be said (SESSWATCH1a): no bound is ever read from it.
             KeptTimeoutMinutes = Int(root, "timeoutMinutes"),
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.

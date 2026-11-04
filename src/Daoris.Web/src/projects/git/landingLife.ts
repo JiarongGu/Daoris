@@ -4,15 +4,9 @@ import type { FlowEdge, FlowNode } from '../../design/Flow';
 import { moment } from '../../locales/format';
 import { runTone } from '../../workflow/run';
 import { entryDetail, entryName, type MilestoneEntry, type MilestoneUnit } from '../../work/head/milestone';
-import { short, type TraceAnswer, type TraceBranch, type TraceDue } from '../../work/head/trace';
+import { short, type TraceAnswer, type TraceBranch } from '../../work/head/trace';
 
 type Translate = TFunction;
-
-/** What a try to land a due session came to (`AutoLandingCode`), held to its source by `landingLife.test.ts`. */
-export const TRY_CODES = [
-  'landed', 'advanced', 'nothing', 'held', 'uncommitted', 'exists', 'completed', 'plugin-unready', 'plugin-failed', 'push-held',
-  'already', 'superseded', 'gone', 'undone', 'off', 'refused', 'unreviewed', 'opinion', 'carried', 'carried-on', 'carry-bound', 'performed',
-] as const;
 
 /** The proofs an end rests on (`EndBy`), each worded as the milestone words it (`work.milestone.by.*`). */
 export const END_BY = ['empty', 'merged', 'on-line', 'pull-request', 'landed', 'carried', 'inside'] as const;
@@ -40,7 +34,7 @@ const OPINIONS = new Set(['settled', 'anyway', 'myself', 'answered']);
 
 const has = <T extends string>(list: readonly T[], code: string | null | undefined): code is T => (list as readonly string[]).includes(code ?? '');
 
-/** What the branch's page holds of its landing: the trace's branch for it, or the gap where none is named; its due entry; its units. */
+/** What the branch's page holds of its landing: the trace's branch for it, or the gap where none is named; its units. */
 export type LandingOf = {
   /** The branch's name, as its page names it. */
   name: string;
@@ -48,8 +42,6 @@ export type LandingOf = {
   branch: TraceBranch | null;
   /** Where the trace names no branch: its code (`merge-accepted` for a landing into the line). */
   gap?: string | null;
-  /** That session's entry on the due list. */
-  due?: TraceDue | null;
   /** The units of work the branch carries, as `WORK_STATE` names them for it; null where they were not read. */
   units?: readonly MilestoneUnit[] | null;
 };
@@ -66,7 +58,7 @@ export type LandingLife = {
 
 /**
  * The landing a trace answers for `session`, for the branch named `name` (FLOWCHART1c): the branch of that name its landing made,
- * a standing one before one gone, else the newest; with its due entry. Null where the trace holds no link for the session.
+ * a standing one before one gone, else the newest. Null where the trace holds no link for the session.
  * The trace reads every landing that names the session, the one made for it and each it moved on (`LandedBranch.Names`), so a
  * shared branch is read from any session it names.
  */
@@ -76,18 +68,16 @@ export function landingOf(answer: TraceAnswer | null | undefined, session: strin
   if (!landing) return null;
   const named = landing.branches.filter((each) => each.branch === name);
   const branch = named.find((each) => !each.gone) ?? [...named].sort((a, b) => b.at.localeCompare(a.at))[0] ?? null;
-  return { branch, gap: branch ? null : landing.missing ?? null, due: landing.due ?? null };
+  return { branch, gap: branch ? null : landing.missing ?? null };
 }
 
 /**
- * **A landed branch's landing and clean-up as a flow** (FLOWCHART1c; D186, the flowchart design §2.7): its due entry and each try
- * by its code; the landing, who accepted it and what let it go, with each later done that moved it on; its push and its pull
- * request; the end each unit it carries reached; the clean-up; the recovery kept.
+ * **A landed branch's landing and clean-up as a flow** (FLOWCHART1c; D186, the flowchart design §2.7): the landing, who accepted it
+ * and what let it go, with each later done that moved it on; its push and its pull request; the end each unit it carries reached;
+ * the clean-up; the recovery kept.
  *
  * @remarks
  * **Drawn as its records keep it** (trap 19):
- * - *The tries* are the due entry's, oldest first, each like the others of its code so three in a row stack (§3.6). The edge into
- *   the landing comes from the last, saying who accepted it.
  * - *The landing is the branch's*: it names the session it was made for and the units it carries, and each advance is a node of its
  *   own naming its session, like the others of that session. A driver from before them answers no advances, and the landing says so.
  * - *The push is a fact with no time*: the record keeps that it was pushed, not when, so it hangs from the landing and never after an
@@ -105,35 +95,9 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
   const entries: string[] = [];
   const edge = (from: string, to: string, says: string, label?: string, style?: EdgeStyle) =>
     edges.push({ id: `${from}>${to}`, from, to, says, ...(label ? { label } : {}), ...(style ? { style } : {}) });
-  const { branch, due } = read;
+  const { branch } = read;
 
-  // 1. Due since, and its tries by their codes.
-  let last: string | null = null;
-  if (due) {
-    nodes.push({ id: 'due', title: t('work.trace.due.title') });
-    lines.due = [
-      due.closed ? t('work.trace.due.closed', { since: at(due.since), closed: at(due.closed) }) : t('work.trace.due.waiting', { since: at(due.since) }),
-      ...(due.tries.length === 0 ? [t('work.trace.due.untried')] : []),
-    ];
-    entries.push('due');
-    last = 'due';
-    due.tries.forEach((tried, index) => {
-      const id = `try:${index}`;
-      const word = has(TRY_CODES, tried.code) ? t(`work.trace.try.${tried.code}`) : t('landing.try.recorded', { code: tried.code });
-      nodes.push({ id, title: word, stack: { key: tried.code, word, at: at(tried.at) } });
-      lines[id] = [
-        at(tried.at),
-        ...(tried.branch ? [t('work.trace.due.branch', { branch: tried.branch })] : []),
-        ...(tried.commits != null ? [t('work.trace.due.commits', { count: tried.commits })] : []),
-        ...(tried.uncommitted != null ? [t('work.trace.due.uncommitted', { count: tried.uncommitted })] : []),
-        ...(tried.tip ? [t('work.trace.due.tip', { tip: short(tried.tip) })] : []),
-      ];
-      edge(last!, id, t(index === 0 ? 'landing.edge.tried' : 'landing.edge.again', { at: at(tried.at) }), t(index === 0 ? 'landing.label.tried' : 'landing.label.again'));
-      last = id;
-    });
-  }
-
-  // 2. Landed, or merged into the line from the trace's gap, and the advances that moved it on.
+  // 1. Landed, or merged into the line from the trace's gap, and the advances that moved it on.
   let tip: string | null = null;
   if (branch) {
     nodes.push({ id: 'landed', title: t('landing.landed.title', { branch: branch.branch }) });
@@ -144,8 +108,7 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
       ...(branch.units && branch.units.length > 0 ? [t('landing.units', { units: branch.units.join(', ') })] : []),
       ...(branch.advances === undefined ? [t('landing.advances.unread')] : []),
     ];
-    if (last) edge(last, 'landed', accepted(t, branch.acceptedBy, branch.rule?.access ?? null), t('landing.label.accepted'));
-    else entries.push('landed');
+    entries.push('landed');
     tip = 'landed';
     (branch.advances ?? []).forEach((advance, index) => {
       const id = `advance:${index}`;
@@ -198,8 +161,7 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
   } else if (read.gap === 'merge-accepted') {
     nodes.push({ id: 'landed', title: t('landing.merged.title') });
     lines.landed = [t('landing.merged.said')];
-    if (last) edge(last, 'landed', t('landing.edge.merged'), t('landing.label.accepted'));
-    else entries.push('landed');
+    entries.push('landed');
     tip = 'landed';
   }
 

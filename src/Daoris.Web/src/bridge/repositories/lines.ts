@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, type UseMutationResult, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { AccessChange, RepositoryAccess } from '../../settings/repository/Access';
@@ -9,14 +9,14 @@ import type { HelperChange, RepositoryHelpers } from '../../settings/repository/
 import type { HandOverChange, RepositoryHandOver } from '../../settings/repository/HandOver';
 import type { LineChange, RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
-import type { LanguageChange, RepositoryLanguage } from '../../settings/repository/Languages';
+import type { RepositoryLanguage } from '../../settings/repository/Languages';
 import type { OpinionChange, RepositoryOpinion } from '../../settings/repository/Opinions';
 import type { RepositoryReview, ReviewChange } from '../../settings/repository/Reviews';
 import type { BranchDiscard, LandedBranch, LandedWithdrawal, SweepBranch } from '../../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../../settings/Sync';
 import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../../work/head/milestone';
 import { call, lookBound, pressBound } from '../call';
-import { readSlice, useDriverChange } from '../driver';
+import { type DriverState, readSlice, useDriverChange } from '../driver';
 import { pushedOf, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
@@ -450,16 +450,19 @@ export const useTreesSync = (workspace?: string) =>
 
 // The standing choices over a repository's or a workspace's rules are the driver's own shape (`useDriverChange`): the answer is
 // the driver's state, written where it is read; what each repository resolves to, and every plan and gate that reads it, move
-// with it, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
+// with it, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169). A rule edit's nested object
+// is the shared table's to judge, so its generated payload leaves it unknown; each hook takes the page's own shape of the edit.
+
+type Change<T> = UseMutationResult<DriverState, Error, T>;
 
 /** Set a repository's line or a workspace's, or clear it with no branch — the file `daoris place line` edits (D50). */
-export const useSetLine = () => useDriverChange<LineChange>('SET_LINE');
+export const useSetLine = () => useDriverChange('SET_LINE') as Change<LineChange>;
 
 /**
  * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language (LANG1c) —
  * the file `daoris place language` edits (D50). A code the driver's table does not hold is its refusal, its sentence verbatim.
  */
-export const useSetLanguage = () => useDriverChange<LanguageChange>('SET_LANGUAGE');
+export const useSetLanguage = () => useDriverChange('SET_LANGUAGE');
 
 /**
  * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,
@@ -467,43 +470,43 @@ export const useSetLanguage = () => useDriverChange<LanguageChange>('SET_LANGUAG
  * reaches, and the answer's `reviewed` says what was found. A refusal is the driver's sentence, verbatim. The landing's gate
  * reads the rule since REVIEWENV1c.
  */
-export const useSetReview = () => useDriverChange<ReviewChange>('SET_REVIEW');
+export const useSetReview = () => useDriverChange('SET_REVIEW') as Change<ReviewChange>;
 
 /**
  * Change which other agent reads a repository's work before it lands, or a workspace's (XAGENT1a, D155 point 3): the twins'
  * edit, over the file `daoris place opinion` edits (D50). A refusal is the driver's sentence, verbatim.
  */
-export const useSetOpinion = () => useDriverChange<OpinionChange>('SET_OPINION');
+export const useSetOpinion = () => useDriverChange('SET_OPINION') as Change<OpinionChange>;
 
 /**
  * Change how a repository's work is committed, or a workspace's (DOORS1b, D164's amendment points 1 and 3): the twins' edit, over
  * the file `daoris place commits` edits (D50). A refusal is the driver's sentence, verbatim. Driven sessions and conversations
  * are told the rule at their start (PROCESS1d).
  */
-export const useSetCommits = () => useDriverChange<CommitChange>('SET_COMMITS');
+export const useSetCommits = () => useDriverChange('SET_COMMITS') as Change<CommitChange>;
 
 /**
  * Change what a helper a repository's agent asks for does, or a workspace's (DOORS1b, D163 point 3): the twins' edit, over the
  * file `daoris place helpers` edits (D50). A refusal is the driver's sentence, verbatim.
  */
-export const useSetHelpers = () => useDriverChange<HelperChange>('SET_HELPERS');
+export const useSetHelpers = () => useDriverChange('SET_HELPERS') as Change<HelperChange>;
 
 /**
  * Change what an agent's ask to hand its session over does in a repository, or a workspace (MIXAGENT1c, D163 point 3): the twins'
  * edit, over the file `daoris settings handover` edits (D50). A refusal is the driver's sentence, verbatim.
  */
-export const useSetHandOver = () => useDriverChange<HandOverChange>('SET_HAND_OVER');
+export const useSetHandOver = () => useDriverChange('SET_HAND_OVER') as Change<HandOverChange>;
 
 /**
  * Change the access setup a repository's sessions start under, a workspace's or this machine's (AUTONOMY1d, D184 points 1-3): full
  * access, a pause set or taken back to the level above, or the level cleared, over the file `daoris place access` edits (D50). A
  * refusal is the driver's sentence, verbatim. Full access is the person's press alone: no proposal names it (D184's rejected list).
  */
-export const useSetAccess = () => useDriverChange<AccessChange>('SET_ACCESS');
+export const useSetAccess = () => useDriverChange('SET_ACCESS') as Change<AccessChange>;
 
 /**
  * Change git access for a repository, a workspace or this machine (GITAUTH1f, D198 points 8, 10 and 12): the classes it sets (a null
  * taking one back to the level above), one value for Read and Write, or the level cleared, over the file `daoris git access`
  * edits. A separate route from `SET_ACCESS`. A refusal is the driver's sentence, verbatim; a widening is confirmed by the page first.
  */
-export const useSetGitAccess = () => useDriverChange<GitAccessChange>('SET_GIT_ACCESS');
+export const useSetGitAccess = () => useDriverChange('SET_GIT_ACCESS') as Change<GitAccessChange>;

@@ -69,7 +69,7 @@ describe('Get started', () => {
     // Ask Daoris and the intake are roles: Agents → Roles, the one door (COMPANYVIEW1g).
     expect(within(step(/Ask Daoris's agent/)).queryByRole('button', { name: 'Open AI features' })).toBeNull();
     await userEvent.click(within(step(/Ask Daoris's agent/)).getByRole('button', { name: 'Open Roles' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'setup', roleSection: 'working' });
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'setup', roleSection: 'allRoles' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Add repository…' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', drawer: 'add' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Import a folder…' }));

@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Desktop.Modules\Daoris.Desktop.Modules.csproj" />
+    <!-- The generator of the page's window routes, whose output is held to the marks it reads. -->
+    <ProjectReference Include="..\..\..\tools\contracts\ContractsGen.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -20,7 +20,7 @@ public sealed class ObservationTests
         var (closed, interrupted) = Observation.Closed(null);
         Assert.Equal(("stopped", "ended.driver-closed", true), (closed.State, closed.Parts![0].Code, interrupted));
 
-        (closed, interrupted) = Observation.Closed(new SessionStop(Daoris.Driver.Driver.LostClaimNoted, Note: null));
+        (closed, interrupted) = Observation.Closed(new SessionStop(LostClaimStop.LostClaimNoted, Note: null));
         Assert.Equal(("stood-down", "ended.lost-claim", false), (closed.State, closed.Parts![0].Code, interrupted));
 
         (closed, interrupted) = Observation.Closed(new SessionStop(Reason: null, Note: null));
@@ -128,7 +128,7 @@ public sealed class ObservationTests
     [Fact]
     public void A_stop_with_the_drivers_reason_is_the_drivers_and_any_other_the_persons()
     {
-        Assert.False(new SessionStop(Daoris.Driver.Driver.LostClaimNoted, Note: null).ByPerson);
+        Assert.False(new SessionStop(LostClaimStop.LostClaimNoted, Note: null).ByPerson);
         Assert.True(new SessionStop(Reason: null, Note: null).ByPerson);
     }
 

@@ -370,7 +370,7 @@ public sealed class AskWordsHandedTests
     [Fact]
     public void A_word_that_is_not_one_is_passed_over_and_an_older_ask_says_from_when()
     {
-        var ask = ServiceClient.ReadAskJson(
+        var ask = AskDoorViews.ReadAskJson(
             """
             {"id":"a1","workspace":"work","sentence":"s","state":"Published","tier":"intake","wordsKeptFrom":"2026-10-02T11:30:00+00:00",
              "words":[{"kind":"asked","text":"s","at":"2026-10-01T02:26:00+00:00"},
@@ -382,7 +382,7 @@ public sealed class AskWordsHandedTests
 
         Assert.Equal(["s", "kept"], ask.Words!.Select(word => word.Text));
         Assert.Equal(new DateTimeOffset(2026, 10, 2, 11, 30, 0, TimeSpan.Zero), ask.WordsKeptFrom);
-        Assert.Null(ServiceClient.ReadAskJson("""{"id":"a1","workspace":"w","sentence":"s","state":"Open","tier":"named"}""").Words);
+        Assert.Null(AskDoorViews.ReadAskJson("""{"id":"a1","workspace":"w","sentence":"s","state":"Open","tier":"named"}""").Words);
     }
 
     // ——— The ask's sender, read back (a twin of the service's `AskDesk.SenderOf` and `AskOf`).

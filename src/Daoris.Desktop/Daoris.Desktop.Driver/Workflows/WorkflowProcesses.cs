@@ -183,16 +183,16 @@ public static class WorkflowProcesses
     }
 
     /// <summary>
-    /// The process a concluded record's run follows (WORKFLOW1f), as <see cref="AutoLander.ProcessAsync"/> reads it for the workplace, here as
-    /// the workflows' own process for the second opinion owed beside the landing. Never throws: a run that could not be read is read
-    /// live, as before.
+    /// The process a concluded record's run follows (WORKFLOW1f), for the second opinion owed at its done: read for its tree's owner where this
+    /// home opened the tree, else the quest's repository in the workspace the record names. Never throws: a run that could not be read is none.
     /// </summary>
     public static async Task<WorkflowProcess?> ConcludedAsync(
         string home, DriverConfig config, IReviewWorld world, QuestView quest, string tree, string? workspace, CancellationToken ct = default)
     {
         try
         {
-            var (where, repository) = AutoLander.RunOwner(home, tree, workspace, quest);
+            var trees = new SessionTrees(home);
+            var (where, repository) = trees.Holds(tree) ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
             return await ReadAsync(home, config, world, quest.Id, repository, where, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or DriverException)

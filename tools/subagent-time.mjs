@@ -18,7 +18,8 @@ import { isMain } from './fsx.mjs';
 
 /** The class of a path a read or an edit touches. */
 export function pathClass(path = '') {
-  const p = path.replaceAll('\\', '/');
+  // A builder's worktree lives under `.claude/worktrees/`, which would otherwise read as records.
+  const p = path.replaceAll('\\', '/').replace(/^.*\/\.claude\/worktrees\/[^/]+\//, '/');
   if (/\/docs\/index\//.test(p) || /docs\/index\//.test(p)) return 'generated';
   if (/(^|\/)(fixtures|golden)\//.test(p) || /\.(golden|account)\.json$/.test(p)) return 'fixtures';
   if (/(Tests?\/|\.test\.|\.spec\.|tool-test\/|\/test\/|e2e\/|measured\/)/.test(p)) return 'tests';
@@ -31,7 +32,7 @@ export function pathClass(path = '') {
 export function commandClass(command = '') {
   const c = command.replace(/\s+/g, ' ');
   if (/\b(sleep|Start-Sleep|Wait-Process)\b/.test(c)) return 'wait';
-  if (/\bnpm run verify\b|check:web-rules|i18n:check|names:check|merge-branch\.mjs|\bdaoris\.mjs check\b|doc-(shapes|duplicates|links|system)|optional-locks|transitional-markers|test-map\.mjs|orient-index\.mjs --check/.test(c)) return 'verify';
+  if (/\bnpm run verify\b|check:web-rules|i18n:check|names:check|merge-branch\.mjs|\bdaoris\.mjs check\b|doc-(shapes|duplicates|links|system)|optional-locks|test-map\.mjs|orient-index\.mjs --check/.test(c)) return 'verify';
   if (/\bdotnet test\b|\bvitest\b|\bnode --test\b|\bplaywright\b|\bnpm (run )?test\b|\bnpm run (test|e2e)/.test(c)) return 'test';
   if (/\bdotnet build\b|\btsc\b|\bnpm run (build|typecheck)\b|\bnpm (ci|install)\b|build-server/.test(c)) return 'build';
   if (/^\s*(cd [^&;]+(&&|;)\s*)?git\b|\bgit (merge|diff|log|status|show|add|commit|checkout|worktree|rev-parse|branch)\b/.test(c)) return 'git';

@@ -515,7 +515,7 @@ test('the catalogue areas, the test fixtures and the files of the index come fro
   const planned = tool.planIndex(fx.root, FIXTURE_FILES);
   assert.deepEqual([...planned.keys()].sort(), [
     'docs/index/README.md', 'docs/index/catalogues.md', 'docs/index/decisions.md', 'docs/index/fixtures.md',
-    'docs/index/routes.md', 'docs/index/verbs.md',
+    'docs/index/registered.md', 'docs/index/routes.md', 'docs/index/verbs.md',
   ]);
   const catalogues = planned.get('docs/index/catalogues.md')!;
   assert.ok(catalogues.includes('| `nav` | 2 | en, zh |'), catalogues);
@@ -562,7 +562,8 @@ test('the check names a missing, stale or stray file, and the write leaves nothi
   const missing = tool.staleness(fx.root, tool.planIndex(fx.root, FIXTURE_FILES));
   assert.deepEqual(missing.map(({ path, fact }) => `${path}: ${fact}`), [
     'docs/index/README.md: missing', 'docs/index/catalogues.md: missing', 'docs/index/decisions.md: missing',
-    'docs/index/fixtures.md: missing', 'docs/index/routes.md: missing', 'docs/index/verbs.md: missing',
+    'docs/index/fixtures.md: missing', 'docs/index/registered.md: missing', 'docs/index/routes.md: missing',
+    'docs/index/verbs.md: missing',
   ]);
   tool.applyIndex(fx.root, tool.planIndex(fx.root, FIXTURE_FILES));
   assert.deepEqual(tool.staleness(fx.root, tool.planIndex(fx.root, FIXTURE_FILES)), []);

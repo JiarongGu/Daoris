@@ -25,14 +25,16 @@ public sealed class RouteMap(IEndpointRouteBuilder app)
 
         RequestDelegate answer = async http =>
         {
-            if (await RouteBinder.BindAsync(http, route, type) is not { } request)
+            var (request, refused) = await RouteBinder.BindAsync(http, route, type);
+            if (request is null)
             {
-                http.Response.StatusCode = StatusCodes.Status400BadRequest;
+                http.Response.StatusCode = refused;
                 return;
             }
 
             await (await handler(request, http, http.RequestAborted)).WriteAsync(http, json);
         };
-        return app.MapMethods(route.Path, [route.Method], answer);
+        // The declaration rides as the endpoint's metadata, so a confirmation reads what the door binds from it (DoorContracts).
+        return app.MapMethods(route.Path, [route.Method], answer).WithMetadata(route);
     }
 }

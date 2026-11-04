@@ -144,7 +144,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
             () => processes.Running.Contains("s1") && _ledger.Session("s1")["state"]!.GetValue<string>() == "working",
             () => "the session never started working");
 
-        Assert.True(processes.Stop("s1", drivers ? Daoris.Driver.Driver.LostClaimNoted : null));
+        Assert.True(processes.Stop("s1", drivers ? LostClaimStop.LostClaimNoted : null));
         await closing.CancelAsync();
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 

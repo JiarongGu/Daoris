@@ -52,7 +52,7 @@ public sealed class IntakeNamedProposalTests
     [Fact]
     public void The_reader_takes_a_proposal_whose_evidence_is_its_own_name_as_named()
     {
-        var ask = ServiceClient.ReadAskJson(
+        var ask = AskDoorViews.ReadAskJson(
             """
             {"id":"a1","workspace":"work","sentence":"s","state":"Proposed","tier":"declarations",
              "proposal":[{"repository":"storefront","score":7,"matched":["storefront"]},
@@ -69,7 +69,7 @@ public sealed class IntakeNamedProposalTests
     [Fact]
     public void An_ask_with_no_proposal_names_none()
     {
-        var ask = ServiceClient.ReadAskJson("""{"id":"a1","workspace":"w","sentence":"s","state":"Open","tier":"named"}""");
+        var ask = AskDoorViews.ReadAskJson("""{"id":"a1","workspace":"w","sentence":"s","state":"Open","tier":"named"}""");
 
         Assert.Empty(ask.Proposed);
         Assert.Empty(ask.Named);

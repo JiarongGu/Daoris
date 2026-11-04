@@ -83,14 +83,6 @@ export const SECOND: TraceSessionLink = {
       line: 'main', from: 'abc1234def567890', plugin: 'github', pushed: true, pullRequest: 'https://example.test/pull/7',
       acceptedBy: 'auto', rule: { plugin: 'github', autoAccept: true, source: 'workspace' },
     }],
-    // LAND2b: it became due at its quest's done, waited once on uncommitted work, then landed.
-    due: {
-      since: '2026-10-03T10:00:00Z', source: 'auto-landings', closed: '2026-10-03T10:05:00Z',
-      tries: [
-        { at: '2026-10-03T10:01:00Z', code: 'uncommitted', uncommitted: 2, tip: '9f8e7d6c5b4a3210' },
-        { at: '2026-10-03T10:05:00Z', code: 'landed', branch: 'feature/q1-fix-the-dashboard-figure', commits: 2, tip: '1a2b3c4d5e6f7081' },
-      ],
-    },
   },
   stood: {
     standing: { repository: 'dashboards', state: 'before', source: 'config', at: '2026-10-03T09:25:00Z', says: 'test on dev first, never production' },
@@ -223,8 +215,7 @@ export const OLD_CHAIN: TraceChain = {
 };
 
 /**
- * Waiting to land automatically (LAND2b): done, due, held once by a branch that already stands, and still waiting; and a
- * landing of an earlier session from before who accepted it was kept.
+ * A landing of an earlier session from before who accepted it was kept.
  */
 export const WAITING_CHAIN: TraceChain = {
   kind: 'session', id: 's8', unread: [],
@@ -240,10 +231,6 @@ export const WAITING_CHAIN: TraceChain = {
       landing: {
         source: 'landings',
         branches: [{ branch: 'feature/q8-earlier', tip: '4d4d4d4d4d4d', at: '2026-10-02T09:00:00Z', line: 'main' }],
-        due: {
-          since: '2026-10-03T12:30:00Z', source: 'auto-landings',
-          tries: [{ at: '2026-10-03T12:31:00Z', code: 'exists', branch: 'feature/q8-tidy-the-legend', tip: '5e5e5e5e5e5e' }],
-        },
       },
       stood: { standing: { repository: 'dashboards', state: 'none', source: 'config' }, goAheads: [] },
     },

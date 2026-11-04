@@ -19,9 +19,6 @@ export type RepositoryLanguage = {
   source?: LanguageSource;
 };
 
-/** A change to a session language: a repository's or a workspace's, cleared when it names no language. */
-export type LanguageChange = { repository?: string; workspace?: string; language?: string };
-
 /** The select's value for nothing set here: Radix takes no empty value. */
 const UNSET = 'unset';
 

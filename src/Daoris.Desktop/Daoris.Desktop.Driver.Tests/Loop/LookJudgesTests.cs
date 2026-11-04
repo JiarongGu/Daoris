@@ -181,52 +181,6 @@ public sealed class LookJudgesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A landing's selection that does not answer holds no later start, and the wakes it judged with are spent once: what it decides
-    /// is said once, and no wake is left to judge again.
-    /// </summary>
-    [Fact]
-    public async Task A_slow_landing_selection_holds_no_start_and_spends_its_wakes_once()
-    {
-        // The home's lease, as the loop that lands holds it (FABRIC-END7's review); a due entry whose rule no longer accepts by itself.
-        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
-        new AutoLandings(_home).Due(new AutoLanding(
-            "s8", "q8", "engine", "default", DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s-8"), DateTimeOffset.UtcNow));
-        var selecting = Hold(path => path == "/api/quests", closed: true);
-        var (watch, runs) = Watch(opinions: false);
-        var reports = new List<TickReport>();
-
-        var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
-        try
-        {
-            await selecting.Asked.Task.WaitAsync(Poll.Patience);
-
-            _ledger.Publish("q3", "tools");
-            watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Contains("q3"), () => "q3 waited for the landing's selection", Poll.Patience);
-
-            selecting.Release();
-            await Poll.Until(() => new AutoLandings(_home).Open().Count == 0, () => "the landing never closed s8", Poll.Patience);
-            for (var wake = 0; wake < 2; wake++)
-            {
-                var seen = Count(reports);
-                watch.Nudge(ChangeTopics.Ledger, "quests");
-                await Poll.Until(() => Count(reports) > seen, () => $"wake {wake} never looked", Poll.Patience);
-            }
-
-            Assert.Single(Snapshot(reports).SelectMany(report => report.Events),
-                line => line.StartsWith("landing  session s8 (#q8 → engine): its repository's rule no longer accepts automatically", StringComparison.Ordinal));
-            var left = watch.Landing.Take(whole: false);
-            Assert.False(left.Whole);
-        }
-        finally
-        {
-            selecting.Release();
-            await _closing.CancelAsync();
-            await Settled(watching);
-        }
-    }
-
-    /// <summary>
     /// A done quest `q1` on `engine` owed a second opinion under `steps`, its tree gone, and its chain's next step `q2` open; the rule
     /// reads `engine` at `steps`, as the watch's config says.
     /// </summary>

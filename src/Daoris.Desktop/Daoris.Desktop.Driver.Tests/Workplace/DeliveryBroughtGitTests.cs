@@ -53,29 +53,6 @@ public sealed class DeliveryBroughtGitTests : LandedFixture
         Assert.Equal([Named], (await GitAsync(root, "for-each-ref", "--format=%(refname:short)", "refs/heads/feature/")).Split('\n', StringSplitOptions.RemoveEmptyEntries));
     }
 
-    /// <summary>An entry's one Accept with the operation bound to its head lands the head's delivery once, its member parts brought into it.</summary>
-    [Fact]
-    public async Task An_entry_s_Accept_lands_its_head_s_delivery_once_and_its_member_parts_are_brought_into_it()
-    {
-        var (trees, _, head, beside, operation) = await ReadyAsync();
-        var store = Store();
-        var claim = Start(store, operation.Checked!, DeliveryMethods.Branch);
-        var other = operation.Members.Single(each => each.Session == "s-other");
-        var together = new EntryTogether(operation.Id, "s-head", new Dictionary<string, IWorkplaceGate?>(), new HashSet<string> { "s-beside", "s-other" })
-        {
-            Delivery = new TreeDelivery(store, claim),
-        };
-
-        var landed = await trees.LandEntryAsync(
-            [new("s-head", head.Path), new("s-beside", beside.Path), new("s-other", other.Tree)], Subject, new HashSet<string>(), together: together);
-
-        Assert.True(landed.Landed, landed.Message);
-        Assert.Equal([EntryPartOutcome.Landed, EntryPartOutcome.BroughtInto, EntryPartOutcome.BroughtInto], landed.Parts.Select(each => each.Outcome));
-        Assert.Equal(Named, landed.Branch);
-        Assert.Equal(DeliverySettlements.Delivered, store.Delivery(claim.Key)?.Settled);
-        Assert.Equal((DeliveryReaches.BroughtInto, claim.Key), Reach(store, "unit-other"));
-    }
-
     /// <summary>A delivery whose tip is not the one the sessions were checked together at lands nothing, and the operation stays ready.</summary>
     [Fact]
     public async Task A_head_s_delivery_at_another_tip_than_the_checked_one_lands_nothing()

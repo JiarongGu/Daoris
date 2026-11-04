@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Quest, QuestStep, Session } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import { buildChain } from './chain';
 
 // MAP1 (D67 §3, `docs/2026-09-23-map-design.md` §2): how the higher loop carried one piece of work —
 // the ask it came from, the quests before and after it, the steps still to come, and every session
 // that ran each one. Read from records the service already keeps; no model, no machine path.
 
-const quest = (id: string, extra: Partial<Quest> = {}): Quest => ({
+const quest = (id: string, extra: Partial<Quest> = {}): Quest => aQuest({
   id, from: 'game', to: 'engine', title: `quest ${id}`, body: '', status: 'Open',
   filed: '2026-09-23T00:00:00Z', updated: '2026-09-23T00:00:00Z', ...extra,
 });

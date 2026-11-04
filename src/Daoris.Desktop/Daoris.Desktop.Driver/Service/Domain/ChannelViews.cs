@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Daoris.Contracts;
+using Daoris.Contracts.Asks;
 
 namespace Daoris.Driver;
 
@@ -137,64 +139,61 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
     internal static ChannelView? Read(string json)
     {
         using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
-        if (root.ValueKind != JsonValueKind.Object || Json.Text(root, "ask") is not { Length: > 0 } ask) return null;
-
-        var items = new List<ChannelItemView>();
-        if (root.TryGetProperty("items", out var listed) && listed.ValueKind == JsonValueKind.Array)
-        {
-            items.AddRange(listed.EnumerateArray().Select(ReadItem).OfType<ChannelItemView>());
-        }
-
-        var unread = root.TryGetProperty("unread", out var count) && count.ValueKind == JsonValueKind.Number ? count.GetInt32() : 0;
-        return new ChannelView(ask, Json.Text(root, "entry") ?? "", items, unread, Moments.Read(root, "mark"))
-        {
-            Addressed = root.TryGetProperty("addressed", out var addressed) && addressed.ValueKind == JsonValueKind.Array
-                ? [.. addressed.EnumerateArray().Select(ReadItem).OfType<ChannelItemView>()]
-                : [],
-        };
+        return document.RootElement.ValueKind == JsonValueKind.Object
+               && document.RootElement.Deserialize(ContractJson.Options.GetTypeInfo(typeof(ChannelResponse))) is ChannelResponse channel
+            ? Of(channel)
+            : null;
     }
+
+    /// <summary>The channel as the doors answer it; null for an answer that names no ask.</summary>
+    internal static ChannelView? Of(ChannelResponse channel) =>
+        channel.Ask is not { Length: > 0 } ask
+            ? null
+            : new ChannelView(
+                ask, channel.Entry ?? "", [.. (channel.Items ?? []).Select(ItemOf).OfType<ChannelItemView>()], channel.Unread, channel.Mark)
+            {
+                Addressed = [.. (channel.Addressed ?? []).Select(ItemOf).OfType<ChannelItemView>()],
+            };
 
     /// <summary>One item as the service answers it; null for one without its kind or a moment that reads (passed over).</summary>
     internal static ChannelItemView? ReadItem(JsonElement item) =>
-        item.ValueKind != JsonValueKind.Object || Json.Text(item, "kind") is not { Length: > 0 } kind || Moments.Read(item, "at") is not { } at
-            ? null
-            : new ChannelItemView(kind, at)
-            {
-                Id = Json.Text(item, "id"),
-                Person = Flag(item, "person"),
-                Session = Json.Text(item, "session"),
-                Repository = Json.Text(item, "repository"),
-                Agent = Json.Text(item, "agent"),
-                Entry = Json.Text(item, "entry"),
-                To = Json.Text(item, "to"),
-                Re = Json.Text(item, "re"),
-                Question = Flag(item, "question"),
-                Open = Flag(item, "open"),
-                Text = Json.Text(item, "text"),
-                Origin = Json.Text(item, "origin"),
-                Code = Json.Text(item, "code"),
-                Quest = Json.Text(item, "quest"),
-                Name = Json.Text(item, "name"),
-                From = Json.Text(item, "from"),
-                Urgent = item.TryGetProperty("urgent", out var urgent)
-                    ? urgent.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
-                    : null,
-                Ack = Json.Text(item, "ack"),
-                AckSession = Json.Text(item, "ackSession"),
-                Receipts = item.TryGetProperty("receipts", out var receipts) && receipts.ValueKind == JsonValueKind.Array
-                    ? [.. receipts.EnumerateArray()
-                        .Select(receipt => (Repository: Json.Text(receipt, "repository"), State: Json.Text(receipt, "state")))
-                        .Where(receipt => receipt.Repository is { Length: > 0 } && receipt.State is { Length: > 0 })
-                        .Select(receipt => new ChannelReceiptView(receipt.Repository!, receipt.State!))]
-                    : null,
-                Part = Json.Text(item, "part"),
-                Channel = Json.Text(item, "channel"),
-                Receipt = Json.Text(item, "receipt"),
-            };
+        item.ValueKind == JsonValueKind.Object && item.Deserialize(ContractJson.Options.GetTypeInfo(typeof(ChannelItemResponse))) is ChannelItemResponse read
+            ? ItemOf(read)
+            : null;
 
-    private static bool Flag(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var flag) && flag.ValueKind == JsonValueKind.True;
+    /// <summary>One item as the doors answer it; null for one without its kind or a moment (passed over).</summary>
+    internal static ChannelItemView? ItemOf(ChannelItemResponse item) =>
+        item.Kind is not { Length: > 0 } kind || item.At == default
+            ? null
+            : new ChannelItemView(kind, item.At)
+            {
+                Id = item.Id,
+                Person = item.Person == true,
+                Session = item.Session,
+                Repository = item.Repository,
+                Agent = item.Agent,
+                Entry = item.Entry,
+                To = item.To,
+                Re = item.Re,
+                Question = item.Question == true,
+                Open = item.Open == true,
+                Text = item.Text,
+                Origin = item.Origin,
+                Code = item.Code,
+                Quest = item.Quest,
+                Name = item.Name,
+                From = item.From,
+                Urgent = item.Urgent,
+                Ack = item.Ack,
+                AckSession = item.AckSession,
+                Receipts = item.Receipts is null
+                    ? null
+                    : [.. item.Receipts.Where(receipt => receipt.Repository is { Length: > 0 } && receipt.State is { Length: > 0 })
+                        .Select(receipt => new ChannelReceiptView(receipt.Repository, receipt.State))],
+                Part = item.Part,
+                Channel = item.Channel,
+                Receipt = item.Receipt,
+            };
 }
 
 /// <summary>

@@ -70,7 +70,9 @@ tokens where Opus builders took 300-900K, so **Sonnet takes every chunk that fol
 (the next routes onto a pattern, a deletion sweep with its list, a rename, a comment cut, tests rewritten onto a
 named helper). Opus takes plans, reviews, a pattern's first exemplar and calls that need judgement. Each builder
 hands back at about 150 tool calls, and a fresh one continues: a start costs about 32K, and a carried context of
-450K costs that much on every turn. Measure each batch with `tools/subagent-usage.mjs` and `tools/subagent-time.mjs`.
+450K costs that much on every turn. Measure each batch with `tools/subagent-usage.mjs` and `tools/subagent-time.mjs`. The split is a balance,
+not a ban: weigh cost against quality, attributing each red the scope's verification finds (and each rework) to the
+chunk and model that made it, and move the line toward Opus where Sonnet's chunks come back with more of either.
 
 | Role in this skill | The reference's role |
 |---|---|

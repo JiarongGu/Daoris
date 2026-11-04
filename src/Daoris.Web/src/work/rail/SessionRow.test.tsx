@@ -3,6 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Quest, Session, SessionState } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { moment } from '../../locales/format';
 import { ContextMenus } from '../../menus/ContextMenu';
 import { menuActs, rightClick } from '../../test/contextMenu';
@@ -26,7 +27,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

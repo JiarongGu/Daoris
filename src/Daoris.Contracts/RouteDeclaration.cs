@@ -20,6 +20,18 @@ public sealed partial record RouteDeclaration(Type Request, Type Answer, string 
     /// <summary>Whether the record's other values travel in the body rather than the query.</summary>
     public bool TakesBody => Method is not ("GET" or "DELETE");
 
+    /// <summary>Whether the body may be left out (<see cref="OptionalBodyAttribute"/>).</summary>
+    public bool BodyOptional { get; private init; }
+
+    /// <summary>The properties of a route that takes a body which travel in its query (<see cref="FromQueryAttribute"/>).</summary>
+    public IReadOnlyList<string> QueryNames { get; private init; } = [];
+
+    /// <summary>Where the value named <paramref name="name"/> travels, its wire or its property name, ignoring case.</summary>
+    public RouteTravel Travels(string name) =>
+        PathNames.Contains(name, StringComparer.OrdinalIgnoreCase) ? RouteTravel.Path
+        : !TakesBody || QueryNames.Contains(name, StringComparer.OrdinalIgnoreCase) ? RouteTravel.Query
+        : RouteTravel.Body;
+
     /// <summary>The path with each <c>{name}</c> segment filled by <paramref name="value"/>, escaped.</summary>
     public string PathWith(Func<string, string> value) => Segment().Replace(Path, match => Uri.EscapeDataString(value(match.Groups[1].Value)));
 
@@ -37,7 +49,11 @@ public sealed partial record RouteDeclaration(Type Request, Type Answer, string 
             .GetMethod(nameof(Members), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(type, answer)
             .Invoke(null, null)!;
-        return new RouteDeclaration(type, answer, method, path, [.. Segment().Matches(path).Select(match => match.Groups[1].Value)]);
+        return new RouteDeclaration(type, answer, method, path, [.. Segment().Matches(path).Select(match => match.Groups[1].Value)])
+        {
+            BodyOptional = type.IsDefined(typeof(OptionalBodyAttribute), inherit: false),
+            QueryNames = [.. type.GetProperties().Where(property => property.IsDefined(typeof(FromQueryAttribute), inherit: false)).Select(property => property.Name)],
+        };
     });
 
     /// <summary>Every route <paramref name="assembly"/> declares, by its record's name.</summary>

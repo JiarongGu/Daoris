@@ -112,16 +112,12 @@ public sealed class LandNodeKindTests
     }
 
     [Fact]
-    public void A_graph_holds_one_land_and_no_handed_beside_it()
+    public void A_graph_holds_one_land()
     {
         var two = Chain(Claimed(), Land(), Node("again", NodeKinds.Land, """{"method":"merge"}"""), Line());
-        var beside = Chain(Claimed(), Land(), Node("old", NodeKinds.Handed), Line());
 
         Assert.Equal([GraphRefusal.LandOnce], Codes(two));
         Assert.Equal("again", NodeGraphs.Problems(two).Where(GraphProblemsTable.IsRule).Single().Node);
-        Assert.Equal([GraphRefusal.LandOnce], Codes(beside));
-        // A stored graph of two handed is as it was: the rule is the new kind's.
-        Assert.Empty(Codes(Chain(Claimed(), Node("a", NodeKinds.Handed), Node("b", NodeKinds.Handed), Line())));
     }
 
     [Theory]
@@ -291,11 +287,4 @@ public sealed class LandNodeKindTests
         Assert.Contains(GraphRefusal.Cleanup, Codes(graph));
     }
 
-    [Fact]
-    public void A_handed_graphs_integrate_rules_are_as_they_were()
-    {
-        var merge = Chain(Claimed(), Node("landing", NodeKinds.Handed, """{"form":"merge"}"""), Node("merge", NodeKinds.Integrate), Line());
-
-        Assert.Equal([GraphRefusal.IntegratePlugin], Codes(merge));
-    }
 }
