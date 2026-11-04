@@ -318,6 +318,8 @@ public sealed class Driver(
 
     void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => CountMove(line, role, condition, from, to);
 
+    System.Collections.Concurrent.ConcurrentDictionary<string, string> IRunWiring.LimitResumed => LimitResumed;
+
     bool IRunWiring.HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
         HandedConnector(adapter, workspace, repository, tool);
 
@@ -618,23 +620,6 @@ public sealed class Driver(
     internal Task<int> MeetingsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Meetings.MeetingsAsync(snapshot, taken, events, ct);
 
-    /// <summary>
-    /// A park whose own conversation cannot resume and that nothing carries on (<see cref="DriverContinuations.CannotGoOn"/>); a
-    /// supervisor's decision on it goes <c>stale</c> first, its word taken back, so the park is a wait on the owner again (SUPERVISOR1a-i,
-    /// the supervisor design §6.1).
-    /// </summary>
-    private async Task<StartRun> CannotGoOnAsync(QuestView quest, PriorSession park, ContinueReason why, CancellationToken ct)
-    {
-        if (Context.Supervisor.Moving(park.Session))
-        {
-            await Context.Supervisor.CannotGoOnAsync(
-                park.Session, async (session, word, token) => (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
-                DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
-        }
-
-        return GoOns.CannotGoOn(quest, park, why);
-    }
-
     /// <summary>The asks for a helper at a look (MIXAGENT2a-ii): <see cref="DriverHelpers.HelpersAsync"/>.</summary>
     internal Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Helpers.HelpersAsync(snapshot, taken, events, ct);
@@ -650,13 +635,6 @@ public sealed class Driver(
     /// <summary>One intake run in its room (D65 §1b): <see cref="DriverIntakes.RunIntakeAsync"/>.</summary>
     private Task<StartRun> RunIntakeAsync(AskView ask, List<TrustHold> untrusted, Action onOpened, CancellationToken ct) =>
         Intakes.RunIntakeAsync(ask, untrusted, onOpened, ct);
-
-    /// <summary>The record the person's words wait on, continued or ended saying why (ANSWER1a): <see cref="DriverContinuations.ContinueAsync"/>.</summary>
-    private Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
-        Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
-        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null,
-        DrivenAccess? permissions = null, bool treeStands = true) =>
-        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync, permissions, treeStands);
 
     /// <summary>
     /// How a pass is run: <see cref="PassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git and an agent,
@@ -1659,7 +1637,7 @@ public sealed class Driver(
         // The agent, a clean checkout, the account and the access setup, each of which may hold the start before anything is grown,
         // locked or opened.
         using var state = new RunState();
-        var run = new RunRound(start, registry, untrusted, movedOff, fresh, state);
+        var run = new RunRound(start, registry, untrusted, onOpened, movedOff, fresh, state);
         foreach (var stage in RunStages.In(RunPhase.Choose))
         {
             if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
@@ -1697,154 +1675,12 @@ public sealed class Driver(
             if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
         }
 
-        // An answer continues its own session (ANSWER1a, D131), and so do words to a session that had ended (MSG1b, D137
-        // §2.2): the record they wait on goes on itself where its harness conversation resumes. Otherwise a park ends, and
-        // the words are handed on below in a new session, saying why; an answer a service from before ANSWER1b ended the
-        // record with is tried, and said `ended`.
-        ContinueReason? fellBack = null;
-        var answerKept = false;
-
-        // 🔴 LIMITRESUME1b (the design §3.3 step 1, round 3's B8 item 4): Daoris's word is kept on the limited record only here, just
-        // before it goes on, after every hold between (access, tree, replay, trust), so a held start leaves no word on it. The person's
-        // words, where a GoOn carries any, are already on it, so theirs go first and Daoris's last. A word the door would not keep leaves
-        // the start the carry-on it was planned.
-        var planned = start;
-        string? limitWord = null;
-        if (limitResume && await GoOns.KeepLimitWordAsync(start.Resumes!, ct).ConfigureAwait(false) is { } keptWord)
-        {
-            limitWord = keptWord.Word;
-            start = start with { Resumes = keptWord.Record, GoesOn = true };
-            if (keptWord.Record.Limit) LimitResumed[quest.Id] = keptWord.Record.Session;
-        }
-        else if (limitResume && !start.GoesOn)
-        {
-            limitResume = false;
-            resume = null;
-        }
-
-        var written = start.Resumes;
-        // Whether the roster's switch moved the words off a cooling own account to a new part (LIMITSWITCH1, LIMITSWITCH2, LIMITSWITCH3).
-        var switched = false;
-        if (start.Resumes is { } park
-            && start.GoesOn
-            && !resuming)
-        {
-            // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
-            (var continued, fellBack, answerKept) = await ContinueAsync(
-                    start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere, inSync: inSync?.Told,
-                    permissions: permissions, treeStands: priorStands is null or { Stand: TreeStand.Stands or TreeStand.Remade })
-                .ConfigureAwait(false);
-            // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
-            // D51): a tree and branch for a start that is never made would be left at every look. On no token (QUEUEDTREE1): a
-            // continuation returns as the driver closes, and a removal on the closed token would leave it to the sweep.
-            if (continued is not null)
-            {
-                await fresh.LetGoAsync().ConfigureAwait(false);
-                return continued;
-            }
-
-            // 🔴 LIMITRESUME1b (the design §3.3, round 3's B8 items 1-3): its own conversation refused, before the wire or on it, Daoris's
-            // word comes off by its id and the line goes on in this same start as the carry-on that was planned, briefed, the person's
-            // words after the brief as theirs, said with the refusal's own code. Another client holding the conversation keeps the word,
-            // marked with the rest below, so the line is held for the person and never spins.
-            if (limitWord is not null && !fellBack!.Holds)
-            {
-                await GoOns.TakeLimitWordsOffAsync(park.Session, [limitWord], ct).ConfigureAwait(false);
-                LimitResumed.TryRemove(quest.Id, out _);
-                var refusedOwn = LimitResume.Refused(fellBack);
-                Context.Output?.Append(park.Session, refusedOwn.Note);
-                Context.Events.Keep(
-                    park.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = refusedOwn.Note, Parts = refusedOwn.Parts }, say: null);
-            }
-
-            // 🔴 SAIDBACK1f (D137 §2.4): the words as the record holds them now, not as the look read them, so a word taken back
-            // since never goes to the new session; none left, nothing is sent. A limit's intent carries the line on all the same.
-            park = await GoOns.HandedOnRecordAsync(park, ct).ConfigureAwait(false);
-            if (!park.Parked && !park.Running && !park.WordsWaiting && limitWord is null)
-            {
-                await fresh.LetGoAsync().ConfigureAwait(false);
-                return DriverContinuations.TakenBackFirst(quest, park.Session);
-            }
-
-            written = park;
-
-            // Nothing carries the words on by itself from a closed quest's session, nor from a never (D137 §2.2): they stay
-            // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f). 🔴 SESSCTX1c
-            // (D189's amendment): nor where another client holds its conversation (`elsewhere`), since a second writer in its tree could
-            // redo its work; every other refusal carries a driven record on below, handed the brief, `from` why `retry`.
-            // LIMITSWITCH3 (D137's note of 2026-10-26): where the roster's switch moved its words off a cooling own account, Daoris's own words
-            // that state a fact go on in the new part with the person's, said as Daoris's (a go-on in another home, not a message that starts
-            // a session: the planner went on with this record already). Every other fall-back carries the person's alone.
-            switched = resume?.Answer is LineAnswer.Elsewhere { Switched: true } && fellBack!.Code == ContinueWhy.Account;
-            bool Goes(SaidWordView word) => switched ? DaorisWords.NewPartCarries(word) : word.Persons;
-            if (fellBack!.Never || fellBack.Holds || quest.Status is not ("Open" or "Taken"))
-            {
-                await fresh.LetGoAsync().ConfigureAwait(false);
-                // 🔴 SESSCTX1c part B (D189 point 3; the steward's choice: a closed quest opens no driven record): a closed quest's session
-                // whose own conversation is proven lost goes on by itself as a conversation in its tree, through the shell's chat runner,
-                // handed the brief and the person's words. Anything else, and a host with no runner, waits for the person as before.
-                // LIMITSWITCH2 (D137's note of 2026-10-25): so does one whose own account cools while another of the line's is ready, the reason
-                // `account` the roster's switch made; the runner's ended move opens it there, never the brief's move, which asks the cooling one.
-                if (!fellBack.Never && !fellBack.Holds && (fellBack.Lost || switched) && Context.GoesOnLost is { } goesOn
-                    && await GoOns.GoesOnLostAsync(goesOn, quest, park, fellBack, ct).ConfigureAwait(false) is { } moved)
-                {
-                    return moved;
-                }
-
-                return await CannotGoOnAsync(quest, park, fellBack, ct).ConfigureAwait(false);
-            }
-
-            // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
-            // nothing is carried on, and they go to the person. The person's words beside them are carried on as ever.
-            // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
-            // So are Daoris's own words (COWORK1b): a message of Daoris's never starts a new session (the message-urgency design §4.1),
-            // bar the go-on a cooling account's switch makes (LIMITSWITCH3), which carries them.
-            if (park.Waiting.Any(word => !Goes(word)) && !park.Waiting.Any(Goes))
-            {
-                await fresh.LetGoAsync().ConfigureAwait(false);
-                return await CannotGoOnAsync(quest, park, fellBack, ct).ConfigureAwait(false);
-            }
-
-            // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in. A limited line with
-            // none of the person's words left goes on as the carry-on planned for it (LIMITRESUME1b).
-            start = start with
-            {
-                Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park,
-                GoesOn = limitWord is not null && !park.WordsWaiting ? planned.GoesOn : start.GoesOn,
-            };
-
-            // 🔴 OWNSPACE1a (D175 point 3): only the record that began in the tool's own home goes on there. Its words carried to a
-            // new record are a new start, which takes the walk (D130 §16.2) and holds where the walk holds, before the record opens:
-            // never a new session in the person's home.
-            if (resume is not null)
-            {
-                var resumed = selection;
-                try
-                {
-                    (selection, var passed) = await Context.Harnesses
-                        .CarriedOnAsync(resume, agent, config, start.Workspace, handedQuest?.Account, ct, CarriedModel(start.Resumes))
-                        .ConfigureAwait(false);
-                    passedAccount ??= passed;
-                }
-                catch (DriverException error)
-                {
-                    await fresh.LetGoAsync().ConfigureAwait(false);
-                    return Hold(error.Message);
-                }
-
-                if (!selection.Allowed)
-                {
-                    await fresh.LetGoAsync().ConfigureAwait(false);
-                    return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
-                }
-
-                if (!ReferenceEquals(resumed, selection) && TrustAsk.Untrusted(this, run, selection) is { } walkedUntrusted)
-                {
-                    await fresh.LetGoAsync().ConfigureAwait(false);
-                    return walkedUntrusted;
-                }
-            }
-        }
+        // The record the person's words wait on, continued, or its words handed on below in a new session saying why. It may move the
+        // start, the account it walked to and the passed account.
+        var goneOn = run.State.GoneOn;
+        start = goneOn.Start;
+        var (fellBack, answerKept, written, switched) = (goneOn.FellBack, goneOn.AnswerKept, goneOn.Written, goneOn.Switched);
+        (selection, passedAccount) = (run.State.Selection, run.State.PassedAccount);
 
         // A resume that was tried let go of the starting hold (LEFT2) when the park held the tree; the carry-on's open below
         // needs it again, until its own record holds the tree.

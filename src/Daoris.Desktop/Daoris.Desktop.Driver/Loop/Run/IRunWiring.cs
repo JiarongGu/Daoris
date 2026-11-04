@@ -61,6 +61,9 @@ internal interface IRunWiring
     /// <summary>A move of a line from one choice to another, counted against its role's bound.</summary>
     void CountMove(string line, string role, string condition, ActorEffective from, string? to);
 
+    /// <summary>The lines resumed in their own conversation on a limit's word, by quest, which the look says once it sees the line go on.</summary>
+    System.Collections.Concurrent.ConcurrentDictionary<string, string> LimitResumed { get; }
+
     /// <summary>Whether the rules a session would be handed let it call the connector's tool unasked, which a harness that takes no rules cannot.</summary>
     bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool);
 

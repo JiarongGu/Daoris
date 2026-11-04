@@ -6,11 +6,16 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="registry">The registry as the look's snapshot answered it: what the session may reach across.</param>
 /// <param name="untrusted">The trees this look found their harness does not trust; the lock guards its adds.</param>
+/// <param name="onOpened">Called once the session's record is open.</param>
 /// <param name="movedOff">The account the first run of this start was refused for its sign-in; a walk that gives it again holds.</param>
 /// <param name="fresh">The tree this start opens, let go on each way out that starts nothing.</param>
 internal sealed class RunRound(
-    Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, string? movedOff, FreshTree fresh, RunState state)
+    Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, string? movedOff, FreshTree fresh,
+    RunState state)
 {
+    /// <summary>Called once the session's record is open, and never for a start that held or was refused.</summary>
+    public Action OnOpened { get; } = onOpened;
+
     /// <summary>The trees this look found their harness does not trust, which a start held for it adds to.</summary>
     public List<TrustHold> Untrusted { get; } = untrusted;
 

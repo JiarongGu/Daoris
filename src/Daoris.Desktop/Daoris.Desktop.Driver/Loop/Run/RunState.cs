@@ -14,6 +14,7 @@ internal sealed class RunState : IDisposable
     private Slot<TreeLock> _starting;
     private Slot<TreeFound> _tree;
     private Slot<ISessionAdapter?> _preflight;
+    private Slot<GoOnFound> _goneOn;
     private Slot<string> _agent;
     private Slot<HandedQuest?> _handedQuest;
     private Slot<string?> _stepRole;
@@ -72,7 +73,7 @@ internal sealed class RunState : IDisposable
         set => _handedFrom.Set(value);
     }
 
-    /// <summary>The harness and the account it runs as.</summary>
+    /// <summary>The harness and the account it runs as; written again where the continue stage walks the role's order for the words it hands on.</summary>
     public HarnessSelection Selection
     {
         get => _selection.Get(nameof(Selection), "account");
@@ -184,6 +185,13 @@ internal sealed class RunState : IDisposable
     {
         get => _preflight.Get(nameof(Preflight), "trust");
         set => _preflight.Set(value);
+    }
+
+    /// <summary>What the run settled of the record the person's words wait on.</summary>
+    public GoOnFound GoneOn
+    {
+        get => _goneOn.Get(nameof(GoneOn), "continue");
+        set => _goneOn.Set(value);
     }
 
     /// <summary>The run's workflow binding as the start made it, before its take names a closure graph.</summary>
