@@ -136,7 +136,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 - [ ] **BUSYPRESS1 — a press the service is too busy to answer says so** (modules, driver): while the machine was out of memory the service missed its 30 seconds, every press came back `UNKNOWN_ERROR`, a landing among them, and the failed read left an unobserved task's exception. Proof: a stand-in service that stalls; the press refused in the busy sentence, and no unobserved task logged. → `docs/areas/desktop-app.md`
 - [ ] **MCPMEM1 — a session's browser server stays bounded** (driver, plugins): a chat's in-app browser server (Playwright MCP) held 1.9 GB after about 20 hours, the largest node process on the machine. Measure what grows (its snapshots, its pages), then bound or restart it across a long chat. Proof: a long chat's server under a stated ceiling. → `docs/areas/plugins.md`
 - [ ] **TREENAME1 — a tree's name given for a session names its session** (driver): `trees land s-92ed2c8c`, the tree's name, answers that the session names no working tree here; it should say the tree is session `7ca1353a`'s. → `docs/areas/git-and-remotes.md`
-- [ ] **CODECS1 — Daoris's browser plays H.264, AAC and HEVC video** (app; D234): waits on the kit's engine with these codecs (quest `e7160488ae00` to Shenora). Then move the `Shenora.Chromium` pin, add a process check that an H.264/AAC MP4 and an HEVC clip play in the browser, and rewrite the evidence's item 8 and the area's browser rules.
+- [ ] **CODECS1 — Daoris's browser plays H.264, AAC and HEVC video** (app; D234): built (`25c2c0493`) on the kit's 0.25.0 and its codecs engine package (CEF 154.0.32); left: `CodecPlaybackProcessTests` passing at SCOPEVERIFY1, and the install staged from it.
 
 ## Plugins
 
