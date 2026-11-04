@@ -56,7 +56,8 @@ runs, the range is given.
    runtime's NuGet package is 181 MB. **On disk it is over the 150–250 MB the owner accepted; as a
    download it is within it.** The build is Chromium 152 while this machine's Edge is 154, so the
    embedding runs about two versions behind Chrome.
-8. **Codecs: no proprietary ones.** H.264, AAC and HEVC: *no*. VP9, AV1 and Opus: *probably*, and
+8. *2026-11-05: superseded by [D234](decisions/D234.md); the engine now carries these codecs from the kit's codecs package (CODECS1).*
+   **Codecs: no proprietary ones.** H.264, AAC and HEVC: *no*. VP9, AV1 and Opus: *probably*, and
    Media Source takes them.
 9. **Licences.** CEF is BSD, and the runtime points at `about:credits` for the rest. The build's credits
    page (19 million characters) names FFmpeg 15 times and carries LGPL text 291 times, GPL 363 times and

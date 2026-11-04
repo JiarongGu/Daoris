@@ -38,6 +38,8 @@
     <!-- Referenced HERE, not only through Shenora.Windows: only a direct reference runs the build that
          fetches the pinned CEF and lays the app out beside its launcher. -->
     <PackageReference Include="Shenora.Chromium" />
+    <!-- The engine with H.264, AAC and HEVC (D234); the runtime identifier above picks this build. -->
+    <PackageReference Include="Shenora.Chromium.Codecs.win-x64" />
   </ItemGroup>
 
   <ItemGroup>
