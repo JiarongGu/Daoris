@@ -385,10 +385,6 @@
       "reads": "tells",
       "note": "tells a partner (`Piece is not null`); the record's view moved here from Trees/SessionGroups.cs (FOUNDATION1 mod-iv); no row of this design moves it"
     },
-    "Service/ServiceClient.cs": {
-      "reads": "other",
-      "note": "parses the marks off the service's answer into the driver's views; it tells no work"
-    },
     "Service/SessionRecords.cs": {
       "reads": "other",
       "note": "parses the marks off the service's answer into the record view (moved from Trees/SessionGroups.cs, FOUNDATION1 mod-iv); it tells no work"
@@ -409,10 +405,6 @@
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "WorkOrders/SessionsCommand.cs": {
-      "reads": "tells",
-      "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
-    },
     "WorkOrders/Work/WorkAbandoning.cs": {
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
@@ -429,10 +421,6 @@
     "Workplace/IntegrationStore.cs": {
       "reads": "other",
       "note": "an integration request's landing proof keeps the landing's own opinion in the landing record's shape (INTEGRATE1e part e2), not a record's mark"
-    },
-    "Workplace/AutoLander.cs": {
-      "reads": "other",
-      "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Review/ChatPresses.cs": {
       "reads": "other",
@@ -487,10 +475,6 @@
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Domain/WorkflowRunBinding.cs": {
-      "reads": "other",
-      "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
-    },
-    "Workflows/Domain/WorkflowRunGraph.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },

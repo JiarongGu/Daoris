@@ -58,7 +58,7 @@ public sealed partial class SettledReadersCensusTests
     /// <summary>The doors that stay today's: they ask for no settled answer and read what they always read.</summary>
     private static readonly Dictionary<string, string> Today = new()
     {
-        ["Driver.cs"] = "the supervisor's release says with `supervised` and asks no settled answer (O7-F12): its door answers its key only while its word waits, and it reads that word's id as it always did",
+        ["SupervisorLook.cs"] = "the supervisor's release says with `supervised` and asks no settled answer (O7-F12): its door answers its key only while its word waits, and it reads that word's id as it always did",
     };
 
     [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
@@ -68,7 +68,7 @@ public sealed partial class SettledReadersCensusTests
     private static partial Regex Other();
 
     /// <summary>The names the code gives a service client the say door is called on.</summary>
-    private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "world.Service"];
+    private static readonly HashSet<string> Receivers = ["service", "_service", "client", "context.Service", "_context.Service", "world.Service", "wiring.Service"];
 
     private static IEnumerable<(string File, string Source)> Sources()
     {
