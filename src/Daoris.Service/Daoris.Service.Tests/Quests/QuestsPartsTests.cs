@@ -18,10 +18,11 @@ public sealed class QuestsPartsTests
     {
         var operations = QuestOperations.Registered;
 
-        Assert.Equal(["conflict", "dismissed"], operations.Order.Select(part => part.Name));
+        Assert.Equal(["conflict", "dismissed", "reopened"], operations.Order.Select(part => part.Name));
         Assert.All(operations.Order, part => Assert.Equal(QuestOperationPhase.Log, (QuestOperationPhase)part.Phase));
         Assert.IsType<QuestConflictOperation>(operations.For(QuestOperationKind.Conflict));
         Assert.IsType<QuestDismissOperation>(operations.For(QuestOperationKind.Dismissed));
+        Assert.IsType<QuestReopenOperation>(operations.For(QuestOperationKind.Reopened));
 
         // A kind no module registers yet is written and read by the store's own fields.
         Assert.Null(operations.For(QuestOperationKind.Published));
@@ -63,6 +64,16 @@ public sealed class QuestsPartsTests
         AssertKept(
             """{"dismisses":{"machine":"m2","sequence":7},"forward":{"machine":"m1","sequence":9}}""",
             plain with { Forward = new QuestOperationRef("m1", 9) });
+    }
+
+    [Fact]
+    public void A_reopen_writes_the_persons_words_and_the_submission_it_names_as_before_and_reads_them_back()
+    {
+        var onTheQuest = new QuestOperation(
+            "q1", QuestOperationKind.Reopened, "m1", 5, At, Note: "not yet", Submission: new QuestOperationRef("m1", 2));
+
+        AssertKept("""{"note":"not yet","submission":{"machine":"m1","sequence":2}}""", onTheQuest);
+        AssertKept("""{"submission":{"machine":"m1","sequence":2}}""", onTheQuest with { Quest = "q2", Note = null });
     }
 
     /// <summary>The payload the store writes for <paramref name="operation"/>, and the operation a row of it reads back as.</summary>
