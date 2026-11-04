@@ -7,47 +7,6 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>How a tool is run (D121 §2.2): the system's, from <c>PATH</c>; managed; or a file the person names.</summary>
-public enum ToolWay
-{
-    System,
-    Managed,
-    File,
-}
-
-/// <summary>A program Daoris starts, or hands to a session, that is neither an agent (D57) nor Daoris's own (§2.1).</summary>
-/// <param name="Id">How the file and the doors name it.</param>
-/// <param name="Name">Its product's name, as a person knows it.</param>
-/// <param name="Answers">The names it answers for on a child's <c>PATH</c>; the first is the program itself.</param>
-/// <param name="Version">The arguments that ask its version.</param>
-/// <param name="Settings">The settings it may carry (§2.5): git's allow-list, and none for the rest.</param>
-public sealed record ToolDeclaration(
-    string Id, string Name, IReadOnlyList<string> Answers, IReadOnlyList<string> Version, IReadOnlyList<string> Settings);
-
-/// <summary>One tool's entry as read: its way, or why it is refused.</summary>
-/// <param name="Way">Null when the entry, or the file, could not say one.</param>
-/// <param name="Problem">Why the entry is refused: its tool is never run another way. Null when it reads.</param>
-public sealed record ToolEntry(ToolWay? Way, string? Version, string? File, string? Problem);
-
-/// <summary><c>tools.json</c> as it stands.</summary>
-/// <param name="Entries">Every declared tool, in the declared order.</param>
-/// <param name="Unknown">The ids the file names that this build does not declare: kept, never applied (rule 3).</param>
-/// <param name="Git">The settings Daoris's git carries (rule 4).</param>
-/// <param name="Locations">The resource locations, in order (rule 5).</param>
-/// <param name="Notes">What the file keeps without applying, or skips, and why.</param>
-/// <param name="Problem">Why the whole file does not read; every tool is then refused.</param>
-public sealed record ToolsRead(
-    string Path, bool Exists, IReadOnlyDictionary<string, ToolEntry> Entries, IReadOnlyList<string> Unknown,
-    IReadOnlyDictionary<string, string> Git, IReadOnlyList<string> Locations, IReadOnlyList<string> Notes, string? Problem);
-
-/// <summary>Which file a tool is, or why none.</summary>
-/// <param name="File">The file that starts; null for a refusal, and for a system tool <c>PATH</c> does not find.</param>
-/// <param name="Refused">
-/// True when the way set cannot run: it never falls back to <c>PATH</c>. False with a problem is a system tool
-/// <c>PATH</c> does not find, which is said, and whose callers keep today's behaviour (§2.3).
-/// </param>
-public sealed record ToolResolution(string Tool, ToolWay? Way, string? Version, string? File, bool Refused, string? Problem);
-
 /// <summary>
 /// The programs Daoris runs beside its agents, and which file each one is (TOOLS2, D121;
 /// <c>docs/2026-10-01-tools-design.md</c> §2.1–§2.3). The way lives in <c>$DAORIS_HOME/tools.json</c>, one
