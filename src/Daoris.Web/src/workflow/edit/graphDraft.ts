@@ -1,4 +1,6 @@
-import type { OptionField, WorkflowPaletteAnswer } from './answers';
+import type { WorkflowPaletteAnswer } from './answers';
+import type { DraftNode, DraftWire, GraphDraft, GraphJson, StepChoice, WireAsk } from './graphDraftTypes';
+import { REFUSED, TAIL_KINDS, tailOf } from './landMethods';
 
 // The step editor's draft (WORKFLOWEDIT1b, FLOWCHART2b): a schema-2 graph as the person composes it, the inverse of the run view's drawing
 // (`workflowFlow.ts`, which reads a graph's wires onto edges). Pure: each change returns a new draft, and `graphOf` writes the graph the
@@ -10,34 +12,7 @@ import type { OptionField, WorkflowPaletteAnswer } from './answers';
 // source comes after through `after`, `trigger`, `data` or `when`, and nothing that would close a cycle. Insert, move and remove-and-join
 // rewire only a plain chain, and never carry a data wire, a group or an exception's path over by guess (§8.2, §8.8).
 
-/** A step the palette offers, a built-in kind's or a plugin's declared step, in one shape. */
-export type StepChoice = {
-  kind: string; version: number; reach: string; plugin: string | null; outcomes: string[]; outputsOn: Record<string, string[]>;
-  inputs: Record<string, string>; outputs: Record<string, string>; evidence: string | null; rejectable: boolean; skippable: boolean; leaves: string[];
-  options: OptionField[]; roleTakes: string[]; mayEnd: boolean;
-  /** How the picker offers it, as the palette says: `alone` or `tail:<method>`. */
-  offered: string;
-};
-
-/** A step of the draft: its id and kind, and its node's JSON as the graph will hold it. */
-export type DraftNode = { id: string; kind: string; node: Record<string, unknown> };
-
-/** A way one step goes on to another: a wire, its ends (a `data` wire's ports apart), a decision's outcome and a way back's `on`. */
-export type DraftWire = {
-  id: string; kind: string; from: string | null; to: string; fromPort: string | null; toPort: string | null; outcome: string | null;
-  on: string | null; wire: Record<string, unknown>;
-};
-
-/** A draft: its steps and wires in the order composed, its end, and the graph's other fields and entries' order as read. */
-export type GraphDraft = { nodes: DraftNode[]; wires: DraftWire[]; end: string; rest: Record<string, unknown>; order: string[] };
-
-/** A wire as `addWire` takes it. */
-export type WireAsk = { kind: string; from: string; to: string; fromPort?: string; toPort?: string; outcome?: string; on?: string };
-
-/** The graph a draft writes: schema 2, what `WORKFLOW_SAVE` takes as `graph`. */
-export type GraphJson = {
-  schemaVersion: 2; entries: string[]; end: string; nodes: Record<string, unknown>[]; wires: Record<string, unknown>[]; [field: string]: unknown;
-};
+export type { DraftNode, DraftWire, GraphDraft, GraphJson, StepChoice, WireAsk } from './graphDraftTypes';
 
 /** The schema a graph is saved in (`NodeGraphs.SchemaVersion`). */
 const SCHEMA = 2;
@@ -619,23 +594,7 @@ export function askedInputs(draft: GraphDraft, id: string): { input: string; sou
 
 /* ---------------------------------------------------------------- a landing's method, and the tail it brings */
 
-/** The five ways a `land` lands (`LandNodes.Methods`). */
-export const LAND_METHODS = ['merge', 'branch', 'push', 'pull-request', 'integrate'] as const;
-
-/** The steps a method brings after the landing, in order (`NodeGraphs`' `land-tail`): a pull request is pushed, then completed on the host. */
-const TAILS: Readonly<Record<string, readonly string[]>> = { push: ['pushed'], 'pull-request': ['pushed', 'pull-request'], integrate: ['integrate'] };
-
-export const tailOf = (method: string | null): readonly string[] => (method === null ? [] : TAILS[method] ?? []);
-
-const TAIL_KINDS: readonly string[] = ['pushed', 'pull-request', 'integrate'];
-
-/** The options a method refuses (`LandNodes.Problem`): a merge makes no branch to name nor plugin to push it, an integrate neither a plugin nor a squash. */
-const REFUSED: Readonly<Record<string, readonly string[]>> = { merge: ['pattern', 'plugin'], integrate: ['plugin', 'squash'] };
-
-/** Whether a land option means something under the method it is held beside; `method` unset leaves each to the repository's rule. */
-export function landOptionApplies(method: string | null, name: string): boolean {
-  return method === null || !(REFUSED[method] ?? []).includes(name);
-}
+export { LAND_METHODS, landOptionApplies, tailOf } from './landMethods';
 
 /**
  * A landing's method set and its tail brought in one change (SETUPUX1r; the land node design §2): the steps the new method brings are put
@@ -739,38 +698,5 @@ export function pasteSteps(draft: GraphDraft, clip: Clip): { draft: GraphDraft; 
 
 /* ---------------------------------------------------------------- the workflow's id, and history */
 
-const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-
-/**
- * A new workflow's id from its name (D221 §2.3, as role ids are made): its words in lower case joined by dashes; a name with no ASCII letter
- * or digit takes the id it was copied from, numbered (`release` → `release-2`), else `workflow`; numbered on past an id saved already.
- */
-export function workflowIdFor(name: string, copiedFrom: string | null, saved: readonly string[]): string {
-  const named = slug(name);
-  const base = named || (copiedFrom ? slug(copiedFrom) : '') || 'workflow';
-  let n = named || !copiedFrom ? 1 : 2;
-  let id = n === 1 ? base : `${base}-${n}`;
-  while (saved.includes(id)) {
-    n += 1;
-    id = `${base}-${n}`;
-  }
-  return id;
-}
-
-/** The editor's history: what was, what is, and what an undo has set aside for a redo. */
-export type History<T> = { past: readonly T[]; present: T; future: readonly T[] };
-
-/** How many changes an undo can go back. */
-const HISTORY_MOST = 100;
-
-export const historyOf = <T>(present: T): History<T> => ({ past: [], present, future: [] });
-
-/** One change: a step of history, and nothing left to redo. */
-export const commit = <T>(history: History<T>, next: T): History<T> =>
-  ({ past: [...history.past, history.present].slice(-HISTORY_MOST), present: next, future: [] });
-
-export const undo = <T>(history: History<T>): History<T> => (history.past.length === 0 ? history
-  : { past: history.past.slice(0, -1), present: history.past[history.past.length - 1]!, future: [history.present, ...history.future] });
-
-export const redo = <T>(history: History<T>): History<T> => (history.future.length === 0 ? history
-  : { past: [...history.past, history.present], present: history.future[0]!, future: history.future.slice(1) });
+export { commit, historyOf, redo, undo, workflowIdFor } from './graphHistory';
+export type { History } from './graphHistory';
