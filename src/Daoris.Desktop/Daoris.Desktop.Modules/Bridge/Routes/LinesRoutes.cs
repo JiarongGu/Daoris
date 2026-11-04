@@ -100,7 +100,7 @@ public sealed class LinesRoutes(DriverContext context)
     //; this pull stays for a page that does not read the slice.
     [DriverRoute("LINES", PipeClass.Open)]
     [OneFlight("LINES")]
-    private async Task<object?> LinesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> LinesAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
@@ -318,27 +318,25 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundBranch("DISCARD_SESSION_BRANCH", "repository", "branch", "named")]
     [Says("DISCARD_SESSION_BRANCH", "repository:repository")]
     [Publishes("DISCARD_SESSION_BRANCH", Moves)]
-    private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DiscardBranchAsync(DiscardBranchPress press, CancellationToken cancellationToken)
     {
-        // `trees remove <named>` names a session or a branch by one name, as the verb takes it, with `repository` only where it
-        // must say which; the page's `repository` and `branch` read as they always did.
-        var named = Optional(request, "named");
-        var force = Flag(request, "force");
+        var named = press.Named;
+        var force = press.Force;
         if (named is not null)
         {
             var kept = _loop.Service ?? throw NotReady();
             var asked = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardNamedAsync(
-                kept, named, Optional(request, "repository"), force, cancellationToken);
+                kept, named, press.Repository, force, cancellationToken);
             _loop.Nudge();
             return new
             {
-                Repository = Optional(request, "repository"), Branch = (string?)null, Done = asked.Removed, asked.Message,
+                Repository = press.Repository, Branch = (string?)null, Done = asked.Removed, asked.Message,
                 Said = TreesWords.Remove(asked).ToWire(),
             };
         }
 
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
+        var repository = ActField.Needs(press.Repository, "repository");
+        var branch = ActField.Needs(press.Branch, "branch");
         var service = _loop.Service ?? throw NotReady();
 
         var removal = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardAsync(service, repository, branch, force, cancellationToken);
@@ -357,12 +355,10 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundBranch("WITHDRAW_LANDING_BRANCH", "repository", "branch")]
     [Says("WITHDRAW_LANDING_BRANCH", "repository:repository", "why:words")]
     [Publishes("WITHDRAW_LANDING_BRANCH", Moves)]
-    private async Task<object?> WithdrawLandingBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WithdrawLandingBranchAsync(WithdrawLandingBranchPress press, CancellationToken cancellationToken)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
-        var why = Optional(request, "why") ?? "";
-        var plan = Flag(request, "plan");
+        var (repository, branch, plan) = (press.Repository, press.Branch, press.Plan);
+        var why = press.Why ?? "";
         var service = _loop.Service ?? throw NotReady();
 
         var withdrawal = await new LandedBranchWithdrawal(new SessionTrees(_loop.Home), _loop.Home)
@@ -653,7 +649,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <remarks>Nothing machine-local comes back: whether it opened. With no record kept there is no folder, which is refused and said.</remarks>
     [DriverRoute("WORK_RECORDS_FOLDER", PipeClass.Window)]
     [Owner("WORK_RECORDS_FOLDER", None = OwnerNone.ActsOnNothing)]
-    private async Task<object?> WorkRecordsFolderAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkRecordsFolderAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var folder = NodeRecordFiles.FolderOf(_loop.Home);
         if (!Directory.Exists(folder)) throw new DriverException("no unit keeps a node record here now, so there is no folder to open.");
@@ -698,12 +694,9 @@ public sealed class LinesRoutes(DriverContext context)
     [Owner("WORK_HELD", Unit = "unit")]
     [GroundRead("WORK_HELD", nameof(PipeReads.HeldAttempt))]
     [Publishes("WORK_HELD", StateScopes.Sessions)]
-    private Task<object?> WorkHeldAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> WorkHeldAsync(WorkHeldPress press, CancellationToken cancellationToken)
     {
-        var unit = PayloadHelper.GetRequiredValue<string>(request.Payload, "unit");
-        var node = PayloadHelper.GetRequiredValue<string>(request.Payload, "node");
-        var attempt = PayloadHelper.GetRequiredValue<int>(request.Payload, "attempt");
-        var word = PayloadHelper.GetRequiredValue<string>(request.Payload, "resolution");
+        var (unit, node, attempt, word) = (press.Unit, press.Node, press.Attempt, press.Resolution);
         _ = _loop.Service ?? throw NotReady();
 
         var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word);
