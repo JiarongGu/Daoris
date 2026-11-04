@@ -17,7 +17,6 @@ import { WiringOlder } from './wiring/WiringHead';
 import { WiringSpace } from './wiring/WiringSpace';
 import { WiringSpaceFree } from './wiring/WiringSpaceFree';
 import { WiringStanding } from './wiring/WiringStanding';
-import { StewardDoor } from './wiring/StewardDoor';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -169,13 +168,6 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
           busy={setStanding.isPending}
           refused={offRefused}
           unwritten={offUnwritten}
-          roles={standing.stewardOffered && (
-            <StewardDoor
-              appointment={standing.appointments.find((each) => each.role === 'steward') ?? null}
-              acts={standing.stewardActs.length}
-              onOpen={() => onGo({ view: 'agents', roleSection: 'appointed' })}
-            />
-          )}
           onTurnOn={(presses, answered) => {
             setOffRefused(null);
             setOffUnwritten(false);

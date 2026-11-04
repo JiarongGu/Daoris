@@ -20,15 +20,11 @@ vi.mock('@shenora/react', () => ({
 
 import i18n from '../locales/i18n';
 import { clockOf } from '../locales/format';
-import type { AppointmentNow, DeskRequestNow, StandingConfirmationNow, StewardActNow } from '../person/standing';
+import type { DeskRequestNow, RoleHoldNow, StandingConfirmationNow, StewardActNow } from '../person/standing';
 import { NotificationsStanding } from './NotificationsStanding';
 import { StewardLine } from './StewardLine';
 
-const OFFERED = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry'];
-const STEWARD: AppointmentNow = {
-  role: 'steward', repository: '', holder: 'terminal', since: '2026-10-25T09:00:00Z', dormant: false, answers: 0, scope: 'machine',
-  holderId: 'h1', acts: OFFERED, setup: false, workspace: '', window: 5,
-};
+const STEWARD: RoleHoldNow = { role: 'steward', kind: 'steward', holder: 'h1', since: '2026-10-25T09:00:00Z', answers: 0 };
 const act = (id: string, kind: string, at: string, more: Partial<StewardActNow> = {}): StewardActNow => ({
   id, act: kind, repository: null, quest: null, session: null, at, standing: true, waiting: false, ...more,
 });
@@ -45,8 +41,7 @@ const ACTS: StewardActNow[] = [
 ];
 const STANDING: StandingConfirmationNow = {
   offered: false, on: false, presses: [], built: [], since: null, unread: null, unwritten: false, used: 0, held: [],
-  appointmentsOffered: true, supervisorOffered: false, stewardOffered: true, appointments: [STEWARD], holders: [],
-  stewardActsOffered: OFFERED, stewardActs: ACTS, stewardDesk: [],
+  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [],
 };
 /** The steward's desk this run, newest first (STEWARDROLE1c): one waiting, one declined with a reason, one answered by an act. */
 const DESK: DeskRequestNow[] = [
@@ -74,27 +69,25 @@ describe("Notifications' steward line", () => {
     await i18n.changeLanguage('en');
   });
 
-  it('draws nothing where the build does not offer the steward, or where none is appointed and it made no act', () => {
-    const { rerender } = render(<StewardLine standing={{ ...STANDING, stewardOffered: false }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+  it('draws nothing where no terminal holds the steward and it made no act', () => {
+    const { rerender } = render(<StewardLine standing={{ ...STANDING, holds: [], stewardActs: [] }} onReverse={vi.fn()} />);
     expect(document.querySelector('[data-steward-line]')).toBeNull();
-    rerender(<StewardLine standing={{ ...STANDING, appointments: [], stewardActs: [] }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    rerender(<StewardLine standing={{ ...STANDING, holds: [],stewardActs: [] }} onReverse={vi.fn()} />);
     expect(document.querySelector('[data-steward-line]')).toBeNull();
-    rerender(<StewardLine standing={null} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    rerender(<StewardLine standing={null} onReverse={vi.fn()} />);
     expect(document.querySelector('[data-steward-line]')).toBeNull();
   });
 
-  it('says the appointment and its acts since Daoris started, and Turn off turns it off at once', async () => {
-    const onTurnOff = vi.fn();
-    render(<StewardLine standing={STANDING} onTurnOff={onTurnOff} onReverse={vi.fn()} />);
-    expect(line().getByText('Steward appointed · 8 acts since Daoris started')).toBeInTheDocument();
+  it("says the steward's terminal and its acts since Daoris started, and offers no Turn off, which is its role's", () => {
+    render(<StewardLine standing={STANDING} onReverse={vi.fn()} />);
+    expect(line().getByText("Steward's terminal · 8 acts since Daoris started")).toBeInTheDocument();
     // Folded until opened: the acts are one press away.
     expect(screen.queryByRole('list', { name: "The steward's acts" })).toBeNull();
-    await userEvent.click(line().getByRole('button', { name: 'Turn off' }));
-    expect(onTurnOff).toHaveBeenCalledTimes(1);
+    expect(line().queryByRole('button', { name: 'Turn off' })).toBeNull();
   });
 
   it('opens to the acts newest first, each in words with its target, time and mark', async () => {
-    render(<StewardLine standing={STANDING} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    render(<StewardLine standing={STANDING} onReverse={vi.fn()} />);
     await userEvent.click(line().getByRole('button', { name: "Show the steward's acts" }));
 
     const rows = acts();
@@ -110,7 +103,7 @@ describe("Notifications' steward line", () => {
 
   it('offers the owner’s reverse press only while an act stands, and none for a finish or a Try again', async () => {
     const onReverse = vi.fn();
-    render(<StewardLine standing={STANDING} onTurnOff={vi.fn()} onReverse={onReverse} />);
+    render(<StewardLine standing={STANDING} onReverse={onReverse} />);
     await userEvent.click(line().getByRole('button', { name: "Show the steward's acts" }));
 
     const rows = acts();
@@ -123,7 +116,7 @@ describe("Notifications' steward line", () => {
 
   it('says a stop whose quest waits on a Try again as Stopped by the steward, with its press', async () => {
     const onReverse = vi.fn();
-    render(<StewardLine standing={STANDING} onTurnOff={vi.fn()} onReverse={onReverse} />);
+    render(<StewardLine standing={STANDING} onReverse={onReverse} />);
     const waiting = within(line().getByRole('list', { name: 'Stopped by the steward' }));
     expect(waiting.getByText('session s1 of #q1')).toBeInTheDocument();
     await userEvent.click(waiting.getByRole('button', { name: 'Try again' }));
@@ -132,7 +125,7 @@ describe("Notifications' steward line", () => {
 
   it('says it all in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    render(<StewardLine standing={STANDING} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    render(<StewardLine standing={STANDING} onReverse={vi.fn()} />);
     const region = within(screen.getByRole('region', { name: '管家' }));
     expect(region.getByText('已任命管家 · 自 Daoris 启动以来 8 项操作')).toBeInTheDocument();
     expect(region.getByRole('list', { name: '管家已停止' })).toBeInTheDocument();
@@ -147,7 +140,7 @@ describe("Notifications' steward line", () => {
   // STEWARDROLE1c (D209 §6.2): the desk under the line, folded until opened, each request its caller's words as written, marked as
   // granting nothing, and how the steward closed it; it offers the owner no press.
   it("says the steward's desk under the line, each request as its caller wrote it and how the steward closed it", async () => {
-    render(<StewardLine standing={{ ...STANDING, stewardDesk: DESK }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    render(<StewardLine standing={{ ...STANDING, stewardDesk: DESK }} onReverse={vi.fn()} />);
     expect(line().getByText("The steward's desk · 1 waiting")).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: "The steward's desk" })).toBeNull();
     await userEvent.click(line().getByRole('button', { name: "Show the steward's desk" }));
@@ -176,14 +169,14 @@ describe("Notifications' steward line", () => {
       id: 'r0', act: 'drive', target: 'engine', why: 'engine is next', filed: '2026-10-24T09:00:00Z', state: 'interrupted',
       closed: '2026-10-25T08:00:00Z', answeredBy: null, reason: null,
     };
-    const { unmount } = render(<StewardLine standing={{ ...STANDING, stewardDesk: [...DESK, interrupted] }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    const { unmount } = render(<StewardLine standing={{ ...STANDING, stewardDesk: [...DESK, interrupted] }} onReverse={vi.fn()} />);
     expect(line().getByText("The steward's desk · 1 waiting")).toBeInTheDocument();
     await userEvent.click(line().getByRole('button', { name: "Show the steward's desk" }));
     expect(within(desk()[3]!).getByText('Interrupted when Daoris stopped')).toBeInTheDocument();
     unmount();
 
     await i18n.changeLanguage('zh');
-    render(<StewardLine standing={{ ...STANDING, stewardDesk: [interrupted] }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    render(<StewardLine standing={{ ...STANDING, stewardDesk: [interrupted] }} onReverse={vi.fn()} />);
     const region = within(screen.getByRole('region', { name: '管家' }));
     expect(region.getByText('管家的待办 · 0 项等管家处理')).toBeInTheDocument();
     await userEvent.click(region.getByRole('button', { name: '显示管家的待办' }));
@@ -191,14 +184,14 @@ describe("Notifications' steward line", () => {
   });
 
   it('draws the line for the desk alone, where none is appointed and the steward made no act', () => {
-    render(<StewardLine standing={{ ...STANDING, appointments: [], stewardActs: [], stewardDesk: DESK }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    render(<StewardLine standing={{ ...STANDING, holds: [],stewardActs: [], stewardDesk: DESK }} onReverse={vi.fn()} />);
     expect(line().getByText("The steward's desk · 1 waiting")).toBeInTheDocument();
     expect(line().queryByRole('button', { name: 'Turn off' })).toBeNull();
   });
 
   it('says the desk in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    render(<StewardLine standing={{ ...STANDING, stewardDesk: DESK }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    render(<StewardLine standing={{ ...STANDING, stewardDesk: DESK }} onReverse={vi.fn()} />);
     const region = within(screen.getByRole('region', { name: '管家' }));
     expect(region.getByText('管家的待办 · 1 项等管家处理')).toBeInTheDocument();
     await userEvent.click(region.getByRole('button', { name: '显示管家的待办' }));
@@ -212,10 +205,10 @@ describe("Notifications' steward line", () => {
     expect(screen.getByRole('region', { name: '管家' }).textContent).not.toMatch(/这台机器|渠道|总管|任务|请求|拒绝|\{\{|undefined/);
   });
 
-  it("as Notifications holds it, sends each reverse press as the owner's ordinary route, and Turn off as the appointment's", async () => {
+  it("as Notifications holds it, sends each reverse press as the owner's ordinary route", async () => {
     // A change answers the driver's whole state, as the shell's does, its standing confirmation in it.
     const state = { drivable: [], holds: [], trees: [], running: [], standingConfirmation: STANDING };
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SET_APPOINTMENT' ? { done: true } : state));
+    invoke.mockImplementation(async () => state);
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -227,7 +220,6 @@ describe("Notifications' steward line", () => {
     for (const [row, press] of [[7, 'Stop driving'], [6, 'Drive'], [5, 'Trees off'], [3, 'Hold'], [2, 'Try again']] as const) {
       await userEvent.click(within(rows[row]!).getByRole('button', { name: press }));
     }
-    await userEvent.click(screen.getByRole('button', { name: 'Turn off' }));
     const sent = () => invoke.mock.calls.filter(([, type]) => type !== 'STATE').map(([, type, request]) => [type, request?.payload]);
     await vi.waitFor(() => expect(sent()).toEqual([
       ['SET_DRIVABLE', { repository: 'engine', drivable: false }],
@@ -235,7 +227,6 @@ describe("Notifications' steward line", () => {
       ['SET_TREES', { repository: 'engine', ownTree: false }],
       ['SET_HOLD', { repository: 'atlas', held: true }],
       ['RETRY_QUEST', { quest: 'q1' }],
-      ['SET_APPOINTMENT', { role: 'steward', scope: 'machine', holder: 'terminal', on: false }],
     ]));
   });
 
