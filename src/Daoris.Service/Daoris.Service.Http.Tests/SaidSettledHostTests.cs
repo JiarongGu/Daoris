@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Daoris.Knowledge;
+using Daoris.Knowledge.Http.Routes;
 
 namespace Daoris.Service.Http.Tests;
 
@@ -169,7 +170,7 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
     /// <summary>
     /// 🔴 Row d-ii, the say door's word table cell for cell: every refusal the ledger knows has its own word on the wire, the table below, so
     /// none falls to the switch's default, which would send a new refusal as <c>running</c>. A refusal added to the ledger fails this until
-    /// its word is written here and in <c>Program.SayRefusal</c>.
+    /// its word is written here and in <c>SessionAnswers.SayRefusal</c>.
     /// </summary>
     [Fact]
     public void Every_say_refusal_has_its_own_word_on_the_wire_cell_for_cell()
@@ -209,7 +210,7 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         };
 
         Assert.Equal(Enum.GetValues<SessionSayRefusal>().Order(), table.Keys.Order());
-        foreach (var (refusal, word) in table) Assert.Equal((refusal, word), (refusal, Program.SayRefusal(refusal)));
+        foreach (var (refusal, word) in table) Assert.Equal((refusal, word), (refusal, SessionAnswers.SayRefusal(refusal)));
         Assert.Equal(table.Count, table.Values.Distinct(StringComparer.Ordinal).Count());
     }
 

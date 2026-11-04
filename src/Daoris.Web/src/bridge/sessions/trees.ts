@@ -368,7 +368,7 @@ export const useLanding = (id: string | null, branch?: string | null) => {
     // keeps its key, and the previous answer stands while the next is read, so the ask's gates do not blink away as one types.
     queryKey: named ? [...keys.landing(id ?? ''), named] : keys.landing(id ?? ''),
     placeholderData: named ? keepPreviousData : undefined,
-    queryFn: () => call<{
+    queryFn: () => call('LANDING', { id: id ?? '', ...(named ? { branch: named } : {}) }) as Promise<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
       /**
        * The branch the press lands on already stands (ACCEPTALL1g): an entry's or a chain's, which the press moves on instead of
@@ -404,7 +404,7 @@ export const useLanding = (id: string | null, branch?: string | null) => {
        * kept, and from an older host.
        */
       carried?: { carries: number; awaiting: boolean } | null;
-    }>('LANDING', { id, ...(named ? { branch: named } : {}) }),
+    }>,
     enabled: isAvailable && id !== null,
   });
 };
@@ -440,7 +440,7 @@ export const useOpinionGate = (id: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.opinion(id ?? ''),
-    queryFn: () => call<OpinionPressed & { opinion?: OpinionGate | null }>('OPINION_GATE', { id }),
+    queryFn: () => call('OPINION_GATE', { id: id ?? '' }) as Promise<OpinionPressed & { opinion?: OpinionGate | null }>,
     enabled: isAvailable && id !== null,
   });
 };
@@ -480,25 +480,25 @@ function useOpinionChange<TVariables>(fn: (variables: TVariables) => Promise<Opi
 export const useAskOpinion = () => useOpinionChange(
   ({ id, reviewer, sameAgent, words, occasion }: {
     id: string; reviewer?: string | null; sameAgent?: boolean; words?: string | null; occasion?: 'asked' | 'failure';
-  }) => call<OpinionPressed>('ASK_OPINION', {
+  }) => call('ASK_OPINION', {
     id, ...(reviewer ? { reviewer } : {}), ...(sameAgent ? { sameAgent: true } : {}), ...(words ? { words } : {}),
     ...(occasion ? { occasion } : {}),
-  }));
+  }) as Promise<OpinionPressed>);
 
 /**
  * *Go on anyway…* (§8.5): what is unsettled stays so, the person's answer kept with their words at the commit that would land,
  * and the gate's next item follows. Nothing lands here.
  */
 export const useOpinionAnyway = () => useOpinionChange(
-  ({ id, words }: { id: string; words?: string | null }) => call<OpinionPressed>('OPINION_ANYWAY', { id, ...(words ? { words } : {}) }));
+  ({ id, words }: { id: string; words?: string | null }) => call('OPINION_ANYWAY', { id, ...(words ? { words } : {}) }) as Promise<OpinionPressed>);
 
 /** *I looked myself…* (§8.5): the person's own reading kept in place of another agent's, with their words. */
 export const useOpinionMyself = () => useOpinionChange(
-  ({ id, words }: { id: string; words?: string | null }) => call<OpinionPressed>('OPINION_MYSELF', { id, ...(words ? { words } : {}) }));
+  ({ id, words }: { id: string; words?: string | null }) => call('OPINION_MYSELF', { id, ...(words ? { words } : {}) }) as Promise<OpinionPressed>);
 
 /** *Stop* (§8.5): the reviewer reading the opinion stopped, as the person's stop; that pass then says it gave none. */
 export const useStopOpinion = () => useOpinionChange(
-  ({ opinion }: { opinion: string }) => call<OpinionPressed>('STOP_OPINION', { opinion }));
+  ({ opinion }: { opinion: string }) => call('STOP_OPINION', { opinion }) as Promise<OpinionPressed>);
 
 /** What the rule's plugin answered once the branch was made (D100): whether it pushed, the pull request, its words. */
 export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string; message: string; failed?: boolean };
@@ -525,7 +525,7 @@ export const useLandSessionTree = () =>
       const named = branch?.trim();
       // LANDSYNC1: what it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
       // FABRIC-CLOSE1h9: why its push was held back, where it landed with no plugin told; a shell before it answers none.
-      return call<TreeAct & {
+      return call('LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound }) as Promise<TreeAct & {
         branch?: string; plugin?: PluginLanding; withheld?: string | null;
         leftOut?: LeftOutCommit[] | null;
         /** CHATFLOW1d: what refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */
@@ -537,8 +537,7 @@ export const useLandSessionTree = () =>
          * older host. A press whose words did not reach it is the refusal as before.
          */
         carried?: { why: 'uncommitted' | 'conflict'; told: boolean } | null;
-      }>(
-        'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
+      }>;
     },
   });
 
@@ -551,10 +550,10 @@ export const useHandOff = (id: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.handOff(id ?? ''),
-    queryFn: () => call<{
+    queryFn: () => call('HANDOFF_PLAN', { id }) as Promise<{
       session: string; branch?: string | null; repository?: string; plugin?: string | null;
       problem?: string | null; pullRequest?: string | null; commits?: number;
-    }>('HANDOFF_PLAN', { id }),
+    }>,
     enabled: isAvailable && id !== null,
   });
 };
@@ -568,7 +567,7 @@ export const useHandOffPress = () =>
   useMutation({
     mutationKey: ['HANDOFF'],
     mutationFn: (id: string) =>
-      call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }, { timeoutMs: pluginBound }),
+      call('HANDOFF', { id }, { timeoutMs: pluginBound }) as Promise<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>,
   });
 
 /**

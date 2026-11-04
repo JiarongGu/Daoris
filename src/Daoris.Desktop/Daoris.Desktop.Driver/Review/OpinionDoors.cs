@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Contracts.Review;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -21,7 +22,7 @@ public sealed class OpinionDoors
     public async Task<OpinionAsked> AskAsync(OpinionAskBody body, CancellationToken ct = default)
     {
         const string Door = "/api/opinions";
-        var (ok, status, payload, root) = await _service.PostJsonAsync(Door, body.Json(), ct).ConfigureAwait(false);
+        var (ok, status, payload, root) = await _service.SendJsonAsync(body.Route(), ct).ConfigureAwait(false);
         if (root is not { } answer) return new(null, null, $"the service at {_service.BaseUrl} has no `{Door}` door ({status}) — is it older than this driver?");
         if (!ok) return new(null, null, Text(answer, "error") ?? payload);
 
@@ -45,11 +46,10 @@ public sealed class OpinionDoors
     /// <exception cref="DriverException">The host refused for another reason.</exception>
     public async Task<OpinionView?> ReadAsync(string id, CancellationToken ct = default)
     {
-        var path = $"/api/opinions/{Uri.EscapeDataString(id)}";
-        var answer = await _service.SendAsync(ServiceVerb.Get, path, null, ct).ConfigureAwait(false);
-        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
-        if (!answer.Ok) throw new DriverException($"{_service.BaseUrl}{path} answered {answer.Status}: {DriverHttp.ErrorOf(answer.Payload)}");
-        return OpinionViews.Read(answer.Payload);
+        var sent = await _service.SendAsync(new ReadOpinion(id), ct).ConfigureAwait(false);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!sent.Reply.Ok) throw new DriverException(sent.Refusal);
+        return OpinionViews.Read(sent.Reply.Payload);
     }
 
     /// <summary>
@@ -66,9 +66,9 @@ public sealed class OpinionDoors
     /// </param>
     public async Task<OpinionHand> HandWordAsync(string id, CancellationToken ct = default, string? to = null)
     {
-        var door = $"/api/opinions/{Uri.EscapeDataString(id)}/hand";
-        var body = to is null ? """{"settled":true}""" : JsonSerializer.Serialize(new { to });
-        var (ok, status, payload, root) = await _service.PostJsonAsync(door, body, ct).ConfigureAwait(false);
+        var route = new HandOpinion(id, to, to is null ? true : null);
+        var door = RouteRequest.Of(route).Path;
+        var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         var answer = SolicitedHand.Read(ok, status, root, payload, door, _service.BaseUrl);
         if (!answer.Handed || root is not { ValueKind: JsonValueKind.Object } read) return new(answer, null, null);
         var opinion = read.TryGetProperty("opinion", out var kept) ? OpinionViews.Read(kept) : null;

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Contracts.Participants;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -29,27 +30,15 @@ public sealed class HelperDoors
     public async Task<HelperOpened> OpenAsync(
         string asker, string adapter, string tree, string? account, string? harnessVersion, string? baseCommit, CancellationToken ct = default)
     {
-        const string Door = "/api/helpers";
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("asker", asker);
-            writer.WriteString("adapter", adapter);
-            writer.WriteString("tree", tree);
-            if (account is not null) writer.WriteString("account", account);
-            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
-            if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
-            writer.WriteEndObject();
-        }
-
-        var (ok, status, payload, root) = await _service.PostJsonAsync(Door, System.Text.Encoding.UTF8.GetString(stream.ToArray()), ct).ConfigureAwait(false);
-        if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{Door}` door ({status}) — is it older than this driver?");
+        var route = new OpenHelper(asker, adapter, tree, account, harnessVersion, baseCommit);
+        var door = RouteRequest.Of(route).Path;
+        var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
+        if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?");
         if (!ok) return new(null, Text(answer, "error") ?? payload);
 
         var session = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var record) ? record : default;
         var id = Text(session, "id");
-        if (id is null) return new(null, $"the service at {_service.BaseUrl} answered `{Door}` with no record.");
+        if (id is null) return new(null, $"the service at {_service.BaseUrl} answered `{door}` with no record.");
 
         // The door the record opened by, for the session log (LOG1b): a helper's record is a chat that serves another session.
         _service.RecordOpened(new SessionOpened(id, HelperPass.OpenedKind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? "")
@@ -78,18 +67,9 @@ public sealed class HelperDoors
     public async Task<SolicitedAnswer> HandAsync(
         string helper, string text, CancellationToken ct = default, bool running = false, string? level = null)
     {
-        var door = $"/api/helpers/{Uri.EscapeDataString(helper)}/hand";
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("text", text);
-            if (running) writer.WriteBoolean("running", true);
-            if (level is { Length: > 0 }) writer.WriteString("level", level);
-            // FOUNDATION1 row p (the design §3.4 rule 5): the hand reads a settled answer, a key its line settled. A host before the row ignores it.
-            writer.WriteBoolean("settled", true);
-            writer.WriteEndObject();
-        }
+        // The hand reads a settled answer, a key its line settled (FOUNDATION1 row p).
+        var route = new HandHelper(helper, text, running ? true : null, level is { Length: > 0 } ? level : null, true);
+        var door = RouteRequest.Of(route).Path;
 
         bool ok;
         int status;
@@ -97,7 +77,7 @@ public sealed class HelperDoors
         JsonElement? root;
         try
         {
-            (ok, status, payload, root) = await _service.PostJsonAsync(door, System.Text.Encoding.UTF8.GetString(stream.ToArray()), ct).ConfigureAwait(false);
+            (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         }
         catch (Exception lost) when (lost is HttpRequestException || (lost is OperationCanceledException && !ct.IsCancellationRequested))
         {

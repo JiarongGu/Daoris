@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Daoris.Contracts.Review;
 
 namespace Daoris.Driver;
 
@@ -30,44 +30,10 @@ public sealed record OpinionAskBody(
     /// <summary>The harness version the reviewer's account walk observed (D49 §4).</summary>
     public string? HarnessVersion { get; init; }
 
-    /// <summary>The body as the door reads it.</summary>
-    internal string Json()
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("occasion", Occasion);
-            writer.WriteString("pass", Pass);
-            if (Rechecks is not null) writer.WriteString("rechecks", Rechecks);
-            writer.WriteString("working", Working);
-            writer.WriteStartObject("candidate");
-            writer.WriteString("repository", Candidate.Repository);
-            writer.WriteString("base", Candidate.Base);
-            writer.WriteString("tip", Candidate.Tip);
-            writer.WriteStartArray("commits");
-            foreach (var commit in Candidate.Commits) writer.WriteStringValue(commit);
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-            writer.WriteStartObject("reviewer");
-            writer.WriteString("adapter", Adapter);
-            writer.WriteString("label", Label);
-            if (Product is not null) writer.WriteString("product", Product);
-            if (Maker is not null) writer.WriteString("maker", Maker);
-            if (Account is not null) writer.WriteString("account", Account);
-            writer.WriteEndObject();
-            writer.WriteStartArray("families");
-            foreach (var family in Families) writer.WriteStringValue(family);
-            writer.WriteEndArray();
-            writer.WriteString("posture", Posture);
-            writer.WriteNumber("minutes", Minutes);
-            writer.WriteString("tree", Tree);
-            if (HarnessVersion is not null) writer.WriteString("harnessVersion", HarnessVersion);
-            writer.WriteEndObject();
-        }
-
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
-    }
+    /// <summary>The ask as the door declares it.</summary>
+    internal AskOpinion Route() => new(
+        Occasion, Pass, Working, new OpinionCandidateWire(Candidate.Repository, Candidate.Base, Candidate.Tip, [.. Candidate.Commits]),
+        new OpinionReviewerWire(Adapter, Label, Product, Maker, Account), Posture, Minutes, Tree, Rechecks, [.. Families], HarnessVersion);
 }
 
 /// <summary>What the host answered a pass's ask: the opinion and its reviewer's record, or why not, in its sentence.</summary>

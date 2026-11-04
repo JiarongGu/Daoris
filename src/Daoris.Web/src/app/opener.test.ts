@@ -102,14 +102,14 @@ describe('the opener', () => {
     expect(opening('projects', 'engine', { code: 'engine' })).toEqual({ view: 'projects', chosen: { view: 'projects', item: 'engine' } });
   });
 
-  /** UX6f (D150 §4.2): a door into a repository's setup opens its page at Setup; a tab is Repositories' alone. */
+  /** UX6f (D150 §4.2): a door opens a repository's page at a tab; a tab is Repositories' alone. */
   it('opens a repository at the tab a door names, and names no tab for another view', () => {
-    expect(opening('projects', 'engine', { tab: 'setup' })).toEqual({
-      view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'setup',
+    expect(opening('projects', 'engine', { tab: 'branches' })).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'branches',
     });
-    expect(opening('projects', null, { tab: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
-    expect(opening('quests', 'abc123', { tab: 'setup' })).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
-    expect(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' })).toEqual(opening('projects', 'engine', { tab: 'setup' }));
+    expect(opening('projects', null, { tab: 'branches' })).toEqual({ view: 'projects', tab: 'branches' });
+    expect(opening('quests', 'abc123', { tab: 'branches' })).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
+    expect(doorOpening({ view: 'projects', item: 'engine', tab: 'branches' })).toEqual(opening('projects', 'engine', { tab: 'branches' }));
   });
 
   /**
@@ -149,8 +149,8 @@ describe('the opener', () => {
     });
     expect(opening('projects', null, { workspaceTab: 'setup' }, null)).toEqual({ view: 'projects', workspaceTab: 'setup' });
     // A repository a door names is never traded for the workspace in view.
-    expect(opening('projects', 'engine', { tab: 'setup' }, 'forge')).toEqual({
-      view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'setup',
+    expect(opening('projects', 'engine', { tab: 'branches' }, 'forge')).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'branches',
     });
     expect(opening('quests', null, { workspaceTab: 'setup' }, 'forge')).toEqual({ view: 'quests' });
     expect(doorOpening({ view: 'projects', workspaceTab: 'setup', workspaceSection: 'defaults' }, 'forge')).toEqual(
@@ -247,20 +247,15 @@ describe("a press's plan door", () => {
   });
 });
 
-/** AGENTSPLACE1f and 1h: every door into a repository's Setup tab or Workflow tab ends in `apply`, so one redirect there is the door census. */
-describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup mode is lit', () => {
+/** AGENTSPLACE1f and 1h: every door naming a repository's place ends in `apply`, so one resolution there is the door census. */
+describe('a door naming a repository\'s place, in the Setup mode', () => {
   const where = () => 'studio';
 
-  it("opens the repository's place in the Setup mode, whichever door named the tab", () => {
+  it("opens the repository's place in the Setup mode, whichever door named it", () => {
     const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine' };
-    // What needs you's declaration wait, a Roles section's door and a workflow step's all say `open('projects', repository, { tab: 'setup' })`.
-    expect(placeOpening(opening('projects', 'engine', { tab: 'setup' }), where)).toEqual(place);
+    expect(placeOpening(opening('agents', null, { placeOf: 'engine' }), where)).toEqual(place);
     // Get started's and the help room's steps name the repository by `doorOpening`.
-    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' }), where)).toEqual(place);
-  });
-
-  it('opens the mode, whose list chooses one, for a door naming the tab and no repository', () => {
-    expect(placeOpening(doorOpening({ view: 'projects', tab: 'setup' }), where)).toEqual({ view: 'agents', agentsMode: 'setup' });
+    expect(placeOpening(doorOpening({ view: 'agents', placeOf: 'engine' }), where)).toEqual(place);
   });
 
   // SETUPUX1v (the setup-UX design §4, row v): the census of the doors that opened a section of a workspace's Setup tab. Each ends in `apply`, so
@@ -282,7 +277,7 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
   // FLOWCHART2g: a conversation's draft card opens the place's Workflow with its editor on the draft the conversation was told.
   it("opens the place's Workflow with the editor asked on a draft, for a repository and for a workspace, lit only", () => {
     const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 };
-    const repository = doorOpening({ view: 'projects', item: 'engine', tab: 'workflow', placeEdit: edit });
+    const repository = doorOpening({ view: 'agents', placeOf: 'engine', placeEdit: edit });
     expect(placeOpening(repository, where)).toEqual({
       view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow', edit },
     });
@@ -304,17 +299,15 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
       .toMatchObject({ view: 'projects', workspaceTab: 'details', workspaceSection: 'remote' });
   });
 
-  // AGENTSPLACE1h: What needs you's, the Roles sections' and a workflow step's doors to a repository's workflow all name the tab.
-  it("opens the repository's place, whose Workflow section holds it, for a door naming the Workflow tab", () => {
+  // AGENTSPLACE1h: a door to a repository's workflow names the place's Workflow section.
+  it("opens the repository's place at its Workflow section", () => {
     const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow' } };
-    expect(placeOpening(opening('projects', 'engine', { tab: 'workflow' }), where)).toEqual(place);
-    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'workflow' }), where)).toEqual(place);
-    expect(placeOpening(doorOpening({ view: 'projects', tab: 'workflow' }), where)).toEqual({ view: 'agents', agentsMode: 'setup' });
+    expect(placeOpening(opening('agents', null, { placeOf: 'engine', placeSection: 'workflow' }), where)).toEqual(place);
   });
 
   // SETUPUX1h: a door names the section of the place's page and the row of it, and the page opens there.
   it('carries the section and row a door names to the place\'s page', () => {
-    const door = opening('projects', 'engine', { tab: 'setup', placeSection: 'roles', placeRow: 'review' });
+    const door = opening('agents', null, { placeOf: 'engine', placeSection: 'roles', placeRow: 'review' });
     expect(placeOpening(door, where)).toEqual({
       view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'roles', row: 'review' },
     });

@@ -91,12 +91,3 @@ export async function chooseWorkspace(name: string) {
   return repositoryMain();
 }
 
-/** The chosen repository's Setup tab (UX6f), and a section of it opened where it is folded. */
-export async function openSetup(section?: string) {
-  await userEvent.click(await within(repositoryMain()).findByRole('tab', { name: 'Setup' }));
-  if (section) {
-    const head = await within(repositoryMain()).findByRole('button', { name: section });
-    if (head.getAttribute('aria-expanded') !== 'true') await userEvent.click(head);
-  }
-  return repositoryMain();
-}

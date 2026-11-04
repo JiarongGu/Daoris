@@ -111,7 +111,7 @@ export function draftDoor(
   };
   return go?.part === 'workspace-workflow'
     ? { view: 'projects', item: workspaceItem(scope), workspaceTab: 'workflow', placeEdit }
-    : { view: 'projects', item: scope, tab: 'workflow', placeEdit };
+    : { view: 'agents', placeOf: scope, placeEdit };
 }
 
 const same = (one: HelpPlace, other: HelpPlace) =>
@@ -201,7 +201,9 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     // The page opens the workspace in view at the tab or section, as a door naming one does (`doorOpening`).
     const workspace = WORKSPACE_PARTS[part];
     if (workspace) return { view, ...workspace };
-    if (part === 'setup' || part === 'branches' || part === 'history') return { view, tab: part };
+    // A repository's own values are its place's, which names no repository here: the Setup mode's list is where one is chosen.
+    if (part === 'setup') return { view: 'agents', agentsMode: 'setup' };
+    if (part === 'branches' || part === 'history') return { view, tab: part };
     // ENTRY1d2b: Add or Import opens with the go's workspace filled; the folder stays the person's pick (D48 §3/§7).
     const filled = asked.workspace?.trim();
     return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };

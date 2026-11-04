@@ -7,8 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-WIRE1g (the fabric events design §E2, §E4, §E7): the decoded nodes evaluated. A <c>stop</c> sink is reached once on the receipt
 /// of the path into it, and never on a success, a skip, an unknown, a retryable failure or another run's failure; an <c>opinion</c> is
-/// reached, pending or passed over on its gate's judgement or on the opinion a recorded landing kept, and invents nothing; and the decoded
-/// order that holds a look behind a disputed opinion, which a schema-1 run does not, is recorded as it stands. Evaluated on
+/// reached, pending or passed over on its gate's judgement or on the opinion a recorded landing kept, and invents nothing. Evaluated on
 /// <see cref="WireEvaluationTests"/>' unit, run and graph helper.
 /// </summary>
 public sealed class WireEvaluationDecodedTests
@@ -16,10 +15,6 @@ public sealed class WireEvaluationDecodedTests
     private const string Repository = "engine";
 
     private static NodeDeclaration Sink(string id) => Node(id, NodeKinds.Stop) with { Synthetic = true };
-
-    /// <summary>A D157 step with its kind's defaults, as a stored version holds it, the fields named overriding them.</summary>
-    private static NamedStep Step(string id, string kind, params (string Name, object? Value)[] fields) =>
-        new(id, kind, [.. WorkflowKindTable.Of(kind)!.Fields.Select(field => new WorkflowSetting(field.Name, fields.FirstOrDefault(each => each.Name == field.Name) is { Name: not null } named ? named.Value : field.Default))]);
 
     /// <summary>The branch unit the opinion's gate reads for: its repository, its tip, and the landings recorded for it.</summary>
     private static WorkUnit Branch(params LandedBranch[] landings) =>
@@ -70,45 +65,6 @@ public sealed class WireEvaluationDecodedTests
     }
 
     // ---- the sink
-
-    /// <summary>
-    /// The row's proof: a decoded check's <c>failed: stop</c> takes its sink, reached once on that failure's receipt, by its path. Evaluated
-    /// again and replayed across a restart it reaches nothing more, and what follows the check, the graph's end, is never reached by it.
-    /// </summary>
-    [Fact]
-    public void A_sink_is_reached_once_on_its_failures_receipt_and_never_reaches_the_end()
-    {
-        List<NamedStep> steps =
-        [
-            Step("work", WorkflowKinds.Work),
-            Step("land", WorkflowKinds.Landing, ("form", LandingForm.Merge), ("accept", "you")),
-            Step("lint", WorkflowKinds.Check, ("plugin", "acme.ci"), ("failed", "stop")),
-            Step("release", WorkflowKinds.Stage, ("plugin", "acme.deploy"), ("stage", "release"), ("start", "automatic")),
-        ];
-        var decoded = WorkflowGraphs.Graph(steps);
-        Assert.Equal("release", decoded.End);
-        var g = new Graph([.. decoded.Nodes], [.. decoded.Wires]);
-        g.Through("work");
-        g.Through("land");
-        g.Start(g.Evaluate(), "lint");
-        g.Fail("lint");
-        g.Start(g.Evaluate(), "lint:failed");
-
-        var reaches = new List<WireMove>();
-        for (var again = 0; again < 3; again++) reaches.AddRange(g.Evaluate().Moves.Where(move => move.Move.To == NodeStates.Reached));
-
-        var reach = Assert.Single(reaches);
-        var sink = g.Statuses["lint:failed"];
-        var receipt = Assert.Single(sink.Current!.PrerequisiteReceipts);
-        Assert.Equal(("lint:failed", WireWhy.Path, receipt, NodeSource.Path), (reach.Node, reach.Why, reach.Detail, sink.By));
-        Assert.StartsWith("fld-", receipt, StringComparison.Ordinal);
-        Assert.Equal(NodeStates.Blocked, g.State("release"));
-
-        var restarted = WireEvaluation.Evaluate([.. decoded.Nodes], [.. decoded.Wires], new Dictionary<string, NodeStatus>(g.Statuses), g.Run);
-        Assert.True(restarted.Settled);
-        Assert.Empty(restarted.Starts);
-        Assert.Equal(sink, restarted.Statuses["lint:failed"]);
-    }
 
     /// <summary>
     /// The trap of a sink reached on the wrong receipt: a success, a skip, an unknown, a failure Daoris still retries and another run's
@@ -402,29 +358,6 @@ public sealed class WireEvaluationDecodedTests
         var elsewhere = Opinioned(Gate(OpinionGateStates.Disputed), Branch(Landed(new LandingOpinion(OpinionGateStates.Settled), tip: "tip-0")));
         elsewhere.Evaluate();
         Assert.Equal(NodeStates.Active, elsewhere.State("opinion"));
-    }
-
-    /// <summary>
-    /// The mismatch D173's FABRIC-WIRE1g note recorded, settled (FABRIC-CUTOVER1b; D190 point 5, the cutover design §5.1): a schema-1 run
-    /// lets the look go on beside a disputed opinion, whose Reviewed answers it (<c>WorkflowRunTests</c>, <i>the look goes on beside a
-    /// dispute, whose Reviewed answers it</i>). The decoder (version 3) wires the look after the step before the opinion, never from it, so a
-    /// decoded look is offered beside the dispute too, and the landing still waits on the opinion.
-    /// </summary>
-    [Fact]
-    public void A_disputed_opinion_holds_no_decoded_look_as_a_schema_1_run_holds_none()
-    {
-        var decoded = WorkflowGraphs.Graph(
-        [
-            Step("work", WorkflowKinds.Work), Step("opinion", WorkflowKinds.Opinion), Step("look", WorkflowKinds.Look),
-            Step("land", WorkflowKinds.Landing, ("form", LandingForm.Merge), ("accept", "you")),
-        ]);
-        var g = new Graph([.. decoded.Nodes], [.. decoded.Wires]) { Run = Judged(Gate(OpinionGateStates.Disputed) with { Disputes = new OpinionDisputes([1], []) }) };
-        g.Through("work");
-        g.Start(g.Evaluate(), "opinion");
-        g.Evaluate();
-        g.Evaluate();
-
-        Assert.Equal((NodeStates.Active, NodeStates.Ready, NodeStates.Blocked), (g.State("opinion"), g.State("look"), g.State("land")));
     }
 
     /// <summary>

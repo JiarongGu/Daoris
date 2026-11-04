@@ -155,12 +155,6 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
                 Addressed = [.. (channel.Addressed ?? []).Select(ItemOf).OfType<ChannelItemView>()],
             };
 
-    /// <summary>One item as the service answers it; null for one without its kind or a moment that reads (passed over).</summary>
-    internal static ChannelItemView? ReadItem(JsonElement item) =>
-        item.ValueKind == JsonValueKind.Object && item.Deserialize(ContractJson.Options.GetTypeInfo(typeof(ChannelItemResponse))) is ChannelItemResponse read
-            ? ItemOf(read)
-            : null;
-
     /// <summary>One item as the doors answer it; null for one without its kind or a moment (passed over).</summary>
     internal static ChannelItemView? ItemOf(ChannelItemResponse item) =>
         item.Kind is not { Length: > 0 } kind || item.At == default

@@ -9,7 +9,7 @@
 import type {
   AskActionResponse, AskResponse, DeclarationMatchResponse, GoAheadRequestResponse, GoAheadResponse, HitResponse, ProvenanceResponse,
   QuestAnswerResponse, QuestAttachmentResponse, QuestConflictResponse, QuestRequirementResponse,
-  QuestResponse, QuestSetUpWire,
+  OpinionResponse, QuestResponse, QuestSetUpWire, SaidWordResponse, SessionResponse,
 } from './generated/service';
 export type {
   StatusResponse as Status, ProvenanceResponse as Provenance, RepositoryResponse as Repository, HitResponse as Hit,
@@ -227,115 +227,22 @@ export type ActorChosen = { rule: string; by: string; condition?: string | null;
 export type ActorRan = { models: string[]; more: number; entries: { at: string; acknowledged?: string | null; effort?: string | null }[]; entriesMore: number };
 export type ActorOverride = { model?: string; effort?: string };
 /**
- * A session's RECORD (D46) — the process lives on the driving machine, never here.
- *
- * `kind` is how it was entered (D49 §3): the driver planned a `driven` one from a quest, a person
- * opened a `chat`. Everything else about them is the same, which is the point — and it is why
- * `quest` is optional: a conversation may serve none.
+ * A session's RECORD (D46) — the process lives on the driving machine, never here — as the service declares it
+ * (`generated/service.ts`). The page shapes it once more where it is pushed: `kind` and `workspace` may be left out, as a host
+ * older than the field leaves them, and `note` is text, never null. Machine-local parts are absent over a keyed remote and on a
+ * teammate's record.
  */
-export type Session = {
-  /** D205: machine-local provenance; absent on old records, mirrors and remote responses. */
-  actor?: string | null;
-  choice?: string | null;
-  asked?: ActorAsked | null;
-  override?: ActorOverride | null;
-  ran?: ActorRan | null;
-  chosen?: ActorChosen | null;
-  id: string; quest?: string | null; repository: string; adapter: string; state: SessionState;
-  kind?: 'driven' | 'chat';
-  note?: string; evidence?: string; created: string; updated: string; workspace?: string;
-  /** The harness version observed at spawn (D49 §4) — which tool produced this, answerable later. */
-  harnessVersion?: string | null;
-  /**
-   * Which named credential profile it ran as. Machine-local and answered only to the machine that
-   * ran it, exactly like the transcript — so a browser over a keyed remote sees null here, and that
-   * is the guarantee working rather than a field the service forgot to fill.
-   */
-  profile?: string | null;
-  /**
-   * The working tree it holds (D51) — the unit of exclusion, and a filesystem path outright, so it
-   * is guarded exactly as the profile and the transcript are. Null is the repository's registered
-   * root: a session that asked for no tree of its own, or a record from a machine that rightly sent
-   * no path. Surfaces show its last segment, which is the branch the tree was cut for.
-   */
-  tree?: string | null;
-  /**
-   * The commit its tree stood at when the spawn began (SURF6): what its review is measured from. Guarded as the tree
-   * is, so a browser over a keyed remote and a teammate's record have none; the review's frame names it while git
-   * reads the range (REVIEW4).
-   */
-  baseCommit?: string | null;
-  /** The ask an intake session answers (D65 §1b) — absent for every other session. */
-  ask?: string | null;
-  /**
-   * The second opinion this session reads another session's work for, as its reviewer (XAGENT1c, D155 point 11): a chat on no
-   * quest, one turn and no words. This machine's own, like the opinion: a teammate's record and a browser have none.
-   */
-  opinion?: string | null;
-  /**
-   * The session a helper answers one question for (MIXAGENT2a-i, D163): a chat on no quest that reads and changes nothing. This
-   * machine's own, as the opinion is: a teammate's record and a browser have none.
-   */
-  serves?: string | null;
-  /**
-   * The piece a partner's record writes, the ask's id (COAGENT1b, D199 point 1): kept only beside `serves`, which names its lead.
-   * This machine's own, as `serves` is: a teammate's record and a browser have none.
-   */
-  piece?: string | null;
-  /**
-   * The session this one continues (MIXAGENT1a-iii, D163's note): a conversation handed over, or a quest's carry-on of a session
-   * handed over or cut off by a limit. Why (`press`, `near`, `limit`, `agent` or `curve`) and who asked (`person`, `daoris` or
-   * `agent`) come with it, the three kept together or not at all. This machine's own, as the opinion is: null on any other
-   * session, on a record from before the link, on a teammate's record and in a browser.
-   */
-  from?: string | null;
-  fromWhy?: string | null;
-  fromBy?: string | null;
-  /**
-   * The words waiting on the record (MSG1a, D137 §2.4), each with the marks that say whose it is. A park holding a word of the
-   * person's is answered (ANSWER1b, D131) and goes on at the driver's next look rather than waits (ANSWER1c): `personsSaid` reads
-   * it, the one read of a park's answer (ONEWAY1m). Answered to this machine only: absent over a keyed remote and on a teammate's.
-   */
+export type Session = Omit<SessionResponse, 'kind' | 'workspace' | 'note' | 'evidence' | 'noteParts' | 'said'> & {
   said?: SaidWord[] | null;
-  /**
-   * An account's limit made its failure (TOOL4c): a `failed` record the page says is *limited*, quietly (LIMITRESUME1a, D206
-   * point 1). It names no account, so every caller is told; false or absent on any other record and from a host before it.
-   */
-  limit?: boolean;
-  /**
-   * The access setup a driven session started under (AUTONOMY1a, D184 point 1): each pause by name with its value, as the driver
-   * resolved it at the start. This machine's own, as the opinion is: null on any other kind, on a record from before the field, on
-   * a teammate's record and in a browser.
-   */
-  access?: Record<string, string> | null;
-  /**
-   * The note's lines, one part each, beside the note's English (LANG1a, D142 point 2): the page words a coded part in the
-   * reader's language and shows a words part as written (LANG1b, `work/note.ts`). Absent or null for a record from before
-   * parts, and from a host older than the field, whose note is shown as kept.
-   */
+  kind?: SessionResponse['kind'];
+  workspace?: string;
+  note?: string;
+  evidence?: string;
   noteParts?: NotePart[] | null;
-  /**
-   * The work the record was opened for (FOUNDATION1c, D212; the foundation design §2.2): `build`, `chat`, `ask-daoris`, `intake`,
-   * `help`, `partner` or `review`, read from its marks by the host and judged in .NET, pushed beside `kind`. This machine's own, as the
-   * opinion is: absent on a teammate's record, which has none here, in a browser, and from a host before the field, which `identity.ts`
-   * then draws by the marks themselves.
-   */
-  work?: string | null;
-  /**
-   * The quest a chat took through its own connector (CHATFLOW1a), its `quest` staying null; pushed for the at-work view, which words a
-   * chat's wait by it (COWORKVIEW1b-i). Absent for every other record.
-   */
-  tookQuest?: string | null;
 };
 
-/**
- * One word waiting on a record, as the service answers it to this machine (MSG1a): its id, words, when and its files' names, and the
- * marks whose it is is read from (`from`, `by`, `helper`, `key`; COMMS1a's one rule, `wordSenderOf`), each absent on the person's.
- */
-export type SaidWord = {
-  id: string; text: string; at: string; files: string[]; reopens?: boolean;
-  from?: string | null; by?: string | null; helper?: string | null; key?: string | null; level?: string | null; question?: string | null;
-};
+/** One word waiting on a record, as the service answers it to this machine: the marks say whose it is (`wordSenderOf`). */
+export type SaidWord = Omit<SaidWordResponse, 'reopens'> & { reopens?: boolean };
 
 /**
  * Whose words a words part is (LANG1a, D142 point 1): the agent's, the person's, a program's passed through, or `before`,
@@ -463,7 +370,7 @@ async function send<N extends RouteName>(name: N, request: Routes[N]['request'],
  * One second opinion as `GET /api/opinions` lists it (XAGENT1g4c), the fields the join reads: `working` is the session whose
  * work was read, `session` the reviewer's own record. The wire carries more (findings, tier, state); the page asks no more here.
  */
-export type OpinionRow = { id: string; working: string; session: string };
+export type OpinionRow = Pick<OpinionResponse, 'id' | 'working' | 'session'>;
 
 /** Whether a read failed because the service holds nothing by that name: an answer, where any other failure is not. */
 export const notFound = (error: unknown): boolean => (error as { status?: unknown } | null)?.status === 404;
@@ -660,11 +567,11 @@ export const api = {
   // Where a circle stands on this machine (SYNC6a) — the host's store, never the remote itself.
   syncStanding: (workspace: string, signal?: AbortSignal) =>
     get<SyncStanding>(`/api/sync${qs({ workspace })}`, signal),
-  sessions: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
-    get<Session[]>(`/api/sessions${qs({ includeClosed, repository, workspace })}`, signal),
+  sessions: async (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    (await send('ListSessions', { includeClosed, repository, workspace }, signal)).answer as Session[],
   // The second opinions this machine holds (XAGENT1g4c): which session read which, to say whose work a reviewer's row reads.
   // This machine's own (D47 §4): another host answers 404.
-  opinions: (signal?: AbortSignal) => get<OpinionRow[]>('/api/opinions', signal),
+  opinions: async (signal?: AbortSignal) => (await send('ListOpinions', {}, signal)).answer as OpinionRow[],
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine
   // is touched, and adding a repository still needs the shell — a page may not name a machine path.
   registerRepository: (body: {

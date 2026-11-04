@@ -150,5 +150,5 @@ export const useRunNodeWord = () => useMutation({
  * `WORKFLOW_SAVE` and `WORKFLOW_USE` (AGENTSPLACE1c), this domain's writes as `WorkflowRoutes.cs` answers them: a version saved, or
  * judged unsaved with `plan`, and a version chosen for a place. The step editor's bridge (`workflowEdit.ts`) presses them through these.
  */
-export const askWorkflowSave = (ask: WorkflowSaveAsk) => call<WorkflowSaveAnswer>('WORKFLOW_SAVE', ask);
+export const askWorkflowSave = (ask: WorkflowSaveAsk) => call('WORKFLOW_SAVE', ask) as Promise<WorkflowSaveAnswer>;
 export const askWorkflowUse = (ask: WorkflowUseAsk) => call('WORKFLOW_USE', ask) as Promise<WorkflowUseAnswer>;

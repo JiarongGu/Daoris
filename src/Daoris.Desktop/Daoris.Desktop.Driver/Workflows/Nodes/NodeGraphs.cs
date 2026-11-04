@@ -210,7 +210,7 @@ public static class NodeGraphs
     /// </summary>
     /// <param name="graph">The graph judged.</param>
     /// <param name="saved">True for a graph a person authored and saves (a named graph version, a cycle): the rules only an authored graph is held to, the
-    /// observed nodes of one plugin step (FABRIC-GRAPH1g). False for <see cref="WorkflowGraphs"/>' decoding of a stored schema 1 version.</param>
+    /// observed nodes of one plugin step (FABRIC-GRAPH1g). False for a graph read back from a file that kept it.</param>
     /// <param name="onSave">True where the graph is being saved now, rather than read from a file that kept it: INTEGRATE1n's F47 (a node that
     /// observes the landing, with a way to it that passes no <c>handed</c>) is refused then alone, since a stored version that read before is
     /// never made unreadable by a rule added after it (<c>compatible-builds.md</c>). Current's own graphs are judged on save, as they are drawn.</param>
@@ -834,7 +834,7 @@ public static class NodeGraphs
     }
 
     /// <summary>
-    /// A whole graph from its JSON (a <c>workCycles</c> entry, a named graph): the graph and what its save refuses, or no graph and the one
+    /// A whole graph from its JSON (a named graph, a bound quest's closure): the graph and what its save refuses, or no graph and the one
     /// <see cref="GraphRefusal.Unreadable"/> problem naming where it is not a graph's shape. Never read in part.
     /// </summary>
     /// <param name="json">The graph's JSON.</param>

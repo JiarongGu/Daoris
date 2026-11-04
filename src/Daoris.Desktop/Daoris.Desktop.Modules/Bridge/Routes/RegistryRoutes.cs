@@ -18,9 +18,9 @@ public sealed class RegistryRoutes(DriverLoop loop)
     // row says, and why nothing was registered. Either way it declares the registry (STATEHUB1h, D169).
     [DriverRoute("REGISTRY_REFRESH", PipeClass.Open)]
     [Publishes("REGISTRY_REFRESH", StateScopes.Registry)]
-    private async Task<object?> RegistryRefreshAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> RegistryRefreshAsync(RegistryRefresh press, CancellationToken cancellationToken)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var repository = press.Repository;
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
 

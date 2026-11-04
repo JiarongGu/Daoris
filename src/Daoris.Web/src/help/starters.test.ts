@@ -62,7 +62,7 @@ describe('starters', () => {
   it('names the repositories with no line git can name, and where to set one', () => {
     expect(starters({ ...READY, unnamedLines: ['engine', 'game', 'tools'] })).toEqual([expect.objectContaining({
       // The first one's Setup, where its line is set (UX6f, UX6g).
-      id: 'no-line', values: { count: 3, first: 'engine' }, door: { view: 'projects', item: 'engine', tab: 'setup' },
+      id: 'no-line', values: { count: 3, first: 'engine' }, door: { view: 'agents', placeOf: 'engine' },
       command: 'daoris place line engine <branch>',
     })]);
   });
