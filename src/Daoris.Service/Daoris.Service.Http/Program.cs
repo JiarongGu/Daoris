@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 using Daoris.Knowledge.Hosting;
 using Daoris.Knowledge.Http;
 using Daoris.Knowledge.Http.Routes;
-using static Daoris.Knowledge.Http.ChannelRoutes;
+using Daoris.Contracts.Asks;
 
 // The browser's half of the service. The MCP host serves an agent over stdio; a browser cannot speak
 // that, so this exists — the same composed service behind a read-only JSON surface.
@@ -466,7 +466,6 @@ if (mode == ServiceMode.Shared)
 // Each domain's routes, declared in Daoris.Contracts and mapped by its module (Routes/), found by reflection. The routes
 // mapped below are the ones not declared yet.
 var wiring = new HostWiring(composed, mode, hostRun, homeId, personKey, personGate);
-var questAnswers = new QuestAnswers(wiring);
 RouteModules.MapAll(app, wiring);
 
 // The window's confirmation of what an asker asked (PERSONDOOR1b, D156 point 4; ONEWAY1n-i, the oneway design §4 M4). A terminal
@@ -572,235 +571,10 @@ if (mode == ServiceMode.Local)
     });
 }
 
-// Asks (D65 §1a): a sentence entered at a WORKSPACE, answered by the tier this machine has — the
-// declarations with no harness, a named receiver at once. LOCAL mode only: the intake is this
-// machine's, like a quest file's bytes, and a shared deployment has no door here.
+// The ask doors are AskRoutes'; the channel's doors of the messages to one part, and an intake, are a local host's alone.
 if (mode == ServiceMode.Local)
 {
-    app.MapGet("/api/asks", async (
-        ComposedService s, HttpContext http, string? workspace, bool? includeClosed, CancellationToken ct) =>
-        (await s.Asks.ListAsync(workspace, includeClosed ?? false, ct)).Select(a => ToAsk(a, s.Files, MachineLocal(http))));
-
-    app.MapPost("/api/asks", async (ComposedService s, HttpContext http, AskRequestBody body, CancellationToken ct) =>
-    {
-        var uploads = new List<QuestUpload>();
-        foreach (var file in body.Attachments ?? [])
-        {
-            if (string.IsNullOrWhiteSpace(file.Name) || file.Content is null)
-            {
-                return Results.BadRequest(new ErrorResponse(
-                    "every attachment needs its name and its content — an ask is made on the machine that has the file"));
-            }
-
-            uploads.Add(new QuestUpload(file.Name, file.Content));
-        }
-
-        var outcome = await s.Asks.AskAsync(
-            new AskRequest(body.Workspace ?? "", body.Sentence ?? "")
-            {
-                Links = body.Links ?? [],
-                Uploads = uploads,
-                To = body.To,
-                // The person's review choice from the composer (REVIEWENV1b), judged by the desk.
-                Review = body.Review,
-                ReviewWords = body.ReviewWords,
-                // The person's kind and workflow from the composer (WORKFLOW1e), judged by the desk.
-                Kind = body.Kind,
-                Workflow = body.Workflow,
-                WorkflowWords = body.WorkflowWords,
-                // The asker's short title (HEAD2e), judged by the desk with the quest's rule.
-                Short = body.Short,
-                // The asker's declared paths (INTEGRATE1l), judged by the desk with the quest's rule.
-                Paths = body.Paths ?? [],
-            },
-            DateTimeOffset.UtcNow, ct);
-        return AskAnswer(outcome, s, http);
-    });
-
-    // The person sets the ask's review choice on its page, or applies its intake's proposal (REVIEWENV1b, design §1.5): the
-    // latest stands. Local like every ask route.
-    app.MapPost("/api/asks/{id}/review", async (
-        ComposedService s, HttpContext http, string id, AskReviewRequest body, CancellationToken ct) =>
-        AskAnswer(await s.Asks.ChooseReviewAsync(id, body.Choice, body.Words, DateTimeOffset.UtcNow, ct), s, http));
-
-    // The person sets the ask's kind and workflow (WORKFLOW1e, the workflow design §4.3), or clears them naming neither: the latest
-    // stands. A person's door (D156 §3.2): an agent proposes a kind, the intake's, and never sets one. Local like every ask route.
-    app.MapPost("/api/asks/{id}/workflow", async (
-        ComposedService s, HttpContext http, string id, AskWorkflowRequest body, CancellationToken ct) =>
-        AskAnswer(await s.Asks.ChooseWorkflowAsync(id, body.Kind, body.Workflow, body.Words, DateTimeOffset.UtcNow, ct), s, http));
-
-    // One ask, whole — how the driver observes what its intake made of it (D65 §1b).
-    app.MapGet("/api/asks/{id}", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
-        await s.Asks.FindAsync(id, ct) is { } ask
-            ? Results.Ok(ToAsk(ask, s.Files, MachineLocal(http)))
-            : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.")));
-
-    // An ask's channel (SESSONE2a, D167 points 6 to 8): what the ask's sessions and the person said, and Daoris's own coded lines read
-    // from the ask's quests, in time order. A read moves no mark: `entry` (the person's by default) says whose unread count it carries,
-    // and the mark moves at the POST below. An ask held elsewhere reads from the messages the sync mirrored (SESSONE2g), read-only; no machine path is in it.
-    app.MapGet("/api/asks/{id}/channel", async (
-        ComposedService s, string id, string? entry, DateTimeOffset? since, CancellationToken ct) =>
-    {
-        var reader = string.IsNullOrWhiteSpace(entry) ? ChannelDesk.PersonEntry : entry.Trim();
-        return await s.Channel.ReadAsync(id, reader, since, moveMark: false, ct) is { } read
-            ? Results.Ok(ToChannel(id, reader, read))
-            : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)));
-    });
-
-    // The asks the mirrored messages name that this machine does not hold (SESSONE2h), for a list that opens each one's channel above.
-    // No ask record is here, so there is no title; the circle, the machines and the moments are all the messages carry.
-    app.MapGet("/api/channel/elsewhere", async (ComposedService s, CancellationToken ct) =>
-        Results.Ok(new ElsewhereAsksResponse([.. (await s.Channel.ElsewhereAsync(ct)).Select(a =>
-            new ElsewhereAskResponse(a.Id, a.Workspace, a.Origins, a.Latest, a.Messages, a.Unread))])));
-
-    // The person's message on the channel (D167 point 7): their words, kept on the ask as a `channel` word. A refusal is a code.
-    app.MapPost("/api/asks/{id}/channel", async (
-        ComposedService s, string id, ChannelPostRequest body, CancellationToken ct) =>
-    {
-        var posted = await s.Channel.PostAsPersonAsync(id, body.Text, body.To, body.Re, DateTimeOffset.UtcNow, ct, urgent: body.Urgent ?? true);
-        if (posted.Refusal == ChannelRefusal.None) return Results.Ok(new ChannelPostResponse(ToChannelItem(posted.Message!)));
-
-        var code = ChannelDesk.Spell(posted.Refusal);
-        return posted.Refusal switch
-        {
-            ChannelRefusal.NotFound => Results.NotFound(new ErrorResponse(code, code)),
-            ChannelRefusal.HeldElsewhere => Results.Conflict(new ErrorResponse(
-                $"Ask `#{id.TrimStart('#')}` is a teammate's, held on their machine: this machine reads its channel and cannot post to it.", code)),
-            _ => Results.BadRequest(new ErrorResponse(code, code)),
-        };
-    });
-
-    // An entry's acknowledgment of messages by their ids (COWORK1d, D188 point 6; the message-urgency design §6): a part's claim, one
-    // part's only, its letting go, a start's packet, the write and the door's word. Each hand that moved the mark by moment writes these
-    // instead, and the mark moves for display. An unknown state is the caller's mistake; an unknown ask is not found.
-    app.MapPost("/api/asks/{id}/channel/ack", async (
-        ComposedService s, string id, ChannelAckRequest body, CancellationToken ct) =>
-    {
-        if (!ChannelAcks.Known(body.State) || string.IsNullOrWhiteSpace(body.Entry))
-        {
-            return Results.BadRequest(new ErrorResponse(
-                "an acknowledgment names its entry and a state: taking, released, sent, taken, read or partly", "bad-state"));
-        }
-
-        var changed = await s.Channel.AcknowledgeAsync(
-            id, body.Entry.Trim(), string.IsNullOrWhiteSpace(body.Session) ? null : body.Session.Trim(), body.State!,
-            [.. (body.Messages ?? []).OfType<string>()], DateTimeOffset.UtcNow, ct);
-        return changed is null
-            ? Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)))
-            : Results.Ok(new ChannelAckResponse(changed));
-    });
-
     app.MapChannelParts();
-
-    // An entry's read mark, moved: the person's, or a part's that a driver handed the channel to (SESSONE2b). Answers the channel as it then reads.
-    // NOTIFY2g (D196 point 6; the notification design §2.4): the person's is kept on a teammate's ask the sync mirrored too, on this machine
-    // alone; a session's entry there, and an ask nowhere, are not found.
-    app.MapPost("/api/asks/{id}/channel/read", async (
-        ComposedService s, string id, ChannelReadRequest body, CancellationToken ct) =>
-    {
-        var reader = string.IsNullOrWhiteSpace(body.Entry) ? ChannelDesk.PersonEntry : body.Entry.Trim();
-        return await s.Channel.MarkReadAsync(id, reader, body.Through, ct) is { } read
-            ? Results.Ok(ToChannel(id, reader, read))
-            : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)));
-    });
-
-    app.MapPost("/api/asks/{id}/publish", async (
-        ComposedService s, HttpContext http, string id, AskPublishRequest body, CancellationToken ct) =>
-    {
-        if (string.IsNullOrWhiteSpace(body.To))
-        {
-            return Results.BadRequest(new ErrorResponse("to is required — the repository this ask becomes a quest for"));
-        }
-
-        var uploads = new List<QuestUpload>();
-        foreach (var file in body.Attachments ?? [])
-        {
-            if (string.IsNullOrWhiteSpace(file.Name) || file.Content is null)
-            {
-                return Results.BadRequest(new ErrorResponse(
-                    "every attachment needs its name and its content — an ask is made on the machine that has the file"));
-            }
-
-            uploads.Add(new QuestUpload(file.Name, file.Content));
-        }
-
-        // A person's publish names a receiver and nothing else; an intake's carries its own words (D65
-        // §1b). Anything beyond `to` makes a draft — words, links, files or a chain alone included.
-        var drafted = body.Title is not null || body.Body is not null || body.Links is { Count: > 0 }
-            || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 } || body.Short is not null
-            || body.Review is not null || body.ReviewProposal is not null || body.WorkflowProposal is not null
-            || body.Paths is { Count: > 0 };
-        var draft = drafted
-            ? new AskDraft(body.Title, body.Body)
-            {
-                Links = body.Links ?? [],
-                Uploads = uploads,
-                Then = QuestAnswers.StepsOf(body.Then),
-                Requirements = QuestAnswers.RequirementsOf(body.Requirements),
-                // The intake's short title (SESSUX1j), judged by the exchange with every other door's.
-                Short = body.Short,
-                // The chain's review choice and an intake's proposal (REVIEWENV1b), judged by the exchange and the desk.
-                Review = QuestAnswers.ReviewOf(body.Review),
-                ReviewProposal = body.ReviewProposal is { } proposal ? new ReviewProposed(proposal.Choice, proposal.Reason) : null,
-                // An intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes the ask; the desk keeps it.
-                WorkflowProposal = body.WorkflowProposal is { } kind ? new WorkflowProposed(kind.Kind, kind.Reason) : null,
-                // An intake's declared paths (INTEGRATE1l), added to the ask's own by the desk.
-                Paths = body.Paths ?? [],
-            }
-            : null;
-
-        // Keyless where the host holds a person key, an agent's publish onto the ask, crediting the session it names, if any;
-        // with the key and no session, the person's choice of receiver (PERSONDOOR1a, design §3.2).
-        return AskAnswer(
-            await s.Asks.PublishAsync(id, body.To, DateTimeOffset.UtcNow, ct, draft, body.Session, byAgent: personGate.IsAgent(http)),
-            s, http);
-    });
-
-    app.MapPost("/api/asks/{id}/close", async (
-        ComposedService s, HttpContext http, string id, AskCloseRequest body, CancellationToken ct) =>
-        AskAnswer(await s.Asks.CloseAsync(id, body.Reason ?? "", DateTimeOffset.UtcNow, ct), s, http));
-
-    // The person answers a go-ahead a session asked on their ask (KNOWUSE1a, D135 §2): yes or no, with their words where
-    // they give any. Local like every ask route; no connector tool answers one, since the production acts stay theirs.
-    // The answer that leaves none of a parked session's go-aheads waiting is that park's answer, and the sentence says which
-    // parks go on and which still wait (GOAHEAD2), unless the caller answers the park itself (`goesOn: false`).
-    app.MapPost("/api/asks/{id}/go-aheads/{number}", async (
-        ComposedService s, HttpContext http, string id, string number, GoAheadAnswerRequest body, CancellationToken ct) =>
-    {
-        if (!int.TryParse(number, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n) || n < 1)
-        {
-            return Results.NotFound(new ErrorResponse($"`{number}` is no go-ahead's number — they are numbered from 1 on their ask."));
-        }
-
-        if (body.Answer is not ("approved" or "refused"))
-        {
-            return Results.BadRequest(new ErrorResponse("answer is `approved` or `refused` — the person's yes or no to the act."));
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var outcome = await s.Asks.AnswerGoAheadAsync(id, n, body.Answer == "approved", body.Words, now, ct);
-        var parks = body.GoesOn == false ? GoAheadParks.None : await s.Ledger.GoOnWithGoAheadsAsync(outcome, now, ct);
-        return outcome.Refusal switch
-        {
-            GoAheadAnswerRefusal.None => Results.Ok(new AskActionResponse(
-                ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message + parks.Said, null)),
-            GoAheadAnswerRefusal.NotFound or GoAheadAnswerRefusal.NoGoAhead => Results.NotFound(new ErrorResponse(outcome.Message)),
-            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
-        };
-    });
-
-    // Deleting an ask made by mistake, with every quest asked by it, or none of it (D95).
-    app.MapDelete("/api/asks/{id}", async (ComposedService s, string id, CancellationToken ct) =>
-    {
-        var outcome = await s.Asks.DeleteAsync(id, DateTimeOffset.UtcNow, ct);
-        return outcome.Refusal switch
-        {
-            // The ask's channel goes with it: the same words asked again are the same ask, and must not find the old channel (SESSONE2a).
-            AskRefusal.None => await DeletedWithChannelAsync(s, id, outcome.Message, ct),
-            AskRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-        };
-    });
 
     // An intake (D65 §1b): the record of a conversation the driver opens for an ask, in a room under
     // its home. Local like the asks it answers; the process is the driver's, as ever.
@@ -1107,7 +881,7 @@ if (mode == ServiceMode.Local)
         {
             AskWordRefusal.None => Results.Ok(new AddedResponse(
                 true, outcome.Message,
-                await s.Asks.FindAsync(outcome.Ask!, ct) is { } ask ? ToAsk(ask, s.Files, MachineLocal(http)) : null)),
+                await s.Asks.FindAsync(outcome.Ask!, ct) is { } ask ? AskAnswers.ToAsk(ask, s.Files, MachineLocal(http)) : null)),
             AskWordRefusal.NoAsk => Results.Ok(new AddedResponse(false, outcome.Message, null)),
             AskWordRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
@@ -2316,64 +2090,6 @@ static IResult FeedAnswer(FeedOutcome outcome) =>
             ? Results.BadRequest(new FeedRefusalResponse(outcome.Message, outcome.Information))
             : Results.Conflict(new FeedRefusalResponse(outcome.Message, outcome.Information));
 
-
-// An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
-// refused, whose message already says the ask was kept and where it was proposed instead.
-IResult AskAnswer(AskOutcome outcome, ComposedService s, HttpContext http) => outcome.Refusal switch
-{
-    AskRefusal.None => Results.Ok(new AskActionResponse(
-        ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message,
-        outcome.Quest is null ? null : QuestAnswers.ToQuest(outcome.Quest, s.Files, MachineLocal(http), here: questAnswers.HereFor(http)))),
-    AskRefusal.UnknownWorkspace or AskRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-    AskRefusal.Closed or AskRefusal.QuestRefused => Results.Conflict(new ErrorResponse(outcome.Message)),
-    _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
-};
-
-// The ask's record — its kept files' paths answered to this machine only, the quest files' rule.
-static async Task<IResult> DeletedWithChannelAsync(ComposedService s, string id, string message, CancellationToken ct)
-{
-    await s.Channel.ForgetAsync(id, ct);
-    return Results.Ok(new DeletedResponse(id.TrimStart('#'), message));
-}
-
-
-static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
-{
-    var kept = files?.For(HomeEntry.AskFiles);
-    return new(
-        a.Id, a.Workspace, a.Sentence, a.State.ToString(), a.Tier, a.Asked, a.Updated, a.Asker, a.Note, a.Links,
-        a.Attachments.Select(f => new QuestAttachmentResponse(
-            f.Name, f.Sha256, f.Bytes,
-            Path: machineLocal && kept is not null && kept.Has(a.Id, f) ? kept.PathOf(a.Id, f) : null)).ToList(),
-        a.Proposal.Select(m => new DeclarationMatchResponse(m.Repository, m.Score, m.Matched)).ToList(),
-        a.Quests, a.Intake, a.Deletable,
-        // The person's words, served as the sentence is: these routes are a local host's alone (DRIFT1a).
-        Words: a.Words.Select(w => new AskWordResponse(AskWord.Spell(w.Kind), w.Text, w.At, w.Session, w.Quest)).ToList(),
-        WordsKeptFrom: a.WordsKeptFrom,
-        // The go-aheads its sessions asked for (KNOWUSE1a), every one, served as the words are.
-        GoAheads: a.GoAheads.Select(g => new GoAheadResponse(
-            g.Number, g.Kind, g.On, g.Act, GoAhead.Spell(g.State),
-            g.Asked.Select(r => new GoAheadRequestResponse(r.Session, r.Quest, r.At, r.Why)).ToList(),
-            g.Answer is { } answer ? new GoAheadAnswerResponse(answer.Approved, answer.Words, answer.At) : null,
-            g.Near)).ToList(),
-        // The person's review choices and the intake's proposals (REVIEWENV1b), each absent where there is none.
-        ReviewChoices: a.ReviewChoices.Count == 0
-            ? null
-            : a.ReviewChoices.Select(c => new AskReviewChoiceResponse(c.Choice, c.At, c.Words)).ToList(),
-        ReviewProposals: a.ReviewProposals.Count == 0
-            ? null
-            : a.ReviewProposals.Select(p => new AskReviewProposalResponse(p.Choice, p.Reason, p.At, p.Session, p.Quest)).ToList(),
-        // The person's kind and workflow choices (WORKFLOW1e), absent where there is none.
-        WorkflowChoices: a.WorkflowChoices.Count == 0
-            ? null
-            : a.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At, c.Words)).ToList(),
-        // The intake's kind proposals (WORKFLOW1i), absent where there is none.
-        WorkflowProposals: a.WorkflowProposals.Count == 0
-            ? null
-            : a.WorkflowProposals.Select(p => new AskWorkflowProposalResponse(p.Kind, p.Reason, p.At, p.Session, p.Quest)).ToList(),
-        Short: a.Short,
-        Paths: a.Paths);
-}
 
 // The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
 // answered only to a caller on this machine. The evidence stays — commits are the reviewable record
