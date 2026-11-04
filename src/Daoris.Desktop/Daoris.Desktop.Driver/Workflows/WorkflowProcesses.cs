@@ -120,7 +120,8 @@ public static class WorkflowProcesses
             return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Land}`), so no chain's work lands by it." };
         }
 
-        var gates = GraphGates.Of(graph, held);
+        // Over what the place declares: the held process carries no opinion, and a gate node chooses among the declared reviewers.
+        var gates = GraphGates.Of(graph, WorkflowProcess.Declared(config, repository, workspace));
         if (gates.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: v{number}, {unread}" };
         if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.QuestClose) is { } close)
         {
