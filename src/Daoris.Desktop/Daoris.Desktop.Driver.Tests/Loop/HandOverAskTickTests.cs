@@ -75,7 +75,8 @@ public sealed class HandOverAskTickTests : IDisposable
         Assert.Equal("Done", service.Status("q1"));
     }
 
-    private DriverConfig Config(string log) =>
+    /// <summary>Build's order is the machine's agent, then <c>stub</c>: a hand-over goes to the next entry on another agent.</summary>
+    private DriverConfig Config(string log) => ActorChoices.With(
         HandOverRules.Apply(
             DriverConfig.Empty with
             {
@@ -90,7 +91,8 @@ public sealed class HandOverAskTickTests : IDisposable
                     ["stub"] = ["node", Agent(), log],
                 },
             },
-            new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = HandOverRules.On, ModeGiven = true } });
+            new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = HandOverRules.On, ModeGiven = true } }),
+        "build", [new ActorChoice("acp-stub"), new ActorChoice("stub")]);
 
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, DriverConfig config)
     {

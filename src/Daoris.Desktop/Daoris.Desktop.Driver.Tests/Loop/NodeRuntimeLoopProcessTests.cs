@@ -111,7 +111,10 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
             await Poll.Until(() =>
             {
                 lock (reports) return until(reports);
-            }, () => "the loop never got there", Poll.Patience);
+            }, () =>
+            {
+                lock (reports) return $"the loop never got there in {reports.Count} looks: " + string.Join(" | ", reports.SelectMany(report => report.Events));
+            }, Poll.Patience);
             lock (reports) return reports.Count;
         }
         finally

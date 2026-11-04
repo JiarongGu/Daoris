@@ -127,6 +127,7 @@ public sealed class OpinionLookTests : IDisposable
     public async Task The_look_asks_a_chat_runs_pass_at_the_press_tip_with_its_opening_keyed_by_the_run()
     {
         var (host, tree, line) = await DoneAsync(required: false);
+        Govern("chat-c1a2b3c4", required: false, on: null);
         new OpinionDues(_home).Close("s1", OpinionRules.Landing, OpinionDueClosed.Off, DateTimeOffset.UtcNow);
         host.Quest("q2", "Open", parent: "q1", setUpIn: "local");
         var pressed = await HeadAsync(tree);
@@ -170,6 +171,7 @@ public sealed class OpinionLookTests : IDisposable
     {
         // A rule keeps its occasions landing first, so one whose first is `steps` names `steps` alone.
         var (host, tree, _) = await DoneAsync(required: false, on: [OpinionRules.Steps]);
+        Govern("chat-c1a2b3c4", required: false, on: [OpinionRules.Steps]);
         foreach (var occasion in new[] { OpinionRules.Steps })
         {
             new OpinionDues(_home).Close("s1", occasion, OpinionDueClosed.Off, DateTimeOffset.UtcNow);
@@ -323,7 +325,7 @@ public sealed class OpinionLookTests : IDisposable
     [Fact]
     public async Task A_graph_runs_opinion_is_not_asked_while_a_check_before_it_waits()
     {
-        var (host, _, _) = await DoneAsync(required: false);
+        var (host, _, _) = await DoneAsync(required: false, governed: false);
         var digest = RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"check","kind":"acme.check/run","version":1,"reach":"performed"},
@@ -406,10 +408,13 @@ public sealed class OpinionLookTests : IDisposable
 
     /// <summary>
     /// A session that worked in its own tree on `reports` and concluded on its quest's done, owed an opinion as the conclusion makes
-    /// it, under a rule naming Codex: the host standing in, the tree, and where the work left the line.
+    /// it, under a rule naming Codex: the host standing in, the tree, and where the work left the line. Where <paramref name="governed"/>,
+    /// its run follows a graph whose second opinion it has begun (<see cref="Govern"/>), since work no workflow governs is held.
     /// </summary>
-    private async Task<(OpinionStandIn Host, string Tree, string Line)> DoneAsync(bool required, string[]? on = null, string[]? reviewers = null)
+    private async Task<(OpinionStandIn Host, string Tree, string Line)> DoneAsync(
+        bool required, string[]? on = null, string[]? reviewers = null, bool governed = true)
     {
+        if (governed) Govern("q1", required, on);
         (DriverConfig.Empty with
         {
             Adapter = "claude-code-acp", Actors = StaffedRoles.On("claude-code-acp"),
@@ -431,6 +436,35 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal(on ?? [OpinionRules.Landing], OpinionLook.Concluded(_home, Config(), "s1",
             new QuestView("q1", "ask #a1", "reports", "Work q1", "", "Done"), "Done", "completed", tree));
         return (host, tree, line);
+    }
+
+    /// <summary>
+    /// Run <paramref name="run"/> on `reports` bound to a graph whose <c>opinion</c> reads at the rule's occasions with the rule's reviewers,
+    /// and its record past the opinion's start, so the look asks it as the runtime begins it.
+    /// </summary>
+    private void Govern(string run, bool required, string[]? on)
+    {
+        var options = $"{{\"required\":{(required ? "true" : "false")},\"steps\":{((on ?? []).Contains(OpinionRules.Steps) ? "true" : "false")}}}";
+        var digest = RunHome.SaveGraph(_home, """
+            {"schemaVersion":2,"entries":["claimed"],"end":"landing",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"opinion","kind":"opinion","version":1,"reach":"observed","options":OPTIONS},
+                      {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
+             "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"opinion"},{"id":"o>l","kind":"after","from":"opinion","to":"landing"}]}
+            """.Replace("OPTIONS", options, StringComparison.Ordinal), workflow: "governed");
+        Assert.True(new WorkflowRunFiles(_home).Bind(new WorkflowRunBinding(run, "reports", "work", "governed", WorkflowLevels.Repository, DateTimeOffset.UtcNow)
+        {
+            Version = 1, Digest = digest,
+        }));
+        var unit = RunUnits.IdOf(run);
+        new NodeRecordFiles(_home, () => true).Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["claimed"] = new(unit, "claimed", NodeStates.Reached),
+                ["opinion"] = new(unit, "opinion", NodeStates.Active),
+            },
+        });
     }
 
     private static async Task<string> HeadAsync(string tree) => (await GitAsync(tree, "rev-parse", "HEAD")).Trim();

@@ -9,8 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// light gates and its heavy gates as the verification's, and, on an agent that takes no rules from Daoris, that they are said rather than
 /// refused; while it runs, its tree's git lock names it and its checks are kept by its id where <c>run-heavy</c> reads them (the pair
 /// <see cref="HeavyRunCommandTests"/> refuses); once its run ends, the kept checks are gone. FABRIC-PIPELINE1b3: a run bound to a named
-/// workflow's version takes that version's checks at its first start, a steps version's <c>work</c> and a graph version's <c>claimed</c>
-/// alike, where its repository sets no rule. A real process (node), a real git repository and a stand-in service on a loopback port, the
+/// workflow's version takes its <c>claimed</c> node's checks at its first start, where its repository sets no rule. A real process (node), a real git repository and a stand-in service on a loopback port, the
 /// shape <see cref="StartInSyncTickTests"/> uses; no model and no account.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -47,26 +46,8 @@ public sealed class SessionChecksStartTests : IDisposable
 
     /// <summary>
     /// FABRIC-PIPELINE1b3 (D192's FABRIC-PIPELINE1b2 note, point 5): a run's first start binds it before its take (FABRIC-CUTOVER1g), so a
-    /// run bound to a named workflow whose <c>work</c> sets <c>light</c> starts its first session light in a repository that sets no rule.
-    /// </summary>
-    [Fact]
-    public async Task A_run_bound_to_a_light_named_workflow_starts_its_first_session_light_where_its_repository_sets_none()
-    {
-        StoredSteps.Add(Home, new WorkflowVersionAdded(
-            "light-work", "Light work", "terminal", "2026-10-22T09:00:00Z",
-            JsonNode.Parse("""[{"id":"work","kind":"work","checks":"light"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")), kept: []);
-
-        var run = await StartAsync(DriverConfig.Parse("""{"workflows":{"engine":{"default":"light-work"}}}"""));
-
-        var bound = WorkflowRunBindings.Read(Home, "q1")!;
-        Assert.Equal(("light-work", (int?)1, (string?)null), (bound.Workflow, bound.Version, bound.Problem));
-        Assert.Contains(HeavyTold.LightWords(["universal"], ["driver"], takesRules: false), run["target"]!.GetValue<string>());
-        Assert.Equal("""{"checks":"light"}""", JsonNode.Parse(run["checks"]!.GetValue<string>())!.ToJsonString());
-    }
-
-    /// <summary>
-    /// FABRIC-PIPELINE1b3: a run bound to a graph version takes its <c>claimed</c> node's <c>checks</c> at its first start, and keeps its
-    /// <c>callMinutes</c> beside them for the long-call watch, where its repository sets no rule.
+    /// run bound to a graph version takes its <c>claimed</c> node's <c>checks</c> at its first start, and keeps its <c>callMinutes</c> beside
+    /// them for the long-call watch, where its repository sets no rule.
     /// </summary>
     [Fact]
     public async Task A_run_bound_to_a_graph_version_whose_claimed_is_light_starts_its_first_session_light()

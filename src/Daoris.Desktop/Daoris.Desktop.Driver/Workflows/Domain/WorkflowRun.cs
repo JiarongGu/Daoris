@@ -21,6 +21,12 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     public string? ChatRun { get; init; }
 
     /// <summary>
+    /// The checks a chat run's conversation is held to at an execution, read as the execution reads them (<see cref="SessionChecks.Of"/>): its
+    /// graph's <c>claimed</c> where a workflow governs it, else its repository's rule; null for a quest's run and where none is set.
+    /// </summary>
+    public string? ChatChecks { get; init; }
+
+    /// <summary>
     /// The run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e): its wires, its subjects and what its record says of it;
     /// null for a run D157's steps govern.
     /// </summary>

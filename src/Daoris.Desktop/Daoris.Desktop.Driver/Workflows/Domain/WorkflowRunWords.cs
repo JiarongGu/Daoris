@@ -381,15 +381,6 @@ public static class WorkflowRunWords
         return said.ToString();
     }
 
-    /// <summary>
-    /// A chat run's checks (CHATFLOW1c; the chat-flow design §4.4): its work step's <c>checks</c>, Current's <c>sessionChecks</c> or its
-    /// version's field, which a conversation's execution is held to since CHATFLOW1h; null for a quest's run and where none is set.
-    /// </summary>
-    public static string? ChecksOf(WorkflowRun run) =>
-        run.ChatRun is null ? null
-            : run.Current.Steps.Where(step => step.Kind == WorkflowKinds.Work)
-                .SelectMany(step => step.Settings).FirstOrDefault(setting => setting.Name == "checks")?.Value as string;
-
     /// <summary>What a chat run said of its checks before CHATFLOW1h enforced them on its tree (§4.4); the page still words it for a driver before it.</summary>
     public static string ChatChecks(string checks) =>
         $"Its checks (`{checks}`) are not yet enforced for a conversation, so its tree is not held to them.";

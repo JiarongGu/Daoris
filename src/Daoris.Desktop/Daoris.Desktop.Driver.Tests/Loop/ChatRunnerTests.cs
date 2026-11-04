@@ -20,17 +20,20 @@ public sealed class ChatRunnerTests : IDisposable
 
     /// <summary>
     /// CHATFLOW1c (the chat-flow design §4.3, §4.4): a conversation that grew its tree binds its run, <c>chat-&lt;record&gt;</c>, beside the
-    /// process it is told: under a steps version its first Daoris line names the version and who chose it, and the landing it is told is
-    /// planned with that version's process, the one its press lands by. Under Current nothing is said. It is told no checks either way,
+    /// process it is told: under a graph version its first Daoris line names the version and who chose it, and the landing it is told is
+    /// planned with that version's process, the one its press lands by. Under no workflow nothing is said. It is told no checks either way,
     /// since nothing enforces them on its tree before CHATFLOW1h.
     /// </summary>
     [Fact]
     public void A_conversation_that_grew_its_tree_binds_its_run_beside_the_process_it_is_told_and_is_told_no_checks()
     {
-        StoredSteps.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z", null,
             System.Text.Json.Nodes.JsonNode.Parse("""
-                [{"id":"work","kind":"work","checks":"light"},
-                 {"id":"landing","kind":"landing","form":"branch","accept":"you","pattern":"chat/{session}-{slug}","plugin":"none"}]
+                {"schemaVersion":2,"entries":["work"],"end":"landing",
+                 "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed","options":{"checks":"light"}},
+                          {"id":"review","kind":"review","version":1,"reach":"pressed"},
+                          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","plugin":"none","pattern":"chat/{session}-{slug}"}}],
+                 "wires":[{"id":"b","kind":"after","from":"work","to":"review"},{"id":"e","kind":"after","from":"review","to":"landing"}]}
                 """)), kept: []);
         var config = DriverConfig.Parse("""{"workflows":{"engine":{"default":"chat-steps"}},"sessionChecks":{"engine":"light"}}""");
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
@@ -60,18 +63,21 @@ public sealed class ChatRunnerTests : IDisposable
     /// CHATFLOW1e (the chat-flow design §6): a chat run whose process names a second opinion is handed <c>opinion_answer</c> in its rules from
     /// its spawn, since a live conversation's rules are fixed then, as a driven run is handed it at its resume: so even where the person turned
     /// the connector's default off, the tool that answers its findings is there. One whose process names none is handed what a conversation
-    /// always was, and with the connector's default on, the tool is allowed once.
+    /// always was, and with the connector's default on, the tool is allowed once. A second opinion is a graph's <c>opinion</c> node's.
     /// </summary>
     [Fact]
     public void A_chat_run_whose_process_names_an_opinion_is_handed_the_tool_that_answers_findings_at_its_spawn()
     {
+        var copy = WorkflowDefaults.Copy(WorkflowDefaults.Of(SetupPresets.Merge)!, opinion: true, look: false);
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(copy.Id, copy.Name, "terminal", "2026-10-09T09:00:00Z", null, copy.Graph), kept: []);
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Unanswered()));
         var binds = new ChatRunBinds(_home, service, events);
         var across = new AcrossReach([], [], []);
         var connectorOff = PermissionFile.Empty with { DefaultsOff = ["connector"] };
 
-        var named = binds.Opened("c1a2b3c4", "engine", "aurora", DriverConfig.Parse("""{"opinions":{"engine":{"reviewers":["codex-acp"]}}}"""));
+        var named = binds.Opened("c1a2b3c4", "engine", "aurora", DriverConfig.Parse(
+            """{"workflows":{"engine":{"default":"merge-after-accept-opinion"}},"opinions":{"engine":{"reviewers":["codex-acp"]}}}"""));
         var none = binds.Opened("d1a2b3c4", "engine", "aurora", DriverConfig.Empty);
 
         Assert.True(ChatRunBinds.AnswersFindings(named));

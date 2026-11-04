@@ -103,7 +103,7 @@ internal static class WorkflowAnswers
             run.Problem,
             // a chat run's key and its checks, which a conversation's execution is held to;
             // null for a quest's run, and from a driver before it.
-            Chat = run.ChatRun is { } chat ? new { Run = chat, Checks = WorkflowRunWords.ChecksOf(run), Enforced = true } : null,
+            Chat = run.ChatRun is { } chat ? new { Run = chat, Checks = run.ChatChecks, Enforced = true } : null,
             // The workflow's wait, in the shape the Trees domain's landing gate answers it.
             WorkflowGate = TreesRoutes.WorkflowWaits(run.WorkflowGate),
             Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,
