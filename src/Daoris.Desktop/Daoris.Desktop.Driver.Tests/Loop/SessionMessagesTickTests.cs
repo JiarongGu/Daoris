@@ -1620,8 +1620,10 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
                         session["state"] = to;
                         session["interrupted"] = to == "stopped" && body["interrupted"]?.GetValue<bool>() == true;
-                        // LIMITRESUME1b: the ledger's limit flag, on the failed end that carries it, as the service keeps it.
-                        session["limit"] = to == "failed" && body["limit"]?.GetValue<bool>() == true ? true : null;
+                        // The ledger's limit flag, on the failed end that carries it, as the service keeps it. Absent otherwise, never
+                        // null: the record reads it as a flag, and a null does not read.
+                        if (to == "failed" && body["limit"]?.GetValue<bool>() == true) session["limit"] = true;
+                        else session.Remove("limit");
                         // When it moved, as the service keeps it (HELPERWAIT1: a park made before its helper's ask was asked is not one made on it).
                         session["updated"] = DateTimeOffset.UtcNow.ToString("O");
                         if (to == "awaiting-person") session["said"] = new JsonArray();
