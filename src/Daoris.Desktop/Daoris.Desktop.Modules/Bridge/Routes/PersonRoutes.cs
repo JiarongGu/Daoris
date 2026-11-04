@@ -51,17 +51,16 @@ public sealed class PersonRoutes(DriverLoop loop)
     // own sentence, `restarted`), `gone` where none, and `unreachable` where the service did not answer, nothing taken.
     [DriverRoute("PERSON_CONFIRM", PipeClass.Window)]
     [Owner("PERSON_CONFIRM", None = OwnerNone.ActsOnNothing)]
-    private async Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PersonConfirmAsync(PersonConfirmPress press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var confirm = PayloadHelper.GetRequiredValue<bool>(request.Payload, "confirm");
+        var (id, confirm) = (press.Id, press.Confirm);
         // The census refuses this to a terminal before it is dispatched; a press that came in by the pipe anyway answers nothing.
         if (PipeDoor.Now == PipeDoor.Terminal)
         {
             return new PersonConfirmRefused(false, "window-only", "Only Daoris's window answers a confirmation.");
         }
 
-        if (PayloadHelper.GetOptionalValue<string>(request.Payload, "source") == "service")
+        if (press.Source == "service")
         {
             return await ServiceConfirmAsync(id, confirm, cancellationToken).ConfigureAwait(false);
         }
@@ -115,9 +114,9 @@ public sealed class PersonRoutes(DriverLoop loop)
     // answered as data, `gone`. It runs nothing and moves no record, so it declares no change.
     [DriverRoute("PERSON_CONFIRM_SHOWN", PipeClass.Window)]
     [Owner("PERSON_CONFIRM_SHOWN", None = OwnerNone.ActsOnNothing)]
-    private Task<object?> PersonConfirmShownAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> PersonConfirmShownAsync(PersonConfirmShown press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         if (PipeDoor.Now == PipeDoor.Terminal)
         {
             return Task.FromResult<object?>(new PersonShownRefused(false, "window-only", "Only Daoris's window says what it shows."));
@@ -137,18 +136,14 @@ public sealed class PersonRoutes(DriverLoop loop)
     [DriverRoute("SET_STANDING_CONFIRMATION", PipeClass.Window)]
     [Owner("SET_STANDING_CONFIRMATION", None = OwnerNone.MachineSetting)]
     [Publishes("SET_STANDING_CONFIRMATION", StateScopes.Driver)]
-    private Task<object?> SetStandingConfirmationAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SetStandingConfirmationAsync(StandingConfirmationPress press, CancellationToken cancellationToken)
     {
         if (PipeDoor.Now == PipeDoor.Terminal)
         {
             return Task.FromResult<object?>(new StandingChange(false, "window-only", "Only Daoris's window grants or revokes the standing confirmation."));
         }
 
-        var presses = request.Payload is { ValueKind: System.Text.Json.JsonValueKind.Object } payload
-            && payload.TryGetProperty("presses", out var named) && named.ValueKind == System.Text.Json.JsonValueKind.Array
-            ? [.. named.EnumerateArray().Select(each => each.ValueKind == System.Text.Json.JsonValueKind.String ? each.GetString() ?? "" : each.GetRawText())]
-            : (IReadOnlyList<string>?)null;
-        if (presses is null)
+        if (press.Presses is not { } presses)
         {
             return Task.FromResult<object?>(new StandingChange(false, "presses", "The standing confirmation is set by the presses ticked, a list."));
         }
@@ -168,17 +163,15 @@ public sealed class PersonRoutes(DriverLoop loop)
     [DriverRoute("START_ROLE_TERMINAL", PipeClass.Window)]
     [Owner("START_ROLE_TERMINAL", None = OwnerNone.RoleTerminal)]
     [Publishes("START_ROLE_TERMINAL", StateScopes.Driver | StateScopes.Sessions)]
-    private async Task<object?> StartRoleTerminalAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> StartRoleTerminalAsync(RoleTerminalPress press, CancellationToken cancellationToken)
     {
         if (PipeDoor.Now == PipeDoor.Terminal)
         {
             return new StandingChange(false, "window-only", "Only Daoris's window starts a role's terminal.");
         }
 
-        var role = PayloadHelper.GetRequiredValue<string>(request.Payload, "role");
-        var share = PayloadHelper.GetOptionalValue<string>(request.Payload, "share");
         return _loop.Pipe is { } pipe
-            ? await SupervisorDoor.StartAsync(_loop, pipe, new HoldRequest(role, share), cancellationToken).ConfigureAwait(false)
+            ? await SupervisorDoor.StartAsync(_loop, pipe, new HoldRequest(press.Role, press.Share), cancellationToken).ConfigureAwait(false)
             : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it starts no role's terminal.");
     }
 

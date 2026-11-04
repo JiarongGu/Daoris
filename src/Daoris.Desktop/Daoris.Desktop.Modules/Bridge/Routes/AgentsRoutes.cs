@@ -24,7 +24,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // declares nothing, so a window's read is never published, which every window would read again without end.
     [DriverRoute("HARNESSES", PipeClass.Open)]
     private Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        ReadHarnessesAsync(request, refresh: false, cancellationToken);
+        ReadHarnessesAsync(null, null, refresh: false, cancellationToken);
 
     // The person pressing *Read again* (HARNESSREFRESH1, D169): every agent's accounts, with `agent` one agent's accounts, or
     // with `profile` too that one account alone; never an agent's own sign-in (POOL1a3, D197 point 3). Its own route so it can
@@ -35,13 +35,12 @@ public sealed class AgentsRoutes(DriverContext context)
     [GroundRead("HARNESSES_REFRESH", nameof(PipeReads.HarnessToRefresh))]
     [Says("HARNESSES_REFRESH", "agent:agent")]
     [Publishes("HARNESSES_REFRESH", StateScopes.Harnesses)]
-    private Task<object?> RefreshHarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        ReadHarnessesAsync(request, refresh: true, cancellationToken);
+    private Task<object?> RefreshHarnessesAsync(HarnessesRefreshPress press, CancellationToken cancellationToken) =>
+        ReadHarnessesAsync(press.Agent, press.Profile, refresh: true, cancellationToken);
 
-    private async Task<object?> ReadHarnessesAsync(IpcRequest request, bool refresh, CancellationToken cancellationToken)
+    private async Task<object?> ReadHarnessesAsync(string? agent, string? profile, bool refresh, CancellationToken cancellationToken)
     {
-        var agent = refresh ? Optional(request, "agent") : null;
-        var account = agent is null ? null : Optional(request, "profile");
+        var account = agent is null ? null : profile;
 
         var config = DriverConfig.Load(_loop.ConfigPath);
         IReadOnlyList<HarnessReport> roster;
@@ -267,19 +266,10 @@ public sealed class AgentsRoutes(DriverContext context)
     // for those and no others. Names and versions only — no home, no binary, no key. Named
     // for what it answers rather than "wiring", which the page already calls the remotes map.
     [DriverRoute("STARTS", PipeClass.Open)]
-    private async Task<object?> StartsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> StartsAsync(StartsRead press, CancellationToken cancellationToken)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var named = new List<string>();
-        if (request.Payload is { } payload
-            && payload.TryGetProperty("workspaces", out var circles)
-            && circles.ValueKind == JsonValueKind.Array)
-        {
-            named.AddRange(circles.EnumerateArray()
-                .Where(circle => circle.ValueKind == JsonValueKind.String)
-                .Select(circle => circle.GetString()!)
-                .Where(circle => circle.Length > 0));
-        }
+        var named = (press.Workspaces ?? []).Where(circle => circle.Length > 0).ToList();
 
         var starts = new List<object>();
         foreach (var workspace in named.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal))
@@ -350,10 +340,9 @@ public sealed class AgentsRoutes(DriverContext context)
     [GroundRead("HARNESS_ACTION", nameof(PipeReads.HarnessToAct))]
     [Says("HARNESS_ACTION", "harness:agent")]
     [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
-    private async Task<object?> HarnessActionAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HarnessActionAsync(HarnessActionPress press, CancellationToken cancellationToken)
     {
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
-        var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
+        var (action, harness) = (press.Action, press.Harness);
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A DriverException, so it travels the same way `Toolchain` already refuses an adapter
         // name it does not know: one mapping, one shape, and the driver's own sentence intact.
@@ -363,7 +352,7 @@ public sealed class AgentsRoutes(DriverContext context)
 
         var command = config.Commands.GetValueOrDefault(harness);
         var stream = Actions.Relay(harness, action);
-        var profile = Optional(request, "profile");
+        var profile = press.Profile;
         // 🔴 Whose accounts an action on this door touches (AGT7): a door's accounts, defaults
         // and keys are its OWNER's. Its pin and its installer stay its own.
         var owner = toolchain.Owner(harness);
@@ -379,7 +368,7 @@ public sealed class AgentsRoutes(DriverContext context)
             }
 
             var account = HarnessKeys.Add(
-                _loop.Harnesses.Home, owner, PayloadHelper.GetRequiredValue<string>(request.Payload, "key"));
+                _loop.Harnesses.Home, owner, ActField.Needs(press.Key, "key"));
             // Not read: a key account is said by its handle, never signed in, since the tool says yes for any key (AGT3).
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
             return new
@@ -401,7 +390,7 @@ public sealed class AgentsRoutes(DriverContext context)
             }
 
             var replaced = HarnessKeys.Replace(
-                _loop.Harnesses.Home, owner, Named(request), PayloadHelper.GetRequiredValue<string>(request.Payload, "key"));
+                _loop.Harnesses.Home, owner, Named(press.Profile), ActField.Needs(press.Key, "key"));
             // The roster's own memory of the account: its last word and what it was owed, forgotten as a removal forgets them.
             _loop.Harnesses.Removed(owner, replaced);
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
@@ -416,9 +405,9 @@ public sealed class AgentsRoutes(DriverContext context)
         // record keeps it; naming it its own id, or none, gives it none. The terminal's twin is `profile rename`.
         if (action == "profile-rename")
         {
-            var renamed = Named(request);
+            var renamed = Named(press.Profile);
             var name = AccountNames.Rename(
-                _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), renamed, Optional(request, "name"));
+                _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), renamed, press.Name);
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
             return new { Harness = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
         }
@@ -439,8 +428,8 @@ public sealed class AgentsRoutes(DriverContext context)
             //
             // A sign-in stays the tool's: adding one MAKES A DIRECTORY and nothing else,
             // and what lands inside it is the harness's own.
-            "profile-add" => ProfileAdd(owner, request),
-            "profile-remove" => ProfileRemove(owner, request, stream),
+            "profile-add" => ProfileAdd(owner, press.Profile),
+            "profile-remove" => ProfileRemove(owner, press.Profile, stream),
             "install" or "update" or "login" or "login-new" or "pin" => null,
             _ => throw Refusals.Because(
                 Refusals.HarnessActionUnknown,
@@ -456,15 +445,15 @@ public sealed class AgentsRoutes(DriverContext context)
         }
 
         // A pin's version is asked for before anything starts: a pin without one is a malformed call.
-        var version = action == "pin" ? PayloadHelper.GetRequiredValue<string>(request.Payload, "version") : null;
+        var version = action == "pin" ? ActField.Needs(press.Version, "version") : null;
         // A sign-in's `join` and a new account's `name` (ACCT1, ACCT2), the terminal's `--join` and `--name`.
-        var joins = action is "login" or "login-new" ? Joins(request) : [];
-        var named = action == "login-new" ? Optional(request, "name") : null;
+        var joins = action is "login" or "login-new" ? Joins(press.Join) : [];
+        var named = action == "login-new" ? press.Name : null;
         // A sign-in's way, its browser first, and whether it switches from the one running (CODEXLOGIN1): the terminal's
         // `--device-code`. A word that is no way is refused before anything starts.
         var signsIn = action is "login" or "login-new";
-        var way = signsIn ? SignInWays.Of(Optional(request, "way")) : SignInWay.Browser;
-        var switching = signsIn && Flag(request, "switch");
+        var way = signsIn ? SignInWays.Of(press.Way) : SignInWay.Browser;
+        var switching = signsIn && press.Switch;
         var reached = await Actions.StartProcessActionAsync(
             harness, action, profile, version, toolchain, command, stream, config, joins: joins, name: named, way: way, switching: switching);
         return new { Harness = harness, Action = action, Started = true, Profile = reached };
@@ -474,9 +463,9 @@ public sealed class AgentsRoutes(DriverContext context)
     /// The lists a sign-in or <c>profile-join</c> names (ACCT1): <c>join</c>, each a workspace's name or null for this
     /// machine's list, in the order named, each once. A value that is neither is a malformed call.
     /// </summary>
-    private static IReadOnlyList<string?> Joins(IpcRequest request)
+    private static IReadOnlyList<string?> Joins(JsonElement? sent)
     {
-        if (request.Payload is not { } payload || !payload.TryGetProperty("join", out var join) || join.ValueKind == JsonValueKind.Null) return [];
+        if (sent is not { } join || join.ValueKind == JsonValueKind.Null) return [];
         if (join.ValueKind != JsonValueKind.Array) throw new DriverException("`join` is a list of workspaces, null for this machine's list.");
 
         var lists = new List<string?>();
@@ -500,17 +489,17 @@ public sealed class AgentsRoutes(DriverContext context)
     // answer that went nowhere must not look delivered.
     [DriverRoute("HARNESS_INPUT", PipeClass.Window)]
     [Owner("HARNESS_INPUT", None = OwnerNone.NamesNothing)]
-    private object? HarnessInput(IpcRequest request)
+    private object? HarnessInput(HarnessInputPress press)
     {
-        Actions.Running(request).Send(PayloadHelper.GetRequiredValue<string>(request.Payload, "text"));
+        Actions.Running(press.Harness, press.Action).Send(press.Text);
         return new { Sent = true };
     }
 
     [DriverRoute("HARNESS_CANCEL", PipeClass.Window)]
     [Owner("HARNESS_CANCEL", None = OwnerNone.NamesNothing)]
-    private object? HarnessCancel(IpcRequest request)
+    private object? HarnessCancel(HarnessCancelPress press)
     {
-        Actions.Cancel(request);
+        Actions.Cancel(press.Harness, press.Action);
         return new { Cancelled = true };
     }
 
@@ -524,11 +513,10 @@ public sealed class AgentsRoutes(DriverContext context)
     [Says("SET_AGENT_SETTINGS", "harness:agent")]
     [NotAlready("SET_AGENT_SETTINGS", "merges into a profile's settings")]
     [Publishes("SET_AGENT_SETTINGS", StateScopes.Harnesses)]
-    private object? SetAgentSettings(IpcRequest request)
+    private object? SetAgentSettings(AgentSettingsPress press)
     {
-        var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
         var (owner, profile, read) = Daoris.Driver.AccountSettings.Write(
-            _loop.Harnesses, harness, Optional(request, "profile"), () => (Edit(request, "model"), Edit(request, "effort"), PerModel(request)));
+            _loop.Harnesses, press.Harness, press.Profile, () => (Edit(press.Model, "model"), Edit(press.Effort, "effort"), PerModel(press.PerModel)));
         return new { Harness = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
     }
 
@@ -546,8 +534,8 @@ public sealed class AgentsRoutes(DriverContext context)
     /// One setting's change as the page sent it (AGT6): a text sets it, null clears it, and a key left out
     /// is no change at all — the three a person can mean, kept apart.
     /// </summary>
-    private static AgentSettingEdit? Edit(IpcRequest request, string name) =>
-        request.Payload is { } payload && payload.TryGetProperty(name, out var value)
+    private static AgentSettingEdit? Edit(JsonElement? sent, string name) =>
+        sent is { } value
             ? value.ValueKind switch
             {
                 JsonValueKind.Null => new AgentSettingEdit(null),
@@ -557,10 +545,9 @@ public sealed class AgentsRoutes(DriverContext context)
             : null;
 
     /// <summary>An effort per model as the page sent it: the model's name, then a value or null.</summary>
-    private static IReadOnlyDictionary<string, AgentSettingEdit>? PerModel(IpcRequest request)
+    private static IReadOnlyDictionary<string, AgentSettingEdit>? PerModel(JsonElement? sent)
     {
-        if (request.Payload is not { } payload || !payload.TryGetProperty("perModel", out var models)
-            || models.ValueKind != JsonValueKind.Object)
+        if (sent is not { ValueKind: JsonValueKind.Object } models)
         {
             return null;
         }
@@ -595,9 +582,9 @@ public sealed class AgentsRoutes(DriverContext context)
     /// failure. The page makes accounts by signing in (<c>login-new</c>, D66 §3); this is the
     /// bridge's half of <c>daoris agent account add</c>, for a name a person picks before signing in.
     /// </remarks>
-    private int ProfileAdd(string harness, IpcRequest request)
+    private int ProfileAdd(string harness, string? named)
     {
-        Directory.CreateDirectory(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, Named(request)));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, Named(named)));
         return 0;
     }
 
@@ -617,9 +604,9 @@ public sealed class AgentsRoutes(DriverContext context)
     /// <para>A delete that fails — a running session holding a file open in it — says so and leaves
     /// the wiring as it was, because the account is still there to point at.</para>
     /// </remarks>
-    private int ProfileRemove(string harness, IpcRequest request, Action<string> stream)
+    private int ProfileRemove(string harness, string? named, Action<string> stream)
     {
-        var profile = Named(request);
+        var profile = Named(named);
         var directory = HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, profile);
         try
         {
