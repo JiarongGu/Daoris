@@ -308,17 +308,17 @@ public sealed class HandOverLookTests : IDisposable
         PriorSession Prior(string session, bool limit = false, string? profile = "account-1") =>
             new(session, null, "stopped") { Limit = limit, Profile = profile };
 
-        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.Driver.ContinuesFrom(handed, Prior("s1"), "account-1"));
-        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1", limit: true), "account-2"));
+        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.MovedParts.ContinuesFrom(handed, Prior("s1"), "account-1"));
+        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1", limit: true), "account-2"));
         // The handed quest's own later carry-on, cut off by a limit too, is the limit's move from that later session.
-        Assert.Equal(new ContinuedFrom("s2", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(handed, Prior("s2", limit: true), "account-2"));
+        Assert.Equal(new ContinuedFrom("s2", "limit", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(handed, Prior("s2", limit: true), "account-2"));
 
         // A carry-on on the same account, or one no limit moved, is Daoris's carry-on.
-        Assert.Equal(new ContinuedFrom("s2", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(handed, Prior("s2"), "account-1"));
-        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1", limit: true), "account-1"));
-        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2"));
-        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(handed, null, "account-1"));
-        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, null, "account-1"));
+        Assert.Equal(new ContinuedFrom("s2", "carry-on", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(handed, Prior("s2"), "account-1"));
+        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1", limit: true), "account-1"));
+        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2"));
+        Assert.Null(Daoris.Driver.MovedParts.ContinuesFrom(handed, null, "account-1"));
+        Assert.Null(Daoris.Driver.MovedParts.ContinuesFrom(null, null, "account-1"));
     }
 
     /// <summary>
@@ -330,9 +330,9 @@ public sealed class HandOverLookTests : IDisposable
     {
         var cut = new PriorSession("s1", null, "failed") { Limit = true, Profile = "work", Adapter = "claude-code-acp" };
 
-        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work", agent: "codex-acp"));
-        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work", agent: "claude-code-acp"));
-        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work"));
+        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, cut, "work", agent: "codex-acp"));
+        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, cut, "work", agent: "claude-code-acp"));
+        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, cut, "work"));
         Assert.True(AccountIdentity.OnAnotherAccount(cut, "work", "codex-acp"));
         Assert.False(AccountIdentity.OnAnotherAccount(cut, "work", "CLAUDE-CODE-ACP"));
     }
@@ -349,7 +349,7 @@ public sealed class HandOverLookTests : IDisposable
         (CourseFromWhy Why, CourseFromBy By) Heard(HandedQuest? hand, PriorSession prior, string profile, bool retried = false, bool pressed = false)
         {
             var decided = new List<LineCourse>();
-            Assert.NotNull(Daoris.Driver.Driver.ContinuesFrom(hand, prior, profile, retried: retried, pressed: pressed, decided: decided.Add));
+            Assert.NotNull(Daoris.Driver.MovedParts.ContinuesFrom(hand, prior, profile, retried: retried, pressed: pressed, decided: decided.Add));
             var move = Assert.IsType<LineCourse.Move>(Assert.Single(decided));
             return (move.Why, move.By);
         }
@@ -372,12 +372,12 @@ public sealed class HandOverLookTests : IDisposable
         PriorSession Prior(string session, bool limit = false, string? profile = "account-1") =>
             new(session, null, "stopped") { Limit = limit, Profile = profile };
 
-        Assert.Equal(new ContinuedFrom("s1", "retry", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-1", retried: true));
-        Assert.Equal(new ContinuedFrom("s1", "carry-on", "person"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-1", pressed: true));
-        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1", limit: true), "account-2", retried: true));
-        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.Driver.ContinuesFrom(
+        Assert.Equal(new ContinuedFrom("s1", "retry", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-1", retried: true));
+        Assert.Equal(new ContinuedFrom("s1", "carry-on", "person"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-1", pressed: true));
+        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1", limit: true), "account-2", retried: true));
+        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.MovedParts.ContinuesFrom(
             new HandedQuest("codex-acp", null, "s1", HandOverWhy.Near, HandOverBy.Person, T0), Prior("s1"), "account-1", retried: true));
-        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, null, "account-1", retried: true));
+        Assert.Null(Daoris.Driver.MovedParts.ContinuesFrom(null, null, "account-1", retried: true));
     }
 
     /// <summary>
@@ -392,19 +392,19 @@ public sealed class HandOverLookTests : IDisposable
             new(session, null, "stopped") { Limit = limit, Profile = profile };
 
         // Moved: the walk's first step was an account over its curve, or the most room under it, and the account changed.
-        Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.OverCurve));
-        Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.MostRoom));
+        Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.OverCurve));
+        Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.MostRoom));
 
         // Stays: the same account, whatever the walk said, is a carry-on (SESSCTX1b).
         var carried = new ContinuedFrom("s1", "carry-on", "daoris");
-        Assert.Equal(carried, Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-1", OpeningWhy.MostRoom));
+        Assert.Equal(carried, Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-1", OpeningWhy.MostRoom));
         // Moved for another reason than the curve is no curve's move, and nothing is claimed of a start no walk chose.
-        Assert.Equal(carried, Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.Cooling));
-        Assert.Equal(carried, Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.NearReached));
-        Assert.Equal(carried, Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", null));
+        Assert.Equal(carried, Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.Cooling));
+        Assert.Equal(carried, Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.NearReached));
+        Assert.Equal(carried, Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2", null));
         // A limit is the limit's move, and a hand-over its own, whatever the walk then said.
-        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1", limit: true), "account-2", OpeningWhy.MostRoom));
-        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.Driver.ContinuesFrom(
+        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1", limit: true), "account-2", OpeningWhy.MostRoom));
+        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.MovedParts.ContinuesFrom(
             new HandedQuest("codex-acp", null, "s1", HandOverWhy.Near, HandOverBy.Person, T0), Prior("s1"), "account-2", OpeningWhy.MostRoom));
     }
 

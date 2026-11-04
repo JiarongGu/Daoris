@@ -31,7 +31,7 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
 
         // The session this start continues, why and who asked: the one the quest was handed over from, or one a limit cut off when this
         // runs on another account; every other carry-on names its link too, `retry` where its resume fell back.
-        var continues = Driver.ContinuesFrom(
+        var continues = MovedParts.ContinuesFrom(
             state.HandedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,
             retried: fellBack is not null,
             pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !state.HandedFrom),

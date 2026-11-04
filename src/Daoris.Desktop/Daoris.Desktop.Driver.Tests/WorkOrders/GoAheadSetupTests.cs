@@ -36,7 +36,7 @@ public sealed class GoAheadSetupTests
     private static string Flat(string prompt) => System.Text.RegularExpressions.Regex.Replace(prompt, @"\s+", " ");
 
     private static SessionTarget Under(SessionTarget target, AccessSetting? repository, AccessSetting? machine = null) =>
-        Daoris.Driver.Driver.WithAccess(target, AccessRules.ResolveLevels(repository, null, machine));
+        Daoris.Driver.StartTargets.WithAccess(target, AccessRules.ResolveLevels(repository, null, machine));
 
     private static AccessSetting Pauses(string pause, string value) =>
         new() { Pauses = new Dictionary<string, string>(StringComparer.Ordinal) { [pause] = value } };

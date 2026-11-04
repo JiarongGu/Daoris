@@ -743,7 +743,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var edges = analysis.Edges.Select(edge => (edge.File, edge.Type)).ToHashSet();
 
         // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using` skipped.
-        Assert.Contains(("WorkOrders/SessionsCommand.cs", "HolderKey"), edges);
+        Assert.Contains(("WorkOrders/Sessions/SessionsWorld.cs", "HolderKey"), edges);
         Assert.Contains(("Agents/AccountCooling.cs", "AccountFileNodes"), edges);
         Assert.Contains(("Install/Tools.cs", "Json"), edges);
 

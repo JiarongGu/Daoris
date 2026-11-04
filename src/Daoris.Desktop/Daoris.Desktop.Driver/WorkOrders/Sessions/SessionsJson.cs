@@ -1,0 +1,161 @@
+using System.Text.Json;
+
+namespace Daoris.Driver;
+
+/// <summary>The written form of one listing, as <c>SESSION_GROUPS</c> answers it.</summary>
+internal static class SessionsJson
+{
+    /// <summary>
+    /// <c>{"sessions": [...]}</c>, and with <paramref name="entries"/> the entries beside the rows, which stay what they were.
+    /// </summary>
+    internal static string Json(IEnumerable<SessionGrouping> rows, IEnumerable<SessionEntry>? entries = null)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("sessions");
+            foreach (var row in rows)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("session", row.Session);
+                writer.WriteString("group", row.Group);
+                writer.WriteString("shown", row.Shown);
+                writer.WriteBoolean("archived", row.Archived);
+                writer.WriteBoolean("teammate", row.Teammate);
+                if (row.Strikes is { } strikes) writer.WriteNumber("strikes", strikes); else writer.WriteNull("strikes");
+                writer.WriteString("awaits", row.Awaits);
+                writer.WriteString("awaitsOf", row.AwaitsOf);
+                if (row.Work is { } work)
+                {
+                    writer.WriteStartObject("work");
+                    if (work.Commits is { } commits) writer.WriteNumber("commits", commits); else writer.WriteNull("commits");
+                    if (work.Uncommitted is { } uncommitted) writer.WriteNumber("uncommitted", uncommitted); else writer.WriteNull("uncommitted");
+                    writer.WriteString("branch", work.Branch);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("work");
+                }
+
+                writer.WriteBoolean("holdsQuest", row.HoldsQuest);
+                if (row.PausedBy is { } pause)
+                {
+                    writer.WriteStartObject("pausedBy");
+                    writer.WriteString("scope", pause.Word);
+                    writer.WriteString("id", pause.Id);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("pausedBy");
+                }
+
+                // What holds the person's words on a record that resumes later.
+                if (row.Holds is { } holds)
+                {
+                    writer.WriteStartObject("holds");
+                    writer.WriteString("why", holds.Why);
+                    writer.WriteString("reason", holds.Reason);
+                    writer.WriteString("repository", holds.Repository);
+                    if (holds.Until is { } until) writer.WriteString("until", until); else writer.WriteNull("until");
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("holds");
+                }
+
+                writer.WriteBoolean("deletable", row.Deletable);
+                // What its own tree offers to land, whatever group it rests in.
+                if (row.Lands is { } lands)
+                {
+                    writer.WriteStartObject("lands");
+                    writer.WriteString("branch", lands.Branch);
+                    writer.WriteString("tree", lands.Tree);
+                    writer.WriteNumber("commits", lands.Commits);
+                    if (lands.Uncommitted is { } paths) writer.WriteNumber("uncommitted", paths); else writer.WriteNull("uncommitted");
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("lands");
+                }
+
+                // Where the line holds its commits by content, its discard instead, with what the page says.
+                if (row.Discards is { } discards)
+                {
+                    writer.WriteStartObject("discards");
+                    writer.WriteString("branch", discards.Branch);
+                    writer.WriteString("tree", discards.Tree);
+                    writer.WriteString("says", discards.Says);
+                    writer.WriteString("keeps", discards.Work.Keeps);
+                    writer.WriteString("keptAt", discards.KeptAt);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("discards");
+                }
+
+                // The call a working session's agent is inside, where the process that read the rows heard one; whether it waits on
+                // the person's answer to its permission request.
+                if (row.Calling is { } call)
+                {
+                    writer.WriteStartObject("calling");
+                    writer.WriteString("title", call.Title);
+                    writer.WriteString("since", call.Since);
+                    writer.WriteBoolean("waiting", call.Waiting);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("calling");
+                }
+
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            if (entries is not null)
+            {
+                writer.WriteStartArray("entries");
+                foreach (var entry in entries)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("entry", entry.Key);
+                    writer.WriteString("origin", entry.Origin);
+                    writer.WriteString("repository", entry.Repository);
+                    writer.WriteString("group", entry.Group);
+                    writer.WriteString("leading", entry.Leading);
+                    writer.WriteString("head", entry.Head);
+                    writer.WriteString("opens", entry.Opens);
+                    writer.WriteStartArray("parts");
+                    foreach (var part in entry.Parts)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("session", part.Session);
+                        writer.WriteString("quest", part.Quest);
+                        writer.WriteString("shown", part.Shown);
+                        writer.WriteString("group", part.Group);
+                        writer.WriteString("began", part.Began);
+                        writer.WriteString("after", part.After);
+                        writer.WriteString("askedBy", part.AskedBy);
+                        writer.WriteString("head", part.Head);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+
+            writer.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n");
+    }
+}

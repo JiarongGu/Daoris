@@ -5,69 +5,6 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Knowledge;
 
-/// <summary>A file a finished tree's commit changed, by name, with the lines added and removed; -1 for each where git counts none (a binary).</summary>
-public sealed record WorkRecordFile(string Path, int Added, int Removed);
-
-/// <summary>One commit of a finished tree's, read by <c>--first-parent</c> from its tip (the keep-size design §2.1): its id, subject and files.</summary>
-public sealed record WorkRecordCommit(string Id, string Subject, IReadOnlyList<WorkRecordFile> Files);
-
-/// <summary>
-/// Which hold kept a finished tree's commits as its branch went (the keep-size design §1.1, §3.3): <c>line</c>, <c>landing</c>,
-/// <c>squash</c>, <c>content</c>, <c>carried</c> or <c>empty</c>; where (the branch or ref named), and in which form.
-/// </summary>
-public sealed record WorkRecordHold(string Kind, string? Where, string? Form);
-
-/// <summary>
-/// The landing that carried a finished tree's work, captured by the driver before the move (Codex's read of the design, finding 6): the
-/// branch it made, the line, when it landed, and its pull request where one was opened.
-/// </summary>
-public sealed record WorkRecordLanding(string Branch, string? Line, DateTimeOffset At, string? PullRequest);
-
-/// <summary>What a finished tree held that no commit holds, by name (§2.1's last row): at most the walk's limit of names, the rest counted.</summary>
-/// <param name="Count">Every such path, named or not.</param>
-/// <param name="Cut">The names stop at the limit; <paramref name="Count"/> says how many there were.</param>
-public sealed record WorkRecordLeft(IReadOnlyList<string> Names, int Count, bool Cut);
-
-/// <summary>
-/// The driver's post of a finished tree's record (KEEPSIZE1b, the keep-size design §2.2): the manifest's facts and the commits read from
-/// the tip. Keyed by the tree's set-aside identity, <c>(workspace, repository, folder)</c>, where the folder is <c>&lt;tree&gt;-&lt;moment&gt;</c>.
-/// </summary>
-/// <param name="Tree">The tree's path before the move: the sessions whose row names it are the record's.</param>
-/// <param name="Moved">When the tree was moved aside: only a session made before it is the record's.</param>
-/// <param name="Commits">The tree's commits, oldest first; null where the tip no longer read, and <paramref name="CommitsUnread"/> says why.</param>
-/// <param name="Whole">Whether <c>whole</c> was set at the move.</param>
-public sealed record WorkRecordPost(
-    string Workspace, string Repository, string Folder, string Tree, DateTimeOffset Moved, string? Unit, string Branch, string? Line,
-    WorkRecordHold Hold, string Tip, string? GrewFrom, string? Ref, IReadOnlyList<WorkRecordCommit>? Commits, string? CommitsUnread,
-    WorkRecordLeft Left, bool Whole)
-{
-    /// <summary>Its landing, where one could be established before the move; null with <see cref="LandingWhy"/> where none could.</summary>
-    public WorkRecordLanding? Landing { get; init; }
-
-    /// <summary>Why no landing is named.</summary>
-    public string? LandingWhy { get; init; }
-}
-
-/// <summary>A session the record names (§2.2's <c>work_record_sessions</c>), and the commits its base attributes to it, or null where none can be read.</summary>
-public sealed record WorkRecordSession(string Session, IReadOnlyList<string>? Commits);
-
-/// <summary>A finished tree's record, as kept (the keep-size design §2): what the driver posted, when it was kept, and its sessions.</summary>
-public sealed record WorkRecord(WorkRecordPost Post, DateTimeOffset At, int Schema, IReadOnlyList<WorkRecordSession> Sessions);
-
-/// <summary>
-/// The records are stamped newer than this build reads (the keep-size design §2.2, as KSCHEMA1 refuses the index's): no row is read or
-/// written, and a post is refused, so the driver keeps its folder <c>deleted</c>, awaiting its record, and says why.
-/// </summary>
-public sealed class NewerWorkRecordsException(int found, int known)
-    : Exception($"The records of finished trees were written by a newer Daoris (version {found}; this build reads {known}), so this one keeps none of them.")
-{
-    /// <summary>The stamp the store carries.</summary>
-    public int Found { get; } = found;
-
-    /// <summary>The version this build writes.</summary>
-    public int Known { get; } = known;
-}
-
 /// <summary>
 /// A finished tree's record (KEEPSIZE1b, D195's keep-size note; the keep-size design §2.2): <c>work_records</c>, one row per finished tree,
 /// and <c>work_record_sessions</c>, the sessions that ran in it, in <c>knowledge.db</c> beside the sessions' rows. Kept, not derived: the

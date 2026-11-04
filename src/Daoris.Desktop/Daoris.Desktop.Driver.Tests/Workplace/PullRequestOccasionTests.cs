@@ -74,7 +74,7 @@ public sealed class PullRequestOccasionTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["LinesRoutes.cs", "TreesConsole.cs"], doors);
+        Assert.Equal(["TreesConsole.cs", "TreesTidyDesk.cs"], doors);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public sealed class PullRequestOccasionTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["HelpSyncProposals.cs", "LinesRoutes.cs", "TreesConsole.cs"], doors);
+        Assert.Equal(["HelpSyncProposals.cs", "TreesConsole.cs", "TreesTidyDesk.cs"], doors);
         // The look and the press are `TreeSync`'s since PART10j; the front keeps one-line calls, which hold no body to read.
         var sync = File.ReadAllText(SourceFiles.Driver("TreeSync.cs"));
         var look = Body(sync, "SyncPlanAsync");

@@ -19,7 +19,10 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | Unit | File | Its job |
 |---|---|---|
 | Senders | `Service/Sessions/Senders.cs`; twins `Driver/Service/Domain/Senders.cs`, `Web/work/conversation/sender.ts` | The one sender rule over a word's marks; held to `fixtures/senders.json` in the service's tests |
-| ChannelStore, ChannelDesk | `Service/Asks/Channel.cs` | An ask's channel: post (session, person), read, receipts, Daoris's lines from the ask's quests, the judge |
+| ChannelStore | `Service/Asks/ChannelStore.cs` | The messages, the read marks, the acknowledgments and the push and fetch cursors, in `channel`, `channel_marks`, `channel_acks` and `channel_cursor` |
+| ChannelDesk | `Service/Asks/ChannelDesk.cs` | An ask's channel: post (session, person), read, receipts, Daoris's lines from the ask's quests, the judge |
+| Channel records | `Service/Asks/Records/` | `ChannelMessage`, `ChannelLine`, `ChannelRead`, `ChannelOutcome`, `ChannelReadOutcome`, `ElsewhereAsk`, `IChannelItem` |
+| HistoryDesk | `Service/Asks/HistoryDesk.cs`, its units and refusals in `Service/Asks/Records/` (`HistoryUnit`, `HistoryKept`, `HistoryRefusal` and the words beside them) | The records' half of clearing finished history: listed first, then pressed, each unit judged again inside the transaction that clears it |
 | ChannelParts | `Service/Asks/ChannelParts.cs` | A line's own channel and messages to one part, kept in `channel_addressed`, never synced |
 | ChannelBounds, ChannelRefusal, ChannelAcks | `Service/Asks/ChannelTerms.cs` | The bounds (4,000 chars, 10 posts, 3 urgent, 20 handed), refusal codes, acknowledgment states |
 | ChannelTools | `Mcp/ChannelTools.cs` | `channel_post` (urgent or ordinary, `to`, `re`) and `channel_read` |
@@ -205,8 +208,8 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 3. D188 point 7 (*answered*: the turn that took it ended with an answer) vs D225's COMMS1h note (that is *taken, turn ended*; *answered* is a reply). D225 reads right.
 4. D188 point 6 (the channel's mark moves on taking) vs code (delivery by per-message acknowledgment, the mark for display, `Driver/WorkOrders/ChannelReach.cs:87-92`). Code reads right.
 5. D167 point 7 (a message reaches a running session at its next step) vs D188 and code (only urgent does, `Driver/WorkOrders/ChannelReach.cs:77-85`). D188 reads right.
-6. D167 point 6 (each ask has one channel) and `Driver/WorkOrders/Domain/ChannelWords.cs:17-18` ("any other origin has none") vs code (a line on no ask posts on its own channel, `Service/Asks/Channel.cs:646-656`). Code reads right.
-7. `Service/Asks/Channel.cs:625` ("read at a session's next look") vs D188's levels. D188 reads right.
+6. D167 point 6 (each ask has one channel) and `Driver/WorkOrders/Domain/ChannelWords.cs:17-18` ("any other origin has none") vs code (a line on no ask posts on its own channel, `Service/Asks/ChannelDesk.cs`'s `SpeakerAsync`). Code reads right.
+7. `ChannelDesk`'s summary ("read at a session's next look") vs D188's levels. D188 reads right.
 8. The co-working skill ("the service refuses one past the bound" for urgent posts) vs code (a fourth urgent post is kept ordinary, `Service/Asks/ChannelTerms.cs:18-22`, `Mcp/ChannelTools.cs:39`). Code reads right.
 9. D163 point 3 (helpers default `ask`) vs code (default `on` for agents set up here, `Driver/Settings/HelperKey.cs:17`, D163's HELPERDEFAULT1 note). Code reads right.
 10. D199 point 2 (the lead asks a piece with `partner_ask`) vs code (no such tool; `Mcp/ToolClasses.cs` has `partner_answer` alone). Code reads right today.

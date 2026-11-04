@@ -119,7 +119,7 @@ public static class CourseDecision
 
         if (words.Count == 0) return Held(facts, CourseHoldWhy.Stays);
 
-        // AGENTERRORS1a: past its transient bound a record goes on only with a word of the person's said after it ended (Planner.cs:894-895).
+        // AGENTERRORS1a: past its transient bound a record goes on only with a word of the person's said after it ended (RoundReading.TransientHolding and WordsOn).
         if (facts.Failure is { PastBound: true } && facts.Press?.Kind != CoursePressKind.TryAgain && !words.Any(word => word.Persons && word.AfterEnd))
         {
             return Held(facts, CourseHoldWhy.TransientBound, [CourseDoor.TryAgain, CourseDoor.Say]);

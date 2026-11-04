@@ -91,7 +91,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["ChatStarts.cs"] = "a conversation's agent in the checkout writes its files itself: its start holds the repository shared until its record is open and the ledger names the checkout, so no writer moves the checkout under the commit it begins from; after that each writer reads the checkout clean under its own hold, immediately before, and moves it only by `merge --ff-only`, which git refuses over the agent's change, and the pull and the transport's promotion wait while the ledger holds the session there",
         ["ChatGoOn.cs"] = "a conversation going on in the checkout: its start holds the repository shared until its record holds the checkout again, then as a new conversation's",
         ["GrowTree.cs"] = "a driven session in the checkout: its start holds the repository shared until its record is open, then as a conversation's",
-        ["Driver.cs"] = "a carry-on's open, which takes the hold again after its resume let it go, until its record is open",
+        ["OpenRecord.cs"] = "a carry-on's open, which takes the hold again after its resume let it go, until its record is open",
     };
 
     /// <summary>
@@ -106,7 +106,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["EntriesRoutes.cs"] = "the window's Accept on an entry, a merge rule's move",
         ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",
         ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
-        ["LinesRoutes.cs"] = "the window's Bring up to date",
+        ["TreesTidyDesk.cs"] = "the window's Bring up to date",
         ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
         ["DriverWatch.cs"] = "the integration transport's promotions",
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",

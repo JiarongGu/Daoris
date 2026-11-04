@@ -15,9 +15,13 @@ import { QUEST_MOVES, QUEST_STATUSES, questFlow } from './questLife';
 
 const root = join(process.cwd(), '..', '..');
 const core = 'src/Daoris.Service/Daoris.Service.Core';
-const found = readdirSync(join(root, ...core.split('/')), { recursive: true, encoding: 'utf8' }).filter((path) => /(^|[\\/])QuestLog\.cs$/.test(path));
-if (found.length !== 1) throw new Error(`QuestLog.cs is expected once under ${core}, found ${found.length}`);
-const source = readFileSync(join(root, ...core.split('/'), found[0]!), 'utf8');
+const files = readdirSync(join(root, ...core.split('/')), { recursive: true, encoding: 'utf8' });
+function sourceOf(name: string): string {
+  const found = files.filter((path) => path.split(/[\\/]/).pop() === name);
+  if (found.length !== 1) throw new Error(`${name} is expected once under ${core}, found ${found.length}`);
+  return readFileSync(join(root, ...core.split('/'), found[0]!), 'utf8');
+}
+const source = sourceOf('QuestTransitions.cs');
 
 /**
  * The pairs `QuestTransitions.Allows` allows, read from its switch: each arm names its targets (`QuestStatus.Done or
@@ -45,8 +49,8 @@ describe('a quest\'s moves, held to the code (trap 11)', () => {
   it('draws exactly the moves the code allows, and every status the code has', () => {
     const sort = (pairs: readonly (readonly [string, string])[]) => pairs.map(([from, to]) => `${from}>${to}`).sort();
     expect(sort(QUEST_MOVES)).toEqual(sort(allowed(source)));
-    // The enum's members, one a line between their comments, in Quests.cs beside QuestLog.cs.
-    const quests = readFileSync(join(root, ...core.split('/'), found[0]!.replace(/QuestLog\.cs$/, 'Quests.cs')), 'utf8');
+    // The enum's members, one a line between their comments.
+    const quests = sourceOf('QuestStatus.cs');
     const block = /public enum QuestStatus\s*\{([^}]*)\}/.exec(quests)?.[1] ?? '';
     const members = block.split('\n').flatMap((line) => /^\s*(\w+)\s*,?\s*$/.exec(line)?.[1] ?? []);
     expect(members).toEqual([...QUEST_STATUSES]);

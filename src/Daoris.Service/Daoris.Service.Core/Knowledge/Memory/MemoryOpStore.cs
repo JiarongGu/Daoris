@@ -4,117 +4,30 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Knowledge;
 
-/// <summary>What an operation does to a memory (the memory coordinator design §3).</summary>
-public static class MemoryOpKind
-{
-    public const string Write = "write";
-    public const string Relate = "relate";
-    public const string End = "end";
-    public const string Confirm = "confirm";
-    public const string Propose = "propose";
-
-    /// <summary>A write that ends the entries it replaces, in one change once approved (KNOWCENTRAL2h).</summary>
-    public const string Supersede = "supersede";
-
-    internal static readonly string[] All = [Write, Relate, End, Confirm, Propose, Supersede];
-
-    /// <summary>Whether a released row of <paramref name="kind"/> awaits its approver: it ends an entry.</summary>
-    internal static bool Ends(string kind) => kind is End or Supersede;
-}
-
-/// <summary>
-/// Where an operation stands (§3): <c>staged</c> by its session; released at the session's commit point to <c>ready</c>, an end or a
-/// replacement to <c>awaiting</c> its approver; <c>applying</c> while the service calls the engine; then <c>applied</c>, <c>stale</c> where its guard no
-/// longer held, or <c>held</c> where nothing says whether it ran. <c>dropped</c> and <c>declined</c> never apply. A proposal (2e) is
-/// <c>awaiting</c> its owner while its quest is open, then <c>declined</c>, <c>answered</c> where the quest closed done, <c>stale</c> where
-/// its target moved first, or <c>dropped</c> where its quest is gone; none applies.
-/// </summary>
-public static class MemoryOpState
-{
-    public const string Answered = "answered";
-    public const string Staged = "staged";
-    public const string Awaiting = "awaiting";
-    public const string Ready = "ready";
-    public const string Applying = "applying";
-    public const string Applied = "applied";
-    public const string Dropped = "dropped";
-    public const string Declined = "declined";
-    public const string Stale = "stale";
-    public const string Held = "held";
-}
-
-/// <summary>
-/// What an operation asks: a write's text, or an end's reason; the entry it targets and the revision its session read; a relation's
-/// source and kind. A write naming a relation and a target relates the entry it writes; its <see cref="Recheck"/> is the records it cites
-/// (<see cref="MemoryCitations"/>), kept on the entry for the sweep. A replacement's <see cref="Predecessors"/> are the entries its
-/// successor ends, each at the revision read.
-/// </summary>
-public sealed record MemoryChange(
-    string Kind, string? Text = null, string? Target = null, long? Revision = null, string? Source = null, string? Relation = null,
-    string? Recheck = null, IReadOnlyList<MemoryPredecessor>? Predecessors = null);
-
-/// <summary>A recheck the sweep read of a cited entry (§3): it holds at <paramref name="Revision"/>, or failed for <paramref name="Reason"/>.</summary>
-public sealed record MemoryRecheck(string Repository, string Entry, long Revision, bool Holds, string? Reason = null);
-
-/// <summary>Who made an operation, from the caller's record at the call (§1), never from a tool's arguments; and the call's instant.</summary>
-public sealed record MemoryAuthor(
-    string Session, string Workspace, string? Quest, string Adapter, string? Harness, string? Role, string? RoleRevision, DateTimeOffset At);
-
-/// <summary>
-/// One row of <c>memory_ops</c>, the log of record of a repository's memory (§3). <see cref="By"/> is null on a row the service's sweep wrote.
-/// </summary>
-public sealed record MemoryOp(string Id, string Repository, string State, MemoryChange Change, MemoryAuthor? By, DateTimeOffset At)
-{
-    /// <summary>The models of the turn that made it, named at its commit point; null before.</summary>
-    public string? Models { get; init; }
-
-    /// <summary>Who decided an awaiting end.</summary>
-    public string? Approver { get; init; }
-
-    /// <summary>When a recheck held the target while this end awaited.</summary>
-    public DateTimeOffset? Holds { get; init; }
-
-    /// <summary>The entry the engine answered: a write's new or repeated entry, an end's or confirmation's target.</summary>
-    public string? Entry { get; init; }
-
-    /// <summary>The revision the engine answered.</summary>
-    public long? Applied { get; init; }
-
-    /// <summary>When the service settled it.</summary>
-    public DateTimeOffset? Settled { get; init; }
-
-    /// <summary>The quest a proposal travels on (2e); null on every other row.</summary>
-    public string? Carried { get; init; }
-
-    /// <summary>The owner's note on the quest that settled a proposal: its decline's reason or its handback.</summary>
-    public string? Answer { get; init; }
-
-    /// <summary>When the proposer was told how its proposal settled.</summary>
-    public DateTimeOffset? Told { get; init; }
-
-    /// <summary>When the service marked it <c>applying</c>: the instant an engine's receipt for its key could have begun; null on a row from before.</summary>
-    public DateTimeOffset? Began { get; init; }
-}
-
-/// <summary>What a session leaves for the person in memory (KNOWCENTRAL2e): ends and replacements awaiting, staged rows of a stopped session, since the oldest.</summary>
-public sealed record MemoryWait(string Session, int Ends, int Replacements, int Staged, DateTimeOffset Since);
-
 /// <summary>
 /// The memory coordinator's log of record (KNOWCENTRAL2c; the design §3): <c>memory_ops</c> in <c>knowledge.db</c>, beside the sessions and
 /// the finished trees' records, so a commit point moves its session's rows in the transaction that records it, whichever process records it.
-/// A connector stages rows and reads; only the service marks <c>applying</c>, calls the engine and settles.
+/// A connector stages rows and reads; only the service marks <c>applying</c>, calls the engine and settles. The read sets
+/// (<see cref="MemoryOpReads"/>) and the changes since a cursor (<see cref="MemoryOpChanges"/>) are types of their own, and their doors here are one line each.
 /// </summary>
-public sealed partial class MemoryOpStore
+public sealed class MemoryOpStore
 {
-    private const string Columns =
+    internal const string Columns =
         "id, repository, kind, state, at, session, workspace, quest, adapter, harness, role, role_revision, models, text, target, revision, source, "
         + "relation, approver, holds, entry, applied, settled, recheck, predecessors, carried, answer, told, began";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     private readonly ConnectionGate _db;
+    private readonly MemoryOpReads _reads;
+    private readonly MemoryOpChanges _changes;
 
-    internal MemoryOpStore(ConnectionGate db) => _db = db;
+    internal MemoryOpStore(ConnectionGate db)
+    {
+        _db = db;
+        _reads = new(db);
+        _changes = new(db, ReadAllAsync, () => BetweenReads);
+    }
 
     public static async Task<MemoryOpStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
@@ -155,7 +68,7 @@ public sealed partial class MemoryOpStore
             CREATE INDEX IF NOT EXISTS memory_ops_session ON memory_ops (session, state);
             CREATE INDEX IF NOT EXISTS memory_ops_state ON memory_ops (state);
             CREATE INDEX IF NOT EXISTS memory_ops_target ON memory_ops (repository, target, state);
-            {ReadSetSchema}
+            {MemoryOpReads.Schema}
             {EventJournal.MemorySchema}
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -484,7 +397,7 @@ public sealed partial class MemoryOpStore
             var settled = await settle.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             if (settled == 1 && outcome is { State: MemoryOpState.Applied, Revision: { } moved })
             {
-                await MovedAsync(id, outcome.Entry, moved, inside).ConfigureAwait(false);
+                await _reads.MovedAsync(id, outcome.Entry, moved, inside).ConfigureAwait(false);
             }
 
             return settled;
@@ -667,200 +580,34 @@ public sealed partial class MemoryOpStore
     /// <summary>Run between a bootstrap's two reads; a test's, to commit from another connection there.</summary>
     internal Func<Task>? BetweenReads { get; set; }
 
-    /// <summary>
-    /// The rows of <paramref name="repositories"/> still to settle (awaiting, ready, applying, held) and the journal's newest position, read in
-    /// one transaction, so a row another connection commits is in the rows or past the cursor.
-    /// </summary>
+    /// <summary>The rows of <paramref name="repositories"/> still to settle and the journal's newest position, read in one transaction.</summary>
     public Task<MemoryBootstrap> BootstrapAsync(IReadOnlyCollection<string> repositories, CancellationToken ct = default) =>
-        _db.InTransactionAsync(async (_, inside) =>
-        {
-            IReadOnlyList<MemoryOp> unsettled;
-            await using (var read = _db.Command())
-            {
-                read.CommandText = $"""
-                    SELECT {Columns} FROM memory_ops
-                    WHERE state IN ('awaiting', 'ready', 'applying', 'held') AND repository IN (SELECT value FROM json_each($scope))
-                    ORDER BY rowid
-                    """;
-                read.Parameters.AddWithValue("$scope", JsonSerializer.Serialize(repositories));
-                unsettled = await ReadAllAsync(read, inside).ConfigureAwait(false);
-            }
-
-            if (BetweenReads is { } between) await between().ConfigureAwait(false);
-            var (store, _, newest) = await JournalAsync(inside).ConfigureAwait(false);
-            return new MemoryBootstrap(new(store, newest, Scope(repositories)), unsettled);
-        }, ct, deferred: true);
+        _changes.BootstrapAsync(repositories, ct);
 
     /// <summary>The journal's newest position over <paramref name="repositories"/>, as a cursor <see cref="ChangesAsync"/> reads past.</summary>
     public Task<MemoryCursor> CursorAsync(IReadOnlyCollection<string> repositories, CancellationToken ct = default) =>
-        _db.InTransactionAsync(async (_, inside) =>
-        {
-            var (store, _, newest) = await JournalAsync(inside).ConfigureAwait(false);
-            return new MemoryCursor(store, newest, Scope(repositories));
-        }, ct, deferred: true);
+        _changes.CursorAsync(repositories, ct);
 
-    /// <summary>
-    /// The references whose rows moved past <paramref name="cursor"/> in <paramref name="repositories"/>, a replacement's predecessors with
-    /// its successor; a re-validation where the cursor is another store's, below the journal's floor, or of another scope.
-    /// </summary>
+    /// <summary>The references whose rows moved past <paramref name="cursor"/> in <paramref name="repositories"/>; a re-validation where the cursor cannot be read past.</summary>
     public Task<MemoryChanges> ChangesAsync(MemoryCursor cursor, IReadOnlyCollection<string> repositories, CancellationToken ct = default) =>
-        _db.InTransactionAsync(async (_, inside) =>
-        {
-            var (store, floor, newest) = await JournalAsync(inside).ConfigureAwait(false);
-            if (!string.Equals(cursor.Scope, Scope(repositories), StringComparison.Ordinal) || !string.Equals(cursor.Store, store, StringComparison.Ordinal)
-                || floor > cursor.Position + 1 || newest < cursor.Position)
-            {
-                return new MemoryChanges(true, cursor, []);
-            }
-
-            await using var read = _db.Command();
-            // The journal names a row's target or the entry it wrote; a replacement's predecessors are read from its row.
-            read.CommandText = """
-                SELECT repository, entry FROM (
-                  SELECT o.repository, j.entry, j.position FROM event_journal j JOIN memory_ops o ON o.id = j.record
-                  WHERE j.family = 'memory' AND j.position > $since AND j.position <= $newest AND j.entry IS NOT NULL
-                    AND o.repository IN (SELECT value FROM json_each($scope))
-                  UNION ALL
-                  SELECT o.repository, json_extract(p.value, '$.entry'), j.position
-                  FROM event_journal j JOIN memory_ops o ON o.id = j.record, json_each(o.predecessors) p
-                  WHERE j.family = 'memory' AND j.position > $since AND j.position <= $newest AND o.kind = 'supersede'
-                    AND o.repository IN (SELECT value FROM json_each($scope)))
-                GROUP BY repository, entry ORDER BY min(position)
-                """;
-            read.Parameters.AddWithValue("$since", cursor.Position);
-            read.Parameters.AddWithValue("$newest", newest);
-            read.Parameters.AddWithValue("$scope", JsonSerializer.Serialize(repositories));
-            var changed = new List<MemoryReference>();
-            await using var reader = await read.ExecuteReaderAsync(inside).ConfigureAwait(false);
-            while (await reader.ReadAsync(inside).ConfigureAwait(false)) changed.Add(new(reader.GetString(0), reader.GetString(1)));
-            return new MemoryChanges(false, cursor with { Position = newest }, changed);
-        }, ct, deferred: true);
-
-    /// <summary>The journal's store, the lowest position it keeps (one past the newest where it keeps none) and its newest.</summary>
-    private async Task<(string Store, long Floor, long Newest)> JournalAsync(CancellationToken inside)
-    {
-        await using var read = _db.Command();
-        read.CommandText = """
-            SELECT (SELECT id FROM store_identity WHERE one = 1),
-                   COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'event_journal'), 0),
-                   (SELECT min(position) FROM event_journal)
-            """;
-        await using var reader = await read.ExecuteReaderAsync(inside).ConfigureAwait(false);
-        await reader.ReadAsync(inside).ConfigureAwait(false);
-        var newest = reader.GetInt64(1);
-        return (reader.IsDBNull(0) ? "" : reader.GetString(0), reader.IsDBNull(2) ? newest + 1 : reader.GetInt64(2), newest);
-    }
-
-    private static string Scope(IReadOnlyCollection<string> repositories) =>
-        string.Join(',', repositories.Order(StringComparer.Ordinal).Select(name => name.Length.ToString(CultureInfo.InvariantCulture) + ":" + name));
+        _changes.ChangesAsync(cursor, repositories, ct);
 
     /// <summary>The newest references one session's read set keeps (the memory coordinator design §3).</summary>
-    public const int ReadsPerSession = 256;
+    public const int ReadsPerSession = MemoryOpReads.PerSession;
 
     /// <summary>The newest references every session's read sets keep together.</summary>
-    public const int ReadsInAll = 65_536;
-
-    private const string ReadSetSchema = """
-        CREATE TABLE IF NOT EXISTS memory_reads (
-          seq        INTEGER PRIMARY KEY AUTOINCREMENT,
-          session    TEXT NOT NULL,
-          repository TEXT NOT NULL,
-          entry      TEXT NOT NULL,
-          revision   INTEGER NOT NULL,
-          moved      INTEGER NOT NULL DEFAULT 0,
-          told       INTEGER NOT NULL DEFAULT 0,
-          UNIQUE (session, repository, entry)
-        );
-        CREATE INDEX IF NOT EXISTS memory_reads_entry ON memory_reads (repository, entry);
-        """;
+    public const int ReadsInAll = MemoryOpReads.InAll;
 
     /// <summary>What <paramref name="session"/> read; a reference read again is kept at its new revision, as yet unmoved.</summary>
     public Task KeepReadsAsync(string session, IReadOnlyList<MemoryRead> reads, CancellationToken ct = default) =>
-        _db.InTransactionAsync(async (_, inside) =>
-        {
-            foreach (var read in reads)
-            {
-                await using var keep = _db.Command();
-                keep.CommandText = "INSERT OR REPLACE INTO memory_reads (session, repository, entry, revision) VALUES ($session, $repository, $entry, $revision)";
-                keep.Parameters.AddWithValue("$session", session);
-                keep.Parameters.AddWithValue("$repository", read.Reference.Repository);
-                keep.Parameters.AddWithValue("$entry", read.Reference.Entry);
-                keep.Parameters.AddWithValue("$revision", read.Revision);
-                await keep.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
-            }
+        _reads.KeepAsync(session, reads, ct);
 
-            await using var trim = _db.Command();
-            trim.CommandText = $"""
-                DELETE FROM memory_reads WHERE session = $session
-                  AND seq < (SELECT min(seq) FROM (SELECT seq FROM memory_reads WHERE session = $session ORDER BY seq DESC LIMIT {ReadsPerSession}));
-                DELETE FROM memory_reads WHERE seq < (SELECT min(seq) FROM (SELECT seq FROM memory_reads ORDER BY seq DESC LIMIT {ReadsInAll}));
-                """;
-            trim.Parameters.AddWithValue("$session", session);
-            return await trim.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
-        }, ct);
+    /// <summary>The references the line <paramref name="session"/> ends read that moved since, each told once.</summary>
+    public Task<IReadOnlyList<MemoryReference>> TellAsync(string session, CancellationToken ct = default) => _reads.TellAsync(session, ct);
 
-    /// <summary>The sessions of the line <c>$session</c> ends: it and those it continues by <c>From</c>.</summary>
-    private const string Line = """
-        WITH RECURSIVE chain(id) AS (
-          SELECT $session
-          UNION SELECT s.from_session FROM sessions s JOIN chain c ON s.id = c.id WHERE s.from_session IS NOT NULL)
-        """;
-
-    /// <summary>
-    /// The references the line <paramref name="session"/> ends read that moved since, each told once: a continuation is told of what the
-    /// parts before it read.
-    /// </summary>
-    public Task<IReadOnlyList<MemoryReference>> TellAsync(string session, CancellationToken ct = default) =>
-        _db.InTransactionAsync<IReadOnlyList<MemoryReference>>(async (_, inside) =>
-        {
-            var moved = new List<MemoryReference>();
-            await using (var read = _db.Command())
-            {
-                read.CommandText = $"""
-                    {Line}
-                    SELECT repository, entry FROM memory_reads
-                    WHERE session IN (SELECT id FROM chain) AND moved = 1 AND told = 0 ORDER BY seq
-                    """;
-                read.Parameters.AddWithValue("$session", session);
-                await using var reader = await read.ExecuteReaderAsync(inside).ConfigureAwait(false);
-                while (await reader.ReadAsync(inside).ConfigureAwait(false)) moved.Add(new(reader.GetString(0), reader.GetString(1)));
-            }
-
-            await using var told = _db.Command();
-            told.CommandText = $"""
-                {Line}
-                UPDATE memory_reads SET told = 1 WHERE session IN (SELECT id FROM chain) AND moved = 1 AND told = 0
-                """;
-            told.Parameters.AddWithValue("$session", session);
-            await told.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
-            return [.. moved.Distinct()];
-        }, ct);
-
-    /// <summary>
-    /// What the line <paramref name="session"/> ends read, each reference once at its newest read, newest first and at most
-    /// <see cref="ReadsPerSession"/>, with the session that read it.
-    /// </summary>
+    /// <summary>What the line <paramref name="session"/> ends read, each reference once at its newest read, newest first, with the session that read it.</summary>
     public Task<IReadOnlyList<(string Session, MemoryRead Read)>> ReadsOfLineAsync(string session, CancellationToken ct = default) =>
-        _db.RunAsync<IReadOnlyList<(string, MemoryRead)>>(async () =>
-        {
-            await using var read = _db.Command();
-            read.CommandText = $"""
-                {Line}
-                SELECT session, repository, entry, revision FROM memory_reads
-                WHERE session IN (SELECT id FROM chain) ORDER BY seq DESC
-                """;
-            read.Parameters.AddWithValue("$session", session);
-            var reads = new List<(string, MemoryRead)>();
-            var seen = new HashSet<MemoryReference>();
-            await using var reader = await read.ExecuteReaderAsync(ct).ConfigureAwait(false);
-            while (reads.Count < ReadsPerSession && await reader.ReadAsync(ct).ConfigureAwait(false))
-            {
-                var reference = new MemoryReference(reader.GetString(1), reader.GetString(2));
-                if (seen.Add(reference)) reads.Add((reader.GetString(0), new MemoryRead(reference, reader.GetInt64(3))));
-            }
-
-            return reads;
-        }, ct);
+        _reads.OfLineAsync(session, ct);
 
     /// <summary>The re-check text the applied write or replacement that wrote <paramref name="entry"/> kept: the records it cites; null for none.</summary>
     public Task<string?> CitedAsync(string repository, string entry, CancellationToken ct = default) => _db.RunAsync(async () =>
@@ -875,29 +622,4 @@ public sealed partial class MemoryOpStore
         read.Parameters.AddWithValue("$entry", entry);
         return await read.ExecuteScalarAsync(ct).ConfigureAwait(false) as string;
     }, ct);
-
-    /// <summary>
-    /// Marks every read of the entry an applied row moved past the revision it was read at, and of each entry a replacement ended at or
-    /// before the revision its approver read, in the settle's transaction.
-    /// </summary>
-    private async Task MovedAsync(string id, string? entry, long revision, CancellationToken inside)
-    {
-        await using var mark = _db.Command();
-        mark.CommandText = """
-            UPDATE memory_reads SET moved = 1
-            WHERE moved = 0 AND revision < $revision
-              AND repository = (SELECT repository FROM memory_ops WHERE id = $id)
-              AND entry = COALESCE($entry, (SELECT COALESCE(entry, target) FROM memory_ops WHERE id = $id));
-            UPDATE memory_reads SET moved = 1
-            WHERE moved = 0 AND EXISTS (
-              SELECT 1 FROM memory_ops o, json_each(o.predecessors) p
-              WHERE o.id = $id AND o.kind = 'supersede' AND o.repository = memory_reads.repository
-                AND json_extract(p.value, '$.entry') = memory_reads.entry
-                AND memory_reads.revision <= json_extract(p.value, '$.revision'));
-            """;
-        mark.Parameters.AddWithValue("$id", id);
-        mark.Parameters.AddWithValue("$entry", (object?)entry ?? DBNull.Value);
-        mark.Parameters.AddWithValue("$revision", revision);
-        await mark.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
-    }
 }

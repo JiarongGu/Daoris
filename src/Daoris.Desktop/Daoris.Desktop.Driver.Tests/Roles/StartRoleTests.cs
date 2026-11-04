@@ -248,8 +248,8 @@ public sealed class StartRoleTests : IDisposable
         Assert.True(walked.Selection.Allowed, walked.Selection.Refusal);
         Assert.Equal(("frontend", 1L), (walked.Role, walked.Revision));
         Assert.Equal(new ActorEffective("staffed", "opus", "high", "1"), walked.Chosen);
-        Assert.Equal(("frontend", 1L), driver.RoleTaken(Engine, named));
-        Assert.Equal(("engine-build", 1L), driver.RoleTaken(Engine, null));
+        Assert.Equal(("frontend", 1L), driver.Walk.RoleTaken(Engine, named));
+        Assert.Equal(("engine-build", 1L), driver.Walk.RoleTaken(Engine, null));
 
         var error = await Assert.ThrowsAsync<DriverException>(() => driver.WalkBuildPassesAsync(Engine, registry, CancellationToken.None, counts: false, role: "gone"));
         Assert.StartsWith("No role `gone` is in the catalogue, so the starts naming it hold until it is added", error.Message);

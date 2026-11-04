@@ -17,25 +17,26 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
 
     public TextReader Hearing(TextReader reader, string sessionId) => driver.Hearing(reader, sessionId);
 
-    public string Bracketed(string sessionId, ProcessStartInfo info, string? moved) => Driver.Bracketed(Home, sessionId, info, moved);
+    public string Bracketed(string sessionId, ProcessStartInfo info, string? moved) => LineageBrackets.Bracketed(Home, sessionId, info, moved);
 
-    public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn) => Driver.Spawned(proc, spawn);
+    public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn) => LineageBrackets.Spawned(proc, spawn);
 
     public Task<int?> WaitAsync(
         string sessionId, string proc, Process process, CancellationToken ct, int? minutes, Action<int>? timingOut, CancellationToken quiet,
         Action? quietEnding) =>
-        driver.WaitedAsync(sessionId, proc, driver.WaitAsync(process, ct, minutes, timingOut, quiet, quietEnding), ct);
+        driver.Brackets.WaitedAsync(sessionId, proc, driver.WaitAsync(process, ct, minutes, timingOut, quiet, quietEnding), ct);
 
-    public Task<bool> DrainedAsync(string sessionId, string proc, Task capture) => driver.DrainedAsync(sessionId, proc, capture);
+    public Task<bool> DrainedAsync(string sessionId, string proc, Task capture) => driver.Brackets.DrainedAsync(sessionId, proc, capture);
 
-    public void Ended(string sessionId, string proc, int? exit) => driver.Ended(sessionId, proc, exit);
+    public void Ended(string sessionId, string proc, int? exit) => driver.Brackets.Ended(sessionId, proc, exit);
 
     public Task AbandonedAsync(string sessionId, string proc, Process process, Task capture) =>
-        Driver.AbandonedAsync(
+        SessionWaits.AbandonedAsync(
             process, capture, sessionId, driver.Log, driver.Context.Output,
             exitRead: () => ChildLineage.Exited(Home, sessionId, proc, clean: false));
 
-    public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) => driver.KeepHandedAsync(sessionId, info, ct);
+    public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) =>
+        DownloadKeeping.KeepHandedAsync(driver.Context.Service, Home, sessionId, info, ct);
 
     public void KeepConversation(string sessionId, string adapter, string conversation) =>
         driver.Context.Conversations.Keep(sessionId, adapter, conversation);
@@ -45,7 +46,7 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
     public ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
         driver.Prepare(adapter, target, selection, next).Info;
 
-    public TimeSpan LingerBound => Driver.LingerBound;
+    public TimeSpan LingerBound => SessionWaits.LingerBound;
 
-    public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => Driver.EndedLingeringAsync(process, Driver.LingerBound, ending);
+    public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => SessionWaits.EndedLingeringAsync(process, SessionWaits.LingerBound, ending);
 }

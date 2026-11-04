@@ -353,19 +353,19 @@ public sealed class NoteSitesTests
     [Fact]
     public void A_further_part_gone_into_its_entrys_tree_says_whose_tree_and_a_start_in_the_root_says_nothing()
     {
-        var joined = Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, false, null, null, false, null, joinedSession: "s0")!;
+        var joined = StartSentence.Of(null, Quest(), null, null, false, null, null, false, null, joinedSession: "s0")!;
         Line(joined, "goes into the tree of session `s0`, which holds the earlier part of this work.", "started.joined");
         Assert.Equal("s0", joined.Parts[0].Value("session"));
-        Assert.Null(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, false, null, null, false, null));
+        Assert.Null(StartSentence.Of(null, Quest(), null, null, false, null, null, false, null));
     }
 
     [Fact]
     public void A_resume_once_its_question_closed_says_which_and_in_which_tree()
     {
         var asked = new PriorSession("s0", "/t", "completed");
-        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), Quest() with { Id = "q2" }, null, false, asked, null, false, null)!,
+        Line(StartSentence.Of(null, Quest(), Quest() with { Id = "q2" }, null, false, asked, null, false, null)!,
             "resumes `#q1` now that `#q2` is answered.", "started.resumes-answered");
-        var inTree = Daoris.Driver.Driver.StartingNote(null, Quest(), Quest() with { Id = "q2" }, "/t", false, asked, null, false, null)!;
+        var inTree = StartSentence.Of(null, Quest(), Quest() with { Id = "q2" }, "/t", false, asked, null, false, null)!;
         Line(inTree, "resumes `#q1` now that `#q2` is answered, in the tree session `s0` asked from.",
             "started.resumes-answered", "started.in-asking-tree");
         Assert.Equal(("q1", "q2"), ((string?)inTree.Parts[0].Value("quest"), (string?)inTree.Parts[0].Value("answered")));
@@ -376,29 +376,29 @@ public sealed class NoteSitesTests
     public void A_carry_on_says_why_on_which_account_in_which_tree_and_why_its_words_did_not_go_on()
     {
         var cut = new PriorSession("s0", "/t", "failed");
-        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, true, cut, null, false, null)!,
+        Line(StartSentence.Of(null, Quest(), null, null, true, cut, null, false, null)!,
             "carries `#q1` on after session `s0` was cut off.", "started.cut-off");
         // RETRYWORK1: an open quest carried on in the tree its failed session committed work in says so, never that it was cut off.
-        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, true, cut, null, false, null, carriesWork: true)!,
+        Line(StartSentence.Of(null, Quest(), null, null, true, cut, null, false, null, carriesWork: true)!,
             "carries `#q1` on with the work session `s0` committed before it failed.", "started.carried-work");
 
         var released = cut with { State = "stopped" };
-        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, released, null, true, null)!,
+        Line(StartSentence.Of(null, Quest(), null, "/t", true, released, null, true, null)!,
             "carries `#q1` on: you stopped session `s0`, and released it, on another account, in the tree it worked in.",
             "started.released", "started.other-account", "started.same-tree");
 
         // MIXAGENT1a-ii (D163 point 1): handed over, not released by the person; the agent it came from, never an account's name.
         var handed = released with { Adapter = "claude-code" };
-        var carriedOver = Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, handed, null, false, null, handedOver: true)!;
+        var carriedOver = StartSentence.Of(null, Quest(), null, "/t", true, handed, null, false, null, handedOver: true)!;
         Line(carriedOver, "carries `#q1` on: session `s0` was handed over from claude-code, in the tree it worked in.",
             "started.handed-over", "started.same-tree");
         Assert.Equal(("q1", "s0", "claude-code"), ((string?)carriedOver.Parts[0].Value("quest"), (string?)carriedOver.Parts[0].Value("session"), (string?)carriedOver.Parts[0].Value("agent")));
-        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, handed, null, false, null, handedOver: true, walked: true)!,
+        Line(StartSentence.Of(null, Quest(), null, "/t", true, handed, null, false, null, handedOver: true, walked: true)!,
             "carries `#q1` on: session `s0` was handed over from claude-code, the account it named could not run it, so another of its agent's did, in the tree it worked in.",
             "started.handed-over", "started.handed-walked", "started.same-tree");
 
         var answered = new PriorSession("s0", "/t", "completed") { Adapter = "claude-code", Said = PersonWords.Of("use main") };
-        var fellBack = Daoris.Driver.Driver.StartingNote(
+        var fellBack = StartSentence.Of(
             null, Quest(), null, "/t", true, answered, answered with { State = "awaiting-person" }, false, ContinueWhy.Of(ContinueWhy.Elsewhere))!;
         Line(fellBack,
             "carries `#q1` on with your answer to session `s0`, in the tree it worked in. A new session, because its conversation "
@@ -407,12 +407,12 @@ public sealed class NoteSitesTests
         Assert.Equal(("elsewhere", "claude-code"), ((string?)fellBack.Parts[2].Value("why"), (string?)fellBack.Parts[2].Value("agent")));
 
         var said = answered with { Said = [new SaidWordView("w1", "use main", DateTimeOffset.UnixEpoch, [], true)] };
-        Line(Daoris.Driver.Driver.StartingNote(null, Quest("Open"), null, null, true, answered, said, false, null)!,
+        Line(StartSentence.Of(null, Quest("Open"), null, null, true, answered, said, false, null)!,
             "starts `#q1` with your words to session `s0`.", "started.words-open");
-        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, true, answered, said, false, null)!,
+        Line(StartSentence.Of(null, Quest(), null, null, true, answered, said, false, null)!,
             "carries `#q1` on with your words to session `s0`.", "started.words-taken");
 
-        Assert.Null(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, false, null, null, false, null));
+        Assert.Null(StartSentence.Of(null, Quest(), null, null, false, null, null, false, null));
     }
 
     /// <summary>
@@ -424,7 +424,7 @@ public sealed class NoteSitesTests
     {
         var lost = new PriorSession("s0", "/t", "stood-down", LostClaimStop.LostClaim);
 
-        var carried = Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, lost, null, false, null, broughtForward: true)!;
+        var carried = StartSentence.Of(null, Quest(), null, "/t", true, lost, null, false, null, broughtForward: true)!;
 
         Line(carried, "carries `#q1` on: you brought the work of session `s0` forward after its take lost, in the tree it worked in.",
             "started.brought-forward", "started.same-tree");

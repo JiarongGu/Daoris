@@ -69,7 +69,7 @@ public sealed class HandedRecordTests : IDisposable
         var file = PermissionRules.Load(_home);
         var composed = PermissionRules.Compose(file, "work", "reports");
 
-        var rules = Daoris.Driver.Driver.RulesHanded(takes: true, file, composed, "work", "reports");
+        var rules = Daoris.Driver.SessionRules.Handed(takes: true, file, composed, "work", "reports");
 
         Assert.Equal(("rules", "permissions", null), (rules.Name, rules.Source, rules.Chars));
         Assert.Equal(composed.Allow.Count + composed.Ask.Count + composed.Deny.Count, rules.Shown);
@@ -85,7 +85,7 @@ public sealed class HandedRecordTests : IDisposable
     {
         var file = PermissionRules.Load(_home);
 
-        var rules = Daoris.Driver.Driver.RulesHanded(takes: false, file, RuleLists.Empty, "work", "reports");
+        var rules = Daoris.Driver.SessionRules.Handed(takes: false, file, RuleLists.Empty, "work", "reports");
 
         Assert.Equal(("agent", 0), (rules.None, rules.Shown));
         Assert.Equal("the permission rules: none handed, since its agent takes no rules from Daoris", rules.Said);
@@ -98,7 +98,7 @@ public sealed class HandedRecordTests : IDisposable
         var file = PermissionRules.Load(_home);
         var composed = PermissionRules.Compose(file, null, null);
 
-        var rules = Daoris.Driver.Driver.RulesHanded(takes: true, file, composed, null, null);
+        var rules = Daoris.Driver.SessionRules.Handed(takes: true, file, composed, null, null);
 
         var cut = Assert.Single(rules.Cuts!);
         Assert.Equal("rules-unread", cut.Code);
