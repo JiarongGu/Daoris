@@ -27,6 +27,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Run binding | `Workflows/Domain/WorkflowRunBinding.cs`, `Workflows/WorkflowRunBindings.cs`, `Workflows/WorkflowRunStart.cs` | A run bound at its first start, kept in `workflows/runs/<run>.json` |
 | Process per gate | `Workflows/WorkflowProcesses.cs` | The binding and gate interface: a graph version read from its gate nodes; no binding, no workflow |
 | Node runtime | `Workflows/Nodes/NodeRuntime.cs`, `WorkPerformer.cs`, `WorkObserver.cs`, `WireEvaluation.cs`, `NodeRecordFiles.cs` | One pass at a time: evaluate each governed unit, keep its moves, start what it proposes |
+| `NodeGoverning` | `Workflows/Nodes/NodeGoverning.cs` | Which units a graph governs and how: a closure graph's quest, a run bound to a graph version on its own record, a unit held for the person; the quests bound to a closure graph the choices no longer hold. `NodeRuntime` keeps one-line doors |
+| `NodeEvaluations` | `Workflows/Nodes/NodeEvaluations.cs`, `PassReads.cs` | A governed unit's graph judged on its record: a unit's, a run's over its subjects, and the pass's gate, content and git reads it waits on |
+| `NodeTelling` | `Workflows/Nodes/NodeTelling.cs` | The awaited set the plugins are told: each unit's frame, the tips last told, the next timer the records persist |
+| `NodeClosing` | `Workflows/Nodes/NodeClosing.cs` | A graph closing a quest: the `quest.close` start and its fence, what a closure graph's unit owes, the pruning of closure graphs nothing needs |
+| `NodeRunKeeping` | `Workflows/Nodes/NodeRunKeeping.cs` | What a run bound to a graph version has kept around its rounds: the person's skips and stops, what a review sent back told to the work, a landing started, the run's end and reopening |
+| `NodeIntegrating` | `Workflows/Nodes/NodeIntegrating.cs` | A unit's `integrate` and a run's `request` started through their doors, and the card waits |
+| `NodeOwing` | `Workflows/Nodes/NodeOwing.cs` | Which units a pass judges: those owing a start or a rebinding, and the turn they are taken in past a pass's bound |
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs` | `land`'s options, their resolution at the bind, the intent a run lands by |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land` |
@@ -192,7 +199,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D190 point 4 (a named version holds one `handed`) vs `NodeKinds` (no `handed` kind): a version lands by `land`. D227 and D232 read right.
 - D190 point 8 (no look starts with no opinion passed) vs `NodeGraphs.cs:352-391` (gates only before the landing): the code and D190 point 5 read right.
 - D190 point 1 and D157 point 7 (never a migration) vs `Conversion/` and `CONVERT_APPLY`: D227 point 3 reads right.
-- D190 "Not settled: FABRIC-CLOSE1k" vs `NodeRuntime.cs:178-179` (a bound quest closed by its bound graph): the code reads right.
+- D190 "Not settled: FABRIC-CLOSE1k" vs `NodeGoverning.Govern` (a bound quest closed by its bound graph): the code reads right.
 - D157 point 1 (a workflow is a list of steps) vs `WorkflowNamed.ReadVersion(onSave)` refusing steps: D227 point 2 reads right.
 - D157 point 15 (nothing set is Current) vs `WorkflowSelection.cs:234-236` (the home default first): D227 reads right.
 - D157's rejection of *merging with nobody* vs the shipped `Defaults/workflows/merge-automatic.json` and `integrated-no-press.json`: the code reads right.
