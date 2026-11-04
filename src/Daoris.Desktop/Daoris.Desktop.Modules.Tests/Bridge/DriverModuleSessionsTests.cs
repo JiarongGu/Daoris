@@ -1196,13 +1196,20 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
     /// <summary>
     /// The service's doors a look at the sessions reads, standing in over a real socket on this machine: `engine` registered
-    /// and adopted; `q1` open with three failed sessions, which park it; a parked session, a running one, and a quest done.
+    /// and adopted, the home staffed; `q1` open with three failed sessions, which park it; a parked session, a running one, and a quest done.
     /// </summary>
     /// <param name="doneTree">The tree the quest done ended in, where a test gives it one; none by default.</param>
     private LoopbackHost Ledger(string? doneTree = null)
     {
+        // A quest parks at its role's failures bound, so the home holds the machine's seeded rules, three failed sessions among them.
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "acp-stub" }""");
+        Assert.True(new RoleStaffing(Home, () => StoreSettled.Yes).ImportFile().How is StaffingImported.Done or StaffingImported.Already);
+        var rules = new SupervisorRuleStore(Home);
+        Assert.True(rules.Write(
+            SupervisorRules.Machine, rules.Of(SupervisorRules.Machine).Revision, [.. SupervisorRuleBook.Seeded(3)],
+            SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(Home) with { ReadReached = false, Reached = true }).Stored);
         var ledger = new LoopbackHost();
-        var root = Path.Combine(Home, "checkouts", "engine").Replace('\\', '/');
+        var root =Path.Combine(Home, "checkouts", "engine").Replace('\\', '/');
         string Session(string id, string state, string quest, int minute, string? tree = null) =>
             $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"{{(tree is null ? "" : $",\"tree\":\"{tree.Replace('\\', '/')}\"")}}}""";
         var records = $"[{Session("failed1", "failed", "q1", 0)},{Session("failed2", "failed", "q1", 10)},{Session("failed3", "failed", "q1", 20)},"

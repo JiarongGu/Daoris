@@ -319,7 +319,6 @@
   "agents.setup.more": "显示更多",
   "agents.setup.none.headline": "选择一个位置",
   "agents.setup.none.body": "本机、工作区或仓库：它的页面会说明它是怎么配置的。",
-  "agents.setup.need.landing-unread": "无法读取它的落地设置",
   "agents.setup.need.work-held": "有启动被暂停",
   "agents.setup.need.policy-failed": "无法读取某项工作的规则",
   "agents.setup.need.catalogue-unread": "无法读取角色",

@@ -113,15 +113,6 @@ describe('the need that opens a section', () => {
     expect(needOpening(ENGINE)).toBeNull();
     expect(needOpening({ ...ENGINE, needs: [{ code: 'no-checkout' }] })).toBeNull();
   });
-
-  // SETUPUX1o: a landing rule that reads as none opens Workflow at its Landing fold.
-  it('opens Workflow at Landing on a landing that could not be read, after a held start', () => {
-    const unread: PlaceRow = { ...ENGINE, needs: [{ code: 'landing-unread', detail: 'no form' }] };
-    expect(needOpening(unread)).toEqual({ section: 'workflow', row: 'landing' });
-
-    const both: PlaceRow = { ...unread, works: [work('chat', { held: 'no role' })] };
-    expect(needOpening(both)).toEqual({ section: 'roles', row: 'chat' });
-  });
 });
 
 // SETUPUX1o: the route the person chose to read, and the step whose cell shows, are held above the mounts for each place.
