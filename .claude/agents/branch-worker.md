@@ -55,6 +55,8 @@ when the work moves outside it. What follows is what a worktree adds.
 - **Never run**: a whole project or suite, `npm run verify`, a `Process` half, a rehearsal, the desktop window, a
   publish, `tools/merge-branch.mjs`, or anything of the owner's install (its folder, home or processes).
 - Words or fields the brief says other suites read: update each hit you were given.
+- A watch is a command that exits on its outcome (an `until` loop); never `tail -f | grep`, which on Windows outlives
+  its shell and its monitor.
 - Leave nothing running: `dotnet build-server shutdown`, and stop each task and monitor you started. A flake is
   reported, not chased.
 

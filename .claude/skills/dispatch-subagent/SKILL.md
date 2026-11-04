@@ -95,7 +95,9 @@ chunk and model that made it, and move the line toward Opus where Sonnet's chunk
    go one after the other.
 5. **Run at most five workers at once; a CI run beside never lowers that.** Never brief a worker to generate load or to
    run or time a long run. Dispatch between merges, never while the merge tool writes git metadata; a refused dispatch
-   leaves a half-made tree to remove first. Nothing started outlives its work: a watch is a loop that ends on its outcome.
+   leaves a half-made tree to remove first. Nothing started outlives its work: a watch is a loop that ends on its outcome,
+   never `tail -f | grep`, which outlives its shell on Windows. A builder stopped by hand never ran its own
+   `dotnet build-server shutdown`, so after a batch the parent runs it, and stops each process a stopped builder left.
 6. **Merge through the queue: records commit, preview, queue** (D207). The records commit goes on the branch (the row to
    the archive, `TASKS.md`, the changelog, a FIX-LOG entry); `<branch> --preview` records the tip read; then
    `<branch> --message <file>`. Before a batch is queued, run the desktop's and the service's fast halves, `npm run
