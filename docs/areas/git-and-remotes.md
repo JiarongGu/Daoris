@@ -212,7 +212,9 @@ catalogues (`i18n:check`).
 
 - D47's one home per quest, written through, vs D68 and D69's local commits and fetch-rebase-push: D68 reads right.
 - D109 §1 and D147 point 3 (the line fetch runs with the person's credentials and helper) vs D198 and `TreeRefs.cs:128`
-  through `WorkingTree.cs:984`: D198 and the code read right.
+  through `GitRuns.cs` (`GitStart`): D198 and the code read right. `WorkingTree` is the door to git's reads and runs; the diff reads are
+  `TreeDiffs` and the process starts, with their test seams, are `GitRuns`. A set-aside folder's marks, reads and keeping are
+  `SetAsideMarks`, `SetAsideReads` and `SetAsideKeeps`, with `TreeSetAside` the front.
 - D147 point 1 (Git a place on the activity bar) vs D150 and `ProjectsView.tsx:44` (Git inside Repositories): D150 reads right.
 - D147 points 4-5 (`daoris-driver git push`, the person's push) vs `Workplace/GitBranchesCommand.cs`' mark (no push verb): the code
   reads right; the push is GITAPP2g, open.
