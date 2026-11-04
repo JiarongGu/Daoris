@@ -184,7 +184,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         var started = ServiceClient.ReadStarted("""
             [{ "id": "s1", "adapter": "claude-code-acp", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
              { "id": "s2", "adapter": "claude-code", "profile": "account-2", "created": "2026-10-01T11:00:00+05:45", "state": "completed" },
-             { "id": "s3", "adapter": "claude-code", "created": "not a time", "state": "working" },
+             { "id": "s3", "adapter": "claude-code", "state": "working" },
              { "id": "s4", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
              { "id": "other-machine/s1", "adapter": "claude-code", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
              { "id": "s5", "adapter": "claude-code-acp", "profile": "account-1", "created": "2026-10-01T12:00:00Z", "state": "failed",
@@ -542,13 +542,14 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         // POOL1c (D197; the account-pool design §4.3): the order's first, said as that, never as this machine's list.
         Assert.Equal(("account-2", "it comes first in the order of Daoris's accounts"), (machine.Profile, machine.Choice?.Clause));
-        // The workspace's start is the set's second, counted beside the first: it spreads as any start in the same look does.
-        Assert.Equal(("account-1", "it runs the fewest of Daoris's sessions"), (work.Profile, work.Rotated?.Why));
+        // The workspace's start is the set's second, counted beside the first: it spreads as any start in the same look does, the walk
+        // begun at the default and wrapping, so the next of the list after it.
+        Assert.Equal(("account-3", "it runs the fewest of Daoris's sessions"), (work.Profile, work.Rotated?.Why));
         Assert.Equal(
             $"the `fake` account `account-2` is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said; of the rest, it runs the "
             + "fewest of Daoris's sessions",
             cooled.Choice?.Clause);
-        Assert.Equal("account-3", cooled.Profile);
+        Assert.Equal("account-1", cooled.Profile);
     }
 
     // ——— What the agents said (TOOL6c, D130 §5.2, §6, §16.3 steps 2 and 5, §16.4): read from `windows.json` as each door

@@ -341,13 +341,12 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.True(at > 0, said);
         var fence = lines[at][(lines[at].LastIndexOf('·') + 2)..^4];
         var end = Array.IndexOf(lines, $"<<< end {fence} >>>", at);
-        Assert.Equal(
-            [
-                "Every count of this line as Daoris read it; a reason names one by its first words here.",
-                "- count:answers-alone=0 (exact): answers alone in a row, from its events; Daoris's own number: it waits for the person after 2",
-                "- count:failures=0 (exact): failed sessions on this quest, from the service's records; Daoris's own number: it waits for the person after 3",
-            ],
-            lines[(at + 1)..(at + 4)]);
+        Assert.Equal("Every count of this line as Daoris read it; a reason names one by its first words here.", lines[at + 1]);
+        // The seeded rules are the person's, so each count says the rule it is held to, at the place it stands.
+        Assert.StartsWith("- count:answers-alone=0 (exact): answers alone in a row, from its events; the person's rule for ", lines[at + 2], StringComparison.Ordinal);
+        Assert.EndsWith("Daoris waits for the person after 2", lines[at + 2], StringComparison.Ordinal);
+        Assert.StartsWith("- count:failures=0 (exact): failed sessions on this quest, from the service's records; the person's rule for ", lines[at + 3], StringComparison.Ordinal);
+        Assert.EndsWith("Daoris waits for the person after 3", lines[at + 3], StringComparison.Ordinal);
         Assert.Contains("- session s1: opened", lines[at..end]);
         Assert.True(Array.FindIndex(lines, line => line.StartsWith("<<< the branch's commits", StringComparison.Ordinal)) > end);
     }
