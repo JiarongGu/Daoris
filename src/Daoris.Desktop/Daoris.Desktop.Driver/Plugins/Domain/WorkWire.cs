@@ -562,7 +562,7 @@ public static class WorkWire
         return colon > 0 && colon < reference.Length - 1 && PluginSteps.IsSchema(reference[..colon]);
     }
 
-    /// <summary>Only a web page is an address a person goes to read, as a landing's pull request is (Hooks.cs).</summary>
+    /// <summary>Only a web page is an address a person goes to read, as a landing's pull request is (HookPeer.cs).</summary>
     private static bool IsWebPage(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var address) && address.Scheme is "https" or "http";
 
