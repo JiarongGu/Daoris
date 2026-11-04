@@ -862,7 +862,7 @@ internal sealed class StandInLedger : HttpMessageHandler
 
                     if (FinishedStays && to == "working" && !From.ContainsKey(from) && session["said"] is not JsonArray { Count: > 0 })
                     {
-                        // In the ledger's own words (SessionLedger.GoOnAsync).
+                        // In the ledger's own words (SessionAdvances.GoOnAsync).
                         return Answer(HttpStatusCode.Conflict, new JsonObject
                         {
                             ["error"] = $"Session `{id}` is {from} — a finished session goes on only with the person's words, and none wait for it.",
