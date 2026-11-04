@@ -24,7 +24,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `RoleDoor` | `Roles/RoleDoor.cs` | The person's one door: judges a press, then writes role, staffing, policy and rules in one transaction |
 | `RoleVerb` | `Roles/RoleVerbs.cs` | `daoris driver role` and `role set/remove/default/policy/rules/supervisor/suggested` |
 | `RoleStaffing` | `Roles/RoleStaffing.cs` | `role_staffing` in the desktop store: import, the one writer |
-| `StaffingProjection`, `StaffingStep` | `Roles/StaffingProjection.cs`, `Install/Migration/StaffingStep.cs` | The store's rows as a record's fields; the migration's staffing step |
+| `StaffingProjection`, `StaffingStep` | `Roles/StaffingProjection.cs`, `Transitional/Migration/StaffingStep.cs` | The store's rows as a record's fields; the migration's staffing step |
 | `ActorChoices`, `ActorKey` | `Roles/ActorChoices.cs`, `Settings/ActorKey.cs` | An order of 1 to 4 choices, its effective entries, its judge, who may be off |
 | `StartPlan`, `ReaskMove` | `Roles/StartPlan.cs`, `Roles/OneTurnReask.cs` | The one walk over a role's order, work to role, pass codes; the one re-ask |
 | `StaffPolicy` | `Roles/StaffPolicy.cs` | The policy record: rules, entries, conditions, actions, presets, digest, judge |

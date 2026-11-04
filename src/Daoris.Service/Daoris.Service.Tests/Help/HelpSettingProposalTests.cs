@@ -10,73 +10,29 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     public void A_setting_is_written_as_a_file_the_driver_judges_with_who_proposed_it_and_why()
     {
         var (id, message) = Box().ProposeSetting(
-            new SettingChange("landing", Target: null, Workspace: "work", Value: "branch feature/{quest}-{slug} --tidy"),
-            "the person asked for work to land on feature branches", session: "h1e1p000", Now);
+            new SettingChange("line", Target: null, Workspace: "work", Value: "develop"),
+            "the person asked for work to start from develop", session: "h1e1p000", Now);
 
         Assert.NotNull(id);
         Assert.Contains($"#{id}", message);
         Assert.Contains("Apply", message);
         var file = Written(id!);
         Assert.Equal("setting", file.GetProperty("kind").GetString());
-        Assert.Equal("landing", file.GetProperty("door").GetString());
+        Assert.Equal("line", file.GetProperty("door").GetString());
         Assert.Equal("work", file.GetProperty("workspace").GetString());
         Assert.Equal(JsonValueKind.Null, file.GetProperty("target").ValueKind);
-        Assert.Equal("branch feature/{quest}-{slug} --tidy", file.GetProperty("value").GetString());
+        Assert.Equal("develop", file.GetProperty("value").GetString());
         Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString());
         Assert.Equal("proposed", file.GetProperty("state").GetString());
-        Assert.Equal("the person asked for work to land on feature branches", file.GetProperty("why").GetString());
+        Assert.Equal("the person asked for work to start from develop", file.GetProperty("why").GetString());
     }
 
-    /// <summary>HELP8: a branch rule naming a plugin passes the shape; whether the plugin lands work here is the driver's to judge.</summary>
     [Fact]
-    public void A_landing_naming_a_plugin_is_written_as_the_terminal_spells_it()
+    public void The_landing_is_no_door_here()
     {
-        var (id, _) = Box().ProposeSetting(
-            new SettingChange("landing", Target: "engine", Workspace: null, Value: "branch feature/{quest}-{slug} --plugin example.lands"),
-            "the person wants a pull request opened for each landing", session: "h1e1p000", Now);
-
-        Assert.Equal("branch feature/{quest}-{slug} --plugin example.lands", Written(id!).GetProperty("value").GetString());
-        Assert.Contains("`--plugin <id>`", Box().ProposeSetting(
-            new SettingChange("landing", Target: "engine", Workspace: null, Value: "rebase"), "why", session: "h1e1p000", Now).Message);
-    }
-
-    /// <summary>
-    /// LANDSVC1 (LAND2a, LAND2b): a branch rule that accepts automatically passes the shape as the terminal spells it, and
-    /// a landing refused for its shape names the switch beside `--tidy` and `--plugin`, so the helper learns it as the room
-    /// says it; whether the plugin lands work here, and a merge carrying it, are the driver's to judge.
-    /// </summary>
-    [Fact]
-    public void A_landing_that_accepts_automatically_is_written_and_the_refusal_names_the_switch()
-    {
-        var (id, _) = Box().ProposeSetting(
-            new SettingChange("landing", Target: null, Workspace: "work", Value: "branch feature/{quest}-{slug} --plugin example.lands --auto-accept"),
-            "the person asked for done work to land itself and open its pull request", session: "h1e1p000", Now);
-
-        Assert.Equal("branch feature/{quest}-{slug} --plugin example.lands --auto-accept", Written(id!).GetProperty("value").GetString());
-        Assert.Contains("`--auto-accept` for a quest's done to land it with no press", Box().ProposeSetting(
-            new SettingChange("landing", Target: "engine", Workspace: null, Value: "rebase"), "why", session: "h1e1p000", Now).Message);
-    }
-
-    /// <summary>
-    /// LANDSVC1 (D145 points 1 and 5): the tool tells the helper a branch rule may accept automatically, what that does, and
-    /// that it is the person's standing say-so for a push, proposed only when they ask, a merge's too (REVIEW2 S1), as the room
-    /// says it, so an agent finding what it may propose learns the switch from the tool and not from the room alone.
-    /// </summary>
-    [Fact]
-    public void The_tool_says_a_branch_rule_may_accept_automatically_and_only_when_the_person_asks()
-    {
-        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
-        var value = method.GetParameters().Single(parameter => parameter.Name == "value")
-            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
-            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
-        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
-            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
-
-        Assert.Contains("`--tidy`, `--plugin <id>` and `--auto-accept` if wanted", value);
-        Assert.Contains("a `landing` on a branch may add `--auto-accept`: a quest's done then lands its work with no press", tool);
-        Assert.Contains("the rule's plugin pushes it and opens a pull request without asking each time", tool);
-        Assert.Contains("the person's standing say-so for that push, so propose it only when they ask for it; a merge rule may add it too", tool);
-        Assert.DoesNotContain("never on a merge", tool);
+        Assert.DoesNotContain("landing", HelpSettingProposalWriter.Doors);
+        Assert.Contains("is not a door", Box().ProposeSetting(
+            new SettingChange("landing", Target: "engine", Workspace: null, Value: "merge"), "why", session: "h1e1p000", Now).Message);
     }
 
     /// <summary>HELP9: reading and writing across (D107) and a cap pass the shape as the terminal spells them.</summary>
@@ -132,9 +88,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("commits", "web-app", null, "--mode ask --convention \"Imperative subject line, at most 72 characters.\"")]
     [InlineData("commits", null, "work", "--mode at-end --no-convention")]
     [InlineData("commits", "web-app", null, "--clear")]
-    // DOORS1a (PROCESS1b-i, -ii): a branch rule's ticket key and squash, as `daoris place landing` takes them.
-    [InlineData("landing", "web-app", null, "branch feature/{ticket}-{slug} --key \"TK-\\d+\" --squash")]
-    [InlineData("landing", null, "work", "branch feature/{ticket} --no-key --no-squash")]
     public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
@@ -334,8 +287,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
 
         Assert.Contains("`--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear` (helpers)", Described("value"));
         Assert.Contains("`--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear` (commits)", Described("value"));
-        Assert.Contains("`--key <shape>` or `--no-key`", Described("value"));
-        Assert.Contains("`--squash` or `--no-squash`", Described("value"));
         Assert.Contains("a helpers rule or a commit rule", Described("target"));
         Assert.Contains("a helpers rule or a commit rule", Described("workspace"));
 
@@ -343,7 +294,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("`commits` sets how a repository's or a workspace's work is committed", tool);
         Assert.Contains("from the repository's own instructions", tool);
         Assert.Contains("never the process until the person applies it", tool);
-        Assert.Contains("keeps the key and the squash already set", tool);
     }
 
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
@@ -354,10 +304,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("line", null, null, "develop", "a repository or a workspace")]
     [InlineData("line", "engine", "work", "develop", "a repository or a workspace")]
     [InlineData("line", "engine", null, null, "a branch, or `--clear`")]
-    [InlineData("landing", "engine", null, "rebase", "`merge`, `branch <pattern>`")]
-    // LANDSVC1: a merge carrying the switch is no shape the box takes, and its sentence says the switch rides a branch.
-    [InlineData("landing", "engine", null, "merge --auto-accept", "`branch <pattern>` (with `--tidy`")]
-    [InlineData("landing", "engine", null, "merge --auto-accept", "`--auto-accept` for a quest's done")]
     [InlineData("notify", null, null, "loud", "`on` or `off`")]
     [InlineData("across", null, null, "read off", "a repository or a workspace")]
     [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]
@@ -407,8 +353,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("commits", "web-app", "work", "--clear", "commit rule is set for a repository or a workspace — name exactly one")]
     [InlineData("commits", "web-app", null, "  ", "`commits` is `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear`")]
     [InlineData("commits", "web-app", null, "--mode ask --squash", "`commits` is `--mode as-you-go|ask|at-end`")]
-    [InlineData("landing", "engine", null, "merge --squash", "`--key <shape>` for the shape `{ticket}` is found by")]
-    [InlineData("landing", "engine", null, "merge --key TK-\\d+", "`--squash` for the pull request's branch as one commit")]
     [InlineData("retry", null, null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked or the person's stop holds")]

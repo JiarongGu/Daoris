@@ -4,9 +4,9 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `keep` or `git-use`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `keep` or `git-use`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
-/// <param name="Workspace">The workspace, for a line, a landing, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
+/// <param name="Workspace">The workspace, for a line, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent, `set-aside 30`…</param>
 public sealed record SettingChange(string Door, string? Target, string? Workspace, string? Value);
 
@@ -21,7 +21,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     /// </summary>
     public static readonly IReadOnlyList<string> Doors =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
+        "drive", "undrive", "hold", "resume", "trees", "line", "across", "standing", "language", "review", "opinion",
         "helpers", "commits", "retry", "notify", "cap", "cooloff", "keep", "git-use",
     ];
 
@@ -67,18 +67,9 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
             case "trees":
                 if (!named) return "`trees` names the repository it is for.";
                 return value is "on" or "off" ? null : "`trees` is set `on` or `off`.";
-            case "line" or "landing":
-                if (named == circle) return $"a {door} is set for a repository or a workspace — name exactly one.";
-                if (door == "line") return string.IsNullOrWhiteSpace(value) ? "a line is a branch, or `--clear`." : null;
-                // LANDSVC1: the sentence names a branch rule's switches as the room and the terminal do, `--auto-accept`
-                // (LAND2a) among them, and since DOORS1a the ticket's key and the squash (PROCESS1b-i, -ii); a branch's words
-                // past its pattern are the driver's to judge.
-                return value is "merge" or "--clear" or "merge --tidy" || (value?.StartsWith("branch ", StringComparison.Ordinal) ?? false)
-                    ? null
-                    : "a landing is `merge`, `branch <pattern>` (with `--tidy` to remove the tree once landed, `--plugin <id>` for an "
-                      + "installed plugin that pushes it and opens the pull request, `--auto-accept` for a quest's done to land it "
-                      + "with no press, `--key <shape>` for the shape `{ticket}` is found by, and `--squash` for the pull request's "
-                      + "branch as one commit), or `--clear`.";
+            case "line":
+                if (named == circle) return "a line is set for a repository or a workspace — name exactly one.";
+                return string.IsNullOrWhiteSpace(value) ? "a line is a branch, or `--clear`." : null;
             case "retry":
                 // HELP10: the quest by id, as `daoris quest retry <quest>` takes it; whether it is parked, or held by the
                 // person's stop (SESSUX1b), is the driver's to judge, so the box takes either id unchanged.

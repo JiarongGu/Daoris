@@ -7,6 +7,9 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record SupervisorRuleBook(bool Reached, IReadOnlyList<SupervisorRuleSet> Sets)
 {
+    /// <summary>How many go-ons by answers alone a line takes in a row (§2.3): the seeded rule's number, which the course's bound reads.</summary>
+    public const int AnswersAloneBound = 2;
+
     /// <summary>A home whose rules are not reached: nothing here decides.</summary>
     public static SupervisorRuleBook NotReached { get; } = new(false, []);
 
@@ -97,7 +100,7 @@ public sealed record SupervisorRuleBook(bool Reached, IReadOnlyList<SupervisorRu
     /// </summary>
     public static IReadOnlyList<SupervisorRule> Seeded(int strikes) =>
     [
-        new("answers-alone", SupervisorRules.AnswersAlone, SupervisorRules.Windows[SupervisorRules.AnswersAlone], AnswersAlone.Bound, SupervisorRules.Hold, null, SupervisorRules.Machine, null),
+        new("answers-alone", SupervisorRules.AnswersAlone, SupervisorRules.Windows[SupervisorRules.AnswersAlone], AnswersAloneBound, SupervisorRules.Hold, null, SupervisorRules.Machine, null),
         .. strikes > 0
             ? [new SupervisorRule("failures", SupervisorRules.Failures, SupervisorRules.Windows[SupervisorRules.Failures], Math.Min(strikes, 20), SupervisorRules.Hold, null, SupervisorRules.Machine, null)]
             : Array.Empty<SupervisorRule>(),

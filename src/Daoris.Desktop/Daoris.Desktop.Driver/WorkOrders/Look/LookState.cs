@@ -23,7 +23,7 @@ internal sealed class LookState(List<SessionEnded> concluded)
     private IReadOnlyList<Consideration>? _starts;
     private IReadOnlyList<AskView>? _intakes;
     private IReadOnlyList<Consideration>? _openedStarts;
-    private List<OpinionJudged>? _judgedOpinions;
+    private IReadOnlyList<IJudgedOpinion>? _judgedOpinions;
 
     /// <summary>
     /// The quests, sessions and records the plan reads: read by the <c>snapshot</c> pass, and set again by each pass that shapes it,
@@ -77,7 +77,7 @@ internal sealed class LookState(List<SessionEnded> concluded)
     }
 
     /// <summary>What the second opinions judged this look, for its report.</summary>
-    public List<OpinionJudged> JudgedOpinions
+    public IReadOnlyList<IJudgedOpinion> JudgedOpinions
     {
         get => _judgedOpinions ?? throw Unwritten(nameof(JudgedOpinions), "opinions");
         set => _judgedOpinions = value;
