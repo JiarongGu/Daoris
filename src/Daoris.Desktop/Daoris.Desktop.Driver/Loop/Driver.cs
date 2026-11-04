@@ -1310,30 +1310,6 @@ public sealed class Driver(
         Accounts.SignedOut(conclusion, adapter, selection, turnFailed, ended);
 
     /// <summary>
-    /// What a start's landing is named for, as its session is told it (WSR5, LAND2c): a chain's step lands on its chain's branch,
-    /// named for the chain's first quest, so it is told that branch, which its done moves on. A quest that follows nothing is its
-    /// own; a service that cannot walk the chain leaves the step its own name, since a start never waits on a sentence.
-    /// </summary>
-    /// <param name="find">One quest as the service answers it, closed ones included.</param>
-    internal static async Task<LandingSubject> LandsAsAsync(
-        string session, QuestView quest, Func<string, Task<QuestView?>> find, CancellationToken ct)
-    {
-        var own = LandingSubject.Of(session, quest);
-        if (quest.Parent is not { Length: > 0 }) return own;
-        try
-        {
-            var chain = await LandingRules.SubjectAsync(session, quest.Id, find, opening: null).ConfigureAwait(false);
-            // A service that no longer answers for the step itself names it with no title: its own is truer.
-            return chain.Title is null ? own : chain;
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
-                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
-        {
-            return own;
-        }
-    }
-
-    /// <summary>
     /// What a further part of a session is handed of the parts before it (SESSONE1d): each one's record, its tree's name where the
     /// tree stands and its branch now, or the branch its work landed on where the tree is gone; and how its own tree stands to
     /// theirs. Only the newest the instruction names are read from git; a running part's note is its opening, so none is said.
@@ -1375,199 +1351,6 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// The creating sentence a start's record carries while it runs (D51 rule 4), each line with its code (LANG1a, the language
-    /// design §4 rows 25–36): its tree's opening; a resume once its question closed, and in which tree; or a carry-on, why,
-    /// whether on another account, in which tree, and why the person's words did not go on in their own session. Null where
-    /// a start in the root says nothing.
-    /// </summary>
-    /// <param name="resumes">The record it carries on or resumes after, or null.</param>
-    /// <param name="written">The record the person's words were written to, as the look read it, or null.</param>
-    /// <param name="elsewhere">Whether it runs on another account than the record it carries on.</param>
-    /// <param name="handedOver">The quest was handed over from <paramref name="resumes"/> (MIXAGENT1a-ii): said by the agent it came from.</param>
-    /// <param name="walked">The account the hand-over named could not run it, and another account of the named agent did.</param>
-    /// <param name="joinedSession">The earlier part's session whose free tree this start went into (SESSONE1g), or null.</param>
-    /// <param name="broughtForward">It carries on a stand-down whose lost take the person brought forward (SYNCMERGE1b): said as that.</param>
-    /// <param name="carriesWork">It carries an open quest on in the tree its failed session committed work in (RETRYWORK1): said as that.</param>
-    internal static Noted? StartingNote(
-        TreeOpened? opened, QuestView quest, QuestView? answered, string? resumedIn, bool carryingOn,
-        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false,
-        string? joinedSession = null, bool broughtForward = false, bool carriesWork = false)
-    {
-        if (opened is not null) return opened.Opening ?? Noted.From(opened.Sentence, null);
-
-        if (answered is not null)
-        {
-            var resumed = Noted.Of(
-                NoteCodes.StartedResumesAnswered, $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered",
-                ("quest", quest.Id), ("answered", answered.Id));
-            return resumedIn is null
-                ? resumed.Then(".")
-                : resumed.Then(", ", Noted.Of(
-                    NoteCodes.StartedInAskingTree, $"in the tree session `{resumes!.Session}` asked from.", ("session", resumes.Session)));
-        }
-
-        // A further part gone into a free tree of its entry (SESSONE1g, D167): said, as a start in the root is not. A part whose
-        // tree was removed grows again, and its opening (`started.tree`) already says whose tree went.
-        if (!carryingOn)
-        {
-            return joinedSession is null
-                ? null
-                : Noted.Of(
-                    NoteCodes.StartedJoined,
-                    $"goes into the tree of session `{joinedSession}`, which holds the earlier part of this work.",
-                    ("session", joinedSession));
-        }
-
-        var session = resumes!.Session;
-        (string Name, object? Value)[] facts = [("quest", quest.Id), ("session", session)];
-        var carried = resumes.PersonSaid
-            ? (written is { Parked: false, Said: not null }
-                // Words to a session that had ended (MSG1b): no answer, and an open quest is started.
-                ? quest.Status == "Open"
-                    ? Noted.Of(NoteCodes.StartedWordsOpen, $"starts `#{quest.Id}` with your words to session `{session}`", facts)
-                    : Noted.Of(NoteCodes.StartedWordsTaken, $"carries `#{quest.Id}` on with your words to session `{session}`", facts)
-                : Noted.Of(NoteCodes.StartedAnswer, $"carries `#{quest.Id}` on with your answer to session `{session}`", facts))
-            : handedOver
-                // The agent it came from, as its record names it; never an account's name or a path (the note travels).
-                ? Noted.Of(
-                    NoteCodes.StartedHandedOver,
-                    $"carries `#{quest.Id}` on: session `{session}` was handed over from {resumes.Adapter ?? "its agent"}",
-                    [.. facts, ("agent", resumes.Adapter ?? "its agent")])
-            : broughtForward
-                ? Noted.Of(
-                    NoteCodes.StartedBroughtForward,
-                    $"carries `#{quest.Id}` on: you brought the work of session `{session}` forward after its take lost", facts)
-            // STEWARDROLE1b (D209 §5.1): the steward's stop released, said as the steward's in the resumed brief, never as the person's.
-            : resumes.StewardStopped
-                ? Noted.Of(NoteCodes.StartedReleasedSteward, $"carries `#{quest.Id}` on: the steward stopped session `{session}`, and it was released", facts)
-            : resumes.PersonStopped
-                ? Noted.Of(NoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
-            // RETRYWORK1: an open quest carried on in the tree its failed session committed work in before it took the quest.
-            : carriesWork
-                ? Noted.Of(NoteCodes.StartedCarriedWork, $"carries `#{quest.Id}` on with the work session `{session}` committed before it failed", facts)
-                : Noted.Of(NoteCodes.StartedCutOff, $"carries `#{quest.Id}` on after session `{session}` was cut off", facts);
-
-        // 🔴 Which account, never (TOOL4f, D125 §3.6): the note travels, and its scrubber elides only the record's own
-        // account, so another account's name here would reach a teammate.
-        if (handedOver && walked)
-        {
-            carried = carried.Then(", ", Noted.Of(NoteCodes.StartedHandedWalked, "the account it named could not run it, so another of its agent's did"));
-        }
-        else if (elsewhere && !handedOver)
-        {
-            carried = carried.Then(", ", Noted.Of(NoteCodes.StartedOtherAccount, "on another account"));
-        }
-        carried = resumedIn is null ? carried.Then(".") : carried.Then(", ", Noted.Of(NoteCodes.StartedSameTree, "in the tree it worked in."));
-
-        // Why the answer did not go on in its own conversation (ANSWER1a, D131 §2).
-        return fellBack is null ? carried : carried.Then(" ", Continuations.CarriedOn(fellBack, resumes.Adapter));
-    }
-
-    /// <summary>
-    /// The judgement a turn that ends on the session's own background work is asked (BGWAIT1, BGWAIT1b), one for a start and a
-    /// resumed run: the quest read again, by the conclusion's own rule. Null for a resumed run whose quest was closed as the look
-    /// planned it, which never waits (D83, D105 §3, D137 §2.3). A start asks the ledger whether it took its quest; a resumed
-    /// run carried on a take of this machine's, so it asks nothing.
-    /// </summary>
-    internal static Func<CancellationToken, Task<bool>>? WaitsOnBackground(
-        ServiceClient service, QuestView planned, string sessionId, bool resumed)
-    {
-        if (resumed && planned.Status is not ("Open" or "Taken")) return null;
-
-        // DONEEND1: read again at every look while the session waits. A take once read stays this session's (its record keeps it), so
-        // the sessions are read only until it is.
-        var took = false;
-        return async token =>
-        {
-            var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
-            var status = now?.Status ?? "Open";
-            took = took || (!resumed && status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
-            return Observation.Parks(status, planned.Awaits, now?.Awaits, resumed, took: took && status == "Taken");
-        };
-    }
-
-    /// <summary>How many times a went-on run is carried on (LANDBACK1 part 3): the person's words were its turn, so one more.</summary>
-    internal const int WentOnCarryBound = 1;
-
-    /// <summary>
-    /// The look a turn's end takes of a quest that may have closed with uncommitted work in its tree (LANDBACK1 part 2, TURNWAIT1): the
-    /// quest read again, and, where it is done or submitted and the person has not stopped the session, its tree (<see cref="TurnCarries"/>).
-    /// A resumed run whose quest was closed as the look planned it (a went-on run, part 3) is carried on once, not <see cref="TurnCarry.Bound"/>
-    /// times, and not at all where it is an Accept's own carry-on (null: the Accept's count bounds it). A parked quest (a question for the
-    /// person), an ask-and-wait (D79), a stand-down and a failed exit are none of them done or submitted, so none is carried on.
-    /// </summary>
-    /// <param name="stopped">Whether the person (or the driver) stopped the session, read at each look and again where the words are written.</param>
-    /// <param name="accepted">Whether the session's kept Accept (<c>CarriedAccepts</c>) is the cause of this resume, read as the run is built.</param>
-    internal static Func<CancellationToken, Task<TurnCarry>>? CarriesOn(
-        ServiceClient service, QuestView planned, string tree, bool resumed, Func<bool> stopped, bool accepted = false)
-    {
-        // A went-on run (a resume of a quest closed as the look planned it, D83) is carried on once, a turn's end twice; an Accept's carry-on
-        // is the Accept's, bounded by its own count, so the run reads null for it and the session is never carried on by two counters.
-        var wentOn = resumed && planned.Status is not ("Open" or "Taken");
-        if (wentOn && accepted) return null;
-        var limit = wentOn ? WentOnCarryBound : TurnCarry.Bound;
-        return async token =>
-        {
-            if (stopped()) return TurnCarry.None;
-            var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
-            return await TurnCarries.LookAsync(now is { Status: "Done" } || QuestResults.Submitted(now), stopped, tree, token, limit).ConfigureAwait(false);
-        };
-    }
-
-    /// <summary>Where a run's capture failed once the run was ended before awaiting it (ANSWER2): the machine log's <c>where</c>.</summary>
-    internal const string AbandonedRun = "a session's run, ended as its record would not move to working";
-
-    /// <summary>
-    /// How long a given-up run's capture is waited for before it is left to finish on its own, still observed: its process was
-    /// just ended, so its output closes at once, and a capture still open after this is stuck, not slow.
-    /// </summary>
-    internal static readonly TimeSpan AbandonedWait = TimeSpan.FromSeconds(10);
-
-    /// <summary>
-    /// A run's capture once the run gave up before awaiting it (ANSWER2), as when its record will not move to working: the
-    /// process ended, then the capture observed, and a failure there written with its reason, to the machine log as an
-    /// <c>error</c> naming its place and to the session's console. Left alone it reached the finalizer, an unobserved task's
-    /// AggregateException whose only place was <i>an unobserved task</i>, beside each session the double move failed.
-    /// </summary>
-    /// <remarks>
-    /// Waited for within <see cref="AbandonedWait"/>, as the ordinary path awaits a capture once its process exited; past it the
-    /// run goes on to say how it ended, and the capture is still observed whenever it finishes. Never throws.
-    /// </remarks>
-    /// <param name="exitRead">
-    /// Told once the ended process's exit is read within <see cref="AbandonedWait"/>, before the capture is waited for
-    /// (COWORKVIEW1a): where its <c>end</c> is written. Never told past the bound.
-    /// </param>
-    internal static async Task AbandonedAsync(
-        Process? process, Task capture, string sessionId, MachineLog? log, SessionOutput? output, TimeSpan? within = null, Action? exitRead = null)
-    {
-        if (process is not null)
-        {
-            SessionProcesses.EndIfRunning(process);
-            if (exitRead is not null && await ExitReadAsync(process, AbandonedWait).ConfigureAwait(false)) exitRead();
-        }
-
-        var observed = capture.ContinueWith(
-            done =>
-            {
-                if (done.Exception is not { } failed) return;
-                var error = failed.InnerExceptions.Count == 1 ? failed.InnerExceptions[0] : failed;
-                log?.Failed(AbandonedRun, error);
-                output?.Append(
-                    sessionId,
-                    $"— the run ended here, since its record would not move, failed as its output was read: {error.GetType().Name}: {error.Message}");
-            },
-            CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        try
-        {
-            await observed.WaitAsync(within ?? AbandonedWait).ConfigureAwait(false);
-        }
-        catch (TimeoutException)
-        {
-            // Still observed: the continuation above writes its failure whenever the capture ends.
-        }
-    }
-
-    /// <summary>
     /// How long a run's capture is waited for once its root exited, G (SESSWATCH1a, D200, the session-watch design §1.5): the door's
     /// drain and <c>EndedLingeringAsync</c>'s ten seconds fit inside it. Settable for a test, never read from <c>driver.json</c>.
     /// </summary>
@@ -1577,7 +1360,7 @@ public sealed class Driver(
     /// 🔴 State E (SESSWATCH1a, D200, the session-watch design §2): a run whose root has exited is concluded by what it said, within
     /// <see cref="CaptureBound"/>. Past it with its capture still held open, by something its agent started holding the harness's
     /// output, everything left in the run's job is ended, said as a note line (<c>ended.gone</c>), and the capture drains; one still
-    /// open after <see cref="AbandonedWait"/> is abandoned, still observed. Never a cut-off: the caller concludes by the exit, so a
+    /// open after <see cref="SessionWaits.AbandonedWait"/> is abandoned, still observed. Never a cut-off: the caller concludes by the exit, so a
     /// session that finished its turn and left a dev server holding its pipe (ORPHAN1's case) ends as it finished.
     /// </summary>
     /// <returns>Whether the capture finished, so what it read may be awaited; false where it was abandoned.</returns>
@@ -1594,13 +1377,13 @@ public sealed class Driver(
         output?.Append(sessionId, $"— {gone.Note}");
         Context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts }, say: null);
         Log?.Info("session.gone", ("session", sessionId), ("bound", (int)CaptureBound.TotalSeconds));
-        if (await Task.WhenAny(capture, Task.Delay(AbandonedWait)).ConfigureAwait(false) == capture)
+        if (await Task.WhenAny(capture, Task.Delay(SessionWaits.AbandonedWait)).ConfigureAwait(false) == capture)
         {
             await capture.ConfigureAwait(false);
             return true;
         }
 
-        await AbandonedAsync(null, capture, sessionId, Log, output, TimeSpan.Zero).ConfigureAwait(false);
+        await SessionWaits.AbandonedAsync(null, capture, sessionId, Log, output, TimeSpan.Zero).ConfigureAwait(false);
         return false;
     }
 
@@ -1719,37 +1502,11 @@ public sealed class Driver(
     internal TextReader Hearing(TextReader reader, string sessionId) => Watch.Hearing(reader, sessionId);
 
     /// <summary>
-    /// How long an agent whose session ended with its own background work still running is given to exit once its stdin closed,
-    /// before its tree is ended (DONEEND1). Its session has said all it will; the work is what can hold it.
-    /// </summary>
-    internal static readonly TimeSpan LingerBound = TimeSpan.FromSeconds(10);
-
-    /// <summary>
     /// How often a driven session that waits on its own background work reads its quest again (DONEEND1, D83's note): every fourth
     /// tick of the driver's own, a minute at its default. Each look reads what a tick reads (the board, and the sessions until this
     /// session's take is read), so a waiting session costs a quarter of a tick, and its run ends within a minute of its quest's close.
     /// </summary>
     internal TimeSpan BackgroundLook => TimeSpan.FromSeconds(4 * Math.Max(1, config.PollSeconds));
-
-    /// <summary>
-    /// Wait up to <paramref name="bound"/> for an agent to exit; past it, end its process tree, saying so to the run first (DONEEND1).
-    /// True where its tree was ended here.
-    /// </summary>
-    internal static async Task<bool> EndedLingeringAsync(Process process, TimeSpan bound, AcpEnding? ending)
-    {
-        using var within = new CancellationTokenSource(bound);
-        try
-        {
-            await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
-            return false;
-        }
-        catch (OperationCanceledException)
-        {
-            ending?.Lingering();
-            SessionProcesses.EndIfRunning(process);
-            return true;
-        }
-    }
 
     /// <summary>
     /// The knowledge server this session is offered (ACP4) — located per run, because a machine can
@@ -1829,20 +1586,6 @@ public sealed class Driver(
         {
             ChildLineage.Exited(home, sessionId, proc, clean: false);
             throw;
-        }
-    }
-
-    /// <summary>Whether <paramref name="process"/>'s exit is read within <paramref name="within"/>; one that cannot say has not exited.</summary>
-    internal static async Task<bool> ExitReadAsync(Process process, TimeSpan within)
-    {
-        try
-        {
-            await process.WaitForExitAsync().WaitAsync(within).ConfigureAwait(false);
-            return true;
-        }
-        catch (Exception error) when (error is TimeoutException or InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            return false;
         }
     }
 

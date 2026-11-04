@@ -262,7 +262,7 @@ and a tree's update leave a bound tree as it stands, each naming the operation (
 records (`TogetherWatch`), settles one at *landing* after a restart and drops one whose sessions were deleted; the head entry's Accept
 lands it (`TogetherAccepts`), its record listing the members as `brought`, and a member's own landing of that work is refused as
 *brought into*. A driven turn on the protocol door that ends with its quest done (or submitted) and its tree
-uncommitted is not the session's end either (LANDBACK1 part 2): `AcpSession.CarriesOn`, built by `Driver.CarriesOn` for a start and a resumed
+uncommitted is not the session's end either (LANDBACK1 part 2): `AcpSession.CarriesOn`, built by `SessionWaits.CarriesOn` for a start and a resumed
 run, reads the quest and the tree (`TurnCarries`, `AutoLander.ReadTreeAsync`), the run waits for the session's own background work as a park
 would, and then sends Daoris's own prompt (`TurnCarries.WordsOf`, no key, no say door, no card, and no `CarriedAccepts` entry) to commit by the
 repository's conventions or restore what is not wanted. Two carry-ons a run (`TurnCarry.Bound`, one number with `LandCarry.Bound`), then

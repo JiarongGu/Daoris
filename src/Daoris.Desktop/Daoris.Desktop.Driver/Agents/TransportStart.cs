@@ -193,7 +193,7 @@ internal interface ITransportHost
     void Ended(string sessionId, string proc, int? exit);
 
     /// <summary>
-    /// A run let go before its end (ANSWER2, <c>Driver.AbandonedAsync</c>): its process ended, its end written unclean once its exit is read,
+    /// A run let go before its end (ANSWER2, <c>SessionWaits.AbandonedAsync</c>): its process ended, its end written unclean once its exit is read,
     /// and its capture observed, a failure there written with its reason.
     /// </summary>
     Task AbandonedAsync(string sessionId, string proc, Process process, Task capture);

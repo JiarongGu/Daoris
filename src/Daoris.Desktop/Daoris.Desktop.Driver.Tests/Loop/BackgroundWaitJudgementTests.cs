@@ -33,7 +33,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
 
     private async Task<bool?> JudgeAsync(QuestView planned, bool resumed)
     {
-        var judge = Daoris.Driver.Driver.WaitsOnBackground(_ledger.Client(), planned, "s1", resumed);
+        var judge = SessionWaits.OnBackground(_ledger.Client(), planned, "s1", resumed);
         return judge is null ? null : await judge(CancellationToken.None);
     }
 
@@ -65,7 +65,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     [Fact]
     public async Task The_same_judgement_read_again_turns_false_once_the_quest_is_done()
     {
-        var judge = Daoris.Driver.Driver.WaitsOnBackground(_ledger.Client(), Planned("Taken"), "s1", resumed: true)!;
+        var judge = SessionWaits.OnBackground(_ledger.Client(), Planned("Taken"), "s1", resumed: true)!;
 
         Assert.True(await judge(CancellationToken.None));
         _ledger.Move("q1", "Done");
@@ -77,7 +77,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     public async Task A_start_s_judgement_read_again_holds_while_taken_and_turns_false_once_done()
     {
         _ledger.Driven("s2", "q1", "tree");
-        var judge = Daoris.Driver.Driver.WaitsOnBackground(_ledger.Client(), Planned("Open"), "s2", resumed: false)!;
+        var judge = SessionWaits.OnBackground(_ledger.Client(), Planned("Open"), "s2", resumed: false)!;
 
         Assert.True(await judge(CancellationToken.None));
         Assert.True(await judge(CancellationToken.None));
@@ -125,7 +125,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
 
     private async Task<TurnCarry?> LookAsync(QuestView planned, bool resumed, string tree, Func<bool>? stopped = null)
     {
-        var look = Daoris.Driver.Driver.CarriesOn(_ledger.Client(), planned, tree, resumed, stopped ?? (() => false));
+        var look = SessionWaits.CarriesOn(_ledger.Client(), planned, tree, resumed, stopped ?? (() => false));
         return look is null ? null : await look(CancellationToken.None);
     }
 
@@ -193,7 +193,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     /// <summary>
     /// LANDBACK1 part 3 (b): a resumed run on a quest already closed as planned (a went-on run, D83) is carried on once where the quest
     /// stands done and its tree is dirty, and owes nothing where the tree is clean or the quest was declined. It still never waits on
-    /// background work: <see cref="Daoris.Driver.Driver.WaitsOnBackground"/> keeps BGWAIT1b's null for it.
+    /// background work: <see cref="SessionWaits.OnBackground"/> keeps BGWAIT1b's null for it.
     /// </summary>
     [Fact]
     public async Task A_resumed_run_on_a_quest_closed_as_planned_is_carried_on_once_where_its_tree_is_dirty()
@@ -205,7 +205,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         Assert.Equal(1, dirty.Limit);
         // A turn's end, resumed or not, keeps the two of part 2.
         Assert.Equal(TurnCarry.Bound, (await LookAsync(Planned("Taken"), resumed: false, Tree(dirty: true)))!.Limit);
-        Assert.Null(Daoris.Driver.Driver.WaitsOnBackground(_ledger.Client(), Planned("Done"), "s1", resumed: true));
+        Assert.Null(SessionWaits.OnBackground(_ledger.Client(), Planned("Done"), "s1", resumed: true));
     }
 
     [Fact]
@@ -228,10 +228,10 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         _ledger.Move("q1", "Done");
         var tree = Tree(dirty: true);
 
-        var look = Daoris.Driver.Driver.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: false)!;
+        var look = SessionWaits.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: false)!;
         Assert.True((await look(CancellationToken.None)).Dirty);
 
-        Assert.Null(Daoris.Driver.Driver.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: true));
+        Assert.Null(SessionWaits.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: true));
     }
 
     /// <summary>A stopped session is never carried on, a closed quest's resume included.</summary>
@@ -249,7 +249,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     {
         var tree = Tree(dirty: true);
         var planned = Planned("Taken");
-        var look = Daoris.Driver.Driver.CarriesOn(_ledger.Client(), planned, tree, resumed: true, () => false)!;
+        var look = SessionWaits.CarriesOn(_ledger.Client(), planned, tree, resumed: true, () => false)!;
 
         Assert.False((await look(CancellationToken.None)).Eligible);
         _ledger.Move("q1", "Done");

@@ -67,8 +67,8 @@ public sealed class QuestNameTests
         var named = new QuestView("q1", "ask #a1", "engine", Refiled, "b", "Open") { Short = "Frame cap" };
         var plain = new QuestView("q2", "game", "engine", "Fix the gap", "b", "Open") { Short = "Fix the gap" };
 
-        var told = await Daoris.Driver.Driver.LandsAsAsync("s1", named, _ => throw new InvalidOperationException("never asked"), default);
-        var same = await Daoris.Driver.Driver.LandsAsAsync("s2", plain, _ => throw new InvalidOperationException("never asked"), default);
+        var told = await StartLanding.SubjectAsync("s1", named, _ => throw new InvalidOperationException("never asked"), default);
+        var same = await StartLanding.SubjectAsync("s2", plain, _ => throw new InvalidOperationException("never asked"), default);
 
         Assert.Equal("frame-cap", told.Slug);
         // The request's words ride the subject, a ticket's key searched in them (PROCESS1b-i).

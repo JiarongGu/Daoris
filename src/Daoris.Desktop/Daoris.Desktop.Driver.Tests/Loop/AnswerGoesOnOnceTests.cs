@@ -173,11 +173,11 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         var output = new SessionOutput();
         var capture = Task.FromException(new IOException("The process cannot access the file 's1.log' because it is being used by another process."));
 
-        await Daoris.Driver.Driver.AbandonedAsync(process: null, capture, "s1", log, output);
+        await SessionWaits.AbandonedAsync(process: null, capture, "s1", log, output);
 
         var line = Assert.Single(StubFile.Lines(DaorisHome.Entry(_home, HomeEntry.Logs,"2026-10-08.desktop.jsonl")));
         Assert.Contains("\"level\":\"error\",\"event\":\"error\"", line);
-        Assert.Contains($"\"where\":\"{Daoris.Driver.Driver.AbandonedRun}\"", line);
+        Assert.Contains($"\"where\":\"{SessionWaits.AbandonedRun}\"", line);
         Assert.Contains("\"type\":\"System.IO.IOException\"", line);
         Assert.Contains("because it is being used by another process.", line);
         Assert.Contains(
@@ -197,7 +197,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         var output = new SessionOutput();
         var capture = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        await Daoris.Driver.Driver.AbandonedAsync(null, capture.Task, "s1", log, output, within: TimeSpan.FromMilliseconds(50)).WaitAsync(Bound);
+        await SessionWaits.AbandonedAsync(null, capture.Task, "s1", log, output, within: TimeSpan.FromMilliseconds(50)).WaitAsync(Bound);
         Assert.Empty(output.Tail("s1").Lines);
         capture.SetException(new IOException("the pipe closed late"));
 
@@ -212,8 +212,8 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         using var log = new MachineLog(_home, "desktop");
         var output = new SessionOutput();
 
-        await Daoris.Driver.Driver.AbandonedAsync(process: null, Task.CompletedTask, "s1", log, output);
-        await Daoris.Driver.Driver.AbandonedAsync(process: null, Task.FromCanceled(new CancellationToken(canceled: true)), "s1", log, output);
+        await SessionWaits.AbandonedAsync(process: null, Task.CompletedTask, "s1", log, output);
+        await SessionWaits.AbandonedAsync(process: null, Task.FromCanceled(new CancellationToken(canceled: true)), "s1", log, output);
 
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Logs)) && Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).Any());
         Assert.Empty(output.Tail("s1").Lines);
@@ -226,7 +226,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     [Fact]
     public async Task A_given_up_runs_capture_never_reaches_the_finalizer()
     {
-        Assert.False(await ReachesTheFinalizerAsync(capture => Daoris.Driver.Driver.AbandonedAsync(null, capture, "s1", log: null, output: null)));
+        Assert.False(await ReachesTheFinalizerAsync(capture => SessionWaits.AbandonedAsync(null, capture, "s1", log: null, output: null)));
         Assert.True(await ReachesTheFinalizerAsync(observe: null));
     }
 

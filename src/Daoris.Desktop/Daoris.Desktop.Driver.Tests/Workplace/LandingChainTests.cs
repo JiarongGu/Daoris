@@ -70,12 +70,12 @@ public sealed class LandingChainTests : IDisposable
         var step = new QuestView("q2", "ask #a1", "engine", "Verify the gap is fixed", "", "Open") { Parent = "q1" };
         Task<QuestView?> Find(string id) => Task.FromResult<QuestView?>(id switch { "q1" => first, "q2" => step, _ => null });
 
-        Assert.Equal(new LandingSubject("s2", "q1", "Fix the gap"), await Daoris.Driver.Driver.LandsAsAsync("s2", step, Find, default));
-        Assert.Equal(new LandingSubject("s1", "q1", "Fix the gap"), await Daoris.Driver.Driver.LandsAsAsync("s1", first, _ => throw new InvalidOperationException("never asked"), default));
+        Assert.Equal(new LandingSubject("s2", "q1", "Fix the gap"), await StartLanding.SubjectAsync("s2", step, Find, default));
+        Assert.Equal(new LandingSubject("s1", "q1", "Fix the gap"), await StartLanding.SubjectAsync("s1", first, _ => throw new InvalidOperationException("never asked"), default));
         Assert.Equal(new LandingSubject("s2", "q2", "Verify the gap is fixed"),
-            await Daoris.Driver.Driver.LandsAsAsync("s2", step, _ => throw new DriverException("the service did not answer"), default));
+            await StartLanding.SubjectAsync("s2", step, _ => throw new DriverException("the service did not answer"), default));
         Assert.Equal(new LandingSubject("s2", "q2", "Verify the gap is fixed"),
-            await Daoris.Driver.Driver.LandsAsAsync("s2", step, _ => Task.FromResult<QuestView?>(null), default));
+            await StartLanding.SubjectAsync("s2", step, _ => Task.FromResult<QuestView?>(null), default));
     }
 
     // ——— what an advance refuses

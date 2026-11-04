@@ -47,7 +47,7 @@ public sealed class LineageExitProcessTests : IDisposable
         var capture = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         bool? exitedAtEnd = null;
 
-        var abandoned = Daoris.Driver.Driver.AbandonedAsync(
+        var abandoned = SessionWaits.AbandonedAsync(
             process, capture.Task, "s1", log: null, output: null, within: Poll.Patience,
             exitRead: () =>
             {

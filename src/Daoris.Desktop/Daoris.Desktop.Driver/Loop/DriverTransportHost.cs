@@ -31,7 +31,7 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
     public void Ended(string sessionId, string proc, int? exit) => driver.Ended(sessionId, proc, exit);
 
     public Task AbandonedAsync(string sessionId, string proc, Process process, Task capture) =>
-        Driver.AbandonedAsync(
+        SessionWaits.AbandonedAsync(
             process, capture, sessionId, driver.Log, driver.Context.Output,
             exitRead: () => ChildLineage.Exited(Home, sessionId, proc, clean: false));
 
@@ -45,7 +45,7 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
     public ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
         driver.Prepare(adapter, target, selection, next).Info;
 
-    public TimeSpan LingerBound => Driver.LingerBound;
+    public TimeSpan LingerBound => SessionWaits.LingerBound;
 
-    public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => Driver.EndedLingeringAsync(process, Driver.LingerBound, ending);
+    public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => SessionWaits.EndedLingeringAsync(process, SessionWaits.LingerBound, ending);
 }

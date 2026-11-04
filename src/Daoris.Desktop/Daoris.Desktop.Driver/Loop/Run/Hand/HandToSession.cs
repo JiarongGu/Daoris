@@ -184,7 +184,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // told its chain's branch, which its done moves on. Under a named workflow its run's bound version's landing step says it.
                 LandsOn = context.Trees.Holds(workTree)
                     ? await context.Trees.PlanAsync(
-                        workTree, await Driver.LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct,
+                        workTree, await StartLanding.SubjectAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct,
                         process!)
                         .ConfigureAwait(false)
                     : null,
@@ -219,7 +219,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
 
             // The creating sentence, on the record while the session runs: where it grew from and what a fresh tree does not hold. The
             // conclusion's note replaces it.
-            var startingNote = Driver.StartingNote(
+            var startingNote = StartSentence.Of(
                 opened, quest, answered, tree.ResumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
                 handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && state.PassedAccount is not null,
                 joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null, broughtForward: start.BroughtForward is not null,
@@ -276,9 +276,9 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 working: channelHeld is null ? null : () => _ = ChannelReach.HandedAsync(channelDoors, channelHeld, CancellationToken.None),
                 // A turn that ends on the session's own background work, holding its quest as a park would, is not a question. Read from
                 // the quest as the conclusion reads it, by the conclusion's own rule.
-                waitsOnBackground: Driver.WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
+                waitsOnBackground: SessionWaits.OnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
                 // A turn that ends with the quest done and the tree uncommitted is carried on, not concluded.
-                carriesOn: Driver.CarriesOn(service, quest, workTree, resumed: start.Resumes is not null, () => context.Processes.StopMade(sessionId) is not null),
+                carriesOn: SessionWaits.CarriesOn(service, quest, workTree, resumed: start.Resumes is not null, () => context.Processes.StopMade(sessionId) is not null),
                 // Where the first prompt's write returns, the carry-on's moved words are `sent`, then taken.
                 written: delivering is null ? null : delivering.Written,
                 // Its agent's refusal of the entry's model at the open is re-asked; a new start's walk may answer a later entry on the same
