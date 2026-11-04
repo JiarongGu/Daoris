@@ -1,13 +1,9 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SessionConsole } from './console/SessionConsole';
-import { sentence } from '../locales/format';
-import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../app/opener';
 import { useAsks } from '../data/queries';
 import {
-  useSessionStreams, useStopTask, useTreeFile, useReviewedPatch, useTerminals, useRemotes, useWorkflowRun,
-  useSessionEvents, usePushedCalls, withCall, useRunNodeWord, useResolveHeld, useConsidered,
+  useSessionEvents, usePushedCalls, withCall, useRemotes, useRunNodeWord, useTerminals,
 } from '../bridge/shell';
 import { useAttendedSession } from './head/useAttendedSession';
 import { useAttendedRecord } from './head/useAttendedRecord';
@@ -19,69 +15,41 @@ import { useSessionLanding } from './review/useSessionLanding';
 import { useAttendedWaits } from './waits/useAttendedWaits';
 import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
-import { WorkflowRunView } from '../workflow/WorkflowRunView';
-import { AtWorkView } from './atWork/AtWorkView';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
-import { opinionAsked, opinionHolds } from './gates/opinion';
-import { OpinionGate } from './gates/OpinionGate';
-import { reviewState } from './gates/review';
-import { ReviewGate } from './gates/ReviewGate';
 import { WaitStrip } from './waits/WaitStrip';
 import { WaitPanel } from './waits/WaitPanel';
-import { anchorOf } from './waits/anchors';
-import { rulesAsked } from './waits/waits';
-import { sayDiscard } from '../settings/Sweep';
-import { toolOf } from '../agents/tools';
-import { agentOf, machineScope } from '../settings/accounts/accounts';
 import { namer } from '../settings/accounts/namer';
-import { coolingFor, takesWords } from './say';
-import { SessionBox } from './conversation/SessionBox';
-import { lastWords } from './channel';
-import { openGoAheads } from './waits/parkQuestion';
-import { FilePreview } from './review/FilePreview';
-import { FileOpener, fileName } from './review/preview';
-import { TerminalView } from './terminals/TerminalView';
-import { failure, type Notify, SESSION_ACTIVE } from '../design/ui';
+import { coolingFor } from './say';
 import type { FrameIntent } from '../menus/commands';
-import { AttendedSession, noteIsInTheHead } from './AttendedSession';
-import { BackToBottom, SessionConversation, ToTheTop } from './conversation/SessionConversation';
-import { type EarlierPart, EarlierParts } from './conversation/EarlierParts';
-import { ancestryOf } from './conversation/line';
+import { BackToBottom, ToTheTop } from './conversation/SessionConversation';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
 import { heavyRow } from './HeavySlotLine';
-import { ownTree, sessionTitle } from './identity';
-import { doorLabel } from '../agents/tools';
-import { Composer } from './conversation/Composer';
-import { DiffPane } from './review/DiffPane';
-import { NothingFollowed, RightDock } from './frame/RightDock';
-import { SessionTimeline } from './head/SessionTimeline';
-import { SessionRail } from './rail/SessionRail';
-import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
-import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import type { HandOverRoster } from './start/HandOverAsk';
+import { sessionTitle } from './identity';
+import { RightDock } from './frame/RightDock';
+import { SESSION_ACTIVE, type Notify } from '../design/ui';
 import { useSessionActs } from './sessionActs';
-import { ListMore } from './frame/ListPane';
 import { useNewStart } from './start/useNewStart';
 import { StartPane } from './start/StartPane';
-import { OutputPanel, PANEL_MIN, StreamTabs } from './frame/frame';
-import { panelTabs } from './console/streams';
+import { agentRosterOf } from './start/agentRoster';
+import { OutputPanel, PANEL_MIN } from './frame/frame';
 import { dockRange, type ListMode } from './frame/layout';
 import type { FrameClosings } from './frame/closings';
 import type { ListPanes } from './frame/listPanes';
-import { type ListSpec, type ViewLayout, ViewListPane } from './frame/ViewFrame';
+import { type ViewLayout, ViewListPane } from './frame/ViewFrame';
 import { ViewMain } from './frame/ViewMain';
-import type { Place, Placements, ViewId } from './frame/placements';
-import { relationsOf } from './head/relations';
-import { beganLine } from './head/partsLife';
-import { cn } from '../lib/cn';
+import type { Placements } from './frame/placements';
+import { fileName } from './review/preview';
 import { useFrameLayout } from './frame/useFrameLayout';
 import { useDockViews } from './frame/useDockViews';
-
-/** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
-const door = (structured?: boolean): 'structured' | 'text' | undefined =>
-  structured === true ? 'structured' : structured === false ? 'text' : undefined;
+import { useRegionSurfaces } from './frame/regionSurface';
+import { useSessionsList } from './rail/useSessionsList';
+import { AttendedPane } from './head/AttendedPane';
+import { partRowsOf } from './head/partRows';
+import { AttendedConversation } from './conversation/AttendedConversation';
+import { AttendedBoxes } from './conversation/AttendedBoxes';
+import { useSeekPart } from './conversation/useSeekPart';
 
 /**
  * Settles the person's words whose send the page stopped waiting on (SENDLOST1b) by the attended session's record and queue.
@@ -231,37 +199,24 @@ export function WorkFrame({
   };
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLElement>(null);
-  const {
-    root, width, listed, closed, placed, collapsed, dockClosed, dockFull, setDockFull, go, layout, list, chosen, resizeDock, closeDock,
-    height, resize, toggle,
-  } = useFrameLayout({ lists, closings, placements, viewLayout, group, onGroupBrought, onListMode });
+  const frame = useFrameLayout({ lists, closings, placements, viewLayout, group, onGroupBrought, onListMode });
+  const { root, width, listed, placed, collapsed, dockClosed, dockFull, setDockFull, go, layout, list, chosen, resizeDock, closeDock } = frame;
   // Another view in the frame (DOCK1a): its own list or none, and its main area. Absent, it is Sessions.
   const elsewhere = viewLayout !== undefined;
 
+  const session = useAttendedSession({ selected, onSelect, notify });
   const {
-    sessions, sessionsResyncing, openings, groups, entries, where, quests, registry, harnesses, accounts, attended, attendedEntry,
-    channelAsk, quest, live, conversation, here, intake, oneTurn,
-  } = useAttendedSession({ selected, onSelect, notify });
+    sessions, openings, groups, entries, where, quests, registry, harnesses, accounts, attended, attendedEntry, channelAsk, quest, live,
+    conversation, here, intake, oneTurn,
+  } = session;
   const start = useNewStart({ t, notify, attended, selected, onSelect, compose, attend, setRefusal });
   const { newConversationPressed } = start;
 
   // Which workspaces sync with a remote here: a pause's ask names an open quest another machine may still take (PAUSE1e).
   const wiring = useRemotes().data;
 
-  const {
-    spent, related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, channel, channelOpened,
-    setChannelOpened, postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone, integration,
-  } = useAttendedRecord({ attended, attendedEntry, channelAsk, where, here, intake });
-
-  // What the session runs beside itself, a tab each in the panel (CONSOLE2c). The panel shows the
-  // session's own console unless the person picked a stream of it, and one it no longer lists falls
-  // back to the session rather than to an empty well.
-  const streams = useSessionStreams(attended?.id ?? null);
-  const [picked, setPicked] = useState<string | null>(null);
-  useEffect(() => setPicked(null), [attended?.id]);
-  const shown = attended
-    ? (picked && streams.some((row) => row.key === picked) ? picked : attended.id)
-    : null;
+  const record = useAttendedRecord({ attended, attendedEntry, channelAsk, where, here, intake });
+  const { spent, branch, integration } = record;
 
   // The person's own terminals (CONSOLE4b), held here rather than by their view, which unmounts whenever
   // it moves or another view of its region is shown: a shell outlives that, as VS Code's terminal does.
@@ -269,55 +224,38 @@ export function WorkFrame({
 
   // The ask its entry came from, for the head's name: the rail's read, so it costs nothing it does not already ask.
   const entryAsks = useAsks(true, channelAsk !== null);
-  const {
-    editQueued, parkAsk, goAheads, question, talking, draft, setDraft, chatTurns, turns, held, box, stands, goes, levels,
-    keepingStop, answering, taking, lastTurns, offered, setOption, setMentioning, treeFiles, reading, onUsage, waiting, onWaiting,
-  } = useAttendedBox({
+  const boxState = useAttendedBox({
     t, attended, here, intake, oneTurn, conversation, live, quest, sessions: sessions.data, attendedEntry, groups: groups.data,
   });
+  const { goAheads, question, talking, draft, setDraft, chatTurns, box, stands, answering, taking, waiting, parkAsk } = boxState;
   const words = useWords({
     t, notify, attended, here, oneTurn, conversation, live, box, chatTurns, draft, setDraft, setRefusal, sessions, attendedEntry, stands,
     attend,
   });
-  const {
-    newSession, send, end, cancelTurn, onMoveWord, onDraftToHead, sending, giveBackSent, onSend, say, onSayAgain, onStartFrom,
-    onGoOnBrief, goOnNew, onGoOnNew, onKeepingStop, onStopTurn,
-  } = words;
+  const { say, sending, giveBackSent } = words;
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const boxWords = useBoxWords({ t, notify, attended, box, answering, question, goAheads, parkAsk, draft, setDraft, setRefusal, roster, words });
-  const { parkGoAhead, parkPicked, onParkPick, ending, boxAccepts, onSay, onBoxGoAhead } = boxWords;
 
   // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is (FIX-LOG 2026-09-23):
   // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
+  const views = useDockViews({
+    attended, elsewhere, here, ask, notifications, terminal, placed, closed: frame.closed, collapsed, dockClosed, closeDock, askFocus,
+    notificationsShow, notificationsToggle,
+  });
   const {
     setDocked, following, rightViews, panelViews, previewing, dock, setDock, setPanelPick, dragging, onDrag, panelView, openDock,
     openPreview, closePreview, openView, moveView,
-  } = useDockViews({
-    attended, elsewhere, here, ask, notifications, terminal, placed, closed, collapsed, dockClosed, closeDock, askFocus,
-    notificationsShow, notificationsToggle,
-  });
-  // Where the followed session's work stands (WORKFLOW1c, the workflow design §7): asked only while the Workflow view shows,
-  // in whichever region it stands, and again at every tick under the driver's key.
-  const workflowShown = following !== null && (placed.places.workflow === 'panel'
-    ? !collapsed && panelView === 'workflow'
-    : !dockClosed && dock === 'workflow');
-  const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
+  } = views;
   // Who is at work on the followed session (COWORKVIEW1a), asked whatever its state and whether *At work* shows (COMMS1i): the head's
   // *Waiting on* is this read's line, and *working with it* (§3.7) its count, at its mount and each `atWork` wake.
   const atWork = useSessionAtWork(following?.id ?? null);
   const atWorkHeld = atWork.data;
-  // Why an untaken quest sits is the driver's last look's, read beside the answer from memory (COWORKVIEW1b-ii).
-  const considered = useConsidered().data;
   const withIt = atWorkHeld && 'answer' in atWorkHeld
     ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
     : 0;
   // FABRIC-CUTOVER1f: the person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
-  // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
-  const resolveHeld = useResolveHeld();
-  const previewFile = useTreeFile(previewing ? following!.id : null, previewing?.path ?? null);
-  const previewPatch = useReviewedPatch(previewing ? following!.id : null, previewing?.path ?? null);
 
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
@@ -329,48 +267,6 @@ export function WorkFrame({
   }
   if (!intent && taken) setTaken(null);
 
-  // The console and its streams (CONSOLE2c), for whichever region it stands in. A session with nothing
-  // held here says so as a sentence, not as an empty bordered well, which read as a field on the
-  // installed window.
-  const consoleView = following && shown
-    ? <SessionConsole id={shown} fill quiet={t(shown === following.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
-    : null;
-  const streamTabs = following ? panelTabs(following.id, streams) : undefined;
-  const pickStream = (key: string) => setPicked(key === attended?.id ? null : key);
-  // A task stopped from its tab (CONSOLE3a): asked of the session that runs it; its tab changes when the
-  // wire says how it ended. What it was called is the tab's, for the notice.
-  const stopTask = useStopTask();
-  const stopStream = (key: string) => {
-    if (!attended) return;
-    const name = streams.find((row) => row.key === key)?.name ?? key;
-    stopTask.mutate({ id: attended.id, key }, {
-      onSuccess: ({ stopped }) => notify(t(stopped ? 'work.panel.stream.stopping' : 'work.panel.stream.notStopped', { name }),
-        stopped ? undefined : 'error'),
-      onError: (error) => notify(sentence(error), 'error'),
-    });
-  };
-
-  // Off Sessions (DOCK1a) the session views speak for the session attended there, which nothing else on
-  // the screen names — so each says whose it is, with the way back to it (found looking at Overview).
-  const whose = (flush: boolean) => (elsewhere && following ? (
-    // Flush in the panel, whose body carries its own gutter; inset in the side bar, as its views are.
-    <p className={cn('m-0 flex min-w-0 shrink-0 items-center gap-2 border-b border-line py-1.5 text-meta text-ink-faint', flush ? 'mb-2' : 'px-3')}>
-      <span className="min-w-0 truncate">
-        {t('work.frame.attending', { title: sessionTitle(following, quest, openings[following.id]) })}
-      </span>
-      {onOpenSessions && (
-        <button
-          type="button"
-          onClick={onOpenSessions}
-          className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
-        >
-          {t('work.frame.open')}
-        </button>
-      )}
-    </p>
-  ) : null);
-  const withWhose = (surface: ReactNode, flush = false) => (elsewhere && following ? <>{whose(flush)}{surface}</> : surface);
-
   // Where a terminal opened here starts (D96): the attended session's tree (a record with none works in
   // its repository's root), else the first repository of the workspace in scope that has a checkout here.
   // Said by the page, which knows what is attended and what the viewer is scoped to; with nothing to say,
@@ -379,217 +275,14 @@ export function WorkFrame({
   const terminalCwd = (attended && here ? attended.tree ?? rootOf(attended.repository) : undefined)
     ?? [...(registry.data ?? [])].filter((row) => row.root).sort((a, b) => a.repository.localeCompare(b.repository))[0]?.root
     ?? undefined;
-
-  // *Send back…* in a review (SURF6; MSG1f, D137 §5.1): the box on that session, with the focus in it, which is what the
-  // glossary's send back means — its work returned to it with a note, so it carries on. Off Sessions, Sessions is opened,
-  // where the box is. Where the session takes no words, the door to the quest composer stays (SURF6b).
-  const sendBack = () => {
-    if (!attended) return;
-    if (!takesWords(box)) {
-      onSendBack?.(attended.repository);
-      return;
-    }
-    if (elsewhere) onOpenSessions?.();
-    setAnswerFocus((was) => ({ session: attended.id, at: (was?.at ?? 0) + 1 }));
-  };
-
-  /** A view's surface, drawn in whichever region it stands (DOCK1b). The panel draws the console itself. */
-  const surface = (view: ViewId, where: Place = 'panel') => {
-    if (view === 'ask') return ask;
-    if (view === 'notifications') return notifications;
-    if (view === 'terminal') return <TerminalView terminals={terminals} cwd={terminalCwd} />;
-    if (view === 'review') {
-      // The line of work the reviewed part belongs to, and its ask: either's one Accept holds this one's while it lands (ACCEPTALL1h).
-      const followingEntry = following ? entryOfSession(entries, following.id) : null;
-      return withWhose(
-        <DiffPane
-          // The session's one press, where the part reviewed is the attended one (REVIEWFLOW1a, D168).
-          entryPress={following && following.id === attended?.id ? entryAt('review') ?? null : null}
-          entry={followingEntry?.entry ?? null}
-          ask={followingEntry && !isIntakeEntry(followingEntry) ? askOfEntry(followingEntry) : null}
-          // The followed session's (UX6b): off Sessions an ended one is reviewed on Sessions, where it is attended.
-          session={following?.id ?? null}
-          // What its frame says while git reads (REVIEW4); off Sessions the line above already names the session.
-          record={following}
-          title={following && !elsewhere ? sessionTitle(following, quest, openings[following.id]) : null}
-          // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
-          hasTree={Boolean(following && ownTree(following, (registry.data ?? []).find((row) => row.repository === following.repository)?.root))}
-          onSendBack={following && (takesWords(box) || onSendBack) ? sendBack : undefined}
-          onPreview={following && here ? (path) => openPreview({ path }) : undefined}
-          // SQUASHTIDY1f: work the line holds by content offers the head's discard in Accept's place, through the head's press.
-          discards={following && following.id === attended?.id ? discards : null}
-          onDiscardTree={following && following.id === attended?.id ? discardHeld : undefined}
-        />,
-      );
-    }
-    if (view === 'workflow') {
-      // Where the followed session's work stands in its workflow (WORKFLOW1c, design §7). Its look's presses are the review's
-      // own gate, drawn under the step where it waits, never a second implementation; every other step opens where its record is.
-      const lookControl = following && following.id === attended?.id && gateHolds && headReview ? (
-        <ReviewGate
-          environment={gateHolds.environment ?? ''}
-          state={reviewState(gateHolds.state)}
-          step={headReview.step ?? null}
-          stepId={gateHolds.quest ?? null}
-          served={headReview.served ?? null}
-          said={gateHolds.says ?? null}
-          chat={Boolean(gateHolds.chatRun)}
-          acts={headReview.acts}
-          busy={headReview.busy}
-        />
-      ) : null;
-      // Its second opinion's own gate under its step while the gate holds the work (XAGENT1g, WORKFLOW1c3's remainder): *Go on
-      // anyway…* and every other press through the gate's one owner, never a second implementation. No *Accept…* is drawn beside
-      // it here, so *Go on anyway…* is offered where the session's page lists the dispute inside *Accept…*.
-      const opinionHeld = following && following.id === attended?.id && headOpinion ? opinionHolds(landing.data) : null;
-      const opinionControl = opinionHeld && headOpinion && attended ? (
-        <OpinionGate
-          gate={opinionHeld}
-          detail={headOpinion.detail}
-          acts={headOpinion.acts}
-          busy={headOpinion.busy}
-          working={attended.id}
-          onOpenFile={headOpinion.onOpenFile}
-        />
-      ) : null;
-      const cells = (Array.isArray(workflowRun.data?.runs) ? workflowRun.data.runs : []).flatMap((run) => run.steps);
-      const controls = Object.fromEntries(cells.flatMap(({ step }) => {
-        const control = step.kind === 'look' ? lookControl : step.kind === 'opinion' ? opinionControl : null;
-        return control ? [[step.id, control]] : [];
-      }));
-      const ownKind = following && following.kind !== 'chat' && following.quest ? quest?.setUpIn ? 'look' : 'work' : null;
-      const ownStep = cells.find(({ step }) => step.kind === ownKind)?.step.id ?? null;
-      return following
-        ? withWhose(
-          <div className="p-3">
-            <WorkflowRunView
-              // A shell older than the route answers something else, which is no run.
-              answer={Array.isArray(workflowRun.data?.runs) ? workflowRun.data : null}
-              reading={workflowRun.isPending}
-              refusal={workflowRun.error ? sentence(workflowRun.error) : null}
-              // A service that did not answer is read again at once, before the view's next tick (CHATFLOW1b).
-              onRetry={() => { void workflowRun.refetch(); }}
-              // The step the followed session is its own: a set-up step's session shows the work for the look.
-              here={ownStep}
-              doors={{
-                session: (id) => { attend(id); if (elsewhere) onOpenSessions?.(); },
-                ...(onOpenQuest ? { quest: onOpenQuest } : {}),
-                ...(onAnswerAsk ? { ask: onAnswerAsk } : {}),
-                review: (id) => { doors.review?.(id); if (elsewhere) onOpenSessions?.(); },
-                ...(onOpenBranch ? { branch: onOpenBranch } : {}),
-              }}
-              controls={lookControl || opinionControl ? controls : undefined}
-              onNodeWord={runNodeWord.mutateAsync}
-              onHeld={resolveHeld.mutateAsync}
-            />
-          </div>,
-        )
-        : elsewhere
-          ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
-          : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
-    }
-    if (view === 'atWork') {
-      // Who is at work on the followed session (COWORKVIEW1a, the cowork view design §5): its parts and its subagents, from Daoris's
-      // records; each part opens its page.
-      return following
-        ? withWhose(
-          <AtWorkView
-            held={atWork.data}
-            error={atWork.error ? sentence(atWork.error) : null}
-            onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
-            onOpenQuest={onOpenQuest}
-            considered={considered}
-            // COMMS1i: its co-workers' agents as the person calls them, as the head's *Waiting on* names them.
-            nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
-            // The newest three messages of the page's own channel read, the panel's (COWORKVIEW1c); none for a session with no ask.
-            channel={attendedEntry && channelAsk && channel.available && channel.channel ? {
-              words: lastWords(channel.channel, { entry: attendedEntry.entry, repository: attendedEntry.repository }),
-              onOpen: () => {
-                setChannelOpened((n) => n + 1);
-                // Under 768 px the view replaces the conversation: leaving it shows the panel it opened.
-                if (layout.dock.mode === 'full') closeDock(true);
-              },
-            } : undefined}
-            onRetry={() => { void atWork.refetch(); }}
-            // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
-            streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}
-            onOpenStream={(key) => { pickStream(key); openView('console'); }}
-          />,
-        )
-        : elsewhere
-          ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
-          : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
-    }
-    if (view === 'console' && where === 'right') {
-      // In the side bar its streams go with it, above it, where the panel carries them in its header.
-      return withWhose(
-        <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
-          {streamTabs && streamTabs.length > 1 && (
-            <StreamTabs tabs={streamTabs} selected={shown ?? undefined} onSelect={pickStream} onStop={stopStream} />
-          )}
-          {consoleView ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
-        </div>,
-      );
-    }
-    return following
-      ? withWhose(
-        <div className="p-3">
-          <SessionTimeline
-            session={following}
-            quest={quest}
-            // The word the session list shows it as, which the states' flow lights its state with (FLOWCHART1b).
-            shown={shownOf(following, (groups.data ?? []).find((row) => row.session === following.id), taking[following.id])}
-            // Off Sessions there is no head to carry the parked note, so the timeline keeps it.
-            hideCurrentNote={!elsewhere && noteIsInTheHead(following, here)}
-            titled={false}
-          />
-        </div>,
-      )
-      : elsewhere
-        // Off Sessions there is no session list beside it to point at (audit SE11): it says nothing is
-        // attended, or that the one attended has ended and is read on Sessions (UX6b), and offers the view.
-        ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
-        : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
-  };
-  // The file previewed for the followed session (PREVIEW1): the host's answer, or its sentence, and the
-  // review's patch for that path where the review already holds one.
-  const previewSurface = previewing && following
-    ? withWhose(
-      <FilePreview
-        key={`${following.id}:${previewing.path}`}
-        path={previewing.path}
-        file={previewFile.data ?? null}
-        pending={previewFile.isPending && !previewFile.error}
-        refusal={previewFile.error ? sentence(previewFile.error) : null}
-        lines={previewing.lines}
-        patch={previewPatch}
-        onReload={() => { void previewFile.refetch(); }}
-      />,
-    )
-    : null;
   useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
 
   // Each actor's order (MODELROLE1e): the hand-over's offer and its ask draw from the session's actor's, empty in a browser.
   const actors = useActors();
-  const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
   // What a person calls an account (ACCTNAME1, D152 §4.2): the roster's one namer, so the head's facts, its Details, its
   // chain and its trace say the name the agent's page leads its row with.
   const nameOf = namer(t, roster);
-  // The agents a conversation may be started or handed over on, with their accounts: *New conversation*'s chips and the
-  // hand-over's ask (MIXAGENT1b-i) choose from the one roster.
-  const agentRoster: HandOverRoster = {
-    harnesses: roster.filter((row) => row.present).map((row) => row.harness),
-    labels: Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)])),
-    names: Object.fromEntries(roster.map((row) => [row.harness, row.product || row.harness])),
-    accounts: Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []])),
-    // The set's order of the agent's accounts of Daoris's, every workspace's (POOL1c, D197), by the accounts' owner (AGT7),
-    // from the files the frame already reads.
-    orderOf: (harness) => {
-      const door = roster.find((row) => row.harness === harness);
-      const use = door ? agentOf(accounts.data, toolOf(door)) : null;
-      return use ? machineScope(use).list : null;
-    },
-  };
+  const agentRoster = agentRosterOf(t, roster, accounts.data);
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
@@ -597,7 +290,7 @@ export function WorkFrame({
   const coolsUntil = between ? coolingFor(attended, roster, accounts.data, new Date()) : null;
 
   const asks = useHeadAsks({ selected, chosen, attend, setDocked, closeDock, terminal, terminals, openView });
-  const { archivingEnded, setArchivingEnded, answerFocus, setAnswerFocus, doors } = asks;
+  const { setArchivingEnded, doors } = asks;
   const actions = useSessionActs({ notify, doors, entries });
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
@@ -647,139 +340,32 @@ export function WorkFrame({
     t, notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, runNodeWord,
     attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  const {
-    ownBranch, landing, gateHolds, headReview, headOpinion, discards, discardHeld, landsNow, workAskAt, entryOffered, landEntry, entryAt,
-    entryAccept,
-  } = work;
-  const {
-    partnerPieces, helperWaits, pieceSection, waits, answerBelow, standing, setAnchored, toEvent, waitsOnScreen, goToWait, seekAt,
-    ruleAskAt, waitPanel, tail, setTail, awayFromTop, toTop,
-  } = useAttendedWaits({
+  const { entryAt, workAskAt, entryOffered, landsNow } = work;
+  const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, onAnswerAsk,
     boxWords, openView, work, talking, centre,
   });
-  const { setChatHeld, limitLine, headLink, continues, helps, pageMenu, pageHead } = useAttendedHead({
+  const {
+    partnerPieces, waits, answerBelow, standing, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
+  } = waitsState;
+  const headState = useAttendedHead({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
     heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking,
   });
+  const { limitLine, pageMenu, pageHead } = headState;
 
-  // Sessions' list (D118 §3a): the rail, handed to the list pane as every view with a list hands its own.
-  // NEW is one control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for
-  // something a person does occasionally, and every reference in the study puts new behind a single affordance.
-  // The list's own choices (D126 §4.1): by state, the default, or by repository; and whether archived is shown.
-  const sessionsFilters = sessionFilters(listed.pane('sessions').filters);
-  // A go to a group of the list where the person keeps it by repository shows it by state (ENTRY1g, D161's ENTRY1b note):
-  // for the go only and never remembered, it lasts until the person chooses an arrangement in the ⋯, which says what is
-  // shown, or leaves Sessions. Set as the go arrives, not after, so the rail draws the group the render it looks for it.
-  const [goByState, setGoByState] = useState(false);
-  if (!elsewhere && (group === 'you' || group === 'review') && sessionsFilters.group === 'repository' && !goByState) {
-    setGoByState(true);
-  }
-  if (elsewhere && goByState) setGoByState(false);
-  const arrangement = goByState ? 'state' : sessionsFilters.group;
-  const sessionsList = (): ListSpec => ({
-    view: 'sessions',
-    name: t('work.rail.label'),
-    labels: { open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') },
-    make: { label: t('work.start.title'), onMake: newConversationPressed },
-    // The list's ⋯, which it never had (SESSUX1c): how it is grouped, a choice of two, and whether archived sessions
-    // are shown, both remembered (D118 §3f); then, below a rule, *Archive what ended…*, which lists first (SESSUX1e).
-    more: (
-      <ListMore
-        label={t('work.list.more')}
-        choice={{
-          label: t('work.list.groupBy'),
-          value: arrangement,
-          options: [
-            { value: 'state', label: t('work.list.byState') },
-            { value: 'repository', label: t('work.list.byRepository') },
-            // Each ask its entries (D167 point 5): offered where the reader answers entries, since it groups by them.
-            ...(entries ? [{ value: 'ask', label: t('work.list.byAsk') }] : []),
-          ],
-          onChoose: (value) => {
-            setGoByState(false);
-            listed.setFilters('sessions', keptSessionFilters({
-              ...sessionsFilters, group: value === 'repository' ? 'repository' : value === 'ask' ? 'ask' : 'state',
-            }));
-          },
-        }}
-        items={[
-          { id: 'archived', label: t('work.list.showArchived'), checked: sessionsFilters.archived },
-          { id: 'archiveEnded', label: t('work.list.archiveEnded'), rule: true },
-        ]}
-        onChoose={(id) => {
-          if (id === 'archiveEnded') setArchivingEnded(true);
-          else if (id === 'archived') {
-            listed.setFilters('sessions', keptSessionFilters({ ...sessionsFilters, archived: !sessionsFilters.archived }));
-          }
-        }}
-      />
-    ),
-    loading: sessions.isPending,
-    resyncing: sessionsResyncing,
-    chosen: selected,
-    // What waits on the person, then what runs, in the open list's order (FRAME6; D126 §2.5).
-    strip: (
-      <SessionRail
-        selected={selected}
-        onSelect={(id) => { chosen(); attend(id); }}
-        notify={notify}
-        compact
-        taking={taking}
-        arrangement={arrangement}
-        archived={sessionsFilters.archived}
-        // The strip draws no group and is handed none: a go lays the list over beside it, and the list there brings the
-        // group (ENTRY1g). Handed one, it answered first and let the go go before the list laid over had looked.
-      />
-    ),
-    body: (
-      <SessionRail
-        selected={selected}
-        onSelect={(id) => { chosen(); attend(id); }}
-        notify={notify}
-        taking={taking}
-        lastTurns={lastTurns}
-        arrangement={arrangement}
-        archived={sessionsFilters.archived}
-        archiveEnded={archivingEnded}
-        onArchiveEnded={() => setArchivingEnded(false)}
-        group={group}
-        onGroupBrought={onGroupBrought}
-        // A row's acts that are this frame's: answering, asking to stop or to delete, reviewing, a terminal there (SESSUX1d, SESSUX1f).
-        doors={doors}
-      />
-    ),
+  const regions = useRegionSurfaces({
+    t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
+    session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork,
   });
-  const spec = elsewhere ? viewLayout.list : sessionsList();
-
-  // The line the attended part continues (SWITCHCTX1c-i; the switch-context design §2.7): each part's record and place as the strip
-  // reads them, the parts it continues by `from` (a part running alongside is not among them), and how each began.
-  const partRows = Object.fromEntries((sessions.data ?? []).map((row) => [row.id, {
-    session: row, root: rootOf(row.repository), where: where[row.id], spent: spent[row.id],
-  }]));
-  const beganOf = (id: string) => {
-    const part = attendedEntry?.parts.find((each) => each.session === id);
-    return attendedEntry && part && part.began !== 'opened' ? beganLine(t, part, attendedEntry.parts, partRows) : undefined;
-  };
-  const line: EarlierPart[] = attended && here
-    ? ancestryOf(sessions.data ?? [], attended.id, attendedEntry ? new Set(attendedEntry.parts.map((part) => part.session)) : null)
-      .flatMap((id) => {
-        const row = (sessions.data ?? []).find((each) => each.id === id);
-        return row
-          ? [{ id, adapter: row.adapter, chat: row.kind === 'chat', tree: row.tree, live: SESSION_ACTIVE.has(row.state), began: beganOf(id) }]
-          : [];
-      })
-    : [];
-  // Pressing a part in the strip or on the flow's rail attends it and scrolls to it, so the part shown is the one in view.
-  const [seeking, setSeeking] = useState(0);
-  const partBox = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (seeking === 0) return undefined;
-    const frame = requestAnimationFrame(() => partBox.current?.scrollIntoView?.({ block: 'start' }));
-    return () => cancelAnimationFrame(frame);
-  }, [seeking]);
+  const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
+  const spec = useSessionsList({
+    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
+  });
+  const partRows = partRowsOf(sessions.data, rootOf, where, spent);
+  const { partBox, seek } = useSeekPart();
 
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
@@ -811,194 +397,52 @@ export function WorkFrame({
               registered={registry.data ?? []}
               sessions={sessions.data}
               agentRoster={agentRoster}
-              defaultHarness={spawning?.harness}
+              defaultHarness={roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''))?.harness}
               notify={notify}
               onMakeTask={onMakeTask}
               attend={attend}
             />
           )}
-          {attended && waits && <AttendedSession
-            // What waits on the person, and every press on it: the strip at the foot is handed the same (D168 point 3).
-            {...waits}
-            // Its pieces (COAGENT1b): what other agents write for it, and the ask of one; no wait of the person's.
-            pieces={pieceSection}
-            // COMMS1i: what its line waits on of others, At work's line from At work's read, a door to At work.
-            waitingOn={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? {
-              answer: atWorkHeld.answer,
-              nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
-              onOpen: () => openView('atWork'),
-            } : null}
-            workAsk={workAskAt('head')}
-            ruleAsk={ruleAskAt('head')}
-            toEvent={toEvent}
-            seek={seekAt('head')}
-            quest={quest}
-            opening={attended ? openings[attended.id] : null}
-            taking={attended ? taking[attended.id] : undefined}
-            lastTurn={attended ? lastTurns[attended.id] : undefined}
-            // The page header above carries its state, its id and its stop (D126 §3.2): said once.
-            headed
-            // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
-            ownSignIn={Boolean(attended && roster.some((row) => row.harness === attended.adapter))}
+          <AttendedPane
+            t={t}
+            notify={notify}
+            session={session}
+            record={record}
+            work={work}
+            boxState={boxState}
+            waitsState={waitsState}
+            headState={headState}
+            roster={roster}
             nameOf={nameOf}
-            // Its entry's parts (SESSONE1c, D167 point 5): every act on this page stays the part shown's, and the strip picks it.
-            parts={attended && entryOfSession(entries, attended.id) ? {
-              entry: entryOfSession(entries, attended.id)!,
-              attended: attended.id,
-              rows: partRows,
-              onShow: (id: string) => {
-                attend(id);
-                setSeeking((count) => count + 1);
-              },
-            } : undefined}
-            entryAccept={entryAccept}
-            // Its ask's channel, kept to this line of work (SESSONE2c): a post is the person's words, and a refusal is the service's code.
-            channel={attended && attendedEntry && channelAsk && channel.available && (channel.loading || channel.channel) ? {
-              channel: channel.channel,
-              only: { entry: attendedEntry.entry, repository: attendedEntry.repository },
-              onPost: (post, answered) => postChannel.mutate({ ask: channelAsk, post }, {
-                onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
-                onError: (error) => answered.refused(sentence(error)),
-              }),
-              // COWORK1d: *Send to its session*, the person's own press, as on the ask's page.
-              onForward: (message, repository, answered) => forwardChannel.mutate({ ask: channelAsk, message, repository }, {
-                onSuccess: (forwarded) => (forwarded.sent ? answered.done() : answered.refused(forwarded.code ?? 'other')),
-                onError: (error) => answered.refused(sentence(error)),
-              }),
-              onOpenQuest,
-              onOpenAsk: onAnswerAsk ? () => onAnswerAsk(channelAsk) : undefined,
-              opened: channelOpened,
-            } : undefined}
-            chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
-            relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
-            related={related}
-            relatedOwn={relatedOwn}
-            onRelated={attend}
-            together={attended ? {
-              candidates: related.filter((row) => row.read !== 'not-read').map((row) => row.id),
-              operation: together,
-              busy: bringTogether.isPending || togetherAct.isPending || landEntry.isPending,
-              said: bringTogether.data?.refused ?? togetherAct.data?.refused
-                ?? (landEntry.variables?.entry === attendedEntry?.entry ? landEntry.data?.message ?? null : null),
-              onBring: here ? (members) => bringTogether.mutate({ session: attended.id, members }) : undefined,
-              onLetGo: () => togetherAct.mutate({ session: attended.id, act: 'let-go' }),
-              onAskAgain: () => togetherAct.mutate({ session: attended.id, act: 'ask-again' }),
-              onAccept: attendedEntry
-                ? () => landEntry.mutate({ entry: attendedEntry.entry, parts: Math.max(1, entryOffered), leaveOut: [] })
-                : undefined,
-              onSession: attend,
-            } : undefined}
-            memory={attended ? {
-              rows: memoryRows,
-              ended: !live,
-              busy: decideMemory.isPending,
-              said: decideMemory.variables?.session === attended.id ? decideMemory.data?.message ?? null : null,
-              onDecide: (op, approve) => decideMemory.mutate({ session: attended.id, op, approve }),
-              onKeep: (keep) => decideMemory.mutate({ session: attended.id, keep }),
-            } : undefined}
-            continues={continues}
-            helps={helps}
+            agentRoster={agentRoster}
+            following={following}
+            atWorkHeld={atWorkHeld}
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
-            process={told.data?.process ?? null}
-            onSession={(session) => attend(session.id)}
-            onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
-            branch={branch}
-            ownBranch={ownBranch}
-            // Only this machine's own record: the clean-up's list is this machine's, and so is the branch it names.
-            // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
-            onDiscardBranch={branch && here
-              ? (answered) => discardBranch.mutate(branch, {
-                onSuccess: sayDiscard(notify, t, answered),
-                onError: (error) => answered.refused(sentence(error)),
-              })
-              : undefined}
-            discardingBranch={discardBranch.isPending}
-            milestone={milestone}
-            record={sessionRecord}
+            partRows={partRows}
+            onShowPart={(id) => { attend(id); seek(); }}
+            openView={openView}
+            attend={attend}
+            onOpenQuest={onOpenQuest}
+            onAnswerAsk={onAnswerAsk}
             onOpenBranch={onOpenBranch}
-            trace={attended && trace.available ? {
-              open: tracing === attended.id,
-              onToggle: () => setTracing(tracing === attended.id ? null : attended.id),
-              answer: tracing === attended.id ? trace.query.data : undefined,
-              reading: tracing === attended.id && trace.query.isPending,
-              refusal: tracing === attended.id && trace.query.error ? sentence(trace.query.error) : null,
-              onSession: attend,
-              onQuest: onOpenQuest,
-              onAsk: onAnswerAsk,
-            } : undefined}
-          />}
-          {/* The conversation (D76): below the record, in the same scroll, so the head is read once
-              and the words are what the region follows. Only where the session ran: a teammate's
-              record came without its transcript, which stays on their machine (D47 §4). */}
-          {attended && here && (
-            <div className="mt-2 min-w-0">
-              {/* A file a tool card names opens in the side bar's preview (PREVIEW1, D111). */}
-              <FileOpener.Provider value={openPreview}>
-                {/* The parts it continues, above it and read-only (SWITCHCTX1c-i); keyed by the part, so attending another starts the count again. */}
-                {line.length > 0 && <EarlierParts key={attended.id} line={line} scroller={centre} />}
-                <div ref={partBox} data-part={attended.id} data-attended className="min-w-0 scroll-mt-12">
-                  <SessionConversation
-                    session={attended.id}
-                    began={beganOf(attended.id)}
-                    adapter={attended.adapter}
-                    chat={attended.kind === 'chat'}
-                    tree={attended.tree}
-                    live={live}
-                    // A conversation the driver answers for is working while a turn is in flight, and not
-                    // under words its agent said after the turn ended (found looking at CONSOLE2).
-                    turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
-                    // The driver's word that its call waits for the person's answer (AUTONOMY1b3e).
-                    callMark={grouping?.calling ?? undefined}
-                    scroller={centre}
-                    // *Back to bottom* is the waiting panel's to draw, above it (WAITPANEL1), not the transcript's foot.
-                    onTail={setTail}
-                    onUsage={onUsage}
-                    onWaiting={onWaiting}
-                    // Its limit's wait, read from its events (LIMITRESUME1d2): the head and the foot say it.
-                    onLimitWait={(session, held) => setChatHeld((was) => (held
-                      ? { session, held }
-                      : was?.session === session ? null : was))}
-                    // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
-                    waits={waits ? {
-                      waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
-                      proposals: rulesAsked(waits.rules?.proposals, attended.id),
-                      helpers: waits.helpers?.asks,
-                      permissions: waits.permissions?.waits,
-                    } : undefined}
-                    onAnchors={(session, state) => setAnchored({ session, ...state })}
-                    // COMMS1h: each helper its agent asked for, a card at its call, the answer folded in, the helper's door on it.
-                    helpersAsked={helperWaits ? { asks: helperWaits.asks, nameOf: helperWaits.nameOf, onOpen: helperWaits.onOpen } : undefined}
-                    onToWait={(wait) => {
-                      const anchor = anchorOf(wait);
-                      if (anchor) goToWait(anchor);
-                    }}
-                    // Where the person's words went, a door to that session; and words that cannot go on here, one press
-                    // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
-                    onSession={(id) => attend(id)}
-                    onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
-                    // SESSCTX1c part B: and beside it, the same session going on in a new part handed Daoris's brief.
-                    onGoOnBrief={rootOf(attended.repository) ? onGoOnBrief : undefined}
-                    // *Say it again* (COWORK1c): the person's own words that may have reached the agent before a restart, said anew.
-                    onSayAgain={onSayAgain}
-                    // Words its cooling account holds, and *Go on in a new session* with what it came to (MSG1g2, D137 §2.2).
-                    cooling={coolsUntil ? {
-                      until: coolsUntil,
-                      quest: attended.quest,
-                      onGoOnNew,
-                      pending: goOnNew.isPending,
-                      answer: newSession?.session === attended.id ? newSession.answer : null,
-                    } : undefined}
-                    reasons={{
-                      from: attended.adapter,
-                      to: harnesses.data?.adapter,
-                      adapter: harnesses.data?.adapter,
-                      agent: roster.find((row) => row.harness === attended.adapter)?.product || attended.adapter,
-                    }}
-                  />
-                </div>
-              </FileOpener.Provider>
-            </div>
-          )}
+          />
+          <AttendedConversation
+            t={t}
+            session={session}
+            boxState={boxState}
+            words={words}
+            waitsState={waitsState}
+            headState={headState}
+            grouping={grouping}
+            coolsUntil={coolsUntil}
+            roster={roster}
+            rootOf={rootOf}
+            openPreview={openPreview}
+            centre={centre}
+            partRows={partRows}
+            partBox={partBox}
+            attend={attend}
+          />
         </ViewMain>
 
         {/* The waiting panel (WAITPANEL1): the strip and the box, its top edge a handle that sizes what waits, kept per viewer;
@@ -1038,110 +482,21 @@ export function WorkFrame({
 
           {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
 
-          {talking && attended && box.kind === 'chat' && (
-            <Composer
-              // Per session: the files attached in one conversation never follow the person to another.
-              key={`composer:${attended.id}`}
-              live={live}
-              sending={send.isPending}
-              refusal={refusal?.session === attended.id ? refusal.text : null}
-              // One owner for the moves at a time (D56): while the session is parked the card above holds
-              // finish and decline, and this form keeps `send` alone. Its session stop is the page
-              // header's at every state (D126 §3.3); this form keeps *Finish* and *Stop turn*.
-              endings={attended.state !== 'awaiting-person'}
-              // *Answer…* from its row puts the focus here, where a parked chat is answered.
-              focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
-              draft={draft}
-              onDraft={setDraft}
-              queued={turns.queued}
-              // A parked conversation's waiting words are its record's, which it goes on with (SAIDBACK1b): no turn, no door.
-              queuedLabel={attended.state === 'awaiting-person' ? t('work.say.waiting') : undefined}
-              fold={attended.state === 'awaiting-person'}
-              going={sending.going}
-              taking={turns.taking}
-              opening={turns.opening}
-              // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
-              stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
-              stopping={cancelTurn.isPending}
-              onStopTurn={onStopTurn}
-              levels={levels}
-              onLevel={editQueued.level}
-              onKeepingStop={keepingStop ? onKeepingStop : undefined}
-              onRemove={editQueued.remove}
-              onEdit={editQueued.reword}
-              mentions={{
-                files: treeFiles.data?.files ?? null,
-                unlisted: treeFiles.data?.unlisted ?? 0,
-                refusal: treeFiles.error ? sentence(treeFiles.error) : null,
-              }}
-              onMentioning={setMentioning}
-              context={{
-                usage: reading?.session === attended.id ? reading.usage : undefined,
-                door: door(roster.find((row) => row.harness === attended.adapter)?.structured),
-              }}
-              offered={offered}
-              optionsBusy={setOption.isPending}
-              // The driver's refusal, or the agent's, reaches the person in its own words.
-              onOption={(option, value) => setOption.mutate({ id: attended.id, option, value }, { onError: failure(notify) })}
-              onSend={onSend}
-              onFinish={() => end.mutate(attended.id, {
-                onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),
-                onError: failure(notify),
-              })}
-            />
-          )}
-
-          {/* Every other box (MSG1f, D137 §5.1): the running door, the park's answer, the box where the same session goes
-              on, and the line where nothing takes words. Keyed by session and box, so a draft's form starts fresh. */}
-          {attended && box.kind !== 'chat' && box.kind !== 'none' && (
-            <SessionBox
-              key={`${box.kind === 'say' ? box.mode : box.kind}:${attended.id}`}
-              box={box}
-              quest={attended.quest}
-              draft={draft}
-              onDraft={setDraft}
-              sending={say.isPending}
-              refusal={refusal?.session === attended.id ? refusal.text : null}
-              held={held ? { queued: held.queued, taking: held.taking } : undefined}
-              ending={ending?.session === attended.id ? ending.words : []}
-              // What waits on a park's or an ended session's record (SAIDBACK1b), as the driver lists it.
-              waiting={box.kind === 'say' ? chatTurns[attended.id]?.queued ?? [] : []}
-              going={sending.going}
-              stopping={cancelTurn.isPending}
-              // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
-              focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
-              accepts={boxAccepts}
-              onSend={onSay}
-              levels={box.kind === 'steer' ? levels : undefined}
-              onLevel={editQueued.level}
-              onKeepingStop={box.kind === 'steer' && keepingStop ? onKeepingStop : undefined}
-              onRemove={editQueued.remove}
-              onEdit={editQueued.reword}
-              goes={goes}
-              onMove={onMoveWord}
-              toHead={onDraftToHead}
-              // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
-              continued={box.kind === 'line' && box.why === 'continued' && box.to
-                ? headLink((sessions.data ?? []).find((row) => row.id === box.to))
-                : null}
-              onOpenSession={(session) => attend(session.id)}
-              // What the park asks, in its box with every answer a press the box's words go with (PARKVIEW1, the design §3-§4): its
-              // question as its agent asked it, its go-aheads still open, by when and what it holds. Only where the box answers a park.
-              park={answering ? {
-                quest: attended.quest,
-                tree: ownTree(attended, rootOf(attended.repository)),
-                since: attended.updated,
-                question,
-                goAheads: openGoAheads(goAheads),
-                busy: say.isPending || parkGoAhead.isPending,
-                selected: parkPicked,
-                onSelect: question ? onParkPick : undefined,
-                onGoAhead: parkAsk ? onBoxGoAhead : undefined,
-                seek: seekAt('box'),
-                toEvent,
-              } : undefined}
-            />
-          )}
+          <AttendedBoxes
+            t={t}
+            notify={notify}
+            session={session}
+            boxState={boxState}
+            words={words}
+            boxWords={boxWords}
+            asks={asks}
+            waitsState={waitsState}
+            headState={headState}
+            refusal={refusal}
+            roster={roster}
+            rootOf={rootOf}
+            attend={attend}
+          />
         </WaitPanel>
 
         </>)}
@@ -1151,17 +506,17 @@ export function WorkFrame({
         {(panelViews.length > 0 || !collapsed || dragging !== null) && (
           <OutputPanel
             console={consoleView ? withWhose(consoleView, true) : null}
-            height={Math.max(PANEL_MIN, height)}
+            height={Math.max(PANEL_MIN, frame.height)}
             collapsed={collapsed}
-            onResize={resize}
-            onToggle={toggle}
+            onResize={frame.resize}
+            onToggle={frame.toggle}
             tabs={streamTabs}
             selected={shown ?? undefined}
             onStop={stopStream}
             onSelect={(key) => {
               pickStream(key);
               // Picking what to read is asking to read it: a hidden panel opens.
-              if (collapsed) toggle();
+              if (collapsed) frame.toggle();
             }}
             views={panelViews}
             view={panelView}
