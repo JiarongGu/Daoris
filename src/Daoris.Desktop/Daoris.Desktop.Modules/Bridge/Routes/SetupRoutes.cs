@@ -24,14 +24,14 @@ public sealed class SetupRoutes(DriverContext context)
     // declaration with its acceptances. It reads the registry, the quests and each line's tip as git objects, and writes and probes nothing.
     [DriverRoute("PLACE_PLAN", PipeClass.Open)]
     [ByEvent("PLACE_PLAN", Untold = "the service's registry and quests, driver.json, the saved workflows and each line's tip in its checkout")]
-    private async Task<object?> PlacePlanAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PlacePlanAsync(PlacePlanRead read, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
-        var ask = PlaceAskOf(request);
+        var ask = PlaceAskOf(read.Repositories, read.Repository, read.Preset, read.Opinion, read.Look, read.Adoption, read.Builds, read.Drive, read.AtOnce, read.Pilot);
         var config = DriverConfig.Load(_loop.ConfigPath);
         var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
         var world = new PlaceWorld(service);
-        if (Flag(request, "said"))
+        if (read.Said)
         {
             return await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
                 PlaceCommand.ArgsOf(ask), output, world, config, _loop.Home, plugins, _context.Door(config), instance: null, ct: cancellationToken)).ConfigureAwait(false);
@@ -50,32 +50,34 @@ public sealed class SetupRoutes(DriverContext context)
     [GroundRead("PLACE_APPLY", nameof(PipeReads.PlacePlan))]
     [Says("PLACE_APPLY", "repositories:repository", "preset:form", "builds:form")]
     [Publishes("PLACE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
-    private async Task<object?> PlaceApplyAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PlaceApplyAsync(PlaceApplyPress press, CancellationToken cancellationToken)
     {
         // The owner row and the grounds read `repositories` alone: a `repository` would name a place they never judged.
-        if (request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("repository", out _))
+        if (press.Repository is not null)
         {
             throw new DriverException("a place's apply names its repositories as `repositories`, never a single `repository`.");
         }
 
         var service = _loop.Service ?? throw NotReady();
-        var digest = Optional(request, "digest") ?? "";
+        var digest = press.Digest ?? "";
+        var ask = PlaceAskOf(press.Repositories, null, press.Preset, press.Opinion, press.Look, press.Adoption, press.Builds, press.Drive, press.AtOnce, press.Pilot);
+        IReadOnlyList<PlaceAccept> accepted = [.. (press.Accept ?? []).Select(each => new PlaceAccept(each.Repository ?? "", each.Purpose ?? ""))];
         var config = DriverConfig.Load(_loop.ConfigPath);
         var doors = new PlaceApplyDoors(
             new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), _context.Door(config),
             () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
         // AGENTSPLACE1b3: `daoris place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
         // on the window's card has already pinned the plan between the terminal's ask and here (`PipeGrounds`).
-        if (Flag(request, "said"))
+        if (press.Said)
         {
             var said = await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
-                PlaceCommand.ApplyArgsOf(PlaceAskOf(request), AcceptedOf(request)), output, doors.Place, config, _loop.Home, doors.Plugins, doors.Door,
+                PlaceCommand.ApplyArgsOf(ask, accepted), output, doors.Place, config, _loop.Home, doors.Plugins, doors.Door,
                 instance: null, apply: doors, ct: cancellationToken)).ConfigureAwait(false);
             _loop.Nudge();
             return said;
         }
 
-        var result = await PlaceApplies.ApplyAsync(doors, PlaceAskOf(request), digest, AcceptedOf(request), cancellationToken).ConfigureAwait(false);
+        var result = await PlaceApplies.ApplyAsync(doors, ask, digest, accepted, cancellationToken).ConfigureAwait(false);
         // The look starts what the configuration now allows, and the quest the press asked.
         _loop.Nudge();
         return new
@@ -95,9 +97,9 @@ public sealed class SetupRoutes(DriverContext context)
     // reopened. It reads the registry, the quests, the line and the tool, and writes nothing.
     [DriverRoute("RECONCILE_PLAN", PipeClass.Open)]
     [ByEvent("RECONCILE_PLAN", Untold = "the service's registry and quests, driver.json, the repository's line and the doctrine tool's status for its checkout")]
-    private async Task<object?> ReconcilePlanAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ReconcilePlanAsync(ReconcileAsk read, CancellationToken cancellationToken)
     {
-        var (plan, _) = await ReconcileOfAsync(request, cancellationToken).ConfigureAwait(false);
+        var (plan, _) = await ReconcileOfAsync(read.Repository, cancellationToken).ConfigureAwait(false);
         return new
         {
             plan.Repository,
@@ -119,9 +121,9 @@ public sealed class SetupRoutes(DriverContext context)
     [GroundRead("RECONCILE_APPLY", nameof(PipeReads.ReconcilePlan))]
     [Says("RECONCILE_APPLY", "repository:repository")]
     [Publishes("RECONCILE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
-    private async Task<object?> ReconcileApplyAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ReconcileApplyAsync(ReconcileAsk press, CancellationToken cancellationToken)
     {
-        var (plan, world) = await ReconcileOfAsync(request, cancellationToken).ConfigureAwait(false);
+        var (plan, world) = await ReconcileOfAsync(press.Repository, cancellationToken).ConfigureAwait(false);
         if (!plan.Pressable)
         {
             return new { Done = false, Refused = plan.Refusals.FirstOrDefault()?.Code ?? SetupRefusals.Open, Message = plan.Refusals.FirstOrDefault()?.Sentence ?? "nothing to ask." };
@@ -134,9 +136,9 @@ public sealed class SetupRoutes(DriverContext context)
     }
 
     /// <summary>The reconcile's plan for the payload's <c>repository</c>, and the world it was read from, which its press asks through.</summary>
-    private async Task<(SetupPlan Plan, ISetupWorld World)> ReconcileOfAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<(SetupPlan Plan, ISetupWorld World)> ReconcileOfAsync(string? named, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository") ?? throw new DriverException("a reconcile names its repository as `repository`.");
+        var repository = named ?? throw new DriverException("a reconcile names its repository as `repository`.");
         var world = _context.SetupWorldOf(_loop.Service ?? throw NotReady());
         var config = DriverConfig.Load(_loop.ConfigPath);
         var plan = await SetupPress.PlanReconcileAsync(
@@ -144,37 +146,21 @@ public sealed class SetupRoutes(DriverContext context)
         return (plan, world);
     }
 
-    private static PlaceAsk PlaceAskOf(IpcRequest request) =>
-        new(Names(request), Optional(request, "preset") ?? "")
+    /// <summary>The ask a plan or an apply carries: the <c>repositories</c> named as a list, or the one <c>repository</c>.</summary>
+    private static PlaceAsk PlaceAskOf(
+        IReadOnlyList<string>? repositories, string? repository, string? preset, bool opinion, bool look, bool adoption, string? builds, bool drive,
+        long? atOnce, long? pilot) =>
+        new(repositories ?? (repository is { } one ? new[] { one } : Array.Empty<string>()), preset ?? "")
         {
-            Opinion = Flag(request, "opinion"),
-            Look = Flag(request, "look"),
-            Adoption = Flag(request, "adoption"),
-            Builds = Optional(request, "builds"),
-            Drive = Flag(request, "drive"),
-            AtOnce = Count(request, "atOnce"),
-            Pilot = Count(request, "pilot"),
+            Opinion = opinion,
+            Look = look,
+            Adoption = adoption,
+            Builds = builds,
+            Drive = drive,
+            AtOnce = Count(atOnce),
+            Pilot = Count(pilot),
         };
 
-    /// <summary>A whole number the payload may carry, or null where it is absent or not one.</summary>
-    private static int? Count(IpcRequest request, string name) =>
-        request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var count)
-            ? count
-            : null;
-
-    /// <summary>The acceptances a place's apply is asked to make: <c>accept</c>, a list of <c>{repository, purpose}</c>.</summary>
-    private static IReadOnlyList<PlaceAccept> AcceptedOf(IpcRequest request) =>
-        request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty("accept", out var listed) && listed.ValueKind == JsonValueKind.Array
-            ? [.. listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.Object)
-                .Select(each => new PlaceAccept(
-                    each.TryGetProperty("repository", out var repository) && repository.ValueKind == JsonValueKind.String ? repository.GetString()! : "",
-                    each.TryGetProperty("purpose", out var purpose) && purpose.ValueKind == JsonValueKind.String ? purpose.GetString()! : ""))]
-            : [];
-
-    /// <summary>The repositories a plan is asked for: <c>repositories</c>, a list of names, or one <c>repository</c>.</summary>
-    private static IReadOnlyList<string> Names(IpcRequest request) =>
-        request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty("repositories", out var listed) && listed.ValueKind == JsonValueKind.Array
-            ? [.. listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
-            : Optional(request, "repository") is { } one ? [one] : [];
+    /// <summary>A whole number the payload carried, or null where it is absent or past an int.</summary>
+    private static int? Count(long? sent) => sent is >= int.MinValue and <= int.MaxValue ? (int)sent : null;
 }

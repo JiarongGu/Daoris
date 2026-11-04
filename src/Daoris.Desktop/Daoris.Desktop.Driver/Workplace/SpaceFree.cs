@@ -739,13 +739,18 @@ public static class SpaceFree
     /// The units a press names, as the page and the terminal send them: <c>{ units: [...], early: [...] }</c>, each <c>{ kind, id, why?,
     /// own? }</c> as the list gave it. A call naming none, or a unit without its kind and id, is malformed.
     /// </summary>
-    public static IReadOnlyList<SpaceAsked> Asked(JsonElement? payload)
+    public static IReadOnlyList<SpaceAsked> Asked(JsonElement? payload) =>
+        payload is not { ValueKind: JsonValueKind.Object } body
+            ? throw new ArgumentException("a press names `units` or `early` to remove.")
+            : Asked(body.TryGetProperty("units", out var units) ? units : null, body.TryGetProperty("early", out var listed) ? listed : null);
+
+    /// <summary><see cref="Asked(JsonElement?)"/> from the two lists as sent: the <paramref name="units"/> and those that could go <paramref name="earlyList"/>; null where not sent.</summary>
+    public static IReadOnlyList<SpaceAsked> Asked(JsonElement? units, JsonElement? earlyList)
     {
-        if (payload is not { ValueKind: JsonValueKind.Object } body) throw new ArgumentException("a press names `units` or `early` to remove.");
         var asked = new List<SpaceAsked>();
-        foreach (var (field, early) in new[] { ("units", false), ("early", true) })
+        foreach (var (field, early, sent) in new[] { ("units", false, units), ("early", true, earlyList) })
         {
-            if (!body.TryGetProperty(field, out var list)) continue;
+            if (sent is not { } list) continue;
             if (list.ValueKind != JsonValueKind.Array) throw new ArgumentException($"`{field}` must be a list of the listed units.");
             foreach (var each in list.EnumerateArray())
             {

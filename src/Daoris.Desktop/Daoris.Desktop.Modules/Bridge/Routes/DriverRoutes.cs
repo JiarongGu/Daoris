@@ -102,10 +102,10 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundRead("SET_HEAVY_GATES", nameof(PipeReads.HeavyGates))]
     [Says("SET_HEAVY_GATES", "repository:repository")]
     [Publishes("SET_HEAVY_GATES", StateScopes.Driver)]
-    private object? SetHeavyGates(IpcRequest request)
+    private object? SetHeavyGates(SetHeavyGatesPress press)
     {
-        var repository = Optional(request, "repository") ?? "";
-        var gates = HeavyGatesOf(request);
+        var repository = press.Repository ?? "";
+        var gates = HeavyGatesOf(press.Gates);
         // The refusals come first, before anything is written.
         HeavyMapping.Apply(DriverConfig.Load(_loop.ConfigPath), repository, gates);
         _context.Change(config => config.WithHeavyGates(repository, gates));
@@ -223,11 +223,9 @@ public sealed class DriverRoutes(DriverContext context)
     /// The list as the page sends it: null where it sends none or null; each gate's name, command and folder as written, a field that is
     /// no text read as none, so the mapping's own rule says what is missing.
     /// </summary>
-    private static List<HeavyGate>? HeavyGatesOf(IpcRequest request)
+    private static List<HeavyGate>? HeavyGatesOf(JsonElement? sent)
     {
-        if (request.Payload is not { } payload
-            || !payload.TryGetProperty("gates", out var gates)
-            || gates.ValueKind == JsonValueKind.Null) return null;
+        if (sent is not { } gates || gates.ValueKind == JsonValueKind.Null) return null;
         if (gates.ValueKind != JsonValueKind.Array)
         {
             throw new DriverException("a repository's heavy gates are a list of gates, each its name, its command and its folder, in the order they run.");
@@ -337,36 +335,26 @@ public sealed class DriverRoutes(DriverContext context)
     // probes nothing (D150 point 5); names only.
     [DriverRoute("ROLE_STRUCTURE", PipeClass.Open)]
     [ByEvent("ROLE_STRUCTURE", Untold = "the store's roles, driver.json, and the accounts' readings, cool-offs and offers under the home")]
-    private Task<object?> RoleStructureAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> RoleStructureAsync(RoleStructureRead read, CancellationToken cancellationToken)
     {
         var places = new List<RolePlace>();
         var works = new List<string>();
-        if (request.Payload is { ValueKind: JsonValueKind.Object } payload)
+        foreach (var place in read.Places ?? [])
         {
-            if (payload.TryGetProperty("places", out var asked) && asked.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var place in asked.EnumerateArray().Where(place => place.ValueKind == JsonValueKind.Object))
-                {
-                    var each = new RolePlace(Named(place, "workspace"), Named(place, "repository"));
-                    if (!places.Contains(each)) places.Add(each);
-                }
-            }
+            var each = new RolePlace(Trimmed(place.Workspace), Trimmed(place.Repository));
+            if (!places.Contains(each)) places.Add(each);
+        }
 
-            // AGENTSPLACE1a: the chosen place's chain alone (the place, its workspace, this machine), where the page reads one place.
-            if (payload.TryGetProperty("chain", out var chosen) && chosen.ValueKind == JsonValueKind.Object)
+        // AGENTSPLACE1a: the chosen place's chain alone (the place, its workspace, this machine), where the page reads one place.
+        if (read.Chain is { ValueKind: JsonValueKind.Object } chosen)
+        {
+            foreach (var each in PlaceProjection.ChainOf(new RolePlace(Plain(chosen, "workspace"), Plain(chosen, "repository"))).Where(each => !places.Contains(each)))
             {
-                foreach (var each in PlaceProjection.ChainOf(new RolePlace(Named(chosen, "workspace"), Named(chosen, "repository"))).Where(each => !places.Contains(each)))
-                {
-                    places.Add(each);
-                }
-            }
-
-            if (payload.TryGetProperty("works", out var named) && named.ValueKind == JsonValueKind.Array)
-            {
-                works.AddRange(named.EnumerateArray().Where(work => work.ValueKind == JsonValueKind.String).Select(work => work.GetString()!)
-                    .Where(work => RoleWork.Codes.Contains(work, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal));
+                places.Add(each);
             }
         }
+
+        works.AddRange((read.Works ?? []).Where(work => RoleWork.Codes.Contains(work, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal));
 
         if (places.Count == 0) places.Add(new RolePlace());
         if (works.Count == 0) works.AddRange(RoleWork.Codes);
@@ -405,12 +393,13 @@ public sealed class DriverRoutes(DriverContext context)
                 Agents = structure.Agents.Select(agent => new { agent.Agent, agent.Known, agent.Installed, agent.Version }),
             };
         }, cancellationToken);
-
-        static string? Named(JsonElement place, string name) =>
-            place.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString()!.Trim() is { Length: > 0 } trimmed
-                ? trimmed
-                : null;
     }
+
+    private static string? Plain(JsonElement place, string name) =>
+        place.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? Trimmed(value.GetString()) : null;
+
+    /// <summary>The text with its edges trimmed, or null where nothing is left.</summary>
+    private static string? Trimmed(string? text) => text?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
 
     // The places (AGENTSPLACE1a, the Agents-place design §2 and §3): this machine, each workspace and a page of the driven repositories,
     // each with its driving, its works' roles and rules, the values of its head's line with where each was set, and why it needs a look,
@@ -420,22 +409,16 @@ public sealed class DriverRoutes(DriverContext context)
     // workspace's whole list (SETUPUX1d).
     [DriverRoute("PLACES", PipeClass.Open)]
     [ByEvent("PLACES", Untold = "the service's registry and quests, driver.json and the role store")]
-    private async Task<object?> PlacesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PlacesAsync(PlacesPageRead read, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken).ConfigureAwait(false);
-        var ask = new PlacesAsk();
-        if (request.Payload is { ValueKind: JsonValueKind.Object } payload)
-        {
-            string? Text(JsonElement from, string name) => from.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString()!.Trim() is { Length: > 0 } trimmed ? trimmed : null;
-            PlaceTarget? target = payload.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.Object
-                ? new PlaceTarget(Text(detail, "workspace"), Text(detail, "repository"))
-                : null;
-            ask = new PlacesAsk(
-                payload.TryGetProperty("limit", out var limit) && limit.TryGetInt32(out var count) ? count : PlacesAsk.DefaultLimit, Text(payload, "after"), Text(payload, "search"),
-                payload.TryGetProperty("needsLook", out var look) && look.ValueKind == JsonValueKind.True, Text(payload, "fold"), Text(payload, "foldAfter"), Text(payload, "foldSearch"),
-                target, Text(payload, "members"));
-        }
+        PlaceTarget? target = read.Detail is { ValueKind: JsonValueKind.Object } detail
+            ? new PlaceTarget(Plain(detail, "workspace"), Plain(detail, "repository"))
+            : null;
+        var ask = new PlacesAsk(
+            read.Limit is >= int.MinValue and <= int.MaxValue ? (int)read.Limit : PlacesAsk.DefaultLimit, Trimmed(read.After), Trimmed(read.Search),
+            read.NeedsLook, Trimmed(read.Fold), Trimmed(read.FoldAfter), Trimmed(read.FoldSearch), target, Trimmed(read.Members));
 
         // Only a repository not adopted can have an adoption running; an unreachable ledger reads as none running.
         IReadOnlyList<QuestView>? quests = null;
@@ -475,9 +458,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundRead("SET_ROLE", nameof(PipeReads.RoleRow))]
     [NotAlready("SET_ROLE", "edits a role's row of the catalogue in place, its revision moving")]
     [Publishes("SET_ROLE", StateScopes.Driver | StateScopes.Harnesses)]
-    private object? SetRole(IpcRequest request)
+    private object? SetRole(SetRolePress sent)
     {
-        var press = RoleDoor.ReadPress(request.Payload);
+        var press = RoleDoor.ReadPress(sent.Press.Json);
         RoleDoor.Apply(Staffing(), press.Change, press.Choices, press.Read, press.Policy);
         return RolesChanged();
     }
@@ -489,9 +472,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundRead("SET_ROLES", nameof(PipeReads.RoleRows))]
     [NotAlready("SET_ROLES", "edits several roles' rows of the catalogue in place, each revision moving, in one transaction")]
     [Publishes("SET_ROLES", StateScopes.Driver | StateScopes.Harnesses)]
-    private object? SetRoles(IpcRequest request)
+    private object? SetRoles(SetRolesPress sent)
     {
-        RoleDoor.ApplyAll(Staffing(), RoleDoor.ReadPresses(request.Payload));
+        RoleDoor.ApplyAll(Staffing(), RoleDoor.ReadPresses(sent.Press.Json));
         return RolesChanged();
     }
 

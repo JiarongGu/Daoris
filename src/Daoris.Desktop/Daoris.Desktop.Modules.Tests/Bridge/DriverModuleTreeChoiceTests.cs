@@ -8,22 +8,16 @@ public sealed class DriverModuleTreeChoiceTests
 {
     [Theory]
     [InlineData("""{ "repository": "engine" }""", null)]
-    [InlineData("""{ "ownTree": true }""", true)]
-    [InlineData("""{ "ownTree": false }""", false)]
-    [InlineData("""{ "ownTree": null }""", null)]
-    [InlineData("""{ "ownTree": "yes" }""", null)]
-    [InlineData("""{ "ownTree": 1 }""", null)]
+    [InlineData("""{ "repository": "engine", "ownTree": true }""", true)]
+    [InlineData("""{ "repository": "engine", "ownTree": false }""", false)]
+    [InlineData("""{ "repository": "engine", "ownTree": null }""", null)]
+    [InlineData("""{ "repository": "engine", "ownTree": "yes" }""", null)]
+    [InlineData("""{ "repository": "engine", "ownTree": 1 }""", null)]
     public void The_tree_choice_is_absent_true_or_false(string payload, bool? expected)
     {
         using var document = JsonDocument.Parse(payload);
 
-        Assert.Equal(expected, DriverArguments.TreeChoice(Request(document.RootElement)));
-    }
-
-    [Fact]
-    public void A_request_with_no_payload_leaves_it_to_the_driver()
-    {
-        Assert.Null(DriverArguments.TreeChoice(Request(null)));
+        Assert.Equal(expected, RoutePayload.Reader<StartChatPress>()(Request(document.RootElement)).OwnTree);
     }
 
     private static IpcRequest Request(JsonElement? payload) => new() { Id = "t1", Module = "DAORIS.DRIVER", Type = "START_CHAT", Payload = payload };

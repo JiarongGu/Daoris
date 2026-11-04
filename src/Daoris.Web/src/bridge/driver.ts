@@ -3,7 +3,7 @@ import { type QueryClient, type UseMutationResult, useMutation, useQueries, useQ
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
 import type {
-  PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleChangePress, RoleStructure, StructurePlaceAsk,
+  PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleStructure, StructurePlaceAsk,
 } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
@@ -20,8 +20,7 @@ import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
 import type { ReviewShown } from '../work/gates/ReviewChip';
 import { type HeavySlot, readHeavySlot } from '../work/heavySlot';
-import { type ByHandRoute, call, type Payload, refusedNotReady, type TypedRoute } from './call';
-import type { DriverRoute } from './generated/routes';
+import { call, type Payload, refusedNotReady, type TypedRoute } from './call';
 import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
 import { askHeld } from './state/held';
 
@@ -401,14 +400,11 @@ export const useTrustFolder = () => useMutation({
  * One mutation shape for the standing choices, these and the rules' (`bridge/repositories/lines.ts`): edit the file, and the loop
  * looks now. The window that pressed writes the state it was answered; every window's state hub asks again on the route's change.
  */
-export function useDriverChange<R extends TypedRoute>(type: R): UseMutationResult<DriverState, Error, Payload<R>>;
-export function useDriverChange<TVariables extends Record<string, unknown>>(type: ByHandRoute): UseMutationResult<DriverState, Error, TVariables>;
-export function useDriverChange(type: DriverRoute): UseMutationResult<DriverState, Error, Record<string, unknown>> {
+export function useDriverChange<R extends TypedRoute>(type: R): UseMutationResult<DriverState, Error, Payload<R>> {
   const client = useQueryClient();
-  // The overloads type each caller's payload, and the bridge sends either form alike; a standing choice answers the driver's state.
-  const route = type as ByHandRoute;
   return useMutation({
-    mutationFn: (variables: Record<string, unknown>) => call<DriverState>(route, variables),
+    // A standing choice answers the driver's state.
+    mutationFn: (variables: Payload<R>) => call(type, variables) as Promise<DriverState>,
     onSuccess: (state) => writeAnswered(client, state),
   });
 }
@@ -608,13 +604,13 @@ export const usePlaces = (ask: PlacesAsk = {}, { enabled = true }: { enabled?: b
  * whose judge refuses with nothing written. `daoris role` is its terminal twin (D50), and Ask Daoris's `role_propose` is applied
  * by the person's press on its card. What starts may move with it, so the route publishes the roster's key too.
  */
-export const useSetRole = () => useDriverChange<RoleChangePress>('SET_ROLE');
+export const useSetRole = () => useDriverChange('SET_ROLE');
 
 /**
  * Several role changes made as one (AGENTSPLACE1g2): each a `SET_ROLE` press, judged in order and written in one transaction, so the first
  * refusal refuses them all and nothing is written. The Roles mode's *Use these choices* is its press.
  */
-export const useSetRoles = () => useDriverChange<{ changes: RoleChangePress[] }>('SET_ROLES');
+export const useSetRoles = () => useDriverChange('SET_ROLES');
 
 /**
  * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath
@@ -677,7 +673,7 @@ export const useSetStanding = () => useDriverChange('SET_STANDING');
  * name or no command, a name twice, a folder not under the checkout) is the driver's refusal, its sentence verbatim, nothing written.
  */
 export const useSetHeavyGates = () =>
-  useDriverChange<{ repository: string; gates: HeavyGate[] | null }>('SET_HEAVY_GATES');
+  useDriverChange('SET_HEAVY_GATES');
 /**
  * Which checks a repository's sessions run (FABRIC-PIPELINE1b, D192 point 4): `light`, `heavy-at-end`, or null for as before — the same
  * `sessionChecks` `daoris place checks <repo> light|heavy-at-end|--clear` edits. A value that is no choice is the driver's refusal, its

@@ -30,7 +30,7 @@ export const usePlacePlan = (ask: PlaceAsk | null, { enabled = true }: { enabled
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: ask ? placePlanKey(ask) : ['place-plan', 'none'],
-    queryFn: () => call<PlacePlanned>('PLACE_PLAN', ask!, { timeoutMs: SETUP_BOUND }),
+    queryFn: () => call('PLACE_PLAN', ask!, { timeoutMs: SETUP_BOUND }) as Promise<PlacePlanned>,
     enabled: isAvailable && enabled && ask !== null,
     refetchOnWindowFocus: false,
     staleTime: 0,
@@ -54,7 +54,7 @@ export const usePlacePlan = (ask: PlaceAsk | null, { enabled = true }: { enabled
 export const usePlaceApply = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (ask: PlaceApplyAsk) => call<PlaceApplied>('PLACE_APPLY', ask, { timeoutMs: SETUP_BOUND }),
+    mutationFn: (ask: PlaceApplyAsk) => call('PLACE_APPLY', ask, { timeoutMs: SETUP_BOUND }) as Promise<PlaceApplied>,
     onSettled: () => client.invalidateQueries({ queryKey: ['place-plan'] }),
   });
 };
@@ -87,7 +87,7 @@ export const useReconcilePlan = (repository: string | null, { enabled = true }: 
 export const useReconcileApply = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (repository: string) => call<ReconcileApplied>('RECONCILE_APPLY', { repository }, { timeoutMs: SETUP_BOUND }),
+    mutationFn: (repository: string) => call('RECONCILE_APPLY', { repository }, { timeoutMs: SETUP_BOUND }) as Promise<ReconcileApplied>,
     onSettled: () => client.invalidateQueries({ queryKey: ['reconcile-plan'] }),
   });
 };

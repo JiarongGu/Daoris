@@ -188,11 +188,11 @@ export const useGitBranches = (scope: GitBranchScope = {}) => {
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: keys.gitBranches(Boolean(scope.all), scope.repository ?? '', scope.workspace ?? ''),
-    queryFn: () => call<GitBranchList>('GIT_BRANCHES', {
+    queryFn: () => call('GIT_BRANCHES', {
       ...(scope.all ? { all: true } : {}),
       ...(scope.repository ? { repository: scope.repository } : {}),
       ...(scope.workspace ? { workspace: scope.workspace } : {}),
-    }),
+    }) as Promise<GitBranchList>,
     enabled: isAvailable && scope.enabled !== false,
   });
   return { available: isAvailable, query };
@@ -207,8 +207,9 @@ export const useGitRemotes = ({ repository, workspace, enabled = true }: { repos
   return useQuery({
     queryKey: ['tools', 'git-remotes', repository ?? '', workspace ?? ''] as const,
     queryFn: async () => {
-      const list = await call<{ repositories: { repository: string; workspace: string; remotes?: GitRemoteRow[] | null }[] }>(
-        'GIT_BRANCHES', { remotes: true, ...(repository ? { repository } : {}), ...(workspace ? { workspace } : {}) });
+      const list = await call(
+        'GIT_BRANCHES', { remotes: true, ...(repository ? { repository } : {}), ...(workspace ? { workspace } : {}) },
+      ) as { repositories: { repository: string; workspace: string; remotes?: GitRemoteRow[] | null }[] };
       return list.repositories.map((each) => ({ repository: each.repository, workspace: each.workspace, remotes: each.remotes ?? [] }));
     },
     enabled: isAvailable && enabled && Boolean(repository || workspace),
@@ -230,10 +231,10 @@ export const useCheckoutBranch = ({ repository, workspace }: { repository: strin
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: keys.checkoutBranch(repository ?? '', workspace ?? ''),
-    queryFn: () => call<CheckoutBranch>('CHECKOUT_BRANCH', {
+    queryFn: () => call('CHECKOUT_BRANCH', {
       repository: repository!,
       ...(workspace ? { workspace } : {}),
-    }),
+    }) as Promise<CheckoutBranch>,
     enabled: isAvailable && Boolean(repository),
     staleTime: 0,
   });
@@ -264,30 +265,30 @@ export const useGitRefActs = (repository: string, workspace: string) => {
   const base = { repository, ...(workspace ? { workspace } : {}) };
   const refresh = () => client.invalidateQueries({ queryKey: ['git'] });
   const make = useMutation({
-    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call<GitRefAnswer>('GIT_REF_CREATE', { ...base, ...ask }),
+    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call('GIT_REF_CREATE', { ...base, ...ask }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
   const undo = useMutation({
-    mutationFn: (act: string) => call<GitRefAnswer>('GIT_REF_UNDO', { ...base, act }),
+    mutationFn: (act: string) => call('GIT_REF_UNDO', { ...base, act }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
   // GITAPP2d: a branch deleted at the commit the list showed; the driver refuses it where it stands elsewhere.
   const remove = useMutation({
-    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call<GitRefAnswer>('GIT_REF_DELETE', { ...base, ...ask }),
+    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call('GIT_REF_DELETE', { ...base, ...ask }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
   // GITAPP2e: a branch renamed at the commit the list showed, and a rename that stopped before its settings moved finished.
   const rename = useMutation({
-    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; to: string; at: string }) => call<GitRefAnswer>('GIT_REF_RENAME', { ...base, ...ask }),
+    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; to: string; at: string }) => call('GIT_REF_RENAME', { ...base, ...ask }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
   const finish = useMutation({
-    mutationFn: (act: string) => call<GitRefAnswer>('GIT_REF_FINISH', { ...base, act }),
+    mutationFn: (act: string) => call('GIT_REF_FINISH', { ...base, act }) as Promise<GitRefAnswer>,
     onSuccess: refresh,
   });
   // GITAPP2f: origin's branches fetched into the tracking refs alone; the answer's `notes` name what was made, moved and removed.
   const fetchOrigin = useMutation({
-    mutationFn: () => call<GitFetchAnswer>('GIT_FETCH', base),
+    mutationFn: () => call('GIT_FETCH', base) as Promise<GitFetchAnswer>,
     onSuccess: refresh,
   });
   return {
@@ -335,10 +336,10 @@ export const useGitHistoryEdits = (repository: string, workspace: string) => {
   const client = useQueryClient();
   const base = { repository, ...(workspace ? { workspace } : {}) };
   const plan = useMutation({
-    mutationFn: (ask: GitHistoryAsk) => call<GitHistoryPlanAnswer>('GIT_HISTORY_EDIT', { ...base, ...ask, plan: true }),
+    mutationFn: (ask: GitHistoryAsk) => call('GIT_HISTORY_EDIT', { ...base, ...ask, plan: true }) as Promise<GitHistoryPlanAnswer>,
   });
   const edit = useMutation({
-    mutationFn: ({ pins, ...ask }: GitHistoryAsk & { pins: GitHistoryPins }) => call<GitHistoryAnswer>('GIT_HISTORY_EDIT', { ...base, ...ask, pins }),
+    mutationFn: ({ pins, ...ask }: GitHistoryAsk & { pins: GitHistoryPins }) => call('GIT_HISTORY_EDIT', { ...base, ...ask, pins }) as Promise<GitHistoryAnswer>,
     onSuccess: () => client.invalidateQueries({ queryKey: ['git'] }),
   });
   return { plan: plan.mutateAsync, edit: edit.mutateAsync };

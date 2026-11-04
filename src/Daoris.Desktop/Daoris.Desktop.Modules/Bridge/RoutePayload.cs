@@ -36,6 +36,9 @@ public enum PayloadRead
     /// left out; null where no list is sent.
     /// </summary>
     Records,
+
+    /// <summary><see cref="WholePayload"/>: the payload itself, whole, the record's only field.</summary>
+    Whole,
 }
 
 /// <summary>One field of a payload record: its name on the wire, its type, and how it is read.</summary>
@@ -94,6 +97,7 @@ public static class RoutePayload
         if (type == typeof(bool?)) return PayloadRead.Choice;
         if (type == typeof(long?)) return PayloadRead.Number;
         if (type == typeof(JsonElement?)) return PayloadRead.Json;
+        if (type == typeof(WholePayload)) return PayloadRead.Whole;
         if (type == typeof(string)) return nullable ? PayloadRead.Text : PayloadRead.Required;
         if (type == typeof(IReadOnlyList<string>) && nullable) return PayloadRead.Texts;
         if (nullable && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>) && type.GetGenericArguments()[0].IsClass)
@@ -115,6 +119,7 @@ public static class RoutePayload
         PayloadRead.Number => payload => DriverArguments.Number(payload, field.Name),
         PayloadRead.Json => payload => DriverArguments.Sent(payload, field.Name),
         PayloadRead.Records => Generic(nameof(RecordsOf), field.Item, field.Name),
+        PayloadRead.Whole => payload => new WholePayload(payload),
         _ => payload => DriverArguments.Listed(payload, field.Name),
     };
 

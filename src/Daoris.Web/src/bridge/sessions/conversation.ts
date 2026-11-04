@@ -391,7 +391,7 @@ export const useStartChat = () => {
       text?: string; files?: File[]; requestId?: string;
     }): Promise<StartedFrom> => {
       const files = start.files?.length ? await Promise.all(start.files.map(toUpload)) : [];
-      return startedOf(await call<unknown>('START_CHAT', {
+      return startedOf(await call('START_CHAT', {
         repository: start.repository,
         ...(start.profile ? { profile: start.profile } : {}),
         ...(start.adapter ? { adapter: start.adapter } : {}),
@@ -526,7 +526,7 @@ export const useSendMessage = () =>
     // `draft` (FLOWCHART2d) is the workflow draft open in the editor, sent where its fingerprint moved since the conversation was told.
     mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string; draft?: DraftSent; level?: Level }) => {
       const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
-      return wordsOf(await call<unknown>('SESSION_INPUT', {
+      return wordsOf(await call('SESSION_INPUT', {
         id: message.id, text: message.text, ...(files.length > 0 ? { files } : {}),
         ...(message.preface ? { preface: message.preface } : {}),
         ...(message.draft ? { draft: message.draft } : {}),
@@ -551,7 +551,7 @@ export const useSay = () =>
     // `question` (PARKVIEW1): the park's question a press answers, which the door refuses `question-changed` where the park no
     // longer asks it, keeping nothing.
     mutationFn: async (words: { id: string; text: string; level?: Level; question?: string }) =>
-      wordsOf(await call<unknown>('SESSION_INPUT', {
+      wordsOf(await call('SESSION_INPUT', {
         id: words.id, text: words.text, ...levelPayload(words.level), ...(words.question ? { question: words.question } : {}),
       })),
   });

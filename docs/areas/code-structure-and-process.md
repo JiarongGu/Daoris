@@ -85,9 +85,9 @@ finishes first and the whole set runs once.
    or a field whose sending is the choice), and a list of records each by the same rules. A route serving a plan and its press is
    two handlers sharing a named helper, never one reading the route's name. The record and the handler's answer record are
    written into `DriverPayloads`, so the
-   page's `call` and `useDriverChange` take that route with no payload type of their own. A handler that still takes the
-   `IpcRequest` reads its payload by hand, and the page sends it through the by-hand overloads with a payload type beside its
-   hook, until CODESHAPE1 moves it. (from D231, D228)
+   page's `call` and `useDriverChange` take that route with no payload type of their own. No handler takes the `IpcRequest`. A
+   judge that holds a form exact (the role door, the role's acts, the steward's desk) is handed the payload whole as a
+   `WholePayload`, the only field of its record, which the page sees as an object of anything. (from D231, D228)
 8. Drift is the disk against the lock; the canon is reconciled, not imposed. (from D19, D230)
 9. Only what must never reach history blocks a commit. The rest is verified as a local CI beside the work, and its reds are fixed
    forward. An install is staged only from a green run. (from D180)

@@ -1,50 +1,32 @@
 using System.Text.Json;
-using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the page may leave out of a request to <see cref="DriverModule"/>, read one way (REV3 CLEAN1), and what a route says
-/// before the loop's service answers. Every domain's handler class imports it with <c>using static</c>, so a handler reads
-/// <c>Optional(request, "workspace")</c> as it did when the domains were the module's partials (PART10d, D166).
+/// What the page may leave out of a payload, read one way (REV3 CLEAN1) by <see cref="RoutePayload"/> and by the readers of a field
+/// sent as free JSON, and what a route says before the loop's service answers. Every domain's handler class imports it with
+/// <c>using static</c>.
 /// </summary>
-/// <remarks>
-/// The routes read optional values by hand, and differently, before REV3: one took an empty <c>adapter</c> as a name where
-/// this takes it as absent.
-/// </remarks>
 public static class DriverArguments
 {
     /// <summary>A string the page may send, or null — blank is absent.</summary>
-    internal static string? Optional(IpcRequest request, string name) => Optional(request.Payload, name);
-
     internal static string? Optional(JsonElement? payload, string name) =>
         Sent(payload, name) is { ValueKind: JsonValueKind.String } value && value.GetString() is { Length: > 0 } text ? text : null;
 
     /// <summary>A flag the page may send: true only when it says true.</summary>
-    internal static bool Flag(IpcRequest request, string name) => Flag(request.Payload, name);
-
     internal static bool Flag(JsonElement? payload, string name) => Sent(payload, name) is { ValueKind: JsonValueKind.True };
 
-    /// <summary>A conversation's tree choice: absent is the driver's own, true a tree of its own, false the checkout.</summary>
-    public static bool? TreeChoice(IpcRequest request) => Choice(request.Payload, "ownTree");
-
     /// <summary>A yes or no the page may leave out: true or false as said, null otherwise; <see cref="Flag(JsonElement?, string)"/> cannot tell absent from false.</summary>
-    internal static bool? Choice(IpcRequest request, string name) => Choice(request.Payload, name);
-
     internal static bool? Choice(JsonElement? payload, string name) =>
         Sent(payload, name)?.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null };
 
     /// <summary>A list of strings the page may send, or null where it sends none; an item that is not a string is left out.</summary>
-    internal static IReadOnlyList<string>? Listed(IpcRequest request, string name) => Listed(request.Payload, name);
-
     internal static IReadOnlyList<string>? Listed(JsonElement? payload, string name) =>
         Sent(payload, name) is { ValueKind: JsonValueKind.Array } value
             ? [.. value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
             : null;
 
     /// <summary>A whole number the page may send, or null.</summary>
-    internal static long? Number(IpcRequest request, string name) => Number(request.Payload, name);
-
     internal static long? Number(JsonElement? payload, string name) =>
         Sent(payload, name) is { ValueKind: JsonValueKind.Number } value && value.TryGetInt64(out var number) ? number : null;
 

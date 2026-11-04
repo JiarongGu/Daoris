@@ -161,7 +161,7 @@ export const useSweepPlan = () => {
   const pushed = usePushedLive(sweepSlice.name);
   return useQuery({
     queryKey: keys.sweep,
-    queryFn: () => readPushed(client, sweepSlice.name, () => call<SweepAnswer>('SWEEP_PLAN')),
+    queryFn: () => readPushed(client, sweepSlice.name, () => call('SWEEP_PLAN', {}) as Promise<SweepAnswer>),
     enabled: isAvailable,
     // Pulled, it asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
     ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : { staleTime: 60_000 }),
@@ -177,7 +177,7 @@ export const useSweepPlan = () => {
 export const useSweepLook = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => call<SweepAnswer>('SWEEP_PLAN'),
+    mutationFn: () => call('SWEEP_PLAN', {}) as Promise<SweepAnswer>,
     onSuccess: (answer) => {
       if (pushedOf(client).data(sweepSlice.name) === undefined) client.setQueryData(keys.sweep, answer);
     },
@@ -225,11 +225,11 @@ export const useWorkState = (unit: string | null = null, enabled = true) => {
 export const useSweep = () =>
   useMutation({
     mutationFn: (only: string[]) =>
-      call<{
+      call('SWEEP', { only }) as Promise<{
         results: { branch: SweepBranch; removed: boolean; message: string }[];
         landed?: { branch: LandedBranch; removed: boolean; message: string }[];
         removed: number;
-      }>('SWEEP', { only }),
+      }>,
   });
 
 /**
@@ -296,7 +296,7 @@ export const useDropRecoveries = () =>
     mutationFn: async (groups: RecoveryDropGroup[]): Promise<RecoveryDropResult> => {
       const result: RecoveryDropResult = { dropped: [], skipped: [], refused: [] };
       for (const { repository, refs } of groups) {
-        const answer = await call<RecoveryDropAnswer>('RECOVERY_DROP', { repository, refs });
+        const answer = await call('RECOVERY_DROP', { repository, refs }) as RecoveryDropAnswer;
         if (answer.refused) result.refused.push(answer.refused);
         result.dropped.push(...(answer.dropped ?? []).map((each) => ({ repository, ...each })));
         result.skipped.push(...(answer.skipped ?? []).map((each) => ({ repository, ...each })));
@@ -404,9 +404,9 @@ export const useTreesSyncPlan = (workspace?: string) => {
     queryKey: treesSyncKey(scoped),
     queryFn: () => {
       const asked = client.getQueryData<SyncAsked>(askedKey);
-      return call<SyncPlan>('TREES_SYNC_PLAN', scopePayload(asked?.include ?? [], scoped), {
+      return call('TREES_SYNC_PLAN', scopePayload(asked?.include ?? [], scoped) ?? {}, {
         timeoutMs: lookBound(asked?.count ?? UNKNOWN_COUNT),
-      });
+      }) as Promise<SyncPlan>;
     },
     // A look is asked by a press, and one the page stopped waiting for is said, not asked again behind the person.
     retry: false,
@@ -440,12 +440,12 @@ export const useTreesSyncPlan = (workspace?: string) => {
 export const useTreesSync = (workspace?: string) =>
   useMutation({
     mutationFn: (only: string[]) =>
-      call<{
+      call('TREES_SYNC', workspace === undefined ? { only } : { only, workspace }, { timeoutMs: pressBound(only.length) }) as Promise<{
         lines: { line: LinePull; moved: boolean; message: string }[];
         rebases: { branch: RebaseBranch; replayed: boolean; message: string }[];
         deletes: { branch: LandedBranch; removed: boolean; message: string }[];
         changed: number;
-      }>('TREES_SYNC', workspace === undefined ? { only } : { only, workspace }, { timeoutMs: pressBound(only.length) }),
+      }>,
   });
 
 // The standing choices over a repository's or a workspace's rules are the driver's own shape (`useDriverChange`): the answer is

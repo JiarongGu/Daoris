@@ -49,3 +49,27 @@ public sealed record QuestPress(string Quest);
 
 /// <summary>One circle synced now.</summary>
 public sealed record SyncNowPress(string Workspace);
+
+/// <summary>
+/// A repository's heavy gates, the whole list in run order: <c>Gates</c> is a list of <c>{ name, run, cwd }</c> the mapping judges, or
+/// none (absent or null) to clear them.
+/// </summary>
+public sealed record SetHeavyGatesPress(string? Repository, System.Text.Json.JsonElement? Gates);
+
+/// <summary>A place a role is read at: a workspace, a repository, or neither for this machine.</summary>
+public sealed record RolePlaceAsked(string? Workspace, string? Repository);
+
+/// <summary>
+/// The roles' structure: the <c>Places</c> asked, <c>Chain</c> a place (<c>{ workspace, repository }</c>) read with the places above it, and
+/// the <c>Works</c> asked. None of each is this machine and every work.
+/// </summary>
+public sealed record RoleStructureRead(IReadOnlyList<RolePlaceAsked>? Places, System.Text.Json.JsonElement? Chain, IReadOnlyList<string>? Works);
+
+/// <summary>
+/// The places page: a <c>Limit</c> of the driven repositories after <c>After</c>, matching <c>Search</c>, only those that <c>NeedsLook</c>;
+/// a <c>Fold</c>'s page after <c>FoldAfter</c> matching <c>FoldSearch</c>; one place whole as <c>Detail</c> (<c>{ workspace, repository }</c>);
+/// a workspace's whole list as <c>Members</c>.
+/// </summary>
+public sealed record PlacesPageRead(
+    long? Limit, string? After, string? Search, string? Fold, string? FoldAfter, string? FoldSearch, string? Members, System.Text.Json.JsonElement? Detail,
+    bool NeedsLook = false);

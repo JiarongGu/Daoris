@@ -51,9 +51,9 @@ public sealed class SystemRoutes(DriverContext context)
     // those, each a bounded walk in the background, one kind after another; each kind's end tells `wiring`, so the card fills in kind by
     // kind (WIRING-SIZES-LIVE1's need). The open walks nothing. Off the window's thread; the reader's own JSON whole, so a null stays a field.
     [DriverRoute("SYSTEM_SPACE", PipeClass.Open)]
-    private Task<object?> SpaceAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> SpaceAsync(SpaceRead read, CancellationToken cancellationToken)
     {
-        var asked = SpaceAsked(request.Payload);
+        var asked = SpaceAsked(read.Measure);
         return Task.Run(() =>
         {
             var loop = _context.Loop;
@@ -82,12 +82,10 @@ public sealed class SystemRoutes(DriverContext context)
     [Owner("SYSTEM_SPACE_FREE", None = OwnerNone.MachineSetting)]
     [GroundRead("SYSTEM_SPACE_FREE", nameof(PipeReads.SpacePlan))]
     [Publishes("SYSTEM_SPACE_FREE", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
-    private Task<object?> FreeSpaceAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> FreeSpaceAsync(SpaceFreePress press, CancellationToken cancellationToken)
     {
-        var plan = request.Payload is { ValueKind: JsonValueKind.Object } body
-            && body.TryGetProperty("plan", out var asked) && asked.ValueKind == JsonValueKind.True;
         var world = SpaceFreeWorldOf();
-        if (plan)
+        if (press.Plan)
         {
             return Task.Run(() =>
             {
@@ -96,7 +94,7 @@ public sealed class SystemRoutes(DriverContext context)
             }, cancellationToken);
         }
 
-        var units = SpaceFree.Asked(request.Payload);
+        var units = SpaceFree.Asked(press.Units, press.Early);
         var start = SpaceRuns.Shared.Start(world, KeepingRun.Press, units, _ => StatePublisher.Publish(_context.Events, StateScopes.Wiring));
         if (start.Run is not { } run)
         {
@@ -127,9 +125,9 @@ public sealed class SystemRoutes(DriverContext context)
     }
 
     /// <summary>The kinds a read asks counted: every kind for <c>measure: true</c>, the named ones for a list, none otherwise.</summary>
-    public static IReadOnlyList<string> SpaceAsked(JsonElement? payload)
+    public static IReadOnlyList<string> SpaceAsked(JsonElement? sent)
     {
-        if (payload is not { ValueKind: JsonValueKind.Object } body || !body.TryGetProperty("measure", out var measure)) return [];
+        if (sent is not { } measure) return [];
         return measure.ValueKind switch
         {
             JsonValueKind.True => [.. SpaceKinds.Table.Select(kind => kind.Id)],
@@ -161,9 +159,9 @@ public sealed class SystemRoutes(DriverContext context)
     [Owner("SYSTEM_DOWNLOADS_CLEAR", None = OwnerNone.MachineSetting)]
     [GroundRead("SYSTEM_DOWNLOADS_CLEAR", nameof(PipeReads.Downloads))]
     [Publishes("SYSTEM_DOWNLOADS_CLEAR", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
-    private Task<object?> ClearDownloadsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> ClearDownloadsAsync(DownloadsClearPress press, CancellationToken cancellationToken)
     {
-        var asked = DownloadsAsked(request.Payload);
+        var asked = DownloadsAsked(press.Versions);
         return Task.Run(async () =>
         {
             var home = _context.Loop.Home;
@@ -207,28 +205,12 @@ public sealed class SystemRoutes(DriverContext context)
     };
 
     /// <summary>The rows a press names; a call naming none, or a row without its kind, name and version, is malformed.</summary>
-    public static IReadOnlyList<DownloadAsked> DownloadsAsked(JsonElement? payload)
+    public static IReadOnlyList<DownloadAsked> DownloadsAsked(IReadOnlyList<DownloadVersionAsked>? versions)
     {
-        if (payload is not { ValueKind: JsonValueKind.Object } body || !body.TryGetProperty("versions", out var versions) || versions.ValueKind != JsonValueKind.Array)
-        {
-            throw new ArgumentException("`versions` must name the downloaded versions to remove.");
-        }
-
-        var asked = new List<DownloadAsked>();
-        foreach (var each in versions.EnumerateArray())
-        {
-            string? Text(string name) =>
-                each.ValueKind == JsonValueKind.Object && each.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-            if (Text("kind") is not ("agent" or "tool") || Text("name") is not { } name || Text("version") is not { } version)
-            {
-                throw new ArgumentException("each of `versions` must be `{ kind: agent|tool, name, version }`.");
-            }
-
-            asked.Add(new DownloadAsked(Text("kind")!, name, version,
-                each.TryGetProperty("unfinished", out var unfinished) && unfinished.ValueKind == JsonValueKind.True));
-        }
-
-        return asked;
+        if (versions is null) throw new ArgumentException("`versions` must name the downloaded versions to remove.");
+        return [.. versions.Select(each => each is { Kind: "agent" or "tool", Name: { } name, Version: { } version }
+            ? new DownloadAsked(each.Kind, name, version, each.Unfinished)
+            : throw new ArgumentException("each of `versions` must be `{ kind: agent|tool, name, version }`."))];
     }
 
     /// <summary>

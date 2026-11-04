@@ -623,16 +623,16 @@ public sealed class SessionsRoutes(DriverContext context)
     // refused as data and keeping nothing.
     [DriverRoute("SUPERVISOR_ANSWER", PipeClass.Role, Drain = PipeDrain.Passes)]
     [Publishes("SUPERVISOR_ANSWER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SupervisorAnswerAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await SupervisorDoor.AnswerAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
+    private async Task<object?> SupervisorAnswerAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
+        await SupervisorDoor.AnswerAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
 
     // The supervisor's leaving a question to the owner: `{ id, question, generation, proof, bound, reasons }`,
     // the role's second act, `Role` in the pipe's census and judged as the answer is. Kept as a decision of state `left`, final at once:
     // nothing reaches the session, and the owner's card says *left to you* with the bound and the reasons. `{ kept, decision?, why? }`.
     [DriverRoute("SUPERVISOR_DEFER", PipeClass.Role, Drain = PipeDrain.Passes)]
     [Publishes("SUPERVISOR_DEFER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SupervisorDeferAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await SupervisorDoor.DeferAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
+    private async Task<object?> SupervisorDeferAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
+        await SupervisorDoor.DeferAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
 
     // A role's act: `{ role, act, generation, form, proof }`, `Role` in the pipe's census, judged by the
     // judge's role method as SUPERVISOR_ANSWER is, then admitted once with an id Daoris draws. Its handler checks the act once more
@@ -641,8 +641,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // roles, brief }`, refused as data.
     [DriverRoute("ROLE_ACT", PipeClass.Role, Drain = PipeDrain.Waits)]
     [Publishes("ROLE_ACT", StateScopes.Sessions | StateScopes.Driver)]
-    private async Task<object?> RoleActAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await SupervisorDoor.ActAsync(_loop.Pipe, request.Payload, cancellationToken, _context.OwnerScopesOf(), _context.StewardWorldOf()).ConfigureAwait(false);
+    private async Task<object?> RoleActAsync(RoleActPress press, CancellationToken cancellationToken) =>
+        await SupervisorDoor.ActAsync(_loop.Pipe, press.Form.Json,cancellationToken, _context.OwnerScopesOf(), _context.StewardWorldOf()).ConfigureAwait(false);
 
     // What waits for the supervisor's holder: the parked sessions here with a recorded question and no
     // decision on it, in a repository a live appointment names, each with its generation. Told by event: it reads the
@@ -669,10 +669,10 @@ public sealed class SessionsRoutes(DriverContext context)
     // steward, `form`, `not-role`, `desk-full`).
     [DriverRoute("STEWARD_REQUEST", PipeClass.Open)]
     [Publishes("STEWARD_REQUEST", StateScopes.Driver)]
-    private object? StewardRequest(IpcRequest request)
+    private object? StewardRequest(DeskRequestPress press)
     {
         var filed = _loop.Pipe?.StandingConfirmation is { } judge
-            ? judge.FileRequest(request.Payload, PipeDoor.Client)
+            ? judge.FileRequest(press.Form.Json, PipeDoor.Client)
             : new DeskFiled(false, null, DeskWhy.NotStaffed);
         return new { filed.Filed, Request = filed.Id, filed.Why };
     }
