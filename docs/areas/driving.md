@@ -39,6 +39,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `ChannelLook`, `ReopensLook`, `ReviewsLook` | `WorkOrders/`, `Review/` | The read phase, from `Looked`: the ask's channel, the sources' reopens (their taken-off words leave the snapshot), the set-ups' tabs |
 | `OpinionsLook`, `HelpersLook`, `PartnersLook`, `BrainstormsLook`, `MeetingsLook` | `Review/`, `Participants/` | The read phase's last: the second opinions owed, then the helpers, partners, brainstorms and meetings, each started beside the look and counted into `LookState.Passes` under the cap. They reach the driver's classes through `ILookStagesWiring` |
 | `LoopRuns` | `Loop/Look/LoopRuns.cs` | The one-look run and the gate's run-until-idle, and the wait for the sessions they started (the sync and the lost-claim stop beside them, the endings after); the driver's `RunOnceAsync` and `RunUntilIdleAsync` are its doors |
+| `RunDoors`, `LookDoors` | `Loop/Run/RunDoors.cs`, `Loop/Look/LookDoors.cs` | The doors the run's stages (`IRunWiring`) and the look's passes (`ILookWiring` and the interfaces over it) reach the driver through, one line each to the driver's member or the unit that owns it; the stages and passes are built on them, never on `Driver` |
+| `SessionEquipment` | `Loop/Session/SessionEquipment.cs` | The spawn prepared for either kind of session: the adapter's process, the toolchain's environment and tools-up-front switch on it (`Equip`, shared with the conversation's run), a dsh home's profile, and whether the handed rules let the connector's tool through |
+| `LineageBrackets` | `Loop/Session/LineageBrackets.cs` | A process's lineage token issued before its spawn and its end written once the exit is read and the capture drained, for the driven run and the conversation's alike |
+| `PartsHanded`, `MovedParts`, `StartTargets` | `Loop/Session/` | What a start hands beyond the quest: the earlier parts of its session, the line saying a part moved and the record's `from` link, and the target's words, language and go-aheads; the bind of the run to its workflow and its step's role are `StartBinding` (`Loop/Run/`), a stopped run's record `StoppedRecord` |
 | `SessionRules` | `Loop/Session/SessionRules.cs` | The permission rules a session is handed: the machine's rules composed for its workspace and repository, shaped by its job and kind, written to its settings file, and the account of what was handed |
 | `AccountEndings` | `Loop/Session/AccountEndings.cs` | What a session's ending says of its account: a limit, a refused credential or model, a sign-in refused, read from the door's failure and applied to the roster; the driver's `AccountLimited` and its kin are its doors |
 | `SessionWatching` | `Loop/Session/SessionWatching.cs` | A run whose root has exited concluded by what it said within the capture bound (a held-open pipe ended, an unfinished capture abandoned), and the watcher's look at the running sessions, each step a line |
@@ -225,8 +229,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 ## Where a change goes
 
-Put new behaviour in a unit of its own, beside the subdomain below (D231). Do not grow `Loop/Driver.cs`: it is over the
-size budget. `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Sessions.cs` and `Service/Asks/AskDesk.cs` are roots that wire.
+Put new behaviour in a unit of its own, beside the subdomain below (D231). `Loop/Driver.cs` is a root that wires: it holds the order of the
+look and the run, the lazily built parts and the settables, and grows by a one-line door at most. `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Sessions.cs` and `Service/Asks/AskDesk.cs` are roots that wire.
 
 | A new behaviour about | Goes in | Tests that pin it |
 |---|---|---|

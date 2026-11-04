@@ -19,9 +19,9 @@ internal sealed class ChatTransportHost(
 
     public TextReader Hearing(TextReader reader, string sessionId) => reader;
 
-    public string Bracketed(string sessionId, ProcessStartInfo info, string? moved) => Driver.Bracketed(home, sessionId, info, moved);
+    public string Bracketed(string sessionId, ProcessStartInfo info, string? moved) => LineageBrackets.Bracketed(home, sessionId, info, moved);
 
-    public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn) => Driver.Spawned(proc, spawn);
+    public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn) => LineageBrackets.Spawned(proc, spawn);
 
     /// <summary>The exit, told to the token set (COWORKVIEW1a); a conversation hands no bound, so none is kept here.</summary>
     public async Task<int?> WaitAsync(

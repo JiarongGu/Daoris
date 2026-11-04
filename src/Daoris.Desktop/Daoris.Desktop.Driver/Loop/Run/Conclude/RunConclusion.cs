@@ -160,7 +160,7 @@ internal sealed class RunConclusion(
                 closure, after,
                 // Why, read off the session's record only where there is something to say.
                 closure is { Bound: true } && after is { Status: "Taken" or "Done", Closure: null or "" }
-                    ? await Driver.TookBindOrNullAsync(service, sessionId, ct).ConfigureAwait(false)
+                    ? await StartTargets.TookBindOrNullAsync(service, sessionId, ct).ConfigureAwait(false)
                     : null),
             true,
             // The stop flag is the "whose decision was this" answer, read once, used for both. A park is not an ending: the record

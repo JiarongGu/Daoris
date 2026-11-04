@@ -323,29 +323,8 @@ public sealed class Driver(
         Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null) =>
         Gate.OpinionsAsync(snapshot, events, ct, judged);
 
-    /// <summary>
-    /// A start's bind of its run before its take (D190's binding moment): Workflows' use case over the loop's service, home, choices
-    /// and plugins. A binding it made is kept for the next look's bind to say.
-    /// </summary>
-    internal async Task<WorkflowBind> BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct)
-    {
-        var bound = await WorkflowRunStart.AtStartAsync(
-                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowSteps.PluginsOf(Context.Catalog),
-                () => DateTimeOffset.UtcNow, ct)
-            .ConfigureAwait(false);
-        if (bound.Came == WorkflowBindCame.Bound) Context.Runs.Bound(bound);
-        return bound;
-    }
-
-    /// <summary>
-    /// The role a quest's run names for its work step, which its start walks: its kept binding's, or where the run is bound nowhere
-    /// yet, the binding its bind would make now, since the walk comes before the bind; null where it names none.
-    /// </summary>
-    internal async Task<string?> StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) =>
-        (await WorkflowRunStart.PlannedAsync(
-                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowSteps.PluginsOf(Context.Catalog),
-                () => DateTimeOffset.UtcNow, ct)
-            .ConfigureAwait(false))?.RoleOf(NodeKinds.Claimed)?.Role;
+    internal Task<string?> StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) =>
+        StartBinding.StepRoleAsync(Context, quest, workspace, ct);
 
     /// <summary>A new start's walk over Build's effective order (D205 §4.1), choice by choice, through the quest's start plan.</summary>
     internal async Task<(HarnessSelection Selection, ActorEffective? Chosen)> WalkBuildAsync(
@@ -495,87 +474,18 @@ public sealed class Driver(
         throw new InvalidOperationException("no stage handed the opened record to its session");
     }
 
-    /// <summary>
-    /// The record of a run whose wire broke after a stop made first: ended as that stop's conclusion would have ended it, never
-    /// interrupted, and shared by every run that catches a failure after <c>HoldAsync</c>. Best-effort, as the failure's own write is.
-    /// </summary>
-    internal async Task<SessionConclusion> EndStoppedAsync(string sessionId, SessionStop stop)
-    {
-        var (stopped, _) = Observation.Closed(stop);
-        try
-        {
-            await service.AdvanceAsync(sessionId, stopped.State, stopped.AsNoted(), ct: CancellationToken.None).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            // The first failure is the report; a host that is gone here must not turn the stop into a second throw.
-        }
+    internal Task<SessionConclusion> EndStoppedAsync(string sessionId, SessionStop stop) => StoppedRecord.EndAsync(service, sessionId, stop);
 
-        return stopped;
-    }
+    private SessionEquipment Equipment => LazyInitializer.EnsureInitialized(ref _equipment, () => new SessionEquipment(home, config, Variable));
 
-    /// <summary>
-    /// The spawn, prepared for either kind of session: the adapter's process, the toolchain's environment on it, and for a dsh home
-    /// Daoris made, its profile written. Shared by a quest's session and an ask's intake, so neither can forget a line the other carries.
-    /// </summary>
-    /// <returns>The process to start, and what this harness is doing that Daoris could not govern.</returns>
-    /// <param name="prepared">The process a resume prepared, given the same environment; null prepares a start.</param>
+    private SessionEquipment? _equipment;
+
     internal (ProcessStartInfo Info, string? Notice) Prepare(
-        ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
-    {
-        target = TargetPrompt.ForStart(target, adapter);
-        // A standing block past what the first prompt carries goes through its file, written before the spawn reads it.
-        if (prepared is null) StandingBlocks.Hand(target);
-        var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(Variable) }, config.Commands.GetValueOrDefault(adapter.Name));
-        Equip(adapter, info, selection);
+        ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null) =>
+        Equipment.Prepare(adapter, target, selection, prepared);
 
-        // Only a dsh home Daoris made is written to; anywhere else the notice says what happens, and a home holding somebody
-        // else's patch layer is reported rather than overwritten.
-        var harnessNotice = DshProfile.NoticeFor(adapter.Name, selection.ProfileHome);
-        if (harnessNotice is null && adapter is DshAdapter && selection.ProfileHome is { Length: > 0 } dshHome)
-        {
-            try
-            {
-                DshProfile.Write(dshHome);
-            }
-            catch (DriverException refused)
-            {
-                harnessNotice = $"— {refused.Message}";
-            }
-        }
-
-        return (info, harnessNotice);
-    }
-
-    /// <summary>
-    /// What every session's process carries on its environment: its toolchain's account, binary and pin, then its tools at the
-    /// start by the adapter's own switch, so its connector's tools come with its first request. Applied here rather than inside
-    /// each adapter's spawn so no adapter can forget it; the switch is set last, so an account's own variables cannot defer the tools again.
-    /// </summary>
-    internal static void Equip(ISessionAdapter adapter, ProcessStartInfo info, HarnessSelection selection)
-    {
-        if (adapter.Toolchain is { } toolchain)
-        {
-            HarnessProbe.Apply(
-                info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
-                selection.Environment);
-        }
-
-        foreach (var (name, value) in adapter.ToolsUpFront) info.Environment[name] = value;
-    }
-
-    /// <inheritdoc cref="DownloadKeeping.KeepHandedAsync"/>
-    internal Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) =>
-        DownloadKeeping.KeepHandedAsync(service, home, sessionId, info, ct);
-
-    /// <summary>
-    /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/> unasked (D73): the same
-    /// composition <see cref="HandRules"/> hands over. False for a harness that takes no rules, which then depends on the repository's own list.
-    /// </summary>
     internal bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
-        adapter.TakesSettings
-        && PermissionRules.AllowsConnector(
-            PermissionRules.Compose(PermissionRules.Load(home), workspace, repository), tool);
+        Equipment.HandedConnector(adapter, workspace, repository, tool);
 
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
@@ -586,15 +496,8 @@ public sealed class Driver(
             home, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
             continued, heavy, partner);
 
-    /// <summary>The protocol-door posture a brainstorm's pass asks; null for every other session, and for a pass whose harness a rule narrows.</summary>
-    internal static string? PassPosture(SessionTarget target, ISessionAdapter adapter) =>
-        target.Brainstorm is not null ? BrainstormPermissions.Posture(adapter) : null;
-
     internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository) =>
         SessionRules.PartnerHanded(home, workspace, repository);
-
-    internal static HandedSection RulesHanded(bool takes, PermissionFile file, RuleLists handed, string? workspace, string? repository) =>
-        SessionRules.Handed(takes, file, handed, workspace, repository);
 
     private AccountEndings Accounts => LazyInitializer.EnsureInitialized(ref _accounts, () => new AccountEndings(home, config, service, Context));
 
@@ -621,50 +524,14 @@ public sealed class Driver(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
         Accounts.SignedOut(conclusion, adapter, selection, turnFailed, ended);
 
-    /// <summary>
-    /// What a further part of a session is handed of the parts before it: each one's record, its tree's name where the tree stands
-    /// and its branch now, or the branch its work landed on where the tree is gone; and how its own tree stands to theirs. Only the
-    /// newest the instruction names are read from git; a running part's note is its opening, so none is said.
-    /// </summary>
-    /// <param name="joinedIn">The tree it went into, standing; null where it did not.</param>
-    /// <param name="entryTree">The tree the planner found free, gone or not; null where it found none.</param>
-    internal async Task<SessionParts> PartsAsync(
-        EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct)
-    {
-        var earlier = new List<EarlierPart>();
-        foreach (var part in entry.Parts)
-        {
-            var named = earlier.Count < TargetPrompt.PartsShown;
-            var tree = named && part.Tree is { Length: > 0 } path && Directory.Exists(path) ? path : null;
-            var branch = tree is not null
-                ? await Context.Trees.BranchNowAsync(tree, ct).ConfigureAwait(false) ?? $"daoris/{TreeName(tree)}"
-                : named && Context.Trees.Recorded.Landing(part.Session) is { GoneAt: null } landing
-                        && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase)
-                    ? landing.Branch
-                    : null;
-            earlier.Add(new EarlierPart(part.Session, part.Quest, part.State)
-            {
-                Note = part.Running ? null : part.Note,
-                Tree = tree is null ? null : TreeName(tree),
-                Branch = branch,
-            });
-        }
-
-        var regrown = entryTree is not null && joinedIn is null;
-        return new SessionParts(earlier)
-        {
-            Into = joinedIn is not null ? entry.Into?.Session : null,
-            HeldBy = entry.HeldBy,
-            Gone = regrown ? entry.Into?.Session : null,
-            GrewFrom = regrown ? opened?.GrewFrom : null,
-        };
-
-        static string TreeName(string tree) => Path.GetFileName(tree.TrimEnd('/', '\\'));
-    }
-
-    private SessionWatching Watching => LazyInitializer.EnsureInitialized(ref _watching, () => new SessionWatching(home, config, Context, output));
+    internal SessionWatching Watching => LazyInitializer.EnsureInitialized(ref _watching, () => new SessionWatching(home, config, Context, output));
 
     private SessionWatching? _watching;
+
+    internal LineageBrackets Brackets =>
+        LazyInitializer.EnsureInitialized(ref _brackets, () => new LineageBrackets(home, Context.Processes, Watching));
+
+    private LineageBrackets? _brackets;
 
     internal TimeSpan CaptureBound
     {
@@ -704,154 +571,4 @@ public sealed class Driver(
             Variable, AppContext.BaseDirectory,
             KnowledgeConnector.SessionScope(home, sessionId, scope, proc, KnowledgeConnector.KeptRole(Context.Conversations.RoleOf, sessionId)));
 
-    /// <summary>A process's lineage token: issued, its <c>start</c> written to the session's lineage, and set anew on the spawn's environment, all before the spawn.</summary>
-    /// <param name="moved">The token its run's move issued (a resume, a chat's go-on), whose <c>start</c> is written already.</param>
-    internal static string Bracketed(string home, string sessionId, ProcessStartInfo info, string? moved = null)
-    {
-        var proc = moved ?? ChildLineage.Opened(home, sessionId);
-        info.Environment[ChildMarks.LineageProcVariable] = proc;
-        return proc;
-    }
-
-    /// <summary>The spawn under <paramref name="proc"/>: its process handed the token, or the token let go where it made none.</summary>
-    internal static async Task<Process?> Spawned(string proc, Func<Task<Process?>> spawn)
-    {
-        var tokens = LineageTokens.Current;
-        Process? process;
-        try
-        {
-            process = await spawn().ConfigureAwait(false);
-        }
-        catch
-        {
-            tokens.Unspawned(proc);
-            throw;
-        }
-
-        if (process is null) tokens.Unspawned(proc);
-        else tokens.Hand(proc, process);
-        return process;
-    }
-
-    /// <summary>A process's end once its exit was read and its capture drained: clean, or killed, stopped or failed.</summary>
-    internal void Ended(string sessionId, string proc, int? exitCode) =>
-        ChildLineage.End(home, sessionId, clean: exitCode == 0 && Context.Processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow, proc);
-
-    /// <summary>
-    /// Loop's wait on a bracketed process: the exit it read told to the token set, which may not watch that process; where the wait
-    /// throws as the loop closes, its kill having read the exit, the process's end written unclean before the throw leaves the run.
-    /// </summary>
-    internal async Task<int?> WaitedAsync(string sessionId, string proc, Task<int?> wait, CancellationToken ct)
-    {
-        try
-        {
-            var exitCode = await wait.ConfigureAwait(false);
-            LineageTokens.Current.Exited(proc);
-            return exitCode;
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            ChildLineage.Exited(home, sessionId, proc, clean: false);
-            throw;
-        }
-    }
-
-    /// <summary>A bracketed process's drain: a capture that faults past the exit writes its end, unclean, before the fault leaves.</summary>
-    internal async Task<bool> DrainedAsync(string sessionId, string proc, Task capture)
-    {
-        try
-        {
-            return await CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
-        }
-        catch
-        {
-            ChildLineage.Exited(home, sessionId, proc, clean: false);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Why the graph named for a session's take did not bind it, or null: a line's extra word is never worth failing the end of a
-    /// run for, so a service that did not answer says nothing more than the line already did.
-    /// </summary>
-    internal static async Task<string?> TookBindOrNullAsync(ServiceClient service, string sessionId, CancellationToken ct)
-    {
-        try
-        {
-            return await service.TookBindAsync(sessionId, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// A quest's target with the person's words on the ask its session's line is on, read for this start: every start on the ask is
-    /// handed them, since a carry-on's own record holds only the session before it. A line on no ask is handed none, and words the
-    /// service did not answer leave today's instruction, saying so (<see cref="AskWords.ReadAsync"/>).
-    /// </summary>
-    internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, string session, ServiceClient service, CancellationToken ct) =>
-        target with { Words = await AskWords.ReadOfSessionAsync(service, session, ct).ConfigureAwait(false) };
-
-    /// <summary>The work's session language for the quest's repository, from the config this tick holds: the repository's, else its workspace's, else none, and never the window's.</summary>
-    internal static SessionTarget WithLanguage(SessionTarget target, DriverConfig config, string? workspace) =>
-        target with { Language = SessionLanguages.Resolve(config, target.Repository, workspace) };
-
-    /// <summary>The go-aheads its repository's access setup asks for, from the setup this start resolved once: under <c>never</c>, the instruction asks only what the person's words demand.</summary>
-    internal static SessionTarget WithAccess(SessionTarget target, ResolvedAccess access) =>
-        target with { NoGoAheads = access.Value(AccessRules.GoAheads) == AccessRules.Never };
-
-    /// <summary>The part a carry-on goes on from, as its record says it ran: its harness, that harness's maker where this build has it, and the models its door reported.</summary>
-    internal EarlierMaker? LeftBy(PriorSession prior)
-    {
-        if (prior.Adapter is not { Length: > 0 } ran) return null;
-        string? maker;
-        try { maker = Context.Adapters.Resolve(ran).Toolchain?.Maker; }
-        catch (DriverException) { maker = null; }
-        return new EarlierMaker(ran, maker, prior.Ran?.Models ?? []);
-    }
-
-    /// <summary>
-    /// A driven move to a new part said as it happens (D189 point 8): a coded line on the part it left and on the new part, each on
-    /// its console too, with the context the part it left stood at and the brief's characters; and <c>session.moved</c> in the
-    /// machine log. Every driven start that continues another says it, whatever moved it.
-    /// </summary>
-    internal void SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief)
-    {
-        var context = RotatedOpening.ContextOf(usage, Context.Events, prior.Session);
-        var ranOn = prior.Adapter ?? agent;
-        var on = HandOverNotes.MovedOn(sessionId, agent, account, why, context, brief.Text.Length);
-        var from = HandOverNotes.MovedFrom(prior.Session, ranOn, prior.Profile, why, context, brief.Text.Length);
-        foreach (var (session, line) in new[] { (prior.Session, on), (sessionId, from) })
-        {
-            output?.Append(session, line.Note);
-            Context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
-        }
-
-        service.AccountSaid(Continuations.Moved(sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: true));
-    }
-
-    /// <summary>
-    /// The session a quest's start continues, for its record's <c>from</c> link: the session the quest was handed over from, with the
-    /// hand-over's why and asker; else a session a limit cut off, carried on onto another account, Daoris's own move; else the
-    /// curve's move. Every other carry-on names its link too, so the brief follows the line: <c>retry</c> where its resume fell back,
-    /// else <c>carry-on</c>, the person's where their press released or brought it forward. A first start, a resume of its own record
-    /// and a fresh start carry nothing on and say none. The link is the course's move, its why and who asked.
-    /// </summary>
-    /// <param name="retried">Its record's resume was tried and fell back: a driven record's fallback.</param>
-    /// <param name="pressed">The person's press carried it on: <i>Try again</i> after their stop, or a bring-forward.</param>
-    /// <param name="handed">The quest's hand-over as held, or null.</param>
-    /// <param name="carried">The record it carries on, where it carries one on, or null.</param>
-    /// <param name="profile">The account it opens on.</param>
-    /// <param name="agent">The agent it opens on, where a limit's move may have gone to another one; null compares accounts alone.</param>
-    /// <param name="walked">
-    /// The reason of the walk's first step, where the walk chose the account (<see cref="StepSaid.Why"/>). An account over its
-    /// curve passed, or the most room under it, is the usage curve's move; a cooling or refused account passed, a limit reached
-    /// and the rest are not.
-    /// </param>
-    internal static ContinuedFrom? ContinuesFrom(
-        HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null, bool retried = false, bool pressed = false,
-        string? agent = null, Action<LineCourse>? decided = null, CoursePolicy? policy = null) =>
-        carried is null ? null : DrivenCourse.From(handed, carried, profile, walked, retried, pressed, agent, decided, policy);
 }

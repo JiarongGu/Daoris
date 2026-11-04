@@ -52,7 +52,7 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
     }
 
     Task<WorkflowBind> IRunWiring.BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct) =>
-        driver.BindAtStartAsync(quest, workspace, ct);
+        StartBinding.AtStartAsync(Context, quest, workspace, ct);
 
     Action<string>? IRunWiring.RunReturned => driver.RunReturned;
 
@@ -75,14 +75,14 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
         AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy) =>
         driver.HandRules(adapter, info, sessionId, workspace, repository, tree, kept, across: across, plugins: plugins, continued: continued, heavy: heavy);
 
-    EarlierMaker? IRunWiring.LeftBy(PriorSession prior) => driver.LeftBy(prior);
+    EarlierMaker? IRunWiring.LeftBy(PriorSession prior) => MovedParts.LeftBy(Context, prior);
 
     Task<SessionParts> IRunWiring.PartsAsync(
         EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct) =>
-        driver.PartsAsync(entry, joinedIn, entryTree, opened, repository, ct);
+        PartsHanded.ReadAsync(Context, entry, joinedIn, entryTree, opened, repository, ct);
 
     void IRunWiring.SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief) =>
-        driver.SayMoved(prior, sessionId, agent, account, why, brief);
+        MovedParts.Say(Context, prior, sessionId, agent, account, why, brief);
 
     Task<(ActorAsked Asked, string Choice)?> IRunWiring.ReaskAsync(
         Consideration start, IReadOnlyList<RepoView> registry, ActorEffective refused, HarnessSelection selection, CancellationToken ct, string? role) =>

@@ -280,9 +280,9 @@ internal sealed class SessionHold(IRunWiring wiring)
 
                 // The posture rides with it because it is the adapter's: harnesses name the same boundary differently, and one does not
                 // name it on the wire. A driven session's asking or unrestricted permission prompts name the adapter's mode, required.
-                target.Access?.Posture ?? Driver.PassPosture(target, adapter) ?? adapter.AcpPosture, scope, rules.Meta,
+                target.Access?.Posture ?? SessionRules.PassPosture(target, adapter) ?? adapter.AcpPosture, scope, rules.Meta,
                 handedServers ?? context.Servers, inbox, said, resume, keepAs, waitsOnBackground, noConnector, ending,
-                unoffered: target.Access is { } access ? access.Unoffered : Driver.PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
+                unoffered: target.Access is { } access ? access.Unoffered : SessionRules.PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
                 setupChanged: setupChanged,
 
                 // What its actor asked, set on the session before the first prompt; what the agent would not take is kept as asked and

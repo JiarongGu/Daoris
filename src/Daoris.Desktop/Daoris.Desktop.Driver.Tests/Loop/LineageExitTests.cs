@@ -43,7 +43,7 @@ public sealed class LineageExitTests : IDisposable
         await closed.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => driver.WaitedAsync("s1", proc, Task.FromCanceled<int?>(closed.Token), closed.Token));
+            () => driver.Brackets.WaitedAsync("s1", proc, Task.FromCanceled<int?>(closed.Token), closed.Token));
 
         var end = Lines()[^1];
         Assert.Equal(["start", "end"], Lines().Select(line => line.GetProperty("by").GetString()));
@@ -60,7 +60,7 @@ public sealed class LineageExitTests : IDisposable
         var proc = ChildLineage.Opened(_home, "s1");
         Assert.Equal(TokenReading.Unwatched, _tokens.Reading(proc));
 
-        Assert.Equal(0, await driver.WaitedAsync("s1", proc, Task.FromResult<int?>(0), CancellationToken.None));
+        Assert.Equal(0, await driver.Brackets.WaitedAsync("s1", proc, Task.FromResult<int?>(0), CancellationToken.None));
 
         Assert.Equal(TokenReading.Gone, _tokens.Reading(proc));
         Assert.Equal([proc], _told);
@@ -74,7 +74,7 @@ public sealed class LineageExitTests : IDisposable
         var proc = ChildLineage.Opened(_home, "s1");
 
         var thrown = await Assert.ThrowsAsync<IOException>(
-            () => driver.DrainedAsync("s1", proc, Task.FromException(new IOException("the transcript would not take a line"))));
+            () => driver.Brackets.DrainedAsync("s1", proc, Task.FromException(new IOException("the transcript would not take a line"))));
 
         Assert.Equal("the transcript would not take a line", thrown.Message);
         var end = Lines()[^1];
