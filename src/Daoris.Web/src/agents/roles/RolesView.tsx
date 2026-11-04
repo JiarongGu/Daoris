@@ -13,6 +13,7 @@ import { namer } from '../../settings/accounts/namer';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
+import { appointedOf } from './appointedHold';
 import { type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
 import { DiagramSection } from './StructureCanvas';
 import { RoleSectionMain, type RolesView } from './RoleSections';
@@ -163,12 +164,12 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   for (const { name, result } of currents) {
     workflows[name] = result.data ? workflowReadOf(result.data) : result.isError ? { read: 'failed' } : { read: 'loading' };
   }
-  // The supervisor and the steward are catalogue roles (D233 point 2); the diagram's appointed half waits for their rows (ROLEONE1).
+  // The supervisor and the steward are catalogue roles (D233 point 2): the diagram's appointed half is drawn from their rows.
   const structure = answer
     ? buildStructure({
       structure: answer, registry: registryRows, tools: byTool(harnesses), accounts: accounts.data, plugins: plugins.data?.plugins, lines: lines.data,
       driver: driver.data ? { drivable: driver.data.drivable ?? [], holds: driver.data.holds ?? [] } : null, workflows, filters,
-      appointed: null,
+      appointed: appointedOf(catalogue),
     })
     : null;
 
