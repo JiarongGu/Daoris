@@ -319,7 +319,6 @@ public sealed class DriverCommandTests
     public void Every_hand_off_holds_its_push_to_the_result_of_the_session_that_last_moved_its_branch()
     {
         var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
-        var help = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "HelpRoutes.cs"));
         var hand = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesHandVerb.cs"));
         var shared = route[route.IndexOf("internal static async Task<TreeHand> HandAsync(", StringComparison.Ordinal)..];
 
@@ -332,7 +331,6 @@ public sealed class DriverCommandTests
         Assert.Contains(
             "await TreesRoutes.HandAsync(_loop, trees, root, entry, named, cancellationToken)",
             File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesHandDesk.cs")));
-        Assert.Contains("TreesRoutes.HandAsync(_loop, trees, root, entry, plugin, ct)", help);
     }
 
     /// <summary>

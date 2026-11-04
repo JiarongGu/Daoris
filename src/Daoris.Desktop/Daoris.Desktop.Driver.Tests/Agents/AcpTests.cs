@@ -1662,7 +1662,7 @@ public sealed class AcpTests
 
             Assert.Contains("`bypassPermissions`", refused.Message);
             Assert.Contains(offered, refused.Message);
-            Assert.Contains("help mode restricted", refused.Message);
+            Assert.Contains("ask-daoris mode restricted", refused.Message);
             Assert.Contains("another agent", refused.Message);
             Assert.Null(ModeSet(agent));
         }

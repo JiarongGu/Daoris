@@ -66,7 +66,7 @@ public sealed class HelpAccessTests : IDisposable
 
         Assert.NotNull(refusal);
         Assert.Contains($"`{name}`", refusal);
-        Assert.Contains("help mode restricted", refusal);
+        Assert.Contains("ask-daoris mode restricted", refusal);
         Assert.Contains("another agent", refusal);
     }
 

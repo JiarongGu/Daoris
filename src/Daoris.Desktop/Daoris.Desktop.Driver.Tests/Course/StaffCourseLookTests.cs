@@ -26,8 +26,8 @@ public sealed class StaffCourseLookTests : IDisposable
         Assert.True(staffing.ImportFile().How is StaffingImported.Done or StaffingImported.Already);
         var choices = new[] { new ActorChoice("acp-stub", "sonnet", "low"), new ActorChoice("acp-other", "codex-mini", "high") };
         var parsed = StaffPolicy.Parse(policy).Policy!;
-        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), choices, null, new RolePolicyPress(parsed));
-        // The course reads the line's rules, not the policy's own moves: the policy's moves, written as rules beside the seeded ones.
+        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), choices);
+        // The course reads the line's rules, never a policy's own moves: the policy's moves, written as rules beside the seeded ones.
         var store = new SupervisorRuleStore(_home);
         var world = SupervisorRuleDoor.World(_home) with { ReadReached = false, Reached = true };
         Assert.True(store.Write(
@@ -66,7 +66,7 @@ public sealed class StaffCourseLookTests : IDisposable
         var scoped = RoleCatalog.Seed[0] with { Id = "engine-build", Scope = new RoleScope(RoleScope.Repository, "engine") };
         var choices = new[] { new ActorChoice("acp-stub", "sonnet", "low"), new ActorChoice("acp-other", "codex-mini", "high") };
         var next = StaffPolicy.Parse(Policy("""{"quiet":"next"}""")).Policy!;
-        RoleDoor.Apply(staffing, RoleChange.Set(scoped), choices, null, new RolePolicyPress(next));
+        RoleDoor.Apply(staffing, RoleChange.Set(scoped), choices);
         var store = new SupervisorRuleStore(_home);
         var machine = store.Of(SupervisorRules.Machine);
         Assert.True(store.Write(
