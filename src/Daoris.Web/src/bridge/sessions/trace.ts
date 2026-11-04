@@ -15,7 +15,7 @@ export const useTrace = (kind: TraceKind, id: string | null) => {
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: keys.trace(kind, id ?? ''),
-    queryFn: () => call<TraceAnswer>('TRACE', { kind, id }),
+    queryFn: () => call('TRACE', { kind, id: id ?? '' }) as Promise<TraceAnswer>,
     enabled: isAvailable && Boolean(id),
   });
   return { available: isAvailable, query };
