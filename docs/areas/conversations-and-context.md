@@ -21,7 +21,11 @@ of everything it handed, section by section.
 | `MoveStore`, `MoveRecords` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases |
 | `ConversationMoves`, `MoveTakeUp` | `Course/ConversationMoves.cs`, `Course/MoveTakeUp.cs` | The conversations' move holder; takes up a dead shell's moves at come-up and at each look |
 | `MoveDelivery`, `MoveResolve`, `MoveBoxImports` | `Course/` | Delivers moved words; settles a held move; imports an older build's boxes once |
-| `ChatRunner` | `Loop/Chat/ChatRunner.cs` (hub, 232 KB) | Starts and runs conversations on both doors; composes a first message |
+| `ChatRunner` | `Loop/Chat/ChatRunner.cs` (hub, 202 KB) | Starts and runs conversations on both doors; composes a first message; builds the registered executors and reaches each through its kind's door |
+| `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
+| `HelpStart` | `Help/HelpStart.cs` | Ask Daoris's start: placed in its workspace's room, the machine read within its bound, run; its replacement's open |
+| `WordsStart`, `StartRequests` | `Course/Chat/` | The start on words: *Start a conversation with these words*, and a conversation opened on its first words, a request id answering a retry |
+| `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops |
 | `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | An ended chat goes on with the words kept on its record |
 | `BriefedMove` | `Course/Chat/BriefedMove.cs` | A lost conversation, or *Go on with Daoris's brief*: a new part handed the brief |
@@ -170,14 +174,15 @@ of everything it handed, section by section.
 
 - **How a line goes on** (a new trigger, path or hold): `Course/Domain/LineCourse.Decide.cs` and its `CourseFacts`. The
   executor that acts goes in `Course/Chat/` for a conversation and `Course/GoOn/` for a driven line, in a unit of its own over
-  `ChatContext`. Durable state goes in `MoveStore`, never a new box.
+  `ChatContext`. A new kind of conversation run is a module in the subdomain of its job, marked `[Executor(kind, phase, after)]`
+  and built from `IExecutorWiring`; the runner gains only its door. Durable state goes in `MoveStore`, never a new box.
 - **What a session is told** (brief, block, first message, go-on words): `Context/` for composing. `ChatRunner` and
   `ResumeAsk` only hand it on. A new section needs its `HandedSections`/`HandedCuts` code and both catalogues' twin rows.
 - **Counts:** `Course/Domain/LineCounts.cs` reads them, `Roles/Domain/CountTexts.cs` words them, and the supervisor's
   rules are the roles area's.
 - **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, in `Help/Proposals/` with its
   row in the room's doors table.
-- **Never grow the hubs.** `Loop/Chat/ChatRunner.cs` (232 KB), `ChatTurns.cs` (72 KB) and `Course/Chat/ChatGoOn.cs`
+- **Never grow the hubs.** `Loop/Chat/ChatRunner.cs` (202 KB), `ChatTurns.cs` (72 KB) and `Course/Chat/ChatGoOn.cs`
   (66 KB) are over budget. New behaviour goes in its own file (D231). Agents comes before Participants and Context in the
   structure gate (D166).
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),
