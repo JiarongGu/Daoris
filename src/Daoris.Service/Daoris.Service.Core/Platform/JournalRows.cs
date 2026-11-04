@@ -1,19 +1,7 @@
+using Daoris.Contracts.Platform;
 using Microsoft.Data.Sqlite;
 
 namespace Daoris.Knowledge;
-
-/// <summary>
-/// One row of the event journal as a reader is answered it (FOUNDATION1 l-i, the foundation design §4.1): the raw transition and the snapshot
-/// its coding needs, the columns the capture schema names, never a text. <c>NoteCodes</c> and <c>Marks</c> are the lists the triggers wrote,
-/// comma-joined.
-/// </summary>
-public sealed record JournalRow(
-    long Position, long At, string Record, string? Family, string Change, string? StateOld, string? StateNew, bool? LimitedOld, bool? LimitedNew,
-    string? NoteCodes, string? Marks, string? Entry, string? FromSession, string? FromWhy, string? FromBy, string? Workspace, string? Quest,
-    string? Word, string? WordAuthor, string? WordLevel, bool? WordKeyed, long? WordsOver, string? Op, string? Ask, string? Message);
-
-/// <summary>A page of the journal after a cursor, with where the journal stands: the store's identity, its floor and its newest position.</summary>
-public sealed record JournalPage(string Store, long Floor, long Newest, IReadOnlyList<JournalRow> Rows);
 
 /// <summary>
 /// The journal read by position (FOUNDATION1 l-i): read on the service's one connection inside its gate, as every store does (SQLITETX1).

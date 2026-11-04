@@ -4,7 +4,10 @@ using System.Text.Json;
 using Daoris.Contracts;
 using Daoris.Contracts.History;
 using Daoris.Contracts.Knowledge;
+using Daoris.Contracts.Quests;
+using Daoris.Contracts.Registry;
 using Daoris.Contracts.Sessions;
+using Daoris.Contracts.Sync;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -148,30 +151,27 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<IReadOnlyList<RegistrationRow>> RegistrationsAsync(CancellationToken ct = default)
     {
-        using var document = JsonDocument.Parse(await GetAsync("/api/registry", ct).ConfigureAwait(false));
+        var rows = (await SendAsync(new ListRegistry(), ct).ConfigureAwait(false)).Answered();
         return
         [
-            .. document.RootElement.EnumerateArray().Select(repo => new RegistrationRow(
-                Text(repo, "repository") ?? "",
-                RemoteTarget.Workspace(Text(repo, "workspace")),
-                Text(repo, "root"),
-                Flag(repo, "adopted"),
-                Text(repo, "summary"),
-                Strings(repo, "owns"),
-                Strings(repo, "accepts"),
-                Strings(repo, "uses"),
-                Strings(repo, "packs"),
-                Flag(repo, "joined"),
-                Flag(repo, "sharesKnowledge"),
+            .. rows.Select(repo => new RegistrationRow(
+                repo.Repository,
+                RemoteTarget.Workspace(repo.Workspace),
+                repo.Root,
+                repo.Adopted,
+                repo.Summary,
+                repo.Owns,
+                repo.Accepts,
+                repo.Uses,
+                repo.Packs,
+                repo.Joined,
+                repo.SharesKnowledge,
                 // Absent is none: a host from before lanes answers without them.
-                repo.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
-                    ? [.. lanes.EnumerateArray()
-                        .Where(lane => lane.ValueKind == JsonValueKind.Object && Text(lane, "id") is { Length: > 0 })
-                        .Select(lane => new LaneView(Text(lane, "id")!, Text(lane, "title") ?? "", Text(lane, "summary") ?? "", Flag(lane, "steward")))]
-                    : [])
+                [.. (repo.Lanes ?? []).Where(lane => lane.Id is { Length: > 0 })
+                    .Select(lane => new LaneView(lane.Id!, lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))])
             {
                 // The service's own word (WSSETUP6): a workspace plan's *set up*, never recomputed on this side.
-                Registered = Flag(repo, "registered"),
+                Registered = repo.Registered,
             }),
         ];
     }
@@ -182,9 +182,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(bool Ok, string Message)> RegisterAsync(System.Text.Json.Nodes.JsonObject body, CancellationToken ct = default)
     {
-        var (ok, status, payload, root) = await PostJsonAsync("/api/registry", body.ToJsonString(), ct).ConfigureAwait(false);
-        if (ok) return (true, "");
-        return (false, (root is { } refused ? Text(refused, "error") : null) ?? $"the registry door answered {status}: {payload}");
+        var sent = await SendAsync(
+            body.Deserialize((System.Text.Json.Serialization.Metadata.JsonTypeInfo<RegisterRepository>)ContractJson.Options.GetTypeInfo(typeof(RegisterRepository)))!,
+            ct).ConfigureAwait(false);
+        if (sent.Reply.Ok) return (true, "");
+        return (false, ErrorWords(sent.Reply.Payload) ?? $"the registry door answered {sent.Reply.Status}: {sent.Reply.Payload}");
     }
 
     /// <summary>
@@ -195,22 +197,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
+        var sent = await SendAsync(new WireRepository(repository, workspace), ct).ConfigureAwait(false);
+        if (AnswerOf(sent.Reply.Payload) is null)
         {
-            writer.WriteStartObject();
-            writer.WriteString("workspace", workspace);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/registry/{Uri.EscapeDataString(repository)}/workspace", body, ct).ConfigureAwait(false);
-        if (root is not { } answer)
-        {
-            return (false, $"the service at {_base} has no workspace door for a repository ({status}) — is it older than this driver?");
+            return (false, $"the service at {_base} has no workspace door for a repository ({sent.Reply.Status}) — is it older than this driver?");
         }
 
-        return ok
-            ? (true, $"`{Text(answer, "repository") ?? repository}` is now in workspace `{Text(answer, "workspace") ?? workspace}`.")
-            : (false, Text(answer, "error") ?? payload);
+        return sent.Answer is { } wired
+            ? (true, $"`{wired.Repository}` is now in workspace `{wired.Workspace}`.")
+            : (false, ErrorWords(sent.Reply.Payload) ?? sent.Reply.Payload);
     }
 
     /// <summary>
@@ -222,9 +217,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<ConnectDone> ConnectAsync(string root, string? workspace, CancellationToken ct = default)
     {
         var plan = RegistryConnect.Plan(root, workspace, _base);
-        var (ok, status, _, answer) = await PostJsonAsync("/api/registry", plan.Body.ToJsonString(), ct).ConfigureAwait(false);
-        if (!ok) throw Refused($"the service refused the registration: {ServiceSaid(status, answer)}", 2);
-        return new ConnectDone(plan, answer is { } landed ? Text(landed, "workspace") : null);
+        var sent = await SendAsync(
+            plan.Body.Deserialize((System.Text.Json.Serialization.Metadata.JsonTypeInfo<RegisterRepository>)ContractJson.Options.GetTypeInfo(typeof(RegisterRepository)))!,
+            ct).ConfigureAwait(false);
+        if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
+        return new ConnectDone(plan, sent.Answer?.Workspace);
     }
 
     /// <summary>
@@ -234,10 +231,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <exception cref="RegistryRefusal">The service refused; nothing changed.</exception>
     public async Task<string> RetireAsync(string repository, CancellationToken ct = default)
     {
-        var answer = await SendAsync(ServiceVerb.Delete, $"/api/registry/{Uri.EscapeDataString(repository)}", null, ct).ConfigureAwait(false);
-        var root = AnswerOf(answer.Payload);
-        if (!answer.Ok) throw Refused(ServiceSaid(answer.Status, root), 1);
-        return (root is { } said ? Text(said, "message") : null) ?? $"{repository} is no longer registered.";
+        var sent = await SendAsync(new RetireRepository(repository), ct).ConfigureAwait(false);
+        if (!sent.Reply.Ok) throw Refused(ServiceSaid(sent.Reply), 1);
+        return sent.Answer?.Message ?? $"{repository} is no longer registered.";
     }
 
     /// <summary>
@@ -257,23 +253,16 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 2);
         }
 
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            if (!string.IsNullOrEmpty(folder)) writer.WriteString("folder", folder);
-            if (!string.IsNullOrEmpty(workspace)) writer.WriteString("workspace", workspace);
-            writer.WriteEndObject();
-        });
-        var (ok, status, _, answer) = await PostJsonAsync("/api/registry/import", body, ct).ConfigureAwait(false);
-        if (!ok) throw Refused(ServiceSaid(status, answer), 1);
-        return (answer is { } said ? Text(said, "message") : null) ?? "imported.";
+        var sent = await SendAsync(
+            new ImportRepositories(string.IsNullOrEmpty(folder) ? null : folder, string.IsNullOrEmpty(workspace) ? null : workspace), ct).ConfigureAwait(false);
+        if (!sent.Reply.Ok) throw Refused(ServiceSaid(sent.Reply), 1);
+        return sent.Answer?.Message ?? "imported.";
     }
 
     private static RegistryRefusal Refused(string message, int exit) => new(RegistryRefusal.ServiceRefused, message, exit);
 
     /// <summary>The service's own sentence, or a bare status when it did not compose one.</summary>
-    private static string ServiceSaid(int status, JsonElement? answer) =>
-        (answer is { } said ? Text(said, "error") : null) ?? $"the service answered {status}";
+    private static string ServiceSaid(ServiceReply reply) => ErrorWords(reply.Payload) ?? $"the service answered {reply.Status}";
 
     private static JsonElement? AnswerOf(string payload)
     {
@@ -294,8 +283,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<string?> RefreshAsync(CancellationToken ct = default)
     {
-        var (ok, status, payload, root) = await PostJsonAsync("/api/refresh", "{}", ct).ConfigureAwait(false);
-        return ok ? null : (root is { } refused ? Text(refused, "error") : null) ?? $"the refresh door answered {status}: {payload}";
+        var sent = await SendAsync(new RefreshIndex(), ct).ConfigureAwait(false);
+        return sent.Reply.Ok ? null : ErrorWords(sent.Reply.Payload) ?? $"the refresh door answered {sent.Reply.Status}: {sent.Reply.Payload}";
     }
 
     /// <summary>
@@ -360,8 +349,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         ReadSessions(await SessionsJsonAsync(false, ct).ConfigureAwait(false));
 
     /// <summary>Where a circle stands on this machine (SYNC6a) — read from its host, without reaching the remote.</summary>
-    public async Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default) =>
-        RemoteSyncPayloads.Standing(await GetAsync($"/api/sync?workspace={Uri.EscapeDataString(workspace)}", ct).ConfigureAwait(false));
+    public async Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default)
+    {
+        var standing = (await SendAsync(new ReadSyncStanding(workspace), ct).ConfigureAwait(false)).Answered();
+        return new SyncStanding(
+            standing.Workspace, standing.Wired, standing.Ahead, standing.Behind, standing.Conflicts, standing.Synced, standing.Tried,
+            standing.Problem,
+            // FABRIC-CLOSE1i2: absent where no pass heard the handshake, which is never read as every machine declared.
+            standing.Undeclared);
+    }
 
     /// <summary>
     /// Whether this session took its own quest through its own connector (STANDDOWN2) — read at its end,
@@ -580,7 +576,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// driver learns that a session it is running took a quest another machine took first.
     /// </summary>
     public async Task<string> ClaimAsync(string id, CancellationToken ct = default) =>
-        RemoteSyncPayloads.Claim(await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false));
+        (await ClaimTakeAsync(id, ct).ConfigureAwait(false)).Claim;
 
     /// <summary>
     /// <see cref="ClaimAsync"/>, with why a lost claim lost where the host says (FABRIC-CLOSE1c18): <c>source-reopened</c> where the take
@@ -599,8 +595,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(string Claim, string? Why, ForwardTake? Forward, DateTimeOffset? Taken)> ClaimTakeAsync(string id, CancellationToken ct = default)
     {
-        var json = await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false);
-        return (RemoteSyncPayloads.Claim(json), RemoteSyncPayloads.ClaimWhy(json), RemoteSyncPayloads.Forward(json), RemoteSyncPayloads.ClaimTaken(json));
+        var claim = (await SendAsync(new ReadClaim(id), ct).ConfigureAwait(false)).Answered();
+        return (claim.Claim, claim.Why, claim.Forward is { } forward ? new ForwardTake(forward.Machine, forward.Sequence, forward.At, forward.Standing) : null, claim.Taken);
     }
 
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
@@ -947,18 +943,16 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => SessionsJsonAsync(true, ct);
 
     /// <summary>
-    /// One quest's handback as the service wrote it (HANDBACK1, <c>GET /api/handbacks/{id}</c>), by the quest's id or the id of the session
+    /// One quest's handback as the service answers it (HANDBACK1, <c>GET /api/handbacks/{id}</c>), by the quest's id or the id of the session
     /// that served it: what <c>sessions handback</c> prints. Null from a host from before the door, which answers the route not found; the
     /// door answers every id, one naming nothing as not found in its own answer, so its own answer is never a 404.
     /// </summary>
     /// <exception cref="DriverException">The host answered the door with a failure.</exception>
-    public async Task<string?> HandbackJsonAsync(string id, CancellationToken ct = default)
+    public async Task<HandbackResponse?> HandbackAsync(string id, CancellationToken ct = default)
     {
-        var answer = await _doors.SendAsync(
-            ServiceVerb.Get, $"/api/handbacks/{Uri.EscapeDataString(id.TrimStart('#'))}", null, ct).ConfigureAwait(false);
-        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
-        if (!answer.Ok) throw new DriverException($"the service would not read `{id}`'s handback: {answer.Payload}");
-        return answer.Payload;
+        var sent = await SendAsync(new ReadHandback(id.TrimStart('#')), ct).ConfigureAwait(false);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        return sent.Answer ?? throw new DriverException($"the service would not read `{id}`'s handback: {sent.Reply.Payload}");
     }
 
     /// <summary>
@@ -1934,9 +1928,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <exception cref="DriverException">A host older than the door, or one that refused the scope, in its words.</exception>
     public async Task<IReadOnlyList<HistoryUnitView>> HistoryAsync(PlanHistory plan, CancellationToken ct = default)
     {
-        var (ok, status, payload, _) = await SendJsonAsync(plan, ct).ConfigureAwait(false);
-        var root = Answered(ok, status, payload);
-        return [.. Items(root, "units").Select(ReadHistoryUnit)];
+        var plans = Answered(await SendAsync(plan, ct).ConfigureAwait(false));
+        return [.. plans.Units.Select(ReadHistoryUnit)];
     }
 
     /// <summary>
@@ -1946,69 +1939,67 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <exception cref="DriverException">A host older than the door, or one that refused the press, in its words.</exception>
     public async Task<IReadOnlyList<HistoryClearedView>> ClearHistoryAsync(IReadOnlyList<HistoryUnitName> units, CancellationToken ct = default)
     {
-        var (ok, status, payload, _) = await SendJsonAsync(
-            new ClearHistory([.. units.Select(unit => new HistoryUnitRequest(unit.Kind, unit.Id))]), ct).ConfigureAwait(false);
-        var root = Answered(ok, status, payload);
+        var cleared = Answered(await SendAsync(
+            new ClearHistory([.. units.Select(unit => new HistoryUnitRequest(unit.Kind, unit.Id))]), ct).ConfigureAwait(false));
         return
         [
-            .. Items(root, "units").Select(each =>
+            .. cleared.Units.Select(each => new HistoryClearedView(ReadHistoryUnit(each.Unit), each.Cleared, each.Message)
             {
                 // Additive (HIST1j): absent where every removal was made, and from a host before it.
-                var failed = each.TryGetProperty("failed", out var named) && named.ValueKind == JsonValueKind.Object;
-                return new HistoryClearedView(
-                    each.TryGetProperty("unit", out var unit) ? ReadHistoryUnit(unit) : new HistoryUnitView("", "", null),
-                    Flag(each, "cleared"),
-                    Text(each, "message") ?? "")
-                {
-                    FailedQuests = failed ? Strings(named, "quests") : [],
-                    FailedAsks = failed ? Strings(named, "asks") : [],
-                };
+                FailedQuests = each.Failed?.Quests ?? [],
+                FailedAsks = each.Failed?.Asks ?? [],
             }),
         ];
     }
 
-    /// <summary>The door's answer read, or its refusal said: in its words where it gave some, else as a host older than the door.</summary>
-    private JsonElement Answered(bool ok, int status, string payload)
+    /// <summary>The door's answer, or its refusal said: in its words where it gave some, else as a host older than the door.</summary>
+    private T Answered<T>(Sent<T> sent) where T : class
     {
-        JsonElement root = default;
+        if (sent.Answer is { } answer) return answer;
+        if (sent.Reply.Ok is false && ErrorWords(sent.Reply.Payload) is { Length: > 0 } error)
+        {
+            throw new DriverException($"the service refused the history door ({sent.Reply.Status}): {error}");
+        }
+
+        throw new DriverException($"the service at {_base} has no history door ({sent.Reply.Status}) — is it older than this driver?");
+    }
+
+    private static string? ErrorWords(string payload)
+    {
         try
         {
-            using var document = JsonDocument.Parse(payload);
-            root = document.RootElement.Clone();
+            return JsonSerializer.Deserialize(payload, ContractJson.Options.GetTypeInfo(typeof(ErrorResponse))) is ErrorResponse refusal ? refusal.Error : null;
         }
         catch (JsonException)
         {
             // Not JSON: a host older than the door answers a bare 404 or 405.
+            return null;
         }
-
-        if (ok && root.ValueKind == JsonValueKind.Object) return root;
-        if (Text(root, "error") is { Length: > 0 } error) throw new DriverException($"the service refused the history door ({status}): {error}");
-        throw new DriverException($"the service at {_base} has no history door ({status}) — is it older than this driver?");
     }
 
-    private static HistoryUnitView ReadHistoryUnit(JsonElement unit) => new(Text(unit, "kind") ?? "", Text(unit, "id") ?? "", Text(unit, "workspace"))
+    private static HistoryUnitView ReadHistoryUnit(HistoryUnitResponse unit) => new(unit.Kind, unit.Id, unit.Workspace)
     {
-        Clearable = Flag(unit, "clearable"),
-        Quests = Strings(unit, "quests"),
-        Forgotten = Strings(unit, "forgotten"),
-        Asks = Strings(unit, "asks"),
-        Sessions = Strings(unit, "sessions"),
-        Teammates = Strings(unit, "teammates"),
-        Refusal = unit.TryGetProperty("refusal", out var refusal) && refusal.ValueKind == JsonValueKind.Object ? ReadHistoryRefusal(refusal) : null,
-        Kept = [.. Items(unit, "kept").Select(ReadHistoryRefusal)],
+        Clearable = unit.Clearable,
+        Quests = unit.Quests,
+        Forgotten = unit.Forgotten,
+        Asks = unit.Asks,
+        Sessions = unit.Sessions,
+        Teammates = unit.Teammates,
+        Refusal = unit.Refusal is { } refusal ? ReadHistoryRefusal(refusal) : null,
+        Kept = [.. unit.Kept.Select(ReadHistoryRefusal)],
     };
 
-    private static HistoryRefusalView ReadHistoryRefusal(JsonElement refusal) => new(Text(refusal, "refusal") ?? "", Text(refusal, "error") ?? "")
+    private static HistoryRefusalView ReadHistoryRefusal(HistoryRefusalResponse refusal) => new(refusal.Refusal, refusal.Error)
     {
-        Quest = Text(refusal, "quest"),
-        Ask = Text(refusal, "ask"),
-        Session = Text(refusal, "session"),
-        Origin = Text(refusal, "origin"),
-        Workspace = Text(refusal, "workspace"),
+        Quest = refusal.Quest,
+        Ask = refusal.Ask,
+        Session = refusal.Session,
+        Origin = refusal.Origin,
+        Workspace = refusal.Workspace,
         // Additive (HIST1l, HIST1m): each absent beside every other word, and from a host before it.
-        Waits = Text(refusal, "waits"),
-        Stands = Text(refusal, "stands"),
-        By = Text(refusal, "by"),
+        Waits = refusal.Waits,
+        Stands = refusal.Stands,
+        By = refusal.By,
     };
 
     // What the review's showing reads of a session's record (REVIEWENV1d): the tree its set-up was built in.

@@ -69,8 +69,13 @@ finishes first and the whole set runs once.
    from `ServiceClient` as `SendJsonAsync(new Say…)` and reads the list into `SessionView` through the generated
    `SessionResponse`; the page's `Session` and `SaidWord` are those records. A local host's second-opinion, helper, partner,
    brainstorm, history and addressed-channel doors are `OpinionRoutes`, `ParticipantRoutes`, `BrainstormRoutes`, `HistoryRoutes`
-   and `AddressedRoutes`; the driver's door classes send their records, and the page's opinion list is sent by name. A route not
-   declared there is still mapped by hand in `Program.cs` (CODESHAPE1). A window
+   and `AddressedRoutes`; the driver's door classes send their records, and the page's opinion list is sent by name. The registry, the
+   code map and the rescan are `RegistryRoutes`; a shared host's feed and quest-operation doors are `FeedRoutes` and a local host's
+   sync and claim doors `SyncRoutes`; the person's confirmations are `ConfirmationRoutes` (the ask, read no further than its limit,
+   is `[OwnBody]`, which the binder leaves unread); the change stream and the journal are `PlatformRoutes`; a quest's handback and
+   its files are `QuestFileRoutes`, whose file is `RouteMap.MapFile` and whose answer is no JSON. A wire Core writes as text (the
+   code map, the session, channel and quest wires) is answered as a `JsonObject`, so the machines' client reads the one it always
+   did. `Program.cs` maps no route, and `HostWiring` carries what a module needs of the start. A window
    route is its handler's marks in the desktop modules (`[DriverRoute]` and those beside it); the same tool writes from them the
    ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
    publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. A handler takes its

@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Daoris.Contracts.Confirmations;
 using Daoris.Knowledge;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
@@ -630,36 +631,36 @@ public sealed class PersonConfirmations(
     /// on another origin sends only with CORS's leave (design §4.2), parsed by the host's own options. The ask, or the refusal to
     /// answer instead.
     /// </summary>
-    public static async Task<(ConfirmationAskRequest? Ask, IResult? Refusal)> ReadAskAsync(HttpContext http, CancellationToken ct)
+    public static async Task<(AskConfirmation? Ask, Routes.Refusal? Refusal)> ReadAskAsync(HttpContext http, CancellationToken ct)
     {
         if (!Microsoft.Net.Http.Headers.MediaTypeHeaderValue.TryParse(http.Request.ContentType, out var type)
             || !type.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase))
         {
-            return (null, Results.Json(
-                new ErrorResponse("An ask for a confirmation is a JSON body: `method`, `path`, `body` and `session`. Nothing was asked."),
-                statusCode: StatusCodes.Status415UnsupportedMediaType));
+            return (null, new Routes.Refusal(
+                StatusCodes.Status415UnsupportedMediaType,
+                new ErrorResponse("An ask for a confirmation is a JSON body: `method`, `path`, `body` and `session`. Nothing was asked.")));
         }
 
         if (await ReadAtMostAsync(http.Request.Body, http.Request.ContentLength, AskLimit, ct) is not { } read)
         {
-            return (null, Results.Json(
-                new ErrorResponse($"An ask for a confirmation is at most {AskLimit / 1024} KB. Nothing was asked."),
-                statusCode: StatusCodes.Status413PayloadTooLarge));
+            return (null, new Routes.Refusal(
+                StatusCodes.Status413PayloadTooLarge,
+                new ErrorResponse($"An ask for a confirmation is at most {AskLimit / 1024} KB. Nothing was asked.")));
         }
 
         var json = http.RequestServices.GetRequiredService<IOptions<Microsoft.AspNetCore.Http.Json.JsonOptions>>().Value.SerializerOptions;
-        ConfirmationAskRequest? ask = null;
+        AskConfirmation? ask = null;
         try
         {
-            ask = JsonSerializer.Deserialize(read, (JsonTypeInfo<ConfirmationAskRequest>)json.GetTypeInfo(typeof(ConfirmationAskRequest)));
+            ask = JsonSerializer.Deserialize(read, (JsonTypeInfo<AskConfirmation>)json.GetTypeInfo(typeof(AskConfirmation)));
         }
         catch (JsonException)
         {
         }
 
         return ask is null
-            ? (null, Results.BadRequest(new ErrorResponse(
-                "An ask for a confirmation is a JSON object: `method`, `path`, `body` and `session`. Nothing was asked.")))
+            ? (null, Routes.Refusal.BadRequest(
+                "An ask for a confirmation is a JSON object: `method`, `path`, `body` and `session`. Nothing was asked."))
             : (ask, null);
     }
 
