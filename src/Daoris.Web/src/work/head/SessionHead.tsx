@@ -1,13 +1,12 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
-import { DiscardBranchAsk, type SweepBranch } from '../../settings/Sweep';
+import type { SweepBranch } from '../../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../../data/api';
 import type { AccountNamer } from '../../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../../locales/format';
 import {
-  answeredPark, Button, Inline, PathText, personsSaid, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Inline, PathText, personsSaid, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { WaitingOnLine } from '../atWork/AtWorkView';
@@ -28,9 +27,11 @@ import type { SayRebase } from '../review/LandingSync';
 import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
 import type { EntryPress } from '../review/EntryAccept';
 import { Note } from '../Note';
+import { Left, Said } from './HeadNote';
+import { type HeadLink, linkRow, requestRow } from './headRows';
 import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from '../waits/HelperAsks';
 import { type PieceSection, Pieces } from '../pieces/Pieces';
-import { hasNote, noteBlocks, noteLines } from '../noteLines';
+import { hasNote } from '../noteLines';
 import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
 import { heldFor, PermissionAsks, type PermissionWaits } from '../waits/PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from '../waits/AnswerAlone';
@@ -591,153 +592,3 @@ export function SessionHead({
   );
 }
 
-/** How much of the record's note the head shows before the rest is a press away. */
-const NOTE_LINES = 3;
-
-/**
- * A conversation's opening is the header's title (`sessionTitle`), which holds one line: past this many characters the
- * header may have cut it, and *Details* holds it whole (HEAD2c). A long line is never wrongly said twice; it is said in the
- * fold, which is closed.
- */
-const ONE_LINE = 60;
-
-/**
- * The request as written, a row of *Details* (HEAD2c, D162 point 3): the quest's whole title with the quest's door, or, for
- * a conversation with no quest, its opening where the header's one line may have cut it. Content, shown as it is.
- */
-function requestRow(
-  t: TFunction, quest: Quest | null | undefined, opening: string | null | undefined, id: string | null | undefined,
-  onOpenQuest: ((quest: Quest) => void) | undefined,
-): DetailRow {
-  const label = t('work.head.request');
-  if (quest?.title) {
-    return {
-      label,
-      value: (
-        <>
-          <span>{quest.title}</span>
-          {onOpenQuest && (
-            <button
-              type="button"
-              onClick={() => onOpenQuest(quest)}
-              className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
-            >
-              {t('work.head.openQuest', { id: quest.id })}
-            </button>
-          )}
-        </>
-      ),
-    };
-  }
-  return { label, value: !id && opening && opening.length > ONE_LINE ? opening : null };
-}
-
-/** A session another one's record names (MIXAGENT3a-i), as the frame holds it: its record, and its title (`sessionTitle`). */
-export type HeadLink = { session: Session; title: string };
-
-/**
- * A link the record holds, a row of *Details* (MIXAGENT3a-i, the mixed-agents design §4): the other session's title with a door
- * that attends it, where the frame holds that session; its id in mono with no door where it does not (deleted, or not listed).
- * No row where the record names none.
- */
-function linkRow(
-  t: TFunction, label: string, id: string | null | undefined, link: HeadLink | null | undefined,
-  onOpenSession: ((session: Session) => void) | undefined,
-): DetailRow {
-  if (!id) return { label, value: null };
-  if (!link || link.session.id !== id) return { label, value: id, mono: true };
-  return {
-    label,
-    value: (
-      <>
-        <span>{link.title}</span>
-        {onOpenSession && (
-          <button
-            type="button"
-            onClick={() => onOpenSession(link.session)}
-            className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
-          >
-            {t('work.head.openSession')}
-          </button>
-        )}
-      </>
-    ),
-  };
-}
-
-/**
- * The record's note about how the session stands (LANG1b): Daoris's lines worded in the reader's language, someone's
- * words as written, a record from before as it was kept. Long is judged on what is shown, a block at least a line each.
- */
-function Said({ note, parts }: { note?: string | null; parts?: Session['noteParts'] }) {
-  const { t, i18n } = useTranslation();
-  const [whole, setWhole] = useState(false);
-  const blocks = noteBlocks(t, noteLines(t, { note, parts }, i18n.language));
-  const shown = blocks.reduce((count, block) => count + block.text.split('\n').length, 0);
-  const long = blocks.reduce((count, block) => count + block.text.length, 0) > 280 || shown > NOTE_LINES;
-  return (
-    <div className="grid justify-items-start gap-1">
-      <Note
-        note={note}
-        parts={parts}
-        clamp={whole ? undefined : NOTE_LINES}
-        className="w-full text-body leading-relaxed text-ink-soft"
-      />
-      {long && (
-        <Button variant="ghost" className="px-0 py-0 text-small" onClick={() => setWhole((was) => !was)}>
-          {t(whole ? 'work.head.noteLess' : 'work.head.noteMore')}
-        </Button>
-      )}
-    </div>
-  );
-}
-
-/**
- * What its own tree left, and whether the person has anything to do about it (SESS1 S10, SESS2 H4). A failed or superseded
- * attempt's branch whose tree is gone is discarded here (LAND3b, D102's LAND3 note), asking once under the line: no clean-up
- * takes its commits, and the review has no tree left to discard. While the tree is here, the review's Discard serves.
- */
-function Left({ branch, onReview, onDiscard, discarding = false }: {
-  branch: SweepBranch;
-  onReview?: () => void;
-  onDiscard?: (answered: Answered) => void;
-  discarding?: boolean;
-}) {
-  const { t } = useTranslation();
-  const [asking, setAsking] = useState(false);
-  const theirs = branch.kind === 'unlanded' || branch.kind === 'dirty';
-  const discardable = Boolean(onDiscard && !branch.hasTree && branch.discardable);
-  return (
-    <>
-      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
-        <span className="text-ink-faint">{t('work.head.itsWork')}</span>
-        <span className={theirs ? 'text-ink-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
-        {/* Whole, as a branch row's name is (UXFIX4b): it wraps after its separators on this line's own row, never cut. */}
-        <PathText path={branch.branch} className="min-w-0 text-meta text-ink-faint" />
-        {theirs && onReview && (
-          <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>
-        )}
-        {discardable && !asking && (
-          <Button variant="danger" className="px-2 py-0.5 text-small" disabled={discarding} onClick={() => setAsking(true)}>
-            {t('settings.sweep.discard')}
-          </Button>
-        )}
-      </p>
-      {/* Open until the discard answers, a branch the driver kept said inside it (UXFIX2). */}
-      {discardable && asking && (
-        <DiscardBranchAsk branch={branch} busy={discarding} onDiscard={onDiscard!} onClose={() => setAsking(false)} />
-      )}
-    </>
-  );
-}
-
-/** Whether a session's branch landed, in a few words for the head (D88's proof). */
-function landed(t: (key: string, options?: Record<string, unknown>) => string, branch: SweepBranch): string {
-  switch (branch.kind) {
-    case 'empty': return t('work.head.landed.empty', { line: branch.where ?? '' });
-    case 'landed': return branch.where ? t('work.head.landed.on', { where: branch.where }) : t('work.head.landed.somewhere');
-    case 'unlanded': return t('work.head.landed.not', { count: branch.commits });
-    case 'dirty': return t('work.head.landed.dirty');
-    default: return t('work.head.landed.inUse');
-  }
-}

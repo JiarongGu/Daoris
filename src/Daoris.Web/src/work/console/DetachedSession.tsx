@@ -9,7 +9,7 @@ import { sentence } from '../../locales/format';
 import { SessionConsole } from './SessionConsole';
 import { AttendedSession } from '../AttendedSession';
 import { useDetachedPanel } from '../frame/closings';
-import { OutputPanel, PANEL_MIN } from '../frame/frame';
+import { OutputPanel, PANEL_MIN } from '../frame/OutputPanel';
 import { isIntake, sessionOrigin } from '../identity';
 import { SessionConversation } from '../conversation/SessionConversation';
 import { panelTabs } from './streams';

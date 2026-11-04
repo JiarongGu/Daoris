@@ -4,7 +4,7 @@ import type { SetUpRef } from '../../data/api';
 import { clockOf, elapsed } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import type { TrustHold } from '../../data/signals';
-import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
+import { Button, Dot, Icon, Inline } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
@@ -14,13 +14,13 @@ import {
   type StaleSince,
 } from './attention';
 import { Note } from '../Note';
-import { type Answered, InlineConfirm } from '../InlineConfirm';
+import type { Answered } from '../InlineConfirm';
 import { hasNote, type NoteRecord } from '../noteLines';
-import { type OpinionWait, opinionState } from '../gates/opinion';
-import { unsettledWords } from '../gates/OpinionGate';
+import type { OpinionWait } from '../gates/opinion';
 import type { PermissionWait } from '../waits/PermissionAsks';
 import type { AnswerWait } from '../waits/AnswerAlone';
-import { TrustAsk } from '../waits/TrustAsk';
+import { AskOnce } from './AskOnce';
+import { AT_AN_AGENT, DOOR_ONLY, HANDLER, IN_A_CIRCLE, INTEGRATION_LABEL } from './rowRules';
 
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
@@ -251,100 +251,6 @@ export type AttentionActs = {
   quiet?: (item: Attention, act: 'carry-on' | 'hand-over' | 'stop' | 'leave', answered?: Answered) => void;
   /** A run's `work.requests` node passed over, with the person's words, as the run's view passes it (INTEGRATE1o part o3). */
   passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on') => void;
-};
-
-/** Which handler each act needs. */
-const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
-  publish: 'publish',
-  choose: 'publish',
-  retry: 'retry',
-  approve: 'answer',
-  refuse: 'answer',
-  trust: 'trust',
-  'accept-departure': 'acceptDeparture',
-  'accept-rule': 'acceptRule',
-  'decline-rule': 'declineRule',
-  'sign-in': 'signIn',
-  'sign-in-new': 'signInNew',
-  read: 'read',
-  reviewed: 'reviewed',
-  'not-yet': 'notYet',
-  'show-again': 'showAgain',
-  'opinion-again': 'opinionAgain',
-  'opinion-anyway': 'opinionAnyway',
-  'let-ask': 'helper',
-  'not-now': 'helper',
-  'hand-over': 'handOver',
-  'keep-agent': 'handOver',
-  'allow-once': 'permission',
-  'refuse-once': 'permission',
-  'refuse-always': 'permission',
-  'go-on-answer': 'answerAlone',
-  'keep-answer': 'answerAlone',
-  happened: 'held',
-  'did-not': 'held',
-  'stop-step': 'held',
-  'record-close': 'held',
-  'resend-close': 'held',
-  'stop-close': 'held',
-  'open-records': 'openRecords',
-  'again-step': 'held',
-  'stop-partial': 'held',
-  'git-try-again': 'gitTryAgain',
-  'git-set-up': 'gitSetUp',
-  'git-keep-own': 'gitSetUp',
-  'git-copy-key': 'gitSetUp',
-  'git-sign-in': 'gitSetUp',
-  'git-open': 'gitSetUp',
-  'git-compare': 'gitSetUp',
-  'git-key-page': 'gitKeyPage',
-  'git-choose': 'gitChoose',
-  'git-use-own': 'gitChoose',
-  'git-read-only': 'gitReadOnly',
-  'git-allow': 'gitAnswer',
-  'git-refuse': 'gitAnswer',
-  'quiet-carry-on': 'quiet',
-  'quiet-hand-over': 'quiet',
-  'quiet-stop': 'quiet',
-  'quiet-leave': 'quiet',
-  'pass-over': 'passOver',
-  'ask-again': 'passOver',
-  'go-on': 'passOver',
-};
-
-/** The kinds that wait in a circle rather than in a repository. */
-const IN_A_CIRCLE: ReadonlySet<Attention['kind']> = new Set(['proposal', 'intake']);
-
-/** An integration row's kind, said by its wait (INTEGRATE1h). */
-const INTEGRATION_LABEL: Readonly<Record<IntegrationWait['wait'], string>> = {
-  decide: 'work.attention.integrationDecide',
-  superseded: 'work.attention.integrationSuperseded',
-  card: 'work.attention.integrationCard',
-  declaration: 'work.attention.integrationDeclaration',
-};
-
-/** The kinds whose door is an agent's page, named by the agent rather than *Open* (UX6d): the door says where it goes. */
-const AT_AN_AGENT: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
-
-/**
- * The kinds whose door is their one control, since their answer needs reading first (design §6.3): a park's question in
- * Sessions, an intake's on its ask, a review in Sessions with its review open (D113). Each is a button naming that.
- */
-const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string, Record<string, unknown>?]>> = {
-  parked: () => ['work.attention.door.answer'],
-  intake: (item) => ['work.attention.door.intake', { id: item.id }],
-  review: () => ['work.attention.door.review'],
-  // HELPERWAIT1c: a refused move back to the person is looked at on its session's page, where its tree and its helper's card are.
-  'helper-ended': () => ['work.attention.door.open'],
-  // KNOWCENTRAL2e: the decisions are made on the session's page, in its Memory section, where each row's words are read first.
-  memory: () => ['work.attention.door.open'],
-  // INTEGRATE1h: a decide, an answer and a request are pressed on the repository's Integration tab, beside the candidate and its steps.
-  // A declaration owed acceptance is read and accepted on the repository's set-up page instead (§5.8); the row never accepts it.
-  integration: (item) => [item.integration?.wait === 'declaration' ? 'work.attention.door.integrationDeclaration' : 'work.attention.door.integration'],
-  // CONFIRMSEEN1: a terminal's press is answered on its card, which shows every value it carries; the row never answers it.
-  confirmation: () => ['work.attention.door.confirmation'],
-  // KEEP1f: what else goes below the floor is chosen on the *Disk space* card's press, where every unit is listed first.
-  space: () => ['work.attention.door.space'],
 };
 
 /**
@@ -647,127 +553,3 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
   );
 }
 
-/**
- * The question an act asks once under its row (D41 §4): what the second press will do, then the move and *Never mind*.
- * A folder's trust is the agent's own question (`TrustAsk`); a go-ahead's yes or no takes the person's words; a choice of
- * receiver is the workspace's receivers. Named by the act's own label, so a person and a test find it as the press they made.
- */
-function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onCancel, onConfirm, onGrant }: {
-  act: AttentionActId;
-  item: Attention;
-  label: string;
-  busy: boolean;
-  words: string;
-  onWords: (words: string) => void;
-  choice: string;
-  onChoice: (choice: string) => void;
-  onCancel: () => void;
-  onConfirm: (answered: Answered) => void;
-  /** A folder's trust, in its own question: told how the grant ended, it closes only once it landed (UXFIX2b3b). */
-  onGrant: (answered: Answered) => void;
-}) {
-  const { t } = useTranslation();
-  if (act === 'trust' && item.trust) {
-    return (
-      <div className="mt-2">
-        <TrustAsk
-          hold={{ ...item.trust, ...(item.quest ? { quest: item.quest } : {}), ...(item.ask ? { ask: item.ask } : {}) }}
-          busy={busy}
-          onGrant={onGrant}
-          onCancel={onCancel}
-        />
-      </div>
-    );
-  }
-  const answering = act === 'approve' || act === 'refuse';
-  // A *not yet* needs words: they are what the set-up step's session acts on (REVIEWENV1g, design §3.3).
-  const notYet = act === 'not-yet';
-  // *Go on anyway…* says what stays unsettled, and takes words the person may give (XAGENT1g, the second-agent design §8.5).
-  const anyway = act === 'opinion-anyway' && item.opinion ? item.opinion.opinion : null;
-  // INTEGRATE1o part o3: passing a run's declined request over needs the person's words, which the run's record keeps with the skip.
-  const passOver = act === 'pass-over';
-  // INTEGRATE1p (C33): a declined request of the run's own, asked again (nothing to say) or gone on without (the person's words).
-  const askAgain = act === 'ask-again';
-  const goOn = act === 'go-on';
-  // SESSWATCH1a: what ending a quiet session does, and that the person's waiting words go to the next part (§5.2).
-  const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';
-  const quietSays = act === 'quiet-carry-on' ? 'work.attention.ask.carryOn'
-    : item.quiet?.intake ? 'work.attention.ask.quietStopIntake' : 'work.attention.ask.quietStop';
-  const sentence = quietAsk
-    ? [t(quietSays), ...(act === 'quiet-carry-on' && item.quiet?.words ? [t('work.attention.quietWords')] : [])].join(' ')
-    : anyway
-    ? t('opinion.ask.anyway', { unsettled: unsettledWords(t, opinionState(anyway.state), anyway) })
-    : passOver
-    ? t('workflow.run.node.skipSays', { node: item.declined?.node ?? '' })
-    : askAgain
-    ? t('workflow.run.node.askAgainSays', { node: item.declined?.node ?? '' })
-    : goOn
-    ? t('workflow.run.node.goOnSays', { node: item.declined?.node ?? '' })
-    : notYet
-    ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
-    : act === 'approve'
-      ? t('work.attention.ask.approve', { id: item.ask ?? '' })
-      : act === 'refuse'
-        // GOAHEADSTALE1: a stale one's refusal sends no session on, since none waits for it.
-        ? t(item.stale ? 'work.attention.ask.refuseStale' : 'work.attention.ask.refuse', { id: item.ask ?? '' })
-        : act === 'accept-rule'
-          ? t('work.attention.ask.acceptRule', { change: item.title })
-          : t('work.attention.ask.choose', { workspace: item.where });
-  const move = act === 'quiet-carry-on'
-    ? t('work.attention.act.carryOn')
-    : act === 'quiet-stop'
-    ? t('work.act.stopMeanIt')
-    : anyway
-    ? t('opinion.ask.anywayMeanIt')
-    : passOver
-    ? t('workflow.run.node.skipMeanIt')
-    : askAgain
-    ? t('workflow.run.node.askAgainMeanIt')
-    : goOn
-    ? t('workflow.run.node.goOnMeanIt')
-    : notYet
-    ? t('review.ask.notYetMeanIt')
-    : act === 'approve'
-      ? t('asks.goAhead.approve')
-      : act === 'refuse'
-        ? t('asks.goAhead.refuse')
-        : act === 'accept-rule'
-          ? t('work.attention.act.allowRule')
-          : t('asks.record.publish');
-  // The words a go-ahead's answer, a second opinion's gate or a *not yet* takes, in the one field each names.
-  const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords')
-    : passOver ? t('workflow.run.node.skipWords') : goOn ? t('workflow.run.node.goOnWords') : null;
-  return (
-    // Only a refusal ends or removes something (platform UX §4): every other ask here is outward and loses nothing.
-    <InlineConfirm
-      className="mt-2"
-      tone={act === 'refuse' || quietAsk ? 'danger' : 'primary'}
-      label={label}
-      says={<Inline text={sentence} />}
-      meanIt={move}
-      busy={busy}
-      ready={!(act === 'choose' && !choice) && !((notYet || passOver || goOn) && !words.trim())}
-      onConfirm={onConfirm}
-      onClose={onCancel}
-    >
-      {wordsLabel && (
-        <input
-          aria-label={wordsLabel}
-          placeholder={wordsLabel}
-          value={words}
-          onChange={(event) => onWords(event.target.value)}
-          className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-        />
-      )}
-      {act === 'choose' && (
-        <SelectField
-          value={choice}
-          onChange={onChoice}
-          ariaLabel={t('work.attention.ask.choosePlaceholder')}
-          placeholder={t('work.attention.ask.choosePlaceholder')}
-          options={(item.choices ?? []).map((name) => ({ value: name, label: name }))}
-        />
-      )}
-    </InlineConfirm>
-  );
-}

@@ -411,7 +411,7 @@ const STATUS_AS_SVG_TEXT = /<text\b[^>]*?(?<![\w-])(fill-st-(?:open|taken|done|d
  */
 const HUE_AS_COLOUR: Record<string, { hits: string[]; reason: string }> = {
   './work/frame/frame.tsx': { hits: ['text-st-open'], reason: "a mark: the status bar's setup icon, beside its words in the ink" },
-  './work/conversation/ConversationView.tsx': {
+  './work/conversation/BlockLines.tsx': {
     hits: ['text-st-done'], reason: "a mark: a finished plan entry's check, aria-hidden beside its words",
   },
 };

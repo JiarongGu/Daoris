@@ -2,22 +2,21 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clockOf, compact, elapsed, moment, span } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { Button, Chip, Dot, Icon, Inline, Tip } from '../../design/ui';
-import type { NotePart } from '../../data/api';
+import { Button, Chip, Dot, Icon, Tip } from '../../design/ui';
 import { turnEnd } from '../waits/anchors';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
 import {
-  type Ask, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
-  type Turn,
+  type Ask, type Block, type Level, type Receipts, runCount, type RunningCall, runningCall, segments, type Turn,
 } from './conversation';
 import type { Author } from './sender';
 import { useNow } from '../useNow';
 import type { AccountNames } from '../accountNames';
 import { HandedAccount } from './HandedAccount';
+import { PlanView, RawLine, ThoughtRow } from './BlockLines';
+import { CannotLine, CodedLine, handedTo, HandedLine, NewSessionDoor, NoteLine, WentLine } from './NoteLines';
+import { type Cooling, SaidDoors } from './saidDoors';
 import { Markdown } from './Markdown';
-import { Note } from '../Note';
-import { noteText } from '../noteLines';
-import { briefOffered, type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from '../say';
+import type { ReasonValues } from '../say';
 import { ToolCard } from './ToolCard';
 import { ExchangeCardView, TakenLine } from './ExchangeCard';
 import { type Exchanges, NO_EXCHANGES } from './exchanges';
@@ -29,44 +28,6 @@ import type { Wait } from '../waits/waits';
  * block carries the line. No way, no marks.
  */
 const WaitMarks = createContext<{ marks?: Readonly<Record<string, readonly Wait[]>>; onToWait?: (wait: Wait) => void }>({});
-
-/**
- * Words a cooling account holds (MSG1g2, D137 §2.2): a resume asks for the account its record ran on, so while that account
- * cools the words wait for its reset, and *Go on in a new session* carries them on now, without this conversation.
- */
-export type Cooling = {
-  /** When the account cools until (ISO 8601), which the held line names. */
-  until: string;
-  /** The quest the session served, which a refusal names. */
-  quest?: string | null;
-  /** *Go on in a new session*; absent, the held line alone. */
-  onGoOnNew?: () => void;
-  /** The press is on its way. */
-  pending?: boolean;
-  /** What the press came to, once the route answered. */
-  answer?: NewSessionAnswer | null;
-};
-
-/**
- * What the person's words to a session that parked or ended need below the conversation (MSG1f, D137 §3.1): whether it
- * is a chat, the doors a note about them offers, what a reason may name, and a cool-off that holds them (MSG1g2). Handed
- * down by the view itself, so a block deep in a turn reads it without every level between carrying it.
- */
-type Said = {
-  chat: boolean;
-  onSession?: (id: string) => void;
-  onStartFrom?: (words: string[]) => void;
-  /** *Go on with Daoris's brief* (SESSCTX1c part B): the session's words go on in a new part of it, handed Daoris's brief. */
-  onGoOnBrief?: () => void;
-  /** *Say it again* (COWORK1c): the person's own words that may have reached the agent, said anew. */
-  onSayAgain?: (words: string[]) => void;
-  reasons: ReasonValues;
-  cooling?: Cooling;
-  /** What the person calls each account (NOTENAME1), for a driver's note that names one. */
-  names?: AccountNames;
-};
-
-const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
 
 /**
  * The requests the session's agent made, each drawn as its card at its call (COMMS1h, the comms design §7): the cards, the doors to a
@@ -527,10 +488,6 @@ const heldKey = (reaches: string | null | undefined, chat: boolean, level?: Leve
   return 'work.conversation.held.turnEnd';
 };
 
-/** Words waiting at a record's foot that no driver's note has settled: what a cool-off holds (MSG1g2). */
-const waitingWords = (turn: Turn) =>
-  turn.items.filter((item) => item.kind === 'held' && item.reaches === 'resume' && !item.settled && !item.unreached);
-
 /**
  * The person's words to a session, waiting to reach it (STEER1, D136; MSG1f, D137 §3.1): theirs, as written, dashed as
  * the composer's waiting words are, and saying when the session reads them — at its next step, at its turn's end, or as
@@ -582,144 +539,6 @@ function ChoiceWords({ choice, text, className }: { choice: string; text: string
       </p>
       {own && <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body', className)}>{own}</p>}
     </>
-  );
-}
-
-/** Never in a sentence: where a session's id goes, so the sentence can be cut around its door. */
-const DOOR = '⁣';
-
-/**
- * The person's words went to a new session (MSG1f, D137 §3.1): said in the page's words, the session a door to it, once,
- * where the words were shown. A reason the page cannot word leaves the driver's own line, which names it too.
- */
-function WentLine({ block }: { block: Block }) {
-  const { t } = useTranslation();
-  const { onSession, reasons } = useContext(SaidDoors);
-  const why = block.why ? reasonOf(t, block.why, reasons) : null;
-  if (!why || !block.to) return <NoteLine text={block.text ?? ''} />;
-  const to = block.to;
-  const [before, ...after] = t('work.conversation.went', { id: DOOR, why }).split(DOOR);
-
-  return (
-    <p className="m-0 text-small text-ink-soft">
-      {before}
-      {onSession
-        ? (
-          <button
-            type="button"
-            onClick={() => onSession(to)}
-            className="cursor-pointer border-0 bg-transparent p-0 font-mono text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
-          >
-            {to}
-          </button>
-        )
-        : <span className="font-mono">{to}</span>}
-      {after.join(to)}
-    </p>
-  );
-}
-
-/** The conversation a `chat.handed-over` line names (MIXAGENT1b-i), or null for any other note. */
-const handedTo = (block: Block): string | null => {
-  const part = block.parts?.find((each) => each.code === 'chat.handed-over');
-  const session = part && 'values' in part ? part.values?.session : undefined;
-  return typeof session === 'string' && session ? session : null;
-};
-
-/**
- * A conversation that went on with another agent (MIXAGENT1b-i, D163): its own last line, worded by its parts, and where this
- * page can open a session, one press to the conversation it went on in, as a started session is a door in *went*.
- */
-function HandedLine({ block, to }: { block: Block; to: string }) {
-  const { t } = useTranslation();
-  const { onSession } = useContext(SaidDoors);
-  return (
-    <div className="grid justify-items-start gap-1.5">
-      <NoteLine text={block.text ?? ''} parts={block.parts} />
-      {onSession && <Button onClick={() => onSession(to)}>{t('work.handOver.open', { session: to })}</Button>}
-    </div>
-  );
-}
-
-/**
- * The person's words cannot go on in this session (MSG1f, D137 §2.2): why, in the page's words, and one press that starts
- * a conversation with them — the person's, since a new conversation has none of this one's context. The press only where
- * the page holds every word the note names, so what it starts with is what they said. Where the words wait for the person on a
- * reason that leaves a tree to go on in (SESSCTX1c part B), or a driven session's tree is gone (TREEGONE2), *Go on with Daoris's brief*
- * goes first beside it: a new part of the same session, handed Daoris's brief, so it keeps the context the fresh start does not.
- */
-function CannotLine({ block }: { block: Block }) {
-  const { t } = useTranslation();
-  const { chat, onStartFrom, onGoOnBrief, reasons } = useContext(SaidDoors);
-  const why = block.why ? reasonOf(t, block.why, reasons) : null;
-  if (!why) return <NoteLine text={block.text ?? ''} parts={block.parts} />;
-  const said = block.said;
-  const brief = onGoOnBrief && briefOffered(block.why ?? '', chat) && said && said.length > 0;
-
-  return (
-    <div className="grid justify-items-start gap-1.5">
-      <p className="m-0 text-small text-ink-soft">{t('work.say.cannot', { why })}</p>
-      {(brief || (onStartFrom && said && said.length > 0)) && (
-        <div className="flex flex-wrap gap-2">
-          {brief && <Button onClick={() => onGoOnBrief!()}>{t('work.say.goOnBrief')}</Button>}
-          {onStartFrom && said && said.length > 0 && (
-            <Button onClick={() => onStartFrom(said)}>{t('work.say.startChat')}</Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * A driver's note the page words itself (MSG1c3, D142 point 1): its code's sentence in the reader's language, said as the
- * went line is, where the word it names was shown. A code this page does not know leaves the driver's English line.
- */
-function CodedLine({ block }: { block: Block }) {
-  const { t } = useTranslation();
-  const { onSayAgain } = useContext(SaidDoors);
-  const key = block.code ? CONVERSATION_CODES[block.code] : undefined;
-  if (!key) return <NoteLine text={block.text ?? ''} />;
-  // *Say it again* (COWORK1c, the design §6): the person's own words that may have reached the agent were never sent again; saying
-  // them anew is theirs to press. Never Daoris's words nor another agent's.
-  const again = block.code === 'lost' && block.persons && block.said?.length && onSayAgain ? block.said : null;
-  if (!again) return <p className="m-0 text-small text-ink-soft">{t(key)}</p>;
-  return (
-    <div className="grid justify-items-start gap-1.5">
-      <p className="m-0 text-small text-ink-soft">{t(key)}</p>
-      <Button onClick={() => onSayAgain!(again)}>{t('work.conversation.sayAgain')}</Button>
-    </div>
-  );
-}
-
-/**
- * *Go on in a new session* (MSG1g2, D137 §2.2), under words a cooling account holds: what it costs (the new session starts
- * without this conversation's context, so it is the person's press), the press, and then what it came to in the page's
- * words. Where nothing carries the words on by itself, a conversation or a closed quest's session, MSG1f's press starts a
- * conversation with every word waiting. The press is offered again only for a choice the driver could not keep.
- */
-function NewSessionDoor({ turn }: { turn: Turn }) {
-  const { t } = useTranslation();
-  const { cooling, onStartFrom } = useContext(SaidDoors);
-  const words = waitingWords(turn);
-  if (!cooling?.onGoOnNew || words.length === 0) return null;
-  const { answer, onGoOnNew, pending, quest } = cooling;
-  const said = answer ? newSessionSaid(t, answer, { quest }) : null;
-  const again = !answer || (!answer.sent && !answer.why);
-
-  return (
-    <div className="grid justify-items-start gap-1.5">
-      {said && <p className="m-0 text-small text-ink-soft">{said.sentence}</p>}
-      {again && (
-        <>
-          {!said && <p className="m-0 text-small text-ink-soft">{t('work.say.newSession.loses')}</p>}
-          <Button onClick={onGoOnNew} disabled={pending}>{t('work.say.goOnNew')}</Button>
-        </>
-      )}
-      {said?.startChat && onStartFrom && (
-        <Button onClick={() => onStartFrom(words.map((word) => word.text ?? ''))}>{t('work.say.startChat')}</Button>
-      )}
-    </div>
   );
 }
 
@@ -807,140 +626,3 @@ function RunView({ items, open: startsOpen, tree, reveal }: {
   );
 }
 
-/** The agent's reasoning: its first line, and the whole on a press. */
-function ThoughtRow({ text }: { text: string }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const first = text.trim().split('\n', 1)[0] ?? '';
-
-  return (
-    <div className="text-small text-ink-soft">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((was) => !was)}
-        className="flex w-full min-w-0 items-center gap-1.5 border-0 bg-transparent p-0 text-left text-ink-soft hover:text-ink"
-      >
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} className="shrink-0" />
-        <Icon name="think" size={13} className="shrink-0" />
-        <span className="shrink-0">{t('work.conversation.thought')}</span>
-        {!open && <span className="min-w-0 truncate italic text-ink-faint">{first}</span>}
-      </button>
-      {open && (
-        <div className="mt-1 border-l-2 border-line pl-3 italic">
-          <Markdown text={text} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-const PLAN_MARK: Record<string, string> = { completed: '✓', in_progress: '◐', pending: '○' };
-
-/** The agent's plan, as it last stood. */
-function PlanView({ entries }: { entries: PlanEntry[] }) {
-  const { t } = useTranslation();
-  return (
-    <div className="rounded-control border border-line bg-raised px-3 py-2">
-      <span className="flex items-center gap-1.5 text-meta text-ink-faint">
-        <Icon name="plan" size={13} />
-        {t('work.conversation.plan')}
-      </span>
-      <ol className="m-0 mt-1 grid list-none gap-0.5 p-0">
-        {entries.map((entry, index) => (
-          // Done is a check, never a strike-through: struck text reads as cancelled (CONV2's look).
-          <li key={index} className={cn('flex gap-2 text-small', entry.status === 'completed' ? 'text-ink-soft' : 'text-ink')}>
-            <span
-              aria-hidden
-              className={cn(
-                'w-3 shrink-0 text-center',
-                entry.status === 'completed' ? 'text-st-done' : entry.status === 'in_progress' ? 'text-accent' : 'text-ink-faint',
-              )}
-            >
-              {PLAN_MARK[entry.status ?? ''] ?? '○'}
-            </span>
-            {entry.content}
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
-/** How long a driver's note may be before it shows two lines and the rest on a press. */
-const LONG_NOTE = 240;
-
-/**
- * The driver's own sentence about the session — a refusal, a missing connector. A long one shows two
- * lines and the rest on a press (SESS1 S6): records written before the refusal named its call carry the
- * request's JSON, four lines each, and nothing reads that JSON to shorten it.
- *
- * A note with parts (CONVNOTE1: a refused sign-in since SIGNIN1b, a landing's line since LAND2b, the opening line since
- * UX7d-1) is worded from them as a session record's note is (`Note`, LANG1b): each coded line in the reader's language, and a
- * line the page cannot word as its record keeps it, marked. Its English is shown only where it has none, its backticks
- * drawn as code as a worded line's are (UX7d-1), never as backticks.
- */
-function NoteLine({ text, parts, under }: { text: string; parts?: readonly NotePart[]; under?: readonly Block[] }) {
-  const { t, i18n } = useTranslation();
-  const { names } = useContext(SaidDoors);
-  const worded = parts?.length ? noteText(t, { note: text, parts }, i18n.language, names) : text;
-  const long = worded.length > LONG_NOTE;
-  const [open, setOpen] = useState(!long);
-  const [unfolded, setUnfolded] = useState(false);
-  return (
-    <div className="text-small text-ink-soft">
-      <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
-        <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
-        {parts?.length ? <Note note={text} parts={parts} names={names} compact /> : <Inline text={text} />}
-      </p>
-      {long && (
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen((was) => !was)}
-          className="border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
-        >
-          {open ? t('work.conversation.hide') : t('work.conversation.show')}
-        </button>
-      )}
-      {/* The opening line of a part that began by a move (SWITCHCTX1c-i), folded under its boundary as a brief is. */}
-      {under && under.length > 0 && (
-        <>
-          <button
-            type="button"
-            aria-expanded={unfolded}
-            onClick={() => setUnfolded((was) => !was)}
-            className="ml-2 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
-          >
-            {unfolded ? t('work.conversation.hide') : t('work.conversation.show')}
-          </button>
-          {unfolded && under.map((line) => <NoteLine key={line.key} text={line.text ?? ''} parts={line.parts} />)}
-        </>
-      )}
-    </div>
-  );
-}
-
-/** Something the wire said that this version has no kind for — kept, and shown as itself. */
-function RawLine({ block }: { block: Block }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="text-meta text-ink-faint">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((was) => !was)}
-        className="flex items-center gap-1 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
-      >
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={12} />
-        {t('work.conversation.raw', { title: block.title ?? '' })}
-      </button>
-      {open && (
-        <pre className="m-0 mt-1 max-h-48 overflow-auto whitespace-pre-wrap wrap-anywhere rounded-control bg-page px-2.5 py-1.5 font-mono">
-          {[block.text, block.raw].filter(Boolean).join('\n')}
-        </pre>
-      )}
-    </div>
-  );
-}
