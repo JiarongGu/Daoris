@@ -22,6 +22,9 @@ internal static class StaffedRoles
         return orders;
     }
 
+    /// <summary>The empty configuration on <paramref name="agent"/>: the machine's key and the roles' orders <see cref="On"/> writes.</summary>
+    public static DriverConfig Config(string agent) => DriverConfig.Empty with { Adapter = agent, Actors = On(agent) };
+
     /// <summary>Intake on <paramref name="agent"/> alone, as the role door writes it: the <c>intakeAdapter</c> key no longer turns it on.</summary>
     public static DriverConfig StaffIntake(this DriverConfig config, string agent) => ActorChoices.With(config, "intake", [new ActorChoice(agent)]);
 }

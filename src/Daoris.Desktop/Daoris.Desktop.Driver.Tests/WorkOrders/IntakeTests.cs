@@ -835,10 +835,8 @@ public sealed class IntakeTests : IDisposable
     {
         SkillsSpawnProbe.Install(_home);
         SkillsSpawnProbe.SignIn(_home);
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config(adapter) with
         {
-            Adapter = adapter,
-            Actors = StaffedRoles.On(adapter),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
         };
@@ -889,10 +887,8 @@ public sealed class IntakeTests : IDisposable
             if (argv[0] === 'auth' && argv[1] === 'status') { console.log('{"loggedIn": true}'); process.exit(0); }
             process.exit(3);
             """);
-        var config = (DriverConfig.Empty with
+        var config = (StaffedRoles.Config("claude-code") with
         {
-            Adapter = "claude-code",
-            Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", claude] },
         }).StaffIntake("claude-code");
@@ -986,10 +982,8 @@ public sealed class IntakeTests : IDisposable
             HandedText = File.ReadAllText(settingsFile);
     }
 
-    private DriverConfig Config() => DriverConfig.Empty with
+    private DriverConfig Config() => StaffedRoles.Config("stub") with
     {
-        Adapter = "stub",
-        Actors = StaffedRoles.On("stub"),
         TestBound = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
     };

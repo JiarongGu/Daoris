@@ -50,11 +50,10 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? goesOnLost = null)
     {
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = command ?? ["node", Agent(), Log, mode] },
@@ -453,11 +452,10 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         await using var service = SaidStandIn.Start(_repository);
         var processes = new SessionProcesses();
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
         };
@@ -504,11 +502,10 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         await using var service = SaidStandIn.Start(_repository);
         service.Retell("报告 \U0001F600 Serve the report", "端口 8080 \U0001F600");
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
         };
@@ -706,11 +703,10 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         File.WriteAllText(go, "");
         await using var service = SaidStandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Path.Combine(_home, "taken.flag"), go] },
         };
@@ -1620,10 +1616,8 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
                         session["state"] = to;
                         session["interrupted"] = to == "stopped" && body["interrupted"]?.GetValue<bool>() == true;
-                        // The ledger's limit flag, on the failed end that carries it, as the service keeps it. Absent otherwise, never
-                        // null: the record reads it as a flag, and a null does not read.
-                        if (to == "failed" && body["limit"]?.GetValue<bool>() == true) session["limit"] = true;
-                        else session.Remove("limit");
+                        // The ledger's limit flag, on the failed end that carries it, as the service keeps it: never a null.
+                        if (to == "failed" && body["limit"]?.GetValue<bool>() == true) session["limit"] = true; else session.Remove("limit");
                         // When it moved, as the service keeps it (HELPERWAIT1: a park made before its helper's ask was asked is not one made on it).
                         session["updated"] = DateTimeOffset.UtcNow.ToString("O");
                         if (to == "awaiting-person") session["said"] = new JsonArray();

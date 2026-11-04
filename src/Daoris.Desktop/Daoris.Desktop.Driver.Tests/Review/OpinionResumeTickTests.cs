@@ -116,11 +116,10 @@ public sealed class OpinionResumeTickTests : IDisposable
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
         await using var service = OpinionTickStandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log] },
         };
@@ -296,11 +295,10 @@ public sealed class OpinionResumeTickTests : IDisposable
     private Daoris.Driver.Driver Protocol(OpinionTickStandIn service, string mode)
     {
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
