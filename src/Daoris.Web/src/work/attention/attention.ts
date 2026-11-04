@@ -1,25 +1,21 @@
 import type { TFunction } from 'i18next';
 import i18n from '../../locales/i18n';
 import { elapsed, size } from '../../locales/format';
-import type { Ask, GoAhead, Quest, SetUpRef, Session } from '../../data/api';
-import type { RuleProposal } from '../../settings/repository/AgentRules';
+import type { Ask, GoAhead, Quest, Session } from '../../data/api';
 import { proposalAuthor, proposalChange } from '../../settings/repository/proposals';
-import { type Consideration, type TrustHold, sittingSentence } from '../../data/signals';
+import { sittingSentence } from '../../data/signals';
 import type { Tool } from '../../agents/tools';
-import type { SessionGrouping } from '../groups';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
-import { accountRowWorded, type PushedAccountFacts } from './accountWords';
+import { accountRowWorded } from './accountWords';
 import {
-  CLOSE_SENDER, endOffersStop, endSentences, entryDetail, entryName, type GraphEnd, type HeldAttempt, heldFailed, heldWhy, heldWords,
-  type MilestoneEntry, type UnreadableRecord,
+  CLOSE_SENDER, endSentences, entryDetail, entryName, type GraphEnd, type HeldAttempt, heldFailed, heldWhy, type UnreadableRecord,
 } from '../head/milestone';
-import { type OpinionWait, opinionState } from '../gates/opinion';
-import { boundMinutes, type PermissionWait } from '../waits/PermissionAsks';
-import type { AnswerWait } from '../waits/AnswerAlone';
+import { boundMinutes } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
-import type { NoteRecord } from '../noteLines';
+import { workCutFor } from './attentionCounts';
+import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
 /**
  * *What needs you*'s three groups (UX6c, design §6.2), in the order a person acts on them: what holds work up until they
@@ -29,12 +25,6 @@ export type AttentionGroup = 'holding' | 'word' | 'ready';
 
 /** The groups in the order the band shows them. */
 export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready'];
-
-/**
- * A stale go-ahead's mark (GOAHEADSTALE1), as .NET judges it: since when nothing on its ask could still use its answer, the last thing on
- * its ask moving; null where no moment reads.
- */
-export type StaleSince = { since: string | null };
 
 /**
  * Each kind's group (design §6.2). **Holding work**: a parked session holds its tree, a parked quest its repository's next
@@ -123,118 +113,8 @@ export function attentionGroup(row: { kind: AttentionKind; stands?: boolean; sta
   return ATTENTION_GROUP[row.kind] ?? 'word';
 }
 
-/**
- * What *What needs you* lists and the bell counts (NOTIFY2b §2.2; NEEDSSCOPE1): every row of the window's scope but a press's own,
- * whose card is drawn from the confirmation channel. The bell, the taskbar, *Notifications*' group and Overview's summary read this
- * one answer, so a count never holds a row the list does not.
- */
-export function needsListed<T extends { kind: string; id?: string; obligation?: string }>(rows: readonly T[]): T[] {
-  // COMMS1j: each obligation once, the first row that names it standing for it.
-  const seen = new Set<string>();
-  return rows.filter((row) => {
-    if (row.kind === 'confirmation') return false;
-    const key = obligationOf(row);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-/**
- * The obligation a row is (COMMS1j, the comms design §4.1 clause 3): the exchange's id .NET keys it by where it names one (a go-ahead's
- * `go-ahead:<ask>/<n>`), else its kind and id, which for a helper's and a hand-over's ask is that exchange's id already.
- */
-export const obligationOf = (row: { kind: string; id?: string; obligation?: string }): string => row.obligation ?? `${row.kind}:${row.id ?? ''}`;
-
-/**
- * The bell's count (NOTIFY2b, the notification design §2.1; COMMS1j): each press of either source once, and each obligation of
- * *What needs you* once. A message unread in a channel is no obligation, and is marked by the channel's own dot, never counted here.
- */
-export const bellCount = (presses: readonly unknown[], rows: readonly { kind: string; id?: string; obligation?: string }[]): number =>
-  presses.length + needsListed(rows).length;
-
-/** The places of the activity bar a wait can be counted at (BADGEUX1): those a row's door opens. */
-export type AttentionPlace = 'sessions' | 'quests' | 'projects' | 'agents' | 'settings';
-
-/**
- * The place each kind is counted at (BADGEUX1, the UI/UX design §3.10): the place its door opens (`App.tsx`'s `attentionDoors`),
- * where its step is taken, so a place's number is what the person finds to do there. A press is the bell's alone, its card in
- * *Notifications*. Typed over every kind, so a new kind is placed when it is added.
- */
-export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | null>> = {
-  // A session's page holds its answer, its review, its gate, its helper's and hand-over's yes and no, its held call and answer.
-  parked: 'sessions',
-  review: 'sessions',
-  opinion: 'sessions',
-  helper: 'sessions',
-  'hand-over': 'sessions',
-  permission: 'sessions',
-  answer: 'sessions',
-  // SESSWATCH1a: a quiet session's page holds its presses too.
-  quiet: 'sessions',
-  // HELPERWAIT1c: a refused move back to the person opens its session, as its park would.
-  'helper-ended': 'sessions',
-  // KNOWCENTRAL2e: the session's page holds its Memory section, where the person approves, declines, keeps or drops.
-  memory: 'sessions',
-  // An ask's page or a quest's: publishing, an intake's question, a quest nobody can take, *Try again*, a go-ahead on its ask, a
-  // departure's yes, a set-up's review, a folder's trust for what it holds.
-  proposal: 'quests',
-  intake: 'quests',
-  unanswerable: 'quests',
-  'parked-quest': 'quests',
-  'steward-stopped': 'quests',
-  'policy-hold': 'quests',
-  // INTEGRATE1o part o3: the run's door opens its quest, where the work and its declined request are read.
-  'request-declined': 'quests',
-  'go-ahead': 'quests',
-  departure: 'quests',
-  'set-up': 'quests',
-  trust: 'quests',
-  // The workspace's Branches, where the clean-up's press is. Its row's door is the row's own (`placeOf`): a branch cut for a session
-  // the page holds opens that session, and a held attempt's presses are on its row alone.
-  work: 'projects',
-  // INTEGRATE1h: the repository's Integration tab, where the decide, the answer and the request are pressed.
-  integration: 'projects',
-  // What agents may do, and an agent's accounts.
-  rule: 'agents',
-  'account-wait': 'agents',
-  'signed-out': 'agents',
-  // This Daoris's *Disk space* card.
-  space: 'settings',
-  confirmation: null,
-  // A held git remote (GITAUTH1a): *Try again* is on the row itself; the identity it waits for is set in Settings → Git (GITAUTH1e), so the
-  // place counts it there, as it counts Disk space.
-  'git-held': 'settings',
-  // A git go-ahead (GITAUTH1f): its session's page draws it in its head and foot, where it is answered too.
-  'git-ask': 'sessions',
-};
-
-/** The sessions a place is judged with: those the page holds, for the branch a unit of work was cut for (`workCutFor`). */
-type PlaceSessions = readonly Pick<Session, 'id' | 'repository' | 'tree'>[] | undefined;
-
-/**
- * The place a row is counted at (BADGEUX1): its kind's, but a unit of work's, whose door is the row's own (`App.tsx`'s
- * `attentionDoors.work`, Codex's read of §3.10): a held attempt is settled on its row alone, in the bell's view, so no place counts
- * it; a branch cut for a session the page holds opens that session; any other opens the workspace's Branches. A kind this build
- * does not know is counted at none, though the bell counts it.
- */
-export function placeOf(row: Pick<PushedAttention, 'kind' | 'held' | 'blocked' | 'session' | 'title' | 'where'>, sessions: PlaceSessions): AttentionPlace | null {
-  if (row.kind === 'work') return row.held ? null : workCutFor(row, sessions) ? 'sessions' : 'projects';
-  return (ATTENTION_PLACE as Readonly<Record<string, AttentionPlace | null>>)[row.kind] ?? null;
-}
-
-/**
- * How many waits each place counts (BADGEUX1): every listed row (`needsListed`) at its place (`placeOf`). A place with none is
- * absent, so it wears no number.
- */
-export function placeCounts(rows: readonly PushedAttention[], sessions?: PlaceSessions): Partial<Record<AttentionPlace, number>> {
-  const counted: Partial<Record<AttentionPlace, number>> = {};
-  for (const row of needsListed(rows)) {
-    const place = placeOf(row, sessions);
-    if (place) counted[place] = (counted[place] ?? 0) + 1;
-  }
-  return counted;
-}
+export { ATTENTION_PLACE, bellCount, needsListed, obligationOf, placeCounts, placeOf, workCutFor } from './attentionCounts';
+export type { AttentionPlace } from './attentionCounts';
 
 /**
  * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `attentionInOrder` gave it.
@@ -297,382 +177,13 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
   }
 }
 
-/** An act a row offers (design §6.2–§6.3), named as the row's press. */
-export type AttentionActId =
-  | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
-  | 'sign-in' | 'sign-in-new' | 'read' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
-  | 'let-ask' | 'not-now'
-  // NOTIFY2e: the person's yes or no to an agent's ask to hand its session over: *Hand over to {agent}*, *Not now*.
-  | 'hand-over' | 'keep-agent'
-  // AUTONOMY1b3c: the person's answer to a tool call held for them, one per choice its agent offered.
-  | 'allow-once' | 'refuse-once' | 'refuse-always'
-  // COWORK1e: the person's word on a third answer alone held for them: *Go on with this answer*, *Not now*.
-  | 'go-on-answer' | 'keep-answer'
-  // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them.
-  | 'happened' | 'did-not' | 'stop-step'
-  // FABRIC-CLOSE1q: the person's word on Daoris's own close held for them: its recoveries, and the rest of the work stopped apart.
-  | 'record-close' | 'resend-close' | 'stop-close'
-  // FABRIC-PERFORM1j: the folder a node record that does not read is kept in, opened for the person to mend it.
-  | 'open-records'
-  // FABRIC-PERFORM1k: the person's new attempt on a plugin step's failure kept for them.
-  | 'again-step'
-  // FABRIC-CLOSE1j: the stop of a close found closed only in part, its node waiting again.
-  | 'stop-partial'
-  // GITAUTH1a: a git remote held because it could not authenticate, tried again on the person's press.
-  | 'git-try-again'
-  // GITAUTH1e: a remote nothing serves, led to Settings → Git to set an identity up or to keep the person's own sign-ins.
-  | 'git-set-up' | 'git-keep-own'
-  // GITAUTH1e (§7.4): what mends a held remote by its class: Settings → Git on its host (the key to copy, a sign-in again, a host to
-  // compare and trust, the person's own sign-ins), the host's key page, the repository's git remote row, and the identity marked read only.
-  | 'git-copy-key' | 'git-key-page' | 'git-sign-in' | 'git-open' | 'git-compare' | 'git-choose' | 'git-use-own' | 'git-read-only'
-  // GITAUTH1f: a git go-ahead allowed or refused.
-  | 'git-allow' | 'git-refuse'
-  // SESSWATCH1a: a quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
-  | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave'
-  // INTEGRATE1o part o3: the run's own skip of its `work.requests` node, with the person's words.
-  | 'pass-over'
-  // INTEGRATE1p (C33): a run's own declined request, asked again or gone on without, each the run's node word.
-  | 'ask-again' | 'go-on';
+export { ASKS_ONCE, attentionActs, attentionOffers, gitHeldOffers, heldActs } from './attentionOffers';
+export type { AttentionActId, AttentionOffer } from './attentionOffers';
 
-/** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
-export function heldActs(held: HeldAttempt): AttentionActId[] {
-  const close = held.plugin === CLOSE_SENDER;
-  return heldWords(held).map((word): AttentionActId => {
-    switch (word) {
-      case 'record': return 'record-close';
-      case 'resend': return 'resend-close';
-      case 'again': return 'again-step';
-      case 'stop': return close ? 'stop-close' : 'stop-step';
-      default: return word;
-    }
-  });
-}
-
-/**
- * An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in; for a held tool call's,
- * the agent's option it answers with (AUTONOMY1b3c).
- */
-export type AttentionOffer = { act: AttentionActId; account?: string; option?: string };
-
-/** The act each kind of choice the person may make on a held tool call is pressed by (AUTONOMY1b3c); any other kind is no act here. */
-const CHOICE_ACTS: Readonly<Record<string, AttentionActId>> = {
-  allow_once: 'allow-once',
-  reject_once: 'refuse-once',
-  reject_always: 'refuse-always',
-};
-
-/**
- * What a held tool call's row offers (AUTONOMY1b3c, D184 point 3): a press per choice its agent offered, in the agent's order, each
- * answering with that choice's id. A kind the page cannot name is left to the session's page, which says it by the agent's name; and
- * where no allow was offered, none is.
- */
-function permissionOffers(item: Attention): AttentionOffer[] {
-  return (item.permission?.choices ?? [])
-    .filter((choice) => CHOICE_ACTS[choice.kind] !== undefined)
-    .map((choice) => ({ act: CHOICE_ACTS[choice.kind]!, option: choice.id }));
-}
-
-/**
- * The acts that ask once under the row before they do anything (design §6.3, D41 §4): a go-ahead's yes or no, which every
- * session on its ask is handed; a folder's trust and a widening of the rules, which widen what Daoris may do; and a choice of
- * receiver, which is a choice before it is a press.
- */
-export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
-  'choose', 'approve', 'refuse', 'trust', 'accept-rule',
-  // A *not yet* asks for the person's words, which are what the set-up step's session acts on (REVIEWENV1g).
-  'not-yet',
-  // *Go on anyway…* says what stays unsettled and takes the person's words (XAGENT1g, the second-agent design §8.5).
-  'opinion-anyway',
-  // SESSWATCH1a: ending a quiet session asks once, saying what it does and where the person's waiting words go.
-  'quiet-carry-on', 'quiet-stop',
-  // INTEGRATE1o part o3: passing a declined request over goes on without it, and keeps the person's words with the skip.
-  'pass-over',
-  // INTEGRATE1p (C33): asking again publishes a quest anew, and going on without it keeps the person's words.
-  'ask-again', 'go-on',
-]);
-
-/** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
-const ACCOUNT_ACTS = 2;
-
-/**
- * What an account's row offers (UX6d, design §6.2–§6.3), each for one account: *Sign in* to each account the start passed
- * signed out, in the order it names them, and *Read* for one it names that no read answered (§5.3: a reading only on the
- * press). No *Let … run …*: every account of Daoris's serves every workspace (POOL1c; the account-pool design §4.3). A
- * signed-out account's own row signs it in. Never the tool's own sign-in, which is the person's, nor where Daoris runs no
- * sign-in for the agent.
- * Where no Daoris account is signed in, *Sign in for Daoris* leads (OWNSPACE1b-B, D175 point 7): it names no account, and runs
- * the add flow's sign-in in place. Two at most: the rest are on the agent's page, the row's door, and its line says them.
- */
-function accountOffers(item: Attention): AttentionOffer[] {
-  const facts = item.account;
-  if (!facts) return [];
-  const signIns: AttentionOffer[] = facts.signsIn
-    ? [
-      ...(facts.noAccount ? [{ act: 'sign-in-new' } as const] : []),
-      ...facts.named.filter((one) => one.state === 'out' && one.id).map((one) => ({ act: 'sign-in' as const, account: one.id! })),
-    ]
-    : [];
-  if (item.kind === 'signed-out') return signIns.slice(0, 1);
-  return [
-    ...signIns,
-    ...facts.named.filter((one) => one.state === 'unknown' && one.id && !one.read).map((one) => ({ act: 'read' as const, account: one.id! })),
-  ].slice(0, ACCOUNT_ACTS);
-}
-
-/**
- * What a row offers, in the order it shows them (design §6.2–§6.3): an act only where one press is safe and the row says
- * what it does, and nothing where the answer needs reading first (a park's question, an intake's, a review), whose door is
- * the row's one control. **One rule per kind**, read by every row and the tests, so two rows of a kind cannot differ, and
- * each mirrors the record's own: a quest's page offers *Try again* on the planner's park and *Accept the departure* on a
- * held done; an ask's page publishes to what its declarations proposed and to any receiver its workspace can ask; an
- * agent's page signs an account in and reads it on its row.
- */
-export function attentionOffers(item: Attention): AttentionOffer[] {
-  const plain = (...acts: AttentionActId[]) => acts.map((act): AttentionOffer => ({ act }));
-  switch (item.kind) {
-    case 'proposal': return (item.publishTo?.length ?? 0) > 0 ? plain('publish', 'choose') : plain('choose');
-    case 'parked-quest': return plain('retry');
-    // STEWARDROLE1b (D209 §5.3, §5.4): the person's own *Try again*, the parked quest's press.
-    case 'steward-stopped': return plain('retry');
-    // STAFFPOLICY1e2: *Try again* is the person's yes to one move (the retry door approves it, once).
-    case 'policy-hold': return plain('retry');
-    // INTEGRATE1o part o3: the run's existing *Pass over…* (§17.3), offered where the node it is said on is named.
-    case 'request-declined': return !item.declined ? [] : item.declined.request ? plain('ask-again', 'go-on') : plain('pass-over');
-    // GOAHEADSTALE1: nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
-    // its refusal is the one answer offered.
-    case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');
-    // A hold on the person's own sign-in's file offers no grant (POOL1c, D197 point 3): Daoris writes nothing there.
-    case 'trust': return item.trust && !item.trust.own ? plain('trust') : [];
-    case 'departure': return plain('accept-departure');
-    // A set-up shown and waiting (REVIEWENV1g, design §3.3): the strip's chip's and the step's page's own presses, *Show it
-    // again* only for a local set-up, which Daoris serves; *Skip…* is the step's page's, where the work is read.
-    case 'set-up': return item.setUp ? plain('reviewed', 'not-yet', ...(item.local ? ['show-again' as const] : [])) : [];
-    case 'rule': return plain('accept-rule', 'decline-rule');
-    // An agent's ask for a helper (MIXAGENT2c): its session's page's own yes and no, each one press, as they are there.
-    case 'helper': return plain('let-ask', 'not-now');
-    // An agent's ask to hand its session over (NOTIFY2e): its session's foot's own yes and no, each one press, where the look named
-    // the agent it goes to.
-    case 'hand-over': return item.agent ? plain('hand-over', 'keep-agent') : [];
-    // A tool call held for the person (AUTONOMY1b3c): its session's card's own presses, one each, as `PermissionAsks` says why.
-    case 'permission': return permissionOffers(item);
-    // A third answer alone held for the person (COWORK1e, §8.3): its session's page's own two presses, each one press.
-    case 'answer': return item.answer ? plain('go-on-answer', 'keep-answer') : [];
-    // A second opinion that waits on the person (XAGENT1g, §8.5): *Go on anyway…* only where no press of theirs is coming (the
-    // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
-    case 'opinion': return opinionOffers(item);
-    // A plugin step's attempt held for the person (FABRIC-PERFORM1g, §D6): their three words, until one is recorded and the driver's next
-    // look applies it; a held close (FABRIC-CLOSE1q) its own, as the driver offers them. A unit only the clean-up's press settles has
-    // that list, on its workspace's Branches, for its door (OVERVIEWNOISE1b), and no act of its own here.
-    // A node record that does not read (FABRIC-PERFORM1j): its folder opened, where the person mends it; nothing else of Daoris's moves it.
-    // FABRIC-CLOSE1j: a close found closed only in part offers its node's stop alone, while it is offered and no word of theirs waits.
-    case 'work': return item.unreadable ? plain('open-records')
-      : item.held && !item.held.resolution ? plain(...heldActs(item.held))
-        : item.ended && endOffersStop(item.ended) ? plain('stop-partial') : [];
-    case 'account-wait':
-    case 'signed-out': return accountOffers(item);
-    // A held git remote (GITAUTH1a, the git auth design §5.2): *Try again*, one press, which lifts its holds and connects nothing itself.
-    // GITAUTH1e (§6.8): a remote nothing serves once the home has moved is set up in Settings → Git, or kept on the person's own sign-ins
-    // there, confirmed in place; *Try again* would change nothing until one of them is done. Every other class offers what mends it
-    // (§7.4), then *Try again*.
-    case 'git-held': return item.git ? plain(...gitHeldOffers(item.git)) : [];
-    // GITAUTH1f (§6.6): a git go-ahead's two answers, as its session's head offers them.
-    case 'git-ask': return item.gitAsk ? plain('git-allow', 'git-refuse') : [];
-    // SESSWATCH1a (the session-watch design §2.3, §5.2): *End and carry on* for a quiet quest session alone, never a busy one; *Hand
-    // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
-    case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];
-    default: return [];
-  }
-}
-
-/**
- * What a second opinion's row offers (XAGENT1g; the second-agent design §8.2, §8.5): a dispute where a press of the person's is
- * coming (*Accept…* on its session's page) asks again only, since that press answers it; where none is (the work lands by
- * itself), *Go on anyway…* too. None to be had where the rule requires one, *Try again* and *Go on anyway…*; commits nobody read
- * where the work lands by itself, the same. The same agent fresh, *I looked myself…* and *Send back…* are on its session's page.
- */
-function opinionOffers(item: Attention): AttentionOffer[] {
-  const wait = item.opinion;
-  if (!wait) return [];
-  const anyway = wait.auto || opinionState(wait.opinion.state) === 'unavailable';
-  return [...(anyway ? [{ act: 'opinion-anyway' as const }] : []), { act: 'opinion-again' as const }];
-}
-
-/**
- * A quiet row's watch (SESSWATCH1a, D200): the minutes nothing was heard from its session, whether something it runs keeps the machine
- * busy (the *busy, nothing heard* row, offered no end), whether it is an intake, and whether the person's words wait to reach it.
- */
-export type QuietWait = {
-  minutes: number; busy: boolean; intake: boolean; words: boolean;
-  /** It waits for its repository's heavy-run slot behind a holder (§1.3): the holder's session, or empty for a run from a terminal. */
-  heavy?: string | null;
-};
-
-/** What a quiet row offers (§2.3, §5.2), in its order. */
-function quietOffers(quiet: QuietWait): AttentionOffer[] {
-  const acts: AttentionActId[] = [
-    ...(!quiet.busy && !quiet.intake ? ['quiet-carry-on' as const] : []),
-    ...(!quiet.intake ? ['quiet-hand-over' as const] : []),
-    'quiet-stop', 'quiet-leave',
-  ];
-  return acts.map((act) => ({ act }));
-}
-
-/** The acts a row offers, without the accounts they are for: what each kind's rule says, read by the tests. */
-export function attentionActs(item: Attention): AttentionActId[] {
-  return attentionOffers(item).map(({ act }) => act);
-}
-
-/**
- * One row of *What needs you* as the shell pushes it (PUSH1d4, D182's PUSH1d4 note): who needs the person is judged in .NET
- * (`NeedsAPerson`, `AccountAttention`), and the page orders and words its rows. Each carries its kind, its id, since when it has
- * waited (null where nothing says), the values its words are made of, and the workspace of the record it was judged from where a
- * window's scope filters it. What it is called is named here from the records the page holds (`attentionWorded`).
- */
-export type PushedAttention = {
-  kind: AttentionKind;
-  id: string;
-  since: string | null;
-  /**
-   * The obligation it is, by its exchange's id where that is not its kind and id (COMMS1j): a go-ahead's `go-ahead:<ask>/<n>`, which
-   * the park of each session that asked it waits on too. `obligationOf` reads it.
-   */
-  obligation?: string;
-  /** The record's workspace, for a row judged from the service's sessions, quests or asks: a scoped window shows its own. */
-  workspace?: string;
-  /** Where it waits, where that is a value: a repository, a circle, an agent's product; absent or null where the page words it. */
-  where?: string | null;
-  /** A parked session's or a parked intake's note, its parts beside its English (LANG1b). */
-  note?: NoteRecord;
-  /** Authored words shown as written: a refused receiver's sentence, a go-ahead's why, a widening's why. */
-  detail?: string | null;
-  publishTo?: string[];
-  choices?: string[];
-  ask?: string;
-  number?: number;
-  /** A go-ahead's act, which its title says. */
-  goAhead?: Pick<GoAhead, 'kind' | 'on' | 'act'>;
-  /**
-   * A go-ahead nothing on its ask could still use (GOAHEADSTALE1): no session on the ask runs or waits, and no quest of it is open. Since
-   * the last thing on its ask moved, which its line says as its age; absent from a go-ahead something still waits for, and from a shell
-   * older than the field.
-   */
-  stale?: StaleSince;
-  session?: string | null;
-  /** A held done's first departed requirement, its reason, and how many it departed from. */
-  departed?: { count: number; number: number; reason: string } | null;
-  setUp?: SetUpRef;
-  local?: boolean;
-  /** A set-up's environment and what its newest set-up showed. */
-  environment?: string;
-  shows?: string | null;
-  opinion?: OpinionWait;
-  /** Work to review's place in Sessions' list, which its line says. */
-  placed?: SessionGrouping;
-  /** A parked quest's verdict, which says why it sits. */
-  sitting?: Consideration;
-  trust?: TrustHold;
-  quest?: string;
-  proposal?: RuleProposal;
-  /** A title that is a value: a helper's question's first line, a hand-over ask's note's, a unit's branch or its tree's folder. */
-  title?: string;
-  /** The agent an ask to hand a session over goes to, as the driver's look named it (NOTIFY2e). */
-  agent?: string | null;
-  /** Whether the session that asked to be handed over stands still on it, its turn no longer running (NOTIFY2e). */
-  stands?: boolean;
-  permission?: PermissionWait;
-  /** A third answer alone held for the person (COWORK1e): its wait whole, the agent that answered among it. */
-  answer?: AnswerWait;
-  /**
-   * A unit only the person's press settles (OVERVIEWNOISE1b): whether its owner is unknown, and the entries it is blocked on, each with
-   * the code the page words it by and its facts, where the driver gave one.
-   */
-  blocked?: { unknown: boolean; entries: Pick<MilestoneEntry, 'kind' | 'resource' | 'detail' | 'code' | 'facts'>[] };
-  held?: HeldAttempt;
-  /** A node record that does not read (FABRIC-PERFORM1j): its file, the unit it names, and the driver's sentence. */
-  unreadable?: UnreadableRecord;
-  /** A closure graph closed only in part whose close node's stop is offered (FABRIC-CLOSE1j), its end whole. */
-  ended?: GraphEnd;
-  /** A start waiting on accounts that holds an intake, or quests in several repositories: `where` is its workspace. */
-  wholeWorkspace?: boolean;
-  /** What a start waiting on accounts holds, which its title says. */
-  holding?: { quests: string[]; asks: string[] };
-  /** When a signed-out account was read (UXFIX3). */
-  read?: string | null;
-  account?: PushedAccountFacts;
-  /** A press a terminal sent that waits for the window's Confirm (CONFIRMSEEN1): {@link PushedConfirmation}. */
-  confirmation?: PushedConfirmation;
-  /**
-   * A volume still below its free-space floor once the floor's acts ran (KEEP1f): where it is mounted, its free space, size and floor in
-   * bytes as read when it was said, what the floor freed in this stretch, and what *Free up space…* could free (null where none was read).
-   */
-  space?: { root: string | null; free: number; total: number; floor: number | null; freed: number; could?: number | null };
-  /** The old records every part's census holds while one has not ended, and their count by part (ONEWAY1ae). */
-  convert?: { records: number; parts?: Record<string, number> };
-  /** A git remote held because it could not authenticate (GITAUTH1a): one row per held group, as .NET groups them. */
-  git?: GitHeld;
-  /** A git go-ahead a door holds while its act waits (GITAUTH1f): its repository, remote, host, class and session, and whether its door has gone. */
-  gitAsk?: GitAskWait;
-  /** A session the watcher brings to the person (SESSWATCH1a): its watch, which its words and its presses read. */
-  quiet?: QuietWait;
-  /** A run held at a declined request (INTEGRATE1o part o3): its `work.requests` node, the quest declined and where it went. */
-  declined?: DeclinedRequest;
-  /** What memory waits on the person for a session (KNOWCENTRAL2e): ends and replacements to approve, a stopped session's staged rows. */
-  memory?: MemoryWait;
-  /** An integration's wait on the owner (INTEGRATE1h): which, its line, and the candidate, commit or landing it is of. */
-  integration?: IntegrationWait;
-};
-
-/** What a session's memory waits on the person for: ends and replacements awaiting their approval, and staged rows to keep or drop. */
-export type MemoryWait = { ends: number; replacements: number; staged: number };
-
-/**
- * An integration's wait on the owner (INTEGRATE1h; the integration design §5.8, §17.4): a candidate the line's rule held for their decide,
- * with its members' branches and the judge's words; a superseded commit awaiting their answer, by its request and commit; or a landed branch
- * whose integration waits for their card; or a repository whose committed declaration waits for their acceptance (§5.8), where `tip` is the
- * declaration's blob and `state` says whether none was accepted yet or the accepted one changed. Branches, subjects and words are content,
- * shown as written.
- */
-export type IntegrationWait = {
-  wait: 'decide' | 'superseded' | 'card' | 'declaration';
-  /** A declaration's state against the accepted blob: `unaccepted`, or `changed`, where integration goes on under the last accepted blob. */
-  state?: 'unaccepted' | 'changed' | null;
-  repository: string;
-  line?: string | null;
-  branch?: string | null;
-  branches?: string[];
-  candidate?: string | null;
-  request?: string | null;
-  commit?: string | null;
-  subject?: string | null;
-  unit?: string | null;
-  tip?: string | null;
-  why?: string | null;
-};
-
-/**
- * A run held at a request the receiver declined (INTEGRATE1o part o3): the `work.requests` node the person's *Pass over…* is said on, the
- * declined quest and the repository it was addressed to, and the run's newest work quest here (null where it has none), which its door reads.
- */
-export type DeclinedRequest = { node: string; quest: string; to: string; work?: string | null; request?: boolean };
-
-/**
- * Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, its host key changed, or
- * (GITAUTH1b) its repository's own ssh command, which Daoris's ssh door cannot stand in front of on this install.
- */
-/**
- * A press a terminal sent that waits for the window's Confirm (CONFIRMSEEN1): its route, the terminal as the system names it, and when a
- * window first showed it. Never a value it carries, which its card alone shows. `expires` is null for it (CONFIRMWAIT1a-i: it waits until
- * the person answers), a field kept so the slice and this type stay twins.
- */
-export type PushedConfirmation = {
-  module: string;
-  route: string;
-  asker?: { process?: string | null; pid?: number | null } | null;
-  expires?: string | null;
-  shownAt?: string | null;
-};
-
-export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed' | 'own-input' | 'no-identity';
+export type {
+  AttentionPushed, DeclinedRequest, GitAskWait, GitHeld, GitHeldClass, GitServed, IntegrationWait, MemoryWait, PushedAttention,
+  PushedConfirmation, QuietWait, StaleSince,
+} from './attentionPushed';
 
 /**
  * The detail's key for a held group: an `own-input` hold is lifted by removing the repository's setting, not by a retry, and git said
@@ -688,58 +199,6 @@ function gitHeldDetailKey(held: Pick<GitHeld, 'class' | 'words'>): string {
  * setting's name (`http.sslCert`, `http.<url>.extraHeader`), never its value; an ssh command's hold says none.
  */
 const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === 'own-input' && held.words?.startsWith('http.') ? held.words : null);
-
-/**
- * A git go-ahead (GITAUTH1f, D198 point 12; the git auth design §6.6): the door holds one act on a remote whose class is ask, a push or a
- * fetch, until the person allows or refuses it; where its door has gone (`gone`), an Allow is kept for the identical retry. The
- * repository, remote and host are content.
- */
-export type GitAskWait = {
-  repository?: string | null;
-  remote?: string | null;
-  host?: string | null;
-  class: 'read' | 'write' | (string & {});
-  session?: string | null;
-  gone: boolean;
-};
-
-/** What serves a held group's remote now, as the doors resolve it (GITAUTH1e, §7.4): an identity, the person's own sign-ins, or nothing. */
-export type GitServed = 'identity' | 'own' | 'none';
-
-/**
- * A held group of git remotes (GITAUTH1a, D198; the git auth design §5.2): the host, why, what it holds (reads and writes, or writes
- * alone), the remote, the repositories held in this group, and git's or ssh's own last line, already redacted. GITAUTH1e (§7.4): its
- * way and what serves it, the identity by label and id where one does; the move's row (`no-identity`) names every host it covers and
- * the repositories whose own configuration names authentication. The host, the remote, the repositories, the label and git's words
- * are content, shown as written.
- */
-export type GitHeld = {
-  host: string;
-  class: GitHeldClass;
-  holds: 'all' | 'writes';
-  remote: string;
-  repositories: string[];
-  words: string;
-  way?: 'ssh' | 'https' | null;
-  served?: GitServed | null;
-  identity?: string | null;
-  identityId?: string | null;
-  /** The host's own page for SSH keys, where Daoris knows it (github.com, gitlab.com, Azure DevOps). */
-  keyPage?: string | null;
-  hosts?: readonly string[] | null;
-  ownInput?: readonly string[] | null;
-};
-
-/**
- * The slice's answer composed (`attentionSlice`): the rows in the band's order, which the bell and each place count (BADGEUX1); the
- * keys of what parked on the person; and the keys of the sessions the driver runs, which the status bar counts (SESSBADGE1) and,
- * less the parks, Sessions' running mark reads (BADGEUX1).
- */
-export type AttentionPushed = {
-  rows: PushedAttention[];
-  sessions: { key: string; workspace?: string | null }[];
-  working: { key: string; workspace?: string | null }[];
-};
 
 /**
  * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks, a
@@ -781,21 +240,6 @@ export type AttentionNames = {
   /** The roster by agent (`byTool`), which names an account as the person knows it. */
   tools?: readonly Tool[];
 };
-
-/**
- * FABRIC-UNKNOWN1c: the session a `work` row's branch was cut for, where nothing records its owner and the page holds a session the
- * branch is named for, by the name the trees give it (`daoris/` and the tree's folder, as WorkFrame finds a session's own branch).
- * That session is the row's door, and the place it is counted at (BADGEUX1).
- */
-export function workCutFor(
-  row: Pick<PushedAttention, 'blocked' | 'session' | 'title' | 'where'>, sessions: readonly Pick<Session, 'id' | 'repository' | 'tree'>[] | undefined,
-) {
-  const branch = (row.blocked?.entries ?? []).find((entry) => entry.facts?.branch)?.facts?.branch ?? row.title;
-  return row.blocked?.unknown && !row.session && branch?.startsWith('daoris/')
-    ? sessions?.find((one) => one.repository === row.where && one.tree
-      && branch === `daoris/${one.tree.split(/[\\/]/).filter(Boolean).pop()}`)
-    : undefined;
-}
 
 /** A go-ahead's act, as its ask's page names it: its kind in the reader's language where the page has a word, and the session's words. */
 function goAheadTitle(goAhead: Pick<GoAhead, 'kind' | 'on' | 'act'>): string {
@@ -1225,30 +669,6 @@ export function gitAskWorded(ask: GitAskWait, since?: string | null, t: TFunctio
 
 /** How long a door holds a git go-ahead, in minutes: a held call's bound (`GitAsks.Bound`). */
 export const GIT_ASK_BOUND_MINUTES = 15;
-
-/**
- * What mends a held group, by its class and what serves it (GITAUTH1e, the git auth design §7.4), then *Try again*: a refusal of an SSH
- * identity its public key and its host's key page, of an HTTPS one a sign-in again, under the person's own sign-ins Settings → Git; a
- * push refused another identity or the identity marked read only; an own-input hold the person's own sign-ins for it; a host's key under
- * an identity its comparison and trust. The move's row is §6.8's two presses alone.
- */
-export function gitHeldOffers(held: GitHeld): AttentionActId[] {
-  if (held.class === 'no-identity') return ['git-set-up', 'git-keep-own'];
-  const identity = held.served === 'identity' && held.identityId ? held.identityId : null;
-  const mends: AttentionActId[] = [];
-  if (held.class === 'refused') {
-    if (identity && held.way === 'https') mends.push('git-sign-in');
-    else if (identity) mends.push('git-copy-key', ...(held.keyPage ? ['git-key-page' as const] : []));
-    else if (held.served === 'own') mends.push('git-open');
-  } else if (held.class === 'write-refused') {
-    mends.push('git-choose', ...(identity ? ['git-read-only' as const] : []));
-  } else if (held.class === 'own-input') {
-    mends.push('git-use-own');
-  } else if ((held.class === 'host-unknown' || held.class === 'host-changed') && identity) {
-    mends.push('git-compare');
-  }
-  return [...mends, 'git-try-again'];
-}
 
 /**
  * A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6): the step and its attempt, its unit,

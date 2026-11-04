@@ -4,6 +4,7 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { call } from '../call';
 import { askHeld } from '../state/held';
+import type { GitBlame, GitCommitDetail, GitCompare, GitFileHistory, GitGraphPage } from './gitLog';
 
 // Git's reads (GIT1d-b, D147 §2, D150): the screen's door to `daoris git`, the same reads over the same checkouts, for
 // Repositories' Branches and History tabs. Shell-only: a checkout is this machine's, and no machine path leaves it (D47 §4).
@@ -118,67 +119,19 @@ export type GitBranchList = {
   sessionsUnread: boolean;
 };
 
-export type GitLogCommit = {
-  commit: string;
-  /** Whole ids, the first parent first. */
-  parents: string[];
-  author: string;
-  authorEmail: string;
-  subject: string;
-  authoredAt: string | null;
-  committedAt: string | null;
-  /** In a two-sided walk, which side holds it; null for a walk from tips. */
-  side: string | null;
-};
-
-export type GitGraphPage = { tips: string[]; sinceParted: boolean; page: number; commits: GitLogCommit[]; more: boolean };
-
-/** The review's changes (REVIEW3), bounded: the list is whole, a patch may be dropped. */
-export type GitChanges = {
-  files: { path: string; status: string; added: number | null; removed: number | null; patch: string | null }[];
-  truncated: string | null;
-  base: string;
-};
-
-export type GitCommitDetail = {
-  commit: string;
-  parents: string[];
-  subject: string;
-  message: string;
-  author: string;
-  authorEmail: string;
-  authoredAt: string | null;
-  committer: string;
-  committerEmail: string;
-  committedAt: string | null;
-  against: string | null;
-  merge: boolean;
-  changes: GitChanges | null;
-};
-
-export type GitFileChange = { commit: GitLogCommit; status: string; path: string; from: string | null };
-export type GitFileHistory = { commit: string; path: string; page: number; changes: GitFileChange[]; more: boolean };
-
-export type GitBlameLine = { original: number; text: string };
-export type GitBlameRun = { commit: string; line: number; path: string; previous: string | null; previousPath: string | null; lines: GitBlameLine[] };
-export type GitBlameCommit = { commit: string; author: string; authorEmail: string; summary: string; authoredAt: string | null; boundary: boolean };
-export type GitBlame = {
-  commit: string;
-  path: string;
-  binary: boolean;
-  runs: GitBlameRun[];
-  commits: Record<string, GitBlameCommit>;
-  stoppedAt: number | null;
-};
-
-export type GitCompare = {
-  left: string;
-  right: string;
-  everything: boolean;
-  commits: GitLogCommit[];
-  more: boolean;
-  changes: GitChanges | null;
-};
+export type {
+  GitBlame,
+  GitBlameCommit,
+  GitBlameLine,
+  GitBlameRun,
+  GitChanges,
+  GitCommitDetail,
+  GitCompare,
+  GitFileChange,
+  GitFileHistory,
+  GitGraphPage,
+  GitLogCommit,
+} from './gitLog';
 
 /** The scope a branch list is read for (D112): the held repositories by default, every one, or one by name. */
 export type GitBranchScope = { all?: boolean; repository?: string; workspace?: string; enabled?: boolean };
