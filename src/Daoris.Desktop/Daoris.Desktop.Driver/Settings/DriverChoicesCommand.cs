@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record ChoicesRegistry(IReadOnlyList<(string Repository, string? Workspace, string? Root)>? Checkouts, string? Unread);
 
 /// <summary>
-/// Where <c>daoris-driver driver</c> acts (PUSH1f2a): the terminal it says its words on and finds the running Daoris from, the
+/// Where the standing choices' command acts: the terminal it says its words on and finds the running Daoris from, the
 /// <c>driver.json</c> it reads and writes, and the facts a choice judges by when it acts alone: the registry's checkouts a review's
 /// procedure is looked for in. A test hands its own of each.
 /// </summary>
@@ -28,13 +28,13 @@ public sealed record DriverChoicesWorld
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// The folder the terminal is in (PUSH1f2b): where a file a verb names by a relative path is read and written, a cycle's, a
+    /// The folder the terminal is in: where a file a verb names by a relative path is read and written, a cycle's, a
     /// workflow's to apply or import, and an export's.
     /// </summary>
     public string Folder { get; init; } = Directory.GetCurrentDirectory();
 
     /// <summary>
-    /// The size of the Daoris folder's volume in bytes (KEEP1f), which a floor's size is judged against; the system's read of the home's
+    /// The size of the Daoris folder's volume in bytes, which a floor's size is judged against; the system's read of the home's
     /// folder by default, a test's stand-in otherwise. Null where it does not read.
     /// </summary>
     public Func<long?>? FloorVolume { get; init; }
@@ -47,7 +47,7 @@ public sealed record DriverChoicesWorld
 }
 
 /// <summary>
-/// One standing choice's press (PUSH1f2a, D194 points 4 and 6): the route the window's press sends and the payload the verb writes from
+/// One standing choice's press (D194 points 4 and 6): the route the window's press sends and the payload the verb writes from
 /// its words, the operation it calls alone, the press's own fields read from the route's answer, and the one function that says it
 /// from those fields on both paths. <see cref="DriverChoicesCommand.Plan"/> makes it; a test sends its payload through the route.
 /// </summary>
@@ -66,9 +66,8 @@ public sealed class ChoiceWords(string message, int exit = 2) : Exception(messag
 }
 
 /// <summary>
-/// The routes <c>daoris-driver driver</c> sends while Daoris runs, each the window twin of
-/// the choice it edits, and the verbs no route takes, each with why it acts alone: the CLI's
-/// <c>DRIVER_VERBS</c>, now this program's. Every one is the person's (D171's RPC1a note). Held to the census by <c>PipeCensusTests</c>.
+/// The routes the standing choices' command sends while Daoris runs, each the window twin of the choice it edits, and the verbs no
+/// route takes, each with why it acts alone. Every one is the person's. Held to the census by <c>PipeCensusTests</c>.
 /// </summary>
 public static class ChoiceRoutes
 {
@@ -136,21 +135,21 @@ public static class ChoiceRoutes
 }
 
 /// <summary>
-/// <c>daoris-driver driver</c>: the driver family from a terminal, the words
-/// <c>daoris driver …</c> hands this program, every one of them since PUSH1f2b. Each change is its route through
-/// <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its window; else the choice's own operation, on
-/// the terminal's word (D50), refused from a session's terminal (D194 point 5). A change no route takes acts alone even beside a running
-/// Daoris (<see cref="ChoiceRoutes"/>):
-/// a landing's cycle, <c>work-cycle</c> and <c>brainstorms</c>; the workflows' writes are routes (<see cref="DriverWorkflowsCommand"/>). Its words
-/// are one function per verb on both paths, today's text kept (<c>fixtures/driver-choices-text.json</c>,
-/// <c>fixtures/driver-workflows-text.json</c>). The settings' own keys' verbs are here; a rule a subdomain above owns has its verb
-/// beside the rule (<see cref="ChoiceVerb"/>, FOUNDATION1 mod-iii), which Loop wires into the world (<see cref="DriverChoiceVerbs"/>)
-/// and this command asks for, so it names no type of theirs, nor the instance's world and door (<see cref="IChoiceTerminal"/>).
+/// The standing choices from a terminal: <c>daoris settings</c>, <c>role</c>, and the place, workflow and retry words the tree routes
+/// here. Each change is its route through <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its
+/// window; else the choice's own operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). A change no
+/// route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>): a landing's cycle, <c>work-cycle</c> and
+/// <c>brainstorms</c>; the workflows' writes are routes (<see cref="DriverWorkflowsCommand"/>). Its words are one function per verb on
+/// both paths (<c>fixtures/driver-choices-text.json</c>, <c>fixtures/driver-workflows-text.json</c>). The settings' own keys' verbs are
+/// here; a rule a subdomain above owns has its verb beside the rule (<see cref="ChoiceVerb"/>), which Loop wires into the world
+/// (<see cref="DriverChoiceVerbs"/>) and this command asks for, so it names no type of theirs, nor the instance's world and door.
 /// </summary>
 /// <remarks>
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
+[CommandGroup("settings", "notify", "cooloff", "keep", "cap", "handover", "brainstorms", "actor")]
+[CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>

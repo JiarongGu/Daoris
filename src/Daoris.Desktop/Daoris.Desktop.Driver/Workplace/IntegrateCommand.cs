@@ -19,6 +19,7 @@ public sealed record IntegrateAsk(string Repository)
 /// <c>--drop</c>, <c>--recheck</c>, <c>--decide</c> and <c>--order</c> are the owner's acts, Person routes: a card in Daoris's window (D156),
 /// which this terminal asks and never answers.
 /// </summary>
+[CommandGroup("integrate", Whole = true)]
 public static class IntegrateCommand
 {
     public const string Usage =

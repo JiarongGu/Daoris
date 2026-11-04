@@ -1,47 +1,27 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The structure gate for the desktop modules library (STRUCT5a, D166; the code-structure design §5): every source sits in
-/// its module's folder, or on <c>fixtures/structure.json</c>'s list of the files not yet moved, which only shrinks; the
-/// library keeps no <c>Application</c>, <c>Infrastructure</c> or <c>Domain</c> folder; a listed test sits under its module's
-/// folder; a bridge domain's handler class is a <c>*Routes.cs</c> in <c>Bridge/Routes/</c> and the only file that marks a
-/// route. The rules are held on sources made in memory, one case each, and then run over the library's own tree.
+/// The structure gate for the desktop modules library (D166; the code-structure design §5): every source sits in its module's
+/// folder, which is its module; the library keeps no <c>Application</c>, <c>Infrastructure</c> or <c>Domain</c> folder; a test
+/// folder is a module's; a bridge domain's handler class is a <c>*Routes.cs</c> in <c>Bridge/Routes/</c> and the only file that
+/// marks a route. The rules are held on sources made in memory, one case each, and then run over the library's own tree.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class StructureTests
 {
-    private static readonly StructureMap Map = new(
-        ["Bridge", "Loop", "Platform"],
-        new Dictionary<string, string> { ["DriverLoop.cs"] = "Loop" });
-
-    private static readonly (string, string)[] Unmoved = [("DriverLoop.cs", "class DriverLoop { }")];
+    private static readonly StructureMap Map = new(["Bridge", "Loop", "Platform"]);
 
     private static IReadOnlyList<string> Check(params (string Path, string Text)[] sources) =>
-        StructureCheck.Check(Map, [.. Unmoved, .. sources]).Select(breach => breach.ToString()).ToList();
+        StructureCheck.Check(Map, sources).Select(breach => breach.ToString()).ToList();
 
     [Fact]
-    public void A_file_at_the_top_is_one_the_list_names_and_every_name_on_it_is_still_at_the_top()
+    public void No_file_sits_at_the_library_s_top()
     {
-        Assert.Empty(Check());
+        Assert.Empty(Check(("Loop/DriverLoop.cs", "class DriverLoop { }")));
 
         Assert.Equal(
             ["Fresh.cs:1 [top] a new file at the library's top: put it in its module's folder (structure.json's modules), not here"],
             Check(("Fresh.cs", "class Fresh { }")));
-
-        // A move takes its entry off the list, or the list says a file is where it is not.
-        Assert.Equal(
-            ["DriverLoop.cs:0 [top] structure.json lists it at the library's top, where it is not: a move takes its entry off the list"],
-            StructureCheck.Check(Map, [("Loop/DriverLoop.cs", "class DriverLoop { }")]).Select(breach => breach.ToString()));
-    }
-
-    [Fact]
-    public void The_list_maps_each_file_it_names_to_a_module_it_declares()
-    {
-        var map = Map with { Root = new Dictionary<string, string> { ["DriverLoop.cs"] = "Gardens" } };
-
-        Assert.Equal(
-            ["structure.json:0 [map] DriverLoop.cs is mapped to Gardens, which is no module of the map"],
-            StructureCheck.Check(map, Unmoved).Select(breach => breach.ToString()));
     }
 
     [Fact]
@@ -78,38 +58,17 @@ public sealed class StructureTests
             Check(("Bridge/GitRoutes.cs", "class GitRoutes { }"), ("Platform/Stray.cs", "class Stray\n{ [DriverRoute(\"X\")] void X() { } }")));
     }
 
-    private static IReadOnlyList<string> Mirror(IEnumerable<string> tests, params string[] listed) =>
-        StructureCheck.Check(Map with { Tests = listed.ToDictionary(name => name, _ => "Loop") }, Unmoved, tests)
-            .Select(breach => breach.ToString()).ToList();
+    private static IReadOnlyList<string> Mirror(IEnumerable<string> tests, StructureMap? map = null) =>
+        StructureCheck.Check(map ?? Map, [], tests).Select(breach => breach.ToString()).ToList();
 
     [Fact]
-    public void A_test_the_map_lists_sits_under_its_module_s_folder_and_one_not_listed_is_not_constrained()
+    public void A_loose_fixture_the_map_names_is_at_the_tests_top()
     {
-        Assert.Empty(Mirror(["Loop/TickTests.cs", "Loop/Deep/WaitTests.cs", "LooseTests.cs", "Platform/OtherTests.cs"], "TickTests.cs", "WaitTests.cs"));
-
-        Assert.Equal(
-            [
-                "Platform/TickTests.cs:0 [mirror] sits under Platform, and the map lists it under Loop: a test mirrors its module's folder",
-                "WaitTests.cs:0 [mirror] sits at the top of the tests, and the map lists it under Loop: a test mirrors its module's folder",
-            ],
-            Mirror(["WaitTests.cs", "Platform/TickTests.cs"], "WaitTests.cs", "TickTests.cs"));
-    }
-
-    [Fact]
-    public void A_name_the_map_lists_that_is_found_nowhere_is_a_stale_entry_or_a_module_the_map_does_not_declare()
-    {
-        Assert.Equal(
-            ["structure.json:0 [map] GoneTests.cs is listed under Loop, and no such test is in the tests' tree: a delete takes its entry off the list"],
-            Mirror(["Loop/TickTests.cs"], "GoneTests.cs"));
-
-        var map = Map with { Tests = new Dictionary<string, string> { ["TickTests.cs"] = "Gardens" } };
-        Assert.Contains(
-            "structure.json:0 [map] TickTests.cs is a test mapped to Gardens, which is no module of the map",
-            StructureCheck.Check(map, Unmoved, ["Gardens/TickTests.cs"]).Select(breach => breach.ToString()));
+        Assert.Empty(Mirror(["Shared.cs", "Loop/TickTests.cs"], Map with { Loose = ["Shared.cs"] }));
 
         Assert.Equal(
             ["structure.json:0 [map] Shared.cs is listed as a loose fixture at the tests' top, and is not there"],
-            StructureCheck.Check(Map with { Loose = ["Shared.cs"] }, Unmoved, ["Loop/TickTests.cs"]).Select(breach => breach.ToString()));
+            Mirror(["Loop/TickTests.cs"], Map with { Loose = ["Shared.cs"] }));
     }
 
     [Fact]
@@ -128,7 +87,6 @@ public sealed class StructureTests
         var map = StructureMap.Read(File.ReadAllText(MapFile()));
 
         Assert.Equal(["Bridge", "Browser", "Windows", "Update", "Loop", "Platform"], map.Modules);
-        Assert.All(map.Tests.Values, module => Assert.True(map.Modules.Contains(module), $"a test is listed under {module}, which is no module of the map"));
     }
 
     [Fact]

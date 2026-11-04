@@ -13,6 +13,7 @@ namespace Daoris.Driver;
 /// The printing lives in the library so a test runs the whole door in-process. Exit codes keep the family contract: 0 said ·
 /// 2 a word it does not answer.
 /// </remarks>
+[CommandGroup("wiring", Whole = true)]
 public static class WiringCommand
 {
     public const string Usage = "usage: daoris wiring [--json] [--measure]";

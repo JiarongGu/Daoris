@@ -15,6 +15,7 @@ public sealed record QuestDoneAsk(string Quest, string? Note);
 ///
 /// <para><b>Exit codes</b>: 0 closed, 1 refused (a closed quest, no such quest, a host older than the door), 2 the usage.</para>
 /// </remarks>
+[CommandGroup("quest", "pause", "resume", "abandon", "delete", "accept", "done", "reopen", "go-on", "check", "review", "workflow", "clear", "retry")]
 public static class QuestDoneCommand
 {
     public const string Usage =

@@ -3,18 +3,15 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// What <c>daoris session list</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2; MSG1g's <c>go-on-new</c>; MSG1f3's
-/// <c>start-from</c>).
-/// </summary>
+/// <summary>What <c>daoris session</c> was asked (D126 §7.1, D137 §5.2).</summary>
 /// <param name="Verb">
 /// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c>,
-/// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>; COAGENT1b's <c>partner</c>, <c>partner-list</c> and
-/// <c>partner-stop</c>; HANDBACK1's <c>handback</c>.
+/// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c>, <c>start-from</c>, <c>partner</c>, <c>partner-list</c>, <c>partner-stop</c>
+/// or <c>handback</c>.
 /// </param>
 public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
 {
-    /// <summary>The code a finish under the standing confirmation answers where a process for the session runs here (TERMTRUST1a).</summary>
+    /// <summary>The code a finish under the standing confirmation answers where a process for the session runs here.</summary>
     public const string RunningHere = "running-here";
 
     /// <summary>The sessions a verb names.</summary>
@@ -38,10 +35,10 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
     /// <summary><c>archive --ended --yes</c>: archive what the list holds.</summary>
     public bool Yes { get; init; }
 
-    /// <summary>A say's words (MSG1e), joined by a space as `answer` joins them; a reword's new words (SAIDBACK1a).</summary>
+    /// <summary>A say's words, joined by a space as `answer` joins them; a reword's new words.</summary>
     public string? Text { get; init; }
 
-    /// <summary>A take-back's or a reword's word (SAIDBACK1a): the id it waits under on the record; null lists them.</summary>
+    /// <summary>A take-back's or a reword's word: the id it waits under on the record; null lists them.</summary>
     public string? Word { get; init; }
 
     /// <summary>A say's files, each as the person named its path.</summary>
@@ -53,17 +50,17 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
     /// </summary>
     public string? Level { get; init; }
 
-    /// <summary>A hand-over's agent (MIXAGENT1a-i): the adapter the conversation goes on with.</summary>
+    /// <summary>A hand-over's agent: the adapter the conversation goes on with.</summary>
     public string? Agent { get; init; }
 
     /// <summary>A hand-over's account, or null for the one the roster picks.</summary>
     public string? Account { get; init; }
 
-    /// <summary>A piece's paths (COAGENT1b, <c>sessions partner … --paths</c>), each repository-relative as the person named it.</summary>
+    /// <summary>A piece's paths (<c>sessions partner … --paths</c>), each repository-relative as the person named it.</summary>
     public IReadOnlyList<string> Paths { get; init; } = [];
 
     /// <summary>
-    /// That the press runs under the person's standing confirmation (TERMTRUST1a, D201 points 2 and 7): the pipe admitted it with no
+    /// That the press runs under the person's standing confirmation (D201 points 2 and 7): the pipe admitted it with no
     /// card. A stop's records gain <see cref="NoteCodes.StandingTerminal"/>; a finish never takes the request folder, answering
     /// <c>running-here</c> where a process for the session runs here, and is moved by the ledger only from <c>awaiting-person</c>.
     /// </summary>
@@ -87,7 +84,7 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// <summary>The markers every driver on the home leaves for a live process: whether something here runs a session.</summary>
     public SessionProcesses Processes { get; init; } = new(DaorisHome.Entry(Home, HomeEntry.SessionPids));
 
-    /// <summary>How a delete removes a file from the home: the disk, or a test's that refuses a path as a held file does (SESSDEL1).</summary>
+    /// <summary>How a delete removes a file from the home: the disk, or a test's that refuses a path as a held file does.</summary>
     public Action<string, bool> Remover { get; init; } = SessionHomeFiles.FromDisk;
 
     /// <summary>
@@ -202,10 +199,9 @@ public static class KeepingStops
 }
 
 /// <summary>
-/// <c>daoris session list</c> (SESSUX1g, D126 §7.1): Sessions' terminal door. It lists this machine's sessions by what
-/// they need, from <see cref="SessionGroups"/>, the one reader <c>SESSION_GROUPS</c> hands the page; stops, finishes and
-/// declines a session; and archives, unarchives and deletes through the owners the screen's routes call. In the library,
-/// so its words are held by a test.
+/// <c>daoris session</c> (D126 §7.1): Sessions' terminal door. It lists this machine's sessions by what they need, from
+/// <see cref="SessionGroups"/>, the one reader <c>SESSION_GROUPS</c> hands the page; stops, finishes and declines a session;
+/// and archives, unarchives and deletes through the owners the screen's routes call.
 /// </summary>
 /// <remarks>
 /// <para><b>Stop, finish and decline reach a session another process runs through a request its loop honours</b>
@@ -213,19 +209,21 @@ public static class KeepingStops
 /// happened, withdrawing a request nothing took. Where nothing on this machine runs the session, a parked one is moved by
 /// the ledger directly and any other is ended as the screen's stop ends an orphan.</para>
 ///
-/// <para><b>Say is what the screen's box says</b> (MSG1e, D137 §5.2, D50): the words reach the loop that runs the session
+/// <para><b>Say is what the screen's box says</b> (D137 §5.2, D50): the words reach the loop that runs the session
 /// through the same requests, a say of their own that the loop answers beside it; a loop keeps words to a session nothing here
 /// runs on its record. Where no loop drives the home, a driven session's words are kept on its record for the next loop, and
 /// a conversation's are refused, since nothing here could open it. What never goes on is judged first, by
 /// <see cref="WordsNever"/>, before anything is asked. One line says where the words stand.</para>
 ///
-/// <para><b>Start-from is the screen's *Start a conversation with these words*</b> (MSG1f3, D137 §2.2, D50): a conversation
+/// <para><b>Start-from is the screen's *Start a conversation with these words*</b> (D137 §2.2, D50): a conversation
 /// in this terminal, as <c>chat</c> opens one, its first message the words a session could not go on with, which then leave
 /// that session naming it, through the chat runner's own act (<see cref="ChatRunner.StartFromAsync"/>).</para>
 ///
 /// <para>Exit codes are the family's: 0 done, listed, or the words taken or held · 1 refused, a policy answer · 2 could not,
 /// the usage among them.</para>
 /// </remarks>
+[CommandGroup("session", "list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword", "go-on-new",
+    "start-from", "hand-over", "helper", "partner", "handback", "opinion", "supervise", "at-work", Nested = ["opinion: ask show stop anyway myself"])]
 public static class SessionsCommand
 {
     public const string Usage =

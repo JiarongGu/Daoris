@@ -5,6 +5,7 @@ namespace Daoris.Driver;
 /// (<see cref="TurnMarks"/>, which a window shows) and honours a stop asked of that one session through the request folder
 /// (SESSUX1g), as its own Ctrl+C at rest would. A window's words and turn stops stay on the terminal's input: no other move is taken.
 /// </summary>
+[CommandGroup("chat", Whole = true)]
 public sealed class TerminalOwner : IAsyncDisposable
 {
     /// <summary>How often the terminal looks for a stop asked of its conversation: well inside the asking door's wait.</summary>

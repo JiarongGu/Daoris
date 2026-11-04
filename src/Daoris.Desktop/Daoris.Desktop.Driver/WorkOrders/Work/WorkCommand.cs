@@ -28,6 +28,7 @@ public sealed record WorkAsk(WorkScope Scope, string Verb, string Id)
 /// could not: a session of the work this machine runs was not stopped, a step of an abandon failed, or the service did not
 /// answer.</para>
 /// </remarks>
+[CommandGroup("work", "state", "held", "recovery", Whole = true)]
 public static class WorkCommand
 {
     public const string Usage =

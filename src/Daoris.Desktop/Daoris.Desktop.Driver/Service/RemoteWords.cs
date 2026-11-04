@@ -20,6 +20,7 @@ public sealed record RemoteWiring(string Source, string? Path, IReadOnlyDictiona
 /// What <c>remote</c> says (ONEWAY1u, D194 point 6): one words function per verb over what the command read and the operation's result,
 /// the lines the TypeScript verb said (<c>fixtures/driver-files-text.json</c>). A key is never printed, only the audit prefix.
 /// </summary>
+[CommandGroup("remote", "list", "add", "remove", "sync", Nested = ["sync: status dismiss forward"])]
 public static class RemoteWords
 {
     public static FileSaid List(RemoteWiring wiring)

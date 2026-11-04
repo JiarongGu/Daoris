@@ -9,6 +9,7 @@ namespace Daoris.Driver;
 /// records here, which the look and the desk share. <c>--kind meeting</c> asks a meeting of the same desk (D177). With no service
 /// running the verb says so and writes nothing.
 /// </summary>
+[CommandGroup("brainstorm", "show", "send", "stop", "clear", "list", "measure", Takes = "\"<question>\"")]
 public static class BrainstormCommand
 {
     public const string Usage =
