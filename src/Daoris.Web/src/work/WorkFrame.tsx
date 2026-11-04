@@ -6,8 +6,8 @@ import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../app/opener';
 import { useAsks } from '../data/queries';
 import {
-  useSessionStreams, useStopTask, useTreeFile, useReviewedPatch, useTerminals, useRemotes, useWorkPlan, useWorkflowRun,
-  useSessionEvents, usePushedCalls, withCall, useRunNodeWord, useResolveHeld, useStopWaiting, useConsidered,
+  useSessionStreams, useStopTask, useTreeFile, useReviewedPatch, useTerminals, useRemotes, useWorkflowRun,
+  useSessionEvents, usePushedCalls, withCall, useRunNodeWord, useResolveHeld, useConsidered,
 } from '../bridge/shell';
 import { useAttendedSession } from './head/useAttendedSession';
 import { useAttendedRecord } from './head/useAttendedRecord';
@@ -17,6 +17,7 @@ import { useBoxWords } from './conversation/useBoxWords';
 import { useHeadAsks } from './head/useHeadAsks';
 import { useSessionLanding } from './review/useSessionLanding';
 import { useAttendedWaits } from './waits/useAttendedWaits';
+import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { AtWorkView } from './atWork/AtWorkView';
@@ -25,8 +26,6 @@ import { opinionAsked, opinionHolds } from './gates/opinion';
 import { OpinionGate } from './gates/OpinionGate';
 import { reviewState } from './gates/review';
 import { ReviewGate } from './gates/ReviewGate';
-import type { Session } from '../data/api';
-import type { HeadLink } from './head/SessionHead';
 import { WaitStrip } from './waits/WaitStrip';
 import { WaitPanel } from './waits/WaitPanel';
 import { anchorOf } from './waits/anchors';
@@ -35,15 +34,10 @@ import { sayDiscard } from '../settings/Sweep';
 import { toolOf } from '../agents/tools';
 import { agentOf, machineScope } from '../settings/accounts/accounts';
 import { namer } from '../settings/accounts/namer';
-import { accountNames } from './accountNames';
-import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitWaitSaid } from './waits/limitWait';
-import { LimitWaitLine } from './waits/LimitWaitLine';
 import { coolingFor, takesWords } from './say';
 import { SessionBox } from './conversation/SessionBox';
-import { pauseAsk, wiredFor } from './pausing/pausing';
 import { lastWords } from './channel';
 import { openGoAheads } from './waits/parkQuestion';
-import { PauseAsk } from './pausing/WorkAsks';
 import { FilePreview } from './review/FilePreview';
 import { FileOpener, fileName } from './review/preview';
 import { TerminalView } from './terminals/TerminalView';
@@ -56,25 +50,17 @@ import { ancestryOf } from './conversation/line';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
-import { heavyLine, heavyRow } from './HeavySlotLine';
-import { askName, linkedSessions, ownTree, sessionTitle } from './identity';
+import { heavyRow } from './HeavySlotLine';
+import { ownTree, sessionTitle } from './identity';
 import { doorLabel } from '../agents/tools';
 import { Composer } from './conversation/Composer';
 import { DiffPane } from './review/DiffPane';
 import { NothingFollowed, RightDock } from './frame/RightDock';
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
-import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
-import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry } from './entries';
-import { useAccountUse } from '../bridge/shell';
+import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
-import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
-import { AskHelper } from './start/AskHelper';
-import { partnersOf } from './pieces/pieceRows';
-import { handOverOffer, nextChoices } from './start/handOverOffer';
-import { HandOverOfferLine } from './start/HandOverOfferLine';
-import { DeleteAsk, SessionPageHead, StopAsk } from './head/SessionPageHead';
+import type { HandOverRoster } from './start/HandOverAsk';
 import { useSessionActs } from './sessionActs';
 import { ListMore } from './frame/ListPane';
 import { useNewStart } from './start/useNewStart';
@@ -243,12 +229,6 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
-  // LIMITRESUME1d: what *Try now* on a waiting line came to where it was refused, by the session it was pressed on.
-  const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
-  const accountUse = useAccountUse();
-  // LIMITRESUME1d2: a conversation's limit wait, as its events hold it, told by the conversation that reads them.
-  const [chatHeld, setChatHeld] = useState<{ session: string; held: ChatLimitHeld } | null>(null);
-  const stopWaiting = useStopWaiting();
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLElement>(null);
   const {
@@ -616,11 +596,8 @@ export function WorkFrame({
     && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
   const coolsUntil = between ? coolingFor(attended, roster, accounts.data, new Date()) : null;
 
-  const {
-    archivingEnded, setArchivingEnded, stopAsking, setStopAsking, deleteAsking, setDeleteAsking, handOverAsking, setHandOverAsking,
-    helperAsking, setHelperAsking, handOverChosen, setHandOverChosen, offerDismissed, setOfferDismissed, pauseAsking, setPauseAsking,
-    answerFocus, setAnswerFocus, doors,
-  } = useHeadAsks({ selected, chosen, attend, setDocked, closeDock, terminal, terminals, openView });
+  const asks = useHeadAsks({ selected, chosen, attend, setDocked, closeDock, terminal, terminals, openView });
+  const { archivingEnded, setArchivingEnded, answerFocus, setAnswerFocus, doors } = asks;
   const actions = useSessionActs({ notify, doors, entries });
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
@@ -681,258 +658,12 @@ export function WorkFrame({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, onAnswerAsk,
     boxWords, openView, work, talking, centre,
   });
-  const attendedFacts: ActFacts | null = attended
-    ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
-    : null;
-  const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
-  // LIMITRESUME1d (D206 §3.7): a driven line an account's limit cut off, every account it may run on cooling, says under its header
-  // when it resumes by itself and how, with the person's ways out beside it: *Go on now with…* (the hand-over's ask), *Pause quest…*
-  // and the account's *Try now*. Read from the accounts the page holds, never a guess: no walk that waits, no line.
-  const attendedWorkspace = attended
-    ? (registry.data ?? []).find((row) => row.repository === attended.repository)?.workspace || 'default'
-    : 'default';
-  const limitWait = attended && here && limitedLine(attended, quest?.status, Boolean(grouping?.pausedBy))
-    ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts.data, now: new Date() })
-    : null;
-  // LIMITRESUME1d2 (D206 §3.5, §3.7): a conversation says its wait from its events alone (`chat.limit-waits`), worded by the walk
-  // where the page holds it, else by the driver's own line. Its ways out: *Go on now with…*, *Stop…* while it runs or *Stop waiting*
-  // once it ended, and *Try now*.
-  const conversationHeld = attended && here && attended.kind === 'chat' && chatHeld?.session === attended.id ? chatHeld.held : null;
-  const conversationWait = conversationHeld && attended
-    ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts.data, now: new Date() })
-    : null;
-  const conversationLines = conversationHeld && attended
-    ? chatLimitWaitSaid(t, {
-      held: conversationHeld,
-      wait: conversationWait,
-      label: (account) => nameOf(attended.adapter, account),
-      language: i18n.language,
-      names: accountNames(roster),
-      now: new Date(),
-    })
-    : null;
-  const waitLines = limitWait && attended
-    ? limitWaitSaid(t, limitWait, (account) => nameOf(attended.adapter, account))
-    : conversationLines;
-  const waitAccount = limitWait?.account ?? conversationWait?.account ?? attended?.profile ?? null;
-  // The line, the same at the head and the foot (D206 §3.7): one element, its presses the same presses.
-  const limitLine = (className: string) => (waitLines && attended ? (
-    <LimitWaitLine
-      // Keyed by the session and the place: a refusal said in one is never another's (RELSPAM1).
-      key={`limit:${attended.id}`}
-      className={className}
-      lines={waitLines}
-      busy={actions.handingOver || accountUse.isPending || stopWaiting.isPending}
-      refusal={limitRefusal?.session === attended.id ? limitRefusal.sentence : null}
-      onGoOnNow={headActs.includes('handOver') ? () => doors.handOver?.(attended.id) : undefined}
-      onPause={limitWait && attended.quest ? () => doors.pause?.(attended.id, { scope: 'quest', id: attended.quest! }) : undefined}
-      onStop={!limitWait && live && headActs.includes('stop') ? () => doors.stop?.(attended.id) : undefined}
-      onStopWaiting={!limitWait && !live ? () => {
-        setLimitRefusal(null);
-        stopWaiting.mutate(attended.id, {
-          onSuccess: (answer) => {
-            if (!answer.stopped) setLimitRefusal({ session: attended.id, sentence: answer.message });
-          },
-          onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }),
-        });
-      } : undefined}
-      onTryNow={() => {
-        setLimitRefusal(null);
-        accountUse.mutate(
-          { harness: attended.adapter, action: 'ready', ...(waitAccount ? { profile: waitAccount } : {}) },
-          { onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }) },
-        );
-      }}
-    />
-  ) : null);
-  // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
-  // account is cut or near its limit by its scope's near (never the agent's pace warning alone, USAGEREAD3b) and another agent
-  // has an account the walk would take. No driver read.
-  // MODELROLE1e (D205 §3.5(e)): its order is the session's actor's, Build's for a driven line and Chat's for a conversation, where that
-  // actor has an order of its own; the roster's order stands where it is as before.
-  const attendedActor = attended ? (actors.data ?? []).find((row) => row.id === (attended.kind === 'chat' ? 'chat' : 'build')) : undefined;
-  const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id) && !waitLines
-    ? handOverOffer({
-      session: attended,
-      workspace: attendedWorkspace,
-      doors: roster,
-      answer: accounts.data,
-      now: new Date(),
-      actor: attendedActor,
-    })
-    : null;
-  const offerTo = offer ? roster.find((row) => row.harness === offer.agent) : null;
-  const asked = attended ? stopAsk(attended, quest) : null;
-  // A pause's ask says what it stops from the driver's plan of the work (D132 §2.6); one that stops nothing applies at once.
-  const pausing = pauseAsking && attended?.id === pauseAsking.session ? pauseAsking : null;
-  const pausePlan = useWorkPlan(pausing?.target ?? null);
-  const pauseWired = wiredFor(wiring, quest?.workspace ?? attended?.workspace);
-  const pauseLines = pausePlan.plan ? pauseAsk(pausePlan.plan, { wired: pauseWired }) : null;
-  const pauseQuiet = Boolean(pausing && pausePlan.plan && pauseLines === null);
-  const pausedQuietly = useRef<string | null>(null);
-  useEffect(() => {
-    if (!pausing || !pauseQuiet) return;
-    const key = `${pausing.target.scope}:${pausing.target.id}`;
-    if (pausedQuietly.current === key) return;
-    pausedQuietly.current = key;
-    actions.work.pause(pausing.target, undefined, () => setPauseAsking(null));
-  }, [pausing, pauseQuiet, actions.work]);
-  useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
-  // Named as its row is (TITLEONE1): the entry's name, its ask's, where an ask began it, read under the rail's own key; otherwise
-  // the record's own.
-  const entryAsk = channelAsk ? (entryAsks.data ?? []).find((ask) => ask.id === channelAsk) : undefined;
-  const attendedTitle = attended
-    ? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})
-      ?? sessionTitle(attended, quest, openings[attended.id])
-    : '';
-  // Whom it continues and whom a helper helps (MIXAGENT3a-i): the record's own links, joined to the sessions the frame holds, for
-  // the head's facts and its *Details*. One the frame does not hold is said by its id, and its agent is not guessed.
-  const linked = attended
-    ? linkedSessions(attended, new Map((sessions.data ?? []).map((row): [string, Session] => [row.id, row])))
-    : null;
-  const headLink = (other: Session | null | undefined): HeadLink | null => (other ? {
-    session: other,
-    title: sessionTitle(other, other.quest ? (quests.data ?? []).find((row) => row.id === other.quest) : null, openings[other.id]),
-  } : null);
-  const continues = headLink(linked?.continues);
-  const helps = headLink(linked?.helps);
-  const headPrimary = primaryAct(headActs, grouping);
-  // A right-click on the session's page offers its header's acts, in the order the header draws them (CTX1, D138 §4).
-  const pageMenu = attended && attendedFacts
-    ? {
-      label: attendedTitle,
-      acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy, attended),
-    }
-    : null;
-  const attendedShown = attended ? shownOf(attended, grouping, taking[attended.id]) : null;
-  // Its facts line by its state (UX7c, D152 §7): the row's facts and the record's, so the head and the row agree.
-  const headFactsOf: SessionFactsOf | null = attended && attendedShown ? {
-    session: attended,
-    shown: attendedShown,
-    grouping,
-    ownSignIn: roster.some((row) => row.harness === attended.adapter),
-    branch,
-    nameOf,
-    // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
-    continuesAgent: continues
-      ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
-      : null,
-    leadingAgent: leadingAgentOf(attendedEntry, sessions.data ?? [], roster),
-    helping: helps?.title,
-    // COAGENT1b: its partners, the agents its pieces went to by the roster's names, and how many work now.
-    partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
-    waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
-    calling: waiting?.session === attended.id ? waiting.calling : undefined,
-    withIt: following?.id === attended.id ? withIt : 0,
-    windowOpened: atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.windowOpened : undefined,
-    // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
-    retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
-    // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
-    heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
-    integration: integration.data ?? null,
-    // REVIEWFLOW1b: where the work stands, from the same facts the head's waits are drawn from.
-    flow: { parts: entryOffered, landing: landsNow },
-  } : null;
-  const nextWait = nextPress(standing);
-  const nextAnchor = standing[0] ? anchorOf(standing[0]) : null;
-  const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
-    <SessionPageHead
-      session={attended}
-      title={attendedTitle}
-      shown={attendedShown}
-      facts={sessionFacts(t, headFactsOf)}
-      // RAILLINE1: the line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
-      factsTip={sessionFactsTip(t, headFactsOf)}
-      next={nextWait && nextAnchor ? { press: nextWait, onPress: () => goToWait(nextAnchor) } : null}
-      acts={headActs}
-      primary={headPrimary}
-      busy={actions.busy}
-      onAct={(act) => actions.run(act, attendedFacts)}
-      asking={stopAsking === attended.id && live && asked ? (
-        <StopAsk
-          // Keyed by the session: an ask open on one session, with its wait or its refusal, is never another's.
-          key={attended.id}
-          sentence={t(asked.key, asked.values)}
-          busy={actions.stopping}
-          onStop={(answered) => actions.stopNow(attended, answered)}
-          // A stop that lands after the person moved to another session closes only the ask it was pressed in.
-          onClose={() => setStopAsking((was) => (was === attended.id ? null : was))}
-        />
-      ) : deleteAsking === attended.id && headActs.includes('delete') ? (
-        <DeleteAsk
-          key={attended.id}
-          busy={actions.deleting}
-          onDelete={(answered) => actions.deleteNow(attended, answered)}
-          onClose={() => setDeleteAsking((was) => (was === attended.id ? null : was))}
-        />
-      ) : handOverAsking === attended.id && headActs.includes('handOver') ? (
-        <HandOverAsk
-          key={attended.id}
-          from={attended.adapter}
-          first={[...new Set(nextChoices(attended, roster, attendedActor).map((step) => step.door.harness))]}
-          working={SESSION_ACTIVE.has(attended.state)}
-          roster={agentRoster}
-          initial={handOverChosen?.choice}
-          busy={actions.handingOver}
-          onHandOver={(choice, told) => actions.handOverNow(attended, choice, told, handOverChosen?.why)}
-          onClose={() => {
-            setHandOverAsking((was) => (was === attended.id ? null : was));
-            setHandOverChosen(null);
-          }}
-        />
-      ) : helperAsking === attended.id && headActs.includes('askHelper') ? (
-        <AskHelper
-          key={attended.id}
-          from={attended.adapter}
-          roster={agentRoster}
-          busy={actions.askingHelper}
-          onAsk={(asked, answered) => actions.askHelperNow(attended, asked, answered)}
-          onClose={() => setHelperAsking((was) => (was === attended.id ? null : was))}
-        />
-      ) : pausing && !pauseQuiet ? (
-        <PauseAsk
-          className="mt-2.5"
-          target={pausing.target}
-          lines={pauseLines}
-          meanIt={t(pausing.target.scope === 'ask' ? 'asks.record.pauseMeanIt' : 'quests.detail.pauseMeanIt')}
-          busy={actions.work.pausing}
-          onPause={(answered) => actions.work.pause(pausing.target, answered)}
-          onClose={() => setPauseAsking(null)}
-        />
-      ) : waitLines && attended ? (
-        limitLine('mt-2.5')
-      ) : offer && attended ? (
-        <HandOverOfferLine
-          // Keyed by the session: a refusal or a kept answer said in one is never another's.
-          key={attended.id}
-          offer={offer}
-          actorName={attendedActor ? t(`work.role.name.${attendedActor.id}`) : undefined}
-          agentName={offerTo?.product || offer.agent}
-          accountName={offer.account ? nameOf(offerTo ? toolOf(offerTo) : offer.agent, offer.account) : null}
-          busy={actions.handingOver}
-          onGoOn={(told) => actions.handOverNow(
-            attended,
-            {
-              agent: offer.agent, account: offer.account ?? '', name: offerTo?.product || offer.agent,
-              model: offer.choice?.model, effort: offer.choice?.effort,
-            },
-            told,
-            offer.why,
-          )}
-          onChoose={() => {
-            chosen();
-            setStopAsking(null);
-            setDeleteAsking(null);
-            setHelperAsking(null);
-            setPauseAsking(null);
-            setHandOverChosen({ why: offer.why, choice: { adapter: offer.agent, profile: offer.account ?? '' } });
-            setHandOverAsking(attended.id);
-          }}
-          onDismiss={() => setOfferDismissed((was) => new Set(was).add(attended.id))}
-        />
-      ) : null}
-    />
-  );
+  const { setChatHeld, limitLine, headLink, continues, helps, pageMenu, pageHead } = useAttendedHead({
+    t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
+    actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
+    sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
+    heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking,
+  });
 
   // Sessions' list (D118 §3a): the rail, handed to the list pane as every view with a list hands its own.
   // NEW is one control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for
