@@ -185,7 +185,7 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
         return 0;
     }
 
-    /// <summary>The run.Choices with <paramref name="edit"/> made, or its refusal in the twins' words: nothing was written.</summary>
+    /// <summary>The choices with <paramref name="edit"/> made, or its refusal in the twins' words: nothing was written.</summary>
     internal DriverConfig Judge(WorkflowChoiceEdit edit)
     {
         try
@@ -262,8 +262,8 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
         {
             if (run.Choices.WorkspaceWorkflows.Count > 0)
             {
-                throw new ChoiceWords($"cannot say which workspace's run.Choices reach `{name}`: the registry could not be read — "
-                    + $"{read.Unread} — and this file sets run.Choices for a workspace. `--workspace <name>` shows a workspace's from this file alone.");
+                throw new ChoiceWords($"cannot say which workspace's choices reach `{name}`: the registry could not be read — "
+                    + $"{read.Unread} — and this file sets choices for a workspace. `--workspace <name>` shows a workspace's from this file alone.");
             }
 
             notes.Add($"  The registry was not read ({read.Unread}); no choice here is set for a workspace, so none reaches it.");
@@ -275,7 +275,7 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
             if (checkout.Repository is null)
             {
                 notes.Add($"  `{name}` is not in the registry, so it is read as in no workspace: the `{RemoteTarget.Workspace(null)}` "
-                    + "workspace's run.Choices reach it.");
+                    + "workspace's choices reach it.");
             }
         }
 

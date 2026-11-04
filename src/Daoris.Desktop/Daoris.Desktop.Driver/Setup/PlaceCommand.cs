@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// purpose, and neither implies the other; an apply names none unless the person does. The digest is not a word: an apply plans again now, prints the
 /// plan it applies, and the window's card pins that plan between its ask and its Confirm (<c>PipeGrounds</c>), refusing a plan that moved.</para>
 /// </remarks>
-[CommandGroup("place", "list", "drive", "undrive", "hold", "resume", "trees", "line", "landing", "work-cycle", "across", "standing", "language",
+[CommandGroup("place", "list", "drive", "undrive", "hold", "resume", "trees", "line", "across", "standing", "language",
     "review", "opinion", "helpers", "commits", "access", "heavy", "checks", Takes = "<repository>…")]
 public static class PlaceCommand
 {
