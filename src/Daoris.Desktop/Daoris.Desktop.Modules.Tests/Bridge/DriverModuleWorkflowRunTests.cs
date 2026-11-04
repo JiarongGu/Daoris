@@ -107,10 +107,11 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"build","kind":"acme.ci/built","version":1,"reach":"observed"},{"id":"lint","kind":"acme.ci/linted","version":1,"reach":"observed"},
                       {"id":"both","kind":"all","version":1,"reach":"observed"},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"merge","accept":"you"}}],
+                      {"id":"yes","kind":"review","version":1,"reach":"pressed"},
+                      {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
              "wires":[{"id":"c>b","kind":"after","from":"claimed","to":"build"},{"id":"c>l","kind":"after","from":"claimed","to":"lint"},
                       {"id":"b>a","kind":"after","from":"build","to":"both"},{"id":"l>a","kind":"after","from":"lint","to":"both"},
-                      {"id":"a>h","kind":"after","from":"both","to":"handed"}]}
+                      {"id":"a>y","kind":"after","from":"both","to":"yes"},{"id":"y>h","kind":"after","from":"yes","to":"handed"}]}
             """)), kept: []);
         var binding = WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null, new WorkflowTaskChoice(null, "docs"), [], T);
         Assert.StartsWith("gph-", binding.Digest);
@@ -232,7 +233,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"go","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"deploy the release"}},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>g","kind":"after","from":"claimed","to":"go"},{"id":"g>h","kind":"after","from":"go","to":"handed"}]}
             """)), kept: []);
         var binding = WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null, new WorkflowTaskChoice(null, "docs"), [], T);
@@ -323,7 +324,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
              "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"find","kind":"local-release/find","version":1,"reach":"performed","outcomes":["release","none"]},
                       {"id":"review","kind":"review","version":1,"reach":"pressed"},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed"},
+                      {"id":"handed","kind":"land","version":1,"reach":"performed"},
                       {"id":"release","kind":"local-release/release","version":1,"reach":"performed"}],
              "wires":[{"id":"a","kind":"after","from":"work","to":"find"},{"id":"b","kind":"after","from":"find","to":"review"},
                       {"id":"c","kind":"after","from":"review","to":"handed"},{"id":"d","kind":"when","from":"find","to":"release","outcome":"release"},

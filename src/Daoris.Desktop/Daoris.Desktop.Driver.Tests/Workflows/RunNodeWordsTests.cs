@@ -71,7 +71,7 @@ public sealed class RunNodeWordsTests : NodeRunFixture
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
             """);
         _branchTips["daoris/s1"] = Tip1;

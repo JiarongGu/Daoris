@@ -304,7 +304,7 @@ public sealed class SessionChecksHandTests : IDisposable
         $$"""
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"{{(options is null ? "" : $",\"options\":{options}")}}},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
         """;
 

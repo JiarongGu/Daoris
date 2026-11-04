@@ -13,8 +13,7 @@ public static class GoOnBrief
 /// <summary>
 /// A conversation, or a closed quest's session, goes on in a new part of its session handed Daoris's brief (SESSCTX1c part B, D189
 /// points 2-3; the session-context design §2): by itself where its own conversation is proven lost (<see cref="ContinueReason.Lost"/>),
-/// or by the person's *Go on with Daoris's brief* where it waits for them. A class over the runner's context, as
-/// <see cref="ChatHandOver"/> is: the new part opens through the runner's own start, in the tree the old part ran in, on its agent and
+/// or by the person's *Go on with Daoris's brief* where it waits for them. The new part opens through the runner's own start, in the tree the old part ran in, on its agent and
 /// its account, its record naming the one it continues, why <c>resume</c>, by Daoris or by the person.
 /// </summary>
 /// <remarks>
@@ -44,8 +43,17 @@ public static class GoOnBrief
 /// its record back first (<see cref="ChatGoOn.WentBackAsync"/>). No closing note is asked: a lost conversation cannot be asked, and a
 /// refused one has no turn left (D189's amendment).</para>
 /// </remarks>
-internal sealed class BriefedMove(ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help)
+[Executor("briefed-move", ExecutorPhase.Move)]
+internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 {
+    private ChatContext context => wiring.Context;
+
+    private IChatRunning runner => wiring;
+
+    private ChatHandOver handOver => wiring.HandOver;
+
+    private IChatHelping help => wiring.Help;
+
     /// <summary>What the course answered each briefed move, by session (FOUNDATION1h branch 4): a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
 

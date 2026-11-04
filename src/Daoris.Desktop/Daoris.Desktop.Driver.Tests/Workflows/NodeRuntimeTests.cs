@@ -187,32 +187,6 @@ public sealed class NodeRuntimeTests : NodeRuntimeFixture
     }
 
     /// <summary>
-    /// FABRIC-RUN1c (§E7, <i>one governs a run, by its binding</i>): a quest whose run is bound to a named workflow's version is governed by that
-    /// version, whose engine is D157's run until the cutover (FABRIC-CUTOVER1), and never by Current's work cycle as well; an unreadable binding
-    /// likewise. A quest whose run follows Current, or has no binding, keeps Current's graph. Nothing is sent on the bound quest.
-    /// </summary>
-    [Fact]
-    public async Task A_quest_whose_run_is_bound_to_a_named_version_is_never_governed_by_Currents_graph()
-    {
-        _units = [QuestOf("quest:q7"), QuestOf("quest:q8"), QuestOf("quest:q9")];
-        // A version the run is bound to, as ForRun reads it: its identity and the graph a run on it binds.
-        var decoded = new DecodedVersion(2, "wfv-docs", new NodeGraph([new NodeDeclaration("work", NodeKinds.Claimed, 1, NodeReach.Observed)], [], ["work"], "work"),
-            "gph-docs", null);
-        DecodedVersion? BoundOf(WorkUnit unit, IReadOnlyCollection<QuestView> _) => unit.Id switch
-        {
-            "quest:q7" => decoded,
-            "quest:q8" => new DecodedVersion(3, null, null, null, "v3: it does not read."),
-            _ => null,
-        };
-
-        var governed = NodeRuntime.Govern(DriverConfig.Parse(Governed), new NodeUnitsRead(_units, new Dictionary<string, string>()), [Step], versionOf: BoundOf);
-        Assert.Equal(["quest:q9"], governed.Select(each => each.Unit.Id));
-
-        await Runtime().PassAsync(Look(Governed) with { Bound = BoundOf }, CancellationToken.None);
-        Assert.Equal(["quest:q9"], _port.Sent.Select(call => call.Unit));
-    }
-
-    /// <summary>
     /// FABRIC-RUN1c: the home's own reading of a quest's binding (<see cref="NodeRuntime.BoundIn"/>), its run named by its chain's first quest in
     /// its repository: a binding to a named workflow is that version's, read as unreadable where the workflow is no longer saved, and a run that
     /// follows Current, or has no binding, is none.

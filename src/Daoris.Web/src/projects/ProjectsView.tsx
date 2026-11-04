@@ -286,9 +286,7 @@ export function useProjectsView({
           here={attached ? Boolean(shown.root) : undefined}
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
-          setup={null}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
-          workflow={null}
           // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).
           branches={attached
             ? (

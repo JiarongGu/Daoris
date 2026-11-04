@@ -74,7 +74,7 @@ public sealed class SessionChecksStartTests : IDisposable
         RunHome.SaveGraph(Home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed","options":{"checks":"light","callMinutes":30}},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
             """, workflow: "light-graph");
 

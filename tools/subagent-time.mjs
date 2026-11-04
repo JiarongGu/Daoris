@@ -18,7 +18,8 @@ import { isMain } from './fsx.mjs';
 
 /** The class of a path a read or an edit touches. */
 export function pathClass(path = '') {
-  const p = path.replaceAll('\\', '/');
+  // A builder's worktree lives under `.claude/worktrees/`, which would otherwise read as records.
+  const p = path.replaceAll('\\', '/').replace(/^.*\/\.claude\/worktrees\/[^/]+\//, '/');
   if (/\/docs\/index\//.test(p) || /docs\/index\//.test(p)) return 'generated';
   if (/(^|\/)(fixtures|golden)\//.test(p) || /\.(golden|account)\.json$/.test(p)) return 'fixtures';
   if (/(Tests?\/|\.test\.|\.spec\.|tool-test\/|\/test\/|e2e\/|measured\/)/.test(p)) return 'tests';

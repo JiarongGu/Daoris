@@ -142,7 +142,7 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
     [Fact]
     public async Task Import_of_a_file_holding_a_handed_is_refused_at_that_node()
     {
-        var graph = JsonNode.Parse("""{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""")!;
+        var graph = JsonNode.Parse("""{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""")!;
         var file = Written("careful.json", new JsonObject
         {
             ["id"] = "careful", ["name"] = "Careful",

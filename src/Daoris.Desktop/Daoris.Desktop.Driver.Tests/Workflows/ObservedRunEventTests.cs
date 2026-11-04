@@ -17,14 +17,14 @@ public sealed class ObservedRunEventTests : ObservedEventFixture
     private const string DeployedBeforeHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deployed"},{"id":"d>h","kind":"after","from":"deployed","to":"handed"}]}
         """;
 
     /// <summary>The plugin's observed deploy after the landing: its subject the run's branch at its landing.</summary>
     private const string DeployedAfterHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"deployed",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"},
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"},
                   {"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"}],
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>d","kind":"after","from":"handed","to":"deployed"}]}
         """;

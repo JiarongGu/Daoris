@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Contracts.Parts;
 
 namespace Daoris.Driver;
 
@@ -318,7 +319,7 @@ public sealed class AcpSession(
     ISessionStreams? streams = null,
     Action<IReadOnlyList<AcpConfigOption>>? onOptions = null,
     Action<string>? onConversation = null,
-    TimeSpan? wakeQuiet = null)
+    TimeSpan? wakeQuiet = null) : ITurnWiring
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -423,9 +424,6 @@ public sealed class AcpSession(
 
     /// <summary>Whether the posture says the person answers this session's permission requests.</summary>
     private readonly bool _personAnswers = Marks(posture).PersonAnswers;
-
-    /// <summary>The answers to held requests still on their way, which the stream's end waits for before it says it ended.</summary>
-    private readonly List<Task> _answering = [];
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
@@ -536,16 +534,7 @@ public sealed class AcpSession(
     private int _promptCount;
     private int _nextId;
     private int _updates;
-
-    /// <summary>The largest context reading seen (TOOL3), and the lock that guards it.</summary>
-    private readonly object _measured = new();
-    private AcpUsage? _usage;
     private string? _sessionId;
-
-    // The models the turn's own updates named, and the response's split as this process last said it (USAGECAP1a2), both under
-    // `_measured`. Read on the reader's thread, as the turn's end is.
-    private readonly List<string?> _named = [];
-    private IReadOnlyDictionary<string, TurnTokens>? _split;
 
     /// <summary>The reader, which lives as long as the conversation does, and what ends it.</summary>
     private readonly CancellationTokenSource _pumpStop = new();
@@ -610,10 +599,7 @@ public sealed class AcpSession(
     /// The largest context reading this session has reported (TOOL3), or null when it reported none —
     /// what a conversation, which never runs <see cref="RunAsync"/>, counts toward its account (USAGE1).
     /// </summary>
-    public AcpUsage? Usage
-    {
-        get { lock (_measured) return _usage; }
-    }
+    public AcpUsage? Usage => TurnStages.Of<AcpMeasure>().Usage;
 
     /// <summary>
     /// Told what a <c>usage_update</c> says about the account's windows (TOOL6c, D130 §5.2): its
@@ -906,7 +892,7 @@ public sealed class AcpSession(
                 // session closes here and its record ends as the start's re-ask said.
                 onLine($"[{refused.Message}]");
                 await CloseAsync(ct).ConfigureAwait(false);
-                lock (_measured) return new AcpOutcome(AcpOutcome.ChoiceNotOffered, _sessionId ?? "", _updates, _usage) { NotOffered = refused.Refusal };
+                return new AcpOutcome(AcpOutcome.ChoiceNotOffered, _sessionId ?? "", _updates, Usage) { NotOffered = refused.Refusal };
             }
 
             // Where the agent says it takes a prompt during its turn, each word goes the moment it is said and reaches it
@@ -1043,7 +1029,7 @@ public sealed class AcpSession(
             }
 
             await CloseAsync(ct).ConfigureAwait(false);
-            lock (_measured) return new AcpOutcome(stopReason, _sessionId!, _updates, _usage) { Cut = _turnCut };
+            return new AcpOutcome(stopReason, _sessionId!, _updates, Usage) { Cut = _turnCut };
         }
         finally
         {
@@ -1398,7 +1384,7 @@ public sealed class AcpSession(
                     // The turn its harness woke has ended, by the adapter's word: a turn's end as an answer's is, with no counts,
                     // since no answer carried any.
                     CloseCut();
-                    Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnModelsOf(default, null) });
+                    Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
                     return WokenStop;
                 case null:
                     throw StreamEnded(waited);
@@ -1907,7 +1893,7 @@ public sealed class AcpSession(
                 }
 
                 CloseCut();
-                Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnModelsOf(default, null) });
+                Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
             }
             else if (!quieted && _wake.Unseen.Count > 0)
             {
@@ -1916,7 +1902,7 @@ public sealed class AcpSession(
                 {
                     case true:
                         CloseCut();
-                        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnModelsOf(default, null) });
+                        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
                         break;
                     case null:
                         throw StreamEnded("the ACP agent's stream ended while the run waited to try again after its provider failed.");
@@ -2323,7 +2309,7 @@ public sealed class AcpSession(
     /// <para><b>Every session asks for its background tasks</b> (BGWAIT3): their frames are what a turn that ends on its own
     /// background work waits by (BGWAIT1), and the headless loop's sessions, which keep no streams, carried none, so their turns
     /// parked on work still running. Where no stream takes the frames, the record and the console keep none of them
-    /// (<see cref="Map"/>, <see cref="Render"/>). A subagent's own session is asked for only where streams route it.</para>
+    /// (<see cref="AcpRender.Map"/>, <see cref="AcpRender.Render"/>). A subagent's own session is asked for only where streams route it.</para>
     /// </remarks>
     internal static object Capabilities(bool streams, bool typedFailures = false)
     {
@@ -2605,7 +2591,7 @@ public sealed class AcpSession(
                     _openCalls.Add(id);
                     break;
                 case null:
-                    if (Kind(update) == "tool_call" && !_finishedCalls.Contains(id)) _openCalls.Add(id);
+                    if (AcpRender.Kind(update) == "tool_call" && !_finishedCalls.Contains(id)) _openCalls.Add(id);
                     break;
                 default:
                     _openCalls.Remove(id);
@@ -2743,30 +2729,6 @@ public sealed class AcpSession(
         };
     }
 
-    /// <summary>
-    /// Which models a turn's tokens were spent on, for the usage history alone (USAGECAP1a2, D179 point 2): the models the turn's
-    /// updates named, and the response's <c>_meta.quota</c> by model where it agrees with the turn's <c>usage</c>. A small model the
-    /// harness called on its own is counted in the quota and not in <c>usage</c> (CONV5), so its tokens are kept beside the total.
-    /// The next turn's names are its own.
-    /// </summary>
-    private TurnModels TurnModelsOf(JsonElement result, TurnTokens? tokens)
-    {
-        JsonElement raw = default;
-        var split = result.ValueKind == JsonValueKind.Object
-                    && result.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
-                    && meta.TryGetProperty("quota", out var quota) && quota.ValueKind == JsonValueKind.Object
-                    && quota.TryGetProperty("model_usage", out var byModel)
-            ? TurnModels.Read(raw = byModel)
-            : null;
-        lock (_measured)
-        {
-            var models = TurnModels.Of(tokens, _named, TurnModels.FromUpdates, split, _split, TurnModels.FromQuota, TurnModels.Names(raw));
-            _named.Clear();
-            if (split is { Count: > 0 }) _split = split;
-            return models;
-        }
-    }
-
     /// <summary>A prompt's content: each text its own block (MSG1b), then each file a <c>resource_link</c> to where it is kept (CONV4c).</summary>
     private static object[] Blocks(IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files) =>
     [
@@ -2801,12 +2763,12 @@ public sealed class AcpSession(
                 Kind = SessionEventKind.Turn,
                 StopReason = stopReason,
                 Tokens = tokens,
-                Models = TurnModelsOf(result, tokens),
+                Models = TurnStages.Of<AcpMeasure>().ModelsOf(result, tokens),
             });
 
             // CODEXPERM1: a turn that ends cancelled when this client never asked it to stop was cut by the agent, after a refusal if one came.
-            _turnCut = stopReason == "cancelled" && !_cancelAsked ? new TurnCut(_lastRefused) : null;
-            _lastRefused = null;
+            _turnCut = stopReason == "cancelled" && !_cancelAsked ? new TurnCut(_refused.Last) : null;
+            _refused.Last = null;
             _cancelAsked = false;
 
             // COWORK1c (the design §7), COMMS1h: the turn that took the words ended, their receipt `ended`: what Daoris saw, never an
@@ -2821,7 +2783,7 @@ public sealed class AcpSession(
         else
         {
             // An error answered the prompt, and the turn its updates named ends without a response: its names are not the next's.
-            lock (_measured) _named.Clear();
+            TurnStages.Of<AcpMeasure>().Forget();
         }
 
         OpenPrompt? taken = null;
@@ -2970,7 +2932,7 @@ public sealed class AcpSession(
         }
         finally
         {
-            await ReleaseHeldAsync(PermissionWhy.Cancelled).ConfigureAwait(false);
+            await TurnStages.Of<AcpPermission>().ReleaseHeldAsync(PermissionWhy.Cancelled).ConfigureAwait(false);
         }
     }
 
@@ -3003,7 +2965,7 @@ public sealed class AcpSession(
         if (_sessionId is null) return;
 
         // Nothing held for the person outlives the session it was asked in (AUTONOMY1b3a): answered before the close goes.
-        await ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
+        await TurnStages.Of<AcpPermission>().ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
 
         using var closing = CancellationTokenSource.CreateLinkedTokenSource(ct);
         closing.CancelAfter(_closeTimeout);
@@ -3073,10 +3035,10 @@ public sealed class AcpSession(
                     // stream had ended — a false sentence over a lost exception, which is how the
                     // first real run died at its first tool call (ACP2, 2026-09-24).
                     _console.End();
-                    onLine($"[unreadable frame: {error.Message}] {Compact(frame)}");
+                    onLine($"[unreadable frame: {error.Message}] {AcpRender.Compact(frame)}");
                     Emit(new SessionEvent
                     {
-                        Kind = SessionEventKind.Raw, Title = "unreadable frame", Text = error.Message, Raw = Compact(frame),
+                        Kind = SessionEventKind.Raw, Title = "unreadable frame", Text = error.Message, Raw = AcpRender.Compact(frame),
                     });
                 }
             }
@@ -3100,7 +3062,7 @@ public sealed class AcpSession(
 
             // What it held for the person ends with the stream, said before the stream's end is (AUTONOMY1b3a): there is no wire to
             // answer on now, and an answer the person gives after would land nowhere.
-            await ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
+            await TurnStages.Of<AcpPermission>().ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
             Fail(StreamEnded(
                 "the ACP agent's stream ended before it answered — the agent exited, or it is not "
                 + "speaking ACP on stdout."));
@@ -3150,72 +3112,85 @@ public sealed class AcpSession(
         if (name == "session/update" && frame.TryGetProperty("params", out var p)
             && p.TryGetProperty("update", out var update))
         {
-            // A load's replay of the history (ANSWER1a): the record already holds it, so it is not kept a second time.
-            if (Replayed(p)) return;
-
-            Interlocked.Increment(ref _updates);
-
-            // The session's own background work (BGWAIT1), before the console takes the same frames for its streams, and the
-            // turns its harness wakes when that work ends (BGWAIT2), read in the same order.
-            var from = StringField(p, "sessionId");
-            if (from is null || from == _sessionId)
-            {
-                _background.Take(update);
-                _wake.Take(update, Prompted());
-            }
-
-            // The agent went on after an error answered the turn before a word (USERSHOWN1): its words, thinking, calls or plan
-            // are that word's turn, so it was taken. A meter or a mode said meanwhile is nobody's answer.
-            if ((from is null || from == _sessionId)
-                && StringField(update, "sessionUpdate") is { } kind
-                && (kind.StartsWith("agent_", StringComparison.Ordinal) || kind.StartsWith("tool_call", StringComparison.Ordinal) || kind == "plan"))
-            {
-                // AGENTERRORS1a (§5.1): an update of the oldest open prompt's turn shows its words taken, whatever answers it.
-                lock (_promptsGate)
-                {
-                    if (_prompts.First?.Value is { } turn) turn.Heard = true;
-                }
-
-                if (TakeLate() is { } late) AskedAll(late);
-            }
-
-            // 🔴 Routed by whose it is (CONSOLE2): a subagent speaks under its own session id, and a
-            // client that reads every update as the session's merges the child into the parent.
-            if (_beside is not null && _beside.Take(from, _sessionId, update)) return;
-
-            Measure(update);
-            // The agent changed its own options — a model it fell back to, a switch it made (AGT6b): what
-            // it says now replaces what was kept, as an answer to a change does.
-            if (Kind(update) == "config_option_update" && update.TryGetProperty("configOptions", out var changed)
-                && changed.ValueKind == JsonValueKind.Array)
-            {
-                KeepOptions(AcpConfigOption.Read(changed));
-            }
-
-            var structured = Refused(Map(update));
-            Track(update, structured);
-            _console.Update(update, structured);
-            if (structured is not null) Emit(structured);
+            await StagesAsync(TurnPhase.Update, new TurnFrame(name, frame, default, update)).ConfigureAwait(false);
         }
     }
 
-    /// <summary>The tool calls this client refused, by id (HELP4).</summary>
-    private readonly ConcurrentDictionary<string, byte> _refused = new(StringComparer.Ordinal);
+    /// <summary>
+    /// The turn's stages, registered by their modules (<see cref="TurnStageAttribute"/>), ordered once per process and built once per
+    /// session with the session as their wiring.
+    /// </summary>
+    internal PartSet<ITurnStage> TurnStages =>
+        LazyInitializer.EnsureInitialized(ref _turnStages, () => Parts.Build(TurnOrder.Value, type => (ITurnStage)Activator.CreateInstance(type, this)!));
 
-    // CODEXPERM1: the last call refused in the turn running, whether this client asked the turn to stop, and how the last turn was cut.
-    private volatile string? _lastRefused;
+    private PartSet<ITurnStage>? _turnStages;
+
+    private static readonly Lazy<IReadOnlyList<PartDeclaration>> TurnOrder = new(() => Parts.Declared<TurnStageAttribute>(typeof(AcpSession).Assembly));
+
+    /// <summary>The stages of <paramref name="phase"/>, in order, until one takes the frame: whether one did.</summary>
+    private async Task<bool> StagesAsync(TurnPhase phase, TurnFrame frame)
+    {
+        foreach (var stage in TurnStages.In(phase))
+        {
+            if (await stage.RunAsync(frame).ConfigureAwait(false)) return true;
+        }
+
+        return false;
+    }
+
+    void ITurnWiring.Say(string line) => onLine(line);
+
+    void ITurnWiring.Emit(SessionEvent e) => Emit(e);
+
+    Task ITurnWiring.SendAsync(JsonNode frame) => SendAsync(frame);
+
+    AcpConsole ITurnWiring.Console => _console;
+
+    AcpWake ITurnWiring.Wake => _wake;
+
+    string? ITurnWiring.SessionId => _sessionId;
+
+    bool ITurnWiring.Replayed(JsonElement parameters) => Replayed(parameters);
+
+    void ITurnWiring.Counted() => Interlocked.Increment(ref _updates);
+
+    AcpBackground ITurnWiring.Background => _background;
+
+    AcpStreams? ITurnWiring.Beside => _beside;
+
+    void ITurnWiring.Heard()
+    {
+        // AGENTERRORS1a (§5.1): an update of the oldest open prompt's turn shows its words taken, whatever answers it.
+        lock (_promptsGate)
+        {
+            if (_prompts.First?.Value is { } turn) turn.Heard = true;
+        }
+
+        if (TakeLate() is { } late) AskedAll(late);
+    }
+
+    bool ITurnWiring.Prompted() => Prompted();
+
+    bool ITurnWiring.PersonAnswers => _personAnswers;
+
+    bool ITurnWiring.StreamOver
+    {
+        get { lock (_endGate) return _streamOver; }
+    }
+
+    RefusedCalls ITurnWiring.Refused => _refused;
+
+    void ITurnWiring.Track(JsonElement update, SessionEvent? mapped) => Track(update, mapped);
+
+    void ITurnWiring.SayLimits(JsonElement limits) => LimitsSaid?.Invoke(limits);
+
+    void ITurnWiring.KeepOptions(IReadOnlyList<AcpConfigOption> options) => KeepOptions(options);
+
+    private readonly RefusedCalls _refused = new();
+
+    // Whether this client asked the turn to stop, and how the last turn was cut.
     private volatile bool _cancelAsked;
     private volatile TurnCut? _turnCut;
-
-    /// <summary>
-    /// A call this client refused ends on the wire as `failed`, and the record says `refused` (HELP4):
-    /// the person read Ask Daoris as failing at a command it was never allowed to run. The console, the
-    /// raw view, keeps the wire's word beside the refusal's own line.
-    /// </summary>
-    private SessionEvent? Refused(SessionEvent? mapped) =>
-        mapped is { Kind: SessionEventKind.Tool, Status: "failed", Id: { } id } && _refused.ContainsKey(id)
-            ? mapped with { Status = "refused" }
-            : mapped;
 
     /// <summary>
     /// An event to whoever keeps the record — and a record that fails costs a line on the console,
@@ -3268,41 +3243,9 @@ public sealed class AcpSession(
         waiting.TrySetResult(frame.TryGetProperty("result", out var result) ? result.Clone() : default);
     }
 
-    /// <summary>
-    /// The option that refuses, read without trusting the frame's shape — null when none can be read.
-    /// </summary>
-    /// <remarks>
-    /// Null answers <c>cancelled</c>, which is also a refusal. A read that threw on an unexpected shape
-    /// used to leave the request unanswered, and an unanswered request is a turn hung for ever (REV3).
-    /// </remarks>
-    private static string? RejectOption(JsonElement frame)
-    {
-        if (!frame.TryGetProperty("params", out var p) || p.ValueKind != JsonValueKind.Object
-            || !p.TryGetProperty("options", out var options) || options.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        foreach (var option in options.EnumerateArray())
-        {
-            if (option.ValueKind != JsonValueKind.Object) continue;
-            if (!option.TryGetProperty("kind", out var kind) || kind.ValueKind != JsonValueKind.String) continue;
-            if (kind.GetString() is not ("reject_once" or "reject_always")) continue;
-            if (option.TryGetProperty("optionId", out var o) && o.ValueKind == JsonValueKind.String) return o.GetString();
-        }
-
-        return null;
-    }
-
     private async Task AnswerRequestAsync(string? method, JsonElement id, JsonElement frame)
     {
-        if (method == "session/request_permission")
-        {
-            // RUNENDS1: a request is the agent's turn doing something, never its silence; with no prompt open, the harness's turn beginning.
-            _wake.Asked(Prompted());
-            await AnswerPermissionAsync(id, frame).ConfigureAwait(false);
-            return;
-        }
+        if (await StagesAsync(TurnPhase.Request, new TurnFrame(method, frame, id, default)).ConfigureAwait(false)) return;
 
         // Anything else the agent asks of the client, this client does not implement — and says so in
         // the protocol's own vocabulary rather than leaving the agent waiting. An unanswered request
@@ -3317,246 +3260,6 @@ public sealed class AcpSession(
                 ["message"] = $"daoris-driver does not implement {method}",
             },
         }).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// A permission request is refused — always, and by the option's KIND rather than its position.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>This is D37 and D52 on the wire.</b> A request reaching the driver at all means the
-    /// repository's own checked-in permission configuration did not already cover the action; the
-    /// driver is a component, not a party to the work, and widening the posture at runtime is
-    /// precisely what "a better approval surface must not widen autonomy" forbids. The harness's
-    /// standing posture — `acceptEdits` and its equivalents — is set where it belongs, at session
-    /// creation, so ordinary reversible work never reaches this path.</para>
-    ///
-    /// <para><b>With no refusal offered, the answer is `cancelled`</b> — never the first option that
-    /// happens to be present. Fail closed means closed even when the menu is unhelpful.</para>
-    ///
-    /// <para><b>Under a repository's asking permission prompts it is held for the person instead</b> (AUTONOMY1b3a, D184 point 3,
-    /// <see cref="HoldPermission"/>): the person's press is the say D37 and D52 keep for them, one call at a time; the driver itself
-    /// still allows nothing.</para>
-    /// </remarks>
-    private async Task AnswerPermissionAsync(JsonElement id, JsonElement frame)
-    {
-        if (HoldPermission(id, frame)) return;
-
-        var rejectId = RejectOption(frame);
-        var outcome = rejectId is null
-            ? new JsonObject { ["outcome"] = "cancelled" }
-            : new JsonObject { ["outcome"] = "selected", ["optionId"] = rejectId };
-
-        var call = frame.TryGetProperty("params", out var q) && q.ValueKind == JsonValueKind.Object
-                   && q.TryGetProperty("toolCall", out var named) && named.ValueKind == JsonValueKind.Object
-            ? named : (JsonElement?)null;
-        // Said of every place a session runs — a repository, an intake's room, Ask Daoris's — since the
-        // rules it was handed and the place's own settings are what refused it, wherever that is.
-        const string governs = "— the rules it runs under govern, and the driver may not widen them";
-        if (call is { } refusedCall && refusedCall.TryGetProperty("toolCallId", out var refusedId)
-            && refusedId.ValueKind == JsonValueKind.String && refusedId.GetString() is { } refusedName)
-        {
-            _refused[refusedName] = 0;
-        }
-        _lastRefused = Named(call).Trim('`');
-        // The console is the raw view, and keeps the request as the wire said it.
-        onLine($"  permission refused: {(call is { } raw ? Compact(raw) : "a tool call")} {governs}");
-        // 🔴 The record names the call as a reader knows it (SESS1 S6): its title, else its kind — the
-        // request's JSON made every refusal four lines of wire. Its id keeps the note with its call.
-        // CONVNOTE2b: coded lead, the title as the agent's words (it may hold a path), coded close; the English is unchanged.
-        var refused = Noted.Of(NoteCodes.RefusedLead, "permission refused:")
-            .Then(" ", Noted.Said(Named(call), NoteBy.Agent))
-            .Then(" ", Noted.Of(NoteCodes.RefusedGoverns, governs));
-        Emit(new SessionEvent
-        {
-            Kind = SessionEventKind.Note,
-            Id = call is { } c && c.TryGetProperty("toolCallId", out var callId) && callId.ValueKind == JsonValueKind.String
-                ? callId.GetString() : null,
-            Text = refused.Note,
-            Parts = refused.Parts,
-        });
-
-        await SendAsync(new JsonObject
-        {
-            ["jsonrpc"] = "2.0",
-            ["id"] = JsonNode.Parse(id.GetRawText()),
-            ["result"] = new JsonObject { ["outcome"] = outcome },
-        }).ConfigureAwait(false);
-    }
-
-    // ---- A permission request held for the person (AUTONOMY1b3a, D184 point 3) ----
-
-    /// <summary>
-    /// Hold a permission request for the person where this session's posture says the person answers them (<see cref="PersonAnswers"/>)
-    /// and it was given a door (<see cref="Permissions"/>): listed with what the person may choose, said on the console and in the record, and
-    /// answered off the read loop once the person answers or it is released. False leaves it to the refusal, as before.
-    /// </summary>
-    /// <remarks>
-    /// <para>🔴 <b>Off the loop.</b> The reader dispatches each frame before it reads the next, so a hold awaited here would stall every
-    /// frame after it: the agent's updates, a cancel's answer, the stream's end. The answer goes later, through the same serialized
-    /// writer as every other frame.</para>
-    ///
-    /// <para><b>A request this client cannot read is still refused at once</b> (REV3): params or options of an unexpected shape hold
-    /// nothing, and the refusal answers it as it always did.</para>
-    /// </remarks>
-    private bool HoldPermission(JsonElement id, JsonElement frame)
-    {
-        if (!_personAnswers || Permissions is not { } holds || Offered(frame) is not { } offered) return false;
-
-        var call = frame.GetProperty("params").TryGetProperty("toolCall", out var named) && named.ValueKind == JsonValueKind.Object
-            ? named : (JsonElement?)null;
-        var callId = call is { } c && c.TryGetProperty("toolCallId", out var asked) && asked.ValueKind == JsonValueKind.String
-            ? asked.GetString() : null;
-        var title = Named(call);
-        var request = id.ValueKind == JsonValueKind.String ? id.GetString() ?? "" : id.GetRawText();
-        // The registry keeps the agent's own title and kind, plain, for the page to word; the notes say it as a reader knows it.
-        var plain = call is { } p && Json.Text(p, "title")?.Trim() is { Length: > 0 } written ? TextBounds.Clip(written, 160) : null;
-        // RUNENDS1: a turn waiting on the person is never silent, and its quiet counts from the answer (AnsweredAsync). The wake knows of
-        // the hold before the hold can be seen, or answered, anywhere: a quiet judged between the two read a held turn as silent.
-        _wake.Held();
-        if (holds.Hold(request, callId, plain, offered, call is { } k ? Json.Text(k, "kind") : null) is not { } held)
-        {
-            _wake.Released();
-            return false;
-        }
-
-        var raw = call is { } shown ? Compact(shown) : "a tool call";
-        Said($"  permission held for the person's answer: {raw}",
-            Noted.Of(NoteCodes.AskingHeld, "permission held for the person's answer:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
-        var answering = AnsweredAsync(id, raw, callId, title, held, holds.Bound);
-        lock (_answering)
-        {
-            _answering.RemoveAll(each => each.IsCompleted);
-            _answering.Add(answering);
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// The options a permission request offered, read without trusting the frame's shape: null where its params or options are not
-    /// what the protocol says, and then nothing is held. An option with no id or no kind is not one the person can choose.
-    /// </summary>
-    private static IReadOnlyList<PermissionChoice>? Offered(JsonElement frame)
-    {
-        if (!frame.TryGetProperty("params", out var p) || p.ValueKind != JsonValueKind.Object
-            || !p.TryGetProperty("options", out var options) || options.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        var offered = new List<PermissionChoice>();
-        foreach (var option in options.EnumerateArray())
-        {
-            if (option.ValueKind != JsonValueKind.Object
-                || Json.Text(option, "optionId") is not { Length: > 0 } optionId || Json.Text(option, "kind") is not { Length: > 0 } kind)
-            {
-                continue;
-            }
-
-            offered.Add(new PermissionChoice(optionId, Json.Text(option, "name") ?? optionId, kind));
-        }
-
-        return offered;
-    }
-
-    /// <summary>
-    /// The answer to a held request, once the person answers it or it is released: the option the person chose where it allows the
-    /// call, else the offered rejection they chose, else <c>cancelled</c>; said on the console and in the record, and sent unless the
-    /// stream is over. A call it did not allow is marked refused, so its later <c>failed</c> reads as what it was (HELP4).
-    /// </summary>
-    private async Task AnsweredAsync(JsonElement id, string raw, string? callId, string title, Task<PermissionEnd> held, TimeSpan bound)
-    {
-        try
-        {
-            await AnswerAsync(id, raw, callId, title, await held.ConfigureAwait(false), bound).ConfigureAwait(false);
-        }
-        finally
-        {
-            // RUNENDS1: the hold is over once its answer is said and sent, and the turn's quiet counts from then, after the record says it.
-            _wake.Released();
-        }
-    }
-
-    /// <summary><see cref="AnsweredAsync"/>'s answer, said and sent once the hold has ended as <paramref name="end"/>.</summary>
-    private async Task AnswerAsync(JsonElement id, string raw, string? callId, string title, PermissionEnd end, TimeSpan bound)
-    {
-        JsonObject outcome;
-        try
-        {
-            if (end.Chosen is { Allows: true } allowed)
-            {
-                Said($"  permission allowed by the person: {raw}",
-                    Noted.Of(NoteCodes.AskingAllowed, "permission allowed by the person:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
-                outcome = new JsonObject { ["outcome"] = "selected", ["optionId"] = allowed.Id };
-            }
-            else
-            {
-                if (callId is not null) _refused[callId] = 0;
-                _lastRefused = title.Trim('`');
-                var minutes = Math.Max(1, (int)Math.Ceiling(bound.TotalMinutes));
-                var close = end.Why switch
-                {
-                    PermissionWhy.Answered => Noted.Of(NoteCodes.AskingDenied, "— the person refused it"),
-                    PermissionWhy.Cancelled => Noted.Of(NoteCodes.AskingCancelled, "— the turn was stopped before the person answered"),
-                    PermissionWhy.Bound => Noted.Of(
-                        NoteCodes.AskingBound,
-                        $"— nobody answered within its {minutes}-minute bound, and a turn is never left waiting for ever",
-                        ("minutes", minutes)),
-                    _ => Noted.Of(NoteCodes.AskingEnded, "— the session ended before the person answered"),
-                };
-                Said($"  permission refused: {raw} {close.Note}",
-                    Noted.Of(NoteCodes.RefusedLead, "permission refused:").Then(" ", Noted.Said(title, NoteBy.Agent)).Then(" ", close), callId);
-                outcome = end.Chosen is { } rejection
-                    ? new JsonObject { ["outcome"] = "selected", ["optionId"] = rejection.Id }
-                    : new JsonObject { ["outcome"] = "cancelled" };
-            }
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            // The console that would say it is gone; the answer still goes, failing closed.
-            outcome = new JsonObject { ["outcome"] = "cancelled" };
-        }
-
-        bool over;
-        lock (_endGate) over = _streamOver;
-        if (over) return;
-        try
-        {
-            await SendAsync(new JsonObject
-            {
-                ["jsonrpc"] = "2.0",
-                ["id"] = JsonNode.Parse(id.GetRawText()),
-                ["result"] = new JsonObject { ["outcome"] = outcome },
-            }).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
-        {
-            // The agent's input closed as it was answered: its stream's end says the rest.
-        }
-    }
-
-    /// <summary>The driver's line about one call: the console's raw view, and the record's coded note, kept with its call.</summary>
-    private void Said(string line, Noted noted, string? callId)
-    {
-        _console.End();
-        onLine(line);
-        Emit(new SessionEvent { Kind = SessionEventKind.Note, Id = callId, Text = noted.Note, Parts = noted.Parts });
-    }
-
-    /// <summary>End what this session holds for the person, saying why, and wait for each answer to be said.</summary>
-    private async Task ReleaseHeldAsync(string why)
-    {
-        Permissions?.ReleaseAll(why);
-        Task[] answering;
-        lock (_answering) answering = [.. _answering];
-        try
-        {
-            await Task.WhenAll(answering).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            // Each answer keeps its own failure; the stream's end is said whatever became of them.
-        }
     }
 
     /// <summary>
@@ -3656,304 +3359,6 @@ public sealed class AcpSession(
         }
 
         return (required, held, posture?[at..] ?? "");
-    }
-
-    /// <summary>
-    /// Keep the largest context reading this session reported (TOOL3/D57 §4), and tell <see cref="LimitsSaid"/> what the
-    /// same update says about the account's windows (TOOL6c).
-    /// </summary>
-    /// <remarks>
-    /// <para>🔴 <b>The high-water mark, not the last reading.</b> Context drops when a session
-    /// compacts, so the final number would report a session that nearly filled its window as having
-    /// used very little — which is exactly backwards for the person deciding whether to split work.</para>
-    ///
-    /// <para><b>A frame that is not a measurement is ignored, never believed.</b> Somebody else's
-    /// protocol version is free to change its shape, and a malformed update must become an absence
-    /// rather than a zero on a person's screen — nor may it take the turn down.</para>
-    /// </remarks>
-    private void Measure(JsonElement update)
-    {
-        if (Kind(update) != "usage_update") return;
-
-        // The account's windows ride beside the context, whether or not the context reads (TOOL6c): an object, or nothing.
-        if (update.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
-            && meta.TryGetProperty("_claude/rateLimit", out var limits) && limits.ValueKind == JsonValueKind.Object)
-        {
-            try
-            {
-                LimitsSaid?.Invoke(limits.Clone());
-            }
-            catch (Exception error) when (error is not OperationCanceledException)
-            {
-                onLine($"[what the session said about its account's windows could not be kept: {error.Message}]");
-            }
-        }
-
-        // The model answering the turn, for the usage history alone (USAGECAP1a2): Claude Code's adapter says it beside the context.
-        if (meta.ValueKind == JsonValueKind.Object && Json.Text(meta, "_claude/model") is { Length: > 0 } model)
-        {
-            lock (_measured) _named.Add(model);
-        }
-
-        if (Json.Long(update, "used") is not { } used || Json.Long(update, "size") is not { } size) return;
-
-        lock (_measured)
-        {
-            if (_usage is null || used > _usage.Used) _usage = new AcpUsage(used, size);
-        }
-    }
-
-    /// <summary>
-    /// One update as a console line — the structured source rendered for a transcript a person reads.
-    /// </summary>
-    /// <remarks>
-    /// <para>An update shape this build has never seen is rendered as ITSELF rather than dropped. The
-    /// wire belongs to somebody else and it grows; a console that silently omitted the one update type
-    /// it did not recognise would be a transcript with a hole in it that nothing reports.</para>
-    ///
-    /// <para>The agent's words are not rendered here: they arrive in chunks, and
-    /// <see cref="AcpConsole"/> joins them into lines from the event <see cref="Map"/> made (UX5 U3).</para>
-    ///
-    /// <para>🔴 <b>A tool is named by its title, and only its end is a line</b>. A call streams its input and output as updates that carry no
-    /// status, five to eight per call in FG5's transcripts, and each printed as <c>toolu_… → ?</c>. The
-    /// record keeps every one of them as an event. The console says the call, then how it ended, by
-    /// the name the call gave it, which <paramref name="titles"/> remembers per session.</para>
-    /// </remarks>
-    internal static string? Render(JsonElement update, IDictionary<string, string> titles)
-    {
-        var kind = Kind(update);
-        var id = Field(update, "toolCallId");
-        if (kind is "tool_call" or "tool_call_update" && id is not null && Field(update, "title") is { Length: > 0 } title)
-        {
-            titles[id] = OneLine(title);
-        }
-
-        var name = id is not null && titles.TryGetValue(id, out var known) ? known : OneLine(Field(update, "title") ?? "a tool");
-
-        return kind switch
-        {
-            "agent_message_chunk" or "agent_thought_chunk" => null,
-            "tool_call" => $"→ {name}" + (Field(update, "status") is { } s and not ("pending" or "in_progress") ? $" [{s}]" : ""),
-            "tool_call_update" => Field(update, "status") switch
-            {
-                "completed" => $"  ✓ {name}",
-                "failed" => $"  ✗ {name} failed",
-                // Progress, and the pieces of a call's input and output, say nothing a line should.
-                null or "pending" or "in_progress" => null,
-                var other => $"  {name}: {other}",
-            },
-            "usage_update" => Field(update, "used") is { } used && Field(update, "size") is { } size
-                ? $"  context {used}/{size}"
-                : null,
-            // BGWAIT3: as the record keeps none (Map): the door's notes say the waits on the console.
-            "async_task_spawned" or "async_task_progress" or "async_task_state_update" => null,
-            null => $"[update] {Compact(update)}",
-            _ => $"[{kind}] {Compact(update)}",
-        };
-    }
-
-    /// <summary>
-    /// A tool's name as one console line (FG5): a shell call's title is its whole command, and a
-    /// heredoc printed across raw lines that then read as the agent's words. The first line, capped.
-    /// </summary>
-    internal static string OneLine(string title, int limit = 160)
-    {
-        var first = title.ReplaceLineEndings("\n").Split('\n', 2);
-        var line = first[0].TrimEnd();
-        var cut = line.Length > limit || first.Length > 1;
-        return (line.Length > limit ? line[..limit].TrimEnd() : line) + (cut ? " …" : "");
-    }
-
-    /// <summary>
-    /// One update as an event in Daoris's vocabulary (D76 §1) — the structure <see cref="Render"/>
-    /// flattens for the console, kept.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>The protocol's own fields, renamed and nothing more.</b> A tool call's kind, title,
-    /// status, places and content are what the wire says they are; nothing is inferred from a title or
-    /// parsed out of text, which is the line D52 drew and D76 keeps.</para>
-    ///
-    /// <para>🔴 <b>Every read is shape-checked.</b> The wire is somebody else's and it grows: a real
-    /// <c>tool_call</c> carries <c>content</c> as a list where a stub sent an object, and reading one as
-    /// the other took a whole turn down (ACP2). A field of an unexpected shape is absent here, never a
-    /// throw.</para>
-    ///
-    /// <para><b>An update this build does not know is kept raw</b>, with its kind as the title, for
-    /// the same reason the console shows it: a record with a silent hole in it reports nothing.</para>
-    /// </remarks>
-    internal static SessionEvent? Map(JsonElement update)
-    {
-        var kind = Kind(update);
-        return kind switch
-        {
-            // The message a chunk belongs to rides with it: two messages in a row are two, which the
-            // chunks alone cannot say (found looking at CONSOLE2: "DONESubagent finished").
-            "agent_message_chunk" => Text(update) is { } message
-                ? new SessionEvent { Kind = SessionEventKind.Message, Id = StringField(update, "messageId"), Text = message }
-                : null,
-            "agent_thought_chunk" => Text(update) is { } thought
-                ? new SessionEvent { Kind = SessionEventKind.Thought, Id = StringField(update, "messageId"), Text = thought }
-                : null,
-            "user_message_chunk" => Text(update) is { } said
-                ? new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said }
-                : null,
-            "tool_call" or "tool_call_update" => new SessionEvent
-            {
-                Kind = SessionEventKind.Tool,
-                Id = StringField(update, "toolCallId"),
-                Title = StringField(update, "title"),
-                ToolKind = StringField(update, "kind"),
-                Status = StringField(update, "status"),
-                Locations = Locations(update),
-                Line = LocationLine(update),
-                Content = Contents(update),
-                Input = update.TryGetProperty("rawInput", out var input) ? Compact(input) : null,
-                Output = update.TryGetProperty("rawOutput", out var output) ? Compact(output) : null,
-            },
-            "plan" => new SessionEvent { Kind = SessionEventKind.Plan, Entries = Entries(update) },
-            "usage_update" => new SessionEvent
-            {
-                Kind = SessionEventKind.Usage, Used = Json.Long(update, "used"), Size = Json.Long(update, "size"),
-            },
-            // Known, and deliberately not the conversation: the session's own settings — the commands it
-            // offers, its mode, its config options. The options are kept by the session itself (AGT6b), and
-            // a person's change to one is the record's note, not the update. The console shows them; in the
-            // record they were rows over a chat nobody had spoken in yet (CONV3b), as the native door's
-            // `system` frames would have been (CONV3a).
-            "available_commands_update" or "current_mode_update" or "config_option_update" or "session_info_update" => null,
-            // BGWAIT3: the session's background tasks, where no stream takes them. The Bash call that started one is its card, the
-            // door's notes say what it waited on, and a raw row would carry the harness's output path into the record.
-            "async_task_spawned" or "async_task_progress" or "async_task_state_update" => null,
-            _ => new SessionEvent { Kind = SessionEventKind.Raw, Title = kind ?? "update", Raw = Compact(update) },
-        };
-    }
-
-    /// <summary>A string field, or null when absent or not a string.</summary>
-    private static string? StringField(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-
-    /// <summary>The paths a tool call names in <c>locations</c>, when it is a list of objects with one.</summary>
-    private static IReadOnlyList<string>? Locations(JsonElement update)
-    {
-        var paths = Located(update).Select(location => StringField(location, "path")!).ToList();
-        return paths.Count == 0 ? null : paths;
-    }
-
-    /// <summary>
-    /// The line the first location with a path names (LEFT2), when it is a whole number of zero or more — the one
-    /// <see cref="Locations"/>' first path pairs with, so a line never rides with a path it was not said of.
-    /// </summary>
-    private static long? LocationLine(JsonElement update) =>
-        Located(update).FirstOrDefault() is { ValueKind: JsonValueKind.Object } first
-        && first.TryGetProperty("line", out var line)
-        && line.ValueKind == JsonValueKind.Number
-        && line.TryGetInt64(out var number)
-        && number >= 0
-            ? number
-            : null;
-
-    /// <summary>The entries of <c>locations</c> that are objects naming a path, in the wire's order.</summary>
-    private static IEnumerable<JsonElement> Located(JsonElement update) =>
-        update.TryGetProperty("locations", out var locations) && locations.ValueKind == JsonValueKind.Array
-            ? locations.EnumerateArray().Where(location => location.ValueKind == JsonValueKind.Object && StringField(location, "path") is not null)
-            : [];
-
-    /// <summary>
-    /// A tool call's <c>content</c> in ACP's three shapes — a content block (its text), a diff, a
-    /// terminal — when it is a list. Anything else in the list is kept as its raw JSON, as text.
-    /// </summary>
-    private static IReadOnlyList<ToolContent>? Contents(JsonElement update)
-    {
-        if (!update.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        var items = new List<ToolContent>();
-        foreach (var item in content.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object) continue;
-            switch (StringField(item, "type"))
-            {
-                case "diff":
-                    items.Add(new ToolContent("diff", Path: StringField(item, "path"),
-                        OldText: StringField(item, "oldText"), NewText: StringField(item, "newText")));
-                    break;
-                case "terminal":
-                    items.Add(new ToolContent("terminal", Text: StringField(item, "terminalId")));
-                    break;
-                case "content" when item.TryGetProperty("content", out var block) && block.ValueKind == JsonValueKind.Object:
-                    items.Add(StringField(block, "type") == "text"
-                        ? new ToolContent("text", Text: StringField(block, "text"))
-                        : new ToolContent(StringField(block, "type") ?? "content", Text: Compact(block)));
-                    break;
-                default:
-                    items.Add(new ToolContent("raw", Text: Compact(item)));
-                    break;
-            }
-        }
-
-        return items.Count == 0 ? null : items;
-    }
-
-    /// <summary>A plan's entries, each with its content; one without content is skipped.</summary>
-    private static IReadOnlyList<PlanEntry>? Entries(JsonElement update)
-    {
-        if (!update.TryGetProperty("entries", out var entries) || entries.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        return [.. entries.EnumerateArray()
-            .Where(entry => entry.ValueKind == JsonValueKind.Object && StringField(entry, "content") is not null)
-            .Select(entry => new PlanEntry(StringField(entry, "content")!, StringField(entry, "status"), StringField(entry, "priority")))];
-    }
-
-    /// <summary>
-    /// `content.text`, which is where every textual update carries its words.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 Only when `content` is an OBJECT. A real `tool_call` carries it as a list, and reading a list
-    /// as an object throws — which, in the reader, took the whole turn down at the first tool call of
-    /// the first real run (ACP2, 2026-09-24).
-    /// </remarks>
-    private static string? Text(JsonElement update) =>
-        update.TryGetProperty("content", out var content) ? Json.Text(content, "text") : null;
-
-    /// <summary>Which update this is, or null when the wire did not say in a string.</summary>
-    internal static string? Kind(JsonElement update) =>
-        update.TryGetProperty("sessionUpdate", out var kind) && kind.ValueKind == JsonValueKind.String
-            ? kind.GetString()
-            : null;
-
-    private static string? Field(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value)
-            ? value.ValueKind == JsonValueKind.String ? value.GetString() : value.GetRawText()
-            : null;
-
-    /// <summary>Bounded raw JSON: enough to recognise, never a log file on one line.</summary>
-    /// <summary>A tool call as a reader knows it: its title, bounded; else its kind; else "a tool call".</summary>
-    private static string Named(JsonElement? call)
-    {
-        if (call is not { } c) return "a tool call";
-        if (c.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String
-            && title.GetString()?.Trim() is { Length: > 0 } text)
-        {
-            return $"`{TextBounds.Clip(text, 160)}`";
-        }
-
-        return c.TryGetProperty("kind", out var kind) && kind.ValueKind == JsonValueKind.String
-               && kind.GetString() is { Length: > 0 } k
-            ? $"an unnamed `{k}` call"
-            : "a tool call";
-    }
-
-    private static string Compact(JsonElement element)
-    {
-        var raw = element.GetRawText();
-        return TextBounds.ClipCounted(raw, 400);
     }
 
     /// <param name="sent">
@@ -4195,149 +3600,6 @@ public sealed class AcpSession(
         catch (Exception error) when (error is not OperationCanceledException)
         {
             onLine($"[the session's conversation id could not be kept: {error.Message}]");
-        }
-    }
-}
-
-/// <summary>
-/// The protocol door's console lines (UX5 U3): the agent's words as the lines it wrote, never as the
-/// chunks the wire carried them in.
-/// </summary>
-/// <remarks>
-/// <para>A message streams in pieces that break wherever the agent flushed, inside a word as often as
-/// not, and a line per piece was a raw view that broke words across lines. So a piece joins the line
-/// it continues, a newline in the words ends a line, and anything else the wire says (a tool call, a
-/// refusal, the turn's answer, the stream's end) ends the open line before it is shown. The native
-/// door writes its console from the whole message; this wire never sends one. And a line the words
-/// leave open is shown once they go quiet, because an agent that says something and then waits sends
-/// nothing that would end it.</para>
-///
-/// <para>The words are read from the event <see cref="AcpSession.Map"/> made, so the console and the
-/// record take them from one place. The reader drives it and the quiet timer ends a line, so one
-/// lock holds both, and every line leaves in the order it was said.</para>
-/// </remarks>
-internal sealed class AcpConsole : IDisposable
-{
-    /// <summary>How long the words may go quiet before the line they left open is shown anyway.</summary>
-    /// <remarks>
-    /// 🔴 <b>Measured, not chosen</b> (UX5 U3, 2026-09-26). Half a second broke real lines on the
-    /// window (<c>al</c> / <c>pha: …</c>), because a real stream pauses that long mid-word. Across 13
-    /// kept conversations, 2,968 gaps between one chunk and the next: median 48ms, p99 557ms, the
-    /// longest 1,161ms, none over two seconds. So two seconds breaks no line that sample holds, and a
-    /// held turn's words still show within two seconds.
-    /// </remarks>
-    public static readonly TimeSpan Quiet = TimeSpan.FromSeconds(2);
-
-    private readonly Action<string> _onLine;
-    private readonly TimeSpan _quiet;
-    private readonly Timer _idle;
-    private readonly object _gate = new();
-    private readonly StringBuilder _open = new();
-    private string? _openKind;
-
-    /// <summary>The message the open line belongs to, where the wire named one.</summary>
-    private string? _openId;
-    private bool _disposed;
-
-    /// <summary>Each tool call's title by its id, so its ending is said by name rather than by id.</summary>
-    private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
-
-    /// <param name="quiet">
-    /// 🔴 How long before an open line is shown with nothing after it. Joining chunks alone held a
-    /// line until the next update, and an agent that says something and then waits sends none: the
-    /// words sat unseen for as long as it waited. A pause longer than this breaks the line there, which
-    /// is rare and still readable; infinite turns the flush off.
-    /// </param>
-    public AcpConsole(Action<string> onLine, TimeSpan quiet)
-    {
-        _onLine = onLine;
-        _quiet = quiet;
-        _idle = new Timer(_ => End());
-    }
-
-    /// <summary>One update: its words joined to the open line, or the open line ended and the update shown.</summary>
-    public void Update(JsonElement update, SessionEvent? mapped)
-    {
-        lock (_gate)
-        {
-            // A subagent's console is closed with its session while the reader may still hand it a
-            // late update (CONSOLE2); a closed timer would throw into the reader.
-            if (_disposed) return;
-
-            if (mapped is { Kind: SessionEventKind.Message or SessionEventKind.Thought, Text: { } words })
-            {
-                // A new message ends the one before it, by the ids the wire gives them.
-                if (_openKind != mapped.Kind || (_openId is not null && mapped.Id is not null && _openId != mapped.Id)) End();
-                _openKind = mapped.Kind;
-                _openId = mapped.Id;
-                _open.Append(words);
-
-                var text = _open.ToString();
-                var cut = text.LastIndexOf('\n');
-                if (cut >= 0)
-                {
-                    foreach (var line in text[..cut].Split('\n')) Say(line);
-                    _open.Clear().Append(text[(cut + 1)..]);
-                }
-
-                if (_open.Length > 0) _idle.Change(_quiet, Timeout.InfiniteTimeSpan);
-                return;
-            }
-
-            End();
-            if (AcpSession.Render(update, _titles) is { } rendered) _onLine(rendered);
-        }
-    }
-
-    /// <summary>A line of the door's own, after whatever the agent's words left open (CONSOLE2).</summary>
-    public void Line(string text)
-    {
-        lock (_gate)
-        {
-            if (_disposed) return;
-            End();
-            _onLine(text);
-        }
-    }
-
-    /// <summary>End the open line, if the agent's words left one.</summary>
-    public void End()
-    {
-        lock (_gate)
-        {
-            // 🔴 A quiet flush already queued when the reader ended runs after the timer is gone, on a
-            // pool thread, where a throw would take the process with it.
-            if (_disposed) return;
-            _idle.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            if (_open.Length > 0) Say(_open.ToString());
-            _open.Clear();
-            _openKind = null;
-            _openId = null;
-        }
-    }
-
-    /// <summary>The last line said, and the timer stopped: the reader has ended.</summary>
-    public void Dispose()
-    {
-        lock (_gate)
-        {
-            End();
-            _disposed = true;
-            _idle.Dispose();
-        }
-    }
-
-    private void Say(string line)
-    {
-        line = line.TrimEnd('\r');
-        if (_openKind != SessionEventKind.Thought)
-        {
-            _onLine(line);
-        }
-        else if (line.Length > 0)
-        {
-            // A thought is marked on every line it runs to; a blank line in one marks nothing.
-            _onLine($"· {line}");
         }
     }
 }
