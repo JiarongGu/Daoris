@@ -178,7 +178,7 @@ const tool = await import(
   isStageRehearsal: (gate: { name: string; run: string }) => boolean;
   stageCommand: (commit: string) => string;
   dotnetComponent: (run: string) => string | null;
-  SHARED_PROJECTS: ReadonlyMap<string, string[]>;
+  SHARED_PROJECTS: ReadonlyMap<string | null, readonly (string | null)[]>;
   isHeavyGate: (gate: { name: string; run: string }) => boolean;
   laneSchedule: (gates: Gate[], options?: { scripts?: Record<string, string>; byMemory?: boolean }) => Schedule;
   LIGHT_WIDTH: number;
