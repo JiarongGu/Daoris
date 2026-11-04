@@ -1,4 +1,4 @@
-import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useState } from 'react';
+import { type Dispatch, type SetStateAction, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   helpModeOf, useAccounts, useActors, useDriver, useHarnesses, useLines, usePlugins, useRoles,
@@ -15,7 +15,7 @@ import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
 import { type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
 import { DiagramSection } from './StructureCanvas';
-import { RoleSectionMain, type RolesView } from './RoleSections';
+import type { RolesView } from './RoleSections';
 import { type RoleDoors, AccountsSection, DiagramDetail, RepositorySection, WorkSection } from './StructureSections';
 import {
   buildStructure, NO_FILTERS, nodeOfRow, placeId, roleId, sectionOf, type StructureFilters, type WorkflowRead, workflowReadOf,
@@ -289,32 +289,3 @@ export function useRolesPage(): RolesPage {
   return { view, onView, selected, onSelected, filters, onFilters, opened, onOpened, scope, onScope, search, onSearch };
 }
 
-/**
- * The Roles mode's main area: the chosen section, and for Working roles the catalogue and its staffing; or the diagram, whichever section
- * is chosen (COMPANYVIEW1f). The page's state is held here, so the toggle and a section that holds its own keep it.
- */
-export function RolesMode({ section, notify, doors = {}, page: held }: { section: RoleSection; notify: Notify; doors?: RoleOpeners; page?: RolesPage }) {
-  const own = useRolesPage();
-  const page = held ?? own;
-  const Own = OWN_MAINS[section];
-  return Own && page.view === 'list'
-    ? <RoleSectionMain section={section} view={page.view} onView={page.onView}><Own /></RoleSectionMain>
-    : <SharedMain section={section} notify={notify} doors={doors} page={page} />;
-}
-
-/** The sections that hold their own reads and presses, so opening another asks nothing of them. */
-const OWN_MAINS: Partial<Record<RoleSection, ComponentType>> = {};
-
-/** Working roles, Work, Accounts and By repository, and the diagram: one hook's card, read and doors. */
-function SharedMain({ section, notify, doors, page }: { section: RoleSection; notify: Notify; doors: RoleOpeners; page: RolesPage }) {
-  const mode = useRolesMode({ notify, section, doors, page });
-  const body = page.view === 'diagram' ? mode.diagram
-    : section === 'working' ? mode.card : section === 'work' ? mode.work : section === 'accounts' ? mode.accounts : section === 'repository' ? mode.repository : null;
-  // Back on the list, the chosen node's row is brought into view.
-  const { view, selected } = page;
-  useEffect(() => {
-    if (view !== 'list' || !selected) return;
-    document.querySelector(`[data-structure-row="${selected}"]`)?.scrollIntoView?.({ block: 'nearest' });
-  }, [view, selected, section]);
-  return <RoleSectionMain section={section} view={page.view} onView={page.onView}>{body}</RoleSectionMain>;
-}

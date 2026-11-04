@@ -58,7 +58,6 @@ const asks = (type: string): Record<string, unknown>[] => invoke.mock.calls
 describe('The Agents place, Setup mode', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.agents.setup', 'on');
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
@@ -202,13 +201,5 @@ describe('The Agents place, Setup mode', () => {
     expect(await screen.findByRole('radio', { name: '配置' })).toBeChecked();
     expect(await screen.findByRole('button', { name: /41 个已导入，未驱动/ })).toBeTruthy();
     expect(within(screen.getByRole('list', { name: '位置' })).getByRole('button', { name: /^本机$/ })).toBeTruthy();
-  });
-
-  it('stays dark until lit: the mode shows the Roles sections', async () => {
-    window.localStorage.removeItem('daoris.agents.setup');
-    show(<Place />);
-    expect(await screen.findByRole('list', { name: 'Roles' })).toBeTruthy();
-    expect(screen.queryByRole('list', { name: 'Places' })).toBeNull();
-    expect(asked()).toEqual([]);
   });
 });

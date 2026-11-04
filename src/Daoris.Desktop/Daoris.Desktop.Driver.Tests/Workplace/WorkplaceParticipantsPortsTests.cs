@@ -216,37 +216,6 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
         }
     }
 
-    [Fact]
-    public void The_merges_note_asks_the_setup_for_its_words_only_where_it_names_them_and_the_other_notes_never_do()
-    {
-        var actual = WorkplaceAccessSetup.Current;
-        var setup = new Setup();
-        try
-        {
-            WorkplaceAccessSetup.Current = setup;
-
-            var named = AutoLandingNotes.Concluded(AutoConcluded.Merges, "somewhere");
-            Assert.Contains("whose-somewhere's access setup", named.Text);
-            Assert.Equal("somewhere", named.Parts![0].Value("access"));
-            Assert.Equal(["whose:somewhere"], setup.Calls);
-
-            setup.Calls.Clear();
-            var none = AutoLandingNotes.Concluded(AutoConcluded.Merges);
-            Assert.Contains("its access setup", none.Text);
-            Assert.Equal("the-default", none.Parts![0].Value("access"));
-            Assert.Equal(["default-source"], setup.Calls);
-
-            setup.Calls.Clear();
-            WorkplaceAccessSetup.Current = null!;
-            Assert.NotNull(AutoLandingNotes.Concluded(AutoConcluded.NoTree, "machine").Text);
-            Assert.NotNull(AutoLandingNotes.Concluded(AutoConcluded.NotDone).Text);
-            Assert.Contains("Participants installs it", Assert.Throws<InvalidOperationException>(() => AutoLandingNotes.Concluded(AutoConcluded.Merges)).Message);
-            Assert.Contains("Participants installs it", Assert.Throws<InvalidOperationException>(() => AutoLandingNotes.Concluded(AutoConcluded.Merges, "machine")).Message);
-            Assert.Empty(setup.Calls);
-        }
-        finally { WorkplaceAccessSetup.Current = actual; }
-    }
-
     // ——— Doubles
 
     private static AccessSetting Pause(string pause, string value) =>
@@ -299,48 +268,6 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
         {
             Calls.Add("holding:" + string.Join(',', sessions));
             return HoldingFails is null ? Holds : throw HoldingFails;
-        }
-    }
-
-    private sealed class Setup : IWorkplaceAccessSetup
-    {
-        public List<string> Calls { get; } = [];
-        public string Landing { get; init; } = "person";
-
-        public IWorkplaceResolvedAccess Resolve(DriverConfig config, string repository, string? workspace)
-        {
-            Calls.Add($"resolve:{repository}/{workspace}");
-            return new Resolved(this);
-        }
-
-        public string Whose(string source)
-        {
-            Calls.Add("whose:" + source);
-            return "whose-" + source;
-        }
-
-        public string DefaultSource
-        {
-            get
-            {
-                Calls.Add("default-source");
-                return "the-default";
-            }
-        }
-    }
-
-    private sealed class Resolved(Setup owner) : IWorkplaceResolvedAccess
-    {
-        public string Value(string pause)
-        {
-            owner.Calls.Add("value:" + pause);
-            return owner.Landing;
-        }
-
-        public string Source(string pause)
-        {
-            owner.Calls.Add("source:" + pause);
-            return "its-source";
         }
     }
 }

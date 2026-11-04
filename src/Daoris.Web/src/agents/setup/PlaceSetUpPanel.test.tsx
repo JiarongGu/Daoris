@@ -103,7 +103,6 @@ describe('Set up…, on a place\'s page', () => {
     quests.length = 0;
     asked.length = 0;
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.agents.setup', 'on');
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {

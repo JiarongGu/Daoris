@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // The Workflow tab in SHELL mode (WORKFLOW1b; D157 point 12, the workflow design §6.1): a repository's page and a
@@ -66,78 +66,9 @@ describe('the Workflow tab', () => {
       return STATE;
     });
 
-  it("asks for a repository's Current only once its tab shows, and draws it", async () => {
-    answering(() => FULL);
-    show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
-    expect(asked('WORKFLOW_CURRENT')).toEqual([]);
-
-    await userEvent.click(within(page).getByRole('tab', { name: 'Workflow' }));
-
-    expect(await within(repositoryMain()).findByRole('heading', { name: 'Current workflow' })).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_CURRENT', expect.objectContaining({ payload: { repository: 'engine' } }));
-    expect(within(repositoryMain()).getByRole('list', { name: 'Before it lands' })).toBeInTheDocument();
-  });
-
-  it("opens the workspace's page at its Setup from a step its workspace set", async () => {
-    answering(() => FULL);
-    show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
-    await userEvent.click(within(page).getByRole('tab', { name: 'Workflow' }));
-
-    const opinion = await waitFor(() => within(repositoryMain()).getAllByRole('listitem')
-      .find((item) => item.getAttribute('data-step') === 'opinion')!);
-    await userEvent.click(within(opinion).getByRole('button', { name: 'Open workspace Setup' }));
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'aurora' })).toBeInTheDocument();
-    expect(within(repositoryMain()).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
-    expect(await within(repositoryMain()).findByRole('button', { name: 'Defaults' })).toHaveAttribute('aria-expanded', 'true');
-  });
-
-  it("says a refusal in the driver's words, in the tab's place", async () => {
-    answering(() => new Error('the driver is still coming up — try again in a moment.'));
-    show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
-    await userEvent.click(within(page).getByRole('tab', { name: 'Workflow' }));
-
-    expect(await within(repositoryMain()).findByText('the driver is still coming up — try again in a moment.')).toBeInTheDocument();
-  });
-
-  it("draws a workspace's Current, opens its own Setup from a step, and a repository with its own rules at its own", async () => {
-    answering((payload) => (payload.workspace ? WORKSPACE : FULL));
-    show(<ProjectsView notify={() => {}} />);
-    const page = await chooseWorkspace('aurora');
-
-    await userEvent.click(within(page).getByRole('tab', { name: 'Workflow' }));
-    expect(await within(repositoryMain()).findByText(/How work moves in each repository of aurora/)).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_CURRENT', expect.objectContaining({ payload: { workspace: 'aurora' } }));
-
-    // A repository that sets its own rules opens at its own Workflow tab.
-    await userEvent.click(within(repositoryMain()).getByRole('button', { name: "Open engine's workflow" }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeInTheDocument();
-    expect(within(repositoryMain()).getByRole('tab', { name: 'Workflow' })).toHaveAttribute('aria-selected', 'true');
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_CURRENT', expect.objectContaining({ payload: { repository: 'engine' } })));
-  });
-
-  it("opens a workspace's Setup at its defaults from a step its rules set", async () => {
-    answering(() => WORKSPACE);
-    show(<ProjectsView notify={() => {}} />);
-    const page = await chooseWorkspace('aurora');
-    await userEvent.click(within(page).getByRole('tab', { name: 'Workflow' }));
-
-    const landing = await waitFor(() => within(repositoryMain()).getAllByRole('listitem')
-      .find((item) => item.getAttribute('data-step') === 'landing')!);
-    await userEvent.click(within(landing).getByRole('button', { name: 'Change in Setup' }));
-
-    expect(within(repositoryMain()).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
-    expect(await within(repositoryMain()).findByRole('button', { name: 'Defaults' })).toHaveAttribute('aria-expanded', 'true');
-  });
-
-  // AGENTSPLACE1h: once the Setup mode is lit, a repository's Workflow is the Agents place's page (the Workflow section), so the tab goes,
-  // its Current is not asked here, and a workspace's door to a repository's own workflow opens that place.
-  describe('once the Setup mode is lit', () => {
-    beforeEach(() => window.localStorage.setItem('daoris.agents.setup', 'on'));
-
+  // AGENTSPLACE1h: a repository's Workflow is the Agents place's page (the Workflow section), so the tab is not drawn, its Current is not
+  // asked here, and a workspace's door to a repository's own workflow opens that place.
+  describe('the place holds the Workflow', () => {
     it("draws no Workflow tab on a repository's page and asks no Current for it", async () => {
       answering(() => FULL);
       show(<ProjectsView notify={() => {}} />);
