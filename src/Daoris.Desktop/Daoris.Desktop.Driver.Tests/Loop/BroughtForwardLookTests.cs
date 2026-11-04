@@ -63,7 +63,7 @@ public sealed class BroughtForwardLookTests : IDisposable
         Assert.Equal(["q1"], carrying.Started);
         var running = await restarted.TickAsync(_closing.Token).WaitAsync(Bound);
         // As the driver stops a take that lost: s2 stands down in its turn, the claim still held by the press.
-        await Poll.Until(() => carrying.Stops("s2", Daoris.Driver.Driver.LostClaimNoted), () => "s2 is not yet running", Bound);
+        await Poll.Until(() => carrying.Stops("s2", LostClaimStop.LostClaimNoted), () => "s2 is not yet running", Bound);
         await Poll.Until(() => State("s2") == "stood-down", () => $"s2 is {State("s2")}", Bound);
         var after = await restarted.TickAsync(_closing.Token).WaitAsync(Bound);
         var (again, more) = Driver(sync);

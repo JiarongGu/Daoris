@@ -231,7 +231,7 @@ public sealed class GoOnInSyncTests : TreeSyncFixture
         };
         var start = new Consideration(step, StartVerdict.Start, "carrying on")
         {
-            Resumes = new PriorSession("s1", tree, "stood-down", Daoris.Driver.Driver.LostClaimToReopen),
+            Resumes = new PriorSession("s1", tree, "stood-down", LostClaimStop.LostClaimToReopen),
             BroughtForward = new ForwardTake("desk", 44, DateTimeOffset.UnixEpoch, "held"),
         };
         return (step, source, start);

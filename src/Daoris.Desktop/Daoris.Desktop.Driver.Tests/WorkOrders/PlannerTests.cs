@@ -1196,7 +1196,7 @@ public sealed class PlannerTests
     private static readonly DateTimeOffset LostAt = new(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
 
     /// <summary>The session whose take lost, stood down by the driver with its tree kept (D68 §5).</summary>
-    private static readonly PriorSession Lost = new("s1", "D:/trees/s1", "stood-down", Daoris.Driver.Driver.LostClaim, Repository: "Game")
+    private static readonly PriorSession Lost = new("s1", "D:/trees/s1", "stood-down", LostClaimStop.LostClaim, Repository: "Game")
     {
         Created = LostAt, Updated = LostAt.AddMinutes(20),
     };
@@ -1303,7 +1303,7 @@ public sealed class PlannerTests
     [Fact]
     public void A_bring_forward_older_than_the_stand_down_carries_nothing_so_the_carry_on_goes_on_once()
     {
-        var carried = new PriorSession("s2", "D:/trees/s1", "stood-down", Daoris.Driver.Driver.LostClaim, Repository: "Game")
+        var carried = new PriorSession("s2", "D:/trees/s1", "stood-down", LostClaimStop.LostClaim, Repository: "Game")
         {
             Created = LostAt.AddMinutes(31), Updated = LostAt.AddMinutes(40),
         };
@@ -1421,7 +1421,7 @@ public sealed class PlannerTests
         using var service = ledger.Client();
         var (lost, _) = await service.OpenSessionAsync("q1", "stub");
         await service.AdvanceAsync(lost!, "working");
-        await service.AdvanceAsync(lost!, "stood-down", note: Daoris.Driver.Driver.LostClaim);
+        await service.AdvanceAsync(lost!, "stood-down", note: LostClaimStop.LostClaim);
         ledger.Move("q1", "Taken");
         ledger.Move("q2", "Taken");
         var forward = ledger.BringForward();
