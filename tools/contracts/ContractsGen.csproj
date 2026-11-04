@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Writes the page's types from the routes src/Daoris.Contracts declares; run by tools/contracts.mjs, never shipped. It takes
-       no package, as the contracts take none, so a checkout with the SDK alone runs it. -->
+  <!-- Writes the page's types from the routes src/Daoris.Contracts declares and the window routes' marks in the desktop modules;
+       run by tools/contracts.mjs, never shipped. It takes no package of its own: the modules bring theirs, from their tree's
+       central versions. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -11,11 +12,12 @@
     <CodePage>65001</CodePage>
     <IsPackable>false</IsPackable>
     <AssemblyName>contracts-gen</AssemblyName>
-    <Description>writes the page's types for the service's routes from Daoris.Contracts</Description>
+    <Description>writes the page's types for the service's routes and the window's routes</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/Daoris.Contracts/Daoris.Contracts.csproj" />
+    <ProjectReference Include="../../src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj" />
   </ItemGroup>
 
 </Project>

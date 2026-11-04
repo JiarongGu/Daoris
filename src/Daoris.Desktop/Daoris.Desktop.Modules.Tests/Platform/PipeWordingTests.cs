@@ -4,32 +4,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The pipe's wording: a person's route's marks say which of its values the card's sentence names and by what role, and every
-/// person's route has its act's words in both catalogues, so no route's constant is ever the sentence a person reads before
-/// <b>Confirm</b>. The named values travel on the pipe's telling as <c>named</c>, a field added beside <c>fields</c>.
+/// The pipe's wording: a person's route's marks say which of its values the card's sentence names and by what role, by the
+/// catalogue key its act is worded by (the web's names check holds every person's route worded in each language). The named
+/// values travel on the pipe's telling as <c>named</c>, a field added beside <c>fields</c>.
 /// </summary>
 public sealed class PipeWordingTests : Bridge
 {
-    /// <summary>Every route the census classes the person's, in any of its forms, by its module and route.</summary>
-    private static IEnumerable<(string Module, string Route)> PersonRoutes() =>
-        PipeCensus.Daoris.Routes
-            .Where(route => route.Route is not null && (route.Class == PipeClass.Person || route.When?.Class == PipeClass.Person))
-            .Select(route => (route.Module, route.Route!));
-
-    [Theory]
-    [InlineData("en")]
-    [InlineData("zh")]
-    public void Every_person_route_has_its_acts_words_in_the_catalogue(string language)
-    {
-        var catalogue = Catalogue(language);
-        var unworded = PersonRoutes()
-            .Select(each => PipeWording.Key(each.Module, each.Route))
-            .Where(key => !catalogue.TryGetProperty(key, out var words) || string.IsNullOrWhiteSpace(words.GetString()))
-            .ToList();
-
-        Assert.Empty(unworded);
-    }
-
     [Fact]
     public void A_drivers_route_is_worded_by_its_route_and_another_modules_by_its_module_too()
     {
@@ -83,30 +63,5 @@ public sealed class PipeWordingTests : Bridge
         Assert.Equal(2, asked.Shown.Fields.Count);
         Assert.Equal([("session", "/id"), ("words", "/text")], asked.Shown.Named!.Select(each => (each.Role, each.Name)));
         Assert.Equal(asked.Shown.Named, confirmations.Now().Waiting.Single().Named);
-    }
-
-    /// <summary>Walk up to the workspace root, as the refusal catalogue's test does: the tests run from <c>bin/Debug/net10.0</c>.</summary>
-    private static string RepositoryRoot()
-    {
-        var at = new DirectoryInfo(AppContext.BaseDirectory);
-        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
-        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
-    }
-
-    /// <summary>A language's whole catalogue, its area files merged as the page loads them.</summary>
-    private static JsonElement Catalogue(string language)
-    {
-        var folder = Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src", "locales", language);
-        var merged = new System.Text.Json.Nodes.JsonObject();
-        foreach (var file in Directory.EnumerateFiles(folder, "*.json").Order(StringComparer.Ordinal))
-        {
-            foreach (var (key, value) in System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!.AsObject())
-            {
-                merged[key] = value?.DeepClone();
-            }
-        }
-
-        Assert.NotEmpty(merged);
-        return JsonDocument.Parse(merged.ToJsonString()).RootElement.Clone();
     }
 }

@@ -378,6 +378,9 @@ public sealed class DriverModule : ModuleBase
     /// <summary>What each route's marks tell the pipe (<see cref="RouteMarks"/>), in the order of <see cref="Domains"/>.</summary>
     public static IReadOnlyList<RouteMark> Marks => [.. Domains.SelectMany(domain => domain.Marks)];
 
+    /// <summary>What each route's handler takes and answers, for the page's generated types.</summary>
+    public static IReadOnlyList<RouteShape> Shapes => [.. Domains.SelectMany(domain => domain.Shapes)];
+
     /// <summary>The reads answered from what is held, their work told by event (NOBLOCK1), by name.</summary>
     public static IReadOnlyCollection<string> ByEventRoutes => [.. Table.Where(entry => entry.Value.Held is not null).Select(entry => entry.Key)];
 
@@ -466,24 +469,27 @@ public sealed class DriverModule : ModuleBase
     private sealed class Domain(
         Func<DriverContext, object> build,
         IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held)> routes,
-        IReadOnlyList<RouteMark> marks)
+        IReadOnlyList<RouteMark> marks,
+        IReadOnlyList<RouteShape> shapes)
     {
         public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held)> Routes => routes;
 
         public IReadOnlyList<RouteMark> Marks => marks;
+
+        public IReadOnlyList<RouteShape> Shapes => shapes;
 
         public object Build(DriverContext context) => build(context);
 
         /// <summary>
         /// A domain whose handler class is <typeparamref name="T"/>: each <see cref="DriverRouteAttribute"/> on one of its
         /// non-public instance methods, by its route, with what its <see cref="PublishesAttribute"/> beside it declares and
-        /// whether its <see cref="OneFlightAttribute"/> shares it. A handler answers at once, <c>object? M(IpcRequest)</c>, or
-        /// later, <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
+        /// whether its <see cref="OneFlightAttribute"/> shares it; its shapes are <see cref="RouteHandlers"/>'.
         /// </summary>
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
             var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, OneFlightAttribute?, ByEventAttribute?)>();
             var pipe = new List<RouteMark>();
+            var shapes = new List<RouteShape>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 var marks = method.GetCustomAttributes<DriverRouteAttribute>().ToList();
@@ -521,23 +527,14 @@ public sealed class DriverModule : ModuleBase
 
                 foreach (var route in marks)
                 {
-                    routes.Add((route.Type, method.GetParameters().Length == 1
-                        ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
-                        : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
+                    routes.Add((route.Type, RouteHandlers.Of(typeof(T), method),
                         publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session, declared.Subject) : null,
                         shared.GetValueOrDefault(route.Type), held.GetValueOrDefault(route.Type)));
+                    shapes.Add(RouteHandlers.ShapeOf(route.Type, typeof(T), method));
                 }
             }
 
-            return new Domain(build, routes, pipe);
-
-            // A handler that answers at once throws at once, which the router awaits the same way as a fault.
-            static Func<object, IpcRequest, CancellationToken, Task<object?>> Now(Func<T, IpcRequest, object?> answer) =>
-                (handler, request, _) => Task.FromResult(answer((T)handler, request));
-
-            static Func<object, IpcRequest, CancellationToken, Task<object?>> Later(
-                Func<T, IpcRequest, CancellationToken, Task<object?>> answer) =>
-                (handler, request, cancellationToken) => answer((T)handler, request, cancellationToken);
+            return new Domain(build, routes, pipe, shapes);
         }
     }
 }
