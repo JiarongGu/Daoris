@@ -23,7 +23,7 @@ import {
 } from './fixtures';
 import { SHARED_BRANCH, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
-import { chooseRepository, chooseWorkspace, openSetup, ProjectsView, repositoryMain } from '../test/projectsView';
+import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from '../test/projectsView';
 
 // The engine has a checkout here; the game is a teammate's, with none.
 const REGISTRY = [
@@ -85,7 +85,7 @@ describe("a repository's Branches and History tabs", () => {
     answering();
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration', 'Workflow', 'Setup']);
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration']);
     expect(asked('GIT_BRANCHES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
@@ -603,40 +603,15 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
 
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration', 'Workflow', 'Setup']);
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration']);
     expect(asked('GIT_CHANGES')).toEqual([]);
-  });
-
-  it("offers the switch in Reach, off, and presses it on for this repository alone", async () => {
-    answering();
-    show(<ProjectsView notify={() => {}} />);
-    await chooseRepository('engine');
-    const page = await openSetup('Reach');
-
-    const control = await within(page).findByLabelText("Daoris may change this checkout's files");
-    expect(control).not.toBeChecked();
-    // Off, it says nothing of sessions: there is nothing yet for them to be beside.
-    expect(within(page).queryByText(/already runs? in this checkout/)).toBeNull();
-    await userEvent.click(control);
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_CHECKOUT_WRITES', { payload: { repository: 'engine', allow: true } });
-  });
-
-  it('says, once on, that a session already runs in the checkout, from the records the service lists', async () => {
-    answering(switchOn);
-    show(<ProjectsView notify={() => {}} />);
-    await chooseRepository('engine');
-    const page = await openSetup('Reach');
-
-    expect(await within(page).findByLabelText("Daoris may change this checkout's files")).toBeChecked();
-    expect(await within(page).findByText('1 session already runs in this checkout.')).toBeInTheDocument();
   });
 
   it('draws the Changes tab where the switch is on, reads it when it opens, and reads again on Refresh', async () => {
     answering(switchOn);
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Changes', 'Integration', 'Workflow', 'Setup']);
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Changes', 'Integration']);
     expect(asked('GIT_CHANGES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));

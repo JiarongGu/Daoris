@@ -473,7 +473,9 @@ export function App() {
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
-      repository: (repository, projectTab) => open('projects', repository, { tab: projectTab }),
+      repository: (repository, door) => door === 'integration'
+        ? open('projects', repository, { tab: 'integration' })
+        : open('agents', null, { placeOf: repository, ...(door === 'workflow' ? { placeSection: 'workflow' as const } : {}) }),
       workspace: (workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: 'defaults' }),
       repositories: () => open('projects'),
       plugin: (plugin) => open('plugins', plugin),
@@ -678,7 +680,7 @@ export function App() {
    * own AI, the remote Workspace, the driver Driver, where each once opened the whole page at its top.
    */
   const apply = (planned: Opening) => {
-    // A door into a repository's Setup tab opens the place's page instead (AGENTSPLACE1f).
+    // A door naming a repository's place is resolved to the place's id (AGENTSPLACE1f).
     const plan = placeOpening(planned, (repository) => {
       const row = (machineRegistry.data ?? []).find((each) => each.repository === repository);
       return row ? workspaceOf(row) : DEFAULT_WORKSPACE;
@@ -1025,8 +1027,8 @@ export function App() {
     onOpenGit: () => open('settings', 'git'),
     // A landing rule's plugin opens its page (PLUGUI1c2c).
     onOpenPlugin: (plugin) => open('plugins', plugin),
-    // A repository's Setup is the place's page once the Setup mode is lit, which `apply` opens for a door into the tab (AGENTSPLACE1f).
-    onOpenSetup: (repository) => open('projects', repository, { tab: 'setup' }),
+    // A repository's setup is its place's page in the Agents place's Setup mode (AGENTSPLACE1f).
+    onOpenSetup: (repository) => open('agents', null, { placeOf: repository }),
     // A workspace's Setup sections have their homes once the Setup mode is lit, which `apply` opens for a door into the tab (SETUPUX1v).
     onOpenWorkspaceSetup: (workspace, section) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: section }),
     onSyncNow,
@@ -1101,7 +1103,7 @@ export function App() {
         const held = item.git;
         const repository = held?.repositories[0];
         if (repository && (held.class === 'write-refused' || held.class === 'own-input')) {
-          open('projects', repository, { tab: 'setup', placeSection: 'sessions', placeRow: 'git' });
+          open('agents', null, { placeOf: repository, placeSection: 'sessions', placeRow: 'git' });
         } else open('settings', 'git', held?.host ? { gitHost: held.host } : {});
       },
     } : {}),
@@ -1155,7 +1157,11 @@ export function App() {
     // A declaration owed acceptance opens the repository's Setup instead, where Line and landing holds the Integration declaration to read and accept.
     ...(attached
       ? {
-          integration: (item: Attention) => open('projects', item.integration?.repository ?? item.where, { tab: item.integration?.wait === 'declaration' ? 'setup' : 'integration' }),
+          integration: (item: Attention) => {
+            const repository = item.integration?.repository ?? item.where;
+            if (item.integration?.wait === 'declaration') open('agents', null, { placeOf: repository });
+            else open('projects', repository, { tab: 'integration' });
+          },
         }
       : {}),
     // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card in *Notifications* (NOTIFY2b), where every value it

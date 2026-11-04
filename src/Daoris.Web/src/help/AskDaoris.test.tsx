@@ -1123,7 +1123,7 @@ describe('Ask Daoris, with an agent named', () => {
 
     // The card is of a new workflow: it names no workflow, no name and no version.
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({
-      view: 'projects', item: 'engine', tab: 'workflow', placeEdit: { draft: 'g1-0123456789abcdef' },
+      view: 'agents', placeOf: 'engine', placeEdit: { draft: 'g1-0123456789abcdef' },
     }));
     PROPOSALS = [];
     APPLIED = APPLIED_SETTING;

@@ -18,7 +18,7 @@ describe("a draft card's door", () => {
 
   it("is the repository's Workflow, with its editor asked on the draft told", () => {
     expect(draftDoor(card, { view: 'projects', part: null })).toEqual({
-      view: 'projects', item: 'engine', tab: 'workflow',
+      view: 'agents', placeOf: 'engine',
       placeEdit: { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 },
     });
   });
@@ -95,8 +95,8 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'agents', part: 'usage' })).toEqual({ view: 'agents', agentPart: 'usage' });
     // COMPANYVIEW1b: the Roles mode is a part of the Agents place, a mode and no part of an agent's page.
     expect(placeDoor({ view: 'agents', part: 'roles' })).toEqual({ view: 'agents', agentsMode: 'setup' });
-    // HELPSETUP1: a repository's own values are on its Setup, on the repository Repositories has chosen.
-    expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
+    // HELPSETUP1: a repository's own values are its place's, chosen in the Setup mode's list.
+    expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(placeDoor({ view: 'settings', domain: 'start', part: 'helper' })).toEqual({ view: 'settings', section: 'start', anchor: 'step-helper' });
     expect(placeDoor({ view: 'projects', part: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
     // UX6i2a: Knowledge alone opens as it was left, a part in that mode (UX6i); Plugins is a place with no parts.
@@ -118,7 +118,7 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'workspace-setup' })).toEqual({ view: 'projects', workspaceTab: 'setup' });
     expect(placeDoor({ view: 'projects', part: 'workspace-defaults' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-remote' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
-    expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
+    expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches.
     expect(placeDoor({ view: 'projects', part: 'branches' })).toEqual({ view: 'projects', tab: 'branches' });
     expect(placeDoor({ view: 'projects', part: 'history' })).toEqual({ view: 'projects', tab: 'history' });
@@ -195,7 +195,7 @@ describe('the places a go may name', () => {
       .toEqual({ view: 'projects', drawer: 'import', drawerWorkspace: 'work' });
     expect(placeDoor({ view: 'projects', part: 'add', workspace: null })).toEqual({ view: 'projects', drawer: 'add' });
     expect(placeDoor({ view: 'projects', part: 'import', workspace: '  ' })).toEqual({ view: 'projects', drawer: 'import' });
-    expect(placeDoor({ view: 'projects', part: 'setup', workspace: 'work' })).toEqual({ view: 'projects', tab: 'setup' });
+    expect(placeDoor({ view: 'projects', part: 'setup', workspace: 'work' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(placeDoor({ view: 'projects', part: 'workspace-details', workspace: 'work' })).toEqual({ view: 'projects', workspaceTab: 'details' });
     expect(placeDoor({ view: 'projects', workspace: 'work' })).toEqual({ view: 'projects' });
     expect(placeDoor({ view: 'quests', item: 'q1a2b3c4', workspace: 'work' })).toEqual({ view: 'quests', item: 'q1a2b3c4' });
