@@ -169,11 +169,11 @@ public sealed class ActorRunTests : IDisposable
             (1, "HandToSession.cs", "build"), (2, "DriverContinuations.cs", "build"), (3, "Driver.cs", "build"),
             (4, "ChatGoOn.cs", "chat"), (5, "DriverIntakes.cs", "intake"), (6, "DriverOpinions.cs", "opinion"),
             (7, "DriverHelpers.cs", "helper"), (8, "DriverPartners.cs", "partner"), (9, "DriverBrainstorms.cs", "brainstorm"),
-            (10, "ChatRunner.cs", "chat"), (11, "HelpStart.cs", "ask-daoris"), (12, "ChatGoOn.cs", "ask-daoris"), (13, "LimitMove.cs", "ask-daoris"),
+            (10, "ChatStarts.cs", "chat"), (11, "HelpStart.cs", "ask-daoris"), (12, "ChatGoOn.cs", "ask-daoris"), (13, "LimitMove.cs", "ask-daoris"),
         };
         Assert.Equal(13, rows.Select(row => row.Start).Distinct().Count());
         foreach (var row in rows) Assert.Contains('"' + row.Actor + '"', File.ReadAllText(SourceFiles.Driver(row.File)));
-        foreach (var (type, name, visibility) in new[] { (typeof(SessionHold), "HoldAsync", BindingFlags.Public), (typeof(ChatRunner), "RunAsync", BindingFlags.NonPublic) })
+        foreach (var (type, name, visibility) in new[] { (typeof(SessionHold), "HoldAsync", BindingFlags.Public), (typeof(ChatRun), "RunAsync", BindingFlags.Public) })
         {
             var method = type.GetMethods(BindingFlags.Instance | visibility).Single(method => method.Name == name);
             Assert.Equal("actor", method.GetParameters()[0].Name);

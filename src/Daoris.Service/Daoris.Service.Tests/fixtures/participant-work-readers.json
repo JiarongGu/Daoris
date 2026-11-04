@@ -36,10 +36,18 @@
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Loop/Chat/ChatRunner.cs": {
+    "Loop/Chat/ChatRun.cs": {
       "reads": "tells",
       "row": "1j",
-      "note": "tells Ask Daoris's place for its start (three lines); the others read a go-on's ask or Ask Daoris's access mode, not a record's mark; the start plan's (§2.4)"
+      "note": "tells Ask Daoris's place for its start (one line); the other reads a go-on's ask, not a record's mark; the start plan's (§2.4)"
+    },
+    "Loop/Chat/ChatWalk.cs": {
+      "reads": "other",
+      "note": "Ask Daoris's access mode, not a record's mark"
+    },
+    "Loop/Chat/ChatWatch.cs": {
+      "reads": "other",
+      "note": "a go-on's ask, not a record's mark"
     },
     "Course/Chat/ChatRunner.StartFrom.cs": {
       "reads": "tells",

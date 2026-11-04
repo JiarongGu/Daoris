@@ -49,12 +49,12 @@ public sealed class HelpCircleTests : IDisposable
     {
         Assert.Equal("DAORIS_SESSION_WORKSPACE", HelpCircle.Variable);
 
-        var bound = ChatRunner.ConnectorScope(_home, "h1a2b3c4", "alpha");
+        var bound = ChatServers.ConnectorScope(_home, "h1a2b3c4", "alpha");
         Assert.Equal("alpha", bound[HelpCircle.Variable]);
         Assert.Equal("h1a2b3c4", bound[IntakeRoom.SessionVariable]);
         Assert.Equal(_home, bound[KnowledgeConnector.RulesHomeVariable]);
 
-        Assert.False(ChatRunner.ConnectorScope(_home, "h1a2b3c4", null).ContainsKey(HelpCircle.Variable));
+        Assert.False(ChatServers.ConnectorScope(_home, "h1a2b3c4", null).ContainsKey(HelpCircle.Variable));
     }
 
     /// <summary>

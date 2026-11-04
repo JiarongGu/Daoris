@@ -104,7 +104,7 @@ public sealed class StartWithTests : IDisposable
     {
         var config = standing ? DriverConfig.Empty.WithTrees("engine", true) : DriverConfig.Empty;
 
-        Assert.Equal(expected, ChatRunner.Isolates(asked, config, "engine"));
+        Assert.Equal(expected, ChatStarts.Isolates(asked, config, "engine"));
     }
 
     private static StartedFrom Said(string session) => new(session, true, null, $"conversation `{session}` starts.");

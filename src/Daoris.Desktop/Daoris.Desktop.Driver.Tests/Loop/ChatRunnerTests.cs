@@ -78,13 +78,13 @@ public sealed class ChatRunnerTests : IDisposable
         Assert.False(ChatRunBinds.AnswersFindings(none));
         Assert.Equal(
             DriverContinuations.AnswersFindings,
-            ChatRunner.RulesFor(connectorOff, "aurora", "engine", "/work/engine", "/data/chats/c1", across, answers: true).Allow
+            RepositoryPlacement.RulesFor(connectorOff, "aurora", "engine", "/work/engine", "/data/chats/c1", across, answers: true).Allow
                 .Where(rule => rule.Contains("opinion_answer", StringComparison.Ordinal)));
         Assert.DoesNotContain(
-            ChatRunner.RulesFor(connectorOff, "aurora", "engine", "/work/engine", "/data/chats/d1", across).Allow,
+            RepositoryPlacement.RulesFor(connectorOff, "aurora", "engine", "/work/engine", "/data/chats/d1", across).Allow,
             rule => rule.Contains("opinion_answer", StringComparison.Ordinal));
         Assert.Single(
-            ChatRunner.RulesFor(PermissionFile.Empty, "aurora", "engine", "/work/engine", "/data/chats/c1", across, answers: true).Allow,
+            RepositoryPlacement.RulesFor(PermissionFile.Empty, "aurora", "engine", "/work/engine", "/data/chats/c1", across, answers: true).Allow,
             rule => rule.Contains("opinion_answer", StringComparison.Ordinal));
     }
 
@@ -114,7 +114,7 @@ public sealed class ChatRunnerTests : IDisposable
         var file = PermissionFile.Empty with { Machine = new RuleLists(["Bash(make:*)"], [], []) };
         var across = new AcrossReach([new("game", "/work/game")], [], [new("personal", "/srv/personal")]);
 
-        var rules = ChatRunner.RulesFor(file, "default", "engine", "/work/engine", "/data/chats/s1", across);
+        var rules = RepositoryPlacement.RulesFor(file, "default", "engine", "/work/engine", "/data/chats/s1", across);
 
         Assert.Contains("Bash(make:*)", rules.Allow);
         Assert.Contains(PermissionRules.ReadRule("/data/chats/s1"), rules.Allow);
@@ -133,7 +133,7 @@ public sealed class ChatRunnerTests : IDisposable
     {
         var across = new AcrossReach([new("game", "/work/game")], [], [new("personal", "/srv/personal")]);
 
-        var rules = ChatRunner.RulesFor(
+        var rules = RepositoryPlacement.RulesFor(
             PermissionFile.Empty, "default", "engine", "/work/engine", "/data/chats/s3", across, continued: ["/data/chats/s1", "/data/chats/s2"]);
 
         Assert.Contains(PermissionRules.ReadRule("/data/chats/s3"), rules.Allow);
@@ -141,7 +141,7 @@ public sealed class ChatRunnerTests : IDisposable
         Assert.Contains(PermissionRules.ReadRule("/data/chats/s2"), rules.Allow);
         Assert.DoesNotContain(rules.Deny, rule => rule.Contains("/data/chats", StringComparison.Ordinal));
         Assert.Equal(
-            ChatRunner.RulesFor(PermissionFile.Empty, "default", "engine", "/work/engine", "/data/chats/s3", across).Allow.Count + 2,
+            RepositoryPlacement.RulesFor(PermissionFile.Empty, "default", "engine", "/work/engine", "/data/chats/s3", across).Allow.Count + 2,
             rules.Allow.Count);
     }
 

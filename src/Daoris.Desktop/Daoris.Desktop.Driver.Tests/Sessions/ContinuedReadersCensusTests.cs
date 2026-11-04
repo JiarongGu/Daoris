@@ -78,7 +78,7 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "Bring them together's word to a line's head (LINESTOGETHER1d): Daoris's word said at its head under the operation's key"),
         ],
-        ["ChatRunner.cs"] =
+        ["ChatClosing.cs"] =
         [
             (How.NotOn, "Daoris's restart word to a conversation this shell runs, at its close: the word is this run's, and refused it is logged unkept as any refusal is"),
         ],
@@ -121,7 +121,7 @@ public sealed partial class ContinuedReadersCensusTests
     {
         ["DrivenInbox.cs"] = "a keep answered `continued` holds, sends, steers, attempts and takes nothing and answers InboxKeep.Continued with the head; KeepOrHoldAsync never holds it here instead; a reword so answered changes nothing here",
         ["ChatTurns.cs"] = "a keep answered `continued` queues, steers, attempts and writes nothing on its door and answers TurnKept.Head; a reword so answered changes nothing here",
-        ["ChatRunner.cs"] = "the turns' head answered as ChatSaid.Head, with no reach and no word",
+        ["ChatWords.cs"] = "the turns' head answered as ChatSaid.Head, with no reach and no word",
         ["SessionSay.cs"] = "the headless door: the inbox's head is where the request is said again",
         ["SessionWords.cs"] = "the inbox's and the turns' head is where the shell says the word again, through its whole judge",
         ["ReopenTelling.cs"] = "the running session's inbox answered `continued`: the reopen's words are said at the head through the reopen's doors",

@@ -55,6 +55,9 @@ internal sealed class ChatContext(
     /// and each question asked both in turn).
     /// </summary>
     public ConcurrentDictionary<string, ITurnedChat> Turned { get; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Each running conversation's run over its process, which a person's finish closes.</summary>
+    public ConcurrentDictionary<string, TransportRun> Runs { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public ConcurrentDictionary<string, ActorRun> ActorRuns { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -142,6 +145,12 @@ internal sealed class ChatContext(
     /// attempt its agent refused at the open, and what a door asked by the issued id answers for.
     /// </summary>
     public ChatPendings Pending { get; } = new();
+
+    /// <summary>The starts under way, by key, which a close and the update drain wait on.</summary>
+    public ConcurrentDictionary<string, Task> Opening { get; } = new();
+
+    /// <summary>A conversation's chat run, bound when its tree opens or at a turn's end.</summary>
+    public ChatRunBinds ChatRuns { get; } = new(home, service, events);
 
     /// <summary>Closing: no conversation starts, goes on or moves from here.</summary>
     public bool Closing => _closing;

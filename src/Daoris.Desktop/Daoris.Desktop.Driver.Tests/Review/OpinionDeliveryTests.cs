@@ -582,7 +582,7 @@ public sealed class OpinionDeliveryTests : IDisposable
             if (!Held.TryGetValue(ask.Session, out var chat)) return new(SendBack.NotHere);
             return new(await chat.Turns.SendBackAsync(
                 ask.Pressed, () => ChatPresses.TurnsOf(events, ask.Line),
-                async token => await ask.Hand(ask.Session, token) is { } word ? ChatRunner.Findings(word, ask.Answered) : null, ct));
+                async token => await ask.Hand(ask.Session, token) is { } word ? ChatSendBack.Findings(word, ask.Answered) : null, ct));
         }
 
         public async Task<SentBack> GoOnWithFindingsAsync(ChatSendBackAsk ask, CancellationToken ct = default)
@@ -592,7 +592,7 @@ public sealed class OpinionDeliveryTests : IDisposable
             host.Move(ask.Session, "working");
             var chat = Held[ask.Session] = new Conversation();
             WentOn.Add(ask.Session);
-            chat.Turns.Take(ChatRunner.Findings(word, ask.Answered));
+            chat.Turns.Take(ChatSendBack.Findings(word, ask.Answered));
             return new(SendBack.Reserved);
         }
 

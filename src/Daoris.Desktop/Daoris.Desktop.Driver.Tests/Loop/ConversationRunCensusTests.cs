@@ -25,7 +25,7 @@ public sealed class ConversationRunCensusTests
     ];
 
     /// <summary>The runner's files and its transports', which it hands each conversation's turns.</summary>
-    private static readonly string[] Transports = ["ProtocolChat.cs", "NativeChat.cs"];
+    private static readonly string[] Transports = ["ProtocolChat.cs", "NativeChat.cs", "ChatRun.cs", "ChatWatch.cs", "ProtocolHeld.cs"];
 
     private static IEnumerable<(string File, string Source)> Runner() =>
         SourceFiles.All(SourceFiles.DriverProject, "*.cs")
