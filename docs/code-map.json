@@ -105,9 +105,19 @@
       "id": "ChromiumProbe",
       "path": "tools/chromium-probe",
       "summary": ""
+    },
+    {
+      "id": "ContractsGen",
+      "path": "tools/contracts",
+      "summary": "writes the page's types for the service's routes from Daoris.Contracts"
     }
   ],
   "dependencies": [
+    {
+      "from": "ContractsGen",
+      "to": "Daoris.Contracts",
+      "kind": "project"
+    },
     {
       "from": "Daoris.Desktop.App",
       "to": "Daoris.Desktop.Driver",

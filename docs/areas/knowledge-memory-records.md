@@ -30,7 +30,7 @@ one job each, checked by `verify`.
 | `AmbientWorkspace`, `WorkspaceScope` | `Core/Registry/`, `Mcp/WorkspaceScope.cs` | Which workspace a call answers from |
 | Feed | `Core/Knowledge/Feed/` | `FeedOrder`, `FeedDigest`, `CodeMap`, `CodeMapWire`: what a remote is fed and how it is ordered |
 | Connector host | `Mcp/Program.cs`, `Mcp/KnowledgeServer.cs` | The stdio MCP server; `ToolTypes` is the one list of tool classes |
-| HTTP knowledge reads | `src/Daoris.Contracts/Knowledge/KnowledgeContracts.cs`, the HTTP host's `Routes/KnowledgeRoutes.cs` | Status, protocol, repositories, search (its tier in `x-daoris-tier`), entry, entries and convergence, each declared once as its request record; the driver sends the records |
+| HTTP knowledge reads | `src/Daoris.Contracts/Knowledge/KnowledgeContracts.cs`, the HTTP host's `Routes/KnowledgeRoutes.cs` | Status, protocol, repositories, search (its tier in `x-daoris-tier`), entry, entries and convergence, each declared once as its request record; the driver sends the records, and the page sends them by name with its generated types (`data/api.ts`) |
 | Knowledge tools | `Mcp/KnowledgeSearchTools.cs` | `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `registry`, `knowledge_refresh` |
 | Memory tools | `Mcp/MemoryTools.cs` | `memory_search`, `memory_get`, `memory_write`, `memory_end`, `memory_propose` |
 | `ToolClasses` | `Mcp/ToolClasses.cs` | Each tool's class: read, restricted or publish |

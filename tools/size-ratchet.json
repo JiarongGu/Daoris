@@ -203,7 +203,7 @@
   "src/Daoris.Web/src/app/pushedState.test.tsx": 71091,
   "src/Daoris.Web/src/bridge/driver.ts": 43063,
   "src/Daoris.Web/src/bridge/sessions/sessions.ts": 55598,
-  "src/Daoris.Web/src/data/api.ts": 57930,
+  "src/Daoris.Web/src/data/api.ts": 57063,
   "src/Daoris.Web/src/data/queries.ts": 52615,
   "src/Daoris.Web/src/design/RankedFlow.tsx": 62426,
   "src/Daoris.Web/src/design/tokens.test.ts": 50760,
