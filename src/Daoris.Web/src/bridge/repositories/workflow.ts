@@ -75,7 +75,7 @@ export const useSetLanded = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (variables: ({ repository: string } | { workspace: string }) & { workflow: string | null; gates?: string }) =>
-      call<LandedAnswer>('WORKFLOW_LANDED', variables),
+      call('WORKFLOW_LANDED', variables) as Promise<LandedAnswer>,
     onSuccess: () => client.invalidateQueries({ queryKey: keys.workflow('repository', '').slice(0, 3) }),
   });
 };
@@ -112,7 +112,7 @@ export const useWorkflowRun = (scope: RunScope | null, { enabled = true }: { ena
     : 'quest' in scope ? ['quest' as const, scope.quest] : ['ask' as const, scope.ask];
   return useQuery({
     queryKey: keys.workflowRun(kind, id),
-    queryFn: () => call<WorkflowRunAnswer>('WORKFLOW_RUN', { [kind]: id }),
+    queryFn: () => call('WORKFLOW_RUN', { [kind]: id }) as Promise<WorkflowRunAnswer>,
     enabled: isAvailable && enabled && scope !== null && id !== '',
     staleTime: 0,
   });
@@ -138,7 +138,7 @@ export const useVerify = () => useMutation({
  */
 export const useRunNodeWord = () => useMutation({
   mutationFn: async ({ run, node, act, words }: NodeWordAsk): Promise<NodeWordAnswer> => {
-    const answer = await call<Partial<NodeWordAnswer> | null>('WORKFLOW_NODE', { run, node, act, ...(words ? { words } : {}) });
+    const answer = (await call('WORKFLOW_NODE', { run, node, act, ...(words ? { words } : {}) })) as Partial<NodeWordAnswer> | null;
     return {
       run: answer?.run ?? run, node: answer?.node ?? node, act: answer?.act ?? act, done: answer?.done === true,
       refused: answer?.refused ?? null, message: answer?.message ?? null,
@@ -151,4 +151,4 @@ export const useRunNodeWord = () => useMutation({
  * judged unsaved with `plan`, and a version chosen for a place. The step editor's bridge (`workflowEdit.ts`) presses them through these.
  */
 export const askWorkflowSave = (ask: WorkflowSaveAsk) => call<WorkflowSaveAnswer>('WORKFLOW_SAVE', ask);
-export const askWorkflowUse = (ask: WorkflowUseAsk) => call<WorkflowUseAnswer>('WORKFLOW_USE', ask);
+export const askWorkflowUse = (ask: WorkflowUseAsk) => call('WORKFLOW_USE', ask) as Promise<WorkflowUseAnswer>;

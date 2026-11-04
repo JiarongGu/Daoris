@@ -302,13 +302,13 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HELPER_APPROVE", nameof(PipeReads.HelperWait))]
     [Says("SESSION_HELPER_APPROVE", "session:session")]
     [Publishes("SESSION_HELPER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHelperApproveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionHelperApproveAsync(SessionHelperApprove press, CancellationToken cancellationToken)
     {
-        var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
+        var askId = press.Ask;
         // `sessions helper --approve` names only the ask, and asks for the verb's own words.
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("helper-approve") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SaidAsync(new SessionsAsk("helper-approve") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
 
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session ?? throw new DriverException("a helper's ask is answered for a `session` — name it.");
         // The judge is the library's, which the terminal's `sessions helper --approve` shares.
         var answer = HelperPersonWord.Approve(new HelperFiles(_loop.Home), session, askId);
         if (answer.Wrote) _loop.Nudge();
@@ -327,13 +327,13 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HELPER_DECLINE", nameof(PipeReads.HelperWait))]
     [Says("SESSION_HELPER_DECLINE", "session:session")]
     [Publishes("SESSION_HELPER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHelperDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionHelperDeclineAsync(SessionHelperDecline press, CancellationToken cancellationToken)
     {
-        var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
+        var askId = press.Ask;
         // `sessions helper --decline` names only the ask, and asks for the verb's own words.
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("helper-decline") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SaidAsync(new SessionsAsk("helper-decline") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
 
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session ?? throw new DriverException("a helper's ask is answered for a `session` — name it.");
         // The judge is the library's, which the terminal's `sessions helper --decline` shares.
         var answer = HelperPersonWord.Decline(new HelperFiles(_loop.Home), _loop.Events, _loop.Output, session, askId);
         return new { Declined = answer.Stands, answer.Why, answer.Message };
@@ -705,19 +705,10 @@ public sealed class SessionsRoutes(DriverContext context)
     // read held the window up to 7.5 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("SESSION_OPENINGS", PipeClass.Open)]
     [ByEvent("SESSION_OPENINGS", Untold = "a session's first words, which SESSION_EVENTS tells and no scope or slice does")]
-    private async Task<object?> SessionOpeningsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionOpeningsAsync(SessionOpeningsRead press, CancellationToken cancellationToken)
     {
-        var ids = new List<string>();
-        if (request.Payload is { } payload && payload.TryGetProperty("ids", out var named)
-            && named.ValueKind == JsonValueKind.Array)
-        {
-            ids.AddRange(named.EnumerateArray()
-                .Where(id => id.ValueKind == JsonValueKind.String)
-                .Select(id => id.GetString()!));
-        }
-
         await Task.CompletedTask;
-        return new { Openings = _loop.Events.Openings(ids) };
+        return new { Openings = _loop.Events.Openings([.. press.Ids ?? []]) };
     }
 
     /// <summary>
@@ -727,9 +718,9 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SESSION_RELATED", PipeClass.Open)]
     [ByEvent("SESSION_RELATED", Untold = "the sessions' working trees, which git reads at each ask (an uncommitted edit counts)")]
-    private async Task<object?> SessionRelatedAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionRelatedAsync(SessionRelatedRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var service = _loop.Service ?? throw NotReady();
         if (await service.RelatedCandidatesAsync(session, cancellationToken) is not var (mine, others)) return new { Session = session, Related = Array.Empty<object>() };
         var look = await _related.AskAsync(mine, others, cancellationToken);
@@ -743,10 +734,10 @@ public sealed class SessionsRoutes(DriverContext context)
     /// with no turn is left out.
     /// </summary>
     [DriverRoute("SESSION_SPENT", PipeClass.Open)]
-    private object? SpentOf(IpcRequest request)
+    private object? SpentOf(SessionSpentRead press)
     {
         var spent = new Dictionary<string, SessionSpent>(StringComparer.Ordinal);
-        foreach (var id in Ids(request) ?? [])
+        foreach (var id in Ids(press.Ids) ?? [])
         {
             if (_loop.Events.Spent(id) is { Turns: > 0 } read) spent[id] = read;
         }
@@ -760,9 +751,9 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SESSION_RECORD", PipeClass.Open)]
     [ByEvent("SESSION_RECORD", Untold = "the service's record of the finished tree, kept when the driver posts it")]
-    private async Task<object?> SessionRecordAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionRecordAsync(SessionRecordRead press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var service = _loop.Service ?? throw NotReady();
         var json = await service.SessionRecordAsync(id, cancellationToken).ConfigureAwait(false);
         return new { Record = json is null ? (JsonElement?)null : JsonDocument.Parse(json).RootElement.Clone() };
@@ -774,9 +765,9 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SESSION_MEMORY", PipeClass.Open)]
     [ByEvent("SESSION_MEMORY", Untold = "the service's memory rows, which its applier and a quest's close move")]
-    private async Task<object?> SessionMemoryAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionMemoryAsync(SessionMemoryRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var service = _loop.Service ?? throw NotReady();
         var json = await service.SessionMemoryAsync(session, cancellationToken).ConfigureAwait(false);
         return json is null ? new { Ops = Array.Empty<object>() } : JsonDocument.Parse(json).RootElement.Clone();
@@ -883,18 +874,18 @@ public sealed class SessionsRoutes(DriverContext context)
     /// own words, transcript-class and answered over this bridge alone.
     /// </summary>
     [DriverRoute("SESSION_GROUPS", PipeClass.Open)]
-    private async Task<object?> SessionGroupsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionGroupsAsync(SessionGroupsRead press, CancellationToken cancellationToken)
     {
-        var ids = Ids(request);
+        var ids = Ids(press.Ids);
         var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
         // the entries beside the rows, which the page reads until SESSONE1c draws entries.
         var sessions = grouped.Select(Grouped).ToArray();
         var entries = SessionGroups.ReadEntries(look, ids).Select(Entry).ToArray();
-        if (!Flag(request, "said")) return new { Sessions = sessions, Entries = entries };
+        if (!press.Said) return new { Sessions = sessions, Entries = entries };
 
         // `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it was given),
         // which the alone path prints from a look of its own through the same function (§7.3); the page asks for none.
-        var ask = new SessionsAsk("list") { Group = Optional(request, "group"), Repository = Optional(request, "repository"), Json = Flag(request, "json") };
+        var ask = new SessionsAsk("list") { Group = press.Group, Repository = press.Repository, Json = press.Json };
         return new
         {
             Sessions = sessions, Entries = entries,
@@ -937,14 +928,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_ARCHIVE", "ids", Many = true)]
     [Says("SESSION_ARCHIVE", "ids:sessions")]
     [Publishes("SESSION_ARCHIVE", StateScopes.Sessions)]
-    private async Task<object?> SessionArchiveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionArchiveAsync(SessionArchiveMark press, CancellationToken cancellationToken)
     {
-        var archive = PayloadHelper.GetRequiredValue<bool>(request.Payload, "archived");
-        var ids = Ids(request) ?? [];
+        var archive = press.Archived;
+        var ids = Ids(press.Ids) ?? [];
         var marks = new SessionArchive(_loop.Home);
         // `sessions archive` and `unarchive` sent over the pipe ask for their words (`said: true`), the alone path's own, and a
         // terminal's lines; the page asks for none, and its answers keep their shape.
-        var said = Flag(request, "said");
+        var said = press.Said;
 
         if (!archive)
         {
@@ -1053,10 +1044,8 @@ public sealed class SessionsRoutes(DriverContext context)
         SessionsVerbs.SaidAsync(_context, ask, cancellationToken);
 
     /// <summary>The session ids the page sent, or null where it sent none.</summary>
-    private static IReadOnlyCollection<string>? Ids(IpcRequest request) =>
-        request.Payload is { } payload && payload.TryGetProperty("ids", out var named) && named.ValueKind == JsonValueKind.Array
-            ? [.. named.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!).Distinct(StringComparer.Ordinal)]
-            : null;
+    private static IReadOnlyCollection<string>? Ids(IReadOnlyList<string>? listed) =>
+        listed is null ? null : [.. listed.Distinct(StringComparer.Ordinal)];
 
     /// <summary>One row of <c>SESSION_GROUPS</c>, field for field what <c>daoris session list --json</c> prints. Public, as <see cref="SweepRow"/> is, so its shape is tested without a service.</summary>
     public static object Grouped(SessionGrouping row) => new
@@ -1205,19 +1194,19 @@ public sealed class SessionsRoutes(DriverContext context)
     // What sessions said, searched: the person's words and the agent's, from this machine's
     // own record, bounded and saying so.
     [DriverRoute("SESSION_SEARCH", PipeClass.Open)]
-    private async Task<object?> SessionSearchAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionSearchAsync(SessionSearchRead press, CancellationToken cancellationToken)
     {
-        var query = PayloadHelper.GetRequiredValue<string>(request.Payload, "q");
+        var query = press.Q;
         await Task.CompletedTask;
         // Within one session, where the page names it: its words and its calls' titles.
         // A page of sessions, as the help list's is: `offset` counts sessions, `total` is every session
         // with a hit, and `next` is null on the last page. A caller naming no page reads the first, at the rail's old size.
-        var found = Optional(request, "session") is { } one
+        var found = press.Session is { } one
             ? _loop.Events.Within(one, query)
             : _loop.Events.Search(
                 query,
-                (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
-                (int)Math.Clamp(Number(request, "limit") ?? SessionEvents.SearchSessions, 0, SessionEvents.SearchPageLimit));
+                (int)Math.Clamp(press.Offset ?? 0, 0, int.MaxValue),
+                (int)Math.Clamp(press.Limit ?? SessionEvents.SearchSessions, 0, SessionEvents.SearchPageLimit));
         return new
         {
             Query = query,
