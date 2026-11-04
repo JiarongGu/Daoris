@@ -375,6 +375,9 @@ public sealed class DriverModule : ModuleBase
     /// <summary>Every route this module answers, by name: what the page's bridge may call (MOD5).</summary>
     public static IReadOnlyCollection<string> Routes => Table.Keys;
 
+    /// <summary>What each route's marks tell the pipe (<see cref="RouteMarks"/>), in the order of <see cref="Domains"/>.</summary>
+    public static IReadOnlyList<RouteMark> Marks => [.. Domains.SelectMany(domain => domain.Marks)];
+
     /// <summary>The reads answered from what is held, their work told by event (NOBLOCK1), by name.</summary>
     public static IReadOnlyCollection<string> ByEventRoutes => [.. Table.Where(entry => entry.Value.Held is not null).Select(entry => entry.Key)];
 
@@ -462,9 +465,12 @@ public sealed class DriverModule : ModuleBase
     /// <summary>One line of <see cref="Domains"/>: how a domain's handler class is built over the context, and the routes that class marks.</summary>
     private sealed class Domain(
         Func<DriverContext, object> build,
-        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held)> routes)
+        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held)> routes,
+        IReadOnlyList<RouteMark> marks)
     {
         public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held)> Routes => routes;
+
+        public IReadOnlyList<RouteMark> Marks => marks;
 
         public object Build(DriverContext context) => build(context);
 
@@ -477,9 +483,11 @@ public sealed class DriverModule : ModuleBase
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
             var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, OneFlightAttribute?, ByEventAttribute?)>();
+            var pipe = new List<RouteMark>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 var marks = method.GetCustomAttributes<DriverRouteAttribute>().ToList();
+                pipe.AddRange(RouteMarks.Read(Name, method, [.. marks.Select(mark => (mark.Type, mark.Class, mark.DrainSaid))], $"{typeof(T).Name}.{method.Name}"));
                 var publishes = method.GetCustomAttributes<PublishesAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
                 var shared = method.GetCustomAttributes<OneFlightAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
                 var held = method.GetCustomAttributes<ByEventAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
@@ -521,7 +529,7 @@ public sealed class DriverModule : ModuleBase
                 }
             }
 
-            return new Domain(build, routes);
+            return new Domain(build, routes, pipe);
 
             // A handler that answers at once throws at once, which the router awaits the same way as a fault.
             static Func<object, IpcRequest, CancellationToken, Task<object?>> Now(Func<T, IpcRequest, object?> answer) =>
@@ -539,11 +547,22 @@ public sealed class DriverModule : ModuleBase
 /// A route is added in its domain's class by marking its handler, so no central switch is edited per route.
 /// </summary>
 /// <param name="type">The route's name, as the page's bridge sends it.</param>
+/// <param name="class">How the pipe treats a terminal's press of it (<see cref="PipeCensus"/>); a <see cref="ClassedByAttribute"/>
+/// beside it names a payload's form of another class.</param>
 /// <remarks>A route that changes the driver's state says so beside its mark, with <see cref="PublishesAttribute"/>.</remarks>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-internal sealed class DriverRouteAttribute(string type) : Attribute
+internal sealed class DriverRouteAttribute(string type, PipeClass @class) : Attribute
 {
+    private PipeDrain? _drain;
+
     public string Type { get; } = type;
+
+    public PipeClass Class { get; } = @class;
+
+    /// <summary>What an update's drain does with it: said for a route with a person's or a role's form, and only for one.</summary>
+    public PipeDrain Drain { get => _drain ?? PipeDrain.Waits; set => _drain = value; }
+
+    public PipeDrain? DrainSaid => _drain;
 }
 
 /// <summary>

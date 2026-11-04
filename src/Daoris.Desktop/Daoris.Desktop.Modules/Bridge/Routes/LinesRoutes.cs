@@ -34,7 +34,10 @@ public sealed class LinesRoutes(DriverContext context)
 
     // A repository's line, or a workspace's (WSR2), or either cleared with no branch — the same
     // file `daoris place line` edits: one truth, two doors (D50).
-    [DriverRoute("SET_LINE")]
+    [DriverRoute("SET_LINE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SET_LINE", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_LINE", "lines", "workspaceLines", Sets = "branch")]
+    [Says("SET_LINE", "repository:repository")]
     [Publishes("SET_LINE", Chosen)]
     private object? SetLine(IpcRequest request)
     {
@@ -73,7 +76,10 @@ public sealed class LinesRoutes(DriverContext context)
     // A repository's session language, or a workspace's (LANG1c, D142 point 7), or either cleared with no language — the
     // same file `daoris place language` edits: one truth, two doors (D50). A code the table does not hold is the driver's
     // refusal.
-    [DriverRoute("SET_LANGUAGE")]
+    [DriverRoute("SET_LANGUAGE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_LANGUAGE", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_LANGUAGE", "languages", "workspaceLanguages", Sets = "language")]
+    [Says("SET_LANGUAGE", "repository:repository")]
     [Publishes("SET_LANGUAGE", Chosen)]
     private object? SetLanguage(IpcRequest request)
     {
@@ -95,7 +101,7 @@ public sealed class LinesRoutes(DriverContext context)
     // the registry's, so this waits for the driver like the review does. Git is asked each checkout's line, so an ask while
     // one runs shares it (SWEEPFLIGHT1). The lines slice pushes the same answer per repository, judged from the machine's facts
     // (PUSH1b1, D182); this pull stays for a page that does not read the slice.
-    [DriverRoute("LINES")]
+    [DriverRoute("LINES", PipeClass.Open)]
     [OneFlight("LINES")]
     private async Task<object?> LinesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -237,8 +243,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// branches landings made (WSR5): each goes where its work reached the line, by the same press. The list is a git fan-out
     /// over every checkout, so an ask while one runs shares it (<see cref="OneFlightAttribute"/>); the press is never shared.
     /// </summary>
-    [DriverRoute("SWEEP_PLAN")]
-    [DriverRoute("SWEEP")]
+    [DriverRoute("SWEEP_PLAN", PipeClass.Open)]
+    [DriverRoute("SWEEP", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SWEEP", Workspace = "workspace")]
+    [GroundRead("SWEEP", nameof(PipeReads.SweepPlan))]
     [Publishes("SWEEP", Moves)]
     [OneFlight("SWEEP_PLAN")]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -303,20 +311,16 @@ public sealed class LinesRoutes(DriverContext context)
         };
     }
 
-    // Discarding a failed or superseded attempt's branch (LAND3b, D102's LAND3 note), beside the clean-up whose list offers
-    // it: its commits are on no branch of the person's, so no landing's tidy and no clean-up takes it, and once its tree is
-    // gone the review has nothing to discard. `daoris tree remove <branch> --repository <name> --force` is the
-    // terminal's door (D50), and both end in the driver's one discard (LAND3c), which keeps a branch a live session's tree holds.
     /// <summary>
-    /// Discard a session branch by its name and its repository (LAND3b): with its tree where it still has one.
+    /// Discard a failed or superseded attempt's session branch by its name and its repository, with its tree where it still has
+    /// one: its commits are on no branch of the person's, so no tidy takes it. A refusal is data; unforced it refuses a branch
+    /// whose commits no branch of the person's holds, and a branch a running or waiting session's tree holds is always kept.
     /// </summary>
-    /// <remarks>
-    /// A refusal is an ANSWER, as discarding a tree's is: `{ done: false, message }` with the driver's sentence. Unforced it
-    /// is D88's proof, refusing a branch whose commits no branch of the person's holds; the page asks once, naming the
-    /// branch and its commits, and sends `force`. A branch whose tree a session still running or waiting holds is kept
-    /// whatever the press says (<see cref="SessionBranchDiscard"/>).
-    /// </remarks>
-    [DriverRoute("DISCARD_SESSION_BRANCH")]
+    [DriverRoute("DISCARD_SESSION_BRANCH", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("DISCARD_SESSION_BRANCH", Repository = "repository")]
+    [GroundRepository("DISCARD_SESSION_BRANCH", "repository")]
+    [GroundBranch("DISCARD_SESSION_BRANCH", "repository", "branch", "named")]
+    [Says("DISCARD_SESSION_BRANCH", "repository:repository")]
     [Publishes("DISCARD_SESSION_BRANCH", Moves)]
     private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -346,21 +350,16 @@ public sealed class LinesRoutes(DriverContext context)
         return new { Repository = repository, Branch = branch, Done = removal.Removed, removal.Message, Said = TreesWords.Remove(removal).ToWire() };
     }
 
-    // Withdrawing a landing's branch the line will never hold (LANDRETIRE1, D102's note of it), beside the clean-up whose `Differs` rows it
-    // answers: `trees clean` keeps such a branch for ever, so this is the person's saying so. `daoris tree remove <landing branch>
-    // --why "…"` is the terminal's door (D50), and both end in the driver's one withdrawal (`LandedBranchWithdrawal`). The page's own press
-    // and the steward's act are LANDRETIRE1's part 2 and a later one: nothing on the page calls this route yet.
     /// <summary>
-    /// Withdraw a branch a landing made, by its name and its repository: its commits kept on a recovery ref, the branch deleted at the commit
-    /// judged, and its record saying why.
+    /// Withdraw a branch a landing made that the line will never hold, which `trees clean` keeps for ever: its commits kept on a
+    /// recovery ref, the branch deleted at the commit judged. A refusal is data; `plan: true` changes nothing. Only the holder of
+    /// the home's lease acts.
     /// </summary>
-    /// <remarks>
-    /// A refusal is an ANSWER, as a discard's is: `{ done, planned, message, said }` with the driver's sentence, `keptRef` where it went. The
-    /// line holding its work, a pull request that may carry it, a tree having it checked out, a branch of the person's and a name no landing
-    /// recorded are refused; `plan: true` says what it would do and changes nothing. Only the process holding the home's lease acts, which the
-    /// running desktop does (<see cref="LandedBranchWithdrawal"/>).
-    /// </remarks>
-    [DriverRoute("WITHDRAW_LANDING_BRANCH")]
+    [DriverRoute("WITHDRAW_LANDING_BRANCH", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WITHDRAW_LANDING_BRANCH", Repository = "repository")]
+    [GroundRepository("WITHDRAW_LANDING_BRANCH", "repository")]
+    [GroundBranch("WITHDRAW_LANDING_BRANCH", "repository", "branch")]
+    [Says("WITHDRAW_LANDING_BRANCH", "repository:repository", "why:words")]
     [Publishes("WITHDRAW_LANDING_BRANCH", Moves)]
     private async Task<object?> WithdrawLandingBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -380,17 +379,15 @@ public sealed class LinesRoutes(DriverContext context)
         };
     }
 
-    // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): CLEANUP1 keeps such a ref at any
-    // age until they say so, and this is their saying, the page's half of `daoris work recovery drop`. Both doors end in
-    // RecoveryDropping.PressAsync, which re-reads the holders at the moment of the delete.
     /// <summary>
-    /// Delete the recovery refs the page listed, `refs` each with the commit it was shown at, in `repository`'s checkout.
+    /// The person's delete of the recovery refs the page listed, each at the commit it was shown at, which are kept at any age until
+    /// they say so. The holders are read again at the delete: a ref now held, moved or gone is in `skipped` with why.
     /// </summary>
-    /// <remarks>
-    /// A refusal is an ANSWER, as a discard's is: `{ done, refused, dropped, skipped, message }`. A ref a branch or a tag now holds,
-    /// one that moved since the page read it, and one gone already are in `skipped` with why; only the lease's holder acts.
-    /// </remarks>
-    [DriverRoute("RECOVERY_DROP")]
+    [DriverRoute("RECOVERY_DROP", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("RECOVERY_DROP", Repository = "repository")]
+    [GroundRepository("RECOVERY_DROP", "repository")]
+    [GroundRead("RECOVERY_DROP", nameof(PipeReads.RecoveryRefs))]
+    [Says("RECOVERY_DROP", "repository:repository")]
     [Publishes("RECOVERY_DROP", Moves)]
     private async Task<object?> DropRecoveriesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -438,21 +435,16 @@ public sealed class LinesRoutes(DriverContext context)
         Message = string.Join("\n", RecoveryDropping.Words(repository, done)),
     };
 
-    // Bringing repositories up to date after a pull request merged (WSR6, D109): the list, which fetches each line —
-    // moving only origin's refs — and the press, which does not fetch again: it acts on what the list fetched, and
-    // only on the rows the page listed (`only`). `daoris tree sync` is the terminal's door (D50).
     /// <summary>
-    /// Bringing each repository with a checkout here up to date (WSR6): its line fast-forwarded, the branches still at
-    /// work replayed onto it, the landed branches whose work reached it deleted — listed first, done by a press.
+    /// Bringing each repository with a checkout here up to date: its line fast-forwarded, the branches at work replayed onto it,
+    /// the landed branches whose work reached it deleted. The list fetches; the press acts on what it fetched, and only on the rows
+    /// the page listed (`only`). A row not done is an answer with the tree layer's sentence. `workspace` keeps both to its checkouts.
     /// </summary>
-    /// <remarks>
-    /// <b>A row that is not done is an answer, not an error</b>, as the clean-up's are: a conflict, a checkout with work
-    /// in flight, a branch on its remote. Each comes back as its row with the sentence the tree layer wrote.
-    /// <para><b>A workspace's page asks for its own</b> (BRSCOPE1, WSP5): with `workspace`, the look fetches, and the press
-    /// judges, that workspace's checkouts alone, and what it leaves apart is its own. With none, every checkout here.</para>
-    /// </remarks>
-    [DriverRoute("TREES_SYNC_PLAN")]
-    [DriverRoute("TREES_SYNC")]
+    [DriverRoute("TREES_SYNC_PLAN", PipeClass.Open)]
+    [DriverRoute("TREES_SYNC", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("TREES_SYNC", Repository = "repository", Workspace = "workspace")]
+    [GroundRead("TREES_SYNC", nameof(PipeReads.SyncPlan))]
+    [Says("TREES_SYNC", "repository:repository")]
     [Publishes("TREES_SYNC", Moves)]
     private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -552,7 +544,7 @@ public sealed class LinesRoutes(DriverContext context)
     // of Daoris's. Read on the machine, never fetched, so the screen can say what a look will fetch before it is asked.
     // The machine's whole, each row naming its workspace: a workspace's page counts its own rows (BRSCOPE1), and Ask
     // Daoris's sync card, whose look is the machine's, waits by the whole.
-    [DriverRoute("TREES_SYNC_SCOPE")]
+    [DriverRoute("TREES_SYNC_SCOPE", PipeClass.Open)]
     private async Task<object?> TreesSyncScopeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (repositories, _) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
@@ -569,7 +561,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// units, entries and held attempts per repository, judged from the machine's facts (PUSH1c2a, D182); this pull stays for a
     /// page that does not read the slice, and for a unit's own read.
     /// </summary>
-    [DriverRoute("WORK_STATE")]
+    [DriverRoute("WORK_STATE", PipeClass.Open)]
     private async Task<object?> WorkStateAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
@@ -663,7 +655,8 @@ public sealed class LinesRoutes(DriverContext context)
     // session's and a plugin's folder are (PROCSTART2).
     /// <summary>Open the folder the units' node records are kept in, in the system's file manager.</summary>
     /// <remarks>Nothing machine-local comes back: whether it opened. With no record kept there is no folder, which is refused and said.</remarks>
-    [DriverRoute("WORK_RECORDS_FOLDER")]
+    [DriverRoute("WORK_RECORDS_FOLDER", PipeClass.Window)]
+    [Owner("WORK_RECORDS_FOLDER", None = OwnerNone.ActsOnNothing)]
     private async Task<object?> WorkRecordsFolderAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var folder = NodeRecordFiles.FolderOf(_loop.Home);
@@ -705,7 +698,9 @@ public sealed class LinesRoutes(DriverContext context)
     /// A refusal is an ANSWER, as a discard's is: `{ done, refused, message }`, the message the terminal's sentence. Only the lease's
     /// holder records; an attempt no longer held, or already worded, is refused and said.
     /// </remarks>
-    [DriverRoute("WORK_HELD")]
+    [DriverRoute("WORK_HELD", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORK_HELD", Unit = "unit")]
+    [GroundRead("WORK_HELD", nameof(PipeReads.HeldAttempt))]
     [Publishes("WORK_HELD", StateScopes.Sessions)]
     private Task<object?> WorkHeldAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -851,7 +846,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// The answer is the state, with <c>reviewed</c> saying what the procedure's look found: the repositories of the workspace
     /// whose checkout lacks it, and whether it could be looked for at all (no checkout here).
     /// </remarks>
-    [DriverRoute("SET_REVIEW")]
+    [DriverRoute("SET_REVIEW", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SET_REVIEW", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_REVIEW", "reviews", "workspaceReviews")]
+    [NotAlready("SET_REVIEW", "merges into the repository's review rule")]
     [Publishes("SET_REVIEW", Chosen)]
     private async Task<object?> SetReviewAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -899,7 +897,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// <c>verify</c>, <c>minutes</c> and <c>recheck</c>, <c>none</c>, or <c>clear</c>), judged by
     /// <see cref="OpinionRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
     /// </summary>
-    [DriverRoute("SET_OPINION")]
+    [DriverRoute("SET_OPINION", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SET_OPINION", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_OPINION", "opinions", "workspaceOpinions")]
+    [NotAlready("SET_OPINION", "merges into the repository's opinion rule")]
     [Publishes("SET_OPINION", Chosen)]
     private object? SetOpinion(IpcRequest request)
     {
@@ -940,7 +941,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// <c>workspace</c>; <c>set</c> with <c>mode</c> and/or <c>agents</c>, or <c>clear</c>), judged by
     /// <see cref="HelperRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
     /// </summary>
-    [DriverRoute("SET_HELPERS")]
+    [DriverRoute("SET_HELPERS", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SET_HELPERS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_HELPERS", "helpers", "workspaceHelpers")]
+    [NotAlready("SET_HELPERS", "merges into the repository's helpers rule")]
     [Publishes("SET_HELPERS", Chosen)]
     private object? SetHelpers(IpcRequest request)
     {
@@ -956,7 +960,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// shape (<c>repository</c> or <c>workspace</c>; <c>set</c> with its <c>mode</c>, or <c>clear</c>), judged by
     /// <see cref="HandOverRules.Apply"/> before anything is written; the screens' half of `daoris settings handover`.
     /// </summary>
-    [DriverRoute("SET_HAND_OVER")]
+    [DriverRoute("SET_HAND_OVER", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SET_HAND_OVER", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_HAND_OVER", "handOver", "workspaceHandOver")]
+    [NotAlready("SET_HAND_OVER", "merges into the repository's hand-over rule")]
     [Publishes("SET_HAND_OVER", Chosen)]
     private object? SetHandOver(IpcRequest request)
     {
@@ -972,7 +979,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// <c>mode</c> and/or <c>convention</c>, the empty convention taking it away, or <c>clear</c>), judged by
     /// <see cref="CommitRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
     /// </summary>
-    [DriverRoute("SET_COMMITS")]
+    [DriverRoute("SET_COMMITS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_COMMITS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_COMMITS", "commits", "workspaceCommits")]
+    [NotAlready("SET_COMMITS", "merges into the repository's commits rule")]
     [Publishes("SET_COMMITS", Chosen)]
     private object? SetCommits(IpcRequest request)
     {
@@ -989,7 +999,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// written. Full access is the person's press alone: no proposal names it (D184's rejected options). It reads nothing else, so it
     /// waits for nothing; what each repository resolves to moves under the driver's key, so the lines slice pushes it again.
     /// </summary>
-    [DriverRoute("SET_ACCESS")]
+    [DriverRoute("SET_ACCESS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_ACCESS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_ACCESS", "access", "workspaceAccess")]
+    [NotAlready("SET_ACCESS", "merges into the repository's access rule")]
     [Publishes("SET_ACCESS", Chosen)]
     private object? SetAccess(IpcRequest request)
     {
@@ -1012,7 +1025,10 @@ public sealed class LinesRoutes(DriverContext context)
     /// field. Judged by <see cref="GitAccessActs.Changes"/> before anything is written; the window confirms a widening in its own
     /// <c>InlineConfirm</c>, and the route carries no flag for it.
     /// </summary>
-    [DriverRoute("SET_GIT_ACCESS")]
+    [DriverRoute("SET_GIT_ACCESS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_GIT_ACCESS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_GIT_ACCESS", "gitAccess", "workspaceGitAccess")]
+    [NotAlready("SET_GIT_ACCESS", "merges into the repository's git access")]
     [Publishes("SET_GIT_ACCESS", Chosen)]
     private object? SetGitAccess(IpcRequest request)
     {

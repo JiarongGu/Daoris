@@ -17,7 +17,7 @@ public sealed class AcrossRoutes(DriverContext context)
     // Every repository here, whether agents outside it read its checkout and what said so, and what its
     // sessions were declared to write into. The workspaces are the registry's, so this waits for the driver
     // as the lines do.
-    [DriverRoute("ACROSS")]
+    [DriverRoute("ACROSS", PipeClass.Open)]
     private async Task<object?> AcrossAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
@@ -47,7 +47,11 @@ public sealed class AcrossRoutes(DriverContext context)
     // A repository's reading across, or a workspace's, or either cleared with no `read` — the same file
     // `daoris place across … read` edits: one truth, two doors (D50). The state it answers, and every repository's answer under
     // the driver's key, move with it (STATEHUB1h, D169).
-    [DriverRoute("SET_READ_ACROSS")]
+    [DriverRoute("SET_READ_ACROSS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_READ_ACROSS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_READ_ACROSS", "readAcross", "workspaceReadAcross")]
+    [Says("SET_READ_ACROSS", "repository:repository")]
+    [NotAlready("SET_READ_ACROSS", "merges into the repository's reading across")]
     [Publishes("SET_READ_ACROSS", StateScopes.Driver)]
     private object? SetReadAcross(IpcRequest request)
     {
@@ -70,7 +74,12 @@ public sealed class AcrossRoutes(DriverContext context)
 
     // A relationship declared, or taken back — the same file `daoris place across <repo> write-to <other>`
     // edits. A repository naming itself is refused in the driver's own sentence.
-    [DriverRoute("SET_WRITE_ACROSS")]
+    [DriverRoute("SET_WRITE_ACROSS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_WRITE_ACROSS", Repository = "repository")]
+    [GroundRepository("SET_WRITE_ACROSS", "repository")]
+    [GroundRead("SET_WRITE_ACROSS", nameof(PipeReads.WriteAcross))]
+    [Says("SET_WRITE_ACROSS", "repository:repository")]
+    [NotAlready("SET_WRITE_ACROSS", "adds or removes one repository of the list it writes to")]
     [Publishes("SET_WRITE_ACROSS", StateScopes.Driver)]
     private object? SetWriteAcross(IpcRequest request)
     {

@@ -14,7 +14,7 @@ public sealed class WorkflowEditRoutes(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;
 
-    [DriverRoute("WORKFLOW_LIST")]
+    [DriverRoute("WORKFLOW_LIST", PipeClass.Open)]
     [ByEvent("WORKFLOW_LIST", Untold = "the workflow files under the home and the choices in the driver's file")]
     private Task<object?> WorkflowListAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -52,7 +52,7 @@ public sealed class WorkflowEditRoutes(DriverContext context)
         });
     }
 
-    [DriverRoute("WORKFLOW_SHOW")]
+    [DriverRoute("WORKFLOW_SHOW", PipeClass.Open)]
     [ByEvent("WORKFLOW_SHOW", Untold = "a workflow's file under the home")]
     private Task<object?> WorkflowShowAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -85,7 +85,7 @@ public sealed class WorkflowEditRoutes(DriverContext context)
         });
     }
 
-    [DriverRoute("WORKFLOW_PALETTE")]
+    [DriverRoute("WORKFLOW_PALETTE", PipeClass.Open)]
     [ByEvent("WORKFLOW_PALETTE", Untold = "the plugins' manifests under the home")]
     private Task<object?> WorkflowPaletteAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(PaletteOf(_loop.Home));

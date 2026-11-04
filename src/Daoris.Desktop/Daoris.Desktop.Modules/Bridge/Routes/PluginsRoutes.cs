@@ -36,7 +36,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // page asks PLUGIN for the rest.
     // Each plugin and offer carries its icon (PLUGUI2b, D140 §5): the bytes PluginIcon.Read judged, as a data URI, and
     // never the icon's path, so the page draws what it was handed and reaches for nothing; 32 KiB a plugin bounds it.
-    [DriverRoute("PLUGINS")]
+    [DriverRoute("PLUGINS", PipeClass.Open)]
     private async Task<object?> PluginsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
@@ -124,7 +124,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // A plugin's page (PLUGUI1e, D119 §3.2 and §4.1): the reader `daoris plugin show` prints, with its health
     // from the loop's own record, since this process runs the loop. A plugin no longer here is PLUGIN_UNKNOWN, which
     // the page reads as gone by the code (D48 §6).
-    [DriverRoute("PLUGIN")]
+    [DriverRoute("PLUGIN", PipeClass.Open)]
     private async Task<object?> PluginAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
@@ -136,7 +136,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // What a plugin did over a period (PLUGUI1e, D119 §4.1): the reader `daoris plugin activity` prints, over
     // the machine log under the home. `since` is the span the page chose (`1d`, `7d`, `30d`), the log's own spans;
     // absent, the page's opening period. Its words this run are the console's ring, read apart (`TAIL_SESSION`).
-    [DriverRoute("PLUGIN_ACTIVITY")]
+    [DriverRoute("PLUGIN_ACTIVITY", PipeClass.Open)]
     private async Task<object?> PluginActivityAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var period = PluginActivity.DefaultPeriod;
@@ -157,7 +157,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // Install from a folder's first step (PLUGUI1e, D119 §3.4): what the folder's plugin would run, shown before the
     // press, read as Ask Daoris's judge reads a folder. A refusal is an ANSWER here, since the drawer shows it in place
     // of the plugin; nothing is copied.
-    [DriverRoute("PLUGIN_READ")]
+    [DriverRoute("PLUGIN_READ", PipeClass.Open)]
     private object? PluginRead(IpcRequest request)
     {
         var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
@@ -189,7 +189,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // Install from a folder (PLUGUI1e, D119 §3.4): `daoris plugin add <folder>`'s copy, the driver's twin, judged as
     // PLUGIN_READ judged it. It adds and never replaces; the terminal's add is the one that replaces (§4.4).
     // 🔴 Nothing starts at the press; the loop starts what it runs at its next look.
-    [DriverRoute("PLUGIN_ADD")]
+    [DriverRoute("PLUGIN_ADD", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("PLUGIN_ADD", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_ADD", "plugin-folder", "folder")]
     [Publishes("PLUGIN_ADD", Installs)]
     private object? PluginAdd(IpcRequest request)
     {
@@ -205,7 +207,8 @@ public sealed class PluginsRoutes(DriverContext context)
     // opens it through the window kit's launcher, as the log's module opens the log's (LOG1c). `which` is a plugin's
     // install folder, its data folder, or the plugins folder. The launcher starts the file manager, so it is opened through the
     // start gate, off the window's thread (PROCSTART2).
-    [DriverRoute("PLUGIN_OPEN_FOLDER")]
+    [DriverRoute("PLUGIN_OPEN_FOLDER", PipeClass.Window)]
+    [Owner("PLUGIN_OPEN_FOLDER", None = OwnerNone.ActsOnNothing)]
     private async Task<object?> PluginOpenFolderAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var which = PayloadHelper.GetRequiredValue<string>(request.Payload, "which");
@@ -257,7 +260,10 @@ public sealed class PluginsRoutes(DriverContext context)
     // would change, or why it cannot, for the row to show before the press; with it, the update. One route for the plan and
     // its press, so the plan publishes too (STATEHUB1d, D169): the catalogue and the roster read again for a press the person
     // made, which splitting the route would spare.
-    [DriverRoute("PLUGIN_UPDATE")]
+    [DriverRoute("PLUGIN_UPDATE", PipeClass.Open, Drain = PipeDrain.Waits)]
+    [ClassedBy("PLUGIN_UPDATE", "apply", PipeClass.Person, "true")]
+    [Owner("PLUGIN_UPDATE", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_UPDATE", "plugin-update", "id", "shipped")]
     [Publishes("PLUGIN_UPDATE", Installs)]
     private async Task<object?> PluginUpdateAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -285,7 +291,9 @@ public sealed class PluginsRoutes(DriverContext context)
 
     // The screen's Install beside one of the install's offers (PLUG9 d): `daoris plugin add --offer <id>`'s
     // copy, the offer recorded. 🔴 Nothing starts at the press; the loop starts it at its next look.
-    [DriverRoute("PLUGIN_INSTALL")]
+    [DriverRoute("PLUGIN_INSTALL", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("PLUGIN_INSTALL", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_INSTALL", "plugin-offer", "offer")]
     [Publishes("PLUGIN_INSTALL", Installs)]
     private async Task<object?> PluginInstallAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -298,7 +306,9 @@ public sealed class PluginsRoutes(DriverContext context)
 
     // The screen's half of `daoris plugin enable|disable|remove` (D50): a row in
     // `plugins.json`, or the install folder gone with the data folder named and kept.
-    [DriverRoute("PLUGIN_ACTION")]
+    [DriverRoute("PLUGIN_ACTION", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("PLUGIN_ACTION", None = OwnerNone.MachineSetting)]
+    [GroundRead("PLUGIN_ACTION", nameof(PipeReads.PluginState))]
     [Publishes("PLUGIN_ACTION", Installs)]
     private async Task<object?> PluginActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -372,7 +382,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // The plugin kit's screen half (PLUG8, D101): `daoris plugin new` from a form. It writes
     // a plugin's folder into the one the person named, a plugins repository's typically, and
     // installs nothing: making a plugin is work, reviewed before `daoris plugin add`.
-    [DriverRoute("PLUGIN_NEW")]
+    [DriverRoute("PLUGIN_NEW", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("PLUGIN_NEW", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_NEW", "plugin-new", "folder", "id")]
     private async Task<object?> PluginNewAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
@@ -390,7 +402,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // `daoris plugin try` from a button: an installed plugin by its id, or a folder by
     // its path, started as the driver would and every answer read by the driver's own reader.
     // It may take as long as the driver waits at the points tried — two minutes for a landing.
-    [DriverRoute("PLUGIN_TRY")]
+    [DriverRoute("PLUGIN_TRY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("PLUGIN_TRY", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_TRY", "plugin-try", "id", "folder")]
     private async Task<object?> PluginTryAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var options = new TrialOptions(Point: Optional(request, "point"));
@@ -425,7 +439,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // The person's Check of a plugin's tools (ADOSIGNIN1, D150 point 7): each declared tool found, its version and its readiness
     // checks read. Started only by this press, never at a look, since a check may reach the platform or read another tool's sign-in.
     // It changes nothing Daoris keeps; it declares the plugins scope so the page's own read of the plugin is asked again with it.
-    [DriverRoute("PLUGIN_TOOLS")]
+    [DriverRoute("PLUGIN_TOOLS", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("PLUGIN_TOOLS", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_TOOLS", "plugin-try", "id")]
     [Publishes("PLUGIN_TOOLS", StateScopes.Plugins)]
     private async Task<object?> PluginToolsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -440,7 +456,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // the manifest's command of one of the plugin's own tools, then the tool's checks read again. Daoris never signs in itself; a
     // fix naming another command, a tool not found (its install words said) and a console that did not start are answered as data.
     // The answer comes when the console ends, which is as long as the person takes.
-    [DriverRoute("PLUGIN_TOOL_FIX")]
+    [DriverRoute("PLUGIN_TOOL_FIX", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("PLUGIN_TOOL_FIX", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_TOOL_FIX", "plugin-try", "id")]
     [Publishes("PLUGIN_TOOL_FIX", StateScopes.Plugins)]
     private async Task<object?> PluginToolFixAsync(IpcRequest request, CancellationToken cancellationToken)
     {

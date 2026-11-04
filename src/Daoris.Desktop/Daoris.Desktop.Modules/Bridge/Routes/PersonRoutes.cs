@@ -17,19 +17,22 @@ public sealed class PersonRoutes(DriverLoop loop)
     // so the pipe never answers it), which keeps it in memory and sends it on every write. This shell mints no key (minting it and
     // proving its host holds it are PERSONDOOR1g's) and holds none for a host it adopted, so it answers none and the page writes as
     // it did.
-    [DriverRoute("PERSON_KEY")]
+    [DriverRoute("PERSON_KEY", PipeClass.Window)]
+    [Owner("PERSON_KEY", None = OwnerNone.NamesNothing)]
     private Task<object?> PersonKeyAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new PersonKey(null));
 
     // RPC1c: what waits for the window, read whole as the `CONFIRMATIONS` event tells it, for a window that opens or reloads while one
     // waits. None where this shell serves no pipe.
-    [DriverRoute("PERSON_CONFIRMATIONS")]
+    [DriverRoute("PERSON_CONFIRMATIONS", PipeClass.Window)]
+    [Owner("PERSON_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
     private Task<object?> PersonConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.Pipe?.Confirmations.Now() ?? new PipeConfirmationsNow(0, []));
 
     // NOTIFY2j (D196 point 4): what waits at the service's own door, read whole as the `SERVICE_CONFIRMATIONS` event tells it, for a
     // window that opens or reloads while one waits; the person answers each at the service's door with the key, as before.
-    [DriverRoute("SERVICE_CONFIRMATIONS")]
+    [DriverRoute("SERVICE_CONFIRMATIONS", PipeClass.Window)]
+    [Owner("SERVICE_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
     private Task<object?> ServiceConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.ServiceConfirmations.Now());
 
@@ -46,7 +49,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // ONEWAY1n-i (the oneway design §4 M4): `source: "service"` answers one waiting at the service's door instead, where the host makes
     // the request at the Confirm: `{ answered: true }` where its door took it, else the host's code as `why` (`not-made` with the door's
     // own sentence, `restarted`), `gone` where none, and `unreachable` where the service did not answer, nothing taken.
-    [DriverRoute("PERSON_CONFIRM")]
+    [DriverRoute("PERSON_CONFIRM", PipeClass.Window)]
+    [Owner("PERSON_CONFIRM", None = OwnerNone.ActsOnNothing)]
     private async Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -109,7 +113,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // CONFIRMSEEN1: the window's word that a terminal's press is drawn in front of the person, in a window that is in front: kept once as
     // when it was shown, which every window is told by `CONFIRMATIONS`, and it moves no clock (CONFIRMWAIT1a-i). One no longer waiting is
     // answered as data, `gone`. It runs nothing and moves no record, so it declares no change.
-    [DriverRoute("PERSON_CONFIRM_SHOWN")]
+    [DriverRoute("PERSON_CONFIRM_SHOWN", PipeClass.Window)]
+    [Owner("PERSON_CONFIRM_SHOWN", None = OwnerNone.ActsOnNothing)]
     private Task<object?> PersonConfirmShownAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -129,7 +134,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // the terminal's door (the census refuses it first), `not-offered` for a grant this build does not offer yet (D201's note on order),
     // `unknown-press`, `newer` for a record a newer Daoris wrote, and `unwritten` for a record that could not be written (a revoke still
     // stands for this run). It moves STATE's `standingConfirmation`.
-    [DriverRoute("SET_STANDING_CONFIRMATION")]
+    [DriverRoute("SET_STANDING_CONFIRMATION", PipeClass.Window)]
+    [Owner("SET_STANDING_CONFIRMATION", None = OwnerNone.MachineSetting)]
     [Publishes("SET_STANDING_CONFIRMATION", StateScopes.Driver)]
     private Task<object?> SetStandingConfirmationAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -162,7 +168,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // `unknown-role`, `unknown-repository`, `unknown-workspace`, `window`, `scope`, `choose-terminal`, `no-holder`, `revoked-holder`,
     // `holder-harness`, `newer`, `unwritten`, `unstarted`, `no-pipe`). The judge's mutation step ends first; then each decision kept
     // under a generation it ended goes stale, and a workspace's for a repository whose own appointment replaced it there.
-    [DriverRoute("SET_APPOINTMENT")]
+    [DriverRoute("SET_APPOINTMENT", PipeClass.Window)]
+    [Owner("SET_APPOINTMENT", None = OwnerNone.Appointment)]
     [Publishes("SET_APPOINTMENT", StateScopes.Driver | StateScopes.Sessions)]
     private async Task<object?> SetAppointmentAsync(IpcRequest request, CancellationToken cancellationToken)
     {

@@ -22,7 +22,7 @@ public sealed class SetupRoutes(DriverContext context)
     // opinion, look, adoption, builds, drive}. The parts are applied to a copy of driver.json through the doors' own edits and read before and
     // after through the start's resolvers; every refusal at once, what lowers the person's part, the reach, the work driving releases and each
     // declaration with its acceptances. It reads the registry, the quests and each line's tip as git objects, and writes and probes nothing.
-    [DriverRoute("PLACE_PLAN")]
+    [DriverRoute("PLACE_PLAN", PipeClass.Open)]
     [ByEvent("PLACE_PLAN", Untold = "the service's registry and quests, driver.json, the saved workflows and each line's tip in its checkout")]
     private async Task<object?> PlacePlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -45,7 +45,10 @@ public sealed class SetupRoutes(DriverContext context)
     // chosen blobs, writes every change and acceptance in one edit of driver.json, and asks each adoption quest last, keyed by the digest, its
     // receipt written before the first effect (`PlaceApplies`). A press of a digest that holds a receipt goes on from it. Answers `{ done, refused,
     // message, digest, operations }`, each operation `{ id, kind, repository, said, outcome, note, quest }`; a refusal is an answer, nothing written.
-    [DriverRoute("PLACE_APPLY")]
+    [DriverRoute("PLACE_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("PLACE_APPLY", Repositories = "repositories")]
+    [GroundRead("PLACE_APPLY", nameof(PipeReads.PlacePlan))]
+    [Says("PLACE_APPLY", "repositories:repository", "preset:form", "builds:form")]
     [Publishes("PLACE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
     private async Task<object?> PlaceApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -90,7 +93,7 @@ public sealed class SetupRoutes(DriverContext context)
     // its checkout (`synced`, `update` `behind` or `differs`, `carried` and `locked`, the files a sync would `changed`, `added` and `retired`, the
     // keeps `reopened`, a `newerLock`), absent where it was not asked or printed none; `offered` is where it says the canon moved or a keep
     // reopened. It reads the registry, the quests, the line and the tool, and writes nothing.
-    [DriverRoute("RECONCILE_PLAN")]
+    [DriverRoute("RECONCILE_PLAN", PipeClass.Open)]
     [ByEvent("RECONCILE_PLAN", Untold = "the service's registry and quests, driver.json, the repository's line and the doctrine tool's status for its checkout")]
     private async Task<object?> ReconcilePlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -111,7 +114,10 @@ public sealed class SetupRoutes(DriverContext context)
     // The reconcile's press (D230 point 2: the person's own), {repository}: it plans again and presses that plan as the set-up press presses one, the
     // rule into the repository's scope, then one ask to it as the person's, its quest admitted alone where the repository is not driven here. It
     // answers {done, refused, message, quest, ask}; a plan that is refused is an answer by its first refusal's code, nothing published or allowed.
-    [DriverRoute("RECONCILE_APPLY")]
+    [DriverRoute("RECONCILE_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("RECONCILE_APPLY", Repository = "repository")]
+    [GroundRead("RECONCILE_APPLY", nameof(PipeReads.ReconcilePlan))]
+    [Says("RECONCILE_APPLY", "repository:repository")]
     [Publishes("RECONCILE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
     private async Task<object?> ReconcileApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {

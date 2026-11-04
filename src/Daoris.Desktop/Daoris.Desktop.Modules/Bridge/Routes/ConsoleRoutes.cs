@@ -19,7 +19,7 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
     // sequence numbers are the driver's, so neither side has to remember the other. A harness
     // action's relay (`harness:action`) is no session's, and answers its latest run (SIGNIN1),
     // so a sign-in's panel mounted after its link or its phases began reads them.
-    [DriverRoute("TAIL_SESSION")]
+    [DriverRoute("TAIL_SESSION", PipeClass.Open)]
     private object? TailSession(IpcRequest request)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -41,7 +41,7 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
     // What a session runs beside itself (CONSOLE2c): each subagent and background task, with
     // the key its console is tailed by over `TAIL_SESSION`. Asked on open and again when a
     // `SESSION_STREAMS` event names the session.
-    [DriverRoute("SESSION_STREAMS")]
+    [DriverRoute("SESSION_STREAMS", PipeClass.Open)]
     private object? SessionStreams(IpcRequest request)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -58,7 +58,11 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
     // the session that runs it. Its stream ends when the wire says how. False is an answer — no
     // session here runs it, or its harness stopped nothing — and a key that is not one of this
     // session's tasks is refused in the driver's words, because the page never sends one.
-    [DriverRoute("STOP_TASK")]
+    [DriverRoute("STOP_TASK", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("STOP_TASK", Session = "id")]
+    [GroundSession("STOP_TASK", "id")]
+    [GroundRead("STOP_TASK", nameof(PipeReads.LiveTask))]
+    [Says("STOP_TASK", "id:session")]
     private async Task<object?> StopTaskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

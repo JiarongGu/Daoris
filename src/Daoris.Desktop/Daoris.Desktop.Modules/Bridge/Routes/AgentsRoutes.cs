@@ -22,7 +22,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // sign-in say what was last read of them and when, the driver's report kept under the home, so a page
     // asking, the first time after a start included, asks no account (ROSTER1, D150 §5.3). It is a read and
     // declares nothing, so a window's read is never published, which every window would read again without end.
-    [DriverRoute("HARNESSES")]
+    [DriverRoute("HARNESSES", PipeClass.Open)]
     private Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         ReadHarnessesAsync(request, refresh: false, cancellationToken);
 
@@ -30,7 +30,10 @@ public sealed class AgentsRoutes(DriverContext context)
     // with `profile` too that one account alone; never an agent's own sign-in (POOL1a3, D197 point 3). Its own route so it can
     // declare what it moved, which the read above must not: it answers the roster as the read does, and every window asks its
     // roster again.
-    [DriverRoute("HARNESSES_REFRESH")]
+    [DriverRoute("HARNESSES_REFRESH", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HARNESSES_REFRESH", None = OwnerNone.MachineSetting)]
+    [GroundRead("HARNESSES_REFRESH", nameof(PipeReads.HarnessToRefresh))]
+    [Says("HARNESSES_REFRESH", "agent:agent")]
     [Publishes("HARNESSES_REFRESH", StateScopes.Harnesses)]
     private Task<object?> RefreshHarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         ReadHarnessesAsync(request, refresh: true, cancellationToken);
@@ -263,7 +266,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // show a start the loop would not make. The page names the circles it shows; this answers
     // for those and no others. Names and versions only — no home, no binary, no key. Named
     // for what it answers rather than "wiring", which the page already calls the remotes map.
-    [DriverRoute("STARTS")]
+    [DriverRoute("STARTS", PipeClass.Open)]
     private async Task<object?> StartsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
@@ -342,7 +345,10 @@ public sealed class AgentsRoutes(DriverContext context)
     // its own login flow. Never automatic, never mid-session, never unasked — and streamed
     // line by line through the console, because it is a process like any other. What it changed at once (a key, a name, a
     // join, a default) is the roster's, which it declares; an action that runs on says its end as `HARNESS_ENDED` (STATEHUB1h).
-    [DriverRoute("HARNESS_ACTION")]
+    [DriverRoute("HARNESS_ACTION", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HARNESS_ACTION", None = OwnerNone.MachineSetting)]
+    [GroundRead("HARNESS_ACTION", nameof(PipeReads.HarnessToAct))]
+    [Says("HARNESS_ACTION", "harness:agent")]
     [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
     private async Task<object?> HarnessActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -492,14 +498,16 @@ public sealed class AgentsRoutes(DriverContext context)
     // the prompt it printed — a login asks for the code the browser shows, and waits — and
     // stop it. Either is refused, naming the action, when nothing runs under that name: an
     // answer that went nowhere must not look delivered.
-    [DriverRoute("HARNESS_INPUT")]
+    [DriverRoute("HARNESS_INPUT", PipeClass.Window)]
+    [Owner("HARNESS_INPUT", None = OwnerNone.NamesNothing)]
     private object? HarnessInput(IpcRequest request)
     {
         Actions.Running(request).Send(PayloadHelper.GetRequiredValue<string>(request.Payload, "text"));
         return new { Sent = true };
     }
 
-    [DriverRoute("HARNESS_CANCEL")]
+    [DriverRoute("HARNESS_CANCEL", PipeClass.Window)]
+    [Owner("HARNESS_CANCEL", None = OwnerNone.NamesNothing)]
     private object? HarnessCancel(IpcRequest request)
     {
         Actions.Cancel(request);
@@ -510,7 +518,11 @@ public sealed class AgentsRoutes(DriverContext context)
     // that account, the same file `daoris agent settings` edits (D50). A key sent as null is
     // cleared and one left out is untouched. Never the tool's own configuration home, which the
     // roster says Daoris never touches, and never an account a setting would bring into being.
-    [DriverRoute("SET_AGENT_SETTINGS")]
+    [DriverRoute("SET_AGENT_SETTINGS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_AGENT_SETTINGS", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_AGENT_SETTINGS", nameof(PipeReads.ProfileSettings))]
+    [Says("SET_AGENT_SETTINGS", "harness:agent")]
+    [NotAlready("SET_AGENT_SETTINGS", "merges into a profile's settings")]
     [Publishes("SET_AGENT_SETTINGS", StateScopes.Harnesses)]
     private object? SetAgentSettings(IpcRequest request)
     {
@@ -526,7 +538,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // a profile name is already served only over loopback (`ToSession`), so this inherits
     // that boundary rather than arguing for its own. There is no HTTP route onto it. Its builder is the pushed slice's
     // (`UsageStateSlice`, PUSH1e), so the pull an older page makes and the push cannot drift.
-    [DriverRoute("USAGE")]
+    [DriverRoute("USAGE", PipeClass.Open)]
     private Task<object?> UsageAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(UsageStateSlice.Answer(_loop.Usage));
 

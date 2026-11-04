@@ -15,20 +15,6 @@ public sealed class PipeGroundsCensusTests
     private static readonly string[] Timeless = ["CHANNEL_MARK", "NOTICES_READ", "HELP_RENAME", "HELP_PIN"];
 
     [Fact]
-    public void Every_person_route_names_its_grounds_and_every_row_is_a_person_route()
-    {
-        var person = PipeCensus.Daoris.Routes
-            .Where(each => each.Route is not null && (each.Class == PipeClass.Person || each.When?.Class == PipeClass.Person))
-            .Select(each => PipeTargets.Key(each.Module, each.Route!))
-            .ToHashSet(StringComparer.Ordinal);
-
-        Assert.Empty(person.Where(each => !PipeTargets.Daoris.Rows.ContainsKey(each)).Order(StringComparer.Ordinal));
-        Assert.Empty(PipeTargets.Daoris.Rows.Keys.Where(each => !person.Contains(each)).Order(StringComparer.Ordinal));
-        // A route a route-by-route module leaves to the person by default has no row, and is refused `ungrounded` (PipeConfirmTests).
-        Assert.Null(PipeTargets.Daoris.Row(DriverModule.Name, "A_ROUTE_NOBODY_CLASSED"));
-    }
-
-    [Fact]
     public void Only_what_deletes_moves_and_starts_nothing_is_timeless_and_each_says_why()
     {
         var timeless = PipeTargets.Daoris.Rows.Where(each => each.Value.Grounds.Count == 0).ToList();
@@ -60,7 +46,7 @@ public sealed class PipeGroundsCensusTests
         foreach (var (key, row) in PipeTargets.Daoris.Rows)
         {
             var route = key.Contains('.', StringComparison.Ordinal) ? key[(key.LastIndexOf('.') + 1)..] : key;
-            var mark = key.Contains('.', StringComparison.Ordinal) ? $"case \"{route}\"" : $"[DriverRoute(\"{route}\")]";
+            var mark = key.Contains('.', StringComparison.Ordinal) ? $"case \"{route}\"" : $"[DriverRoute(\"{route}\",";
             var handler = sources.Values.Where(each => each.Contains(mark, StringComparison.Ordinal))
                 .Select(each => Handler(each, mark, sources.Values)).ToList();
             Assert.True(handler.Count > 0, $"no handler marks {key}");
@@ -104,11 +90,12 @@ public sealed class PipeGroundsCensusTests
     /// <summary>
     /// The text of the handler <paramref name="mark"/> marks in <paramref name="source"/>: the marked method's body, or the switch's case,
     /// and the bodies of the module's own methods it hands its request or its payload to, wherever in <paramref name="others"/> each is.
+    /// The pipe's marks beside the handler are left out, since they name the very fields this looks for.
     /// </summary>
     private static string Handler(string source, string mark, IEnumerable<string>? others = null)
     {
         var at = source.IndexOf(mark, StringComparison.Ordinal);
-        var body = mark.StartsWith("case ", StringComparison.Ordinal) ? Case(source, at) : Body(source, at);
+        var body = PipeMark.Replace(mark.StartsWith("case ", StringComparison.Ordinal) ? Case(source, at) : Body(source, at), "");
         var methods = Methods(others ?? [source]);
         var read = new List<string> { body };
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -126,6 +113,9 @@ public sealed class PipeGroundsCensusTests
     }
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IEnumerable<string>, Dictionary<string, List<string>>> Indexed = [];
+
+    private static readonly System.Text.RegularExpressions.Regex PipeMark =
+        new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy|Ground\w+|Timeless|Says)\(.*\r?\n", System.Text.RegularExpressions.RegexOptions.Multiline);
 
     /// <summary>Every method of <paramref name="files"/> that takes a request or a payload, by its name: its bodies, indexed once.</summary>
     private static Dictionary<string, List<string>> Methods(IEnumerable<string> files) => Indexed.GetValue(files, each =>
