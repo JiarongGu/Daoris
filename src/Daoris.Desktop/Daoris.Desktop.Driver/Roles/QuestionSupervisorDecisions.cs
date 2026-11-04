@@ -30,13 +30,13 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission admission, MachineLog? log = null)
 {
-    /// <summary>Row 1's overrule window (§6.3): five minutes from the keeping, where the supervisor's role keeps none.</summary>
+    /// <summary>Row 1's overrule window (§6.3): five minutes, where the role keeps none.</summary>
     public static readonly TimeSpan Window = TimeSpan.FromMinutes(RoleHold.DefaultWindow);
 
-    /// <summary>The window the supervisor's role may keep (<see cref="RoleHold"/>): 1 to 60 minutes, never 0.</summary>
+    /// <summary>The window the role may keep (<see cref="RoleHold"/>): 1 to 60 minutes.</summary>
     public static readonly TimeSpan ShortestWindow = TimeSpan.FromMinutes(RoleHold.ShortestWindow), LongestWindow = TimeSpan.FromMinutes(RoleHold.LongestWindow);
 
-    /// <summary>The window a decision is held for: the supervisor's role's where it is within the bounds, else <see cref="Window"/>.</summary>
+    /// <summary>The window a decision is held for: the role's where within the bounds, else <see cref="Window"/>.</summary>
     public static TimeSpan WindowOf(DecisionAdmitted admitted) =>
         admitted.Window is { } set && set >= ShortestWindow && set <= LongestWindow ? set : Window;
 

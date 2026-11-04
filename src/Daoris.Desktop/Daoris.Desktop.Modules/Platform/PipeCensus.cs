@@ -465,7 +465,7 @@ public sealed class PipeCensus
             // TERMTRUST1a (D201 point 5): the standing confirmation is granted and revoked in the window alone; no card offers it, since a
             // person used to confirming a terminal's presses would confirm that one too.
             "SET_STANDING_CONFIRMATION",
-            // D233 point 2: a role's terminal is started in the window alone, by the owner's own press, since its key passes to the tab.
+            // D233 point 2: a role's terminal is started in the window alone, by the owner's press: its key passes to the tab.
             "START_ROLE_TERMINAL");
         // SUPERVISOR1a-ii (D208 §3.1): the supervisor's answer, a role's act, covered only for a terminal outside every agent's job that
         // proves the holder key; never a card. SUPERVISOR1b (§3.1): its leaving a question to the owner, the role's second act, alike.
