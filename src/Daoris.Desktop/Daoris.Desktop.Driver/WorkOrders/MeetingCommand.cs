@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Daoris.Contracts.Brainstorms;
 
 namespace Daoris.Driver;
 
@@ -37,13 +38,13 @@ public static class MeetingCommand
             case ["show", var id]:
                 return Show(files, id, output);
             case ["send", var id]:
-                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "send", meeting: true), "{}", output);
+                return BrainstormDoor.Press(doors, new SendBrainstorm(id, BrainstormDoor.Meeting), output);
             case ["send", var id, "--round", var round] when int.TryParse(round, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && number >= 1:
-                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "send", meeting: true, number), "{}", output);
+                return BrainstormDoor.Press(doors, new SendBrainstorm(id, BrainstormDoor.Meeting, number), output);
             case ["stop", var id]:
-                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "stop", meeting: true), "{}", output);
+                return BrainstormDoor.Press(doors, new StopBrainstorm(id, BrainstormDoor.Meeting), output);
             case ["clear", var id]:
-                return BrainstormDoor.Press(doors, ServiceVerb.Delete, BrainstormDoor.PathOf(id, null, meeting: true), null, output);
+                return BrainstormDoor.Press(doors, new ClearBrainstorm(id, BrainstormDoor.Meeting), output);
             case ["ask", var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal):
                 return Ask(question, rest, output, doors);
             default:
@@ -90,8 +91,7 @@ public static class MeetingCommand
         }
 
         return BrainstormDoor.Press(
-            doors, ServiceVerb.Post, "/api/brainstorms",
-            BrainstormDoor.AskBody(question, repository is { Length: > 0 } ? repository : null, agents, [], named, meeting: true), output);
+            doors, BrainstormDoor.Ask(question, repository is { Length: > 0 } ? repository : null, agents, [], named, meeting: true), output);
     }
 
     private static int Show(MeetingFiles files, string id, TextWriter output)

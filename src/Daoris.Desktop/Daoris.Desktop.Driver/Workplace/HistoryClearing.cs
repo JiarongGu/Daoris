@@ -1,3 +1,4 @@
+using Daoris.Contracts.History;
 using static Daoris.Driver.HistoryHome;
 
 namespace Daoris.Driver;
@@ -177,13 +178,13 @@ public static class HistoryClearing
     private static string Named(HistoryScope scope, string id) =>
         scope == HistoryScope.Workspace ? RemoteTarget.Workspace(id) : (id ?? "").Trim().TrimStart('#').Trim();
 
-    /// <summary>The service's door's one scope, escaped.</summary>
-    private static string Query(HistoryScope scope, string id) => scope switch
+    /// <summary>The service's door's one scope.</summary>
+    private static PlanHistory Query(HistoryScope scope, string id) => scope switch
     {
-        HistoryScope.Workspace => $"workspace={Uri.EscapeDataString(id)}",
-        HistoryScope.Ask => $"ask={Uri.EscapeDataString(id)}",
-        HistoryScope.Failed => $"quest={Uri.EscapeDataString(id)}&failed=true",
-        _ => $"quest={Uri.EscapeDataString(id)}",
+        HistoryScope.Workspace => new(Workspace: id),
+        HistoryScope.Ask => new(Ask: id),
+        HistoryScope.Failed => new(Quest: id, Failed: true),
+        _ => new(Quest: id),
     };
 
     private static HistoryScope ScopeOf(string kind) => kind switch

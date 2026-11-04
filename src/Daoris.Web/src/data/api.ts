@@ -9,7 +9,7 @@
 import type {
   AskActionResponse, AskResponse, DeclarationMatchResponse, GoAheadRequestResponse, GoAheadResponse, HitResponse, ProvenanceResponse,
   QuestAnswerResponse, QuestAttachmentResponse, QuestConflictResponse, QuestRequirementResponse,
-  QuestResponse, QuestSetUpWire, SaidWordResponse, SessionResponse,
+  OpinionResponse, QuestResponse, QuestSetUpWire, SaidWordResponse, SessionResponse,
 } from './generated/service';
 export type {
   StatusResponse as Status, ProvenanceResponse as Provenance, RepositoryResponse as Repository, HitResponse as Hit,
@@ -370,7 +370,7 @@ async function send<N extends RouteName>(name: N, request: Routes[N]['request'],
  * One second opinion as `GET /api/opinions` lists it (XAGENT1g4c), the fields the join reads: `working` is the session whose
  * work was read, `session` the reviewer's own record. The wire carries more (findings, tier, state); the page asks no more here.
  */
-export type OpinionRow = { id: string; working: string; session: string };
+export type OpinionRow = Pick<OpinionResponse, 'id' | 'working' | 'session'>;
 
 /** Whether a read failed because the service holds nothing by that name: an answer, where any other failure is not. */
 export const notFound = (error: unknown): boolean => (error as { status?: unknown } | null)?.status === 404;
@@ -571,7 +571,7 @@ export const api = {
     (await send('ListSessions', { includeClosed, repository, workspace }, signal)).answer as Session[],
   // The second opinions this machine holds (XAGENT1g4c): which session read which, to say whose work a reviewer's row reads.
   // This machine's own (D47 §4): another host answers 404.
-  opinions: (signal?: AbortSignal) => get<OpinionRow[]>('/api/opinions', signal),
+  opinions: async (signal?: AbortSignal) => (await send('ListOpinions', {}, signal)).answer as OpinionRow[],
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine
   // is touched, and adding a repository still needs the shell — a page may not name a machine path.
   registerRepository: (body: {

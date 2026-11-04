@@ -1,4 +1,5 @@
 using System.Text;
+using Daoris.Contracts.Brainstorms;
 
 namespace Daoris.Driver;
 
@@ -46,11 +47,11 @@ public static class BrainstormCommand
             case ["show", var id]:
                 return Show(files, id, output);
             case ["send", var id]:
-                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "send", meeting: false), "{}", output);
+                return BrainstormDoor.Press(doors, new SendBrainstorm(id), output);
             case ["stop", var id]:
-                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "stop", meeting: false), "{}", output);
+                return BrainstormDoor.Press(doors, new StopBrainstorm(id), output);
             case ["clear", var id]:
-                return BrainstormDoor.Press(doors, ServiceVerb.Delete, BrainstormDoor.PathOf(id, null, meeting: false), null, output);
+                return BrainstormDoor.Press(doors, new ClearBrainstorm(id), output);
             case [var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal) && question is not ("show" or "send" or "stop" or "clear" or "list"):
                 return Ask(question, rest, output, doors);
             default:
@@ -122,8 +123,7 @@ public static class BrainstormCommand
         }
 
         return BrainstormDoor.Press(
-            doors, ServiceVerb.Post, "/api/brainstorms",
-            BrainstormDoor.AskBody(question, repository is { Length: > 0 } ? repository : null, agents, sources, named, meeting: false), output);
+            doors, BrainstormDoor.Ask(question, repository is { Length: > 0 } ? repository : null, agents, sources, named, meeting: false), output);
     }
 
     private static int Show(BrainstormFiles files, string id, TextWriter output)
