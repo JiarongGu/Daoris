@@ -611,7 +611,7 @@ const NATIVE_CHOICE = /<select\b|type=["']checkbox["']|type=["']radio["']/g;
 
 export function nativeChoices(files: [path: string, source: string][]): string[] {
   return files
-    .filter(([path]) => path !== './design/ui.tsx')
+    .filter(([path]) => path !== './design/atoms/FormControls.tsx')
     .flatMap(([path, source]) =>
       (source.match(NATIVE_CHOICE) ?? []).map((hit) => `${path} builds a native control: ${hit}`));
 }
@@ -804,7 +804,7 @@ const WINDOW_PARTS: Record<string, string> = {
   // The status bar's items, placed against the window's bottom edge.
   './work/frame/frame.tsx': 'the status bar (sync, remote, indexed)',
   // The toast viewport beside an open drawer: the corner is the window's (UXTOAST1).
-  './design/ui.tsx': 'the toast viewport beside a drawer (Toasts)',
+  './design/atoms/Toasts.tsx': 'the toast viewport beside a drawer (Toasts)',
   // The main area is the container named `main` itself, and a container cannot query itself: its gutters follow the
   // window until the padding moves inside it.
   './work/frame/ViewMain.tsx': "the main area's gutters (ViewMain)",
@@ -872,7 +872,7 @@ describe('the form controls', () => {
     expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);
     expect(nativeChoices([['./work/Row.tsx', '<input type="checkbox" checked />']])).toHaveLength(1);
     expect(nativeChoices([['./work/Row.tsx', "<input type='radio' />"]])).toHaveLength(1);
-    expect(nativeChoices([['./design/ui.tsx', '<select value={x}>']])).toEqual([]);
+    expect(nativeChoices([['./design/atoms/FormControls.tsx', '<select value={x}>']])).toEqual([]);
     expect(nativeChoices([['./work/Row.tsx', '<SelectField value={x} />']])).toEqual([]);
   });
 
