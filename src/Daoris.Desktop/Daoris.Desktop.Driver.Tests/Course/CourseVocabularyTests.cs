@@ -18,7 +18,7 @@ public sealed class CourseVocabularyTests
     private const string Decision = "LineCourse.Decide.cs";
 
     /// <summary>Every file the course is written in, read by nothing outside them.</summary>
-    private static readonly string[] Course = [.. Files, Decision];
+    private static readonly string[] Course = [.. Files, Decision, "LimitCourse.cs"];
 
     private static string Driver => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
 
@@ -177,6 +177,7 @@ public sealed class CourseVocabularyTests
         ["WorkOrders/Domain/RoundReading.cs"] = "FOUNDATION1i path 4: what follows a transient bound",
         ["Loop/OpinionDeliverer.cs"] = "FOUNDATION1i path 5: the findings sent back to a driven record",
         ["Course/Chat/LimitMove.cs"] = "FOUNDATION1h branch 5: the live and ended limit moves",
+        ["Course/Chat/EndedLimitMove.cs"] = "FOUNDATION1h branch 5: the ended limit move",
         ["Course/Chat/LimitWaits.cs"] = "FOUNDATION1h branch 6: the limit's wake",
         ["Course/Chat/ChatGoOn.cs"] = "FOUNDATION1h branch 7: the conversation's go-on",
         ["Course/Chat/ChatHelperWords.cs"] = "FOUNDATION1h branch 7: the helper's go-on",

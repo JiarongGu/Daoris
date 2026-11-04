@@ -18,7 +18,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Catalogue | `Plugins/Domain/PluginCatalog.cs` | Reads every manifest in `<home>/plugins/`, API version first; names problems and conflicts; hands harnesses and servers on |
 | Manifest | `Plugins/Domain/PluginManifest.cs` | The manifest's records: harnesses, hooks, servers, skills, steps, resources, icon, tools |
 | Points and frames | `Knowledge/Domain/PluginVocabulary.cs` (`HookPoints`), `Plugins/Domain/HookPoints.cs` (`HookFrames`) | The point names, and the one builder of each point's frame |
-| Wire | `Plugins/Hooks.cs` (`HookPeer`, `HookSet`), `Plugins/HookProcess.cs` | Handshake and answer reading; the loop's running hooks, reconciled each look |
+| Wire | `Plugins/IHookChannel.cs` (the port), `HookPeer.cs`, `HookChannels.cs`, `HookSet.cs`, `Plugins/HookProcess.cs` | Handshake and answer reading; the loop's running hooks, reconciled each look |
 | Landing and query | `Plugins/LandingPlugins.cs`, `Workplace/PullRequestAsks.cs`, `Workplace/PullRequestMoments.cs` | `work/land` per landing; `work/state` at its occasions |
 | Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
 | Harness | `Plugins/DeclaredAcpAdapter.cs`, `Plugins/PluginAgentSkills.cs` | A declared harness on the ACP door; a plugin's skills handed at spawn |

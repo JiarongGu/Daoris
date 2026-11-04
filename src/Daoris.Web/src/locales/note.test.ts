@@ -44,7 +44,7 @@ function reasons(family: string): { key: string; values: string[] }[] {
 
 /** The states the driver's `BackgroundState` declares as known (CONVNOTE2i). */
 function backgroundStates(): string[] {
-  const block = /static class BackgroundState\s*\{([\s\S]*?)\n\}/.exec(driverSource('NoteCodes.cs'))?.[1] ?? '';
+  const block = /static class BackgroundState\s*\{([\s\S]*?)\n\}/.exec(driverSource('BackgroundState.cs'))?.[1] ?? '';
   return [...block.matchAll(/public const string \w+ = "([^"]+)";/g)].map((match) => match[1]);
 }
 

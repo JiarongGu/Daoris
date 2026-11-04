@@ -16,7 +16,7 @@ of everything it handed, section by section.
 
 | Unit | File | Its job |
 |---|---|---|
-| `CourseDecision` | `Course/Domain/LineCourse.Decide.cs` | The one pure decision of how a line goes on, paths A to N, for both loops |
+| `CourseDecision`, `LimitCourse` | `Course/Domain/LineCourse.Decide.cs`, `Course/Domain/LimitCourse.cs` | The one pure decision of how a line goes on, paths A to N, for both loops; the limit paths (D, E, F), the carry-on and the transient bound are `LimitCourse` |
 | `CourseTrigger`, `CourseFacts` | `Course/Domain/CourseTriggers.cs`, `CourseFacts.cs` | What asks the course, and the facts an executor hands it |
 | `MoveStore`, `MoveRecords` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases |
 | `ConversationMoves`, `MoveTakeUp` | `Course/ConversationMoves.cs`, `Course/MoveTakeUp.cs` | The conversations' move holder; takes up a dead shell's moves at come-up and at each look |
@@ -48,7 +48,7 @@ of everything it handed, section by section.
 | `ChatAccountReads` | `Loop/Chat/ChatAccountReads.cs` | A refused call read for its account: a limit cools it, a refused sign-in signs it out; what a part going on from a limit carries |
 | `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made |
 | `ChatHelperWords` | `Course/Chat/ChatHelperWords.cs` | Executor `helper-words`: a helper's answer said to the conversation that asked, as its next turn |
-| `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it |
+| `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it. `LimitMove`'s ended-conversation move is `EndedLimitMove`, built by it and reaching its siblings through the wiring at run time; `LimitNotes`, `LimitResetWord` and `GoingOn` (the go-on's record of its words) are files of their own |
 | `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | Executor `curve-move`: the usage curve's move of a conversation at its turn's end |
 | `HandOver`, `ChatHandOver`, `HandOverQuest` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions |
 | `StartFrom`, `StartWith` | `Course/Chat/ChatRunner.StartFrom.cs`, `StartWith.cs` | *Start a conversation with these words*; a conversation opened on its first words |
@@ -56,13 +56,16 @@ of everything it handed, section by section.
 | `Continuations`, `ResumeAsk` | `Course/Domain/Continuation.cs`, `ResumeAsk.cs` | Judges whether a record resumes; what a resumed run is told |
 | `ContinuationAdmissions`, `AnswersAloneHold` | `Course/ContinuationAdmissions.cs`, `Course/GoOn/` | A line's serialized go-on admission; the answers-alone bound |
 | `SaidDoor`, `DrivenInbox` | `Course/SaidDoor.cs`, `Course/DrivenInbox.cs` | Words kept on a record's `said`, and their delivery to a running session |
-| `ContextBrief`, `ContextBriefs` | `Context/Domain/ContextBrief.cs`, `Context/Events/ContextBriefs.cs` | The brief (pure), and the read of the line it is composed from |
+| `ContextBrief`, `ContextBriefs` | `Context/Domain/ContextBrief.cs`, `BriefLine.cs` (its input records), `BriefReading.cs` (the line read into turns), `Context/Events/ContextBriefs.cs` | The brief (pure), and the read of the line it is composed from |
 | `StandingBlock`, `StandingBlocks` | `Context/Domain/StandingBlock.cs`, `Context/StandingBlocks.cs` | The standing block (pure), and the facts a start reads for it |
 | `InstructionAccounting`, `HandedCodes` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A line's key, its counts, and Daoris's words for them |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
 | `HelpRoom`, `HelpMode`, `HelpProposals` | `Help/` | Ask Daoris's room, access mode and proposals |
+| `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
+| `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
+| `HelpSettingProposals`, `HelpWorkflowProposals` | `Help/Proposals/HelpSettingProposals.cs`, `HelpRuleSettings.cs`, `HelpAcrossSetting.cs`, `HelpRetrySetting.cs`, `HelpGitUseSetting.cs`, `HelpSettingWords.cs`, `HelpWorkflowProposals.cs`, `HelpWorkflowDrafts.cs`, `HelpWorkflowRoutes.cs`, `HelpWorkflowCard.cs` | The `setting` and `workflow` proposals: the plan of the simple doors in the hub; the rule doors, across, retry, git-use, the draft door, the routes and the card each apart |
 | `LineEvents`, `SessionEntries` | `src/Daoris.Service/Daoris.Service.Core/Sessions/` | The connector's `line_read`; the entry key and `from` on the service's records |
 
 ## Its rules

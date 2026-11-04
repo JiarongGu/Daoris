@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.HelpProposals;
+using static Daoris.Driver.HelpWorkflowRoutes;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -82,7 +83,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         // FLOWCHART2e (the flowchart design §8.4): judged before any save or use, so a draft never reaches a save's path.
-        if (proposal.Door == Drafts) return PlanDraft(proposal, facts);
+        if (proposal.Door == Drafts) return HelpWorkflowDrafts.Plan(proposal, facts);
         var id = proposal.Workflow?.Trim() ?? "";
         if (WorkflowNamed.IdProblem(id) is { } idProblem) return Refused(idProblem);
         if (proposal.Steps is not null && proposal.Graph is not null) return Refused("a workflow proposal carries its `steps` or its `graph`, never both.");
@@ -147,7 +148,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var inWorkspace = repository is not null ? WorkspaceOf(facts, repository) : workspace;
         WorkflowUse? use = null;
         var after = config;
-        if (chosen is not null && !Chooses(ChoiceOf(map, scope), id, chosen))
+        if (chosen is not null && !ChoosesRoute(ChoiceOf(map, scope), id, chosen))
         {
             var mark = verifies ? WorkflowPipelines.Verification : WorkflowPipelines.Development;
             use = UseOf(id, chosen, repository, workspace, inWorkspace) with { Pipeline = mark };
@@ -298,7 +299,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var card = plan.Workflow ?? throw new DriverException($"the card for `#{applying.Id}` was not judged as a workflow's.");
 
         // FLOWCHART2e: a draft's Apply, before any save or choice is looked at, writes neither.
-        if (applying.Proposal.Door == Drafts || card.Draft is not null) return Task.FromResult(ApplyDraft(applying, card));
+        if (applying.Proposal.Door == Drafts || card.Draft is not null) return Task.FromResult(HelpWorkflowDrafts.Apply(applying, card));
 
         // §8.1: a draft offers no Apply. One pressed anyway is refused before anything is saved, and the card stands.
         if (card.Needs.Count > 0)
@@ -358,133 +359,6 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         return Task.FromResult(applying.Settled(true, $"Applied: `#{applying.Id}` (`{plan.Terminal}`) — {string.Join(", and ", said)}.", null));
     }
 
-    /// <summary>The code a save's refusal of the version whole is said by on a draft's card, where no graph rule names it (its pipeline's shape).</summary>
-    public const string VersionRefused = "version";
-
-    /// <summary>
-    /// The <c>draft</c> door (FLOWCHART2e, D223; the flowchart design §4, §8.4): a whole graph proposed against the draft this conversation
-    /// was told under its fingerprint, of either pipeline, read and judged as a save would judge it (each refusal the card's to put right,
-    /// never the proposal's), and said as <see cref="WorkflowGraphDiff"/>'s changes. The candidate rides apart from what a save takes, so
-    /// <see cref="HelpWorkflowCard.Saves"/> stays false; a base, a choice, a route or a name beside it is refused.
-    /// </summary>
-    private static HelpPlan PlanDraft(HelpProposal proposal, HelpMachineFacts facts)
-    {
-        var fingerprint = proposal.Draft?.Trim() ?? "";
-        if (proposal.Steps is not null || proposal.Graph is not { } drawn) return Refused("a change to the open draft carries its whole `graph`, never `steps`.");
-        if (proposal.Base is not null) return Refused("a change to the open draft saves nothing, so it names no `base`: the draft names where it came from.");
-        if (proposal.Choose || !string.IsNullOrWhiteSpace(proposal.Route))
-        {
-            return Refused("a change to the open draft chooses nothing, so it names no `choose` and no `route`: the person chooses where the workflow is used.");
-        }
-
-        if (!string.IsNullOrWhiteSpace(proposal.Name)) return Refused("a change to the open draft names no `name`: the person names the workflow as they save it.");
-        if (!facts.Drafts.TryGetValue(fingerprint, out var told))
-        {
-            return Refused($"the draft `{fingerprint}` was never shown to this conversation: ask again from the editor, whose draft goes beside your words.");
-        }
-
-        var scope = proposal.Scope?.Trim() ?? "";
-        if (!Same(scope, told.Place)) return Refused($"the draft `{fingerprint}` is for `{told.Place}`, not `{scope}`: a change to it names the place it is for.");
-        var named = proposal.Workflow?.Trim() ?? "";
-        if (named.Length > 0 && told.Workflow is { } held && named != held) return Refused($"the draft `{fingerprint}` is `{held}`'s, not `{named}`'s.");
-        var id = told.Workflow ?? named;
-        if (id.Length > 0 && WorkflowNamed.IdProblem(id) is { } idProblem) return Refused(idProblem);
-
-        if (NodeGraphs.Parts(drawn.GetRawText(), out var unread) is not { } parts) return Refused(unread!.Words);
-        if (NodeGraphs.Parts(told.Graph.GetRawText(), out var baseUnread) is not { } was)
-        {
-            return Refused($"the draft `{fingerprint}` does not read as a graph, so nothing is changed against it: {baseUnread!.Words}");
-        }
-
-        var proposed = new NodeGraph(parts.Nodes, parts.Wires, parts.Entries, parts.End ?? "") { SchemaVersion = parts.SchemaVersion, Cleanup = parts.Cleanup ?? GraphCleanup.Held };
-        var before = new NodeGraph(was.Nodes, was.Wires, was.Entries, was.End ?? "") { SchemaVersion = was.SchemaVersion, Cleanup = was.Cleanup ?? GraphCleanup.Held };
-        var found = id.Length > 0 ? facts.Workflows.FirstOrDefault(each => each.Id == id) : null;
-        var pipeline = found?.Read.Pipeline
-            ?? (told.Pipeline == WorkflowPipelines.Verification ? WorkflowPipelines.Verification : WorkflowPipelines.Development);
-
-        // Judged as the editor's save judges it: each graph rule's refusal at its step or way, and where those hold, the pipeline's own shape.
-        var candidate = JsonNode.Parse(drawn.GetRawText())!;
-        var problems = facts.Home is { } home ? WorkflowOperations.GraphProblems(home, candidate) : NodeGraphs.Problems(proposed, onSave: true);
-        if (problems.Count == 0 && WorkflowNamed.ReadVersion(GraphVersion(drawn, 1), 1, [], pipeline, onSave: true).Problem is { } shape)
-        {
-            problems = [new WireProblem(VersionRefused, null, null, shape.StartsWith("v1: ", StringComparison.Ordinal) ? shape[4..] : shape)];
-        }
-
-        var changes = WorkflowGraphDiff.Of(before, proposed);
-        var repository = facts.Repositories.FirstOrDefault(each => Same(each, told.Place));
-        var whose = id.Length > 0 ? $"`{id}`" : "a new workflow";
-        var said = new List<string>
-        {
-            (changes.Count == 0 ? $"A change to your workflow draft of {whose} for `{told.Place}` that changes nothing in it."
-                : $"A change to your workflow draft of {whose} for `{told.Place}`: {changes.Count} change{(changes.Count == 1 ? "" : "s")}.")
-            + " Nothing is saved or chosen: you take the changes into the draft in its editor, and only your Save there saves it.",
-        };
-        said.AddRange(changes.Select(change => $"  {change.Said}"));
-        if (problems.Count > 0)
-        {
-            said.Add("To put right before it saves:");
-            said.AddRange(problems.Select(problem => $"  {Capital(problem.Words)}"));
-        }
-
-        var card = new HelpWorkflowCard(
-            id, found?.Read.Name ?? id, told.Base, 0, told.Place, [.. changes.Select(change => change.Said)], [], [], [],
-            "Nothing is saved or chosen: you take the changes into the draft in its editor, and only your Save there saves it.", false)
-        {
-            ScopeKind = repository is not null ? "repository" : "workspace",
-            Verifies = pipeline == WorkflowPipelines.Verification,
-            Draft = fingerprint,
-            Changes = changes,
-            Problems = problems,
-            Proposed = candidate,
-        };
-
-        // The place's Workflow, where its editor is.
-        return new HelpPlan(null, string.Join('\n', said), "", null)
-        {
-            Workflow = card,
-            Go = new HelpPlace("projects", null, repository is null ? "workspace-workflow" : null),
-        };
-    }
-
-    /// <summary>
-    /// A draft card's Apply (FLOWCHART2e; the flowchart design §8.6): it writes no workflow and no choice. Pressed from the card, with no
-    /// change named, it takes the person to the place's Workflow, where the editor shows the proposal, and settles nothing; pressed by the
-    /// editor with every change taken or left once, it settles applied, the file recording which. A press naming them otherwise stands.
-    /// </summary>
-    private static HelpApplied ApplyDraft(HelpApplying applying, HelpWorkflowCard card)
-    {
-        var proposal = applying.Proposal;
-        if (proposal.Taken is null && proposal.Left is null)
-        {
-            return new HelpApplied(true, $"`#{applying.Id}` is a change to your workflow draft: it is shown in the draft's editor, and nothing is saved or "
-                + "chosen until you take its changes into the draft and press Save there.")
-            {
-                Go = applying.Plan.Go,
-                Stands = true,
-            };
-        }
-
-        IReadOnlyList<string> taken = proposal.Taken ?? [], left = proposal.Left ?? [];
-        var ids = card.Changes.Select(change => change.Id).ToHashSet(StringComparer.Ordinal);
-        var named = taken.Concat(left).ToList();
-        if (named.Count != ids.Count || !ids.SetEquals(named) || named.Distinct(StringComparer.Ordinal).Count() != named.Count)
-        {
-            return new HelpApplied(false, $"Not applied: `#{applying.Id}` — the press names each of its {ids.Count} changes once, taken or left, and this one did not, "
-                + "so the card stands for the editor to name them.")
-            {
-                Stands = true,
-            };
-        }
-
-        var path = Path.Combine(FolderOf(applying.Home), $"{Path.GetFileName(applying.Id)}.json");
-        var file = JsonNode.Parse(AtomicFile.ReadText(path))!.AsObject();
-        file["taken"] = new JsonArray([.. taken.Select(each => (JsonNode)JsonValue.Create(each)!)]);
-        file["left"] = new JsonArray([.. left.Select(each => (JsonNode)JsonValue.Create(each)!)]);
-        JsonFile.Write(path, file);
-        return applying.Settled(true, $"Applied: `#{applying.Id}` — {taken.Count} of its {ids.Count} changes taken into your workflow draft and {left.Count} left; "
-            + "nothing is saved until you press Save in its editor.", $"taken {taken.Count}, left {left.Count}");
-    }
-
     /// <summary>
     /// Why the base no longer stands (§2.6, the terminal's <c>--base</c>): a new workflow's id taken, an edit's workflow gone or
     /// unreadable, or a newer version than its base saved. Null where it stands.
@@ -506,45 +380,8 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
     }
 
 
-    /// <summary>The routes a workflow proposal chooses its workflow for (FABRIC-PIPELINE1i, the pipeline design §1.3).</summary>
-    private static class Routes
-    {
-        public const string Default = "default";
-        public const string Landed = "landed";
-        public const string KindPrefix = "kind:";
-    }
-
-    /// <summary>Why a route is none a proposal names, or null: <c>default</c>, <c>landed</c>, or <c>kind:&lt;id&gt;</c>.</summary>
-    private static string? RouteProblem(string route) =>
-        route is Routes.Default or Routes.Landed || (KindOf(route) is { } kind && WorkflowSelection.IsKindId(kind))
-            ? null
-            : $"`{route}` is not a route: `default`, `landed` for the work that lands, or `kind:<id>` for one of the scope's kinds, such as `kind:docs`.";
-
-    private static string? KindOf(string? route) =>
-        route is not null && route.StartsWith(Routes.KindPrefix, StringComparison.Ordinal) ? route[Routes.KindPrefix.Length..] : null;
-
-    /// <summary>
-    /// Why a route with no version cannot choose its workflow (FABRIC-PIPELINE1i), or null: the workflow is saved here and its newest
-    /// version reads, and the proposal names no base and no name, which only a save takes.
-    /// </summary>
-    private static string? UseProblem(string id, HelpProposal proposal, WorkflowFileFound? found)
-    {
-        if (proposal.Base is not null || !string.IsNullOrWhiteSpace(proposal.Name)) return "a `route` with no version saves nothing, so it names no `base` and no `name`.";
-        if (found is null) return $"there is no workflow `{id}` on this machine: a `route` with no version chooses a workflow saved here.";
-        if (found.Read.Problem is { } unread) return $"`{id}`'s file cannot be read here, so nothing chooses it: {unread}";
-        return found.Read.Versions[^1] is { Steps: null, Graph: null } newest
-            ? $"`{id}` v{newest.Version} cannot be read here, so nothing chooses it: {newest.Problem}"
-            : null;
-    }
-
     /// <summary>A graph proposed, as the version a save would write around it (schema 2), for the store's own reader to judge.</summary>
-    /// <summary>Whether a proposed graph holds a landing node, which makes a new workflow a development pipeline.</summary>
-    private static bool HoldsLanding(JsonElement graph) =>
-        graph.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array
-        && nodes.EnumerateArray().Any(node => node.ValueKind == JsonValueKind.Object && node.TryGetProperty("kind", out var kind)
-            && kind.ValueKind == JsonValueKind.String && kind.GetString() is NodeKinds.Land);
-
-    private static JsonElement GraphVersion(JsonElement graph, int version)
+    internal static JsonElement GraphVersion(JsonElement graph, int version)
     {
         var node = new JsonObject
         {
@@ -553,49 +390,6 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         using var document = JsonDocument.Parse(node.ToJsonString());
         return document.RootElement.Clone();
     }
-
-    /// <summary>Whether a choice names the workflow for the route already.</summary>
-    private static bool Chooses(WorkflowChoice? choice, string id, string route) => choice is not null && route switch
-    {
-        Routes.Default => choice.Default == id,
-        Routes.Landed => choice.Landed?.Workflow == id,
-        _ => choice.KindOf(KindOf(route)!)?.Workflow == id,
-    };
-
-    /// <summary>
-    /// The edit choosing the workflow for the route, as the terminal's <c>use</c> makes it: a repository's kind checked against its
-    /// workspace's kinds, and a landed route with no gates accepted, which only the person's <i>Accept the gates</i> does (D156).
-    /// </summary>
-    private static WorkflowUse UseOf(string id, string route, string? repository, string? workspace, string? inWorkspace)
-    {
-        var kind = KindOf(route);
-        return new WorkflowUse(id, repository, repository is null ? workspace : null, kind)
-        {
-            InKnown = repository is not null && kind is not null,
-            In = inWorkspace,
-            Landed = route == Routes.Landed,
-        };
-    }
-
-    /// <summary>Who the choice is for, as the card's first line says it.</summary>
-    private static string ForRoute(string? route, string? repository, string? workspace)
-    {
-        var whose = repository is not null ? $"`{repository}`" : $"the workspace `{workspace}`";
-        return route switch
-        {
-            Routes.Landed => $"for the work that lands in {whose}",
-            not null when KindOf(route) is { } kind => repository is not null ? $"for `{repository}`'s kind `{kind}`" : $"for the workspace `{workspace}`'s kind `{kind}`",
-            _ => $"for {whose}",
-        };
-    }
-
-    /// <summary>The route as said after <i>chooses it</i>: nothing for the default.</summary>
-    private static string RouteWords(string route) => route switch
-    {
-        Routes.Landed => " for the work that lands",
-        _ when KindOf(route) is { } kind => $" for its kind `{kind}`",
-        _ => "",
-    };
 
     /// <summary>The repositories whose landed work the workflow would verify (§1.2): each whose landed route resolves to it.</summary>
     private static List<string> ReachedLanded(DriverConfig config, HelpMachineFacts facts, string id) =>
@@ -707,76 +501,13 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
     private static bool Chooses(WorkflowChoice? choice, string id, bool kinds) =>
         choice is not null && (choice.Default == id || (kinds && choice.Kinds.Any(kind => kind.Value.Workflow == id)));
 
-    private static HelpPlan Refused(string why) => new(why, "", "", null);
+    internal static HelpPlan Refused(string why) => new(why, "", "", null);
 
-    private static bool Same(string one, string other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
+    internal static bool Same(string one, string other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
 
-    private static string Capital(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
+    internal static string Capital(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>The moment a version is saved, as the workflow's file writes it (ISO 8601, to the second, UTC).</summary>
     private static string Moment() => DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 }
 
-/// <summary>
-/// A workflow card's data (WORKFLOW1h-b, the workflow design §8.2), as the page's <c>HelpWorkflowShown</c> takes it: the workflow
-/// and its name, the version it is made on (null for a new one) and the one it becomes, the scope, the steps' diff, the person's
-/// part and each outward act as <see cref="WorkflowDiff"/> says them, what it needs first, what it applies to, and whether the
-/// scope also chooses it. Lines are the driver's English; the page words them (WORKFLOW1h-d).
-/// </summary>
-/// <param name="Needs">What is missing; while any is, the card is a draft and offers no Apply.</param>
-public sealed record HelpWorkflowCard(
-    string Id, string Name, int? Base, int Version, string Scope, IReadOnlyList<string> Diff, IReadOnlyList<string> YourPart,
-    IReadOnlyList<string> Outward, IReadOnlyList<string> Needs, string AppliesTo, bool Choose)
-{
-    /// <summary>Whether the scope is a <c>repository</c> or a <c>workspace</c>.</summary>
-    public string ScopeKind { get; init; } = "repository";
-
-    /// <summary>The steps Apply saves, as the proposal carried them; null where the version says what the newest says already.</summary>
-    public JsonNode? Steps { get; init; }
-
-    /// <summary>The graph Apply saves (FABRIC-PIPELINE1i), as the proposal carried it; null where it carries steps or saves nothing.</summary>
-    public JsonNode? Graph { get; init; }
-
-    /// <summary>The choice Apply makes; null where none is asked, or it is made already.</summary>
-    public WorkflowUse? Use { get; init; }
-
-    /// <summary>The route the card chooses for (FABRIC-PIPELINE1i): <c>default</c>, <c>landed</c> or <c>kind:&lt;id&gt;</c>; null where none.</summary>
-    public string? Route { get; init; }
-
-    /// <summary>
-    /// The repositories a chosen graph integrates its landing in with no gates (INTEGRATE1r part r3; the integration design §17.7, F42), by name,
-    /// so the page words the line in its own language; the plan's text says the same sentence for the terminal. Empty where none, or where
-    /// the card saves a version.
-    /// </summary>
-    public IReadOnlyList<string> NoGates { get; init; } = [];
-
-    /// <summary>Whether the workflow is a verification pipeline, or is made one by the save (the pipeline design §2.1).</summary>
-    public bool Verifies { get; init; }
-
-    /// <summary>
-    /// What the change asks less of the person (D157 point 10, the pipeline design §1.3), each said as what it does; empty where it
-    /// lowers nothing. An agent's change that lowers anything is applied only by the person's press, as every card is.
-    /// </summary>
-    public IReadOnlyList<string> Lowers { get; init; } = [];
-
-    /// <summary>
-    /// The fingerprint of the draft a <c>draft</c> card changes (FLOWCHART2e), the base its changes are against; null for every other card,
-    /// which saves or chooses. A draft card saves no version, so its <see cref="Version"/> is 0.
-    /// </summary>
-    public string? Draft { get; init; }
-
-    /// <summary>A draft card's changes against its draft, in <see cref="WorkflowGraphDiff"/>'s order, each with what it needs; empty for every other.</summary>
-    public IReadOnlyList<GraphChange> Changes { get; init; } = [];
-
-    /// <summary>What a save of a draft card's graph would refuse, each at its step or way: the card's to put right, never a refusal of it.</summary>
-    public IReadOnlyList<WireProblem> Problems { get; init; } = [];
-
-    /// <summary>
-    /// A draft card's candidate graph, whole, as the proposal carried it, for the editor to take changes from: never <see cref="Graph"/>,
-    /// which a save takes, so a draft card never saves. Null for every other card.
-    /// </summary>
-    public JsonNode? Proposed { get; init; }
-
-    /// <summary>Whether Apply saves a version.</summary>
-    public bool Saves => Steps is not null || Graph is not null;
-}

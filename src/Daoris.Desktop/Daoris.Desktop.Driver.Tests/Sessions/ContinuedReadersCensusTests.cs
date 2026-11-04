@@ -98,7 +98,7 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.NotOn, "the transient episode's go-on, kept for the run this process holds (`running`): not kept, the try goes on with the plain block, as for any refusal"),
         ],
-        ["DriverContinuations.cs"] =
+        ["ContinuationLimits.cs"] =
         [
             (How.NotOn, "the limit word of a cool-off, for this record's own go-on, whose conclusion takes it off this record: refused, the line goes on as the carry-on it was planned"),
         ],
