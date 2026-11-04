@@ -72,8 +72,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     // CHATFLOW1c: a conversation's chat run, bound when its tree opens or at a turn's end (the chat-flow design §4.3).
     private readonly ChatRunBinds _chatRuns;
 
-    // What the conversations' turns are judged by (NOTIFY1a): the person's words, their stops and each turn's end.
-    private readonly AttentionWatch _answers = new();
+    private readonly ChatWords _words;
+
+    private readonly ChatTurnDoors _turns;
+
+    private readonly ChatSendBack _sendBack;
 
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
@@ -121,6 +124,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
         _chatRuns = new ChatRunBinds(home, service, _events);
         _told = new ChatTold(_context, _chatRuns);
+        _words = new ChatWords(_context, _told);
+        _turns = new ChatTurnDoors(_context);
+        _sendBack = new ChatSendBack(this, _chatRuns);
 
         // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
@@ -1212,7 +1218,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             }
 
             // A turn the person's words started has ended (NOTIFY1a): judged last, so a listener's failure moves nothing above.
-            if (_answers.Turned(sessionId, place.Name, queue) is { } answered) Answered?.Invoke(answered);
+            if (_context.Answers.Turned(sessionId, place.Name, queue) is { } answered) Answered?.Invoke(answered);
         }
         // A conversation going on hands its words to the native door only once its watch began, so a word the person says meanwhile goes
         // after them; the protocol door waits for its session to open anyway (MSG1c).
@@ -1319,7 +1325,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         if (first is not null)
         {
             // Their words, so the turn's end they start is an answer they wait on (NOTIFY1a).
-            _answers.Asked(sessionId);
+            _context.Answers.Asked(sessionId);
             (chat?.Turns ?? native?.Turns)?.Say(first);
         }
 
@@ -1552,357 +1558,85 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         return await Task.WhenAny(watch, Task.Delay(bound, ct)).ConfigureAwait(false) == watch;
     }
 
-    /// <summary>Send a person's message to a live chat. False when there is nothing listening.</summary>
-    /// <remarks>
-    /// Framed for the conversation's harness (CONV3) — a `stream-json` line where it reads one, a turn on
-    /// its session on the protocol door (CONV3b) — and, once it is sent, part of the record: the person's
-    /// words were never in it before (D76 §4). On either structured door a message sent mid-turn waits
-    /// for its own (CONV4a).
-    /// </remarks>
-    /// <param name="files">
-    /// What the person attached (CONV4c): kept for this conversation before the message is queued, so a
-    /// refusal — too many, too large — reaches the person while they are still looking, and nothing
-    /// half-kept is sent.
-    /// </param>
-    /// <param name="preface">Where the person is (HELP1b), handed to the agent ahead of the words, or null.</param>
-    /// <exception cref="DriverException">The files are more than a message carries.</exception>
+    /// <inheritdoc cref="ChatWords.Say(string, string, out string?, IReadOnlyList{ChatUpload}?, string?, MessageLevel)"/>
     public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null) =>
-        Say(sessionId, message, out _, files, preface);
+        _words.Say(sessionId, message, out _, files, preface);
 
-    /// <summary>Send a person's message to a live chat, saying when it reaches it. False when there is nothing listening.</summary>
-    /// <param name="reaches">
-    /// When the words reach it, in the record's spelling (MSG1c, D137 §2.1): <c>next-step</c> where its door took them into
-    /// the turn on the wire, <c>turn-end</c> where they wait for the running turn, and null where they are its turn now or
-    /// its door carries only text.
-    /// </param>
-    /// <param name="level">
-    /// When the person asked it to reach the agent (COWORK1a): urgent, the default, at the running turn's next step where its door
-    /// takes words then; ordinary as a turn of its own after it. <c>now</c> is <see cref="SayNowAsync"/>'s.
-    /// </param>
-    /// <exception cref="DriverException">The files are more than a message carries.</exception>
+    /// <inheritdoc cref="ChatWords.Say(string, string, out string?, IReadOnlyList{ChatUpload}?, string?, MessageLevel)"/>
     public bool Say(
         string sessionId, string message, out string? reaches, IReadOnlyList<ChatUpload>? files = null, string? preface = null,
-        MessageLevel level = MessageLevel.Urgent)
-    {
-        reaches = null;
-        // MODELROLE1d2 (D205 §3.5(b)): the press's id answers for the replacement its start moved to.
-        sessionId = _context.Pending.Current(sessionId);
-        var said = Compose(sessionId, message, files, preface) with { Level = level };
+        MessageLevel level = MessageLevel.Urgent) =>
+        _words.Say(sessionId, message, out reaches, files, preface, level);
 
-        if (_context.Turned.TryGetValue(sessionId, out var chat))
-        {
-            // Before it is taken, so even a turn that ends at once is the answer the person waits on (NOTIFY1a).
-            _answers.Asked(sessionId);
-            var reach = chat.Turns.Take(said);
-            reaches = Spelled(reach);
-            return reach is not null;
-        }
+    /// <inheritdoc cref="ChatWords.CurrentOf"/>
+    public string CurrentOf(string sessionId) => _words.CurrentOf(sessionId);
 
-        // MODELROLE1d2: its start refused at the open and its replacement opening, the word joins the words moving there.
-        if (_context.Pending.For(sessionId) is { } moving && moving.Join(said))
-        {
-            reaches = Spelled(TurnReach.TurnEnd);
-            return true;
-        }
+    /// <inheritdoc cref="ChatWords.Replacing"/>
+    public bool Replacing(string sessionId) => _words.Replacing(sessionId);
 
-        return SendText(sessionId, said);
-    }
+    /// <inheritdoc cref="ChatWords.Tell"/>
+    public bool Tell(string sessionId, string message, string key) => _words.Tell(sessionId, message, key);
 
-    /// <summary>
-    /// The record a conversation's id answers for (MODELROLE1d2, D205 §3.5(b)): the replacement its start moved to where its agent refused
-    /// the choice at the open, else itself, as a conversation that went on in another is answered for today.
-    /// </summary>
-    public string CurrentOf(string sessionId) => _context.Pending.Current(sessionId);
-
-    /// <summary>Whether a conversation's start is moving its words to a replacement now (MODELROLE1d2): a word said to it joins them.</summary>
-    public bool Replacing(string sessionId) => _context.Pending.For(sessionId) is { IsMoving: true };
-
-    /// <summary>
-    /// Daoris's own words to a live chat (COWORK1b, D188; ASKQUESTS1): a turn, as the person's words make one, so the agent hears them
-    /// at once, and kept on the record as Daoris's (<see cref="DaorisWords.From"/>), never the person's. What Ask Daoris's Apply did,
-    /// and a proposal refused before it was shown. They take none of what a conversation hands with the person's first words (a
-    /// preface, an earlier conversation's brief, a browser, a process), which stay for those words. False when nothing listens.
-    /// </summary>
-    /// <param name="key">The word's key (<see cref="DaorisWord"/>): one no fact of Daoris's is judged by, so it always goes.</param>
-    public bool Tell(string sessionId, string message, string key)
-    {
-        sessionId = _context.Pending.Current(sessionId);
-        var said = new ChatMessage(message, []) { Daoris = new DaorisWord(key) };
-        if (_context.Turned.TryGetValue(sessionId, out var chat))
-        {
-            // As the person's words are (NOTIFY1a): the answer to it is one the person waits on.
-            _answers.Asked(sessionId);
-            return chat.Turns.Take(said) is not null;
-        }
-
-        return SendText(sessionId, said);
-    }
-
-    /// <summary>
-    /// The person's words to a live chat kept on its record first (COWORK1c, D188 point 6; the message-urgency design §6), then taken by
-    /// its turns under the record's id at the level they carry, through its one dispatcher (<see cref="ChatTurns.KeepAsync"/>): a shell
-    /// that restarts before they go finds them waiting there. A text-only door has no turns: its words go at once, as before, and are
-    /// kept nowhere. Null when there is nothing listening.
-    /// </summary>
-    /// <param name="key">The press's key, so a press that arrives twice keeps one word.</param>
-    /// <exception cref="DriverException">The files are more than a message carries.</exception>
-    public async Task<ChatSaid?> SayKeptAsync(
+    /// <inheritdoc cref="ChatWords.SayKeptAsync"/>
+    public Task<ChatSaid?> SayKeptAsync(
         string sessionId, string message, IReadOnlyList<ChatUpload>? files, string? preface, MessageLevel level, string? key,
-        CancellationToken ct = default)
-    {
-        sessionId = _context.Pending.Current(sessionId);
-        if (!_context.Turned.TryGetValue(sessionId, out var chat))
-        {
-            if (level == MessageLevel.Now)
-            {
-                return await SayNowAsync(sessionId, message, files, preface).ConfigureAwait(false) is { } now
-                    ? new ChatSaid(now.Reaches, null) { Now = now }
-                    : null;
-            }
+        CancellationToken ct = default) =>
+        _words.SayKeptAsync(sessionId, message, files, preface, level, key, ct);
 
-            return Say(sessionId, message, out var reaches, files, preface, level) ? new ChatSaid(reaches, null) : null;
-        }
+    /// <inheritdoc cref="ChatWords.SayNowAsync"/>
+    public Task<SentNow?> SayNowAsync(
+        string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null) =>
+        _words.SayNowAsync(sessionId, message, files, preface);
 
-        var said = Compose(sessionId, message, files, preface) with { Level = level, Key = key };
-        // Before it is taken, as a word said is (NOTIFY1a).
-        _answers.Asked(sessionId);
-        var kept = await chat.Turns.KeepAsync(new SaidDoor(_context.Service, sessionId), said, ct).ConfigureAwait(false);
-        return kept switch
-        {
-            null => null,
-            { Settled: true } => new ChatSaid(null, null) { Settled = true },
-            // FOUNDATION1d-ii: the record is no longer its line's head, which the turns answer: nothing was kept, and the caller says it there.
-            { Head: { } head } => new ChatSaid(null, null) { Head = head },
-            { Now: { } now } => new ChatSaid(now.Reaches, kept.Word) { Now = now },
-            _ => new ChatSaid(Spelled(kept.Reach), kept.Word),
-        };
-    }
-
-    /// <summary>
-    /// The person's words at <c>now</c> to a live chat (STEER2a, COWORK1a), carried out by its door: steered into the running turn
-    /// where its agent steers, else at its next step or queued for the turn's end, said why, never stopping the turn; or the next
-    /// turn at once where none runs (<see cref="ChatTurns.TakeNowAsync"/>). A text-only door has no turn to steer or stop: its
-    /// words go as they always did, said so. Null when there is nothing listening.
-    /// </summary>
-    /// <exception cref="DriverException">The files are more than a message carries.</exception>
-    public async Task<SentNow?> SayNowAsync(
-        string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null)
-    {
-        sessionId = _context.Pending.Current(sessionId);
-        var said = Compose(sessionId, message, files, preface);
-        if (_context.Turned.TryGetValue(sessionId, out var chat))
-        {
-            // Before it is taken, as a word said is (NOTIFY1a): the stopped turn's end is no answer while these words wait.
-            _answers.Asked(sessionId);
-            return await chat.Turns.TakeNowAsync(said).ConfigureAwait(false);
-        }
-
-        return SendText(sessionId, said) ? new SentNow(null, Now: false, SendNowWhy.NoInterrupt) : null;
-    }
-
-    /// <summary>
-    /// The person's message as a live chat's door takes it: the files kept for this conversation (CONV4c), and the preface, the
-    /// briefing and the process it is handed once, ahead of its first words. Nothing is kept for a chat nothing here holds.
-    /// </summary>
-    private ChatMessage Compose(string sessionId, string message, IReadOnlyList<ChatUpload>? files, string? preface)
-    {
-        var held = _context.Turned.ContainsKey(sessionId) || _context.Talking.ContainsKey(sessionId);
-        IReadOnlyList<KeptFile> kept = held && files is { Count: > 0 } ? ChatFiles.Keep(_home, sessionId, files) : [];
-        // A conversation started from an earlier one is handed Daoris's brief of that one's line with the person's first message (D233).
-        var brief = held && _context.Handing.TryRemove(sessionId, out var handed) ? handed.Brief : null;
-        // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
-        var briefing = held && _context.Browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
-        var composed = new ChatMessage(message, kept)
-        {
-            Brief = brief, Preface = ChatMessage.Bound(preface), Briefing = briefing, Draft = held ? DraftOf(sessionId) : null,
-        };
-        return held ? WithProcess(sessionId, composed) : composed;
-    }
-
-    /// <summary>
-    /// Hand a conversation the workflow draft open in the person's editor with the message it was sent with (FLOWCHART2d): taken by that
-    /// message as it is composed, its palette handed whole only where this conversation was not told it under the same digest.
-    /// </summary>
-    public void HandDraft(string sessionId, WorkflowDraftTold draft) => _context.Drafts[_context.Pending.Current(sessionId)] = draft;
-
-    private WorkflowDraftTold? DraftOf(string sessionId)
-    {
-        if (!_context.Drafts.TryRemove(sessionId, out var draft)) return null;
-        if (draft.Palette is not { } palette) return draft;
-        var told = _context.Palettes.TryGetValue(sessionId, out var digest) && digest == palette.Digest;
-        _context.Palettes[sessionId] = palette.Digest;
-        return told ? draft with { Palette = palette with { Text = null } } : draft;
-    }
+    /// <inheritdoc cref="ChatWords.HandDraft"/>
+    public void HandDraft(string sessionId, WorkflowDraftTold draft) => _words.HandDraft(sessionId, draft);
 
     /// <inheritdoc cref="ChatTold.With"/>
-    internal ChatMessage WithProcess(string sessionId, ChatMessage message) => _told.With(sessionId, message);
+    internal ChatMessage WithProcess(string sessionId, ChatMessage message) => _words.WithProcess(sessionId, message);
 
-    /// <summary>
-    /// A text-only door keeps the person's words where it keeps the agent's — the console. In the record they would be half a
-    /// conversation: questions with no answers beside them. A file it is handed is named by its path, which any agent can read.
-    /// </summary>
-    private bool SendText(string sessionId, ChatMessage said)
-    {
-        var text = said.PromptWithFiles;
-        var framed = _context.Talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(text) : text;
-        return _processes.Send(sessionId, framed);
-    }
+    /// <inheritdoc cref="ChatTurnDoors.Taking"/>
+    public bool Taking(string sessionId) => _turns.Taking(sessionId);
 
-    /// <summary>Whether a conversation's turn is on its way to the harness or running there — false on a text-only door.</summary>
-    public bool Taking(string sessionId) => _context.Turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running;
+    /// <inheritdoc cref="ChatTurnDoors.Reach"/>
+    public string? Reach(string sessionId) => _turns.Reach(sessionId);
 
-    /// <summary>
-    /// What a word said now to a live conversation would do (MSG1c, D137 §2.1), in the record's spelling: <c>next-step</c>
-    /// while a turn runs on a door whose agent takes words then, <c>turn-end</c> while one runs anywhere else, and null
-    /// where it would be the next turn at once, or the door carries only text.
-    /// </summary>
-    public string? Reach(string sessionId) =>
-        _context.Turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running
-            ? chat is ProtocolChat { Session.NextStep: true } && !chat.Turns.Stopped ? "next-step" : "turn-end"
-            : null;
+    /// <inheritdoc cref="ChatTurnDoors.Door"/>
+    public TurnDoor? Door(string sessionId) => _turns.Door(sessionId);
 
-    /// <summary>
-    /// What a live conversation's door can do with a word while a turn runs (COWORK1a, the design §3.0, §8.1): whether its agent
-    /// steers, so a word at <c>now</c> cuts its step; and whether the door can stop a turn and keep the conversation, so the keeping
-    /// stop is offered beside words held for the turn's end. Null for one nothing here holds, and for a text-only door, which has
-    /// no turns and honours no level.
-    /// </summary>
-    public TurnDoor? Door(string sessionId) =>
-        _context.Turned.TryGetValue(sessionId, out var chat)
-            ? chat is ProtocolChat protocol
-                ? new TurnDoor(Steers: protocol.Session is { Steers: true }, KeepingStop: true)
-                : new TurnDoor(Steers: false, KeepingStop: chat is NativeChat { Interrupts: true })
-            : null;
+    /// <inheritdoc cref="ChatTurnDoors.Holds"/>
+    public bool Holds(string sessionId) => _turns.Holds(sessionId);
 
-    /// <summary>A word's reach in the spelling the record and the page use (D136 §3).</summary>
-    private static string? Spelled(TurnReach? reach) => reach switch
-    {
-        TurnReach.NextStep => "next-step",
-        TurnReach.TurnEnd => "turn-end",
-        _ => null,
-    };
+    /// <inheritdoc cref="ChatTurnDoors.Queue"/>
+    public ChatQueue Queue(string sessionId) => _turns.Queue(sessionId);
 
-    /// <summary>Whether this runner holds the conversation: its turns, its text door or its go-on. What it does not hold, it knows nothing of (CLITURN1).</summary>
-    public bool Holds(string sessionId) =>
-        _context.Turned.ContainsKey(sessionId) || _context.Talking.ContainsKey(sessionId) || _context.GoingOn.ContainsKey(sessionId);
-
-    /// <summary>Where a conversation's turns stand; <see cref="ChatQueue.Idle"/> for one nothing here holds.</summary>
-    public ChatQueue Queue(string sessionId) =>
-        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
-
-    /// <summary>
-    /// Whether a conversation this runner holds has ended its turn with nothing waiting or opening (ACCEPTFOOT1b), as a curve's move
-    /// reads a turn's end (<see cref="CurveMove.TurnJustEnded"/>): the word the page's foot offers its <i>Accept…</i> by, which the
-    /// session list's look in this process reads too (<see cref="SessionGroups.Between"/>). Null for one nothing here holds.
-    /// </summary>
-    public bool? TurnEnded(string sessionId) =>
-        _context.Turned.TryGetValue(sessionId, out var chat)
-            ? chat.Turns.State is { Taking: false, Opening: false, Queued.Count: 0, LastTurnEnded: not null }
-            : null;
+    /// <inheritdoc cref="ChatTurnDoors.TurnEnded"/>
+    public bool? TurnEnded(string sessionId) => _turns.TurnEnded(sessionId);
 
     /// <inheritdoc cref="IChatPressing.HoldAsync"/>
-    public Task<PressHold> HoldAsync(string sessionId, CancellationToken ct = default) =>
-        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.PressAsync(ct) : Task.FromResult(PressHold.NotHere);
+    public Task<PressHold> HoldAsync(string sessionId, CancellationToken ct = default) => _turns.HoldAsync(sessionId, ct);
 
     /// <inheritdoc cref="IChatPressing.Release"/>
-    public void Release(string sessionId)
-    {
-        if (_context.Turned.TryGetValue(sessionId, out var chat)) chat.Turns.Pressed();
-    }
+    public void Release(string sessionId) => _turns.Release(sessionId);
 
     /// <inheritdoc cref="IChatSendBacks.SendBackAsync"/>
-    /// <remarks>
-    /// The person's turn count reads their words in the line's history here and their words queued or on the wire in the turns, compared in
-    /// one operation of the keep (<see cref="ChatTurns.SendBackAsync"/>). The word the hand kept leaves the record once its turn is on the wire.
-    /// </remarks>
-    public async Task<SentBack> SendBackAsync(ChatSendBackAsk ask, CancellationToken ct = default)
-    {
-        if (_context.Closing || !_context.Turned.TryGetValue(ask.Session, out var chat)) return new(SendBack.NotHere);
-        chat.Turns.Keeps(new SaidDoor(_context.Service, ask.Session));
-        var outcome = await chat.Turns.SendBackAsync(
-                ask.Pressed, () => ChatPresses.TurnsOf(_events, ask.Line),
-                async token => await ask.Hand(ask.Session, token).ConfigureAwait(false) is { } word ? Findings(word, ask.Answered) : null, ct)
-            .ConfigureAwait(false);
-        return new(outcome);
-    }
+    public Task<SentBack> SendBackAsync(ChatSendBackAsk ask, CancellationToken ct = default) => _sendBack.SendBackAsync(ask, ct);
 
     /// <inheritdoc cref="IChatSendBacks.GoOnWithFindingsAsync"/>
-    public async Task<SentBack> GoOnWithFindingsAsync(ChatSendBackAsk ask, CancellationToken ct = default)
-    {
-        if (_context.Closing) return new(SendBack.Waiting, "the application is closing, so no conversation goes on now.");
-        if (_context.Turned.ContainsKey(ask.Session) || _context.Talking.ContainsKey(ask.Session) || _context.GoingOn.ContainsKey(ask.Session))
-        {
-            return new(SendBack.Waiting, $"conversation `{ask.Session}` runs here, or is going on already.");
-        }
+    public Task<SentBack> GoOnWithFindingsAsync(ChatSendBackAsk ask, CancellationToken ct = default) => _sendBack.GoOnWithFindingsAsync(ask, ct);
 
-        var record = await _context.ReadAgainAsync(ask.Session, ct).ConfigureAwait(false);
-        if (record is not { Kind: "chat" }) return new(SendBack.CannotGoOn, ContinueWhy.Of(ContinueWhy.Refused).Code);
-        if (GoOn.CannotGoOnWithFindings(record) is { } never) return new(SendBack.CannotGoOn, never.Code);
-        if (await ask.Hand(ask.Session, ct).ConfigureAwait(false) is null) return new(SendBack.Refused);
+    /// <inheritdoc cref="ChatSendBack.AnswersFindingsAsync"/>
+    internal Task<bool> AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => _sendBack.AnswersFindingsAsync(sessionId, tree, config);
 
-        var started = await GoOn.GoOnWithFindingsAsync(ask.Session, ask.Answered, ct).ConfigureAwait(false);
-        // Held, the findings wait on its record: the next word, a wake or the next look goes on with them; refused, the go-on marked why.
-        return started.SessionId is not null ? new(SendBack.Reserved) : new(SendBack.Waiting, started.Message);
-    }
+    /// <inheritdoc cref="ChatTurnDoors.EditQueued"/>
+    public QueueEdit EditQueued(string sessionId, string id, string? text, MessageLevel? level = null) => _turns.EditQueued(sessionId, id, text, level);
 
-    /// <summary>Whether a conversation's spawn is handed <c>opinion_answer</c>: its chat run's process names a second opinion (CHATFLOW1e).</summary>
-    internal Task<bool> AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => _chatRuns.AnswersAsync(sessionId, tree, config);
-
-    /// <summary>
-    /// Another agent's findings as a conversation's turn (CHATFLOW1e, the chat-flow design §6): Daoris's words around that agent's claims, kept on
-    /// the record under the word's id with its <c>by</c>, never the person's; ordinary, so never steered into a turn in flight; with the
-    /// answering turn's completion.
-    /// </summary>
-    internal static ChatMessage Findings(SaidWordView word, Func<bool, Task> answered) =>
-        new(word.Text, []) { Helped = word, Id = word.Id, Kept = true, Level = MessageLevel.Ordinary, Answering = answered };
-
-    /// <summary>
-    /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn
-    /// took it already, or nothing here holds the conversation.
-    /// </summary>
-    /// <param name="level">A waiting word's new urgency (COWORK1a), under its own id; null leaves it as it is.</param>
-    public QueueEdit EditQueued(string sessionId, string id, string? text, MessageLevel? level = null) =>
-        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueued(id, text, level) : QueueEdit.Taken;
-
-    /// <summary>
-    /// <see cref="EditQueued"/>, where a word kept on the conversation's record is taken back there too, and reworded as a word said is
-    /// kept (COWORK1c).
-    /// </summary>
+    /// <inheritdoc cref="ChatTurnDoors.EditQueuedAsync"/>
     public Task<QueueEdit> EditQueuedAsync(
         string sessionId, string id, string? text, MessageLevel? level = null, CancellationToken ct = default) =>
-        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueuedAsync(id, text, level, ct) : Task.FromResult(QueueEdit.Taken);
+        _turns.EditQueuedAsync(sessionId, id, text, level, ct);
 
-    /// <summary>
-    /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
-    /// withdrawn and handed back, and the turn in flight ends on the harness's own word.
-    /// </summary>
-    /// <param name="keep">
-    /// Keep what was waiting for the next turn rather than withdraw it (STEER2a, <c>CANCEL_TURN</c> with <c>keep</c>): the turn-end
-    /// door's *Send now* (D90), nothing handed back.
-    /// </param>
-    /// <returns><see cref="TurnStop.Nothing"/> when nothing here holds the conversation, or nothing ran.</returns>
-    /// <exception cref="DriverException">The conversation's door carries only text, so it has no turn to stop.</exception>
-    public Task<TurnStop> CancelTurnAsync(string sessionId, bool keep = false)
-    {
-        if (_context.Turned.TryGetValue(sessionId, out var chat))
-        {
-            // What it kept is the next turn, whose end the person waits on (NOTIFY1a).
-            if (keep) return chat.Turns.StopKeepingAsync();
-
-            // The turn ends on the person's own press: no answer to tell them of (NOTIFY1a).
-            _answers.Stopped(sessionId);
-            return chat.Turns.StopAsync();
-        }
-
-        if (_context.Talking.TryGetValue(sessionId, out var adapter))
-        {
-            throw new DriverException(
-                $"the `{adapter.Name}` agent carries only text, so the driver cannot tell where one turn ends "
-                + "and the next begins — there is no turn to stop. Finish the conversation, or stop it.");
-        }
-
-        return Task.FromResult(TurnStop.Nothing);
-    }
+    /// <inheritdoc cref="ChatTurnDoors.CancelTurnAsync"/>
+    public Task<TurnStop> CancelTurnAsync(string sessionId, bool keep = false) => _turns.CancelTurnAsync(sessionId, keep);
 
     /// <inheritdoc cref="ChatOptions.Of"/>
     public IReadOnlyList<AcpConfigOption> Options(string sessionId) => _options.Of(sessionId);
@@ -2043,7 +1777,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             chat?.Turns.Gone(personStopped);
             native?.Gone(personStopped);
             // Last, so the queue told empty above judges nothing it still waited on (NOTIFY1a).
-            _answers.Forget(sessionId);
+            _context.Answers.Forget(sessionId);
         });
         // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a), on the session the run holds.
         using var stops = chat is null || _output is null

@@ -159,7 +159,7 @@ public sealed class ChatTurnsTests
 
     /// <summary>A second opinion's findings as the runner makes them a conversation's turn (CHATFLOW1e), with its completion.</summary>
     private static ChatMessage Findings(Func<bool, Task>? answering = null) =>
-        ChatRunner.Findings(
+        ChatSendBack.Findings(
             new SaidWordView("f1", "Another agent, Codex by OpenAI, read your work and claims what follows.", DateTimeOffset.UnixEpoch, [], Reopens: true)
             {
                 By = "op1", Level = MessageLevel.Ordinary,

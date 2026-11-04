@@ -32,6 +32,9 @@ of everything it handed, section by section.
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops |
 | `ProtocolChat`, `NativeChat` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt |
 | `ChatOptions` | `Loop/Chat/ChatOptions.cs` | A conversation's model and effort as its agent offers them, the person's change of either (never the mode), and the change as last kept |
+| `ChatWords` | `Loop/Chat/ChatWords.cs` | The words said to a live conversation: the person's (framed, kept on the record, at a level or at *now*), Daoris's own, a composed message and the workflow draft it carries |
+| `ChatTurnDoors` | `Loop/Chat/ChatTurnDoors.cs` | What is read of a live conversation's turns and done to them: where they stand, a word's reach, the press hold, waiting words edited, the turn stopped |
+| `ChatSendBack` | `Loop/Chat/ChatSendBack.cs` | Another agent's findings handed to a conversation as a turn: sent back to the one running, or the ones an ended conversation goes on with |
 | `ChatTold` | `Loop/Chat/ChatTold.cs` | What a new conversation is told with its first message, held from its start: its process, its execution's checks, its standing block's facts |
 | `ChatAccountReads` | `Loop/Chat/ChatAccountReads.cs` | A refused call read for its account: a limit cools it, a refused sign-in signs it out; what a part going on from a limit carries |
 | `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made |

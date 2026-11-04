@@ -27,7 +27,7 @@ public sealed partial class SettledReadersCensusTests
         ["OpinionDeliverer.cs"] = "the findings' hand reads a settled answer as handed, with nothing said for it; the chat run's send-back asks none",
         ["ChatTurns.cs"] = "answers a retry of a word it holds already: holds, queues, steers, attempts and takes nothing",
         ["DrivenInbox.cs"] = "answers a retry of a word it holds already: holds, sends, steers, attempts and takes nothing",
-        ["ChatRunner.cs"] = "maps the turns' settled answer to ChatSaid.Settled, with no reach and no word",
+        ["ChatWords.cs"] = "maps the turns' settled answer to ChatSaid.Settled, with no reach and no word",
         ["SessionWords.cs"] = "the pump takes its held word off and shows nothing; the record path, the inbox and the chat answer sent, no word, nothing kept on the ask",
         ["SessionSay.cs"] = "the headless door answers sent with no word, shows nothing and keeps nothing on the ask",
         ["DriverHelpers.cs"] = "the helper pass dispatches and records nothing, the ask marked handed",
@@ -118,7 +118,7 @@ public sealed partial class SettledReadersCensusTests
         var named = new SortedSet<string>([.. First.Keys, .. AsKept.Keys, .. Today.Keys], StringComparer.Ordinal);
         var readers = new SortedSet<string>(found.Where(file => file is not "ServiceClient.cs"), StringComparer.Ordinal);
         Assert.Empty(readers.Except(named));
-        Assert.Empty(named.Except(readers.Concat(["ServiceClient.cs", "HelperDoors.cs", "PartnerDoors.cs", "OpinionDoors.cs", "ChatRunner.cs", "SaidDoor.cs", "SessionSay.cs"])));
+        Assert.Empty(named.Except(readers.Concat(["ServiceClient.cs", "HelperDoors.cs", "PartnerDoors.cs", "OpinionDoors.cs", "ChatWords.cs", "SaidDoor.cs", "SessionSay.cs"])));
     }
 
     [Fact]

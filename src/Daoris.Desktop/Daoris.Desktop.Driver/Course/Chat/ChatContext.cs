@@ -143,6 +143,9 @@ internal sealed class ChatContext(
     /// </summary>
     public ChatPendings Pending { get; } = new();
 
+    /// <summary>What the conversations' turns are judged by: the person's words, their stops and each turn's end.</summary>
+    public AttentionWatch Answers { get; } = new();
+
     /// <summary>Closing: no conversation starts, goes on or moves from here.</summary>
     public bool Closing => _closing;
 
