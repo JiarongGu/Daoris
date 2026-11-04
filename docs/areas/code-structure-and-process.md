@@ -65,9 +65,10 @@ finishes first and the whole set runs once.
    a keyed open's refusal in the answer's own record), `SessionKeepRoutes` (a local host's opens for the conversations the driver
    starts itself, and what it learned of a start), `SessionStoreRoutes` (a finished tree's record, a session's memory and its
    delete) and `SessionWordRoutes` (the person's words on a session); a refusal in a record of its own (a say's word, a delete's
-   facts) is `Answer<T>.Else`, and `SessionAnswers` is the one place a record is turned into its answer. The driver sends them
-   from `ServiceClient` as `SendJsonAsync(new Say…)` and reads the list into `SessionView` through the generated
-   `SessionResponse`; the page's `Session` and `SaidWord` are those records. A local host's second-opinion, helper, partner,
+   facts) is `Answer<T>.Else`, and `SessionAnswers` is the one place a record is turned into its answer. The driver sends
+   them from a named type per family in `Service/`, reached as a property of `ServiceClient` (`SessionList`, `Words`, `Moves`, `Keeps`,
+   `Store`, `Openings`, `Registry`, `History`, `Standing`) and by the one-line doors callers name; `SessionReads` reads the list's
+   generated `SessionResponse` into the planner's views, and the page's `Session` and `SaidWord` are those records. A local host's second-opinion, helper, partner,
    brainstorm, history and addressed-channel doors are `OpinionRoutes`, `ParticipantRoutes`, `BrainstormRoutes`, `HistoryRoutes`
    and `AddressedRoutes`; the driver's door classes send their records, and the page's opinion list is sent by name. The registry, the
    code map and the rescan are `RegistryRoutes`; a shared host's feed and quest-operation doors are `FeedRoutes` and a local host's
