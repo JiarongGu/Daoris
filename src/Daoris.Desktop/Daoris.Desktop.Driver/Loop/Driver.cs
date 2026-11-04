@@ -656,62 +656,6 @@ public sealed class Driver(
         GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync, permissions, treeStands);
 
     /// <summary>
-    /// What became of a session's tree before it went on (TREEGONE1), said on that session's record: its console and its conversation,
-    /// by code. The tree made again in its place is said once, as it happens.
-    /// </summary>
-    private void TreeSaid(string session, Noted said)
-    {
-        Context.Output?.Append(session, said.Note);
-        Context.Events.Keep(
-            session,
-            new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts.Count > 0 ? said.Parts : null },
-            say: null);
-    }
-
-    /// <summary>
-    /// A tree a start goes on in, brought up to date where the line holds some of its commits (LANDSYNC2): what the session is told,
-    /// or null. Git or a disk that fails here is no reason to hold the start: it goes on in the tree as it stands, told nothing.
-    /// </summary>
-    private async Task<TreeStartSync?> StartInSyncAsync(string tree, CancellationToken ct)
-    {
-        try
-        {
-            return await Context.Trees.StartInSyncAsync(tree, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// A step's tree the person went on with after reopening its source (FABRIC-CLOSE1c5), brought up to date with the source's new
-    /// submission, read off the wire now, then with the line: what the session is told, or null. A source the service cannot answer is
-    /// read as one naming no commit, so only the line is synced and that said; git or a disk that fails is no reason to hold the start.
-    /// </summary>
-    private async Task<TreeStartSync?> GoOnInSyncAsync(string tree, QuestView step, CancellationToken ct, bool broughtForward = false)
-    {
-        QuestView? source = null;
-        try
-        {
-            if (step.Parent is { Length: > 0 } parent) source = await service.FindQuestAsync(parent, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException)
-        {
-            // Read as naming no commit: the session is told only the line was synced.
-        }
-
-        try
-        {
-            return await Context.Trees.GoOnInSyncAsync(tree, $"#{step.Parent}", Planner.SourceCommit(step, source), ct, broughtForward).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
     /// How a pass is run: <see cref="PassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git and an agent,
     /// which the suite's fast half may not (MOD8). The recheck is run through it (XAGENT1e). Written through to the context.
     /// </summary>
@@ -1708,11 +1652,11 @@ public sealed class Driver(
     {
         var quest = start.Quest;
         var root = start.Root!;
-        var isolated = config.OpensOwnTree(quest.To);
 
         // The agent, a clean checkout, the account and the access setup, each of which may hold the start before anything is grown,
         // locked or opened.
-        var run = new RunRound(start, registry, movedOff, fresh, new RunState());
+        using var state = new RunState();
+        var run = new RunRound(start, registry, movedOff, fresh, state);
         foreach (var stage in RunStages.In(RunPhase.Choose))
         {
             if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
@@ -1727,159 +1671,22 @@ public sealed class Driver(
         string? CarriedModel(PriorSession? record) => run.State.CarriedModel(record);
         var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
-        // the same reason every refusal above is asked before it: a failure here holds the quest
-        // open and records nothing. The branch grows from the canonical line as WSP4 resolves it.
-        // A RESUME (D79) carries on in the tree its earlier session asked from — that tree holds the work
-        // done before the question — where it still stands, or made again below on its branch (TREEGONE1). One whose work
-        // landed and whose branch the tidy took grows a fresh tree like a first start. A CARRY-ON after a
-        // cut-off (D80) is the same move for a different reason: the quest waits on nothing, and the
-        // earlier session failed before closing it.
-        // TREEGONE1 (D51, D131): a session never runs with its tree gone. The tree a session goes on in is asked for as git lists it,
-        // on its branch, before anything goes on there: made again in its place where its folder is gone and its branch stands, and
-        // said; where its branch is gone too, or it could not be made, the start is held for the person and said, and no harness
-        // starts in the checkout or a folder left behind in its place. Asked with the repository's trees held, as an open is (LEFT2).
-        // A session whose work landed and whose branch the tidy took grows a fresh tree as before (D79, D82).
-        var priorTree = start.Resumes is { Tree: { Length: > 0 } resumesIn } && Context.Trees.Holds(resumesIn) ? resumesIn : null;
-        var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
-        TreeStanding? priorStands = null, entryStands = null;
-        if (priorTree is not null || (entryTree is not null && Context.Trees.Holds(entryTree)))
+        // The session's own tree, found or grown before the record; the repository's trees stay held in the state until the record is open.
+        foreach (var stage in RunStages.In(RunPhase.Grown))
         {
-            using var returning = TreeLock.TryStarting(home, root);
-            if (returning is null) return Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
-            if (priorTree is not null) priorStands = await Context.Trees.EnsureAsync(root, priorTree, ct).ConfigureAwait(false);
-            if (entryTree is not null && Context.Trees.Holds(entryTree))
-            {
-                entryStands = await Context.Trees.EnsureAsync(root, entryTree, ct).ConfigureAwait(false);
-            }
+            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
         }
 
-        if (priorStands is { Said: { } priorSaid } && start.Resumes is { } goneFrom)
-        {
-            var landedAway = priorStands.Stand == TreeStand.Gone && Context.Trees.Recorded.Landing(goneFrom.Session) is not null;
-            // TREEKEEPRETRY1: gone with nothing beyond the line, the part goes on in a fresh tree rather than holding for good.
-            var leftNothing = priorStands.Stand == TreeStand.Gone && !landedAway && goneFrom.BaseCommit is { Length: > 0 } stoodAt
-                && TreeReturns.LeftNothing(
-                    goneFrom, await Context.Trees.LineHoldsAsync(root, quest.To, RemoteTarget.Workspace(start.Workspace), stoodAt, ct).ConfigureAwait(false));
-            if (priorStands.Stand == TreeStand.Remade) TreeSaid(goneFrom.Session, priorSaid);
-            else if (leftNothing) TreeSaid(goneFrom.Session, TreeReturns.Fresh(priorStands.Branch ?? Path.GetFileName(priorTree!)));
-            else if (!landedAway)
-            {
-                GoOns.HeldSaying(goneFrom, priorSaid);
-                return Hold(priorSaid.Note);
-            }
-        }
-
-        if (entryStands is { Stand: TreeStand.Remade, Said: { } entrySaid }) TreeSaid(start.Entry!.Into!.Session, entrySaid);
-        else if (entryStands is { Stand: TreeStand.Unmade, Said: { } entryUnmade }) return Hold(entryUnmade.Note);
-
-        static bool StandsNow(TreeStanding? stands, string tree) =>
-            stands is null ? Directory.Exists(tree) : stands.Stand is TreeStand.Stands or TreeStand.Remade;
-        var resumedIn = start.Resumes is { Tree: { Length: > 0 } resumedTree } && isolated && StandsNow(priorStands, resumedTree)
-            ? resumedTree
-            : null;
-        // 🔴 SAYHELD1: words going on are never a resume (D79), whatever question the quest still names: the planner plans them only once
-        // a resume began (its ResumedOnAnswer), and that session was handed the answer.
-        var resuming = start.Resumes is not null && !start.GoesOn && quest.Awaits is { Length: > 0 };
-        var carryingOn = start.Resumes is not null && !resuming;
-        // A further part of a session (SESSONE1d, D167 point 4 as amended) goes into the tree the planner found free, where it still
-        // stands; one the tidy took at its landing grows again below, from the branch that work landed on (D82), else from the line.
-        var joinedIn = entryTree is not null && StandsNow(entryStands, entryTree) ? entryTree : null;
-
-        // What the question came back with, which is the whole point of resuming: the session is handed
-        // it. Read before the record opens, like every hold above — a question the service no longer
-        // knows leaves nothing to resume with.
-        QuestView? answered = null;
-        if (resuming && quest.Awaits is { Length: > 0 } question)
-        {
-            answered = await service.FindQuestAsync(question, ct).ConfigureAwait(false);
-            if (answered is null)
-            {
-                return Hold($"`#{quest.Id}` waited on `#{question}`, which this service does not hold — "
-                    + "there is no answer to resume with.");
-            }
-        }
-
-        // 🔴 SAYHELD1 (A), the owner's case on the install: the words kept on the session that asked while its quest waited, which it never
-        // took, go to the session this resume opens, read as the record holds them now (SAIDBACK1f), so one taken back never goes.
-        // SESSWATCH1a: and the person's words that waited for a run they ended with End and carry on go to the part that carries it on.
-        var handsOn = answered is not null || (carryingOn && Observation.IsQuietPressed(start.Resumes!.NoteParts))
-            ? await GoOns.ResumeWordsAsync(start.Resumes!, ct).ConfigureAwait(false)
-            : null;
-
-        // COMMS1g (the comms design §11): the waited quest's result counts on the line this resume carries on, reserved before the run is
-        // handed it and once however often the start is tried. Nothing here holds it.
-        if (answered is not null)
-        {
-            new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home)).Waited(
-                start.Resumes!, answered.Id, handsOn?.Waiting ?? [], await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
-        }
-
-        // LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in a tree that stands — a resume, words going on, a
-        // carry-on, a further part gone into its session's tree — starts from the line where the line came to hold some of its commits,
-        // and is told what was done. Asked before this start's own hold below, since bringing a tree up to date holds the repository's
-        // trees alone; never a reason to hold the start.
-        // FABRIC-CLOSE1c5 (§E5): the person went on with a step whose source they reopened, so its tree is first brought up to date
-        // with the source's new submission, then with the line; a conflict leaves both, and the session is told. FABRIC-CLOSE1c13: so
-        // is one whose session had ended normally, going on with the words Daoris told it of the go-on (ReopenTelling). SYNCMERGE1b: and
-        // a stand-down whose lost take the person brought forward, onto the step's current source, which its fresh take was made on.
-        var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom
-                     && (ReopenTelling.BringsToSource(quest, goesFrom) || Planner.BringsForwardToSource(quest, start))
-            ? await GoOnInSyncAsync(reopenedIn, quest, ct, broughtForward: start.BroughtForward is not null).ConfigureAwait(false)
-            : (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
-
-        // 🔴 WSR6's open window (LEFT2): bringing the repository up to date must not rebase a tree a session is
-        // starting in. Its trees are held, beside any other start, from choosing the tree until the record is open,
-        // when the ledger holds it; a replay holding them holds this start for one look. Let go right after the
-        // open below; the `using` lets go on every hold and throw between. GITLOCK1: a start in the checkout itself
-        // holds it too, so no writer moves it between the commit this start reads and the record that holds it.
-        using var starting = TreeLock.TryStarting(home, root);
-        if (starting is null) return Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
-
-        // STARTGIT1: git's guess at the checkout's line is asked once for this start, by the tree's opening and by the landing it
-        // tells the session of, which each asked it afresh (three `symbolic-ref origin/HEAD`, up to four `rev-parse --verify`).
-        // Let go before the spawn: a session runs for minutes, and what follows it asks git as it stands then.
-        var oneLook = Context.Trees.OneLook();
-
-        TreeOpened? opened = null;
-        if (isolated && resumedIn is null && joinedIn is null)
-        {
-            try
-            {
-                // A chain's next step in its parent's repository grows from the branch the parent
-                // landed on (CHAIN2), named as the trees name their branches — so a verify step sees
-                // the unmerged work it exists to check. Where a tidy took that branch at the parent's
-                // landing, it grows from the chain's landed branch instead, so its own done can move
-                // that branch on (LAND2c, D82 as D145 amends it).
-                opened = await Context.Trees.OpenAsync(
-                        root, quest.To, start.Workspace ?? "default", ct,
-                        // TREEFOLLOW1: the step before's branch as its tree has it now, where its agent moved it onto one of its own.
-                        from: start.BuildsOn?.Tree is { Length: > 0 } parentTree
-                            ? await Context.Trees.BranchNowAsync(parentTree, ct).ConfigureAwait(false) ?? $"daoris/{Path.GetFileName(parentTree)}"
-                            : null,
-                        landed: start.BuildsOn is { } stepBefore
-                                && Context.Trees.Recorded.Landing(stepBefore.Session) is { GoneAt: null } chain
-                                && string.Equals(chain.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
-                            ? chain.Branch
-                            : entryTree is not null ? EntryLanded(start.Entry!, quest.To) : null,
-                        partOf: entryTree is not null ? start.Entry!.Into!.Session : null)
-                    .ConfigureAwait(false);
-                fresh.Opened(opened.Path);
-            }
-            catch (DriverException error)
-            {
-                return Hold(error.Message);
-            }
-        }
-
-        var workTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
-        run.State.WorkTree = workTree;
+        var workTree = run.State.WorkTree;
         foreach (var stage in RunStages.In(RunPhase.Placed))
         {
             if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
         }
 
         var (runBound, setUp) = (run.State.Bound, run.State.SetUp);
+        var (entryTree, priorStands, entryStands, opened, resumedIn) = (run.State.Tree.EntryTree, run.State.Tree.PriorStands, run.State.Tree.EntryStands, run.State.Tree.Opened, run.State.Tree.ResumedIn);
+        var (joinedIn, resuming, carryingOn) = (run.State.Tree.JoinedIn, run.State.Tree.Resuming, run.State.Tree.CarryingOn);
+        var (answered, handsOn, inSync, oneLook, starting) = (run.State.Tree.Answered, run.State.Tree.HandsOn, run.State.Tree.InSync, run.State.Tree.OneLook, run.State.Starting);
 
         // 🔴 Can this harness use what the repository allows it? (DEPLOY1.) Claude Code ignores a
         // repository's `permissions.allow` until a person has accepted that path, so a session in an
@@ -3275,17 +3082,6 @@ public sealed class Driver(
             return own;
         }
     }
-
-    /// <summary>
-    /// The branch a session's work last landed on here (SESSONE1d; D82 by entry rather than by chain): the newest of its parts'
-    /// landings in the repository whose record stands, or null where none of them landed on a branch.
-    /// </summary>
-    private string? EntryLanded(EntryParts entry, string repository) =>
-        entry.Parts
-            .Select(part => Context.Trees.Recorded.Landing(part.Session))
-            .FirstOrDefault(landing => landing is { GoneAt: null }
-                                       && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase))
-            ?.Branch;
 
     /// <summary>
     /// What a further part of a session is handed of the parts before it (SESSONE1d): each one's record, its tree's name where the

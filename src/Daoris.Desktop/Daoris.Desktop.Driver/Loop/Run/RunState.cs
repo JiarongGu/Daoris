@@ -9,8 +9,10 @@ namespace Daoris.Driver;
 /// A member a stage writes is unwritten until that stage runs, and reading it earlier throws, naming the stage that writes it: a
 /// stage declared without the <c>after</c> its reads need fails at its first run, never on a value left over or a default.
 /// </remarks>
-internal sealed class RunState
+internal sealed class RunState : IDisposable
 {
+    private Slot<TreeLock> _starting;
+    private Slot<TreeFound> _tree;
     private Slot<string> _agent;
     private Slot<HandedQuest?> _handedQuest;
     private Slot<string?> _stepRole;
@@ -149,6 +151,26 @@ internal sealed class RunState
         set => _permissions.Set(value);
     }
 
+    /// <summary>
+    /// The repository's trees, held from the tree's choice until the record is open: the run lets it go there, or with the state on any
+    /// way out before.
+    /// </summary>
+    public TreeLock Starting
+    {
+        get => _starting.Get(nameof(Starting), "tree");
+        set => _starting.Set(value);
+    }
+
+    /// <summary>How the tree the session runs in stands, and what the start goes on with there.</summary>
+    public TreeFound Tree
+    {
+        get => _tree.Get(nameof(Tree), "tree");
+        set => _tree.Set(value);
+    }
+
+    /// <summary>Lets go of the repository's trees where the run never reached the record; once let go, a second does nothing.</summary>
+    public void Dispose() => _starting.Peek()?.Dispose();
+
     /// <summary>The tree the session runs in: the one opened for it, the one its earlier session or part went on in, else the checkout.</summary>
     public string WorkTree
     {
@@ -184,6 +206,8 @@ internal sealed class RunState
                 ? _value
                 : throw new InvalidOperationException(
                     $"the run's {member} is written by the {stage} stage, which has not run before the stage reading it: that stage runs after {stage}");
+
+        public readonly T? Peek() => _written ? _value : default;
 
         public void Set(T value) => (_value, _written) = (value, true);
     }

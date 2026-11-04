@@ -28,9 +28,9 @@ public sealed class DriverRunPartsTests : IDisposable
         var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
 
         var order = driver.RunStages.Order;
-        Assert.Equal(["agent", "clean", "account", "access", "steward", "bind", "setup"], order.Select(part => part.Name));
+        Assert.Equal(["agent", "clean", "account", "access", "tree", "steward", "bind", "setup"], order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(RunPhase.Choose, 4), .. Enumerable.Repeat(RunPhase.Placed, 3)],
+            [.. Enumerable.Repeat(RunPhase.Choose, 4), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3)],
             order.Select(part => (RunPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
@@ -40,6 +40,7 @@ public sealed class DriverRunPartsTests : IDisposable
             stage => Assert.IsType<CleanCheckout>(stage),
             stage => Assert.IsType<AccountWalk>(stage),
             stage => Assert.IsType<StartAccess>(stage));
+        Assert.Collection(driver.RunStages.In(RunPhase.Grown), stage => Assert.IsType<GrowTree>(stage));
         Assert.Collection(
             driver.RunStages.In(RunPhase.Placed),
             stage => Assert.IsType<StewardPlace>(stage),
@@ -61,6 +62,8 @@ public sealed class DriverRunPartsTests : IDisposable
         Assert.Contains("written by the account stage", Assert.Throws<InvalidOperationException>(() => state.CarriedModel(null)).Message);
         Assert.Contains("written by the access stage", Assert.Throws<InvalidOperationException>(() => state.Permissions).Message);
         Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.WorkTree).Message);
+        Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.Tree).Message);
+        Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.Starting).Message);
         Assert.Contains("written by the bind stage", Assert.Throws<InvalidOperationException>(() => state.Bound).Message);
         Assert.Contains("written by the setup stage", Assert.Throws<InvalidOperationException>(() => state.SetUp).Message);
 
