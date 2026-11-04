@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Daoris.Contracts.Parts;
 
 namespace Daoris.Driver;
 
@@ -42,7 +43,7 @@ public sealed class Driver(
     // The sessions still running (DEV3), shared by the watch across the driver it builds for each look,
     // since a session outlives the look that started it. Null keeps this driver's own, which is what a
     // one-look run and a gate's run-until-idle want.
-    RunningSessions? running = null)
+    RunningSessions? running = null) : ILandingWiring
 {
     /// <summary>
     /// How one quest's start is run, from its holds to its record's conclusion: <see cref="RunAsync"/>, unless a
@@ -203,26 +204,6 @@ public sealed class Driver(
     /// </summary>
     public string? ConfigPath { get; init; }
 
-    /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
-    public const string LostClaim =
-        "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
-        + "session's take is a conflict on the quest and its work would double someone else's.";
-
-    /// <summary><see cref="LostClaim"/> with its code (LANG1a).</summary>
-    public static Noted LostClaimNoted => Noted.Of(NoteCodes.EndedLostClaim, LostClaim);
-
-    /// <summary>
-    /// What a session whose take lost to the person's reopen of the work its step grew from is told (FABRIC-CLOSE1c18): the claim's
-    /// answer says so beside the lost claim, and no other machine took anything first.
-    /// </summary>
-    public const string LostClaimToReopen =
-        "stopped by this machine's driver: you reopened the work this session's step grew from, and that reached the remote before this "
-        + "session's take did, so the take is a conflict on the quest. Its work stays in its tree; the step is open again for the work as "
-        + "it stands now.";
-
-    /// <summary><see cref="LostClaimToReopen"/> with its code.</summary>
-    public static Noted LostClaimToReopenNoted => Noted.Of(NoteCodes.EndedLostClaimReopened, LostClaimToReopen);
-
     /// <summary>
     /// What a carry-on of a stood-down session whose lost take the person brought forward is told of the session before it (SYNCMERGE1b,
     /// D178 point 3), in place of that record's stop, which said its work would double someone else's: the quest is this machine's again,
@@ -272,6 +253,39 @@ public sealed class Driver(
     /// unless the watch hands a wake's <see cref="LookPart.Plan"/>, which leaves the remote sync to the <c>look</c> topic's deadline.
     /// </summary>
     public LookPart Part { get; init; } = LookPart.Look;
+
+    /// <summary>
+    /// The look's passes, registered by their modules (<see cref="LookPassAttribute"/>), ordered once per process and built once per
+    /// driver with this driver as their wiring; each phase's run at its anchor in <see cref="LookAsync"/>.
+    /// </summary>
+    internal PartSet<ILookPass> LookPasses =>
+        LazyInitializer.EnsureInitialized(ref _lookPasses, () => Parts.Build(LookOrder.Value, type => (ILookPass)Activator.CreateInstance(type, this)!));
+
+    private PartSet<ILookPass>? _lookPasses;
+
+    private static readonly Lazy<IReadOnlyList<PartDeclaration>> LookOrder = new(() => Parts.Declared<LookPassAttribute>(typeof(Driver).Assembly));
+
+    string ILookWiring.Home => home;
+
+    DriverConfig ILookWiring.Config => config;
+
+    ServiceClient ILookWiring.Service => service;
+
+    RemoteSyncSet? ILookWiring.Sync => sync;
+
+    RunningSessions ILookWiring.Runs => Context.Runs;
+
+    SessionProcesses ILookWiring.Processes => Context.Processes;
+
+    LookSaid ILookWiring.Lines => Lines;
+
+    bool ILookWiring.Beside => Context.Beside;
+
+    Func<string, Noted, bool>? ILookWiring.Stops => Stops;
+
+    SessionOutput? ILandingWiring.Output => output;
+
+    HookSet? ILandingWiring.Hooks => Context.Hooks;
 
     /// <summary>
     /// Told a run a start found bound already, to a named workflow (FABRIC-CUTOVER1c; the cutover design §3): where it is a graph run whose record
@@ -1021,25 +1035,10 @@ public sealed class Driver(
         // FOUNDATION1 z-v: the notices' file moves into the store the same way, and stays as the backup.
         Notices.ImportFile(home);
 
-        // The sync runs BESIDE the sessions, not only around them (D68 §6): every whole look syncs, and a whole look comes
-        // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
-        // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
-        // An unconfirmed take keeps working. A wake's plan does neither (FABRIC-EVENT3a): the claims it would ask after move
-        // only when the sync runs, so both wait for the `look` topic's deadline, and a wake costs the remote nothing.
-        // PARALLEL1b (D181 point 3): under the watch the sync runs beside the look, on its own task, so a remote that does not answer
-        // holds that pass and no local start; this look plans over what the last pass brought, and the change stream wakes the plan
-        // that reads what this one brings. The stop stays the look's, so a stop a look made is said with it: at every whole look, and
-        // at the first look after a pass beside ended while a session here held a quest. Both are `|`, so a whole look takes the due.
-        if (Part == LookPart.Look)
-        {
-            if (Wanted is not null) SyncBeside(ct);
-            else await SyncAsync(events, ct).ConfigureAwait(false);
-        }
-
-        if (sync is not null && (Part == LookPart.Look | Context.Runs.TakeClaimsDue()))
-        {
-            await Stages.TimeAsync("claims", () => StopLostClaimsAsync(events, ct)).ConfigureAwait(false);
-        }
+        // The look's registered passes run at their phase's anchor, in their order; the code that has not moved into a pass runs
+        // between the anchors.
+        var round = new LookRound(Part, events);
+        foreach (var pass in LookPasses.In(LookPhase.Before)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process
@@ -1376,8 +1375,7 @@ public sealed class Driver(
 
         await Stages.TimeAsync("endings", () => EndingsAsync(events, concluded, ct)).ConfigureAwait(false);
 
-        // A run's `land` is the runtime's; the look only settles the deliveries a stopped run left unresolved.
-        await Stages.TimeAsync("landing", () => SettleAsync(events, ct)).ConfigureAwait(false);
+        foreach (var pass in LookPasses.In(LookPhase.After)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt, signedOutAt), events, progressed, snapshot.Active, concluded)
         {
@@ -1631,46 +1629,6 @@ public sealed class Driver(
             [.. held.SelectMany(each => each.Came?.SignedOut?.Accounts ?? []).Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
-    /// <summary>Whether this loop settled the deliveries a stopped run left unresolved (LANDNODE1c3), once, at its first landing look.</summary>
-    private bool _deliveriesSettled;
-
-    /// <summary>
-    /// A restart settles by phase, before any new start (LANDNODE1c3; the land node design §3): every delivery left unresolved, once, by the
-    /// lease's holder, its plugin phases through the landing's plugins. What is held for the person, or could not be read, is said; a
-    /// delivery settled or going on says nothing, since its unit's next landing goes on from it.
-    /// </summary>
-    private async Task SettleDeliveriesAsync(IWorkplacePluginWire plugins, List<string> events, CancellationToken ct)
-    {
-        if (_deliveriesSettled) return;
-        _deliveriesSettled = true;
-        var store = new DeliveryStore(home);
-        foreach (var settled in await DeliveryReconciler.Of(store, home, plugins, DeliveryReconciler.Checkouts(home)).StartAsync(ct).ConfigureAwait(false))
-        {
-            if (settled.Standing is DeliveryStandings.Unknown or DeliveryStandings.Held) events.Add(Lines.Retry("landing", $"landing  {settled.Said}"));
-        }
-    }
-
-    /// <summary>
-    /// The deliveries a stopped run left unresolved, settled by the process holding the home's lease, as only it lands, and never while an
-    /// update drains (DRAINHOLD1). A delivery that could not be read is said, and settled at the next look.
-    /// </summary>
-    private async Task SettleAsync(List<string> events, CancellationToken ct)
-    {
-        if (!HomeLease.HeldHere(home) || config.Draining) return;
-        try
-        {
-            // A plugin says its lines on the console under its name, as at a press (D100), and what it did is logged where the loop's hooks are.
-            var plugins = new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log);
-            await SettleDeliveriesAsync(plugins, events, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
-                                          or UnauthorizedAccessException)
-        {
-            events.Add(Lines.Retry(
-                "landing", $"landing  the deliveries left unresolved could not be settled this look, and are settled at the next: {error.Message}"));
-        }
-    }
-
     /// <summary>
     /// A driven record that just concluded: a done whose rule reads it is owed a second opinion, which a later look asks (XAGENT1f, the
     /// second-agent design §2.1). Never a reason to fail the run: the record has concluded.
@@ -1752,54 +1710,6 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// The sync, once, with what it said added to <paramref name="events"/>. It runs before a look's snapshot,
-    /// so the look plans over what the team has done (D68). Its failure is an event, never a dead look: the
-    /// next retries, and every verb has already committed here — but a sync dying quietly looks exactly like
-    /// a family with nothing to say, so the wall is named.
-    /// </summary>
-    /// <param name="beside">Whether it runs beside the look (<see cref="SyncBeside"/>), for its stage's mark (LOOKWAIT1).</param>
-    private async Task SyncAsync(List<string> events, CancellationToken ct, bool beside = false)
-    {
-        if (sync is null) return;
-        SyncReport synced;
-        using (var syncing = Stages.Begin("sync", beside: beside))
-        {
-            // Its gate's queue, and its git's waits for a place (LOOKWAIT1b), said as one.
-            synced = await syncing.RunAsync(() => sync.RunOnceAsync(ct)).ConfigureAwait(false);
-            syncing.Queued(synced.Queued);
-        }
-
-        lock (events)
-        {
-            if (synced.Problem is not null)
-            {
-                events.Add(Lines.Retry("sync", $"sync  {synced.Problem}"));
-            }
-
-            // What the remote understood and deliberately did not take (D48 §6) — a stale or
-            // branch feed, a quest it would not keep, a move that lost to another machine's.
-            // Reported as its own kind of line: each is news about the family, not a fault here.
-            foreach (var note in synced.Notes) events.Add(Lines.Progress("sync", $"held  {note}"));
-        }
-    }
-
-    /// <summary>
-    /// The sync, run beside the look on the running set's own task (PARALLEL1b, D181 point 3): what it says joins a later look's report,
-    /// one pass at a time, and one asked for while a pass works follows it once. The lost-claim stop after it is the next look's
-    /// (<see cref="RunningSessions.TakeClaimsDue"/>), so a stop is still said by the look that made it.
-    /// </summary>
-    private void SyncBeside(CancellationToken ct)
-    {
-        if (sync is null) return;
-        Context.Runs.SyncBeside(async token =>
-        {
-            var said = new List<string>();
-            await SyncAsync(said, token, beside: true).ConfigureAwait(false);
-            return said;
-        }, ct);
-    }
-
-    /// <summary>
     /// What ended since the last look, into the report (DEV3): each run's line and what it ended as, then
     /// everything that ended told to the plugins that listen, then one more sync.
     /// </summary>
@@ -1837,65 +1747,16 @@ public sealed class Driver(
             }
         }
 
-        // Under the watch, beside the look (PARALLEL1b): the report after it carries what the sync said.
+        // Under the watch, beside the look: the report after it carries what the sync said.
         if (concluded.Count == 0) return;
-        if (Wanted is not null) SyncBeside(ct);
-        else await SyncAsync(events, ct).ConfigureAwait(false);
+        await LookPasses.Of<LookSync>().SyncAsync(events, ct).ConfigureAwait(false);
     }
-
-    /// <summary>
-    /// Stop every session this driver is running whose take LOST (D68 §5) — found by asking this
-    /// machine's host where its claim on the session's quest stands. A driver stops only its own
-    /// processes (D47 §6), and the record says why, not that the person did.
-    /// </summary>
-    /// <remarks>
-    /// Once each (DEV3b): a session already stopped for its lost take is still running until it has written how it ended, and
-    /// a pass in between asked again and said a second stop.
-    /// </remarks>
-    private async Task StopLostClaimsAsync(List<string> events, CancellationToken ct)
-    {
-        // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
-        // question alone, not every session's after it until the client gives up on it.
-        await Parallel.ForEachAsync(
-            Context.Runs.Live.ToArray(), new ParallelOptions { MaxDegreeOfParallelism = ClaimsAtOnce, CancellationToken = ct },
-            async (live, token) =>
-            {
-                var (quest, session) = (live.Key, live.Value);
-                string claim;
-                string? why;
-                try
-                {
-                    (claim, why) = await service.ClaimStandingAsync(quest, token).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
-                                                  // The client's own timeout (DEV3a): a host that took the question and stalled.
-                                                  || (error is OperationCanceledException && !ct.IsCancellationRequested))
-                {
-                    return; // The host did not answer; the next pass asks again.
-                }
-
-                // FABRIC-CLOSE1c18: a take lost to the person's reopen is stopped alike, and said as that, never as another machine's take.
-                var reopened = why == "source-reopened";
-                if (claim == "lost" && (Stops ?? StopForLostClaim)(session, reopened ? LostClaimToReopenNoted : LostClaimNoted))
-                {
-                    var news = new LookNews(reopened ? LookSaid.LostToReopen : LookSaid.LostClaim, session, session, quest);
-                    lock (events) events.Add(Lines.News("stop", news, $"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}"));
-                }
-            }).ConfigureAwait(false);
-    }
-
-    /// <summary>How many claim questions the lost-claim stop asks this machine's host together (PARALLEL1b): local, and each one small.</summary>
-    internal const int ClaimsAtOnce = 4;
 
     /// <summary>
     /// How many endings the plugins hear at once beside the looks (PARALLEL1b; a topic bounded, the events design §A3): one slow answer
     /// holds its own ending, and a burst of endings reaches each plugin's one process two requests at a time, never all at once.
     /// </summary>
     internal const int HooksAtOnce = 2;
-
-    /// <summary>The process's stop, unless the driver already stopped it for its reason: true only when it stopped it now.</summary>
-    private bool StopForLostClaim(string session, Noted reason) =>
-        Context.Processes.StopReason(session) is null && Context.Processes.Stop(session, reason);
 
     /// <summary>
     /// Look until nothing runs and a look starts nothing — the deterministic mode a gate drives (D115 §3.1):
@@ -2040,8 +1901,8 @@ public sealed class Driver(
                     lock (pending) pending.AddRange(LookIn(Lines));
                     if (sync is not null)
                     {
-                        await SyncAsync(pending, ct).ConfigureAwait(false);
-                        await StopLostClaimsAsync(pending, ct).ConfigureAwait(false);
+                        await LookPasses.Of<LookSync>().OnceAsync(pending, ct).ConfigureAwait(false);
+                        await LookPasses.Of<LostClaimStop>().StopAsync(pending, ct).ConfigureAwait(false);
                     }
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)

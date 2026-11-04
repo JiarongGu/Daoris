@@ -123,8 +123,8 @@ public sealed class NoteSitesTests
         Assert.Equal(30, Observation.TimedOut(30).Parts[0].Value("minutes"));
         Line(Observation.Stopped, "the person stopped it.", "ended.stopped");
         Line(Observation.DriverClosed, "the driver was stopped while this ran; the session's process was ended with it.", "ended.driver-closed");
-        Line(Daoris.Driver.Driver.LostClaimNoted, Daoris.Driver.Driver.LostClaim, "ended.lost-claim");
-        Line(Daoris.Driver.Driver.LostClaimToReopenNoted, Daoris.Driver.Driver.LostClaimToReopen, "ended.lost-claim-reopened");
+        Line(LostClaimStop.LostClaimNoted, LostClaimStop.LostClaim, "ended.lost-claim");
+        Line(LostClaimStop.LostClaimToReopenNoted, LostClaimStop.LostClaimToReopen, "ended.lost-claim-reopened");
 
         // An exception's message is a program's words, shown as written: no code re-authors it (the design §2).
         var failed = Observation.Failure("the service refused moving session `s1` to working");
@@ -422,7 +422,7 @@ public sealed class NoteSitesTests
     [Fact]
     public void A_bring_forward_s_carry_on_says_the_press_never_a_cut_off()
     {
-        var lost = new PriorSession("s0", "/t", "stood-down", Daoris.Driver.Driver.LostClaim);
+        var lost = new PriorSession("s0", "/t", "stood-down", LostClaimStop.LostClaim);
 
         var carried = Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, lost, null, false, null, broughtForward: true)!;
 
