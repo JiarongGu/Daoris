@@ -4,23 +4,16 @@ import type { GitLogCommit, GitRepositoryBranches } from '../bridge/repositories
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
-import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
-  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE,
-  SETUP_DEFAULTS, SETUP_INTEGRATING, SETUP_OWN, SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
+  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './git/RepositoryGit';
-import type { RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab } from './tabs';
 
 // A repository's page (FRAME1e, D118 §2) in Repositories' main area: its Details tab (adopted, driven here, held, with its
 // line, with unlanded branches, a teammate's with no checkout here, one that declared nothing, one not adopted with a root
-// here and on a direct door, one not adopted with none, a browser's, a 中文 name) and since UX6f (D150 §4.2) its Setup tab,
-// each section folded to what Daoris decides and open: Driving, Line and landing, Sessions, Reach, the person's own values, narrow and
-// in 中文; since WORKFLOW1b its Workflow tab, with everything at once, nothing set, a limit, in 中文, narrow and in a browser;
-// since DOORS1b its process on Setup (Commits and Helpers, the landing's ticket key and squash), from above, its own, narrow
-// and in 中文;
+// here, one not adopted with none, a browser's, a 中文 name);
 // since UX6h1 (§4.4) its Branches and History tabs, each reading, with no checkout here, refused, with nothing yet and read,
 // History's lanes for a merged branch and for several, dark, in 中文 and narrow; since UX6h2a Branches by kind, its line's
 // and its landed branches' other standings with origin, its session records unread, dark and narrow; and the main area with
@@ -115,9 +108,6 @@ const meta: Meta<typeof Tabbed> = {
     line: { ...LINE, branch: 'main', source: 'workspace' },
     here: true,
     drivable: true,
-    setup: SETUP_DEFAULTS,
-    // How its work moves (WORKFLOW1b): a shell's, beside its Setup.
-    workflow: { current: FULL, doors: { workspaceSetup: nothing } },
     // Its branches and its line's history (UX6h1): a shell's, as Git's reads answer them.
     branches: branchesRead({ state: 'read', value: GIT_BRANCHES_ENGINE }),
     history: lineHistory(GIT_HISTORY_ENGINE),
@@ -131,9 +121,6 @@ export default meta;
 
 type Story = StoryObj<typeof Tabbed>;
 
-/** Setup with one section asked open, as the line's door opens Line and landing. */
-const opened = (open: RepositorySetupProps['open'], setup: RepositorySetupProps = SETUP_DEFAULTS): RepositorySetupProps => ({ ...setup, open });
-
 /**
  * Adopted, on Details: its summary as its one line, *Open code map* and *Manage* in its header; what the index holds and
  * the commit it was fed from, its workspace, its line read-only with its door to Setup, and its declaration as chips.
@@ -141,7 +128,7 @@ const opened = (open: RepositorySetupProps['open'], setup: RepositorySetupProps 
 export const Adopted: Story = {};
 
 /** Held by the person: *held* outranks *drives here*, which it suspends; the hold is lifted on Setup. */
-export const Held: Story = { args: { held: true, setup: { ...SETUP_DEFAULTS, driving: { ...SETUP_DEFAULTS.driving!, held: true } } } };
+export const Held: Story = { args: { held: true } };
 
 /** Its own line (WSR2): the branch its work grows from and lands on, and that it was set for this repository. */
 export const WithALine: Story = { args: { line: LINE } };
@@ -151,7 +138,7 @@ export const UnlandedBranches: Story = { args: { line: LINE, unlanded: 2 } };
 
 /** A teammate's registration with no checkout here: *not on this machine*, and nothing printed of anyone's path. */
 export const NoRootHere: Story = {
-  args: { registration: MIRRORED, counts: COUNTS['studio-tools'], here: false, drivable: false, line: null, setup: { ...SETUP_DEFAULTS, driving: null, sessions: null } },
+  args: { registration: MIRRORED, counts: COUNTS['studio-tools'], here: false, drivable: false, line: null },
 };
 
 /** Adopted, and declared nothing: the warning that an asker would be guessing (D34). */
@@ -166,63 +153,18 @@ export const AnotherAdopter: Story = { args: { registration: GAME, counts: COUNT
  */
 export const NotAdopted: Story = { args: { registration: NEWBIE, counts: COUNTS.newbie, drivable: false, onManage: undefined } };
 
-/** Not adopted, on a machine whose door is direct: its Driving says a quest there sits. */
-export const NotAdoptedOnADirectDoor: Story = {
-  args: {
-    registration: NEWBIE, counts: COUNTS.newbie, drivable: false, onManage: undefined, start: 'setup',
-    setup: opened('driving', {
-      ...SETUP_DEFAULTS,
-      driving: {
-        ...SETUP_DEFAULTS.driving!, drivable: false, ownTree: false,
-        note: 'This machine drives on a direct agent, so a quest here sits, saying why, until it drives on a protocol one.',
-      },
-    }),
-  },
-};
-
-/** Not adopted, with no root here: nowhere to start it, so its Setup has no Driving and no Sessions. */
+/** Not adopted, with no root here: nowhere to start it. */
 export const NotAdoptedNoRoot: Story = {
-  args: {
-    registration: ELSEWHERE, counts: undefined, here: false, drivable: false, onManage: undefined, line: null, start: 'setup',
-    setup: { ...SETUP_DEFAULTS, driving: null, sessions: null },
-  },
+  args: { registration: ELSEWHERE, counts: undefined, here: false, drivable: false, onManage: undefined, line: null },
 };
 
 /** A browser's page: Details alone, no tab row, no *Manage* and no setting, which only a shell's driver says (D47 §4). */
 export const InABrowser: Story = {
   args: {
-    here: undefined, drivable: undefined, line: undefined, setup: null, workflow: null, branches: undefined, history: undefined,
+    here: undefined, drivable: undefined, line: undefined, branches: undefined, history: undefined,
     onManage: undefined,
   },
 };
-
-/**
- * **Workflow** (WORKFLOW1b, the workflow design §6.1, §6.2): how its work moves, drawn from its rules as they stand, between
- * Details and Setup. Everything at once: a plugin that may hold a start, its standing answer, its workspace's second opinion,
- * its own look in `dev`, an automatic landing on a branch and the pull request the person merges.
- */
-export const Workflow: Story = { args: { start: 'workflow' } };
-
-/** Its Workflow with nothing set anywhere: the work, then a merge the person accepts, by Daoris's default. */
-export const WorkflowNothingSet: Story = { args: { start: 'workflow', workflow: { current: NOTHING_SET } } };
-
-/** Its Workflow with a limit: the branch rule's plugin is not on this machine, said whole on both steps it reaches. */
-export const WorkflowWithALimit: Story = { args: { start: 'workflow', workflow: { current: PLUGIN_UNREADY } } };
-
-/** Its Workflow in 中文. */
-export const WorkflowChinese: Story = { args: { start: 'workflow' }, decorators: [chinese] };
-
-/** Its Workflow, narrow: the list a strip and the side bar closed, each step's words wrapping under its title. */
-export const WorkflowNarrow: Story = { args: { start: 'workflow' }, decorators: [narrow] };
-
-/** Its Workflow at a 680 px window, the list a strip beside it. */
-export const WorkflowHalf: Story = { args: { start: 'workflow' }, decorators: [storyWidths.half] };
-
-/**
- * **The bundle without a shell** (D47 §4, the workflow design §6.1): a browser's page remembered at Workflow is Details
- * alone, with no tab row, since a repository's workflows are this machine's.
- */
-export const WorkflowInABrowser: Story = { args: { ...InABrowser.args, start: 'workflow' } };
 
 /**
  * **Branches** (UX6h1, D150 §4.2, §4.4; by kind since UX6h2a, the built-in Git design §2.2): its line at the head, set for
@@ -410,195 +352,6 @@ export const HistoryInABrowser: Story = { args: { ...InABrowser.args, start: 'hi
 
 /** A name in 中文: the title and the summary are content, shown as they are. */
 export const ChineseName: Story = { args: { registration: CJK, counts: COUNTS['渲染管线'] } };
-
-/**
- * **Setup, as Daoris decides it** (UX6f): every section folded to a line naming its values, each at its workspace's or
- * Daoris's default marked as such.
- */
-export const SetupFolded: Story = { args: { start: 'setup' } };
-
-/** Setup's Driving open: drive, hold and a tree per session, each its terminal twin. */
-export const SetupDriving: Story = { args: { start: 'setup', setup: opened('driving') } };
-
-/** Setup's Line and landing open: its line its workspace's and its landing Daoris's, each offering *Set for this repository*. */
-export const SetupWork: Story = { args: { start: 'setup', setup: opened('work') } };
-
-/** Setup's Sessions open: no session language and no standing answer yet. */
-export const SetupSessions: Story = { args: { start: 'setup', setup: opened('sessions') } };
-
-/** Setup's Reach open: read by agents outside it, writing into nothing else, and no rule of its own. */
-export const SetupReach: Story = { args: { start: 'setup', setup: opened('reach') } };
-
-// GITAPP2b (D204, the git-writes design §2): Reach's switch *Daoris may change this checkout's files*, off, and on with the sessions that
-// already run in the checkout named; at the main area's three widths in English and 中文, in both themes.
-const withSwitch = (on: boolean, running: number | null): RepositorySetupProps =>
-  opened('reach', { ...SETUP_DEFAULTS, reach: { ...SETUP_DEFAULTS.reach, checkout: { on, running, onChange: nothing } } });
-
-/** Reach with the switch off, as it is by default: the row says why it matters in its tip, and names nothing of sessions. */
-export const SetupCheckoutOff: Story = { args: { start: 'setup', setup: withSwitch(false, 2) } };
-
-/** The switch on: Reach opens on its own and names the two sessions that already run in this checkout. */
-export const SetupCheckoutOn: Story = { args: { start: 'setup', setup: withSwitch(true, 2) } };
-
-/** On, with no session running in the checkout. */
-export const SetupCheckoutOnNone: Story = { args: { start: 'setup', setup: withSwitch(true, 0) } };
-
-/** On, with the sessions unread: it says it does not know. */
-export const SetupCheckoutOnUnread: Story = { args: { start: 'setup', setup: withSwitch(true, null) } };
-
-export const SetupCheckoutOnChinese: Story = { ...SetupCheckoutOn, decorators: [chinese] };
-export const SetupCheckoutOnDark: Story = { ...SetupCheckoutOn, decorators: [dark] };
-export const SetupCheckoutOnHalf: Story = { ...SetupCheckoutOn, decorators: [storyWidths.half] };
-export const SetupCheckoutOnHalfChinese: Story = { ...SetupCheckoutOn, decorators: [storyWidths.half, chinese] };
-export const SetupCheckoutOnNarrow: Story = { ...SetupCheckoutOn, decorators: [narrow] };
-export const SetupCheckoutOnNarrowChineseDark: Story = { ...SetupCheckoutOn, decorators: [narrow, chinese, dark] };
-export const SetupCheckoutOffNarrow: Story = { ...SetupCheckoutOff, decorators: [narrow] };
-
-/**
- * Setup's *Heavy gates* (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): this machine's list for it where its own `daoris.gates.json`
- * marks none, open on its own as a list is set, each gate by name with its command and its folder, then *Edit* and *Clear*. Its
- * Save says it landed, so *Edit* shows the list editor whole.
- */
-export const SetupHeavyGates: Story = {
-  args: {
-    start: 'setup',
-    setup: {
-      ...SETUP_DEFAULTS,
-      heavy: {
-        gates: [
-          { name: 'build', run: 'dotnet build -nodeReuse:false' },
-          { name: 'web', run: 'npm test -- --maxWorkers=2', cwd: 'src/web' },
-          { name: 'e2e', run: 'npm run e2e', cwd: 'src/web' },
-        ],
-        onSave: (_gates, answered) => answered.done(),
-      },
-    },
-  },
-};
-
-/**
- * Setup's *Heavy gates* where the repository's own `daoris.gates.json` marks heavy gates (HEAVYRUN1b2c): the section says those are run
- * and this list is not, and its folded line cues it "not used".
- */
-export const SetupHeavyGatesFileWins: Story = {
-  args: {
-    start: 'setup',
-    setup: {
-      ...SETUP_DEFAULTS,
-      heavy: {
-        gates: [{ name: 'build', run: 'dotnet build -nodeReuse:false' }],
-        marks: { marks: true, names: ['web', 'e2e'] },
-        onSave: (_gates, answered) => answered.done(),
-      },
-    },
-  },
-};
-
-/** Setup's *Heavy gates* where its file does not read: the driver's words, "cannot tell", never "marks none". */
-export const SetupHeavyGatesCannotTell: Story = {
-  args: {
-    start: 'setup',
-    setup: {
-      ...SETUP_DEFAULTS,
-      heavy: {
-        gates: [{ name: 'build', run: 'dotnet build -nodeReuse:false' }],
-        marks: { marks: null, names: [], refusal: 'daoris.gates.json is not valid JSON: unexpected end of input.' },
-        onSave: (_gates, answered) => answered.done(),
-      },
-    },
-  },
-};
-
-/**
- * Setup's *Sessions' checks* set to light (FABRIC-PIPELINE1b): its light gates and its heavy gates by name, that an agent taking no rules
- * is told them and refused `run-heavy` rather than refused in its shell, and that nothing runs them after a landing yet.
- */
-export const SetupSessionChecksLight: Story = {
-  args: {
-    start: 'setup',
-    setup: {
-      ...SETUP_DEFAULTS,
-      heavy: {
-        gates: [],
-        marks: { marks: true, names: ['driver', 'web'], light: ['universal', 'code-map', 'orient-index'] },
-        onSave: (_gates, answered) => answered.done(),
-        checks: { set: 'light', onChange: (_checks, answered) => answered.done() },
-      },
-    },
-  },
-};
-
-/** Setup's *Sessions' checks* set to light where the repository marks no heavy gate: its sessions may run every gate; in 中文. */
-export const SetupSessionChecksNoneHeavyChinese: Story = {
-  args: {
-    start: 'setup',
-    setup: {
-      ...opened('heavy'),
-      heavy: {
-        gates: [],
-        marks: { marks: false, names: [], light: ['universal'] },
-        onSave: (_gates, answered) => answered.done(),
-        checks: { set: 'light', onChange: (_checks, answered) => answered.done() },
-      },
-    },
-  },
-  decorators: [chinese],
-};
-
-/** Setup's *Heavy gates* where none is set, folded to its line and offering *Add heavy gates* once opened; narrow, in 中文. */
-export const SetupHeavyGatesNoneChinese: Story = {
-  args: { start: 'setup', setup: { ...opened('heavy'), heavy: { gates: [], onSave: (_gates, answered) => answered.done() } } },
-  decorators: [narrow, chinese],
-};
-
-/**
- * Setup with the person's own values: its line, a branch rule a plugin pushes and accepts automatically, its session
- * language, a standing answer, read by nobody outside it, writing into the game and two rules. Each section holding one
- * opens on its own, with its *Clear*; Driving folds.
- */
-export const SetupOwn: Story = { args: { start: 'setup', setup: { ...SETUP_OWN, onOpenPlugin: () => {} } } };
-
-/** Setup folded, narrow: the list a strip and the side bar closed, a section's line wrapping under its name. */
-export const SetupNarrow: Story = { args: { start: 'setup' }, decorators: [narrow] };
-
-/** The person's own values at a 680 px window, the list a strip beside it. */
-export const SetupOwnHalf: Story = { args: { start: 'setup', setup: SETUP_OWN }, decorators: [storyWidths.half] };
-
-/** The person's own values, narrow: each row stacks below 26 rem (WSR4). */
-export const SetupOwnNarrow: Story = { ...SetupNarrow, args: { start: 'setup', setup: SETUP_OWN } };
-
-/** Setup in 中文: 驱动 · 工作 · 会话 · 边界, each default marked in Chinese. */
-export const SetupChinese: Story = { args: { start: 'setup', setup: SETUP_OWN }, decorators: [chinese] };
-
-/**
- * **Its process** (DOORS1b, D164's amendment point 3): *Commits* on Line and landing at Daoris's default, and *Helpers* on
- * Sessions from its workspace, each with *Set for this repository*; Line and landing open.
- */
-export const SetupProcess: Story = { args: { start: 'setup', setup: opened('work', SETUP_PROCESS) } };
-
-/** Its process with Sessions open: its workspace's helpers rule, two agents in the order they are tried. */
-export const SetupProcessSessions: Story = { args: { start: 'setup', setup: opened('sessions', SETUP_PROCESS) } };
-
-/**
- * Its process set for it: a branch named by the ticket its key finds, squashed to one commit, the key's field and the squash
- * switch under the pattern; each commit waiting for the person's yes under their convention, quoted; no helper offered.
- */
-export const SetupProcessOwn: Story = { args: { start: 'setup', setup: { ...SETUP_PROCESS_OWN, onOpenPlugin: () => {} } } };
-
-/** Its process set for it, narrow: the landing's fields and the commit row's convention wrap under their rows. */
-export const SetupProcessOwnNarrow: Story = { ...SetupNarrow, args: { start: 'setup', setup: SETUP_PROCESS_OWN } };
-
-/** Its process in 中文: 提交方式 and 助手, the convention as written. */
-export const SetupProcessChinese: Story = { args: { start: 'setup', setup: SETUP_PROCESS_OWN }, decorators: [chinese] };
-
-/** Its branch rule integrating into the line (AGENTSPLACE1d): the choices under the row, its words "batch 4, oldest first, gates declared". */
-export const SetupIntegrating: Story = { args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING) } };
-
-/** The integrate form, narrow: the choices wrap under the row. */
-export const SetupIntegratingNarrow: Story = { ...SetupNarrow, args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING) } };
-
-/** The integrate form in 中文. */
-export const SetupIntegratingChinese: Story = { args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING) }, decorators: [chinese] };
 
 /** Nothing chosen: how to choose, and the list's ＋ on a shell. */
 export const NothingChosen: Story = {

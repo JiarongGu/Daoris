@@ -20,12 +20,12 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
     // action's relay (`harness:action`) is no session's, and answers its latest run (SIGNIN1),
     // so a sign-in's panel mounted after its link or its phases began reads them.
     [DriverRoute("TAIL_SESSION", PipeClass.Open)]
-    private object? TailSession(IpcRequest request)
+    private object? TailSession(TailSession read)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = read.Id;
         // Absent means "everything you have": a page opening a drawer has seen nothing, and
         // making it say so explicitly would be ceremony with a wrong default available.
-        var after = Number(request, "after") ?? 0;
+        var after = read.After ?? 0;
         var tail = _loop.Output.Tail(id, after);
         if (tail.Sequence == 0 && _actions.Tail(id, after) is { } relayed) tail = relayed;
         return new
@@ -42,9 +42,9 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
     // the key its console is tailed by over `TAIL_SESSION`. Asked on open and again when a
     // `SESSION_STREAMS` event names the session.
     [DriverRoute("SESSION_STREAMS", PipeClass.Open)]
-    private object? SessionStreams(IpcRequest request)
+    private object? SessionStreams(SessionStreamsRead read)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = read.Id;
         return new
         {
             Session = id,
@@ -63,10 +63,9 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
     [GroundSession("STOP_TASK", "id")]
     [GroundRead("STOP_TASK", nameof(PipeReads.LiveTask))]
     [Says("STOP_TASK", "id:session")]
-    private async Task<object?> StopTaskAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> StopTaskAsync(StopTask press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var key = PayloadHelper.GetRequiredValue<string>(request.Payload, "key");
+        var (id, key) = (press.Id, press.Key);
         var prefix = SessionOutput.Key(id, $"{SessionStreamKind.Task}/");
         if (!key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || key.Length == prefix.Length)
         {

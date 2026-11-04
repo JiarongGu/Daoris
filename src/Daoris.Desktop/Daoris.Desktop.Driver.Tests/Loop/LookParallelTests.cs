@@ -334,7 +334,8 @@ public sealed class LookParallelTests : IDisposable
     {
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _) ?? throw new InvalidOperationException("the home's lease was not taken");
         await using var hooks = new HookSet(_home, say: (_, _) => { });
-        var (watch, runs) = Watch(hooks: hooks, cycle: Cycle, log: new MachineLog(_home, "driver"));
+        BindARun();
+        var (watch, runs) = Watch(hooks: hooks, log: new MachineLog(_home, "driver"));
         var reports = new List<TickReport>();
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -384,13 +385,12 @@ public sealed class LookParallelTests : IDisposable
         }
     }
 
-    /// <summary>A work cycle naming a plugin's performed step on <c>engine</c>'s quests, which arms the loop's evaluation runtime.</summary>
-    private const string Cycle = """
-        "workCycles": { "engine": { "quest": {
-            "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }],
-            "wires": [] } } },
-        """;
+    /// <summary>A run of <c>engine</c> bound to a saved graph version, which arms the loop's evaluation runtime.</summary>
+    private void BindARun() => RunHome.Bind(_home, "q7", RunHome.SaveGraph(_home, """
+        {"schemaVersion":2,"entries":["claimed"],"end":"land",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"a","kind":"after","from":"claimed","to":"land"}]}
+        """), DateTimeOffset.UtcNow);
 
     /// <summary>Each <c>watch.looked</c> line's stages, as the machine log holds them.</summary>
     private string[] Looked()
@@ -409,12 +409,11 @@ public sealed class LookParallelTests : IDisposable
     }
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(
-        RemoteSyncSet? sync = null, int cap = 3, int pollSeconds = 60, StartGate? gate = null, HookSet? hooks = null, string cycle = "",
-        MachineLog? log = null)
+        RemoteSyncSet? sync = null, int cap = 3, int pollSeconds = 60, StartGate? gate = null, HookSet? hooks = null, MachineLog? log = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
-            { {{cycle}} "drivable": ["engine", "tools", "docs"], "adapter": "stub", "cap": {{cap}}, "pollSeconds": {{pollSeconds}}, "trees": ["engine", "tools", "docs"] }
+            { "drivable": ["engine", "tools", "docs"], "adapter": "stub", "cap": {{cap}}, "pollSeconds": {{pollSeconds}}, "trees": ["engine", "tools", "docs"] }
             """);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);

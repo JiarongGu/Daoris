@@ -36,13 +36,13 @@ public sealed class NodeWakesTests : IDisposable
     public async Task A_nodes_wake_runs_the_runtimes_pass_and_no_plan()
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        // A work cycle naming a plugin's performed step arms the runtime; no plugin declares it here, so nothing is ever sent.
-        File.WriteAllText(config, """
-            { "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": 600, "trees": ["engine"],
-              "workCycles": { "engine": { "quest": {
-                "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-                "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }], "wires": [] } } } }
-            """);
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": 600, "trees": ["engine"] }""");
+        // A run bound to a saved graph version arms the runtime; no plugin declares a step of it here, so nothing is ever sent.
+        RunHome.Bind(_home, "q7", RunHome.SaveGraph(_home, """
+            {"schemaVersion":2,"entries":["claimed"],"end":"land",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
+             "wires":[{"id":"a","kind":"after","from":"claimed","to":"land"}]}
+            """), DateTimeOffset.UtcNow);
         await using var hooks = new HookSet(_home, say: (_, _) => { });
         int looks;
         using (var log = new MachineLog(_home, "driver"))

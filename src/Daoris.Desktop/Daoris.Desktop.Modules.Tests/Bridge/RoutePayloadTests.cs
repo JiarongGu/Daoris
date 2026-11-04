@@ -52,4 +52,35 @@ public sealed class RoutePayloadTests
     [Fact]
     public void A_field_of_a_type_no_payload_reads_is_refused_when_the_record_is_first_read() =>
         Assert.Contains("Unread.At", Assert.Throws<InvalidOperationException>(() => RoutePayload.Reader<Unread>()).Message);
+
+    public sealed record Row(string Id, string? Tree);
+
+    public sealed record Shaped(JsonElement? Policy, JsonElement? Graph, IReadOnlyList<Row>? Rows);
+
+    [Fact]
+    public void A_json_field_is_the_value_as_sent_and_null_only_where_absent()
+    {
+        var read = RoutePayload.Reader<Shaped>();
+
+        var sent = read(Request("""{ "policy": null, "graph": { "nodes": [] } }"""));
+        var absent = read(Request("""{ }"""));
+
+        Assert.Equal(JsonValueKind.Null, sent.Policy!.Value.ValueKind);
+        Assert.Equal("""{ "nodes": [] }""", sent.Graph!.Value.GetRawText());
+        Assert.Null(absent.Policy);
+        Assert.Equal(PayloadRead.Json, RoutePayload.Fields(typeof(Shaped))[0].Read);
+    }
+
+    [Fact]
+    public void A_list_of_records_reads_each_object_by_the_same_rules_and_leaves_out_an_item_of_another_kind()
+    {
+        var read = RoutePayload.Reader<Shaped>();
+
+        var rows = read(Request("""{ "rows": [{ "id": "s1", "tree": "a" }, 3, { "id": "s2", "tree": "" }] }""")).Rows!;
+
+        Assert.Equal([new Row("s1", "a"), new Row("s2", null)], rows);
+        Assert.Null(read(Request("""{ "rows": "none" }""")).Rows);
+        Assert.Equal(IpcErrorCodes.MissingPayloadValue,
+            Assert.Throws<ShenoraException>(() => read(Request("""{ "rows": [{ "tree": "a" }] }"""))).Code);
+    }
 }

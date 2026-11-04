@@ -82,14 +82,12 @@ public sealed record NotePart
     /// </summary>
     public static IReadOnlyList<NotePart>? Read(JsonElement record, string name = "noteParts")
     {
-        if (record.ValueKind != JsonValueKind.Object || !record.TryGetProperty(name, out var parts)
-            || parts.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        return [.. parts.EnumerateArray().Select(NotePartJson.ReadPart).OfType<NotePart>()];
+        return record.ValueKind == JsonValueKind.Object && record.TryGetProperty(name, out var parts) ? ReadParts(parts) : null;
     }
+
+    /// <summary>The parts as a record's array holds them, read without trusting the shape; null where it is no array.</summary>
+    public static IReadOnlyList<NotePart>? ReadParts(JsonElement parts) =>
+        parts.ValueKind == JsonValueKind.Array ? [.. parts.EnumerateArray().Select(NotePartJson.ReadPart).OfType<NotePart>()] : null;
 }
 
 /// <summary>

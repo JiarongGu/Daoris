@@ -79,7 +79,7 @@ public sealed class StartFromTests : IDisposable
                 asked.Started.Add(repository);
                 asked.Moves.Add(moves);
                 var opened = await client.Opens.OpenAsync(
-                    "/api/sessions/chat", $$"""{"repository":"{{repository}}","adapter":"talk"}""", $"start/{asked.Started.Count}", moves.From,
+                    new Daoris.Contracts.Sessions.OpenChat(repository, "talk", null, null, null), $"start/{asked.Started.Count}", moves.From,
                     ct: token, moves: moves);
                 return new ChatStart(opened.SessionId, opened.Message) { Moves = opened.Moves, Moved = opened.Moved };
             },

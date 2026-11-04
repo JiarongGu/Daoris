@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Daoris.Contracts;
 using Daoris.Contracts.Knowledge;
+using Daoris.Contracts.Sessions;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -138,10 +140,19 @@ public sealed class SessionOpenDoors
     /// is 2 or more and only beside the key; any <c>moves</c> the body carries is never sent. Against an older host the answer's
     /// <see cref="DestinationOpen.Moves"/> is false, and the caller moves the words itself as today.
     /// </param>
-    public async Task<DestinationOpen> OpenAsync(
-        string path, string body, string key, string left, bool retry = false, CancellationToken ct = default, MoveWords? moves = null)
+    public Task<DestinationOpen> OpenAsync(
+        OpenSession open, string key, string left, bool retry = false, CancellationToken ct = default, MoveWords? moves = null) =>
+        OpenAsync((opens, sent) => open with { Opens = opens, Moves = sent }, key, left, retry, ct, moves);
+
+    /// <summary><see cref="OpenAsync(OpenSession, string, string, bool, CancellationToken, MoveWords?)"/> for a chat.</summary>
+    public Task<DestinationOpen> OpenAsync(
+        OpenChat open, string key, string left, bool retry = false, CancellationToken ct = default, MoveWords? moves = null) =>
+        OpenAsync((opens, sent) => open with { Opens = opens, Moves = sent }, key, left, retry, ct, moves);
+
+    private async Task<DestinationOpen> OpenAsync<TOpen>(
+        Func<string?, OpenMovesRequest?, TOpen> make, string key, string left, bool retry, CancellationToken ct, MoveWords? moves)
+        where TOpen : class, IRoute<SessionOpenResponse>
     {
-        if (path is not ("/api/sessions" or "/api/sessions/chat")) throw new ArgumentException("Not a destination open door.", nameof(path));
         await _step.WaitAsync(ct).ConfigureAwait(false);
         try
         {
@@ -151,20 +162,12 @@ public sealed class SessionOpenDoors
             if (retry && _opens == 0) return await HoldAsync(left, ct).ConfigureAwait(false);
             var keyed = _opens >= 1;
             var moving = keyed && _opens >= 2 && moves is not null;
-            var request = ServiceClient.WriteJson(writer =>
-            {
-                using var json = JsonDocument.Parse(body);
-                writer.WriteStartObject();
-                foreach (var field in json.RootElement.EnumerateObject())
-                    if (field.Name is not ("opens" or "moves")) field.WriteTo(writer);
-                if (keyed) writer.WriteString("opens", key);
-                if (moving) WriteMoves(writer, moves!);
-                writer.WriteEndObject();
-            });
+            var request = make(
+                keyed ? key : null, moving ? new OpenMovesRequest(moves!.From, [.. moves.Words], [.. moves.Read]) : null);
             ServiceReply reply;
             try
             {
-                reply = await _service.SendAsync(ServiceVerb.Post, path, request, ct).ConfigureAwait(false);
+                reply = (await _service.SendAsync(request, ct).ConfigureAwait(false)).Reply;
                 using var answer = JsonDocument.Parse(reply.Payload);
                 var root = answer.RootElement;
                 if (root.ValueKind != JsonValueKind.Object) throw new JsonException("The open's answer is not an object.");
@@ -203,19 +206,6 @@ public sealed class SessionOpenDoors
         finally { _step.Release(); }
     }
 
-    private static void WriteMoves(Utf8JsonWriter writer, MoveWords moves)
-    {
-        writer.WriteStartObject("moves");
-        writer.WriteString("from", moves.From);
-        writer.WriteStartArray("words");
-        foreach (var word in moves.Words) writer.WriteStringValue(word);
-        writer.WriteEndArray();
-        writer.WriteStartArray("read");
-        foreach (var word in moves.Read) writer.WriteStringValue(word);
-        writer.WriteEndArray();
-        writer.WriteEndObject();
-    }
-
     /// <summary>
     /// One element of a transfer as the host answers it. An element naming no <c>id</c>, as a host whose mark is below 2 replays a newer
     /// host's receipt, reads as its word's own id, which a moved word keeps; one naming no word, no transfer id or no whole order does not read.
@@ -236,7 +226,7 @@ public sealed class SessionOpenDoors
         var candidates = new List<string>();
         try
         {
-            var reply = await _service.SendAsync(ServiceVerb.Get, "/api/sessions?includeClosed=true", null, ct).ConfigureAwait(false);
+            var reply = (await _service.SendAsync(new ListSessions(IncludeClosed: true), ct).ConfigureAwait(false)).Reply;
             if (reply.Ok)
             {
                 using var json = JsonDocument.Parse(reply.Payload);

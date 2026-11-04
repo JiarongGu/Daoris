@@ -116,7 +116,7 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
                 }
 
                 streams.Open(new SessionStream(work.StreamId, SessionStreamKind.Task, name));
-                say($"→ background: {AcpSession.OneLine(name)}");
+                say($"→ background: {AcpRender.OneLine(name)}");
                 return true;
             }
 
@@ -206,7 +206,7 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
         }
 
         streams.Open(new SessionStream(streamId, SessionStreamKind.Subagent, name));
-        say($"→ subagent: {AcpSession.OneLine(name)}");
+        say($"→ subagent: {AcpRender.OneLine(name)}");
         return child;
     }
 
@@ -263,7 +263,7 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
     {
         streams.End(streamId, state);
         var what = kind == SessionStreamKind.Subagent ? "subagent" : "background";
-        name = AcpSession.OneLine(name);
+        name = AcpRender.OneLine(name);
         say(state switch
         {
             "completed" => $"  ✓ {what}: {name}",

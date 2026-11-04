@@ -285,9 +285,9 @@ export const useSessionWhere = (sessions: readonly Session[] | undefined): Recor
   const queryKey = keys.sessionsWhere(asked.map((session) => session.id));
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld<{ sessions?: ({ session: string } & SessionWhere)[] }>('SESSION_WHERE', client, queryKey, {
+    queryFn: () => askHeld('SESSION_WHERE', client, queryKey, {
       sessions: asked.map((session) => ({ id: session.id, tree: session.tree })),
-    }),
+    }, (answer) => answer as { sessions?: ({ session: string } & SessionWhere)[] }),
     enabled: isAvailable && asked.length > 0,
     staleTime: 60_000,
     refetchOnWindowFocus: false,

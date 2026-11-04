@@ -347,10 +347,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     private static object Refused(string code, string message, IReadOnlyList<WorkflowReach>? reach = null) =>
         new { Done = false, Refused = code, Message = message, Changed = false, Reach = ReachRows(reach ?? []), Start = (object?)null };
 
-    private static JsonNode? NodeOf(IpcRequest request, string name) =>
-        request.Payload is { } payload && payload.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.Array or JsonValueKind.Object
-            ? JsonNode.Parse(value.GetRawText())
-            : null;
+    private static JsonNode? NodeOf(JsonElement? sent) =>
+        sent is { ValueKind: JsonValueKind.Array or JsonValueKind.Object } value ? JsonNode.Parse(value.GetRawText()) : null;
 
     /// <summary>
     /// A version saved: <c>{id}</c> and one of <c>from</c> (a preset, a saved
@@ -367,19 +365,16 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("WORKFLOW_SAVE", "id:form", "from:form", "name:words")]
     [NotAlready("WORKFLOW_SAVE", "adds a version beside the ones kept, or makes a workflow")]
     [Publishes("WORKFLOW_SAVE", StateScopes.Driver)]
-    private async Task<object?> WorkflowSaveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowSaveAsync(WorkflowSavePress press, CancellationToken cancellationToken)
     {
-        var id = Optional(request, "id")?.Trim();
+        var id = press.Id?.Trim();
         if (string.IsNullOrEmpty(id)) throw new DriverException("a workflow is saved under an `id` — name it.");
-        var authorize = request.Payload is { } payload && payload.TryGetProperty("authorize", out var listed) && listed.ValueKind == JsonValueKind.Array
-            ? listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToList()
-            : null;
         var saved = await WorkflowOperations.SaveAsync(
-            DriverConfig.Load(_loop.ConfigPath), _loop.Home, Registry, id, Optional(request, "from"), NodeOf(request, "steps"), NodeOf(request, "graph"),
-            Flag(request, "withOpinion"), Flag(request, "withLook"), Optional(request, "name"),
-            Number(request, "base") is { } baseVersion ? baseVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
-            authorize, Flag(request, "plan"), DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
-            cancellationToken, Optional(request, "updates")).ConfigureAwait(false);
+            DriverConfig.Load(_loop.ConfigPath), _loop.Home, Registry, id, press.From, NodeOf(press.Steps), NodeOf(press.Graph),
+            press.WithOpinion, press.WithLook, press.Name,
+            press.Base is { } baseVersion ? baseVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
+            press.Authorize?.ToList(), press.Plan, DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            cancellationToken, press.Updates).ConfigureAwait(false);
         return new
         {
             saved.Id,

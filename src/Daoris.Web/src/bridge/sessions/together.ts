@@ -19,7 +19,7 @@ export const useTogether = (session: string | null | undefined): TogetherView | 
   const { isAvailable } = useShenora();
   const answer = useQuery({
     queryKey: ['sessions', 'together', session ?? ''],
-    queryFn: () => call<{ operation?: TogetherView | null }>('TOGETHER', { session }),
+    queryFn: () => call('TOGETHER', { session: session ?? '' }) as Promise<{ operation?: TogetherView | null }>,
     enabled: isAvailable && Boolean(session),
     staleTime: 10_000,
   });
@@ -30,11 +30,11 @@ export const useTogether = (session: string | null | undefined): TogetherView | 
 export const useBringTogether = () => useMutation({
   mutationKey: ['TOGETHER_PRESS'],
   mutationFn: async ({ session, members }: { session: string; members: readonly string[] }) =>
-    answerOf(await call<{ operation?: unknown; refused?: unknown } | null>('TOGETHER_PRESS', { session, members: [...members] })),
+    answerOf(await call('TOGETHER_PRESS', { session, members: [...members] }) as { operation?: unknown; refused?: unknown } | null),
 });
 
 /** *Ask again* after a failed check, or *Let them go* before the landing, on the head. */
 export const useTogetherAct = () => useMutation({
   mutationFn: async ({ session, act }: { session: string; act: 'ask-again' | 'let-go' }) =>
-    answerOf(await call<{ done?: unknown; refused?: unknown } | null>(act === 'ask-again' ? 'TOGETHER_ASK_AGAIN' : 'TOGETHER_LET_GO', { session })),
+    answerOf(await call(act === 'ask-again' ? 'TOGETHER_ASK_AGAIN' : 'TOGETHER_LET_GO', { session }) as { done?: unknown; refused?: unknown } | null),
 });

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Daoris.Contracts;
 using Daoris.Contracts.Knowledge;
+using Daoris.Contracts.Sessions;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -297,11 +298,23 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// The session list as the service wrote it, the active records or with <paramref name="includeClosed"/> every one: the text the
+    /// readers below and the snapshot read from. A refused read throws with the service's own sentence.
+    /// </summary>
+    /// <exception cref="DriverException">A refused read.</exception>
+    public async Task<string> SessionsJsonAsync(bool includeClosed, CancellationToken ct = default)
+    {
+        var sent = await SendAsync(new ListSessions(IncludeClosed: includeClosed ? true : null), ct).ConfigureAwait(false);
+        sent.Answered();
+        return sent.Reply.Payload;
+    }
+
+    /// <summary>
     /// How many sessions failed on each quest (DRV6), as <c>SnapshotAsync</c> (the work orders' read of the client) derives them: what a workspace plan reads a
     /// parked set-up by (WSSETUP6), without the rest of a snapshot.
     /// </summary>
     public async Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct = default) =>
-        ReadStrikes(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        ReadStrikes(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
 
     /// <summary>
     /// Every session record this machine keeps, closed ones included, with the repository it ran in: what a workspace plan
@@ -310,7 +323,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<IReadOnlyList<SessionRun>> SessionRunsAsync(CancellationToken ct = default)
     {
-        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        using var document = JsonDocument.Parse(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
         return
         [
             .. document.RootElement.EnumerateArray()
@@ -325,7 +338,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// row never carries); null where the service has none.
     /// </summary>
     public async Task<SessionView?> FindSessionAsync(string id, CancellationToken ct = default) =>
-        ReadSessions(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false))
+        ReadSessions(await SessionsJsonAsync(true, ct).ConfigureAwait(false))
             .FirstOrDefault(session => string.Equals(session.Id, id, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
@@ -334,8 +347,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(RelatedCandidate Mine, IReadOnlyList<RelatedCandidate> Others)?> RelatedCandidatesAsync(string id, CancellationToken ct = default)
     {
-        var all = ReadSessions(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
-        var running = ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false)).Select(s => s.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var all = ReadSessions(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
+        var running = ReadSessions(await SessionsJsonAsync(false, ct).ConfigureAwait(false)).Select(s => s.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var quests = (await this.EveryQuestAsync(ct).ConfigureAwait(false))
             .ToDictionary(quest => quest.Id, quest => quest.Paths, StringComparer.OrdinalIgnoreCase);
         return RelatedCandidates.Pick(all, running, quest => quests.TryGetValue(quest, out var paths) ? paths : [], id, Directory.Exists);
@@ -343,7 +356,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
-        ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+        ReadSessions(await SessionsJsonAsync(false, ct).ConfigureAwait(false));
 
     /// <summary>Where a circle stands on this machine (SYNC6a) — read from its host, without reaching the remote.</summary>
     public async Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default) =>
@@ -355,7 +368,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<bool> TookAsync(string id, CancellationToken ct = default)
     {
-        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        using var document = JsonDocument.Parse(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
         return document.RootElement.EnumerateArray().Any(session =>
             Text(session, "id") == id && session.TryGetProperty("took", out var took) && took.ValueKind == JsonValueKind.True);
     }
@@ -367,7 +380,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<string?> TookBindAsync(string id, CancellationToken ct = default)
     {
-        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        using var document = JsonDocument.Parse(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
         foreach (var session in document.RootElement.EnumerateArray())
         {
             if (Text(session, "id") == id) return Text(session, "tookBind") is { Length: > 0 } why ? why : null;
@@ -384,14 +397,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(bool Kept, string Message)> AddedToSessionAsync(string id, string text, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("text", text);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/added", body, ct)
-            .ConfigureAwait(false);
+        var (ok, status, payload, root) = await SendJsonAsync(new AddToSession(id, text), ct).ConfigureAwait(false);
         if (root is not { } answered)
         {
             return (false, $"the service at {_base} has no door for what the person adds ({status}) — is it older than this driver?");
@@ -434,42 +440,23 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
         // COMMS1e: the person's press names its question, which the host's say door checks.
         var presses = question is { Length: > 0 } && supervised is null;
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            if (supervised is { } release)
-            {
-                writer.WriteString("decision", release.Decision);
-                writer.WriteString("question", release.Question);
-                writer.WriteString("choice", release.Choice);
-            }
-            else
-            {
-                writer.WriteString("text", text);
-            }
-
-            // SESSONE2e: the channel message these words are, which the ask holds already; an older service ignores it.
-            if (channel is { Length: > 0 }) writer.WriteString("channel", channel);
-            if (from is { Length: > 0 }) writer.WriteString("from", from);
-            if (key is { Length: > 0 }) writer.WriteString("key", key);
-            // FOUNDATION1 row p (the design §3.4 rule 5): every keyed say reads a settled answer, the supervisor's release excepted, whose
-            // door reads no settlement. A host before the row ignores the field and answers as it did.
-            if (key is { Length: > 0 } && supervised is null) writer.WriteBoolean("settled", true);
-            if (level is { Length: > 0 }) writer.WriteString("level", level);
-            if (running) writer.WriteBoolean("running", true);
-            if (ending) writer.WriteBoolean("ending", true);
-            if (presses) writer.WriteString("question", question!);
-            if (files is { Count: > 0 })
-            {
-                writer.WriteStartArray("files");
-                foreach (var name in files) writer.WriteStringValue(name);
-                writer.WriteEndArray();
-            }
-
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/say", body, ct)
-            .ConfigureAwait(false);
+        var request = new SaySession(
+            id, supervised is null ? text : null,
+            files is { Count: > 0 } ? files : null,
+            // The channel message these words are, which the ask holds already; an older service ignores it.
+            channel is { Length: > 0 } ? channel : null,
+            from is { Length: > 0 } ? from : null,
+            key is { Length: > 0 } ? key : null,
+            level is { Length: > 0 } ? level : null,
+            running ? true : null,
+            supervised?.Decision,
+            supervised is { } release ? release.Question : presses ? question : null,
+            supervised?.Choice,
+            // Every keyed say reads a settled answer, the supervisor's release excepted, whose door reads no settlement. A host before
+            // the row ignores the field and answers as it did.
+            key is { Length: > 0 } && supervised is null ? true : null,
+            ending ? true : null);
+        var (ok, status, payload, root) = await SendJsonAsync(request, ct).ConfigureAwait(false);
         if (root is not { } answered)
         {
             return new SayAnswer(false, $"the service at {_base} has no door for words to a session that is not running ({status}) — is it older than this driver?");
@@ -508,15 +495,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<TakeBackAnswer> TakeBackAsync(string id, string word, string? text = null, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("word", word);
-            if (text is not null) writer.WriteString("text", text);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/take-back", body, ct)
-            .ConfigureAwait(false);
+        var (ok, status, payload, root) = await SendJsonAsync(new TakeBackSaid(id, word, text), ct).ConfigureAwait(false);
         if (root is not { } answered)
         {
             return new TakeBackAnswer(false, $"the service at {_base} has no door for taking back words a session has not taken ({status}) — is it older than this driver?");
@@ -535,14 +514,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<MoveAnswer> MoveSaidAsync(string id, string word, string? to = null, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("word", word);
-            if (to is { Length: > 0 }) writer.WriteString("to", to);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/move", body, ct).ConfigureAwait(false);
+        var (ok, status, payload, root) = await SendJsonAsync(new MoveSaid(id, word, to is { Length: > 0 } ? to : null), ct).ConfigureAwait(false);
         if (root is not { ValueKind: JsonValueKind.Object } answered)
         {
             return new MoveAnswer(false, $"the service at {_base} has no door for moving words to a session's head ({status}) — is it older than this driver?");
@@ -569,16 +541,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </remarks>
     public async Task<AttemptAnswer> AttemptAsync(string id, IReadOnlyList<string> said, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("said");
-            foreach (var word in said) writer.WriteStringValue(word);
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/attempt", body, ct)
-            .ConfigureAwait(false);
+        var (ok, status, payload, root) = await SendJsonAsync(new AttemptSaid(id, [.. said]), ct).ConfigureAwait(false);
         if (root is not { } answered)
         {
             return new AttemptAnswer(false, $"the service at {_base} has no door for a word's attempt ({status}) — is it older than this driver?", [], said);
@@ -602,17 +565,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<(bool Ok, string Message)> TakenAsync(
         string id, IReadOnlyList<string> said, string? by = null, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("said");
-            foreach (var word in said) writer.WriteStringValue(word);
-            writer.WriteEndArray();
-            if (by is not null) writer.WriteString("by", by);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/taken", body, ct)
-            .ConfigureAwait(false);
+        var (ok, status, payload, root) = await SendJsonAsync(new TakeSaid(id, [.. said], by), ct).ConfigureAwait(false);
         if (root is not { } answered)
         {
             return (false, $"the service at {_base} has no door for the words a session took ({status}) — is it older than this driver?");
@@ -664,8 +617,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
         ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null) =>
         await OpenRecordAsync(
-                "/api/sessions", SessionOpenBody(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access), SessionOpened.Driven,
-                adapter, repository: null, ct, setup)
+                DrivenOpen(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access), opened => (opened.Session, opened.Message),
+                SessionOpened.Driven, adapter, repository: null, ct, setup)
             .ConfigureAwait(false);
 
     /// <summary>
@@ -688,7 +641,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var left = moves?.From ?? from?.Session ?? throw new ArgumentException("A keyed open names the record it continues.", nameof(from));
         var opened = await Opens
             .OpenAsync(
-                "/api/sessions", SessionOpenBody(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access),
+                DrivenOpen(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access),
                 opens ?? moves?.Opens ?? MoveWords.DrivenKey(), left, ct: ct, moves: moves)
             .ConfigureAwait(false);
         if (opened.SessionId is { } id)
@@ -703,49 +656,17 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return opened;
     }
 
-    /// <summary>A driven record's open (D49 §3), as both of its doors send it: every optional field omitted where unknown.</summary>
-    private static string SessionOpenBody(
+    /// <summary>
+    /// A driven record's open, as both of its doors send it. What the harness is, the account, the working tree and where it stood
+    /// are observed on this side before the spawn: the service has no binaries or checkout to look at. The setup it starts under keeps
+    /// the pauses' order, resolved here, which holds the driver's file; <paramref name="from"/> is the session it continues, why and who
+    /// asked, known on this side alone.
+    /// </summary>
+    private static OpenSession DrivenOpen(
         string questId, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         IReadOnlyDictionary<string, string>? access) =>
-        WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("quest", questId);
-            writer.WriteString("actor", "build");
-            writer.WriteString("adapter", adapter);
-            // Observed by this side before the spawn (D49 §4) — the service has no binaries to look
-            // at. Omitted when unknown rather than sent blank, as every optional field here is.
-            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
-            if (profile is not null) writer.WriteString("profile", profile);
-            // Which working tree this spawn will hold (D51). The same split: the service has no
-            // checkout to look at, and this side is about to run a process in one.
-            if (tree is not null) writer.WriteString("tree", tree);
-            // Where that tree stood before the process ran (SURF6) — the range the review is measured
-            // from. Observed here for the same reason as the two above: only this side has a checkout.
-            if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
-            WriteFrom(writer, from);
-            // The setup it starts under (AUTONOMY1a), in the pauses' order: resolved on this side, which holds the driver's file.
-            if (access is { Count: > 0 })
-            {
-                writer.WriteStartObject("access");
-                foreach (var (pause, value) in access) writer.WriteString(pause, value);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndObject();
-        });
-
-    /// <summary>
-    /// The session a new record continues, why and who asked (MIXAGENT1a-iii, D163 point 4): known on this side alone, which ran
-    /// the hand-over or the carry-on. Omitted for none, as every optional field of an open is.
-    /// </summary>
-    private static void WriteFrom(Utf8JsonWriter writer, ContinuedFrom? from)
-    {
-        if (from is null) return;
-        writer.WriteString("from", from.Session);
-        writer.WriteString("fromWhy", from.Why);
-        writer.WriteString("fromBy", from.By);
-    }
+        new(questId, adapter, harnessVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By,
+            access is { Count: > 0 } ? new Dictionary<string, string>(access) : null, "build");
 
     /// <summary>
     /// Ask the ledger to open a CHAT in a repository (D49 §3) — a person's session, serving no quest
@@ -757,8 +678,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         string repository, string adapter, string? harnessVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, ContinuedFrom? from = null) =>
         await OpenRecordAsync(
-                "/api/sessions/chat", ChatOpenBody(repository, adapter, harnessVersion, profile, tree, baseCommit, from), SessionOpened.Chat,
-                adapter, repository, ct)
+                ChatOpen(repository, adapter, harnessVersion, profile, tree, baseCommit, from), opened => (opened.Session, opened.Message),
+                SessionOpened.Chat, adapter, repository, ct)
             .ConfigureAwait(false);
 
     /// <summary>
@@ -774,29 +695,17 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
         var opened = await Opens
             .OpenAsync(
-                "/api/sessions/chat", ChatOpenBody(repository, adapter, harnessVersion, profile, tree, baseCommit, from),
+                ChatOpen(repository, adapter, harnessVersion, profile, tree, baseCommit, from),
                 moves.Opens ?? MoveWords.ChatKey(), moves.From, ct: ct, moves: moves)
             .ConfigureAwait(false);
         if (opened.SessionId is { } id) Raise(Opened, new SessionOpened(id, SessionOpened.Chat, adapter, repository) { Workspace = workspace });
         return opened;
     }
 
-    /// <summary>A chat's open (D49 §3), as both of its doors send it: every optional field omitted where unknown.</summary>
-    private static string ChatOpenBody(
+    /// <summary>A chat's open, as both of its doors send it.</summary>
+    private static OpenChat ChatOpen(
         string repository, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from) =>
-        WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("repository", repository);
-            writer.WriteString("actor", "chat");
-            writer.WriteString("adapter", adapter);
-            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
-            if (profile is not null) writer.WriteString("profile", profile);
-            if (tree is not null) writer.WriteString("tree", tree);
-            if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
-            WriteFrom(writer, from);
-            writer.WriteEndObject();
-        });
+        new(repository, adapter, harnessVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By, "chat");
 
     /// <summary>
     /// Ask the ledger to open an INTAKE for an ask (D65 §1b), in the room this side is about to run it
@@ -806,19 +715,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         string ask, string adapter, string room, string? harnessVersion = null, string? profile = null,
         CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("ask", ask);
-            writer.WriteString("actor", "intake");
-            writer.WriteString("adapter", adapter);
-            writer.WriteString("room", room);
-            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
-            if (profile is not null) writer.WriteString("profile", profile);
-            writer.WriteEndObject();
-        });
-
-        return await OpenRecordAsync("/api/sessions/intake", body, SessionOpened.Intake, adapter, repository: null, ct).ConfigureAwait(false);
+        return await OpenRecordAsync(
+                new OpenIntake(ask, adapter, room, harnessVersion, profile, "intake"), opened => (opened.Session, opened.Message),
+                SessionOpened.Intake, adapter, repository: null, ct)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -837,20 +737,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         string adapter, string room, string? harnessVersion = null, string? profile = null, string? workspace = null,
         string? mode = null, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("adapter", adapter);
-            writer.WriteString("actor", "ask-daoris");
-            writer.WriteString("room", room);
-            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
-            if (profile is not null) writer.WriteString("profile", profile);
-            if (workspace is not null) writer.WriteString("workspace", workspace);
-            if (mode is not null) writer.WriteString("mode", mode);
-            writer.WriteEndObject();
-        });
-
-        return await OpenRecordAsync("/api/sessions/help", body, SessionOpened.Help, adapter, repository: null, ct).ConfigureAwait(false);
+        return await OpenRecordAsync(
+                new OpenHelp(adapter, room, harnessVersion, profile, workspace, mode, "ask-daoris"), opened => (opened.Session, opened.Message),
+                SessionOpened.Help, adapter, repository: null, ct)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -859,15 +749,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task KeepHelpModeAsync(string sessionId, string mode, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("mode", mode);
-            writer.WriteEndObject();
-        });
-
-        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(sessionId)}/help-mode", body, ct)
-            .ConfigureAwait(false);
+        var (ok, _, payload, root) = await SendJsonAsync(new KeepHelpMode(sessionId, mode), ct).ConfigureAwait(false);
         if (!ok)
         {
             throw new DriverException(
@@ -882,17 +764,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task KeepAccessAsync(string sessionId, IReadOnlyDictionary<string, string> access, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartObject("access");
-            foreach (var (pause, value) in access) writer.WriteString(pause, value);
-            writer.WriteEndObject();
-            writer.WriteEndObject();
-        });
-
-        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(sessionId)}/access", body, ct)
-            .ConfigureAwait(false);
+        var (ok, _, payload, root) = await SendJsonAsync(new KeepAccess(sessionId, access), ct).ConfigureAwait(false);
         if (!ok)
         {
             throw new DriverException(
@@ -908,17 +780,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task KeepResolvedAsync(string sessionId, IReadOnlyList<string> versions, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("resolved");
-            foreach (var version in versions) writer.WriteStringValue(version);
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-        });
-
-        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(sessionId)}/resolved", body, ct)
-            .ConfigureAwait(false);
+        var (ok, _, payload, root) = await SendJsonAsync(new KeepResolved(sessionId, [.. versions]), ct).ConfigureAwait(false);
         if (!ok)
         {
             throw new DriverException(
@@ -933,13 +795,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     internal async Task<int> AgeWorkRecordsAsync(DateTimeOffset before, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("before", before.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync("/api/trees/record/age", body, ct).ConfigureAwait(false);
+        var (ok, status, payload, root) = await SendJsonAsync(new AgeWorkRecords(before.UtcDateTime), ct).ConfigureAwait(false);
         if (ok) return root is { } answered && answered.TryGetProperty("cleared", out var cleared) && cleared.TryGetInt32(out var count) ? count : 0;
         if (status == 404) return 0;
         throw new DriverException($"the service refused ageing the finished trees' records: {(root is { } refused ? Text(refused, "error") : null) ?? payload}");
@@ -951,7 +807,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<string?> SessionRecordAsync(string session, CancellationToken ct = default)
     {
-        var answer = await SendAsync(ServiceVerb.Get, $"/api/sessions/{Uri.EscapeDataString(session)}/record", null, ct).ConfigureAwait(false);
+        var answer = (await SendAsync(new ReadSessionRecord(session), ct).ConfigureAwait(false)).Reply;
         if (answer.Ok) return answer.Payload;
         if (answer.Status == 404) return null;
         throw new DriverException($"the service refused reading session `{session}`'s record: {answer.Payload}");
@@ -963,7 +819,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<IReadOnlyList<string>> LineMemoryAsync(string session, CancellationToken ct = default)
     {
-        var answer = await SendAsync(ServiceVerb.Post, $"/api/sessions/{Uri.EscapeDataString(session)}/memory/read", "{}", ct).ConfigureAwait(false);
+        var answer = (await SendAsync(new ReadLineMemory(session), ct).ConfigureAwait(false)).Reply;
         if (answer.Status == 404) return [];
         if (!answer.Ok) throw new DriverException($"the service refused reading the memory session `{session}`'s line read: {answer.Payload}");
         using var document = JsonDocument.Parse(answer.Payload);
@@ -978,7 +834,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<string?> SessionMemoryAsync(string session, CancellationToken ct = default)
     {
-        var answer = await SendAsync(ServiceVerb.Get, $"/api/sessions/{Uri.EscapeDataString(session)}/memory", null, ct).ConfigureAwait(false);
+        var answer = (await SendAsync(new ReadSessionMemory(session), ct).ConfigureAwait(false)).Reply;
         if (answer.Ok) return answer.Payload;
         if (answer.Status == 404) return null;
         throw new DriverException($"the service refused reading session `{session}`'s memory: {answer.Payload}");
@@ -990,7 +846,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<IReadOnlyList<JsonElement>> MemoryWaitsAsync(CancellationToken ct = default)
     {
-        var answer = await SendAsync(ServiceVerb.Get, "/api/memory/waits", null, ct).ConfigureAwait(false);
+        var answer = (await SendAsync(new ListMemoryWaits(), ct).ConfigureAwait(false)).Reply;
         if (answer.Status == 404) return [];
         if (!answer.Ok) throw new DriverException($"the service refused reading the memory waits: {answer.Payload}");
         using var document = JsonDocument.Parse(answer.Payload);
@@ -1005,16 +861,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<(bool Ok, string Message)> DecideMemoryAsync(string session, string? op, bool yes, CancellationToken ct = default)
     {
-        var (path, field) = op is { Length: > 0 }
-            ? ($"/api/memory/{Uri.EscapeDataString(op)}/decide", "approve")
-            : ($"/api/sessions/{Uri.EscapeDataString(session)}/memory", "keep");
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteBoolean(field, yes);
-            writer.WriteEndObject();
-        });
-        var (ok, _, payload, root) = await PostJsonAsync(path, body, ct).ConfigureAwait(false);
+        var (ok, _, payload, root) = op is { Length: > 0 }
+            ? await SendJsonAsync(new DecideMemory(op, yes), ct).ConfigureAwait(false)
+            : await SendJsonAsync(new KeepSessionMemory(session, yes), ct).ConfigureAwait(false);
         var said = root is { ValueKind: JsonValueKind.Object } answered ? Text(answered, ok ? "message" : "error") : null;
         return (ok, said ?? payload);
     }
@@ -1094,7 +943,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         SessionRecords.Parse(await SessionRecordsJsonAsync(ct).ConfigureAwait(false));
 
     /// <summary>The same records as the service wrote them, for a reader that reads the strikes and the last runs from them too.</summary>
-    public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => GetAsync(SessionRecords.Door, ct);
+    public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => SessionsJsonAsync(true, ct);
 
     /// <summary>
     /// One quest's handback as the service wrote it (HANDBACK1, <c>GET /api/handbacks/{id}</c>), by the quest's id or the id of the session
@@ -1117,7 +966,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>
     public Task<SessionDeleteAnswer> JudgeSessionDeleteAsync(string id, CancellationToken ct = default) =>
-        SessionDeleteAsync(ServiceVerb.Get, $"/api/sessions/{Uri.EscapeDataString(id)}/deletable", ct);
+        SessionDeleteAsync(new JudgeSessionDelete(id), ct);
 
     /// <summary>
     /// Delete a session's record (SESSUX1f): the ledger judges it again as it deletes, so a record that moved since is
@@ -1125,10 +974,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>
     public Task<SessionDeleteAnswer> DeleteSessionAsync(string id, CancellationToken ct = default) =>
-        SessionDeleteAsync(ServiceVerb.Delete, $"/api/sessions/{Uri.EscapeDataString(id)}", ct);
+        SessionDeleteAsync(new DeleteSession(id), ct);
 
-    private async Task<SessionDeleteAnswer> SessionDeleteAsync(ServiceVerb verb, string path, CancellationToken ct)
+    private async Task<SessionDeleteAnswer> SessionDeleteAsync<TAnswer>(IRoute<TAnswer> route, CancellationToken ct) where TAnswer : class
     {
+        var (verb, path, _) = RouteRequest.Of(route);
         var answer = await _doors.SendAsync(verb, path, null, ct).ConfigureAwait(false);
         var payload = answer.Payload;
         JsonElement root;
@@ -1195,36 +1045,17 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null)
     {
         var turns = Ending.Contains(state) ? await TurnLinesForAsync(id, ct).ConfigureAwait(false) : null;
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("state", state);
-            if (note is not null) writer.WriteString("note", note);
-            if (note is not null && parts is { Count: > 0 })
-            {
-                writer.WritePropertyName("noteParts");
-                NotePart.Write(writer, parts);
-            }
+        var request = new AdvanceSession(
+            id, state, note, evidence, transcript, interrupted ? true : null, limit ? true : null,
+            note is not null && parts is { Count: > 0 } ? PartsElement(parts) : null,
+            expected, unbindAsk ? true : null, expect is null ? null : [.. expect],
+            turns?.ToDictionary(
+                pair => pair.Key,
+                pair => new MemoryTurnsRequest(
+                    [.. pair.Value.Select(line => new MemoryTurnLine(line.Seq, line.Started, line.Ended, line.Model))], []),
+                StringComparer.Ordinal));
 
-            if (evidence is not null) writer.WriteString("evidence", evidence);
-            if (transcript is not null) writer.WriteString("transcript", transcript);
-            if (interrupted) writer.WriteBoolean("interrupted", true);
-            if (limit) writer.WriteBoolean("limit", true);
-            if (expected is not null) writer.WriteString("expected", expected);
-            if (unbindAsk) writer.WriteBoolean("unbindAsk", true);
-            if (expect is not null)
-            {
-                writer.WriteStartArray("expect");
-                foreach (var word in expect) writer.WriteStringValue(word);
-                writer.WriteEndArray();
-            }
-
-            if (turns is not null) WriteTurns(writer, turns);
-            writer.WriteEndObject();
-        });
-
-        var (ok, _, payload, root) = await PostJsonAsync(
-            $"/api/sessions/{Uri.EscapeDataString(id)}/state", body, ct).ConfigureAwait(false);
+        var (ok, _, payload, root) = await SendJsonAsync(request, ct).ConfigureAwait(false);
 
         if (!ok)
         {
@@ -1271,7 +1102,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var chain = new List<string> { id };
         try
         {
-            var records = ReadRecords(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false));
+            var records = ReadRecords(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
             // A chain longer than any hand-over makes is cut: the lines are evidence, never a reason to fail.
             while (chain.Count < 16 && records.GetValueOrDefault(chain[^1])?.From is { Length: > 0 } from && !chain.Contains(from, StringComparer.OrdinalIgnoreCase))
             {
@@ -1287,30 +1118,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return lines.Count == 0 ? null : lines;
     }
 
-    private static void WriteTurns(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>> turns)
+    /// <summary>The note's parts as the record's JSON spells them, for a route that carries them beside the note.</summary>
+    private static JsonElement PartsElement(IReadOnlyList<NotePart> parts)
     {
-        writer.WriteStartObject("turns");
-        foreach (var (session, lines) in turns)
-        {
-            writer.WriteStartObject(session);
-            writer.WriteStartArray("turns");
-            foreach (var line in lines)
-            {
-                writer.WriteStartObject();
-                writer.WriteNumber("seq", line.Seq);
-                if (line.Started is { } started) writer.WriteString("started", started.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-                writer.WriteString("ended", line.Ended.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-                writer.WriteString("model", line.Model);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
-            writer.WriteStartArray("asked");
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
+        using var document = JsonDocument.Parse(WriteJson(writer => NotePart.Write(writer, parts)));
+        return document.RootElement.Clone();
     }
 
     /// <summary>Move a session's record with a composed note: its English and its parts together (LANG1a).</summary>
@@ -1327,25 +1139,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task RestoreParkAsync(string id, IReadOnlyList<string> takeBack, Noted? noted, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("takeBack");
-            foreach (var word in takeBack) writer.WriteStringValue(word);
-            writer.WriteEndArray();
-            if (noted is { } note)
-            {
-                writer.WriteString("note", note.Note);
-                if (note.Parts is { Count: > 0 })
-                {
-                    writer.WritePropertyName("noteParts");
-                    NotePart.Write(writer, note.Parts);
-                }
-            }
-
-            writer.WriteEndObject();
-        });
-        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/restore", body, ct).ConfigureAwait(false);
+        var (ok, _, payload, root) = await SendJsonAsync(
+            new RestoreSessionPark(
+                id, [.. takeBack], noted?.Note, noted is { Parts: { Count: > 0 } parts } ? PartsElement(parts) : null),
+            ct).ConfigureAwait(false);
         if (!ok)
         {
             throw new DriverException(
@@ -1418,8 +1215,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>The quest a session serves, or null for a conversation's or an intake's (WSR1: what a landing names).</summary>
     public async Task<string?> SessionQuestAsync(string id, CancellationToken ct = default)
     {
-        using var document = JsonDocument.Parse(
-            await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        using var document = JsonDocument.Parse(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
 
         foreach (var session in document.RootElement.EnumerateArray())
         {
@@ -1432,8 +1228,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<(string? Tree, string? BaseCommit)> SessionGroundAsync(
         string id, CancellationToken ct = default)
     {
-        using var document = JsonDocument.Parse(
-            await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        using var document = JsonDocument.Parse(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
 
         foreach (var session in document.RootElement.EnumerateArray())
         {
@@ -1454,41 +1249,29 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </remarks>
     internal static IReadOnlyList<SessionView> ReadSessions(string json)
     {
-        using var document = JsonDocument.Parse(json);
         var sessions = new List<SessionView>();
-        foreach (var session in document.RootElement.EnumerateArray())
+        var listed = JsonSerializer.Deserialize(json, ContractJson.Options.GetTypeInfo(typeof(SessionResponse[]))) as SessionResponse[];
+        foreach (var session in listed ?? [])
         {
-            if (IsTeams(session)) continue;
-            sessions.Add(new SessionView(
-                Text(session, "id") ?? "",
-                Text(session, "repository") ?? "",
-                // Read since SURF5b: a park is a state change nothing here performs, so the only way
-                // to see one is to look. Defaulted rather than required, because a service older
-                // than this field answers without it and the planner never needed it either way.
-                Text(session, "state") ?? "",
-                Text(session, "note"))
+            if (session.Id?.Contains('/') == true) continue;
+            sessions.Add(new SessionView(session.Id ?? "", session.Repository ?? "", session.State ?? "", session.Note)
             {
-                // An intake's ask (D65 §1b) — how a parked one is ended when the person answers it.
-                Ask = Text(session, "ask"),
-                // The tree it holds — the lock where a repository opens a tree per session (PAR1).
-                Tree = Text(session, "tree"),
-                // The quest it serves, which it holds while it works (DEV3).
-                Quest = Text(session, "quest"),
-                // Where its tree stood when it opened (SURF6): what the sweep reads a lost done's evidence as changed from (EVID1b).
-                BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
-                // Its note's lines by code (LANG1a), handed on wherever the note is; null for a record from before parts.
-                NoteParts = NotePart.Read(session),
-                // Its words (ENTRY1f2), read as SessionRecords reads them: the person's make an answered park.
-                Said = ReadSaid(session),
-                // Its workspace (ASKSCOPE1a), as SessionRecords reads it: none from a host from before is `default`.
-                Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
-                // What the cap counts by (CAPCOUNT1): its kind, and the mark of each conversation the driver opens for itself, an
-                // intake's ask above, a helper's serves and a reviewer's opinion. A conversation the person holds has none of them.
-                Kind = Text(session, "kind") ?? SessionKinds.Driven,
-                Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
-                Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
-                // A partner's piece (COAGENT1b): its reservation is counted once its record opens.
-                Piece = Text(session, "piece") is { Length: > 0 } piece ? piece : null,
+                Ask = session.Ask,
+                Tree = session.Tree,
+                Quest = session.Quest,
+                // Where its tree stood when it opened: what the sweep reads a lost done's evidence as changed from.
+                BaseCommit = session.BaseCommit is { Length: > 0 } baseCommit ? baseCommit : null,
+                // Its note's lines by code, handed on wherever the note is; null for a record from before parts.
+                NoteParts = session.NoteParts is { } parts ? NotePart.ReadParts(parts) : null,
+                // Its words, read as SessionRecords reads them: the person's make an answered park.
+                Said = session.Said is { } said ? [.. said.Select(ReadWord).OfType<SaidWordView>()] : null,
+                Workspace = RemoteTarget.Workspace(session.Workspace),
+                // What the cap counts by: its kind, and the mark of each conversation the driver opens for itself, an intake's ask
+                // above, a helper's serves and a reviewer's opinion. A conversation the person holds has none of them.
+                Kind = session.Kind ?? SessionKinds.Driven,
+                Opinion = session.Opinion is { Length: > 0 } opinion ? opinion : null,
+                Serves = session.Serves is { Length: > 0 } serves ? serves : null,
+                Piece = session.Piece is { Length: > 0 } piece ? piece : null,
             });
         }
 
@@ -1501,7 +1284,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// from before that field, which keeps the start-time rule. A teammate's record runs nothing here.
     /// </summary>
     public async Task<IReadOnlyList<LiveSession>> LiveSessionsAsync(CancellationToken ct = default) =>
-        ReadRunning(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+        ReadRunning(await SessionsJsonAsync(false, ct).ConfigureAwait(false));
 
     /// <summary><see cref="LiveSessionsAsync"/>'s read of an answer.</summary>
     internal static IReadOnlyList<LiveSession> ReadRunning(string json)
@@ -1742,17 +1525,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task KeepActorAsync(string id, string? choice = null, ActorAsked? asked = null, ActorRan? ran = null,
         object? changed = null, CancellationToken ct = default, ActorChosen? chosen = null)
     {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            if (choice is not null) writer.WriteString("choice", choice);
-            if (chosen is not null) { writer.WritePropertyName("chosen"); JsonSerializer.Serialize(writer, chosen, ActorWire.Json); }
-            if (asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, asked, ActorWire.Json); }
-            if (ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, ran, ActorWire.Json); }
-            if (changed is not null) { writer.WritePropertyName("override"); JsonSerializer.Serialize(writer, changed, ActorWire.Json); }
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, _) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/actor", body, ct).ConfigureAwait(false);
+        JsonElement? Wired(object? value) => value is null ? null : JsonSerializer.SerializeToElement(value, ActorWire.Json);
+        var (ok, status, payload, _) = await SendJsonAsync(
+            new KeepActor(id, choice, Wired(asked), Wired(changed), Wired(ran), Wired(chosen)), ct).ConfigureAwait(false);
         if (ok) Raise(ActorKept, id);
         else if (status != 404) throw new DriverException($"the service refused actor provenance: {payload}");
     }
@@ -1789,21 +1564,21 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// version it ran on, its note and its flags, and its kind. Null when no record of this machine has that id.
     /// </summary>
     public async Task<PriorSession?> RecordAsync(string id, CancellationToken ct = default) =>
-        ReadRecord(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false), id);
+        ReadRecord(await SessionsJsonAsync(true, ct).ConfigureAwait(false), id);
 
     /// <summary>
     /// The trees of this machine's records the person's words wait on (AUTOTIDY2d, MSG1b, D137 §2.2): a record that ended or
     /// parked with words a later run goes on with in its own tree, which the look's own tidy keeps as it keeps a session's in use.
     /// </summary>
     public async Task<IReadOnlyList<string>> WaitingTreesAsync(CancellationToken ct = default) =>
-        WaitingTrees(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false));
+        WaitingTrees(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
 
     /// <summary>
     /// This machine's records, open and closed, by id (<see cref="ReadRecords"/>): what the person's <i>Send to its session</i> finds a
     /// line of work's newest part here among (COWORK1d). A teammate's is none here.
     /// </summary>
     public async Task<IReadOnlyCollection<PriorSession>> RecordsAsync(CancellationToken ct = default) =>
-        [.. ReadRecords(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false)).Values];
+        [.. ReadRecords(await SessionsJsonAsync(true, ct).ConfigureAwait(false)).Values];
 
     /// <summary><see cref="WaitingTreesAsync"/>'s trees among the answer's records; a teammate's is none here.</summary>
     internal static IReadOnlyList<string> WaitingTrees(string json)
@@ -1968,19 +1743,26 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     internal static SaidWordView? ReadWord(JsonElement word) =>
         word.ValueKind == JsonValueKind.Object
         && Text(word, "id") is { Length: > 0 } id && Text(word, "text") is { } words && Moment(word, "at") is { } at
-            ? new SaidWordView(id, words, at, Strings(word, "files"), Flag(word, "reopens"))
+            ? ReadWord(new SaidWordResponse(
+                id, words, at, Strings(word, "files"), Flag(word, "reopens"), Text(word, "by"), Text(word, "helper"), Text(word, "from"),
+                Text(word, "key"), Text(word, "level"), Moment(word, "attempt"), Text(word, "decision")))
+            : null;
+
+    /// <summary>
+    /// A word as the typed answer carries it, with the same reading: the marks that say whose it is are absent when blank, a helper's
+    /// answer is its own mark (never <c>by</c>), and a host from before a mark says none, so its word is the person's.
+    /// </summary>
+    internal static SaidWordView? ReadWord(SaidWordResponse word) =>
+        word.Id is { Length: > 0 } id && word.Text is { } words && word.At != default
+            ? new SaidWordView(id, words, word.At, word.Files ?? [], word.Reopens)
             {
-                By = Text(word, "by") is { Length: > 0 } by ? by : null,
-                // A helper's answer is its own mark, never `by` (MIXAGENT2a-i): the person's words are neither.
-                Helper = Text(word, "helper") is { Length: > 0 } helper ? helper : null,
-                // COWORK1b: Daoris's own words, and the producer's key; a host from before says neither, and its word is the person's.
-                From = Text(word, "from") is { Length: > 0 } from ? from : null,
-                Key = Text(word, "key") is { Length: > 0 } key ? key : null,
-                // COWORK1c: its level, and when a dispatcher first wrote it to a harness; a host from before says neither.
-                Level = MessageLevels.Read(Text(word, "level")),
-                Attempt = Moment(word, "attempt"),
-                // SUPERVISOR1a-i: the decision a supervisor's word claims; a host from before says none.
-                Decision = Text(word, "decision") is { Length: > 0 } decision ? decision : null,
+                By = word.By is { Length: > 0 } by ? by : null,
+                Helper = word.Helper is { Length: > 0 } helper ? helper : null,
+                From = word.From is { Length: > 0 } from ? from : null,
+                Key = word.Key is { Length: > 0 } key ? key : null,
+                Level = MessageLevels.Read(word.Level),
+                Attempt = word.Attempt,
+                Decision = word.Decision is { Length: > 0 } decision ? decision : null,
             }
             : null;
 
@@ -2064,7 +1846,22 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     internal async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
         string path, string body, CancellationToken ct)
     {
-        var answer = await SendAsync(ServiceVerb.Post, path, body, ct).ConfigureAwait(false);
+        return Parsed(await SendAsync(ServiceVerb.Post, path, body, ct).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// A declared route sent as its record, its answer read as <see cref="PostJsonAsync"/> reads one: for the doors whose answers
+    /// are read by their fields, a refusal's included.
+    /// </summary>
+    internal async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> SendJsonAsync<TAnswer>(
+        IRoute<TAnswer> route, CancellationToken ct) where TAnswer : class
+    {
+        var (verb, path, json) = RouteRequest.Of(route);
+        return Parsed(await SendAsync(verb, path, json, ct).ConfigureAwait(false));
+    }
+
+    private static (bool Ok, int Status, string Payload, JsonElement? Root) Parsed(ServiceReply answer)
+    {
         var payload = answer.Payload;
 
         JsonElement? root = null;
@@ -2085,35 +1882,36 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// Open a session record — a quest's, a chat's or an intake's, which the ledger answers alike. A
     /// refusal is an answer, not an exception, and so is a door that did not answer in JSON.
     /// </summary>
+    /// <param name="route">The door's request.</param>
+    /// <param name="read">The record and the sentence its answer carries.</param>
     /// <param name="kind">Which door this is, for the watchers (<see cref="SessionOpened"/>).</param>
     /// <param name="adapter">The adapter asked for — the record's own, when the answer carries one, wins.</param>
     /// <param name="repository">The repository asked for, where the door names one — the record's own wins.</param>
     /// <param name="setup">That a driven session's quest is a set-up, for the watchers (WSSETUP11).</param>
-    private async Task<(string? SessionId, string Message)> OpenRecordAsync(
-        string path, string body, string kind, string adapter, string? repository, CancellationToken ct, bool setup = false)
+    private async Task<(string? SessionId, string Message)> OpenRecordAsync<TAnswer>(
+        IRoute<TAnswer> route, Func<TAnswer, (SessionResponse? Session, string? Message)> read, string kind, string adapter,
+        string? repository, CancellationToken ct, bool setup = false) where TAnswer : class
     {
-        var (ok, status, payload, root) = await PostJsonAsync(path, body, ct).ConfigureAwait(false);
-        if (root is not { } answer)
+        var sent = await SendAsync(route, ct).ConfigureAwait(false);
+        if (sent.Answer is not { } answer)
         {
-            return (null, $"the service at {_base} has no `{path}` door ({status}) — is it older than this driver?");
+            return (null, QuestViews.Error(sent) ?? $"the service at {_base} has no `{RouteDeclaration.Of(route.GetType()).Path}` door ({sent.Reply.Status}) — is it older than this driver?");
         }
 
-        if (!ok) return (null, Text(answer, "error") ?? payload);
-        var session = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var record) ? record : default;
-        var id = Text(session, "id");
-        if (id is not null)
+        var (session, message) = read(answer);
+        if (session?.Id is { } id)
         {
             // What the ledger recorded rather than what was asked: a driven session names its quest, and
             // the record answers with the quest's receiver; a blank adapter takes the ledger's default. The
             // workspace is the record's too, the circle its repository is wired into on this machine (D48).
-            Raise(Opened, new SessionOpened(id, kind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? repository)
+            Raise(Opened, new SessionOpened(id, kind, session.Adapter ?? adapter, session.Repository ?? repository)
             {
-                Workspace = Text(session, "workspace"),
+                Workspace = session.Workspace,
                 Setup = setup,
             });
         }
 
-        return (id, Text(answer, "message") ?? "");
+        return (session?.Id, message ?? "");
     }
 
     internal static string WriteJson(Action<Utf8JsonWriter> write)
@@ -2237,7 +2035,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public async Task<string?> SessionTreeAsync(string session, CancellationToken ct = default)
     {
-        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        using var document = JsonDocument.Parse(await SessionsJsonAsync(true, ct).ConfigureAwait(false));
         if (document.RootElement.ValueKind != JsonValueKind.Array) return null;
         return document.RootElement.EnumerateArray()
             .Where(record => record.ValueKind == JsonValueKind.Object
