@@ -244,7 +244,7 @@ public sealed class HelpRoomTests : IDisposable
                 { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
                 { "name": "docs", "command": ["docs"] } ] }
             """);
-        var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var place = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []);
 
         Assert.True(place.Plugins);
         Assert.Equal(PluginServerTo.Help, place.ServersTo);

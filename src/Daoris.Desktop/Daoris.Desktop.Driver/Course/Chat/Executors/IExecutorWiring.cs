@@ -13,6 +13,9 @@ internal interface IExecutorWiring : IChatRunning
     /// <exception cref="DriverException">The files are more than a message carries.</exception>
     bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null);
 
+    /// <summary>Ends a conversation as a person finishing does: the turns asked for run first.</summary>
+    bool Finish(string sessionId);
+
     /// <summary>Ends a conversation's record in <paramref name="state"/>, saying why, and tells <paramref name="onEnded"/>.</summary>
     Task ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded);
 

@@ -24,6 +24,7 @@ of everything it handed, section by section.
 | `ChatRunner` | `Loop/Chat/ChatRunner.cs` (hub, 202 KB) | Starts and runs conversations on both doors; composes a first message; builds the registered executors and reaches each through its kind's door |
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
 | `HelpStart` | `Help/HelpStart.cs` | Ask Daoris's start: placed in its workspace's room, the machine read within its bound, run; its replacement's open |
+| `HelpAccessSwap`, `HelpPlacement` | `Help/` | A change of Ask Daoris's access ending its running conversations at their turn's end, and the receipt of what a start was handed; the place Ask Daoris runs in, under its access |
 | `WordsStart`, `StartRequests` | `Course/Chat/` | The start on words: *Start a conversation with these words*, and a conversation opened on its first words, a request id answering a retry |
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops |

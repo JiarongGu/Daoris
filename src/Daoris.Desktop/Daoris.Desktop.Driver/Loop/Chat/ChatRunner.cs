@@ -433,11 +433,12 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     public event Action<string, IReadOnlyList<AcpConfigOption>>? OptionsChanged;
 
-    /// <summary>
-    /// An Ask Daoris start's receipt is on disk (HELPWIRED1, HELPWIREDLIVE1b): raised with the session's id once it is kept, so the
-    /// modules publish the help scope after it, never before, and an open <i>What it has</i> reads the new receipt, not the old.
-    /// </summary>
-    public event Action<string>? WiredKept;
+    /// <inheritdoc cref="HelpAccessSwap.WiredKept"/>
+    public event Action<string>? WiredKept
+    {
+        add => Executors.Of<HelpAccessSwap>().WiredKept += value;
+        remove => Executors.Of<HelpAccessSwap>().WiredKept -= value;
+    }
 
     /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
     public const string ClosedNote =
@@ -902,205 +903,23 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             : new(settled.Adapter, settled.Selection, settled.Chosen, settled.Passes, null);
     }
 
-    /// <summary>
-    /// Where Ask Daoris's conversation runs (HELP1a): its room, the room's allows and a read of its own files folder, and the
-    /// checkouts reading across lets it read (D107); the agent's own asking mode; its tools up front.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Its conversation is kept</b> (ASKHIST1): the person goes back to an earlier one from its history, and words written to
-    /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.</para>
-    ///
-    /// <para><b>A plugin's server reaches it only where the plugin declares it for Ask Daoris</b> (HELPPLUG1a, D170 point 3), and
-    /// only once the person approved its exact tools (<see cref="HelpGrants"/>, D170's note): its reads and the writes they
-    /// accepted are allowed, any other write asked, which its mode refuses. HELP1a handed it none, since a browser brought up for
-    /// a tool it may not use is a window for nothing; a server approved for it names the tools it may use.</para>
-    /// </remarks>
-    /// <param name="workspace">The workspace its record keeps (ASKSCOPE1a): what setting it aside is judged by; null is <c>default</c>.</param>
-    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => HelpPlaceIn(_home, room, reads, workspace);
+    /// <summary>Where Ask Daoris's conversation runs (<see cref="HelpPlacement.In"/>).</summary>
+    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => HelpPlacement.In(_home, room, reads, workspace);
 
-    /// <inheritdoc cref="HelpPlace"/>
-    /// <remarks>
-    /// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): its tools are bound to its room's workspace (<see cref="HelpCircle.Of"/>): its
-    /// connector's circle, and the person's denies for that workspace in its rules beside the checkouts its room grants.
-    /// </remarks>
-    internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null)
-    {
-        var circle = HelpCircle.Of(home, room, workspace);
-        // HELPMODE1c2a (D183's note): the housekeeping the person chose, and since HELPMODE1c3 the settings, read once for this start,
-        // so its allow-list and its receipt say the same; each tool's call is judged again by the record then (HelpHousekeeping,
-        // HelpSettings).
-        var access = ConfiguredAccess.Read(home);
-        var housekeeping = access.Housekeeping;
-        // HELPMODE1c4: the readable checkouts the person left on, read through `checkout_read`, which each call judges again.
-        IReadOnlyList<HelpRead> handed = [.. reads.Where(read => access.Reads(read.Name))];
-        return new(
-            HelpRoom.Repository, room,
-            (file, id) =>
-            {
-                var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
-                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), handed, grants.Allow, grants.Ask, circle, housekeeping, access.Settings);
-            },
-            Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture)
-        {
-            Keeps = true,
-            ServersTo = PluginServerTo.Help,
-            Workspace = RemoteTarget.Workspace(workspace),
-            Circle = circle,
-            Reads = handed,
-            Housekeeping = housekeeping,
-            Settings = access.Settings,
-            CheckoutsOff = access.CheckoutsOff,
-            // CONTEXTONE1c: in no repository, its standing block is the workspace's part alone, its room's circle or the whole machine.
-            Block = new StandingFacts { Workspace = circle },
-        };
-    }
+    /// <inheritdoc cref="HelpAccessSwap.Chosen"/>
+    public void HelpAccessChosen(string mode) => Executors.Of<HelpAccessSwap>().Chosen(mode);
 
-    /// <summary>
-    /// Ask Daoris's place under the access its start got (HELPMODE1a1, D183 point 1). Restricted is the place as HELP1a made it. Full
-    /// asks nothing and allows nothing by list, its harness's mode doing neither; keeps every deny the person's rules compose; is
-    /// handed every plugin server here, approved or not (D170 as D183 amends it); and is handed no tree guard, which would keep its
-    /// file writes inside the room when Daoris's own housekeeping, its trees and its home, is outside it (D183 point 5). Its circle
-    /// stays its room's workspace (ASKSCOPE1c), so its connector's searches stay scoped though its shell reaches anything.
-    /// </summary>
-    internal static ChatPlace HelpUnder(ChatPlace place, HelpAccess access) => access is not { Full: true, Refusal: null }
-        ? place
-        : place with
-        {
-            Rules = (file, _) => HelpRoom.FullRules(file, place.Circle),
-            Posture = access.Posture,
-            PermissionMode = access.PermissionMode,
-            EveryServer = true,
-            Guarded = false,
-            Reads = [],
-        };
+    /// <inheritdoc cref="HelpAccessSwap.Swapping"/>
+    public IReadOnlyList<string> HelpSwapping(string mode) => Executors.Of<HelpAccessSwap>().Swapping(mode);
 
-    /// <summary>
-    /// A conversation's place under Ask Daoris's mode as the person chose it, read at this start (HELPMODE1a1), a conversation going on
-    /// among them; a repository's conversation's is its own, and says nothing. With it, what the start got, for the first line of
-    /// its transcript (D183 point 3), and the mode its harness runs in, the effective one, which its record keeps (HELPMODE1a2).
-    /// </summary>
-    /// <param name="ran">
-    /// The mode a conversation going on last ran under, as its record says (HELPMODE1a2); its first line says the change first where
-    /// it now goes on under another. Null for a new conversation.
-    /// </param>
-    /// <exception cref="DriverException">Full access on an agent with no mode that asks nothing: it ends saying so.</exception>
-    internal static (ChatPlace Place, string? Said, string? Mode) UnderHelpMode(
-        ChatPlace place, ISessionAdapter resolved, DriverConfig config, string? ran = null)
-    {
-        if (!string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) return (place, null, null);
-        var access = HelpAccess.For(config.HelpMode, resolved);
-        if (access.Refusal is { } refused) throw new DriverException(refused);
-        var changed = ran is null ? null : HelpModes.ChangedSince(ran, access.Mode);
-        return (HelpUnder(place, access), changed is null ? $"— {access.Said}" : $"— {changed} {access.Said}", access.Mode);
-    }
+    /// <inheritdoc cref="HelpAccessSwap.GrantPending"/>
+    public bool GrantPending(string grant, ConfiguredAccess chosen) => Executors.Of<HelpAccessSwap>().GrantPending(grant, chosen);
 
-    /// <summary>
-    /// The person changed Ask Daoris's access (ACCESSSWAP1, D183 point 2): its mode, now <paramref name="mode"/>, or its configured
-    /// access, read from the home's record now. Each of its conversations running here under another access than that ends at its
-    /// turn's end, never mid-turn, and at once where it is idle, the way a person finishing ends it (<see cref="Finish"/>: the turns
-    /// asked for run first); its console says what changed and when. Its next words resume the same conversation under the access
-    /// chosen then (D131), as every go-on reads the mode and the record at its start, keeps the mode on the record and a new receipt.
-    /// </summary>
-    /// <remarks>
-    /// <para>Nothing a running conversation was handed changes while it runs: a live switch of its harness's posture alone would
-    /// leave the rules, servers, guard and room its start handed for the old access (D183's HELPMODE1a2 note). HELPMODE1a5 ended a
-    /// narrowing so; a widening and a grant now take the same path, and a grant taken back too, overturning HELPMODE1c2a's "a revoke
-    /// ends no conversation", since every access change applies at the next turn.</para>
-    ///
-    /// <para>A change back to what it runs under before its turn ends withdraws the end; one already ending goes on, and its next
-    /// words resume it under the same access. A further change while one is due is said again.</para>
-    /// </remarks>
-    public void HelpAccessChosen(string mode)
-    {
-        var access = ConfiguredAccess.Read(_home);
-        foreach (var (sessionId, running) in _context.HelpModes)
-        {
-            if (_context.HelpEnding.TryGetValue(sessionId, out var due) && !due) continue;
-            if (HelpSwap.Changed(running, Handed(sessionId), mode, access) is not { } changed)
-            {
-                // Chosen back to what it runs under: an end due at its turn's end is withdrawn.
-                _context.HelpEnding.TryRemove(new KeyValuePair<string, bool>(sessionId, true));
-                continue;
-            }
-
-            // Due first and judged idle after, so a turn ending between the two is ended by HelpTurnChanged, and once.
-            _context.HelpEnding[sessionId] = true;
-            var idle = !Taking(sessionId);
-            _output?.Append(sessionId, HelpSwap.Said(changed, idle));
-            if (idle && _context.HelpEnding.TryUpdate(sessionId, false, true)) Finish(sessionId);
-        }
-    }
-
-    /// <summary>
-    /// The Ask Daoris conversations running here under another access than the one chosen now (ACCESSSWAP1), by session, in order:
-    /// each ends at its turn's end, and its next words resume it under the access chosen. What the page's <i>pending</i> marks read.
-    /// </summary>
-    /// <param name="mode">The mode chosen now; the configured access is read from the home's record.</param>
-    public IReadOnlyList<string> HelpSwapping(string mode)
-    {
-        var access = ConfiguredAccess.Read(_home);
-        return [.. _context.HelpModes
-            .Where(each => HelpSwap.Changed(each.Value, Handed(each.Key), mode, access) is not null)
-            .Select(each => each.Key)
-            .Order(StringComparer.Ordinal)];
-    }
-
-    /// <summary>
-    /// Whether an Ask Daoris conversation running here was handed another choice of <paramref name="grant"/> than
-    /// <paramref name="chosen"/> holds (ACCESSSWAP1; HELPMODE1c3 for the chosen settings): the grant's <i>pending</i> mark, from the
-    /// change until that conversation's agent has ended.
-    /// </summary>
-    public bool GrantPending(string grant, ConfiguredAccess chosen) =>
-        _context.HelpModes.Keys.Any(sessionId => !Handed(sessionId).Of(grant).SequenceEqual(chosen.Of(grant), StringComparer.Ordinal));
-
-    /// <summary>The configured access a running Ask Daoris conversation's start was handed; none where it kept none.</summary>
-    private ConfiguredAccess Handed(string sessionId) =>
-        _context.AccessHanded.TryGetValue(sessionId, out var handed) ? handed : ConfiguredAccess.None;
-
-    /// <summary>
-    /// Where a conversation's turns stand (ACCESSSWAP1, after HELPMODE1a5): one whose access changed is ended once nothing runs or
-    /// waits, as its turn has ended. Called by each start's turns, under their lock, so it ends off it.
-    /// </summary>
-    internal void HelpTurnChanged(string sessionId, ChatQueue queue)
-    {
-        if (queue.Taking || queue.Opening || queue.Queued.Count > 0) return;
-        // Due at its turn's end, and marked ending in the same step, so it is finished once.
-        if (!_context.HelpEnding.TryUpdate(sessionId, false, true)) return;
-        _ = Task.Run(() => Finish(sessionId));
-    }
-
-    /// <summary>
-    /// A conversation's run is over (ACCESSSWAP1): what its start was handed is no longer compared with the person's access, so it
-    /// is pending no more. Said before its end is told, so the state judged at that word reads it gone.
-    /// </summary>
-    private void ForgetAccess(string sessionId)
-    {
-        _context.HelpModes.TryRemove(sessionId, out _);
-        _context.AccessHanded.TryRemove(sessionId, out _);
-        _context.HelpEnding.TryRemove(sessionId, out _);
-    }
+    /// <inheritdoc cref="HelpAccessSwap.TurnChanged"/>
+    internal void HelpTurnChanged(string sessionId, ChatQueue queue) => Executors.Of<HelpAccessSwap>().TurnChanged(sessionId, queue);
 
     /// <summary>The runner's shared state, for tests that stand a conversation up without a spawn.</summary>
     internal ChatContext Context => _context;
-
-    /// <summary>
-    /// Keep what an Ask Daoris start handed as its receipt (HELPWIRED1, D183 point 4), each server's approval and what restricted mode
-    /// lacks read from the plugins and the person's grants as they stand at this start. A receipt the disk will not take does not
-    /// hold the start: its console says so, and that start reads as not recorded.
-    /// </summary>
-    private void KeepWired(string sessionId, HelpHanded handed)
-    {
-        try
-        {
-            var catalog = PluginCatalog.Load(_home, AdapterSet.Built().Names);
-            new HelpWired(_home).Keep(sessionId, HelpWired.Compose(handed, catalog, HelpGrants.Read(_home, catalog), DateTimeOffset.UtcNow));
-            WiredKept?.Invoke(sessionId);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            _output?.Append(sessionId, $"— what this start handed could not be recorded: {error.Message}");
-        }
-    }
 
     /// <summary>
     /// The plugins' servers a conversation is handed, with Daoris's own browser brought up for one that drives it, or
@@ -1205,7 +1024,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
             // HELPMODE1a1 (D183 point 1): Ask Daoris's place under the mode the person chose, refused where its agent has none such.
             var ran = goOn is null ? null : HelpModes.Recorded(goOn.Record.HelpMode);
-            (place, modeSaid, helpMode) = UnderHelpMode(place, resolved, config, ran);
+            (place, modeSaid, helpMode) = HelpPlacement.UnderMode(place, resolved, config, ran);
 
             // HELPMODE1a2 (D183 point 3): one going on under another mode than it last ran under runs under the new one, and its record
             // says so before anything is spawned, as its transcript's first line does.
@@ -1303,7 +1122,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             if (helpMode is not null)
             {
                 var pipe = resolved.Wire == SessionWire.Pipe;
-                KeepWired(sessionId, new HelpHanded(helpMode, goOn is not null, resolved.Name, resolved.Wire, workTree)
+                Executors.Of<HelpAccessSwap>().KeepWired(sessionId, new HelpHanded(helpMode, goOn is not null, resolved.Name, resolved.Wire, workTree)
                 {
                     Version = selection.Version,
                     Account = selection.Profile,
@@ -2460,7 +2279,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             _context.Turned.TryRemove(sessionId, out _);
             _context.Rooms.TryRemove(sessionId, out _);
             _context.Finishing.TryRemove(sessionId, out _);
-            ForgetAccess(sessionId);
+            Executors.Of<HelpAccessSwap>().Forget(sessionId);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
             _context.Drafts.TryRemove(sessionId, out _);
@@ -3377,7 +3196,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         string sessionId, string state, Noted note, Func<string, string, Task>? onEnded)
     {
         // Its agent has ended: an Ask Daoris conversation whose access changed is pending no more once its end is told (ACCESSSWAP1).
-        ForgetAccess(sessionId);
+        Executors.Of<HelpAccessSwap>().Forget(sessionId);
         (state, note, var limit) = LimitedEnd(sessionId, state, note);
         try
         {
