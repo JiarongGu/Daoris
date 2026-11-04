@@ -137,6 +137,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
         _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
+
+        // Before the classes below, whose events may reach an executor as soon as they hear the record.
+        Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
         _handOver = new ChatHandOver(_context, this);
         _chatRuns = new ChatRunBinds(home, service, _events);
         _curve = new CurveMove(_context, _handOver);
@@ -156,8 +159,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
         Moves = _limit.Moves;
-
-        Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
     }
 
     /// <summary>
@@ -322,13 +323,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     }
 
     /// <summary>
-    /// How long an Ask Daoris start waits for the machine's reading before the room as last written serves (HELPSTUCK1,
-    /// <see cref="ChatHelp.ReadBound"/>).
+    /// How long an Ask Daoris start waits for the machine's reading before the room as last written serves
+    /// (<see cref="HelpStart.ReadBound"/>).
     /// </summary>
     internal TimeSpan HelpReadBound
     {
-        get => _help.ReadBound;
-        set => _help.ReadBound = value;
+        get => Executors.Of<HelpStart>().ReadBound;
+        set => Executors.Of<HelpStart>().ReadBound = value;
     }
 
     /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (HELPSTART1b, <see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
@@ -837,163 +838,23 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             .Joined(AcrossRules.Rules(across, [tree, .. folders]));
     }
 
-    /// <summary>
-    /// Open Ask Daoris's conversation (HELP1a, D89): a chat about Daoris itself, in the room written from
-    /// <paramref name="machine"/> under the home, on the helper's agent. The record is the service's; the
-    /// process is this machine's.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>It reads, and it advises</b>: handed the knowledge connector on either door, the room's
-    /// allow-list and the person's denies, and none of the plugins' servers — a browser brought up for a
-    /// tool it is not allowed would be a window for nothing.</para>
-    ///
-    /// <para><b>Its tools load with the first request</b> (HELP5), as every session's do since CONTEXTONE1d
-    /// (<see cref="Driver.Equip"/>), so the first answer is not a search for the tools it was handed.</para>
-    ///
-    /// <para><b>One at a time in each workspace</b> (ASKSCOPE1a): the ledger refuses a second while one runs, naming it. The caller hands
-    /// the person the running one rather than asking for another.</para>
-    /// </remarks>
-    public async Task<ChatStart> StartHelpAsync(
+    /// <inheritdoc cref="HelpStart"/>
+    public Task<ChatStart> StartHelpAsync(
         string adapter, DriverConfig config, HelpMachine machine,
-        Func<string, string, Task>? onEnded = null, CancellationToken ct = default, IReadOnlyList<ActorEffective>? order = null)
-    {
-        var placed = await PlaceHelpAsync(adapter, config, ct: ct, order: order).ConfigureAwait(false);
-        return placed.SessionId is null
-            ? new(null, placed.Message)
-            : await RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
-    }
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default, IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<HelpStart>().StartHelpAsync(adapter, config, machine, onEnded, ct, order);
 
-    /// <summary>
-    /// Place Ask Daoris's conversation (HELPSTART1, D89's note): its agent resolved, its account chosen and its record opened in
-    /// its workspace's room folder (ASKSCOPE1b, <see cref="HelpRoom.PathOf(string, string?)"/>), whose path is known before
-    /// anything is read or written. What the person's press waits for; <see cref="RunHelpAsync"/> reads the machine, writes the
-    /// room and spawns the agent after.
-    /// </summary>
-    /// <param name="workspace">
-    /// The workspace the person's window was on at the press (ASKSCOPE1a, D158's ASKSCOPE1 note point 1), captured there, so a
-    /// window that moves meanwhile moves nothing here: its record keeps it and its account is that workspace's. Null is a press
-    /// that named none, which opens as before, in <c>default</c>.
-    /// </param>
-    /// <param name="carries">
-    /// The conversation whose account's limit refused its turn, which this one goes on from on the next account (LIMITGOON1): its
-    /// opening line and <c>account.rotated</c> name it, as a driven carry-on's do. Null for every other start.
-    /// </param>
-    /// <param name="order">
-    /// Ask Daoris's effective order for a new conversation (MODELROLE1d, D205 §4.1): one entry runs on its agent, as before, asking its
-    /// model; more are walked choice by choice, each entry judged first by <see cref="HelpAccess.For"/> under the mode standing now
-    /// (<c>no-posture</c>). Null for one that goes on from another, which runs on <paramref name="adapter"/> as before.
-    /// </param>
-    /// <exception cref="DriverException">The agent names no harness this machine knows.</exception>
-    public async Task<HelpPlaced> PlaceHelpAsync(
+    /// <inheritdoc cref="HelpStart.PlaceHelpAsync"/>
+    public Task<HelpPlaced> PlaceHelpAsync(
         string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default, string? carries = null,
-        IReadOnlyList<ActorEffective>? order = null)
-    {
-        if (order is { Count: > 1 })
-        {
-            var walk = await WalkAsync("ask-daoris", order, config, workspace, null, ct).ConfigureAwait(false);
-            if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
-            return await OpenHelpAsync(walked, taken, entry, walk.Passes, config, workspace, carries, ct, order: order).ConfigureAwait(false);
-        }
+        IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<HelpStart>().PlaceHelpAsync(adapter, config, workspace, ct, carries, order);
 
-        var chosen = order is [var only] ? only : null;
-        if (chosen is not null) adapter = chosen.Agent;
-        var resolved = _harnesses.Adapters.Resolve(adapter);
-        if (!resolved.Interactive)
-        {
-            return new(
-                null,
-                $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
-                + "takes its target once and runs to completion. Name another under Agents → Roles, Ask Daoris, "
-                + "or `daoris role set ask-daoris \"<agent>\"`.");
-        }
-
-        // HELPMODE1a1 (D183 point 3): full access on an agent with no mode that asks nothing is refused before anything is opened.
-        var access = HelpAccess.For(config.HelpMode, resolved);
-        if (access.Refusal is { } refused) return new(null, refused);
-
-        // The account its workspace names, then the machine's (ASKSCOPE1a), as a start in that workspace takes one; a press that
-        // named none asks the machine's, as before (D89).
-        var selection = await _harnesses
-            .SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct, chosen?.Model).ConfigureAwait(false);
-        if (!selection.Allowed) return new(null, selection.Refusal!);
-        return await OpenHelpAsync(resolved, selection, chosen, [], config, workspace, carries, ct, order: order).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Ask Daoris's replacement placed (MODELROLE1d2, D205 §3.5(b)): its pending start's order walked in its workspace, the refused account
-    /// passed, and its record opened in that workspace's room under the same pending start.
-    /// </summary>
-    private async Task<HelpPlaced> PlaceReplacementAsync(ChatPending pending, DriverConfig config, CancellationToken ct)
-    {
-        var walk = await WalkAsync("ask-daoris", pending.Order, config, pending.Workspace, null, ct, pending.Refusing).ConfigureAwait(false);
-        if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
-        return await OpenHelpAsync(walked, taken, entry, [.. pending.Passes, .. walk.Passes], config, pending.Workspace, null, ct, pending)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>Ask Daoris's record opened on the agent and account its start chose, and its opening said (HELPSTART1, MODELROLE1d).</summary>
-    /// <param name="pending">The pending start a replacement opens for (MODELROLE1d2); null makes one where the start asks its entry on the protocol wire.</param>
-    private async Task<HelpPlaced> OpenHelpAsync(
-        ISessionAdapter resolved, HarnessSelection selection, ActorEffective? chosen, IReadOnlyList<BuildPass> passes, DriverConfig config,
-        string? workspace, string? carries, CancellationToken ct, ChatPending? pending = null, IReadOnlyList<ActorEffective>? order = null)
-    {
-        var access = HelpAccess.For(config.HelpMode, resolved);
-
-        // Its workspace's own room (ASKSCOPE1b), which its record keeps as its tree: the folder its harness keeps it by. With the mode
-        // its start gets (HELPMODE1a2), which its run reads from the same file below.
-        var (sessionId, message) = await _service
-            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home, workspace), selection.Version, selection.Profile, workspace, access.Mode, ct)
-            .ConfigureAwait(false);
-        if (sessionId is null) return new(null, message);
-        // Marked as this process's start until its spawn's marker replaces it: placed, it waits for its run (QUEUED1).
-        _processes.MarkOpening(sessionId);
-
-        // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first; one that goes on from a
-        // limit names the conversation it carries and the turn the limit refused (LIMITGOON1).
-        RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, LimitCarried(carries));
-        // Where a later choice of Ask Daoris's order ran, its actor line says which and why (D205 §4.6).
-        if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "ask-daoris", chosen, passes);
-        await RotatedOpening.SayStaffAsync(_events, _harnesses.Staff(), _service, null, sessionId, selection, "ask-daoris").ConfigureAwait(false);
-
-        // MODELROLE1d2 (D205 §3.5(b)): owned from its placement until dispatched or exhausted; its run says how a replacement runs.
-        if (pending is not null)
-        {
-            pending.Entry = chosen!;
-            _context.Pending.Link(pending, sessionId);
-        }
-        else if (chosen is not null && resolved.Wire == SessionWire.Acp && carries is null)
-        {
-            pending = _context.Pending.Add(new ChatPending(
-                sessionId, "ask-daoris", order is { Count: > 0 } ? order : [chosen], chosen, null, workspace, (_, _) => Task.FromResult(new ChatStart(null, "Ask Daoris's replacement opens only from its run."))));
-        }
-
-        return new(sessionId, message)
-        {
-            Workspace = RemoteTarget.Workspace(workspace), Adapter = resolved, Selection = selection, Chosen = chosen, Pending = pending,
-        };
-    }
-
-    /// <summary>
-    /// Ask Daoris's replacement opened and run (MODELROLE1d2, D205 §3.5(b)): placed in its workspace's room, its link kept in the room's
-    /// history, then run on the machine as the press's run reads it.
-    /// </summary>
-    private async Task<ChatStart> RunReplacementAsync(
-        ChatPending pending, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine, Func<string, string, Task>? onEnded,
-        CancellationToken ct)
-    {
-        var placed = await PlaceReplacementAsync(pending, config, ct).ConfigureAwait(false);
-        if (placed.SessionId is not { } id) return new(null, placed.Message);
-        try
-        {
-            new HelpConversations(_home).StartedFrom(id, pending.Current, HelpConversations.NotOffered);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            // Its history names no earlier conversation; its opening's actor line still says why it opened.
-        }
-
-        return await RunHelpAsync(placed, config, machine, onEnded, ct).ConfigureAwait(false);
-    }
+    /// <inheritdoc cref="HelpStart.RunHelpAsync"/>
+    public Task<ChatStart> RunHelpAsync(
+        HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        Executors.Of<HelpStart>().RunHelpAsync(placed, config, machine, onEnded, ct);
 
     /// <summary>
     /// A new conversation's walk over <paramref name="actor"/>'s effective order (MODELROLE1d, D205 §4.1), as Build's start walks its:
@@ -1039,93 +900,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         return settled.Chosen is null
             ? new(null, null, null, settled.Passes, settled.Selection.Refusal)
             : new(settled.Adapter, settled.Selection, settled.Chosen, settled.Passes, null);
-    }
-
-    /// <summary>
-    /// Run Ask Daoris's conversation placed by <see cref="PlaceHelpAsync"/> (HELPSTART1): the room written from the machine as the
-    /// facts the judges keep say it (PARALLEL1a), at once, then the agent spawned as any conversation's. A reading or a room that
-    /// fails ends the record <c>failed</c> saying why, so a conversation the person was handed says what became of it rather than
-    /// waiting at <c>queued</c>. Where no fact was ever judged, the room as last written serves, said first in its conversation;
-    /// with none written before, the first judgement is waited for within <see cref="HelpReadBound"/> (HELPSTUCK1), and past it the
-    /// conversation ends <c>failed</c> saying so (<see cref="ChatHelp.ReadAsync"/>).
-    /// </summary>
-    /// <param name="machine">
-    /// The whole machine from the facts as last judged; null where it could not be read. The room written is the placed
-    /// workspace's (ASKSCOPE1b): the machine projected to it (<see cref="HelpMachine.Within"/>) in its own folder.
-    /// </param>
-    public async Task<ChatStart> RunHelpAsync(
-        HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
-        Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
-    {
-        if (placed is not { SessionId: { } sessionId, Adapter: { } resolved, Selection: { } selection }) return new(null, placed.Message);
-
-        // A start being made, as a start from a conversation's words is: no go-on takes it up meanwhile, and a closing waits for it.
-        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _context.GoingOn.TryAdd(sessionId, going.Task);
-        try
-        {
-            string room;
-            IReadOnlyList<HelpRead> reads;
-            try
-            {
-                // 🔴 HELPSTUCK1, then PARALLEL1a (D181 point 1): the room is the facts the judges keep, as last judged, which answer at
-                // once; a reading of its own walked git across every tree and repository and, on the owner's loaded machine, did not
-                // answer for minutes while this conversation sat at `queued`. Only a home whose facts were never judged waits, and
-                // only where no room was written before, within the bound; else it starts on the room as last written, said first in
-                // its conversation; with none written and no answer in the bound, it ends below saying why.
-                var (read, late, waited) = await _help.ReadAsync(machine, placed.Workspace, ct).ConfigureAwait(false);
-                if (late && !HelpRoom.Written(_home, placed.Workspace))
-                {
-                    var unread = ChatHelp.NotRead(_help.ReadBound);
-                    await Conclude(sessionId, "failed", unread, onEnded).ConfigureAwait(false);
-                    return new(null, unread.Note);
-                }
-
-                if (late)
-                {
-                    (room, reads) = (HelpRoom.PathOf(_home, placed.Workspace), []);
-                    _context.Note(sessionId, waited ? ChatHelp.AsWritten(_help.ReadBound) : ChatHelp.NotReadYet());
-                }
-                else
-                {
-                    // ASKSCOPE1b: its workspace's room, the facts projected to it, so what is not read yet is its own.
-                    var machineRead = (read ?? throw new DriverException("this machine could not be read for it: the service is not answering yet"))
-                        .Within(placed.Workspace);
-                    (room, reads) = (HelpRoom.Prepare(_home, machineRead), machineRead.Reads);
-                    // What the facts had not read yet is said first, so the person knows the room may name less than there is.
-                    if (machineRead.NotReadYet.Any) _context.Note(sessionId, ChatHelp.NotReadYet());
-                }
-            }
-            catch (Exception error)
-            {
-                var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
-                var why = $"Ask Daoris's room could not be written — {error.Message}";
-                await Conclude(
-                    sessionId, "failed",
-                    cancelled ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.") : Observation.Failure(why),
-                    onEnded).ConfigureAwait(false);
-                if (cancelled) throw;
-                return new(null, why);
-            }
-
-            if (_context.Closing)
-            {
-                await Conclude(sessionId, "failed", Observation.Failure("the application closed before its agent started."), onEnded).ConfigureAwait(false);
-                return new(null, "the application is closing, so no conversation starts now.");
-            }
-
-            // MODELROLE1d2: a replacement of this start runs as this run does, on the machine's reading, its end told to the same listener.
-            if (placed.Pending is { } pending) pending.Open = (owner, token) => RunReplacementAsync(owner, config, machine, onEnded, token);
-            return await RunAsync(
-                    "ask-daoris", sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads, placed.Workspace), onEnded, ct,
-                    chosen: placed.Chosen, pending: placed.Pending)
-                .ConfigureAwait(false);
-        }
-        finally
-        {
-            _context.GoingOn.TryRemove(new KeyValuePair<string, Task>(sessionId, going.Task));
-            going.TrySetResult();
-        }
     }
 
     /// <summary>

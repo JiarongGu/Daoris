@@ -25,11 +25,14 @@ public sealed class ChatRunnerPartsTests : IDisposable
             new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
 
         var order = runner.Executors.Order;
-        Assert.Equal(["start-from", "replacement"], order.Select(part => part.Name));
-        Assert.Equal([ExecutorPhase.Start, ExecutorPhase.Move], order.Select(part => (ExecutorPhase)part.Phase));
+        Assert.Equal(["help", "start-from", "replacement"], order.Select(part => part.Name));
+        Assert.Equal([ExecutorPhase.Start, ExecutorPhase.Start, ExecutorPhase.Move], order.Select(part => (ExecutorPhase)part.Phase));
 
         // What each phase holds, in the order the runner built it.
-        Assert.IsType<WordsStart>(Assert.Single(runner.Executors.In(ExecutorPhase.Start)));
+        Assert.Collection(
+            runner.Executors.In(ExecutorPhase.Start),
+            executor => Assert.IsType<HelpStart>(executor),
+            executor => Assert.IsType<WordsStart>(executor));
         Assert.IsType<ChatReplacement>(Assert.Single(runner.Executors.In(ExecutorPhase.Move)));
     }
 
@@ -53,9 +56,9 @@ public sealed class ChatRunnerPartsTests : IDisposable
     public void A_kind_declared_twice_a_start_after_a_move_and_an_executor_its_runner_cannot_build_are_refused()
     {
         Assert.Equal(
-            "the part help is declared twice, by WordsStart and ChatRunnerPartsTests",
+            "the part help is declared twice, by HelpStart and WordsStart",
             Assert.Throws<PartOrderException>(() => PartOrder.Of(
-                [Declared("help", ExecutorPhase.Start), Declared("help", ExecutorPhase.Move, type: typeof(ChatRunnerPartsTests))])).Message);
+                [Declared("help", ExecutorPhase.Start, type: typeof(HelpStart)), Declared("help", ExecutorPhase.Move)])).Message);
         Assert.Equal(
             "the part start-from runs in Start and comes after replacement, which runs later, in Move",
             Assert.Throws<PartOrderException>(() => PartOrder.Of(
