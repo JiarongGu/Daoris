@@ -94,7 +94,7 @@ public sealed class WorkWordsTests : IDisposable
     [Fact]
     public void The_host_answers_trees_state_with_no_name_and_work_state_over_the_one_inventory()
     {
-        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var work = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "WorkConsole.cs"));
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
 

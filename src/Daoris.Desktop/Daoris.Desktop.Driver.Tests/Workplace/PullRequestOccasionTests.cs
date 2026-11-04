@@ -74,7 +74,7 @@ public sealed class PullRequestOccasionTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["TreesConsole.cs", "TreesTidyDesk.cs"], doors);
+        Assert.Equal(["TreesCleanVerb.cs", "TreesTidyDesk.cs"], doors);
     }
 
     /// <summary>
@@ -128,7 +128,7 @@ public sealed class PullRequestOccasionTests
             .Distinct()
             .ToList();
 
-        Assert.Equal(["TreesConsole.cs"], doors);
+        Assert.Equal(["TreesStateVerb.cs"], doors);
     }
 
     /// <summary>

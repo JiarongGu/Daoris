@@ -208,7 +208,7 @@ public sealed class MoveStoreCensusTests
         Assert.Matches(@"scope: Share \? MoveTakeUpScope\.Shared\([^;]*\) : MoveTakeUpScope\.LeaseHolder", driver);
         Assert.Matches(@"new Driver\([^;]*\)\s*\{\s*Share = Share,", watch);
 
-        var host = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs")));
+        var host = CourseCensusTests.WithoutComments(HostProgramSource.Read(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host")));
         Assert.Matches(@"new DriverWatch\([^;]*\)\s*\{\s*Log = log, Share = held\.Beside is not null \}", host);
     }
 

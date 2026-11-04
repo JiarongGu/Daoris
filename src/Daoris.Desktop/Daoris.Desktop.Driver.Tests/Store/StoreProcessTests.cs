@@ -36,7 +36,7 @@ public sealed class StoreProcessTests
     public void The_composition_roots_name_their_kind_and_a_verb_names_none()
     {
         var desktop = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
-        var host = File.ReadAllText(Path.Combine(desktop, "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var host = HostProgramSource.Read(Path.Combine(desktop, "Daoris.Desktop.Driver.Host"));
         var shell = File.ReadAllText(Path.Combine(desktop, "Daoris.Desktop.App", "Program.cs"));
 
         // The headless loop names itself once its verb is read, before its lease and its first look; every other verb stays a verb.

@@ -63,6 +63,9 @@ of everything it handed, section by section.
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
 | `HelpRoom`, `HelpMode`, `HelpProposals` | `Help/` | Ask Daoris's room, access mode and proposals |
+| `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
+| `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
+| `HelpSettingProposals`, `HelpWorkflowProposals` | `Help/Proposals/HelpSettingProposals.cs`, `HelpRuleSettings.cs`, `HelpAcrossSetting.cs`, `HelpRetrySetting.cs`, `HelpGitUseSetting.cs`, `HelpSettingWords.cs`, `HelpWorkflowProposals.cs`, `HelpWorkflowDrafts.cs`, `HelpWorkflowRoutes.cs`, `HelpWorkflowCard.cs` | The `setting` and `workflow` proposals: the plan of the simple doors in the hub; the rule doors, across, retry, git-use, the draft door, the routes and the card each apart |
 | `LineEvents`, `SessionEntries` | `src/Daoris.Service/Daoris.Service.Core/Sessions/` | The connector's `line_read`; the entry key and `from` on the service's records |
 
 ## Its rules
