@@ -295,6 +295,8 @@ public sealed class GitDoorsProcessTests : IDisposable
         var ssh = StandInSsh();
         await Ok(Git(_root, Path.Combine(_root, "no-install"), "-c", $"core.sshCommand={ssh}", "clone", "--config", $"core.sshCommand={ssh}", address, Work));
         File.Delete(Path.Combine(_root, "ssh.log"));
+        // The person's own sign-ins chosen for the stand-in's host: with nothing serving it, the door has no key to reach it with.
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), """{"machineGitIdentity":{"localhost":"own"}}""");
         return address;
     }
 

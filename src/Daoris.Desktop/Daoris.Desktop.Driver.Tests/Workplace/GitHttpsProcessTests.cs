@@ -163,11 +163,15 @@ public sealed class GitHttpsProcessTests : IDisposable
         File.WriteAllText(Path.Combine(Scratch, "_netrc"), netrc);
         File.WriteAllText(Path.Combine(Scratch, ".netrc"), netrc);
 
-        // Nothing serves: today's ambient credentials, which include curl's netrc.
+        // The person's own sign-ins chosen for the host: what git would have run, which reads curl's netrc. Where nothing serves a
+        // host and nothing is chosen, it is reached with no credential of the person's.
+        var config = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
+        File.WriteAllText(config, $$$"""{"machineGitIdentity":{"{{{HostOf(host)}}}":"own"}}""");
         await Ok(_root, "clone", address, Path.Combine(_root, "ambient"));
         Assert.Contains(User, host.Users);
 
         // An identity serves, with no token stored for it: the netrc must not be read, so the host refuses.
+        File.WriteAllText(config, "{}");
         GitIdentities.Change(Home, all => [.. all, new GitIdentity(GitIdentities.NewId(), "Unsigned", HostOf(host), GitIdentity.Https, User, null, null, null, null, false, null, true)]);
         var asked = host.Users.Count;
         var (exit, _, error) = await RunAsync(Git(_root, "clone", address, Work));
