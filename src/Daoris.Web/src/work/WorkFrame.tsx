@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../app/opener';
 import { useAsks } from '../data/queries';
 import {
-  useSessionStreams, useStartChat, useStopTask, useTreeFile, useReviewedPatch,
+  useSessionStreams, useStopTask, useTreeFile, useReviewedPatch,
   useTerminals, useRemotes, useWorkPlan, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, usePushedCalls, withCall,
@@ -71,11 +71,10 @@ import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
 import { heavyLine, heavyRow } from './HeavySlotLine';
-import { askName, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { askName, linkedSessions, ownTree, sessionTitle } from './identity';
 import { doorLabel } from '../agents/tools';
 import { Composer } from './conversation/Composer';
 import { DiffPane } from './review/DiffPane';
-import { keepDraft } from './conversation/drafts';
 import { NothingFollowed, RightDock } from './frame/RightDock';
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
@@ -95,11 +94,8 @@ import { HandOverOfferLine } from './start/HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './head/SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './frame/ListPane';
-import { AddProjectDrawer, ImportFolderDrawer } from '../projects/ProjectManage';
-import { useCheckoutBranch } from '../bridge/repositories/git';
-import { type CheckoutReader, NewConversation, type NewStart } from './start/NewConversation';
-import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './start/startRecent';
-import { type Carry, NO_CARRY } from '../compose/carry';
+import { useNewStart } from './start/useNewStart';
+import { StartPane } from './start/StartPane';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame/frame';
 import { panelTabs } from './console/streams';
 import { dockRange, type ListMode } from './frame/layout';
@@ -113,15 +109,6 @@ import { beganLine } from './head/partsLife';
 import { cn } from '../lib/cn';
 import { useFrameLayout } from './frame/useFrameLayout';
 import { useDockViews } from './frame/useDockViews';
-
-/**
- * The composer's tree chip reads the checkout's branch through this (NEW1e-b): a refusal or a pending read is no answer, and
- * the chip says the checkout plain. A module-level hook, so the molecule's prop is stable.
- */
-const readCheckout: CheckoutReader = (repository, workspace) => {
-  const { query } = useCheckoutBranch({ repository, workspace });
-  return { read: query.isError ? undefined : query.data, refresh: () => { void query.refetch(); } };
-};
 
 /** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
 const door = (structured?: boolean): 'structured' | 'text' | undefined =>
@@ -273,46 +260,6 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
-  // *New conversation* (NEW1b, D162 point 1): bumped by each of its doors (the list's ＋, the menu, Ctrl+N, the palette),
-  // which puts the attended session down and the focus in the composer's prompt.
-  const [composing, setComposing] = useState(0);
-  // Whether that press's focus is still owed: met once the prompt took it, so a composer that comes back by another path
-  // (the attended session deleted) takes none.
-  const [focusOwed, setFocusOwed] = useState(false);
-  // The repository of the session attended at the press (NEW1f): the press puts the selection down, so the composer is told
-  // where the person was. Each press sets it afresh, to null where nothing was attended.
-  const [pressedFrom, setPressedFrom] = useState<string | null>(null);
-  const newConversationPressed = () => {
-    setPressedFrom(attended && sessionOrigin(attended) === null ? attended.repository : null);
-    setComposing((count) => count + 1);
-    setFocusOwed(true);
-  };
-  // The composer's words and files, held here so a visit to a session and back keeps them; a start that opened a
-  // conversation lets them go. Its last refusal is said under Start until the next press (UX5 U68).
-  // The drawers the composer's picker opens over Sessions (NEW1c): Projects' own, on this frame's state, so the draft stays where
-  // it is and App's views are not asked to navigate. `pickNew` and `reveal` are the answers it hands the composer, each a counted
-  // ask; `refocus` is bumped when a drawer goes down, so the prompt takes the focus Radix would return to a press that is gone.
-  const [adding, setAdding] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [pickNew, setPickNew] = useState<{ repository: string; n: number } | null>(null);
-  const [reveal, setReveal] = useState<{ workspace: string; n: number } | null>(null);
-  const [refocus, setRefocus] = useState(0);
-  // An import that opened the picker keeps the focus in its field: the drawer's closing must not take it back to the prompt.
-  const listOpened = useRef(false);
-  const [newDraft, setNewDraft] = useState('');
-  const [newCarry, setNewCarry] = useState<Carry>(NO_CARRY);
-  const [startRefusal, setStartRefusal] = useState<string | null>(null);
-  // This machine's last starts and the repository last chosen (the entry design §1), read once and kept as they change.
-  const [recentStarts, setRecentStarts] = useState(readRecent);
-  const [chosenStart, setChosenStart] = useState(readChosen);
-  // Kept in step with the storage, which `chosenStart` alone would leave stale within a mount (NEW1f).
-  const chooseStart = (repository: string) => {
-    setChosenStart(repository);
-    keepChosen(repository);
-  };
-  // One press, one request id (NEW1a): a press again with the same words and choices after a failure carries the same id,
-  // so a start that did open is answered rather than repeated; an answer lets it go.
-  const pressed = useRef<{ key: string; id: string } | null>(null);
   // *Archive what ended…* pressed in the list's ⋯ (SESSUX1e): its first press stands under the list's header until it
   // archives or the person never minds. Not remembered: it is a question asked now.
   const [archivingEnded, setArchivingEnded] = useState(false);
@@ -354,8 +301,9 @@ export function WorkFrame({
     sessions, sessionsResyncing, openings, groups, entries, where, quests, registry, harnesses, accounts, attended, attendedEntry,
     channelAsk, quest, live, conversation, here, intake, oneTurn,
   } = useAttendedSession({ selected, onSelect, notify });
+  const start = useNewStart({ t, notify, attended, selected, onSelect, compose, attend, setRefusal });
+  const { newConversationPressed } = start;
 
-  const startChat = useStartChat();
   // Which workspaces sync with a remote here: a pause's ask names an open quest another machine may still take (PAUSE1e).
   const wiring = useRemotes().data;
 
@@ -409,52 +357,6 @@ export function WorkFrame({
     setPauseAsking((asked) => (asked?.session === selected ? asked : null));
   }, [selected]);
 
-  // *New conversation* puts the attended session down, so the composer stands in the main area (NEW1b).
-  useEffect(() => {
-    if (composing > 0 && selected !== null) onSelect(null);
-    // Only a new press: the selection is read, not watched.
-  }, [composing]);
-
-  const onStart = (start: NewStart) => {
-    setStartRefusal(null);
-    const key = JSON.stringify([
-      start.repository, start.text, start.adapter ?? '', start.profile ?? '', start.ownTree ?? null,
-      start.files.map((file) => [file.name, file.size, file.lastModified]),
-    ]);
-    if (pressed.current?.key !== key) pressed.current = { key, id: crypto.randomUUID() };
-    const requestId = pressed.current.id;
-    startChat.mutate({ ...start, requestId }, {
-      onSuccess: (result) => {
-        pressed.current = null;
-        // The ledger's own sentence: the tree is busy, the repository has no checkout here, the
-        // harness is missing, the chosen account is logged out. Each names the action that fixes
-        // it, which is why it is shown rather than summarised — whole, under Start where it was
-        // pressed, with the words kept; it was a corner toast cut mid-sentence (UX5 U68).
-        if (!result.sessionId) {
-          setStartRefusal(result.message);
-          return;
-        }
-        const session = result.sessionId;
-        setRecentStarts(keepRecent(start.repository));
-        setNewDraft('');
-        setNewCarry(NO_CARRY);
-        // Opened without the words (NEW1a's `sent: false`): they wait in its box, put there before it is attended so its
-        // draft is read with them, and the driver's sentence stands beside them. The files are named, as a send handed
-        // back names them: the page no longer holds their bytes.
-        if (!result.sent) keepDraft(session, start.text);
-        attend(session);
-        if (!result.sent) {
-          setRefusal({ session, text: result.message });
-          if (start.files.length > 0) {
-            notify(t('work.composer.filesNotSent', { count: 1, names: start.files.map((file) => file.name).join(', ') }), 'error');
-          }
-        }
-      },
-      // No answer came: the bridge's sentence where Start was pressed, and the press keeps its id for the next.
-      onError: (error: unknown) => setStartRefusal(sentence(error)),
-    });
-  };
-
   // The rules agents proposed (PERM2, D74), the band's own read, and their answer's one owner: the attended session's own open
   // ones are a wait where the person talks to it (PROPOSEHERE1b, D168 point 2). The machine's file, so a browser has none.
   const ruleState = useRules();
@@ -501,19 +403,6 @@ export function WorkFrame({
     else if (intent === 'atWork') openView('atWork');
   }
   if (!intent && taken) setTaken(null);
-
-  // A go to New conversation (NEW1d-b): consumed by its id, as `intent` is by identity. The repository is NEW1c's pick, which waits
-  // until the registry lists it; the words go above what is typed, as `keepDraft` puts them. Files are not touched.
-  const [composed, setComposed] = useState<number | null>(null);
-  if (compose && compose.id !== composed) {
-    setComposed(compose.id);
-    newConversationPressed();
-    if (compose.repository) setPickNew((last) => ({ repository: compose.repository!, n: (last?.n ?? 0) + 1 }));
-    if (compose.sentence) {
-      const sentence = compose.sentence;
-      setNewDraft((was) => [sentence, was.trim()].filter(Boolean).join('\n\n'));
-    }
-  }
 
   // The console and its streams (CONSOLE2c), for whichever region it stands in. A session with nothing
   // held here says so as a sentence, not as an empty bordered well, which read as a field on the
@@ -1643,49 +1532,6 @@ export function WorkFrame({
   });
   const spec = elsewhere ? viewLayout.list : sessionsList();
 
-  // *New conversation* (NEW1b, D162 point 1), the main area while nothing is attended: what the drawer it replaced knew is
-  // its chips'.
-  const registered = registry.data ?? [];
-  const newConversation = (
-    <NewConversation
-      readCheckout={readCheckout}
-      // A checkout on this machine is what makes a repository choosable: there is nowhere else to talk, and a teammate's
-      // mirrored registration has no tree here (D48 §3/§7). One without is listed and says so.
-      repositories={registered
-        .map((row) => ({ name: row.repository, workspace: row.workspace || 'default', checkout: Boolean(row.root) }))
-        .sort((a, b) => a.name.localeCompare(b.name))}
-      // A checkout an active session on this machine holds refuses a second one (UX5 U68): with the session holding it.
-      busy={Object.fromEntries((sessions.data ?? [])
-        .filter((session) => SESSION_ACTIVE.has(session.state) && sessionOrigin(session) === null
-          && !ownTree(session, registered.find((row) => row.repository === session.repository)?.root))
-        .map((session) => [session.repository, session.id]))}
-      recent={mergeRecent(recentStarts, sessions.data ?? [])}
-      remembered={chosenStart}
-      attended={pressedFrom}
-      onChoose={chooseStart}
-      harnesses={agentRoster.harnesses}
-      labels={agentRoster.labels}
-      names={agentRoster.names}
-      defaultHarness={spawning?.harness}
-      accounts={agentRoster.accounts}
-      orderOf={agentRoster.orderOf}
-      draft={newDraft}
-      onDraft={setNewDraft}
-      carried={newCarry}
-      onCarry={setNewCarry}
-      pending={startChat.isPending}
-      refusal={startRefusal}
-      focus={(focusOwed ? composing : 0) + refocus}
-      onFocused={() => setFocusOwed(false)}
-      onStart={onStart}
-      onOpenSession={attend}
-      onAdd={() => setAdding(true)}
-      onImport={() => setImporting(true)}
-      pick={pickNew}
-      reveal={reveal}
-      onMakeTask={onMakeTask}
-    />
-  );
   // The line the attended part continues (SWITCHCTX1c-i; the switch-context design §2.7): each part's record and place as the strip
   // reads them, the parts it continues by `from` (a part running alongside is not among them), and how each began.
   const partRows = Object.fromEntries((sessions.data ?? []).map((row) => [row.id, {
@@ -1712,11 +1558,6 @@ export function WorkFrame({
     const frame = requestAnimationFrame(() => partBox.current?.scrollIntoView?.({ block: 'start' }));
     return () => cancelAnimationFrame(frame);
   }, [seeking]);
-  const drawerDown = (close: () => void) => () => {
-    close();
-    if (listOpened.current) listOpened.current = false;
-    else setRefocus((count) => count + 1);
-  };
 
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
@@ -1741,33 +1582,18 @@ export function WorkFrame({
           // handed, so the state's body is the composer.
           state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
         >
+          {/* *New conversation* (NEW1b, D162 point 1), the main area while nothing is attended. */}
           {!attended && (
-            <>
-              {newConversation}
-              {adding && (
-                // Once registered it is chosen, as Projects' list chooses what it registered, and the words stay (NEW1c).
-                <AddProjectDrawer
-                  onClose={drawerDown(() => setAdding(false))}
-                  onAdded={(repository) => setPickNew((last) => ({ repository, n: (last?.n ?? 0) + 1 }))}
-                  notify={notify}
-                />
-              )}
-              {importing && (
-                <ImportFolderDrawer
-                  onClose={drawerDown(() => setImporting(false))}
-                  onImported={({ repositories: landed, workspace }) => {
-                    // One is chosen; several, or none, leave the choice to the person, in the list opened on where they landed.
-                    if (landed.length === 1) {
-                      setPickNew((last) => ({ repository: landed[0]!, n: (last?.n ?? 0) + 1 }));
-                      return;
-                    }
-                    listOpened.current = true;
-                    setReveal((last) => ({ workspace: landed.length > 1 ? workspace ?? '' : '', n: (last?.n ?? 0) + 1 }));
-                  }}
-                  notify={notify}
-                />
-              )}
-            </>
+            <StartPane
+              start={start}
+              registered={registry.data ?? []}
+              sessions={sessions.data}
+              agentRoster={agentRoster}
+              defaultHarness={spawning?.harness}
+              notify={notify}
+              onMakeTask={onMakeTask}
+              attend={attend}
+            />
           )}
           {attended && waits && <AttendedSession
             // What waits on the person, and every press on it: the strip at the foot is handed the same (D168 point 3).
