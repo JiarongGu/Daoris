@@ -17,7 +17,7 @@ public sealed class ServiceClientReviewTests
     [Fact]
     public void A_set_up_step_s_review_is_read_as_the_service_answers_it()
     {
-        var quests = ServiceClient.ReadQuests(
+        var quests = QuestViews.Read(
             $$"""
             [{ "id": "q2", "from": "ask #a1", "to": "engine", "title": "Build the column", "body": "", "status": "Done",
                "review": { "choice": "local", "words": "show me it running" },
@@ -79,7 +79,7 @@ public sealed class ServiceClientReviewTests
     [Fact]
     public void A_quests_note_is_read_with_its_parts_and_one_from_before_carries_none()
     {
-        var quests = ServiceClient.ReadQuests(
+        var quests = QuestViews.Read(
             """
             [{ "id": "q1", "to": "engine", "status": "Done", "note": "Done by the person.",
                "noteParts": [{ "code": "quest.person-done", "text": "Done by the person." }] },
@@ -95,7 +95,7 @@ public sealed class ServiceClientReviewTests
     [Fact]
     public void A_quest_no_review_touches_reads_as_it_did()
     {
-        var quest = Assert.Single(ServiceClient.ReadQuests(
+        var quest = Assert.Single(QuestViews.Read(
             """
             [{ "id": "q1", "from": "game", "to": "engine", "title": "Cap it", "body": "", "status": "Done",
                "then": [{ "to": "game", "title": "Report on {parent}", "body": "Say what was done." }] }]
@@ -115,7 +115,7 @@ public sealed class ServiceClientReviewTests
     [Fact]
     public void A_set_up_a_verdict_or_a_choice_that_is_not_whole_is_passed_over()
     {
-        var quest = Assert.Single(ServiceClient.ReadQuests(
+        var quest = Assert.Single(QuestViews.Read(
             $$"""
             [{ "id": "q3", "to": "engine", "status": "Done", "setUpIn": "local", "review": { "words": "no choice" },
                "setUps": [{ "shows": "no commit" }, { "commit": "abc123", "shows": "a short commit" }, "not a set-up",

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Daoris.Knowledge.Http.Routes;
 
@@ -24,7 +25,7 @@ internal static class RouteBinder
     {
         foreach (var property in type.Properties)
         {
-            var travels = route.PathNames.Contains(property.Name, StringComparer.OrdinalIgnoreCase) || !route.TakesBody;
+            var travels = route.Travels(property.Name) != RouteTravel.Body;
             if (travels && !Scalars.Contains(Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType))
             {
                 throw new InvalidOperationException(
@@ -41,76 +42,74 @@ internal static class RouteBinder
         }
     }
 
-    /// <summary>The bound request, or null where a value did not bind.</summary>
-    public static async Task<TRequest?> BindAsync<TRequest>(HttpContext http, RouteDeclaration route, JsonTypeInfo<TRequest> type)
+    /// <summary>The bound request, or null with the status a request that did not bind is answered: 400, or 415 for a body that is not JSON.</summary>
+    public static async Task<(TRequest? Request, int Refused)> BindAsync<TRequest>(HttpContext http, RouteDeclaration route, JsonTypeInfo<TRequest> type)
         where TRequest : class
     {
-        var values = route.TakesBody ? await BodyAsync(http) : new JsonObject();
-        if (values is null) return null;
+        // As the framework bound a body parameter: only a record that has body values reads one; a body whose content type is not
+        // JSON is 415 unread; a body that is absent, or JSON's null, binds as naming nothing where the body is optional and does not
+        // bind where it is required. Its values are never required one by one: the serializer leaves one out as its default.
+        var values = new JsonObject();
+        if (type.Properties.Any(property => route.Travels(property.Name) == RouteTravel.Body))
+        {
+            var (body, refused) = await BodyAsync(http);
+            if (refused != 0) return (null, refused);
+            if (body is null && !route.BodyOptional) return (null, StatusCodes.Status400BadRequest);
+            values = body ?? values;
+        }
 
         foreach (var property in type.Properties)
         {
-            var fromPath = route.PathNames.Contains(property.Name, StringComparer.OrdinalIgnoreCase);
-            string? raw;
-            if (fromPath)
+            var travels = route.Travels(property.Name);
+            if (travels == RouteTravel.Body) continue;
+
+            // A body never fills an address's value; the address's own is bound.
+            foreach (var named in values.Select(pair => pair.Key).Where(key => string.Equals(key, property.Name, StringComparison.OrdinalIgnoreCase)).ToList())
             {
-                raw = http.Request.RouteValues[property.Name]?.ToString();
-                foreach (var named in values.Select(pair => pair.Key).Where(key => string.Equals(key, property.Name, StringComparison.OrdinalIgnoreCase)).ToList())
-                {
-                    values.Remove(named);
-                }
+                values.Remove(named);
             }
-            else if (!route.TakesBody)
+
+            var raw = travels == RouteTravel.Path
+                ? http.Request.RouteValues[property.Name]?.ToString()
+                : http.Request.Query.TryGetValue(property.Name, out var given) ? given.ToString() : null;
+            if (raw is null)
             {
-                raw = http.Request.Query.TryGetValue(property.Name, out var given) ? given.ToString() : null;
-            }
-            else
-            {
+                if (property.AssociatedParameter is { HasDefaultValue: false, IsNullable: false }) return (null, StatusCodes.Status400BadRequest);
                 continue;
             }
 
-            if (raw is null) continue;
             var (read, node) = Value(property.PropertyType, raw);
-            if (!read) return null;
+            if (!read) return (null, StatusCodes.Status400BadRequest);
             if (node is not null) values[property.Name] = node;
         }
 
-        foreach (var property in type.Properties)
-        {
-            if (property.AssociatedParameter is { HasDefaultValue: false, IsNullable: false }
-                && !values.Any(pair => string.Equals(pair.Key, property.Name, StringComparison.OrdinalIgnoreCase)))
-            {
-                return null;
-            }
-        }
-
         try
         {
-            return values.Deserialize(type);
+            return values.Deserialize(type) is { } request ? (request, 0) : (null, StatusCodes.Status400BadRequest);
         }
         catch (JsonException)
         {
-            return null;
+            return (null, StatusCodes.Status400BadRequest);
         }
     }
 
-    /// <summary>A body's object; an empty body binds nothing, and a body that is not an object does not bind.</summary>
-    private static async Task<JsonObject?> BodyAsync(HttpContext http)
+    /// <summary>A body's object; null for none, and a refusal's status for one that is not JSON or not an object.</summary>
+    private static async Task<(JsonObject? Body, int Refused)> BodyAsync(HttpContext http)
     {
-        if (http.Request.ContentLength == 0) return new JsonObject();
+        if (http.Features.Get<IHttpRequestBodyDetectionFeature>()?.CanHaveBody != true) return (null, 0);
+        if (!http.Request.HasJsonContentType()) return (null, StatusCodes.Status415UnsupportedMediaType);
         try
         {
-            var node = await JsonNode.ParseAsync(http.Request.Body, cancellationToken: http.RequestAborted);
-            return node switch
+            return await JsonNode.ParseAsync(http.Request.Body, cancellationToken: http.RequestAborted) switch
             {
-                null => new JsonObject(),
-                JsonObject body => body,
-                _ => null,
+                null => (null, 0),
+                JsonObject body => (body, 0),
+                _ => (null, StatusCodes.Status400BadRequest),
             };
         }
         catch (JsonException)
         {
-            return null;
+            return (null, StatusCodes.Status400BadRequest);
         }
     }
 

@@ -34,4 +34,10 @@ public readonly record struct Refusal(int Status, ErrorResponse Body)
     public static Refusal BadRequest(string error, string? code = null) => new(StatusCodes.Status400BadRequest, new ErrorResponse(error, code));
 
     public static Refusal NotFound(string error, string? code = null) => new(StatusCodes.Status404NotFound, new ErrorResponse(error, code));
+
+    /// <summary>A state the request found the record in, the lock's own shape: the losing side of a race reads it as someone got there first.</summary>
+    public static Refusal Conflict(string error, string? code = null) => new(StatusCodes.Status409Conflict, new ErrorResponse(error, code));
+
+    /// <summary>Written as a handler that answers <see cref="IResult"/> writes one.</summary>
+    public IResult Result() => Results.Json(Body, statusCode: Status);
 }

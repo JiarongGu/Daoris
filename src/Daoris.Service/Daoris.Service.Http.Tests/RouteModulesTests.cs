@@ -48,6 +48,61 @@ public sealed class RouteModulesTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     [Fact]
+    public void The_quest_doors_are_a_module_of_their_own()
+    {
+        Assert.Contains(typeof(QuestRoutes), RouteModules.In(typeof(HostWiring).Assembly));
+    }
+
+    /// <summary>A body is bound as the framework bound a body parameter: required unless marked optional, and JSON or refused 415.</summary>
+    [Fact]
+    public async Task A_required_body_left_out_is_400_and_an_optional_one_binds_as_naming_nothing()
+    {
+        var missing = await host.SendAsync("POST", "/api/quests/nosuchquest/respond", DaorisHost.Loopback);
+        Assert.Equal((400, ""), (missing.Status, missing.Body));
+
+        var nulled = await host.SendAsync("POST", "/api/quests/nosuchquest/respond", DaorisHost.Loopback, json: "null");
+        Assert.Equal((400, ""), (nulled.Status, nulled.Body));
+
+        // A done's words are optional, so it reaches the exchange, which says the quest is not one it holds.
+        var done = await host.SendAsync("POST", "/api/quests/nosuchquest/done", DaorisHost.Loopback);
+        Assert.Equal(404, done.Status);
+        Assert.False(string.IsNullOrEmpty(done.Error));
+    }
+
+    [Fact]
+    public async Task A_body_that_is_not_json_is_415_and_a_door_that_binds_none_never_reads_it()
+    {
+        var plain = await SendTextAsync("/api/quests/nosuchquest/respond", "action=take");
+        Assert.Equal((415, ""), plain);
+
+        // The yes binds no body, so whatever was sent is left unread and the exchange answers.
+        var (status, _) = await SendTextAsync("/api/quests/nosuchquest/accept", "anything");
+        Assert.Equal(404, status);
+    }
+
+    private async Task<(int Status, string Body)> SendTextAsync(string path, string text)
+    {
+        var context = await host.Server.SendAsync(http =>
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(text);
+            http.Request.Method = "POST";
+            http.Request.Path = path;
+            http.Connection.RemoteIpAddress = DaorisHost.Loopback;
+            http.Request.Body = new MemoryStream(bytes);
+            http.Request.ContentType = "text/plain";
+            http.Request.ContentLength = bytes.Length;
+            http.Features.Set<Microsoft.AspNetCore.Http.Features.IHttpRequestBodyDetectionFeature>(new Bodied());
+        });
+        using var reader = new StreamReader(context.Response.Body);
+        return (context.Response.StatusCode, await reader.ReadToEndAsync());
+    }
+
+    private sealed class Bodied : Microsoft.AspNetCore.Http.Features.IHttpRequestBodyDetectionFeature
+    {
+        public bool CanHaveBody => true;
+    }
+
+    [Fact]
     public async Task A_handler_s_refusal_keeps_its_sentence_and_a_bound_read_answers()
     {
         var blank = await host.GetAsync("/api/search?q=%20");

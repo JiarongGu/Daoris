@@ -66,7 +66,7 @@ public sealed class StartRoleTests : IDisposable
     [Fact]
     public void A_quest_published_with_weight_design_starts_on_Build_s_order_then_on_the_role_that_takes_it()
     {
-        var answered = ServiceClient.ReadQuests(
+        var answered = QuestViews.Read(
             """[{"id":"q1","from":"a","to":"b","title":"Decide the cap","body":"Two ways.","status":"Open","weight":"design"},""" +
             """{"id":"q2","from":"a","to":"b","title":"Cap it","body":"b","status":"Open"}]""");
 

@@ -46,7 +46,9 @@ finishes first and the whole set runs once.
    registered, not written by hand. An HTTP route is its request record in `src/Daoris.Contracts/<Domain>/` (`IRoute<TAnswer>`:
    method, path, answer), which uses the standard library alone. The host finds its `IRouteModule`s by reflection and maps each
    handler through `RouteMap`, whose binder answers a value that does not bind 400 with no body, as the framework's binding
-   did; the driver sends the record through `ServiceClient.SendAsync`. The page's types and `ROUTES` table are written from the
+   did: a body is read only where the record has body values, is 415 when it is not JSON, and is required unless the record
+   is `[OptionalBody]`; a POST's `[FromQuery]` value travels in its query. The driver sends the record through
+   `ServiceClient.SendAsync`, its views read in `Service/Wire/<Domain>Views.cs`. The page's types and `ROUTES` table are written from the
    records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
    first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
    pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. `api.ts` sends a declared
