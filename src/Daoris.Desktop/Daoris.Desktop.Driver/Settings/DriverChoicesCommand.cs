@@ -8,8 +8,7 @@ namespace Daoris.Driver;
 /// The standing choices from a terminal: <c>daoris settings</c>, <c>role</c>, and the place, workflow and retry words the tree routes
 /// here. Each change is its route through <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its
 /// window; else the choice's own operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). A change no
-/// route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>): a landing's cycle, <c>work-cycle</c> and
-/// <c>brainstorms</c>; the workflows' writes are routes (<see cref="DriverWorkflowsCommand"/>). Its words are one function per verb on
+/// route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>): <c>brainstorms</c>; the workflows' writes are routes (<see cref="DriverWorkflowsCommand"/>). Its words are one function per verb on
 /// both paths (<c>fixtures/driver-choices-text.json</c>, <c>fixtures/driver-workflows-text.json</c>). The settings' own keys' verbs are
 /// here; a rule a subdomain above owns has its verb beside the rule (<see cref="ChoiceVerb"/>), which Loop wires into the world
 /// (<see cref="DriverChoiceVerbs"/>) and this command asks for, so it names no type of theirs, nor the instance's world and door.
@@ -18,15 +17,15 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "keep", "cap", "handover", "brainstorms", "actor")]
+[CommandGroup("settings", "notify", "cooloff", "keep", "cap", "handover", "brainstorms")]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
-        "brainstorms", "workflow", "keep", "actor", "role",
+        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+        "brainstorms", "workflow", "keep", "role",
     ];
 
     public const string Usage =
@@ -37,11 +36,6 @@ public static class DriverChoicesCommand
                daoris settings cap <n> · cooloff <minutes>
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
-               daoris place landing <repository>|--workspace <name> merge|branch <pattern>|--clear
-                      (serves only a place that follows Current; converting retires the old landing rule)
-                      [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]
-                      [--cycle <file>|--no-cycle]
-               daoris place work-cycle <repository>|--workspace <name> quest|ask <file>|--clear
                daoris place across <repository>|--workspace <name> read on|off|--clear
                daoris place across <repository> write-to <other> [--clear]
                daoris place standing <repository> "…"|--clear
@@ -68,7 +62,6 @@ public static class DriverChoicesCommand
                       (a workflow's writes say their change, and with --plan save nothing)
                daoris settings keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
-               daoris settings actor found [take|dismiss <n>]
                daoris role [<id>] · role set <id> [--name "…"] [--name-in <tag>="…"]… [--takes <work,…>]
                       [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" … | off]
                       · role remove|default <id> · role suggested [--use]
@@ -103,8 +96,6 @@ public static class DriverChoicesCommand
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read (KEEP1d).
             "keep" => args.Count > 1,
-            // `actor found` says the staffing copy's found changes, a read; `take` and `dismiss` write.
-            "actor" => args.Count > 2,
             // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
             "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
