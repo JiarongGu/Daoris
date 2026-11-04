@@ -3,16 +3,6 @@ namespace Daoris.Driver;
 /// <summary>What a combined Accept brought a member into: the branch, or the line a merge went into, and the tip it was bound at.</summary>
 public sealed record TogetherBrought(string Operation, string Session, string Tree, string Tip, string Into, bool Line, DateTimeOffset At);
 
-/// <summary>The operation bound to an entry's head, as its one Accept lands it (LINESTOGETHER1d): its head part, each member's gate.</summary>
-/// <param name="Head">The entry's part whose tree is the head's.</param>
-/// <param name="Members">The members' sessions: those among the entry's parts are brought into the head, never landed.</param>
-public sealed record EntryTogether(
-    string Operation, string Head, IReadOnlyDictionary<string, IWorkplaceGate?> Gates, IReadOnlySet<string> Members)
-{
-    /// <summary>The head's unit's delivery the combined Accept performs (LANDNODE1b3), its members brought into it; null lands by the rule, as before.</summary>
-    public TreeDelivery? Delivery { get; init; }
-}
-
 /// <summary>
 /// The inclusion record of every form (LINESTOGETHER1d, the review-flow design §4): a landed operation, not a landing record, says what
 /// a member was brought into, since a merge keeps none of its own.

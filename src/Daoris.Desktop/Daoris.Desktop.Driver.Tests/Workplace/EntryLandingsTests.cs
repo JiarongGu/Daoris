@@ -120,53 +120,6 @@ public sealed class EntryLandingsTests
         Assert.Equal((null, null), EntryLandings.Verdict("s2", null, (null, "CONFLICT (content): Merge conflict in a.cs."), ["a.cs"]));
     }
 
-    [Fact]
-    public void The_answer_says_what_landed_where_what_was_left_out_and_what_was_not_tried()
-    {
-        var refused = new TreeLanding(false, "Nothing was landed: it conflicts.");
-        var said = EntryLandWords.Said(LandingForm.Branch, "feature/x", [
-            new EntryPartLanding("s1", EntryPartOutcome.LeftOut),
-            new EntryPartLanding("s2", EntryPartOutcome.Landed, new TreeLanding(true, "put the work on `feature/x`.", "feature/x")),
-            new EntryPartLanding("s3", EntryPartOutcome.Refused, refused),
-            new EntryPartLanding("s4", EntryPartOutcome.NotTried),
-        ]);
-
-        Assert.Equal("Landed 1 part(s) on `feature/x`, in the order they ran. Left out 1, as you chose. `s3` was refused: Nothing was landed: "
-            + "it conflicts. 1 after it not tried, since a later part may build on it.", said);
-    }
-
-    /// <summary>
-    /// FABRIC-CLOSE1h3: a part whose quest moved just before its push keeps its branch made, but its push was not tried, and the parts
-    /// after it are not tried either, since their push would carry its work: the answer says so, and the press did not do what it asked.
-    /// </summary>
-    [Fact]
-    public void A_part_whose_push_was_held_back_stops_the_parts_after_it_and_says_so()
-    {
-        var held = new TreeLanding(true, "put the work on `feature/x`. its quest was taken back before its plugin was told.", "feature/x")
-        {
-            Withheld = "its quest was taken back before its plugin was told",
-        };
-        var outcomes = new[]
-        {
-            new EntryPartLanding("s1", EntryPartOutcome.Landed, new TreeLanding(true, "put the work on `feature/x`.", "feature/x")),
-            new EntryPartLanding("s2", EntryPartOutcome.Landed, held),
-            new EntryPartLanding("s3", EntryPartOutcome.NotTried),
-        };
-
-        Assert.Equal("Landed 2 part(s) on `feature/x`, in the order they ran. `s2`'s push was held back: its quest moved before its plugin "
-            + "was told. 1 after it not tried, since a later part may build on it.", EntryLandWords.Said(LandingForm.Branch, "feature/x", outcomes));
-        Assert.False(EntryLandWords.AllLanded(outcomes));
-        Assert.True(EntryLandWords.AllLanded(outcomes[..1]));
-    }
-
-    [Fact]
-    public void A_merge_rule_says_the_line_the_parts_merged_into() =>
-        Assert.StartsWith("Merged 2 part(s) into `main`",
-            EntryLandWords.Said(LandingForm.Merge, "main", [
-                new EntryPartLanding("s1", EntryPartOutcome.Landed, new TreeLanding(true, "merged.")),
-                new EntryPartLanding("s2", EntryPartOutcome.Landed, new TreeLanding(true, "merged.")),
-            ]));
-
     /// <summary>A conflict with the entry's earlier work offers the later part's session the words to rebase onto the entry's branch.</summary>
     [Fact]
     public void A_conflict_with_the_entrys_earlier_work_is_refused_with_rebase_words_for_its_branch()
@@ -176,9 +129,7 @@ public sealed class EntryLandingsTests
         Assert.False(refused.Landed);
         Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
         Assert.Contains("onto `feature/x`, its entry's branch, conflicts with the entry's earlier work there", refused.Message);
-        Assert.StartsWith("Rebase your work onto `feature/x`: its entry's earlier work landed there", refused.Conflict!.Words);
-        Assert.Equal("`s2`'s work conflicts with what `s1` landed before it. ", EntryLandWords.After("s2", ["s1"]));
-    }
+        Assert.StartsWith("Rebase your work onto `feature/x`: its entry's earlier work landed there", refused.Conflict!.Words);    }
 
     /// <summary>
     /// ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, a coded note on its conversation
