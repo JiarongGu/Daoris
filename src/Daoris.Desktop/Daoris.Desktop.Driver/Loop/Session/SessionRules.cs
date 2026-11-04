@@ -11,8 +11,23 @@ internal static class SessionRules
 {
     /// <summary>
     /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's account,
-    /// which outlives the file. A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
+    /// which outlives the file. A harness a Claude Code rule means nothing to is handed nothing, and no file is written. Shared by a
+    /// quest's session and an ask's intake, so neither forgets it.
     /// </summary>
+    /// <param name="tree">The tree the session works in: its own, which the tree guard holds it to.</param>
+    /// <param name="kept">
+    /// The folder this session's quest or ask keeps its files in, or null when none is on this machine. It lies outside the tree, so the
+    /// session is handed a read of it and of nothing else under the home: a read there would otherwise be asked, and every ask is refused.
+    /// </param>
+    /// <param name="across">What it may reach outside its tree: a read of each checkout it may read, an edit in each declared target,
+    /// and a refusal everywhere else, beside the person's rules, whose denies still win.</param>
+    /// <param name="said">The folder this session keeps the files the person said with their words in, where a resumed run is handed them.</param>
+    /// <param name="opinion">A reviewer's session: the composition laid under the opinion's rules, and the classifier told it changes nothing.</param>
+    /// <param name="plugins">The harness plugins composed for it, which the protocol door carries beside its rules.</param>
+    /// <param name="brainstorm">A brainstorm's pass: its one result tool, and the composition laid under the <c>brainstorm</c> posture, its room the tree.</param>
+    /// <param name="continued">The kept folders of the parts a carry-on's line continues, so it may read exactly those folders too.</param>
+    /// <param name="heavy">What its run's checks hand it: under <c>light</c>, each heavy gate's declared command denied exactly beside the
+    /// person's rules, and auto mode's classifier told the heavy gates are the verification's.</param>
     public static (string? File, object? Meta, HandedSection Handed) Hand(
         string home, ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job, AcrossReach? across, string? said,

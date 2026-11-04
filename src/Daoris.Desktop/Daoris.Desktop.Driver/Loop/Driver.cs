@@ -1054,84 +1054,28 @@ public sealed class Driver(
         && PermissionRules.AllowsConnector(
             PermissionRules.Compose(PermissionRules.Load(home), workspace, repository), tool);
 
-    /// <summary>
-    /// The rules one session may run under (PERM1, D72), composed from this machine's file and handed
-    /// over the harness's own way: a flag on the pipe door, <c>session/new</c>'s <c>_meta</c> on the
-    /// protocol door. Shared by a quest's session and an ask's intake, so neither forgets it.
-    /// </summary>
-    /// <param name="tree">The tree the session works in — its own, which the tree guard holds it to (PERM3).</param>
-    /// <param name="kept">
-    /// The folder THIS session's quest or ask keeps its files in, or null when none is on this machine.
-    /// It lies outside the tree, so the session is handed a read of it and of nothing else under the home
-    /// (INT4j): a read there would otherwise be asked, and every ask is refused (D52). Only a read — the
-    /// tree guard still refuses a write anywhere outside the tree, and says nothing about reads.
-    /// </param>
-    /// <param name="across">
-    /// What it may reach outside its tree (D107): a read of each checkout it may read, an edit in each declared
-    /// target, and a refusal everywhere else — beside the person's rules, whose denies still win.
-    /// </param>
-    /// <param name="said">
-    /// The folder THIS session keeps the files the person said with their words in (MSG1d3, D137 §2.4), where a resumed run
-    /// is handed them; null for none. A read of it, as of <paramref name="kept"/>, and of nothing else under the home.
-    /// </param>
-    /// <param name="opinion">
-    /// A reviewer's session (XAGENT1d, D155 point 5): the composition laid under the opinion's rules
-    /// (<see cref="OpinionPermissions.Shape"/>), and the classifier told it changes nothing.
-    /// </param>
-    /// <returns>
-    /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's
-    /// account (CONTEXT1), which outlives the file.
-    /// </returns>
-    /// <param name="plugins">
-    /// The harness plugins composed for it (HELPPLUG1b, <see cref="SpawnSkills"/>), which the protocol door carries beside its rules;
-    /// the pipe door was handed them by its own flag already.
-    /// </param>
-    /// <param name="brainstorm">
-    /// A brainstorm's pass (BRAINSTORM1a2, D176 points 1 and 2): its one result tool, and the composition laid under the
-    /// <c>brainstorm</c> posture (<see cref="BrainstormPermissions.Shape"/>), its room the <paramref name="tree"/>; null for any other session.
-    /// </param>
-    /// <param name="continued">
-    /// The kept folders of the parts a carry-on's line continues (SESSCTX1b, the session-context design §3.1 item 5): its brief names
-    /// their files, so it may read exactly those folders too. None for every other start.
-    /// </param>
-    /// <param name="heavy">
-    /// What its run's checks hand it (FABRIC-PIPELINE1b, <see cref="HeavyTold.Hand"/>): under <c>light</c>, each heavy gate's declared
-    /// command denied exactly beside the person's rules, and auto mode's classifier told the heavy gates are the verification's. None for
-    /// a session that works on no quest's repository, and nothing where the harness takes no rules.
-    /// </param>
+    /// <summary>The rules one session may run under, handed over the harness's own way: <see cref="SessionRules.Hand"/>.</summary>
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
         bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
-        IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false)
-    {
-        return SessionRules.Hand(
+        IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false) =>
+        SessionRules.Hand(
             home, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
             continued, heavy, partner);
-    }
 
     /// <summary>
-    /// The protocol-door posture a brainstorm's pass asks (BRAINSTORM1c, <see cref="BrainstormPermissions.Posture"/>): its harness's mode that
-    /// changes nothing where it takes no rules; null for every other session, and for a pass whose harness a rule narrows.
+    /// The protocol-door posture a brainstorm's pass asks (<see cref="BrainstormPermissions.Posture"/>): its harness's mode that changes
+    /// nothing where it takes no rules; null for every other session, and for a pass whose harness a rule narrows.
     /// </summary>
     internal static string? PassPosture(SessionTarget target, ISessionAdapter adapter) =>
         target.Brainstorm is not null ? BrainstormPermissions.Posture(adapter) : null;
 
-    /// <summary>
-    /// What a partner's start hands its agent beside the instruction (COAGENT1b, the co-agent design §3.3): the rules
-    /// <see cref="HandRules"/> writes for it with <c>partner</c>, its classifier's hard denials and its tree guard, which always holds it.
-    /// What its effective configuration's digest is taken over (<see cref="PartnerConfigurations"/>).
-    /// </summary>
+    /// <summary>What a partner's start hands its agent beside the instruction: <see cref="SessionRules.PartnerHanded"/>.</summary>
     internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository) =>
         SessionRules.PartnerHanded(home, workspace, repository);
 
-    /// <summary>
-    /// The permission rules a session was handed beside its instruction (CONTEXT1, D143 point 1), kept in its instruction's
-    /// account: how many in each list, the scopes they were composed for, the hard denials and the tree guard. The rules file
-    /// goes when the run does (TRACE1), and the account keeps what it held by count past that.
-    /// </summary>
-    /// <param name="takes">Whether the session's agent takes Daoris's rules at all (<see cref="ISessionAdapter.TakesSettings"/>).</param>
-    /// <param name="handed">The rules as handed: the composition, with any read of the quest's files, reach across and job's own.</param>
+    /// <summary>The permission rules a session was handed, kept in its instruction's account: <see cref="SessionRules.Handed"/>.</summary>
     internal static HandedSection RulesHanded(bool takes, PermissionFile file, RuleLists handed, string? workspace, string? repository) =>
         SessionRules.Handed(takes, file, handed, workspace, repository);
 
@@ -1207,147 +1151,28 @@ public sealed class Driver(
         static string TreeName(string tree) => Path.GetFileName(tree.TrimEnd('/', '\\'));
     }
 
-    /// <summary>
-    /// How long a run's capture is waited for once its root exited, G (SESSWATCH1a, D200, the session-watch design §1.5): the door's
-    /// drain and <c>EndedLingeringAsync</c>'s ten seconds fit inside it. Settable for a test, never read from <c>driver.json</c>.
-    /// </summary>
-    internal TimeSpan CaptureBound { get; set; } = TimeSpan.FromSeconds(60);
+    private SessionWatching Watching => LazyInitializer.EnsureInitialized(ref _watching, () => new SessionWatching(home, config, Context, output));
 
-    /// <summary>
-    /// 🔴 State E (SESSWATCH1a, D200, the session-watch design §2): a run whose root has exited is concluded by what it said, within
-    /// <see cref="CaptureBound"/>. Past it with its capture still held open, by something its agent started holding the harness's
-    /// output, everything left in the run's job is ended, said as a note line (<c>ended.gone</c>), and the capture drains; one still
-    /// open after <see cref="SessionWaits.AbandonedWait"/> is abandoned, still observed. Never a cut-off: the caller concludes by the exit, so a
-    /// session that finished its turn and left a dev server holding its pipe (ORPHAN1's case) ends as it finished.
-    /// </summary>
-    /// <returns>Whether the capture finished, so what it read may be awaited; false where it was abandoned.</returns>
-    internal async Task<bool> CaptureWithinAsync(Task capture, string sessionId)
+    private SessionWatching? _watching;
+
+    /// <summary>How long a run's capture is waited for once its root exited: <see cref="SessionWatching.CaptureBound"/>.</summary>
+    internal TimeSpan CaptureBound
     {
-        if (await Task.WhenAny(capture, Task.Delay(CaptureBound)).ConfigureAwait(false) == capture)
-        {
-            await capture.ConfigureAwait(false);
-            return true;
-        }
-
-        Context.Processes.JobOf(sessionId)?.Terminate();
-        var gone = Observation.Gone;
-        output?.Append(sessionId, $"— {gone.Note}");
-        Context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts }, say: null);
-        Log?.Info("session.gone", ("session", sessionId), ("bound", (int)CaptureBound.TotalSeconds));
-        if (await Task.WhenAny(capture, Task.Delay(SessionWaits.AbandonedWait)).ConfigureAwait(false) == capture)
-        {
-            await capture.ConfigureAwait(false);
-            return true;
-        }
-
-        await SessionWaits.AbandonedAsync(null, capture, sessionId, Log, output, TimeSpan.Zero).ConfigureAwait(false);
-        return false;
+        get => Watching.CaptureBound;
+        set => Watching.CaptureBound = value;
     }
 
-    /// <summary>
-    /// Exit code, or null when a pass's own minutes ran out and killed it. Either way the tree dies with it — a pass's bound
-    /// AND a driver shutdown both end the process, because an orphaned agent session working a quest
-    /// nobody is observing is the one thing worse than a failed one.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 No working session is ended on time (SESSWATCH1a, D200): a driven session, an answered park's resumed run, a native go-on and
-    /// an intake wait for their exit with no bound, and the watcher looks in on one gone quiet. Only a pass with minutes of its own (a
-    /// helper's, a reviewer's, a partner's, a brainstorm's turn) passes them, and the tests' one backstop (<see cref="DriverConfig.TestBound"/>)
-    /// rides the same parameter.
-    /// </remarks>
-    /// <param name="minutes">A pass's own minutes (XAGENT1d); null bounds nothing but the tests' backstop.</param>
-    /// <param name="timingOut">
-    /// Told the bound, in minutes, when the bound ends the process, before it is killed (BGWAIT2): what lets the protocol door
-    /// say the stream's end that follows as the bound's. Never told for a shutdown.
-    /// </param>
-    /// <param name="quiet">
-    /// The watcher's end of the run (SESSWATCH1a): a headless <c>--quiet-end</c>, its own cause, never a registry stop. Its exit is null
-    /// as a bound's is, and the conclusion reads the watcher's minutes.
-    /// </param>
-    /// <param name="quietEnding">Told before the watcher's kill, as <paramref name="timingOut"/> is before a bound's (BGWAIT2).</param>
-    internal async Task<int?> WaitAsync(
+    /// <summary>A run whose root has exited, concluded by what it said within the bound: <see cref="SessionWatching.CaptureWithinAsync"/>.</summary>
+    internal Task<bool> CaptureWithinAsync(Task capture, string sessionId) => Watching.CaptureWithinAsync(capture, sessionId);
+
+    /// <summary>Exit code, or null when a pass's own minutes ran out and killed it: <see cref="SessionWaits.ExitAsync"/>, bounded by the tests' backstop where no minutes are given.</summary>
+    internal Task<int?> WaitAsync(
         Process process, CancellationToken ct, int? minutes = null, Action<int>? timingOut = null, CancellationToken quiet = default,
-        Action? quietEnding = null)
-    {
-        var bound = minutes ?? config.TestBound;
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct, quiet);
-        if (bound is { } within) timeout.CancelAfter(TimeSpan.FromMinutes(within));
-        try
-        {
-            await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
-            return process.ExitCode;
-        }
-        catch (OperationCanceledException)
-        {
-            // Said before the kill, since the stream's end can reach the door's reader before anything after it here runs.
-            if (!ct.IsCancellationRequested)
-            {
-                if (quiet.IsCancellationRequested) quietEnding?.Invoke();
-                else timingOut?.Invoke(bound ?? 0);
-            }
-            process.Kill(entireProcessTree: true);
-            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-            if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"
-            return null; // timeout: the caller records "failed"
-        }
-    }
+        Action? quietEnding = null) =>
+        SessionWaits.ExitAsync(process, minutes ?? config.TestBound, ct, timingOut, quiet, quietEnding);
 
-    /// <summary>
-    /// The watcher's look (SESSWATCH1a, D200, the session-watch design §2): its steps this look, each said as a line, which is the
-    /// headless host's row, since it has no <i>What needs you</i>; the window's row is <c>NeedsAPerson</c>'s.
-    /// </summary>
-    /// <param name="said">The look's classing, each step's line classed as it is made (NOTIFY2h2).</param>
-    internal IReadOnlyList<string> LookIn(LookSaid said)
-    {
-        var watch = Watch;
-        watch.Log = Log;
-        var lines = new LookLines(said, "watch");
-        var steps = watch.Look(
-            id => Context.Processes.JobOf(id) is { } job ? new JobRead(job.Holds, job.Cpu) : null, TimeSpan.FromSeconds(config.PollSeconds),
-            (id, tree) => HeavyWaitOf(id, tree));
-        foreach (var step in steps)
-        {
-            var who = step.Kind == SessionWatch.Intake ? $"intake {step.Session}" : $"session {step.Session}";
-            switch (step)
-            {
-                case { Step: SessionWatch.Marked }:
-                    lines.Progress($"watch  {who} is quiet: nothing heard from it for {step.Minutes} minutes, and nothing it runs uses the machine; "
-                        + "Daoris looked in and ended nothing.");
-                    break;
-                case { Step: SessionWatch.Brought }:
-                    var row = watch.RowOf(step.Session);
-                    lines.Wait($"watch  {who} has said nothing for {step.Minutes} minutes"
-                        + (row is { Busy: true } ? ", while something it runs keeps the machine busy" : ", and nothing it runs uses the machine")
-                        + ": it needs you. Daoris ends nothing; stop it or leave it running from Daoris's window, or end this run with Ctrl-C."
-                        + (watch.EndAfter is null ? " A headless run nobody watches takes --quiet-end <minutes>." : ""));
-                    break;
-                case { Step: SessionWatch.Ended }:
-                    lines.Progress($"watch  {who} said nothing for {step.Minutes} minutes: --quiet-end ends its run, and its work goes on in the same tree.");
-                    break;
-                case { Outcome: "heard" or "busy" or "moving" or "waits" }:
-                    lines.Progress($"watch  {who} is no longer quiet ({step.Outcome}).");
-                    break;
-            }
-        }
-
-        return lines.Said;
-    }
-
-    /// <summary>
-    /// Whether a session waits for its repository's heavy-run slot (HEAVYSLOT1, the session-watch design §1.3), from the slot's records:
-    /// the holder's session, or null for a run from a terminal; null where it waits for none, or its tree is in no checkout.
-    /// </summary>
-    private HeavyWait? HeavyWaitOf(string session, string? tree)
-    {
-        // HEAVYQUEUE1: a run asking for a place in the machine's admission waits for the machine, as one waiting for the slot waits for a
-        // run: it names no session to help, and is brought to the person at three times the bound all the same.
-        if (MachineAdmission.Look(home).Waits.Any(wait => string.Equals(wait.Session, session, StringComparison.OrdinalIgnoreCase))) return new HeavyWait(null);
-        if (tree is null || HeavySlot.KeyOf(tree) is not { } key) return null;
-        var look = HeavySlot.Look(home, key);
-        return look.Waiters.Any(waiter => string.Equals(waiter.Session, session, StringComparison.OrdinalIgnoreCase))
-            ? new HeavyWait(look.Holder?.Session)
-            : null;
-    }
+    /// <summary>The watcher's look, its steps this look each said as a line: <see cref="SessionWatching.Look"/>.</summary>
+    internal IReadOnlyList<string> LookIn(LookSaid said) => Watching.Look(said);
 
     /// <summary>The watcher (SESSWATCH1a): every running driven session's, shared by every look's driver through the record.</summary>
     internal SessionWatch Watch => SessionWatch.Of(Context.Events);

@@ -118,6 +118,53 @@ internal static class SessionWaits
     }
 
     /// <summary>
+    /// Exit code, or null when a pass's own minutes ran out and killed it. Either way the tree dies with it: a pass's bound and a
+    /// driver shutdown both end the process, because an orphaned agent session working a quest nobody is observing is the one thing
+    /// worse than a failed one.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 No working session is ended on time: a driven session, an answered park's resumed run, a native go-on and an intake wait for
+    /// their exit with no bound, and the watcher looks in on one gone quiet. Only a pass with minutes of its own (a helper's, a
+    /// reviewer's, a partner's, a brainstorm's turn) passes them, and the tests' one backstop (<see cref="DriverConfig.TestBound"/>)
+    /// rides the same parameter.
+    /// </remarks>
+    /// <param name="bound">A pass's own minutes; null bounds nothing but the tests' backstop.</param>
+    /// <param name="timingOut">
+    /// Told the bound, in minutes, when the bound ends the process, before it is killed: what lets the protocol door say the stream's
+    /// end that follows as the bound's. Never told for a shutdown.
+    /// </param>
+    /// <param name="quiet">
+    /// The watcher's end of the run: a headless <c>--quiet-end</c>, its own cause, never a registry stop. Its exit is null as a bound's
+    /// is, and the conclusion reads the watcher's minutes.
+    /// </param>
+    /// <param name="quietEnding">Told before the watcher's kill, as <paramref name="timingOut"/> is before a bound's.</param>
+    public static async Task<int?> ExitAsync(
+        Process process, int? bound, CancellationToken ct, Action<int>? timingOut = null, CancellationToken quiet = default,
+        Action? quietEnding = null)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct, quiet);
+        if (bound is { } within) timeout.CancelAfter(TimeSpan.FromMinutes(within));
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
+            return process.ExitCode;
+        }
+        catch (OperationCanceledException)
+        {
+            // Said before the kill, since the stream's end can reach the door's reader before anything after it here runs.
+            if (!ct.IsCancellationRequested)
+            {
+                if (quiet.IsCancellationRequested) quietEnding?.Invoke();
+                else timingOut?.Invoke(bound ?? 0);
+            }
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"
+            return null; // timeout: the caller records "failed"
+        }
+    }
+
+    /// <summary>
     /// Wait up to <paramref name="bound"/> for an agent to exit; past it, end its process tree, saying so to the run first. True where
     /// its tree was ended here.
     /// </summary>
