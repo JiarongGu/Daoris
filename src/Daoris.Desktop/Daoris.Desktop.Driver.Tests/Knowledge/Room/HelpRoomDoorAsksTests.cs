@@ -49,9 +49,8 @@ public sealed class HelpRoomDoorAsksTests
         Assert.Equal($"{helpers.Act} (Ask Daoris proposes it)", helpers.To);
 
         var accept = Row("`daoris quest accept <id>`");
-        Assert.IsType<HelpDoorAsk.OnlyWhenAsked>(accept.Ask);
-        Assert.Equal(("accept", "accept"), accept.Ask!.Through);
-        Assert.StartsWith($"{accept.Act} (Ask Daoris proposes it only when you ask for it: ", accept.To, StringComparison.Ordinal);
+        Assert.Equal(new HelpDoorAsk.Never("the yes is yours"), accept.Ask);
+        Assert.Null(accept.Ask!.Through);
 
         var abandon = Row("`daoris ask abandon <id>");
         Assert.Equal(new HelpDoorAsk.Never("the reason is your answer"), abandon.Ask);
@@ -60,13 +59,13 @@ public sealed class HelpRoomDoorAsksTests
     }
 
     [Fact]
-    public void A_door_still_owed_is_never_said_to_be_proposed()
+    public void An_act_done_at_a_terminal_is_never_said_to_be_proposed()
     {
-        var owed = HelpRoomOwed.All.SelectMany(door => door.Terminal).ToList();
+        var terminal = HelpRoomTerminalActs.All.SelectMany(act => act.Terminal).ToList();
 
         foreach (var door in HelpRoomDoors.Doors.Where(door => door.Ask?.Through is not null))
         {
-            Assert.DoesNotContain(owed, command => door.Terminal.Contains($"`{command}`", StringComparison.Ordinal));
+            Assert.DoesNotContain(terminal, command => door.Terminal.Contains($"`{command}`", StringComparison.Ordinal));
         }
     }
 

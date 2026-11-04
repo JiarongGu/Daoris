@@ -121,8 +121,7 @@ export type SessionEvent = {
   code?: string | null;
   /**
    * For `receipt` (COWORK1c, the message-urgency design §7): what the door observed of the word under `id`, `sent` (the write to its
-   * harness returned) or `ended` (the turn that took it ended so; COMMS1h, an older build's `answered`). Each written only where it
-   * was observed.
+   * harness returned) or `ended` (the turn that took it ended so; COMMS1h). Each written only where it was observed.
    */
   receipt?: string | null;
   /**
@@ -341,11 +340,8 @@ export type Ask = {
   helper?: string;
 };
 
-/**
- * A word's receipts as its conversation folds them (COWORK1c): each the driver's moment it was observed. `answered` is an older build's
- * receipt for the turn that took the word, drawn as it was (COMMS1h).
- */
-export type Receipts = { sent?: string; taken?: string; ended?: string; answered?: string };
+/** A word's receipts as its conversation folds them (COWORK1c): each the driver's moment it was observed. */
+export type Receipts = { sent?: string; taken?: string; ended?: string };
 
 /**
  * A message as the driver tells the page of one it has not sent yet, or handed back (CONV4a/c): the
@@ -749,8 +745,6 @@ export function toTurns(
         if (event.id && (event.receipt === 'sent' || event.receipt === 'ended')) {
           receipts.set(event.id, { ...receipts.get(event.id), [event.receipt]: event.at });
         }
-        // transitional: receipt-answered
-        if (event.id && event.receipt === 'answered') receipts.set(event.id, { ...receipts.get(event.id), answered: event.at });
         break;
       }
       default:

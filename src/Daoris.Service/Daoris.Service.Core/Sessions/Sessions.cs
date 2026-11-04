@@ -561,14 +561,10 @@ public sealed class SessionStore
         await SchemaColumns.EnsureAsync(_db, "sessions", "ask", "ask TEXT NULL", ct).ConfigureAwait(false);
 
         // STANDDOWN2: whether this session took its own quest, through its own connector. A record from
-        // before it says nothing, and nothing is the old reading. And the person's answer to one that
-        // parked to ask them, which the session that carries the quest on is handed.
+        // before it says nothing, and nothing is the old reading.
         await SchemaColumns.EnsureAsync(_db, "sessions", "took", "took INTEGER NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(_db, "sessions", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
 
-        // MSG1a (D137 §2.4): the person's words, a JSON list, which the single answer above became. Nothing is moved at
-        // the column's arrival: a record from before reads its answer as its first word, and the first word kept after
-        // it writes both into this list and empties the old column, so the two never both hold words.
+        // MSG1a (D137 §2.4): the person's words, a JSON list. The single answer it replaced is the desktop's migration's (D232).
         await SchemaColumns.EnsureAsync(_db, "sessions", "said", "said TEXT NULL", ct).ConfigureAwait(false);
 
         // D104: a stop that was not the person's — the sweep's, or a shutdown's. A record from before it
@@ -958,7 +954,7 @@ public sealed class SessionStore
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, note_parts = $noteParts, evidence = $evidence,
               transcript = $transcript, updated = $updated, interrupted = $interrupted, limited = $limited,
-              said = CASE WHEN $clear THEN NULL ELSE said END, answer = CASE WHEN $clear THEN NULL ELSE answer END,
+              said = CASE WHEN $clear THEN NULL ELSE said END,
               revision = {NextRevision} WHERE id = $id
             """;
         command.Parameters.AddWithValue("$noteParts", (object?)moved.NoteParts ?? DBNull.Value);
@@ -1614,8 +1610,8 @@ public sealed class SessionStore
         _db.RunAsync(() => WorkRecordStore.ForgetOrphansAsync(_db, workspace, through, ct), ct);
 
     /// <summary>
-    /// The id a record from before <see cref="Session.Said"/> gives its answer as a word (MSG1a). Never one a word is
-    /// given now, which are hexadecimal.
+    /// The id a record's answer from before <see cref="Session.Said"/> took as its word when the desktop's migration converted it
+    /// (MSG1a, D232). Never one a word is given now, which are hexadecimal.
     /// </summary>
     public const string AnswerWordId = "answer";
 
@@ -1628,9 +1624,6 @@ public sealed class SessionStore
     /// <remarks>
     /// <para><b>Appended in one statement</b>, for the reason an ask's words are (REV3): a whole-list save from two
     /// doors at once would drop one of them.</para>
-    ///
-    /// <para><b>A record from before the list</b> holds its answer in the old column: it becomes the list's first
-    /// word in the same statement, and the old column is emptied, so the record's words have one home from here.</para>
     /// </remarks>
     /// <param name="noteParts">The note's parts beside it (LANG1a), written with it; a note without them clears the record's.</param>
     public Task<Session?> KeepSaidAsync(
@@ -1638,14 +1631,9 @@ public sealed class SessionStore
     {
         await using (var command = _db.Command())
         {
-            // transitional: session-answer-column (the old column becomes the first word, then is emptied)
             command.CommandText = $"""
                 UPDATE sessions SET
-                  said = json_insert(
-                    COALESCE(said, CASE WHEN answer IS NULL THEN '[]' ELSE json_array(json_object(
-                      'id', '{AnswerWordId}', 'text', answer, 'at', updated, 'files', json('[]'))) END),
-                    '$[#]', json($word)),
-                  answer = NULL
+                  said = json_insert(COALESCE(said, '[]'), '$[#]', json($word))
                   {(note is null ? "" : $", note = $note, note_parts = $noteParts, updated = $updated, revision = {NextRevision}")}
                 WHERE id = $id AND origin IS NULL
                 """;
@@ -1678,7 +1666,7 @@ public sealed class SessionStore
         var left = session.Said.Where(word => !ids.Contains(word.Id, StringComparer.Ordinal)).ToList();
         await using (var command = _db.Command())
         {
-            command.CommandText = "UPDATE sessions SET said = $said, answer = NULL WHERE id = $id AND origin IS NULL";
+            command.CommandText = "UPDATE sessions SET said = $said WHERE id = $id AND origin IS NULL";
             command.Parameters.AddWithValue("$id", id);
             command.Parameters.AddWithValue("$said", left.Count == 0 ? DBNull.Value : SaidJson(left));
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -1720,21 +1708,16 @@ public sealed class SessionStore
 
     /// <summary>
     /// A record's words as stored, each element's text beside the word it reads as, null for an element that is no word, which stays as it
-    /// is; on a record from before the list, its answer as the word every reader reads. Null where no record of this machine's has the id.
+    /// is. Null where no record of this machine's has the id.
     /// </summary>
     private async Task<IReadOnlyList<(string Element, SaidWord? Word)>?> StoredWordsAsync(string id, CancellationToken ct)
     {
         await using var command = _db.Command();
-        command.CommandText = "SELECT said, answer, updated FROM sessions WHERE id = $id AND origin IS NULL";
+        command.CommandText = "SELECT said FROM sessions WHERE id = $id AND origin IS NULL";
         command.Parameters.AddWithValue("$id", id);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
-        if (!reader.IsDBNull(0)) return StoredElements(reader.GetString(0));
-        if (reader.IsDBNull(1)) return [];
-
-        // transitional: session-answer-column
-        var answer = new SaidWord(AnswerWordId, reader.GetString(1), Moments.ReadRequired(reader.GetString(2)), []);
-        return [(WordJson(answer), answer)];
+        return reader.IsDBNull(0) ? [] : StoredElements(reader.GetString(0));
     }
 
     /// <summary>A list's elements as stored, in order; none for a list that is not a JSON array, which nothing here rewrites.</summary>
@@ -1774,7 +1757,7 @@ public sealed class SessionStore
     private async Task WriteWordsAsync(string id, IReadOnlyList<string> elements, CancellationToken ct)
     {
         await using var command = _db.Command();
-        command.CommandText = "UPDATE sessions SET said = $said, answer = NULL WHERE id = $id AND origin IS NULL";
+        command.CommandText = "UPDATE sessions SET said = $said WHERE id = $id AND origin IS NULL";
         command.Parameters.AddWithValue("$id", id);
         command.Parameters.AddWithValue("$said", elements.Count == 0 ? DBNull.Value : JsonFields.Written(writer =>
         {
@@ -1851,20 +1834,11 @@ public sealed class SessionStore
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
-    /// <summary>
-    /// The record's words: its list, or, on a record from before the list, its answer as the first word, said when the
-    /// record last changed, which is when the answer was kept (ANSWER1b).
-    /// </summary>
+    /// <summary>The record's words: its list.</summary>
     private static IReadOnlyList<SaidWord> SaidOf(SqliteDataReader reader)
     {
         var said = reader.GetOrdinal("said");
-        if (!reader.IsDBNull(said)) return SaidWords(reader.GetString(said));
-
-        // transitional: session-answer-column
-        var answer = reader.GetOrdinal("answer");
-        return reader.IsDBNull(answer)
-            ? []
-            : [new SaidWord(AnswerWordId, reader.GetString(answer), Moments.ReadRequired(reader.GetString(reader.GetOrdinal("updated"))), [])];
+        return reader.IsDBNull(said) ? [] : SaidWords(reader.GetString(said));
     }
 
     /// <summary>

@@ -24,15 +24,7 @@ internal static class ChatRecorded
         if (message.TakenOver is { } taken)
         {
             yield return new SessionEvent { Kind = SessionEventKind.Note, Text = taken.Note, Parts = taken.Parts };
-            // SESSCTX1b (the session-context design §3.4): the brief is the conversation's first prompt, Daoris's, with its account and
-            // the session it continues, as an instruction is kept. Never a message of the person's, nor the browser's line.
-            if (message.Brief is { } brief)
-            {
-                yield return new SessionEvent
-                {
-                    Kind = SessionEventKind.User, Origin = "target", Text = brief.Text, Account = brief.Account, Continues = brief.Continues,
-                };
-            }
+            if (Briefed(message) is { } briefed) yield return briefed;
 
             // SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the person's
             // words that waited there after the brief, in the same prompt; they are the person's, as they said them. FOUNDATION1d-ii part 4:
@@ -79,6 +71,8 @@ internal static class ChatRecorded
             yield break;
         }
 
+        // An Ask Daoris conversation started from an earlier one is handed that line's brief ahead of the person's first words (D233).
+        if (Briefed(message) is { } brief) yield return brief;
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (ToldBlock(message.Block) is { } toldBlock) yield return toldBlock;
@@ -93,6 +87,14 @@ internal static class ChatRecorded
         // FOUNDATION1d-ii part 4: a first message of moved words (start-from's, a fresh start's) shows each under its id.
         foreach (var each in shown) yield return each;
     }
+
+    /// <summary>
+    /// The brief a message carries (SESSCTX1b, the session-context design §3.4), kept as the conversation's first prompt, Daoris's, with its
+    /// account and the session it continues, as an instruction is kept. Never a message of the person's, nor the browser's line.
+    /// </summary>
+    private static SessionEvent? Briefed(ChatMessage message) => message.Brief is { } brief
+        ? new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = brief.Text, Account = brief.Account, Continues = brief.Continues }
+        : null;
 
     private static SessionEvent Asked(ChatMessage message) => new()
     {

@@ -25,19 +25,14 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         new(scope, id, [new HistoryUnitPlan(kind, id, workspace) { Quests = [id], Bytes = new HistoryBytes(1024, 0, 0, 0, 0) }]);
 
     /// <summary>
-    /// <c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s; each landed a branch. ASKSCOPE1c2: each has a quest, an ask
-    /// and a session, as each kind's facts read them: the delete's and a go's records, the accept's quests, the pause's works,
-    /// the clear's plans, and the sessions where Sessions' list places them.
+    /// <c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s. ASKSCOPE1c2: each has a quest, an ask and a session, as each
+    /// kind's facts read them: the delete's and a go's records, the pause's works, the clear's plans, and the sessions where
+    /// Sessions' list places them.
     /// </summary>
     private static readonly HelpMachineFacts Two = Facts with
     {
         Workspaces = ["default", "alpha", "beta"],
         Registered = [("engine", "alpha", "/alpha/engine"), ("game", "beta", "/beta/game")],
-        Landed =
-        [
-            new("engine", "alpha", "feature/qa1-tiles", "main", "a1b2c3d", "sa0", "qa1", "Stream the tiles", At),
-            new("game", "beta", "feature/qb1-stall", "main", "b2c3d4e", "sb0", "qb1", "Fix the stall", At),
-        ],
         Quests =
         [
             new HelpQuestFacts("qa1alpha", "Stream the tiles", "engine", "Open", Deletable: true, Workspace: "alpha"),
@@ -48,7 +43,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
             new HelpAskFacts("aa1alpha", "stream the tiles", "alpha", "Open", [], Deletable: true),
             new HelpAskFacts("ab1beta0", "fix the stall", "beta", "Open", [], Deletable: true),
         ],
-        QuestRecords = [Quest("qa1alpha", "alpha", "engine"), Quest("qb1beta0", "beta", "game")],
         Work =
         [
             QuestWork(Quest("qa1alpha", "alpha", "engine")),
@@ -146,12 +140,8 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     [Fact]
-    public void A_hand_off_a_go_and_a_plugin_from_another_workspace_s_repository_are_refused()
+    public void A_go_and_a_plugin_from_another_workspace_s_repository_are_refused()
     {
-        Outside(Of("hand", "hand", "feature/qb1-stall"), "`game`");
-        Outside(Of("hand", "hand", "sa0") with { Repository = "game" }, "`game`");
-        Inside(Of("hand", "hand", "feature/qa1-tiles"));
-
         Outside(Of("go", "go", "repositories") with { Repository = "game" }, "`game`");
         Outside(Of("go", "go", "repositories") with { Workspace = "beta" }, "workspace `beta`");
         Outside(Of("plugin", "add", "x") with { Repository = "game", Folder = "plugins/x" }, "`game`");
@@ -185,7 +175,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Outside(Of("delete", "quest", "qb1beta0"), BetaQuest);
         Outside(Of("delete", "ask", "#AB1BETA0"), BetaAsk);
         Outside(Of("delete", "session", "sb1beta0"), BetaSession);
-        Outside(Of("accept", "accept", "#qb1beta0"), BetaQuest);
         Outside(Of("pause", "pause", "qb1beta0"), BetaQuest);
         Outside(Of("pause", "pause", "ab1beta0", value: "ask"), BetaAsk);
         Outside(Of("clear", "quest", "qb1beta0"), BetaQuest);
@@ -253,13 +242,11 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Assert.Null(Refusal(Of("go", "go", "quests") with { Item = "qa1alpha" }));
         Assert.Null(Refusal(Of("go", "go", "quests") with { Item = "ask:aa1alpha" }));
         Assert.Null(Refusal(Of("go", "go", "sessions") with { Item = "sa1alpha" }));
-        Inside(Of("accept", "accept", "qa1alpha"));
         Inside(Of("pause", "pause", "qa1alpha"));
 
         Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("delete", "quest", "zz000000")));
         Assert.Equal("there is no ask `#zz000000` on this machine.", Refusal(Of("go", "go", "quests") with { Item = "ask:zz000000" }));
         Assert.Equal("there is no session `zz000000` on this machine.", Refusal(Of("session", "archive", "zz000000")));
-        Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("accept", "accept", "zz000000")));
         Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("pause", "pause", "zz000000", value: "quest")));
         Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("clear", "quest", "zz000000")));
     }

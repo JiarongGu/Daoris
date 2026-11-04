@@ -1527,7 +1527,7 @@ describe('Ask Daoris’s history', () => {
     await userEvent.click(press);
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', { payload: { id: EARLIER.id } }));
-    expect(await screen.findByText('This conversation starts from “what is a workspace?”: its words go to Ask Daoris as a file with your first message.'))
+    expect(await screen.findByText('This conversation starts from “what is a workspace?”: Daoris\'s brief of it goes with your first message.'))
       .toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -1546,7 +1546,7 @@ describe('Ask Daoris’s history', () => {
     SESSIONS = [EARLIER, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
     await userEvent.click(press);
 
-    expect(await screen.findByText(`This conversation starts from “${title}”: its words go to Ask Daoris as a file with your first message.`))
+    expect(await screen.findByText(`This conversation starts from “${title}”: Daoris's brief of it goes with your first message.`))
       .toHaveClass('wrap-anywhere');
   });
 

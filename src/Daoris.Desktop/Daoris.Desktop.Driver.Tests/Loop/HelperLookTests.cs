@@ -1574,7 +1574,7 @@ public sealed class HelperLookTests : IDisposable
     public async Task Against_the_one_door_a_keyed_attempt_a_restart_cut_is_asked_again_and_never_handed_twice(string where)
     {
         var host = Door();
-        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow.AddMinutes(-1), Keyed = true });
+        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow.AddMinutes(-1) });
         if (where == "taken")
         {
             Kept(host, "s1");
@@ -1616,7 +1616,7 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Contains("uncertain", Assert.Single(await Look(driver)));
         var held = Files.ReadState("a1")!;
-        Assert.True(held is { Attempted: not null, Keyed: true, Handed: null });
+        Assert.True(held is { Attempted: not null, Handed: null });
         var word = host.Said("s1")[0]!["id"]!.GetValue<string>();
 
         host.HelperHandLost = null;
@@ -1642,7 +1642,7 @@ public sealed class HelperLookTests : IDisposable
     public async Task Against_the_one_door_a_keyed_attempt_past_the_horizon_goes_to_the_person_unasked()
     {
         var host = Door();
-        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow - SolicitedHand.Horizon - TimeSpan.FromMinutes(1), Keyed = true });
+        Files.WriteState(Files.ReadState("a1")! with { Attempted = DateTimeOffset.UtcNow - SolicitedHand.Horizon - TimeSpan.FromMinutes(1) });
 
         await Look(Driver(host, pass: null));
 

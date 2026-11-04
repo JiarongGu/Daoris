@@ -14,10 +14,9 @@ namespace Daoris.Driver;
 /// admission, so two answers queued together, on one path or two, never both pass as the second. The continuation's own files stay as
 /// they were (SESSCTX1c): the hold is a mark beside them.</para>
 ///
-/// <para><b>A line whose events are missing here counts nothing</b> (the steward's choice 2) at its seed: a teammate's record, a part
-/// this machine keeps no events of, or a file that does not read ends the line before it. Once seeded, the count is the store's, and an
-/// event trimmed or lost afterwards takes nothing from it. Where the service's records did not read, or the store holds no admissions
-/// (a start before its confirmation settled), the record's line is counted from its events as it was before.</para>
+/// <para><b>A line is counted by its admissions alone</b> (D232), from its seed on: an event trimmed or lost afterwards takes nothing from
+/// it. Where the service's records did not read, or the store holds no admissions (a start before its confirmation settled), nothing is
+/// held, and the next look judges again.</para>
 /// </remarks>
 public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null)
 {
@@ -26,21 +25,18 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
         new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home));
 
     /// <summary>
-    /// The answers alone in a row <paramref name="session"/>'s line goes on by: on a reached home its line's effective rule, null where none
-    /// holds it; else Daoris's own bound.
+    /// The answers alone in a row <paramref name="session"/>'s line goes on by: its line's effective rule, null where none holds it. A hold
+    /// handed no rules holds at Daoris's own bound.
     /// </summary>
     public int? At(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
-        // transitional: answers-alone-bound
-        if (rules is not { Reached: true } book) return AnswersAlone.Bound;
+        if (rules is not { } book) return AnswersAlone.Bound;
         var record = records.GetValueOrDefault(session);
         return SupervisorRuleBook.AnswersAloneAt(book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key));
     }
 
-    /// <summary>The number a held line was held at: its rule's, or Daoris's own bound on a home not reached.</summary>
-    public int HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) =>
-        // transitional: answers-alone-bound
-        At(session, records) ?? AnswersAlone.Bound;
+    /// <summary>The number a held line was held at: its rule's.</summary>
+    public int HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) => At(session, records) ?? AnswersAlone.Bound;
 
     /// <summary>
     /// Whether going on with <paramref name="words"/> on <paramref name="record"/> now would take its line on by answers alone past the
@@ -114,9 +110,7 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
     public bool AtBound(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
         if (!SessionEventText.IsLocalId(session)) return false;
-        if (records.ContainsKey(session) && admissions.Count(History(session, records)) is { } count) return At(session, records) is { } at && count.N >= at;
-        // transitional: answers-alone-events
-        return AnswersAlone.AtBound(Line(session, records));
+        return records.ContainsKey(session) && admissions.Count(History(session, records)) is { } count && At(session, records) is { } at && count.N >= at;
     }
 
     /// <summary>
@@ -137,57 +131,20 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
 
     /// <summary>
     /// Whether the line admits the go-on now: judged and reserved inside its admission at <see cref="AnswersAlone.Bound"/>, the line read
-    /// by its one key. Without the service's records, or without the admissions, the record's line is counted from its events as before.
+    /// by its one key. Without the service's records, or without the admissions, it is admitted: nothing counts it.
     /// </summary>
     private bool Admits(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<SaidWordView> words)
     {
         var ids = Keys(record, words);
-        if (records.ContainsKey(record.Session)
-            && admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, At(record.Session, records)) is { } admission)
-        {
-            return admission.Admitted;
-        }
-
-        // transitional: answers-alone-events
-        return !AnswersAlone.Holds(words, Line(record.Session, records));
+        return !records.ContainsKey(record.Session)
+            || admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, At(record.Session, records)) is not { } admission
+            || admission.Admitted;
     }
 
     /// <summary>Each word's id, and for a word from before ids its record and when it was said.</summary>
     private static IReadOnlyList<string> Keys(PriorSession record, IReadOnlyList<SaidWordView> words) =>
         [.. words.Select(word => word.Id ?? $"{record.Session}@{word.At.ToUniversalTime():O}").Distinct(StringComparer.Ordinal)];
 
-    /// <summary>
-    /// The line <paramref name="session"/> ends, oldest part first, as this machine keeps its events: it, then by each record's <c>from</c>
-    /// the parts it continued (<see cref="ContextBriefs.LineOf"/>'s walk). A part that is not this machine's, or whose events do not read,
-    /// ends the line before it. What the count was read from before its admission, and still where none is kept.
-    /// </summary>
-    private IReadOnlyList<SessionEvent> Line(string session, IReadOnlyDictionary<string, PriorSession> records)
-    {
-        var parts = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        for (string? at = session; at is not null && parts.Count < ContextBriefs.Depth && SessionEventText.IsLocalId(at) && seen.Add(at);)
-        {
-            parts.Add(at);
-            at = records.TryGetValue(at, out var record) && record.From is { Length: > 0 } from ? from : null;
-        }
-
-        parts.Reverse();
-        var line = new List<SessionEvent>();
-        foreach (var part in parts)
-        {
-            try
-            {
-                line.AddRange(events.After(part, 0).Events);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-            {
-                // The line is read from the next part on.
-                line.Clear();
-            }
-        }
-
-        return line;
-    }
 
     /// <summary>
     /// The agent whose answer is held, by its adapter: a helper's record's, else the reviewer's whose opinion the findings are; else the

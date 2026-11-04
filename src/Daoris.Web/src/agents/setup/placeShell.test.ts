@@ -55,16 +55,13 @@ describe('the first section by kind of place', () => {
   });
 
   // SETUPUX1m: this machine alone draws All roles beside its Roles, and its fold says what is behind it from no read.
-  it("gives this machine All roles after its Roles, then Old records (ONEWAY1ad-ii), and no other place", () => {
-    expect(sectionsOf('machine')).toEqual(['roles', 'allRoles', 'oldRecords']);
+  it('gives this machine All roles after its Roles, and no other place', () => {
+    expect(sectionsOf('machine')).toEqual(['roles', 'allRoles']);
     expect(sectionsOf('workspace')).not.toContain('allRoles');
-    expect(sectionsOf('repository')).not.toContain('oldRecords');
     expect(isPlaceSection('allRoles')).toBe(true);
-    expect(isPlaceSection('oldRecords')).toBe(true);
+    expect(isPlaceSection('oldRecords')).toBe(false);
     expect(foldedLines(ENGINE, 'machine', t, 'en').allRoles).toBe('Every role once, by where it is placed · as a list or a diagram');
     expect(foldedLines(ENGINE, 'machine', tz, 'zh').allRoles).toBe('每个角色一次，按所在位置 · 列表或角色图');
-    expect(foldedLines(ENGINE, 'machine', t, 'en').oldRecords).toBe('Old shapes Daoris still reads, and when each ends');
-    expect(foldedLines(ENGINE, 'machine', tz, 'zh').oldRecords).toBe('Daoris 仍在读取的旧形态，以及每项何时结束');
   });
 });
 

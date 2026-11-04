@@ -46,11 +46,13 @@ public static class StandingBlocks
     }
 
     /// <summary>
-    /// <paramref name="facts"/> on <paramref name="adapter"/>: the tree's skill folders where it loads none itself, and the repository's rules
-    /// where its instruction file is longer than the harness reads. Nothing for a kind with no repository.
+    /// <paramref name="facts"/> on <paramref name="adapter"/>: whether it takes none of the person's denies (D233 choice 3), and, for a kind
+    /// with a repository, the tree's skill folders where it loads none itself and the repository's rules where its instruction file is
+    /// longer than the harness reads.
     /// </summary>
     public static StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree)
     {
+        facts = facts with { NoDenies = !adapter.TakesSettings };
         if (facts.Repository is not { } repository) return facts;
         IReadOnlyList<string> skills = adapter.LoadsTreeSkills ? [] : [.. SkillFolders.Where(folder => Directory.Exists(Path.Combine(tree, folder)))];
         return facts with { Skills = skills, Rules = adapter.InstructionFileLimit is { } limit ? Rules(repository, tree, limit) : null };

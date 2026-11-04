@@ -154,27 +154,18 @@ public static class LineCounts
     public const int GoOnsShown = 10;
 
     /// <summary>
-    /// The counts as facts below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i), each with the number Daoris acts on it at today: the
-    /// answers-alone bound, and the home's failed sessions, none where it is 0.
+    /// The counts as facts below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i), each with the number Daoris acts on it at today: its lowest
+    /// effective rule with its place, none where no rule watches it.
     /// </summary>
-    /// <param name="ruled">On a reached home the line's effective rules (CONTEXTDRIVE1e), each count watched by its lowest rule with its place; null reads Daoris's own numbers.</param>
+    /// <param name="ruled">The line's effective rules (CONTEXTDRIVE1e); null where they did not read, which watches nothing.</param>
     public static IReadOnlyList<CountFact> Facts(
-        IReadOnlyList<LineCount> counts, int strikes, IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>>? ruled = null) =>
+        IReadOnlyList<LineCount> counts, IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>>? ruled = null) =>
     [
         .. counts.Select(count => new CountFact(count.Count, count.N, count.Known, count.Why, count.From)
         {
-            Watch = ruled is not null
-                ? ruled.TryGetValue(count.Count, out var rules) && rules.Where(rule => rule.Do != SupervisorRules.Off).MinBy(rule => rule.At) is { } rule
-                    ? new CountWatch(rule.At, rule.Do, rule.Place)
-                    : null
-                : count.Count switch
-                {
-                    // transitional: answers-alone-bound
-                    AnswersAlone => new CountWatch(global::Daoris.Driver.AnswersAlone.Bound, SupervisorRules.Hold),
-                    // transitional: strikes-key
-                    Failures when strikes > 0 => new CountWatch(strikes, SupervisorRules.Hold),
-                    _ => null,
-                },
+            Watch = ruled is not null && ruled.TryGetValue(count.Count, out var rules) && rules.Where(rule => rule.Do != SupervisorRules.Off).MinBy(rule => rule.At) is { } rule
+                ? new CountWatch(rule.At, rule.Do, rule.Place)
+                : null,
         }),
     ];
 

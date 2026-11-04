@@ -513,23 +513,6 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/contributes nothing: declares agent/)).toBeInTheDocument();
   });
 
-  // WSR5b: a branch a landing made, handed to a landing plugin — the one card whose Apply leads to a push.
-  const HAND: HelpProposal = {
-    id: 'p8', kind: 'hand',
-    describe: 'Hand `feature/q2-second` (in `engine`) to plugin `example.lands`: it pushes the branch and opens the pull request against the line.',
-    terminal: 'daoris tree hand feature/q2-second --repository engine',
-    why: 'the person wants its pull request opened',
-  };
-
-  it('a hand-off says a plugin pushes the branch, signed in as the person, before Apply', async () => {
-    await press(HAND, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes a hand-off')).toBeInTheDocument();
-    expect(screen.getByText(code('feature/q2-second'))).toBeInTheDocument();
-    expect(screen.getByText(/pushes the branch to its remote, signed in as you/)).toBeInTheDocument();
-    expect(screen.getByText(code(HAND.terminal))).toBeInTheDocument();
-  });
-
   // HELP10: Daoris's browser's settings, a card as a setting's is: what changes, and the command that does the same.
   const BROWSER: HelpProposal = {
     id: 'p10', kind: 'browser',
@@ -675,10 +658,6 @@ describe('the kinds that reach every door', () => {
       const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
       expect(runs.getByText(code('node ${plugin}/hooks.mjs'))).toBeInTheDocument();
       cleanup();
-      // WSR5b: the hand-off's chrome translates too.
-      render(<ul><ProposalCard proposal={HAND} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议交接一个分支')).toBeInTheDocument();
-      expect(screen.getByText(/以你的身份把分支推送到它的远程/)).toBeInTheDocument();
       // PLUG9 (c) and (d): what an offer needs and what an update changes, the chrome in 中文.
       render(<ul><ProposalCard proposal={PLUGIN_OFFER} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText(/^需要：/)).toBeInTheDocument();
@@ -694,55 +673,6 @@ describe('the kinds that reach every door', () => {
       render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(within(screen.getByRole('note', { name: '未获取' })).getByText(unreadable)).toBeInTheDocument();
       expect(within(screen.getByRole('group', { name: '未检查的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();
-    } finally {
-      cleanup();
-      await i18n.changeLanguage('en');
-    }
-  });
-});
-
-// DRIFT1d2 (D133 §4): the person's yes to a done's departure, its card showing each departure with the person's words it
-// relied on, as the quest's page does, and its press the yes.
-
-const ACCEPT: HelpProposal = {
-  id: 'p12', kind: 'accept',
-  describe: 'Accept the departure on quest `#q3done00` “Stream the tiles”, for `engine`: it departed from requirement 2, '
-    + 'and what it held goes on — its next step, “Report on q3done00” to `game`, is published.',
-  terminal: 'daoris quest accept q3done00',
-  why: 'the person said the first frame may go over',
-  accept: {
-    quest: 'q3done00', title: 'Stream the tiles',
-    departures: [{
-      requirement: 2, quote: 'keep the budget under the ceiling', check: 'no frame hydrates past the ceiling',
-      departed: 'a cold cache cannot hold the ceiling on its first frame', words: 'keep the budget under the ceiling',
-    }],
-  },
-};
-
-describe('a yes to a departure', () => {
-  it('shows each departure with the person’s words it relied on before the yes, and its Apply is the yes', async () => {
-    await press(ACCEPT, 'Accept');
-
-    expect(screen.getByText('Ask Daoris proposes a yes')).toBeInTheDocument();
-    const departures = within(screen.getByRole('list', { name: 'what it departed from' }));
-    expect(departures.getByText('2')).toBeInTheDocument();
-    expect(departures.getAllByText('keep the budget under the ceiling')).toHaveLength(2);
-    expect(departures.getByText('no frame hydrates past the ceiling')).toBeInTheDocument();
-    expect(departures.getByText('departed')).toBeInTheDocument();
-    expect(departures.getByText('a cold cache cannot hold the ceiling on its first frame')).toBeInTheDocument();
-    expect(screen.getByText(/the departure stays on its record/)).toBeInTheDocument();
-    expect(screen.getByText(code(ACCEPT.terminal))).toBeInTheDocument();
-  });
-
-  it('speaks 中文, the person’s words and the done’s as they were written', async () => {
-    const { default: i18n } = await import('../locales/i18n');
-    await i18n.changeLanguage('zh');
-    try {
-      render(<ul><ProposalCard proposal={ACCEPT} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议采纳')).toBeInTheDocument();
-      expect(within(screen.getByRole('list', { name: '偏离之处' })).getByText('偏离')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '采纳' })).toBeInTheDocument();
-      expect(screen.getAllByText('keep the budget under the ceiling')).toHaveLength(2);
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

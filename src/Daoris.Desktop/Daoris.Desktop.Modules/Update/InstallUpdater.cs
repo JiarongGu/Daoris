@@ -187,6 +187,16 @@ public sealed class InstallUpdater(
             // A journal that cannot be read or written is no outcome to say; the swap's own record stays as it was.
         }
 
+        try
+        {
+            // D233 choice 6: a start nothing can roll back is the home's newest build, which the launcher refuses an older one by.
+            if (StartConfirmation.Read(install).Is) HomeLastBuild.Keep(home, Running);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // Kept at the next start; until then the launcher refuses by the build kept before.
+        }
+
         lock (_gate) _outcome = outcome;
         await LookAsync().ConfigureAwait(false);
     }
@@ -402,7 +412,7 @@ public sealed class InstallUpdater(
             // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
             if (StagedBuild.Check(install!) is { } problem) refused = new UpdateProblem(problem.Code, problem.Sentence);
             // LANDNODE1c2: going back to an older build waits until no delivery is unresolved.
-            else if (InstallRollback.Refused(home, staged?.Version, Running, ConversionReceipts.Stands) is var (backCode, back)) refused = new UpdateProblem(backCode, back);
+            else if (InstallRollback.Refused(home, staged?.Version, Running) is var (backCode, back)) refused = new UpdateProblem(backCode, back);
             // DRAINHOLD1, a review's finding: what began after the look read no work (a turn a press let through opened, a helper the look
             // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
             // closes whatever runs, so it reads nothing.

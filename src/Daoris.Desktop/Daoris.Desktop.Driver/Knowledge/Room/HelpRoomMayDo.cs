@@ -152,10 +152,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append($"Plugins installed here also hand you these skills: {string.Join(", ", machine.PluginSkills.Select(skill => $"`{skill}`"))}.\n\n");
         }
 
-        // HELPOWED1 (D170 point 2): asked to set a repository up, the helper said it had no shell and no door, as if that were
-        // the design. A door it lacks is one Daoris owes, and the room lists them.
+        // D170 point 2: asked to set a repository up, the helper said it had no shell and no door, as if that were a limit of its own.
         text.Append("Where you have no door to propose what the person wants, that is never a limit of yours: where the act is\n");
-        text.Append("under *Doors Daoris still owes* (below), say Daoris still owes that door and name its command.\n\n");
+        text.Append("under *Done at a terminal* (below), name its command for the person to run.\n\n");
         if (reads.Count == 0 && off.Count > 0)
         {
             // HELPMODE1c4: every readable checkout turned off under configured access, which is the person's choice for Ask Daoris

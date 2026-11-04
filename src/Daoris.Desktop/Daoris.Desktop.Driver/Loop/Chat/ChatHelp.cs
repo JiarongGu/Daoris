@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -43,9 +41,9 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner) : IChatHe
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
 
     /// <summary>
-    /// Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1): its workspace's running conversation set aside, a
-    /// new one opened as <c>START_HELP</c> opens one, and the earlier one's transcript (<see cref="HelpTranscript"/>) kept as its
-    /// file, handed with the person's first message. Never a summary: Daoris makes no model call (D24).
+    /// Start a new Ask Daoris conversation from an earlier one (ASKHIST1, D233): its workspace's running conversation set aside, a new
+    /// one opened as <c>START_HELP</c> opens one, and Daoris's brief of the earlier one's line (<see cref="ContextBriefs"/>) handed with
+    /// the person's first message, as every new part of a line is handed one. Never a summary: Daoris makes no model call (D24).
     /// </summary>
     /// <param name="earlier">The earlier conversation, an Ask Daoris record of this machine's; the caller has judged that.</param>
     public async Task<ChatStart> StartHelpFromAsync(
@@ -60,7 +58,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner) : IChatHe
 
     /// <summary>
     /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for (HELPSTART1b): its workspace's running conversation
-    /// set aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier one's words kept for it.
+    /// set aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier line's brief kept for it.
     /// The room is read and the agent spawned after, by <see cref="ChatRunner.RunHelpAsync"/>, off the request. A conversation
     /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
     /// </summary>
@@ -72,31 +70,31 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner) : IChatHe
     {
         if (context.Closing) return new(null, "the application is closing, so no conversation starts now.");
 
-        var kept = new HelpConversations(context.Home);
-        var title = (SessionEventText.IsId(earlier) ? kept.Read(earlier).Name : null)
-                    ?? context.Events.Openings([earlier]).GetValueOrDefault(earlier);
-        if (HelpTranscript.Of(context.Events, earlier, title) is not { } transcript)
+        var (said, _) = context.Events.Spoken(earlier);
+        if (!said.Any(passage => passage.Text.Trim().Length > 0))
         {
             return new(null, $"nothing was said in conversation `{earlier}`, so there is nothing to start from.");
         }
 
         if (await SetAsideHelpAsync(null, workspace, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
 
+        // Composed before the new one opens, so the line it hands ends at the earlier conversation.
+        var brief = await ContextBriefs.ComposeAsync(context.Service, context.Events, context.Home, earlier, HandOverWhy.Press, conversation: true, ct: ct)
+            .ConfigureAwait(false);
         var placed = await runner.PlaceHelpAsync(adapter, config, workspace, ct, order: order).ConfigureAwait(false);
         if (placed.SessionId is not { } id) return placed;
 
+        context.Handing[id] = new Handing(brief);
         try
         {
-            var files = ChatFiles.Keep(context.Home, id, [new ChatUpload(HelpTranscript.FileName(earlier), Encoding.UTF8.GetBytes(transcript))]);
-            context.Handing[id] = new Handing(files, HelpTranscript.Preface(earlier));
-            kept.StartedFrom(id, earlier, HelpConversations.Transcript);
+            new HelpConversations(context.Home).StartedFrom(id, earlier, HelpConversations.Brief);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
-            return placed with { Message = $"Ask Daoris `{id}` opened, but conversation `{earlier}`'s words could not be kept for it: {error.Message}" };
+            // Its history names no earlier conversation; its brief still says which it continues.
         }
 
-        return placed with { Message = $"Ask Daoris `{id}` opened from conversation `{earlier}`: its words go with your first message." };
+        return placed with { Message = $"Ask Daoris `{id}` opened from conversation `{earlier}`: Daoris's brief of it goes with your first message." };
     }
 
     /// <summary>

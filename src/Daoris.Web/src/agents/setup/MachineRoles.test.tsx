@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// SETUPUX1m (the setup-UX design §2.4, This machine's page): lit, the page holds All roles, the diagram, the Suggested line and the found
-// staffing changes, so lighting the flag loses none of what the dark Roles mode shows.
+// SETUPUX1m (the setup-UX design §2.4, This machine's page): lit, the page holds All roles, the diagram and the Suggested line, so lighting
+// the flag loses none of what the dark Roles mode shows.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import type { RoleCatalogue, StaffingFound, StructurePlaceAsk } from '../../data/wiring';
+import type { RoleCatalogue, StructurePlaceAsk } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { DRIVER_STATE, respond, show, WIRING } from '../../test/shellHarness';
 import { useListPanes } from '../../work/frame/listPanes';
@@ -54,12 +54,6 @@ const ROSTER = {
   }],
 };
 
-const before = (id: string, agent: string) => ({ id, state: 'before' as const, choices: [{ agent, from: 'before' }] });
-const FOUND: StaffingFound[] = [{
-  id: 7, at: '2026-10-30T10:00:00Z',
-  changes: [{ role: 'build', was: before('build', 'claude-code'), now: before('build', 'codex-acp'), applied: false }],
-}];
-
 const SUGGESTING: RoleCatalogue = {
   ...CATALOGUE,
   suggestedChoicesDated: '2026-10-31',
@@ -72,11 +66,9 @@ const asks = (type: string): Record<string, unknown>[] => invoke.mock.calls
 
 describe('This machine\'s page, lit', () => {
   let roles: RoleCatalogue = CATALOGUE;
-  let found: StaffingFound[] = [];
 
   beforeEach(() => {
     roles = CATALOGUE;
-    found = [];
     window.localStorage.clear();
     window.localStorage.setItem('daoris.agents.setup', 'on');
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
@@ -90,7 +82,7 @@ describe('This machine\'s page, lit', () => {
       if (type === 'STATE' || type === 'SET_ROLE' || type === 'SET_ROLES') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'PLACES') return PLACES((options?.payload ?? {}) as Parameters<typeof PLACES>[0]);
-      if (type === 'ROLES') return { ...roles, found };
+      if (type === 'ROLES') return roles;
       // A chain is asked of the Roles section; the whole structure, with no chain, of the diagram.
       if (type === 'ROLE_STRUCTURE') return options?.payload?.chain ? CHAIN(options.payload.chain) : STRUCTURE;
       return undefined;
@@ -178,23 +170,17 @@ describe('This machine\'s page, lit', () => {
     expect(await screen.findByRole('region', { name: 'Placed machine-wide' })).toBeTruthy();
   });
 
-  it('says what is suggested and what was found above the sections, and shows both under All roles', async () => {
+  it('says what is suggested above the sections, and shows it under All roles', async () => {
     roles = SUGGESTING;
-    found = FOUND;
     await openMachine();
     const notes = within(await screen.findByRole('list', { name: 'Staffing to look at' }));
     expect(notes.getByText('Daoris suggests choices for 1 role')).toBeTruthy();
-    expect(notes.getByText('1 change found outside Daoris')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Use these choices' })).toBeNull();
 
     await userEvent.click(notes.getByRole('button', { name: 'Show: Daoris suggests choices for 1 role' }));
     expect(screen.getByRole('button', { name: 'All roles' })).toHaveAttribute('aria-expanded', 'true');
     await userEvent.click(await screen.findByRole('button', { name: 'Use these choices' }));
     await waitFor(() => expect(asks('SET_ROLES')).toHaveLength(1));
-
-    const list = within(await screen.findByRole('list', { name: 'Changed outside Daoris' }));
-    await userEvent.click(list.getByRole('button', { name: 'Take it' }));
-    await waitFor(() => expect(asks('STAFFING_FOUND_ANSWER')).toEqual([{ found: 7, answer: 'take' }]));
   });
 
   it('opens at the Appointed row of Roles, or at All roles, for the doors that opened the Roles mode', async () => {
@@ -209,7 +195,7 @@ describe('This machine\'s page, lit', () => {
     expect(await screen.findByRole('searchbox', { name: 'Search roles' })).toBeTruthy();
   });
 
-  it('says nothing above the sections where nothing is suggested or found', async () => {
+  it('says nothing above the sections where nothing is suggested', async () => {
     await openMachine();
     await screen.findByRole('button', { name: 'All roles' });
     expect(screen.queryByRole('list', { name: 'Staffing to look at' })).toBeNull();

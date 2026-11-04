@@ -186,8 +186,6 @@ public static class PipeWording
         // D230: a reconcile names the repository whose own session is asked.
         Row("RECONCILE_APPLY", W("repository", PipeRole.Repository));
         // WORKFLOWCLEAN1 1e: the conversion's presses; the apply names the two choices of its plan, the undo names nothing.
-        Row("CONVERT_APPLY", W("composed", PipeRole.Form), W("landAutomatic", PipeRole.Form));
-        Row("CONVERT_UNDO");
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
         Row("WORKFLOW_USE", W("repository", PipeRole.Repository), W("workflow", PipeRole.Form), W("kind", PipeRole.Form));
         Row("WORKFLOW_KIND", W("kind", PipeRole.Form), W("label", PipeRole.Words));
@@ -218,7 +216,7 @@ public static class PipeWording
             "LAND_ENTRY", "OPINION_ANYWAY", "OPINION_MYSELF", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "WORK_ABANDON", "WORK_PAUSE",
             "INTEGRATE", "WORK_HELD", "HELP_DISMISS", "CHANNEL_MARK", "NOTICES_READ", "NOTICE_DISMISS", "HELP_APPLY", "START_HELP", "HELP_START_FROM",
             "HELP_RENAME", "HELP_PIN",
-            "SET_ACCESS", "SET_GIT_ACCESS", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP",
+            "SET_ACCESS", "SET_GIT_ACCESS", "SET_ROLE", "SET_ROLES", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP",
             "SET_NOTIFY", "SET_OPINION", "SET_REVIEW", "TRUST_FOLDER", "RULE_ACTION", "RULE_PROPOSAL", "PLUGIN_ACTION",
             "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "TOOLS_GIT_SET", "GIT_IDENTITY", "GIT_USE", "GIT_ANSWER", "ASK_OPINION",

@@ -44,8 +44,7 @@ public sealed record DriverConfig(
     /// </summary>
     public int Strikes { get; init; } = Math.Max(0, Strikes);
 
-    /// <summary>Whether the save writes <c>strikes</c>: as the file held it or a press set it, never from the default, so the key can end.</summary>
-    // transitional: strikes-key
+    /// <summary>Whether the save writes <c>strikes</c>: as the file held it or a press set it, never from the default.</summary>
     public bool StrikesHeld { get; init; } = Strikes != 3;
 
     /// <summary>
@@ -1021,7 +1020,6 @@ public sealed record DriverConfig(
             if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("pollSeconds", PollSeconds);
-            // transitional: strikes-key
             if (StrikesHeld) writer.WriteNumber("strikes", Strikes);
             // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
             if (CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);

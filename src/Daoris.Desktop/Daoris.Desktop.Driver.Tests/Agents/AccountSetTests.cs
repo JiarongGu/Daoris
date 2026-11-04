@@ -199,41 +199,19 @@ public sealed class AccountSetTests : IDisposable
         Assert.Equal("2.0.0", twice.Versions[Agent]);
     }
 
-    /// <summary>
-    /// A raw edit through <see cref="HarnessSettings.Change"/> on an unfolded file leaves it folded, its receipt reading the scopes as
-    /// they were; an older build's write is folded again with a second receipt kept beside the unsaid first.
-    /// </summary>
+    /// <summary>A change makes no fold (NOCOMPAT1): a workspace's list the file still holds is the migration's, and the edit leaves it.</summary>
     [Fact]
-    public void Every_change_folds_first_and_a_second_fold_keeps_the_unsaid_first()
+    public void A_change_folds_nothing_and_makes_the_order_whole()
     {
         Signed("a", "b", "c");
         Raw("""{ "rotation": { "claude-code": ["a"] }, "workspaceRotation": { "w": { "claude-code": ["b"] } } }""");
 
-        var changed = HarnessSettings.Change(File_, read => read.WithVersion(Agent, "2.0.0"));
+        HarnessSettings.Change(File_, read => read.WithVersion(Agent, "2.0.0"));
 
         var written = HarnessSettings.Load(File_);
         Assert.Equal(["a", "b", "c"], written.Rotation[Agent]);
-        Assert.Empty(written.WorkspaceRotation);
         Assert.Equal("2.0.0", written.Versions[Agent]);
-        var first = Assert.Single(written.Pooled[Agent]);
-        Assert.Equal(["a", "b"], first.Scopes.Select(scope => string.Join(",", scope.List)));
-        Assert.Equal(changed.Pooled[Agent][0].Id, first.Id);
-
-        // An older build writes a workspace's list again; the next change folds it with a receipt of its own.
-        var older = JsonDocument.Parse(File.ReadAllText(File_)).RootElement.GetRawText()
-            .Replace("\"rotation\"", "\"workspaceRotation\":{\"w\":{\"claude-code\":[\"c\"]}},\"rotation\"", StringComparison.Ordinal);
-        File.WriteAllText(File_, older);
-        HarnessSettings.Change(File_, read => read);
-
-        var again = HarnessSettings.Load(File_);
-        Assert.Equal(2, again.Pooled[Agent].Count);
-        Assert.Equal(first.Id, again.Pooled[Agent][0].Id);
-        Assert.False(again.Pooled[Agent][0].Said);
-        Assert.Empty(again.WorkspaceRotation);
-
-        // A change over a folded file appends nothing.
-        HarnessSettings.Change(File_, read => read.WithVersion(Agent, null));
-        Assert.Equal(2, HarnessSettings.Load(File_).Pooled[Agent].Count);
+        Assert.False(written.Pooled.ContainsKey(Agent));
     }
 
     /// <summary><i>Got it</i> by id marks only the receipts it names; an id no receipt holds is passed over (Fable's F13).</summary>
@@ -241,12 +219,14 @@ public sealed class AccountSetTests : IDisposable
     public void Got_it_marks_only_the_receipts_it_names()
     {
         Signed("a", "b");
-        Raw("""{ "rotation": { "claude-code": ["a"] } }""");
-        var id = HarnessSettings.Change(File_, read => read).Pooled[Agent][0].Id;
-        File.WriteAllText(File_, File.ReadAllText(File_).Replace("\"rotation\"", "\"workspaces\":{\"w\":{\"claude-code\":\"b\"}},\"rotation\"", StringComparison.Ordinal));
-        HarnessSettings.Change(File_, read => read);
+        Raw("""
+            { "rotation": { "claude-code": ["a", "b"] },
+              "pooled": { "claude-code": [
+                { "id": "r1", "at": "2026-10-22T13:42:00Z", "scopes": [], "order": ["a", "b"], "moved": [], "joined": [], "inOrder": null, "notKept": [], "gone": [], "said": false },
+                { "id": "r2", "at": "2026-10-23T13:42:00Z", "scopes": [], "order": ["a", "b"], "moved": [], "joined": [], "inOrder": null, "notKept": [], "gone": [], "said": false } ] } }
+            """);
 
-        HarnessSettings.Change(File_, read => read.WithSaid(Agent, [id, "nobody"]));
+        HarnessSettings.Change(File_, read => read.WithSaid(Agent, ["r1", "nobody"]));
 
         var receipts = HarnessSettings.Load(File_).Pooled[Agent];
         Assert.Equal([true, false], receipts.Select(receipt => receipt.Said));
@@ -284,31 +264,15 @@ public sealed class AccountSetTests : IDisposable
         Assert.Equal("off", RotationUse.Read(cleared.Uses[Agent]).Use.Switch);
     }
 
-    /// <summary>An older build reads a folded file as the machine's list naming every account, for every workspace (design §6.4).</summary>
-    [Fact]
-    public void An_older_build_reads_a_folded_file_as_every_workspace_on_the_same_accounts()
-    {
-        var raw = Raw("""{ "rotation": { "claude-code": ["a"] }, "workspaceRotation": { "w": { "claude-code": ["b"] } }, "workspaceRotationUse": { "w": { "claude-code": { "use": "order" } } } }""");
-        var (folded, _) = Folded(raw, Accounts("a", "b"));
-
-        foreach (var workspace in new string?[] { null, "w", "other" })
-        {
-            var scope = OlderScope.Of(folded, Agent, workspace);
-            Assert.Equal(ChoiceFrom.Machine, scope.From);
-            Assert.Equal(["a", "b"], scope.List);
-            Assert.Equal("order", scope.Use.Use);
-        }
-    }
-
     /// <summary>
-    /// Every reader's projection (design §2.4): a raw file read through <see cref="HarnessSettings.LoadSet"/> answers the set, nothing
-    /// written.
+    /// Every reader's projection (design §2.4): a file read through <see cref="HarnessSettings.LoadSet"/> answers the set, its order made
+    /// whole with the accounts on this machine, nothing written.
     /// </summary>
     [Fact]
     public void The_projection_answers_the_set_and_writes_nothing()
     {
         Signed("a", "b");
-        var text = """{ "workspaces": { "w": { "claude-code": "b" } } }""";
+        var text = """{ "rotation": { "claude-code": ["b"] } }""";
         Raw(text);
 
         var set = HarnessSettings.LoadSet(File_);
@@ -319,10 +283,10 @@ public sealed class AccountSetTests : IDisposable
 
     /// <summary>A come-up a held lock refuses is logged and tried again at the next look (Fable's F11).</summary>
     [Fact]
-    public void A_come_up_a_held_lock_refuses_is_logged_and_folded_at_the_next_look()
+    public void A_come_up_a_held_lock_refuses_is_logged_and_written_at_the_next_look()
     {
         Signed("a", "b");
-        Raw("""{ "defaults": { "claude-code": "b" } }""");
+        Raw("""{ "rotation": { "claude-code": ["b"] } }""");
         var log = new MachineLog(_home, "driver-test");
 
         bool refused;
@@ -332,15 +296,13 @@ public sealed class AccountSetTests : IDisposable
         }
 
         Assert.False(refused);
-        Assert.True(HarnessSettings.Load(File_).Defaults.ContainsKey(Agent));
+        Assert.Equal(["b"], HarnessSettings.Load(File_).Rotation[Agent]);
         Assert.True(HarnessSettings.FoldNow(File_, log));
-        Assert.False(HarnessSettings.Load(File_).Defaults.ContainsKey(Agent));
         Assert.Equal(["b", "a"], HarnessSettings.Load(File_).Rotation[Agent]);
 
         log.Dispose();
         var lines = Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines).ToList();
         Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("\"held\":true"));
-        Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("\"scopes\":1"));
     }
 
     /// <summary>The folder the install held (POOLSTRAY1): a start whose path carried an unexpanded <c>$a</c> left it beside the agents.</summary>

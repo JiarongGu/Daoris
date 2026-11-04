@@ -32,6 +32,9 @@ public static class Launcher
     /// <summary>The application: Chromium's launcher, named from the app's assembly less <c>.App</c>.</summary>
     public const string ShellExe = "Daoris.Desktop.exe";
 
+    /// <summary>The application's library, whose product version is the build's (D233 choice 6).</summary>
+    private const string AppLibrary = "Daoris.Desktop.App.dll";
+
     /// <summary>
     /// The application id Windows groups Daoris's taskbar button by (D108): the same as the window's,
     /// because a launcher and the process it starts are one application to Windows, and so a refusal
@@ -133,6 +136,8 @@ public static class Launcher
                 + "this launcher. Publish it again into this folder.");
         }
 
+        if (Older(root) is { } older) return Refuse(older);
+
         return Start(shell, rest) is null
             ? Refuse($"Daoris could not start {Path.Combine(AppFolder, ShellExe)}.")
             : 0;
@@ -176,21 +181,40 @@ public static class Launcher
     /// </summary>
     private static bool Wanted(string root)
     {
+        var staged = StagedBuild.Read(root, out _)?.Id;
+        return UpdateRequests.ModeFor(UpdateRequests.Read(HomeOf(root)), staged) != UpdateMode.NotNow;
+    }
+
+    /// <summary>
+    /// The home the application runs on, as it decides it (D63, D105): the install's own <c>data/</c>, or a home named for this start
+    /// alone, a process value that differs from the account's.
+    /// </summary>
+    private static string HomeOf(string root)
+    {
         var named = Environment.GetEnvironmentVariable("DAORIS_HOME");
         var account = OperatingSystem.IsWindows()
             ? Environment.GetEnvironmentVariable("DAORIS_HOME", EnvironmentVariableTarget.User)
             : null;
-        var home = string.IsNullOrWhiteSpace(named) || string.Equals(named.Trim(), account?.Trim(), StringComparison.OrdinalIgnoreCase)
+        return string.IsNullOrWhiteSpace(named) || string.Equals(named.Trim(), account?.Trim(), StringComparison.OrdinalIgnoreCase)
             ? Path.Combine(root, "data")
             : named.Trim();
-        var staged = StagedBuild.Read(root, out _)?.Id;
-        return UpdateRequests.ModeFor(UpdateRequests.Read(home), staged) != UpdateMode.NotNow;
     }
 
-    /// <summary>Start the application with these arguments; its process id, or null when it would not start.</summary>
+    /// <summary>
+    /// Why the build in <c>app/</c> may not start (D233 choice 6): it is older than the newest that has run on its home, whose records it
+    /// cannot read. Null where it may, and where its version or the home's does not read.
+    /// </summary>
+    private static string? Older(string root)
+    {
+        var library = Path.Combine(root, AppFolder, AppLibrary);
+        var version = File.Exists(library) ? FileVersionInfo.GetVersionInfo(library).ProductVersion : null;
+        return HomeLastBuild.Refusal(HomeOf(root), version);
+    }
+
+    /// <summary>Start the application with these arguments; its process id, or null when it would not start or is older than its home's last.</summary>
     private static int? Start(string shell, IReadOnlyList<string> arguments)
     {
-        if (!File.Exists(shell)) return null;
+        if (!File.Exists(shell) || Older(Path.GetDirectoryName(Path.GetDirectoryName(shell)!)!) is not null) return null;
 
         // Not the tools' environment (TOOLS5): the application is Daoris's own program, and every child it starts is
         // handed the tools' environment there, read at each start; its own environment is never rewritten (§2.4).

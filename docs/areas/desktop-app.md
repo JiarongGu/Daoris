@@ -122,7 +122,8 @@ web paths are under `src/Daoris.Web/src/`.
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
 34. Every surface is reached from the frame. It adds no new place. It needs a door from *What needs you* where it
-    waits, a verb in the command table, an Ask Daoris door or exemption, and a terminal twin. (from D185, D150, D110)
+    waits and a verb in the command table; an Ask Daoris door and a terminal twin only where one is wanted. (from D185,
+    D150, D233)
 35. A setting has one home, on the thing it is about. Elsewhere it is read-only with a door. Settings holds only the
     machine's and the person's domains. (from D150)
 36. The scope is always named in the command center and status bar. The word is *workspace* / 工作区 everywhere. (from D75)
@@ -203,15 +204,15 @@ web paths are under `src/Daoris.Web/src/`.
   `work/frame/`, the strip in `work/strip/`, atoms in `design/ui.tsx`, flows in `design/` and graphs in `design/canvas/`.
   A folder past twenty sources splits into named scopes (`test/structure.test.ts` with `structure.json`).
 - **A new driver route** follows `.claude/knowledge/bridge-presses.md`. It needs the handler and its `[Publishes]`, the
-  page's copy in `test/publishing.ts`, the desktop README's row, the hook in `bridge/<domain>.ts`, Ask Daoris's row in
-  `HelpCoverageTests`, its `PipeCensus` class (and its wording and grounds if `Person`), and its words in both catalogues.
+  page's copy in `test/publishing.ts`, the desktop README's row, the hook in `bridge/<domain>.ts`, its `PipeCensus` class
+  (and its wording and grounds if `Person`), and its words in both catalogues.
 - **A new pushed slice** follows `.claude/knowledge/pushed-slices.md`: the `StateSlice` owner, its wakes, the
   `DriverLoop.Slices` entry, the page's `SliceSpec` and `ShellSignals`' `PUSHED`.
 - **A wait on the person** follows `.claude/knowledge/person-waits.md`; **new words** `translation-parity.md`, plus a
   glossary row for a name. **A movable view** goes in `work/frame/placements.ts`; **a verb** in `menus/commands.ts`.
 - **Tests that pin it.** Modules: `DriverModuleRoutesTests`, `StatePublisherTests`, `StateSlicesTests`,
   `PipeCensusTests`, `PipeWordingTests`, `RefusalCatalogueTests`, `ChromePaletteTests`, `WindowsModuleTests`,
-  `WaitingBadgeTests`, `SessionBalloonTests`, `EngineBrowserTests`. Driver: `HelpCoverageTests`. Web: `test/structure.test.ts`, `design/tokens.test.ts`,
+  `WaitingBadgeTests`, `SessionBalloonTests`, `EngineBrowserTests`. Web: `test/structure.test.ts`, `design/tokens.test.ts`,
   `presentational.test.ts`, `siblingKeys.test.ts`, `pageMeasure.test.tsx`, `locales/{i18n,names,note,glossary,
   shippedNames}.test.ts`, `menus/commands.test.ts`, `ContextMenu.test.tsx`, `bridge/state/{stateHub,slices}.test.*`,
   `app/pushedState.test.tsx`; `e2e/platform.spec.ts`; `measured/*.spec.ts`.

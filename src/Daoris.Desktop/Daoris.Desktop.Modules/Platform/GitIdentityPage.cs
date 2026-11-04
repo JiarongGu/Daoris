@@ -4,8 +4,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// What Settings → Git and the remote rows read (GITAUTH1e; the git-auth design §7.1), from the files alone, as <c>TOOLS_LIST</c>'s
-/// <c>identities</c>: the identities with what points at them, the hosts, the hosts the person's own sign-ins are chosen for, and whether
-/// the home has moved. No secret by construction: a public key and a fingerprint are the most it holds.
+/// <c>identities</c>: the identities with what points at them, the hosts, and the hosts the person's own sign-ins are chosen for. No secret by construction: a public key and a fingerprint are the most it holds.
 /// </summary>
 internal static class GitIdentityPage
 {
@@ -16,7 +15,6 @@ internal static class GitIdentityPage
         return new
         {
             Problem = GitIdentities.Problem(home),
-            Moved = GitMoved.Moved(home),
             Identities = identities.Select(each =>
             {
                 var used = GitSshFiles.LastUsed(home, each.Id);

@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RolePolicyRow, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
+import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RolePolicyRow, RoleRow, RoleUse, SuggestedRole } from '../../data/wiring';
 import { Button, Card, CardHeader, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { authoredEntries, authoredText, composeAuthored } from '../../locales/authored';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
@@ -213,7 +213,7 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function RolesCard({
-  catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll, found = [], onAnswerFound,
+  catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll,
   editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope, consequence,
   bare = false, search: heldSearch, onSearch,
 }: {
@@ -255,10 +255,6 @@ export function RolesCard({
   onSet: (press: RoleChangePress, answered: Answered) => void;
   /** Several roles' changes as one over `SET_ROLES`, judged whole by the driver; where none is given there is no suggested-choices card. */
   onSetAll?: (presses: RoleChangePress[], answered: Answered) => void;
-  /** The changes the driver kept for the person, oldest first. */
-  found?: readonly StaffingFound[];
-  /** A found change taken or dismissed; the answer says whether it landed or the driver's sentence. */
-  onAnswerFound?: (found: number, answer: 'take' | 'dismiss', answered: Answered) => void;
 }) {
   const { t, i18n } = useTranslation();
   const next = useRef(0);
@@ -281,7 +277,6 @@ export function RolesCard({
   const setSearch = (next: string) => (onSearch ?? setOwnSearch)(next);
   const [removing, setRemoving] = useState<string | null>(null);
   const [refused, setRefused] = useState<{ at: string; sentence: string } | null>(null);
-  const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
   const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'name'>) => roleName(t, i18n.language, row);
   const kept = catalogue?.kept === true;
   // The staffing is each role row's own, so with no catalogue there is no line to draw.
@@ -328,10 +323,6 @@ export function RolesCard({
       choices: off ? [] : now.drafts.length > 0 ? entries(now) : now.isNew ? [] : null,
       ...(off ? {} : policyPress(now)),
     }, () => setEditing(null));
-  };
-  const answer = (id: number, said: 'take' | 'dismiss') => {
-    setFoundRefused(null);
-    onAnswerFound?.(id, said, { done: () => {}, refused: (sentence) => setFoundRefused({ id, sentence }) });
   };
   const works = (catalogue?.works ?? []).map((work) => ({ value: work, label: t(`settings.ai.roles.work.${work}`) }));
   /** The catalogue's own presses, held where this home's file is its own. */
@@ -563,30 +554,6 @@ export function RolesCard({
           </section>
         );
       })}
-      {found.length > 0 && (
-        <section className="mt-3">
-          <p className="m-0 text-body font-medium text-ink">{t('settings.ai.role.found.title')}</p>
-          <Prose className="mb-2 mt-0 text-small text-ink-soft">{t('settings.ai.role.found.body')}</Prose>
-          <ul aria-label={t('settings.ai.role.found.title')} className="m-0 flex list-none flex-col gap-2 p-0">
-            {found.map((each) => (
-              <li key={each.id} className="rounded-control border border-line p-2">
-                {each.changes.map((moved) => (
-                  <p key={moved.role} className="m-0 text-small text-ink wrap-anywhere">
-                    {t(moved.applied ? 'settings.ai.role.found.changeApplied' : 'settings.ai.role.found.change', {
-                      role: name(lineOf(moved.role)?.row ?? { id: moved.role, seeded: true }), was: actorSummary(t, moved.was), now: actorSummary(t, moved.now),
-                    })}
-                  </p>
-                ))}
-                <div className="mt-2 flex gap-2">
-                  <Button disabled={busy} onClick={() => answer(each.id, 'take')}>{t('settings.ai.role.found.take')}</Button>
-                  <Button variant="ghost" disabled={busy} onClick={() => answer(each.id, 'dismiss')}>{t('settings.ai.role.found.dismiss')}</Button>
-                </div>
-                {foundRefused?.id === each.id && <Refused sentence={foundRefused.sentence} />}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
       <p className="m-0 mt-3 text-small text-ink-faint"><Inline text={t('settings.ai.roles.footnote')} /></p>
     </>
   );

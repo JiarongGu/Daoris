@@ -674,33 +674,6 @@ export const GitHeldRowsNarrowChinese: StoryObj = {
   ),
 };
 
-/** WORKFLOWCLEAN1g-ii, ONEWAY1ae: the home's one conversion row, its door its one control, counted by part, worded by a reader of `language`. */
-function convertRow(language: 'en' | 'zh'): Attention {
-  const reader = readerIn(language);
-  return {
-    id: 'home', kind: 'workflow-convert', where: '', since: at(25), title: reader.t('work.attention.convertTitle', { count: 3 }),
-    detail: reader.t('work.attention.convertPart', { part: reader.t('agents.convert.part.workflows'), count: 3 }), convert: { records: 3, parts: { workflows: 3 } },
-  };
-}
-
-function ConvertWidths({ language }: { language: 'en' | 'zh' }) {
-  return (
-    <>
-      {[1180, 680, 420].map((width) => (
-        <Main key={width} width={width}>
-          <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
-            <AttentionRow item={convertRow(language)} acts={ACTS} onOpen={() => undefined} />
-          </ul>
-        </Main>
-      ))}
-    </>
-  );
-}
-
-export const ConvertRow: StoryObj = { render: () => <ConvertWidths language="en" /> };
-
-export const ConvertRowChinese: StoryObj = { decorators: [chinese], render: () => <ConvertWidths language="zh" /> };
-
 /**
  * SESSWATCH1a (D200, the session-watch design §5.2): the sessions the watcher brings to the person. A quiet quest session offers *End
  * and carry on*, *Hand over…*, *Stop…* and *Leave it running*, and says the person's waiting words go to the next part; a busy one

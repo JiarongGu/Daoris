@@ -231,7 +231,7 @@ public sealed class PartnerFiles(string home)
             var element = root.RootElement;
             return Text(element, "to") is { Length: > 0 } to && Text(element, "key") is { Length: > 0 } key
                 && Text(element, "outcome") is { } outcome && PartnerDelivery.All.Contains(outcome)
-                ? new PartnerReceipt(Text(element, "id") ?? id, to, key, outcome, Moments.Read(element, "at") ?? DateTimeOffset.UtcNow) { Keyed = Flag(element, "keyed") }
+                ? new PartnerReceipt(Text(element, "id") ?? id, to, key, outcome, Moments.Read(element, "at") ?? DateTimeOffset.UtcNow)
                 : null;
         }
     }
@@ -247,7 +247,6 @@ public sealed class PartnerFiles(string home)
             writer.WriteString("key", receipt.Key);
             writer.WriteString("outcome", receipt.Outcome);
             writer.WriteString("at", Moments.Write(receipt.At));
-            if (receipt.Keyed) writer.WriteBoolean("keyed", true);
             writer.WriteEndObject();
         });
     }

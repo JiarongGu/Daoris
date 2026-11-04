@@ -200,22 +200,17 @@ public sealed record HarnessSettings(
     /// <exception cref="DriverException">The file does not read, or the edit is refused; nothing was written.</exception>
     /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
     /// <remarks>
-    /// <para><b>Every change folds first</b> (POOL1a, D197 point 7; the account-pool design §6.2): under the lock the raw file is folded
-    /// to one set per agent (<see cref="AccountSet.Fold"/>), the edit is made over the folded wiring, each agent's order is made whole
-    /// (<see cref="AccountSet.Whole"/>), and the fold's receipts are written with it, so the first writer in any process is the folder
-    /// and no edit is ever made over a raw file whose scopes remain. A folded file folds to itself. Each agent folded writes one
-    /// <c>accounts.pooled</c> line to the machine log, by count.</para>
+    /// Each agent's order is made whole after the edit (POOL1a, D197 point 7; <see cref="AccountSet.Whole"/>), so a new account goes last.
     /// </remarks>
     /// <param name="account">
-    /// An account the change itself adds or removes (a sign-in's new folder, a removal's), so the fold does not say it as one a stored
-    /// order left out or as a name gone: an added one is placed last by the edit's whole order, a removed one taken out by the edit.
+    /// An account the change itself adds or removes (a sign-in's new folder, a removal's): an added one is placed last by the edit's whole
+    /// order, a removed one taken out by the edit.
     /// </param>
-    /// <param name="log">Where the fold's line goes; the driver's log under the file's home where none is handed.</param>
+    /// <param name="log">Where the strays' lines go; the driver's log under the file's home where none is handed.</param>
     /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
     /// <remarks>
-    /// An agent the wiring's <c>rotation</c> or <c>pooled</c> names that Daoris does not know (POOLSTRAY1) is dropped from both before
-    /// the fold, which an older fold wrote over a stray folder, and its <c>accounts.strayDropped</c> line is the receipt; its other
-    /// sections are the person's and stay.
+    /// An agent the wiring's <c>rotation</c> or <c>pooled</c> names that Daoris does not know (POOLSTRAY1) is dropped from both, and its
+    /// <c>accounts.strayDropped</c> line is the receipt; its other sections are the person's and stay.
     /// </remarks>
     public static HarnessSettings Change(
         string path, Func<HarnessSettings, HarnessSettings> edit, Action? read = null, AccountChange? account = null, MachineLog? log = null,
@@ -236,12 +231,9 @@ public sealed record HarnessSettings(
         IReadOnlyCollection<string> known = account is null ? agents ?? AgentsKnown(home) : [.. agents ?? AgentsKnown(home), account.Agent];
         var dropped = AccountSet.Strays(settings, known);
         foreach (var stray in dropped) settings = settings.WithoutStray(stray.Agent);
-        var accounts = AccountsOf(home, settings, known);
-        // transitional: account-pool-fold
-        var (folded, counts) = AccountSet.Fold(settings, Hinted(settings, accounts, account), DateTimeOffset.UtcNow, PoolReceipts.NewId);
-        var changed = AccountSet.Whole(folded, edit(folded), AccountsOf(home, folded, known)).WithSaidKept();
+        var changed = AccountSet.Whole(settings, edit(settings), AccountsOf(home, settings, known)).WithSaidKept();
         changed.SaveHolding(path);
-        Logged(home, log, Unsaid(home, known), dropped, counts);
+        Logged(home, log, Unsaid(home, known), dropped, []);
         return changed;
     }
 
@@ -264,20 +256,20 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
-    /// The wiring as every reader takes it (POOL1a, the account-pool design §2.4): the file at <paramref name="path"/> read raw and
-    /// projected to one set per agent (<see cref="AccountSet.Of"/>), nothing written.
+    /// The wiring as every reader takes it (POOL1a, the account-pool design §2.4): the file at <paramref name="path"/>, each agent's order
+    /// made whole with the accounts on this machine (<see cref="AccountSet.Whole"/>), nothing written.
     /// </summary>
     /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
     public static HarnessSettings LoadSet(string path, IReadOnlyCollection<string>? agents = null)
     {
         var settings = Load(path);
-        return settings.Problem is not null ? settings : AccountSet.Of(settings, AccountsOf(HomeOf(path), settings, agents));
+        return settings.Problem is not null ? settings : AccountSet.Whole(settings, settings, AccountsOf(HomeOf(path), settings, agents));
     }
 
     /// <summary>
-    /// The driver's come-up fold (the account-pool design §6.2): <see cref="Change"/> with no edit, for a file with anything to fold,
-    /// so a file nobody edits is folded too. True when the file is folded now, or had nothing to fold; false where its lock was held
-    /// for the whole wait, which is logged once and tried again at the next look (Fable's F11).
+    /// The driver's come-up write (the account-pool design §6.2): <see cref="Change"/> with no edit, for a file whose orders are not whole
+    /// or that names a stray, so a file nobody edits is made whole too. True when the file is written now, or had nothing to write; false
+    /// where its lock was held for the whole wait, which is logged once and tried again at the next look (Fable's F11).
     /// </summary>
     /// <remarks>
     /// A folder under the account homes no known agent names is said once to the machine log (<c>accounts.stray</c>, POOLSTRAY1) and
@@ -290,9 +282,9 @@ public sealed record HarnessSettings(
         if (settings.Problem is not null) return true;
         var home = HomeOf(path);
         var known = agents ?? AgentsKnown(home);
-        var accounts = AccountsOf(home, settings, known);
+        var whole = AccountSet.Whole(settings, settings, AccountsOf(home, settings, known)).Rotation;
         if (AccountSet.Strays(settings, known).Count == 0
-            && !AccountSet.AgentsOf(settings, accounts).Any(agent => accounts.TryGetValue(agent, out var mine) && AccountSet.Unfolded(settings, agent, mine)))
+            && whole.All(each => settings.Rotation.TryGetValue(each.Key, out var order) && order.SequenceEqual(each.Value, StringComparer.Ordinal)))
         {
             Logged(home, log, Unsaid(home, known), [], []);
             return true;
@@ -384,20 +376,6 @@ public sealed record HarnessSettings(
         }
 
         return unsaid;
-    }
-
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> Hinted(
-        HarnessSettings settings, IReadOnlyDictionary<string, IReadOnlyList<string>> accounts, AccountChange? change)
-    {
-        if (change is null) return accounts;
-        // A sign-in back into an account the order already names adds nothing: the fold reads it as it stands.
-        if (change.Added && settings.Rotation.GetValueOrDefault(change.Agent)?.Contains(change.Account, StringComparer.Ordinal) == true) return accounts;
-        var hinted = new Dictionary<string, IReadOnlyList<string>>(accounts, StringComparer.OrdinalIgnoreCase);
-        var mine = accounts.GetValueOrDefault(change.Agent) ?? [];
-        hinted[change.Agent] = change.Added
-            ? [.. mine.Where(name => name != change.Account)]
-            : [.. mine.Append(change.Account).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
-        return hinted;
     }
 
     /// <summary>
@@ -525,7 +503,7 @@ public sealed record HarnessSettings(
                 + $"not written. `daoris agent pin {harness} {version}` installs it again."), agents: agents);
 
     /// <summary><see cref="Save"/> for a writer already holding the file's <see cref="KeepLock"/>.</summary>
-    private void SaveHolding(string path)
+    internal void SaveHolding(string path)
     {
         if (Problem is not null)
         {
@@ -1143,18 +1121,11 @@ public sealed record HarnessSettings(
     // the machine and `workspaceRotationUse` for one workspace, per agent, beside the lists, which `daoris agent account use` writes
     // through this program (PUSH1f2e3; the CLI's rotation.ts, its twin, left with PUSH1f2e); RotationUseTwinTests reads one table,
     // fixtures/rotation-use.json among the driver's tests, row for row. The rules it keeps:
-    //  - Read: an entry is an object, kept whole; `prefer` and `parallel`, which §16.6 retired, are read as nothing and said as
-    //    nothing, and go at the next write (KEEPALL1b: held as read, so the save's edit takes them out). Each other field is a value this build knows, or one it does not, which reads as today's default and is said
-    //    (RotationScope.Unknown); a field this build has no name for is kept and said too, so a newer build's setting outlives
-    //    this one's save.
-    //  transitional: harness-old-names
-    //  - The old names read on (D165 §6): `early` and `near`, which only an older build writes, are taken out and applied as a
-    //    change applies them (UseChange), over the entry's own switch and curve; a value of theirs that does not read is said, and goes.
-    //  - Resolved as one scope (§2 rule 1): the workspace's, when it names a default or a list of its own for the agent, else the
-    //    machine's. A scope's settings are read only with its list; with none it is its default alone.
+    //  - Read: an entry is an object, kept whole. Each field is a value this build knows, or one it does not, which reads as today's
+    //    default and is said (RotationScope.Unknown); a field this build has no name for is kept and said too, so a newer build's
+    //    setting outlives this one's save. The old names (`early`, `near`, `prefer`, `parallel`) are the migration's (HarnessesStep).
     //  - Written as chosen: a choice equal to today's default is still written, so a later default never overturns a person's
-    //    choice; absence alone means RotationUse.Default. The old names are never written: a writer writes `switch` and `curve`,
-    //    and since a save is measured from each entry as the file held it (KEEPALL1b, D173's note), every save does so.
+    //    choice; absence alone means RotationUse.Default.
     //  - HarnessRoster.SelectAsync reads them through Set on the projection (POOL1a2, the account-pool design §2.4), the agent's one
     //    entry: `use` and `keep` choose a start's account, and the switch and the curve pass an account whose use is over the curve
     //    now (SWITCH1b-ii). The per-workspace reading left with the terminal's last callers (POOL1b), so every reader reads Set.

@@ -22,17 +22,9 @@ public static class AccountSet
     public const int SaidKept = 5;
 
     /// <summary>
-    /// The set as every reader takes it (design §2.4): <paramref name="settings"/> folded in memory, no receipt appended, so a
-    /// start, a look or a door reads one scope, the machine's, whatever the raw file still holds.
-    /// </summary>
-    /// <param name="accounts">Each agent's accounts on this machine, sorted (<see cref="HarnessSettings.Profiles"/>).</param>
-    // transitional: account-pool-fold
-    public static HarnessSettings Of(HarnessSettings settings, IReadOnlyDictionary<string, IReadOnlyList<string>> accounts) =>
-        Fold(settings, accounts, DateTimeOffset.UnixEpoch, () => "", receipts: false).Settings;
-
-    /// <summary>
     /// <paramref name="settings"/> folded to one set per agent (design §6.1), each fold that had anything to say appended to
-    /// <see cref="HarnessSettings.Pooled"/> as a receipt; and, per agent folded, its counts for the machine log's line.
+    /// <see cref="HarnessSettings.Pooled"/> as a receipt; and, per agent folded, its counts for the machine log's line. The migration's
+    /// (<see cref="HarnessesStep"/>): every other reader and writer takes the file as one set per agent.
     /// </summary>
     /// <param name="accounts">Each agent's accounts on this machine, sorted.</param>
     /// <param name="now">When the receipts were written.</param>
@@ -66,9 +58,9 @@ public static class AccountSet
 
     /// <summary>
     /// Whether <paramref name="agent"/>'s wiring has anything to fold (design §6.1 rule 1): a default, any workspace entry, no stored
-    /// order while it has accounts, or a stored order that leaves out an account or names one that is gone.
+    /// order while it has accounts, or a stored order that leaves out an account or names one that is gone. The migration's fold reads it.
     /// </summary>
-    public static bool Unfolded(HarnessSettings settings, string agent, IReadOnlyList<string> accounts)
+    private static bool Unfolded(HarnessSettings settings, string agent, IReadOnlyList<string> accounts)
     {
         if (settings.Defaults.ContainsKey(agent)) return true;
         if (settings.Workspaces.Values.Any(circle => circle.ContainsKey(agent))) return true;

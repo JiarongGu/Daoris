@@ -623,8 +623,7 @@ public sealed partial class SessionRequests(string home)
                     ? [.. files.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                     : [],
                 Key = Text("key"),
-                // transitional: say-now-field
-                Level = Text("level") ?? (root.TryGetProperty("now", out var now) && now.ValueKind == JsonValueKind.True ? MessageLevels.Now : null),
+                Level = Text("level"),
                 Word = Text("takeBackWord"),
                 Operation = Text("operation"),
                 Repository = Text("repository"),

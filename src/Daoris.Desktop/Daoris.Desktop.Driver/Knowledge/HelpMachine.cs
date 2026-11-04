@@ -185,7 +185,4 @@ public sealed record HelpMachine
 
     /// <summary>The kinds of work each workspace declares (WORKFLOW1h-b, the workflow design §8.4), by workspace.</summary>
     public IReadOnlyList<HelpWorkflowKind> WorkflowKinds { get; init; } = [];
-
-    /// <summary>This machine's list of old records (ONEWAY1ad-ii): each conversion part's census, then each kept read and its state.</summary>
-    public IReadOnlyList<KeptLine> Kept { get; init; } = [];
 }

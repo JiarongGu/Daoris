@@ -137,12 +137,6 @@ if (args is ["workflow", .. var workflowArgs])
     return await Daoris.Driver.Host.WorkflowConsole.RunAsync(workflowArgs);
 }
 
-// The home's one conversion door (ONEWAY1ae): through the running Daoris alone, routed before the machine log opens, with its own catch.
-if (args is ["convert", .. var convertArgs])
-{
-    return await Daoris.Driver.Host.ConvertConsole.RunAsync(convertArgs);
-}
-
 // A checkout's heavy gates under its repository's one slot (HEAVYRUN1a, D180's HEAVYRUN1 note). Routed before the machine log opens,
 // with its own catch: it runs for minutes beside everything else, holds no home lease (VerbLeases), and writes only its slot's files.
 if (args is ["run-heavy", .. var heavyArgs])

@@ -240,7 +240,6 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
     public async Task A_helpers_answer_after_a_hand_over_reaches_the_new_part_once_through_the_one_door()
     {
         await ServiceAsync();
-        Assert.True(await _client!.Opens.AnswersAsync());
         var lead = await EndedAsync();
         var (helper, opened) = await _client.Helpers.OpenAsync(lead, "stub", Path.Combine(_scratch, "helper-clone"), null, null, null);
         Assert.True(helper is not null, opened);
@@ -274,15 +273,15 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
         Assert.Equal(word.Id, Assert.Single(driver.Context.Events.After(part, 0).Events, e => e.Kind == SessionEventKind.User).Id);
 
         // A restart cut the next hand between its attempt and the take: the door answers it waiting on the new part, and nothing is kept again.
-        files.WriteState(files.ReadState("a1")! with { Handed = null, Attempted = DateTimeOffset.UtcNow, Keyed = true });
+        files.WriteState(files.ReadState("a1")! with { Handed = null, Attempted = DateTimeOffset.UtcNow });
         await LookAsync();
         Assert.Equal(word.Id, files.ReadState("a1")!.Handed);
         Assert.Single(await WaitingAsync(part));
         Assert.Single(driver.Context.Events.After(part, 0).Events, e => e.Kind == SessionEventKind.User);
 
         // The new part takes it once; a retry after the take is settled, nothing kept on either part.
-        Assert.True((await _client.TakenAsync(part, [word.Id])).Ok);
-        files.WriteState(files.ReadState("a1")! with { Handed = null, Attempted = DateTimeOffset.UtcNow, Keyed = true });
+        Assert.True((await _client!.TakenAsync(part, [word.Id])).Ok);
+        files.WriteState(files.ReadState("a1")! with { Handed = null, Attempted = DateTimeOffset.UtcNow });
         await LookAsync();
         Assert.Equal("settled", files.ReadState("a1")!.Handed);
         Assert.Empty(await WaitingAsync(part));

@@ -223,13 +223,13 @@ public sealed class HelpConversationsTests : IDisposable
     {
         Said("h1", "what is a workspace?", "A circle.");
         Said("h2", "and a remote?", "A shared host.");
-        new HelpConversations(_home).StartedFrom("h2", "h1", HelpConversations.Transcript);
+        new HelpConversations(_home).StartedFrom("h2", "h1", HelpConversations.Brief);
 
         var listed = new HelpConversations(_home).List([Help("h1"), Help("h2", "working")], Events, Resumes).Conversations
             .ToDictionary(row => row.Session);
 
         Assert.True(listed["h2"].Live);
-        Assert.Equal(("h1", "transcript"), (listed["h2"].From, listed["h2"].Handed));
+        Assert.Equal(("h1", "brief"), (listed["h2"].From, listed["h2"].Handed));
         Assert.Null(listed["h1"].From);
     }
 
@@ -484,50 +484,4 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.Null(titled.FoundLine);
     }
 
-    /// <summary>
-    /// The earlier conversation's transcript, handed to a new one (ASKHIST1): the person's words and Ask Daoris's answers in
-    /// order, its chunks joined, its title and id at the head; the tools it used and what Daoris told it are left out.
-    /// </summary>
-    [Fact]
-    public void A_transcript_holds_both_sides_words_in_order_and_nothing_else()
-    {
-        Said("h1", "what is a workspace?", "A circle ", "of repositories.");
-        var events = Events;
-        events.Append("h1", new SessionEvent { Kind = SessionEventKind.Note, Text = "told where the person is: Sessions" });
-        events.Append("h1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "t1", Title = "knowledge_search", Status = "completed" });
-        Said("h1", "and a remote?", "A shared host.");
-
-        var transcript = HelpTranscript.Of(events, "h1", "what is a workspace?")!;
-
-        Assert.StartsWith("# An earlier Ask Daoris conversation: what is a workspace?\n", transcript);
-        Assert.Contains("`h1`", transcript);
-        var person = transcript.IndexOf("## The person\n\nwhat is a workspace?", StringComparison.Ordinal);
-        var answer = transcript.IndexOf("## Ask Daoris\n\nA circle of repositories.", StringComparison.Ordinal);
-        var second = transcript.IndexOf("## The person\n\nand a remote?", StringComparison.Ordinal);
-        Assert.True(person >= 0 && answer > person && second > answer, transcript);
-        Assert.DoesNotContain("told where the person is", transcript);
-        Assert.DoesNotContain("knowledge_search", transcript);
-        Assert.DoesNotContain("\r", transcript);
-    }
-
-    /// <summary>A conversation longer than a file carries keeps its newest words, and says the start was left out.</summary>
-    [Fact]
-    public void A_transcript_too_long_keeps_its_newest_words_and_says_so()
-    {
-        Said("h1", "first question " + new string('x', 200), "first answer");
-        Said("h1", "last question", "last answer");
-
-        var transcript = HelpTranscript.Of(Events, "h1", "first", limit: 70)!;
-
-        Assert.Contains("last answer", transcript);
-        Assert.DoesNotContain("first answer", transcript);
-        Assert.Contains("left out", transcript);
-    }
-
-    /// <summary>Nothing said is no transcript: a conversation nobody spoke in hands nothing on.</summary>
-    [Fact]
-    public void A_conversation_nobody_spoke_in_has_no_transcript()
-    {
-        Assert.Null(HelpTranscript.Of(Events, "h9", null));
-    }
 }

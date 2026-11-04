@@ -21,7 +21,6 @@ public static class DriverChoiceVerbs
         new RetryVerb(verdicts),
         new HelpersVerb(),
         new HandOverVerb(),
-        new StaffingFoundVerb(),
         new RoleVerb(),
         new WorkflowVerb(),
         new ReviewVerb(),

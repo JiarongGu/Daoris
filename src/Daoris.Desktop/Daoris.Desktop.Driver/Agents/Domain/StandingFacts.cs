@@ -42,6 +42,9 @@ public sealed record StandingFacts
     /// <summary>The person's choices on this machine for its repository (the standing answer, D135 §3, D230 point 4); null where none is kept.</summary>
     public StandingAnswer? Choices { get; init; }
 
+    /// <summary>Whether its harness takes no rules file (<see cref="ISessionAdapter.TakesSettings"/>), so none of the person's denies reaches it.</summary>
+    public bool NoDenies { get; init; }
+
     /// <summary>The memory its line read, newest first, as the service rechecked it when a move's brief was composed; none at a first start.</summary>
     public IReadOnlyList<string> Memory { get; init; } = [];
 

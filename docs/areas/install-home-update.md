@@ -7,8 +7,8 @@ category folders beside it. The install's `data/` is the Daoris home. Every mach
 through one table of entries, held by three twins (driver, service, CLI). The driver also decides which file each tool is (git,
 Node, PowerShell, gh, az), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
 in `update/staged/` beside a running one. The application drains its work, closes, and the launcher swaps `app/`, confirms the
-new build, or rolls back. The desktop store, the conversion receipts and the transitional register keep older builds from
-writing what this build no longer reads.
+new build, or rolls back. A release that changes a stored shape carries one migration, which converts the home once at its
+first start; nothing reads an older shape after it.
 
 Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/` for `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 
@@ -30,10 +30,11 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `UpdateModule`, `UpdateLauncher` | `Mod/Update/UpdateModule.cs`, `UpdateLauncher.cs` | The page's `STATE`/`SET`; the launcher's start through the start gate |
 | `UpdateCommand` | `Drv/Install/UpdateCommand.cs` | The terminal's door, `daoris update` |
 | `StartConfirmation` | `Drv/Install/StartConfirmation.cs` | Whether this start can still be rolled back, read from the swap journal |
-| `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build: an unresolved delivery, a standing conversion |
+| `HomeLastBuild` | `Drv/Install/HomeLastBuild.cs` | `data/last-build.json`: the newest build that ran on the home; the launcher's refusal of an older one. Compiled into the launcher |
+| `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build while a delivery is unresolved |
 | `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: numbered steps, the writer stamp, settled-gated imports |
-| Conversion door | `Drv/Conversion/` (`ConversionApplies`, `HomeReceipts`, `ConvertCommand`) | One plan, one Apply, receipts stamped with the applying build, Undo |
-| `TransitionalRegister`, `HomeFloor` | `Drv/Transitional/Register.cs`, `HomeFloor.cs` | Every kept older read with its end and row; the oldest build that can still write the home |
+| `HomeMigration` | `Drv/Install/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
+| `TransitionalRegister` | `Drv/Transitional/Register.cs` | The reads still kept, each with its end and row, until their chunks delete them and the list |
 | Marker gate | `tools/transitional-markers.mjs` | Markers, entries and open rows held together, in `verify` |
 | `Tools` | `Drv/Install/Tools.cs` | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |
 | `ToolInstall`, `ToolResources`, `ToolsCommand` | `Drv/Install/` same names | Download, verify, lay out; the lists and locations; `daoris tool` |
@@ -150,7 +151,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     and the terminal are idle. (from D139)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
-    version while a delivery is unresolved or a conversion stands. A refusal closes nothing. (from D139, D215, D227)
+    version while a delivery is unresolved. A refusal closes nothing. (from D139, D215)
 41. *Update now* is the person closing Daoris. It does not wait; driven sessions are recorded stopped and carried on at the
     next start. (from D139)
 42. The application starts `Daoris.exe --update --after <pid>` and closes. The launcher waits up to three minutes for it and
@@ -163,29 +164,37 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     and `previous/` comes back. A failed move undoes the journal in reverse; a launcher that died mid-swap is undone at the next
     start. Confirmed, `previous/` is removed. A build that failed is not tried again. (from D139)
 46. A start that finds a build staged and nothing running from `app/` swaps first, unless the person said *Not now* of that
-    build. Whatever happens, the launcher's last act is starting Daoris. (from D139)
+    build. Whatever happens, the launcher's last act is starting Daoris, unless that build is older than its home's last: a
+    start nothing can roll back keeps its version in `data/last-build.json`, never lowered, and the launcher refuses a build
+    below it in one sentence naming both, a swap onto one rolling back. It is the launcher's one check of an older build.
+    (from D139, D232, D233)
 47. The launcher writes no log. The next start says the outcome once (`update.installed`, `update.rolled-back`,
     `update.refused`), and every state carries `last` from the journal. Log lines name things and count them, never a path or
     a command line. (from D94, D139)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)
 
-**The store and older builds**
+**The store and the migration**
 
 49. `data/desktop.db` is the desktop's SQLite store, opened by the driver library alone and never synced: one connection per
     process, write-ahead logging, `synchronous = FULL`, every write one immediate transaction. (from D212)
 50. Store changes are numbered steps, forward only, one exclusive transaction each. The writer stamp (3) is never lowered. A
     build whose stamp is below the store's reads it and writes nothing. A stamp-raising step, and every import, waits until
-    the start is settled, so a rolled-back build meets its files as they were. (from D139, D212, D226)
-51. Converting old records is one door, `daoris convert` and the window's review: one plan, one Apply on its digest, a receipt
-    written before the first effect and stamped with the applying build, Undo of the latest settled receipt. Its parts today are
-    workflows and staffing. (from D227, D228)
-52. Every read kept for an old record or an older build is one register entry: its id, the code kept, what reaches it, the
-    condition that ends it and the row that deletes it, with `// transitional: <id>` at the site. The gate fails a marker with
-    no entry, an entry with no marker, and an entry whose row is closed. (from D228)
-53. The floor is the oldest build that can still write the home: the build in the oldest standing receipt, and the store's
-    writer stamp for what the store holds. An entry kept for an older build ends once the floor passes that build. This
-    machine's page lists every entry and its state. (from D228)
-54. A stored shape or stored code is never changed in place; it is read as it was written. (from D228)
+    the start is settled. (from D139, D212, D226)
+51. No code reads a record, key, file or layout in a shape an older build wrote. A release that changes a stored shape carries
+    one migration, `HomeMigration`, run by the application's start once the home is known and before the staffing, the loop
+    and the routes read it, under the home's lease; a lease held past its wait runs nothing, and the next start runs it. (from D232)
+52. The migration is a list of steps, each converting its own records and idempotent. Before a file's first change it is
+    copied into `data/salvage/<migration>/`, the Daoris folder's layout under it, a database with its journal files; a copy
+    already there is kept. The copy is the undo. (from D232)
+53. `data/migration.json` names the migration and each step as it finishes. A start whose record holds every step runs
+    nothing; a step that throws stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
+    `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
+54. This release's steps: the staffing into the store, the caps into the supervisor's rules, `driver.json`'s keys no code
+    writes, `harnesses.json`'s old names and pooled sections, a waiting say's `now`, unkeyed solicited attempts, held presses
+    with no question, the event logs' `answered` receipts, `chat.told-routing` notes and old handed sections, and the session
+    records' `answer` column. The next release that changes a shape replaces them. (from D232)
+55. A read still kept until its chunk deletes it is one register entry with `// transitional: <id>` at the site; the gate
+    fails a marker with no entry, an entry with no marker, and an entry whose row is closed. (from D228, D232)
 
 ## Where a change goes
 
@@ -197,16 +206,16 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 - **What the swap does:** `Drv/Install/StagedBuild.cs`, `InstallSwap.cs`, on the base library alone, since the launcher compiles
   them. **When to update:** `Mod/Update/InstallUpdater.cs`. **The request:** `Drv/Install/InstallUpdate.cs`.
 - **A refusal to go back:** `Drv/Workplace/InstallRollback.cs`.
-- **A read kept for an older build:** an entry in `Drv/Transitional/Register.cs`, a marker at the site and an open deleting row,
-  in one commit.
+- **A changed stored shape:** a step of its own in `Drv/Install/Migration/`, one entry of `HomeMigration.Steps`, and the old
+  reader deleted in the same chunk.
 - **A store table or column:** a new numbered step in `DesktopStore.Steps`. Raise the writer stamp only when older builds must
   stop writing.
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
 **Tests that pin the area.** Driver: `Install/StagedBuildTests`, `InstallUpdateTests`, `UpdateDrainTests`,
 `UpdateCommandTests`, `StartConfirmationTests`, `HeldFilesTests`, the `Tool*Tests`; `Platform/DaorisHomeTests`, `HomeLeaseTests`,
-`HomeIdentityTests`; `Store/DesktopStore*Tests`; `Transitional/TransitionalRegisterTests`; `Conversion/ConversionTests`,
-`ConversionPartsTests`; `Service/ServiceHostLocatorTests`; `PinnedUpdatesTests`. Modules: `Update/InstallHomeTests`,
+`HomeIdentityTests`; `Store/DesktopStore*Tests`; `Transitional/TransitionalRegisterTests`; `Install/HomeMigrationTests`;
+`Service/ServiceHostLocatorTests`; `PinnedUpdatesTests`. Modules: `Update/InstallHomeTests`,
 `HomePlacingProcessTests`, `AppWorkingFolderProcessTests`, `InstallUpdaterTests`, `UpdateModuleTests`, `UpdateRelaunchGateTests`,
 `UpdateWatchTests`; `Windows/TaskbarIdentityTests`; `EveryModuleChildIsHandedTheToolsTests`. Service:
 `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`, `home-census.test.ts`, `tool-test/desktop-publish.test.ts`,
@@ -232,21 +241,16 @@ drains, swaps, rolls back and refuses.
 6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs:57-59` (the driver alone)
    and `DaorisHome.cs:428` (`cache/tools`). The code reads right.
 7. D57 (managed agents under `~/.daoris/toolchain/`) vs `DaorisHome.cs:427` (`cache/toolchain`). The code reads right.
-8. The floor's premise (`Drv/Transitional/HomeFloor.cs:24-26`, oneway design §1.3: no older build is staged while a conversion
-   stands) vs the launcher's start swap (`Launcher/Program.cs:88`, `Drv/Install/InstallSwap.cs:243`) and a publish in place,
-   neither of which asks `InstallRollback`. Only the drained path refuses (`Mod/Update/InstallUpdater.cs:405`). The code is
-   today's behaviour, so the floor can be wrong after such a start; this needs the owner's settling.
-9. D228 (every older read kept names its end and its row) vs `DaorisHome.cs:119-128` (old places), `HomeLease.cs:128` (old
-   lease and `driver.lock`) and `InstallHome.cs:209` (D63's `~/.daoris` move-in), none of them in the register. The code is
-   today's behaviour; the register under-counts until ONEWAY1w.
+8. D232 (no older reader) vs `DaorisHome.cs:119-128` (old places), `HomeLease.cs:128` (old lease and `driver.lock`) and
+   `InstallHome.cs:209` (D63's `~/.daoris` move-in), none of them in the register or the migration. The code is today's
+   behaviour until ONEWAY1w moves them into the migration.
 
 ## Open
 
-- **ONEWAY1w**: the conversion's home part. Pressed alone, it moves every entry at its old place at the restart, from a receipt
-  the launcher reads. The person chooses where an entry is in both places. It ends D172's old places, `driver.lock`, D63's
-  move-in and the flat service host.
+- **ONEWAY1w**: the home's old places as a migration step: every entry at its old place moved, `driver.lock`, D63's move-in and
+  the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
-- **ONEWAY1af**: delete each register entry's read once its condition ends, the floor-waited ones among them. Undo is refused
-  from the first such deletion (`Register.FloorNeeded`, null today).
+- **NOCOMPAT1b2**: the rest of the old workflow logic's reads (`current-followed`, `auto-lander`, `work-cycles`), and the page's
+  handed sections (`handed-before-block`); the register and its gate deleted with the last of them.
 - **ONEWAY1ai-ii, ai-iv**: the driver's, the tools' and the documents' words name `daoris …` alone.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

@@ -483,12 +483,11 @@ function AskView({ ask }: { ask: Ask }) {
 
 /**
  * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2): *sent 14:02 · taken 14:03 · turn ended 14:09*,
- * each only where it was observed, folded under them as a quiet line. A turn's end is what Daoris saw, never an answer (COMMS1h); an
- * older build's `answered` is drawn as it was.
+ * each only where it was observed, folded under them as a quiet line. A turn's end is what Daoris saw, never an answer (COMMS1h).
  */
 function ReceiptsLine({ receipts }: { receipts: Receipts }) {
   const { t, i18n } = useTranslation();
-  const seen = (['sent', 'taken', 'ended', 'answered'] as const)
+  const seen = (['sent', 'taken', 'ended'] as const)
     .filter((receipt) => receipts[receipt])
     .map((receipt) => `${t(`work.receipt.${receipt}`)} ${clockOf(receipts[receipt]!, new Date(), i18n.language)}`);
   if (seen.length === 0) return null;

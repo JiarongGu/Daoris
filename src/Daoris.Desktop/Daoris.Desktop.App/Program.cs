@@ -87,6 +87,12 @@ internal static class Program
             return;
         }
 
+        // D232: this release's migration converts the home once, before the staffing, the loop and the routes read any of it.
+        if (Daoris.Driver.DriverConfig.FindHome(Environment.GetEnvironmentVariable) is { } migrating)
+        {
+            Daoris.Driver.HomeMigration.Log(Daoris.Driver.HomeMigration.Run(migrating), log);
+        }
+
         // FOUNDATION1w-s (the foundation design §19.15): the home's driver.json reads its staffing from the store, wired before the loop
         // and the routes load it.
         Daoris.Driver.RoleStaffing.WireHome(Environment.GetEnvironmentVariable);

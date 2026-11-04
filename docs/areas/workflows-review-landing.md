@@ -40,8 +40,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Review/Heavy/HeavyExecutor.cs` | The `check` node performed by Daoris, off the pass, under the heavy slots |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
-| Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
-| Routes and page | Modules `Bridge/Routes/WorkflowRoutes.cs`, `WorkflowEditRoutes.cs`, `SetupRoutes.cs`, `ConvertRoutes.cs`, `TreesRoutes.cs`, `EntriesRoutes.cs`; web `src/workflow/` (`chart/`, `edit/`, `place/`), `src/agents/setup/` | The bridge doors; the chart, the editor, the place page and *Convert…* |
+| Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs`; `Install/Migration/WorkflowsStep.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
+| Routes and page | Modules `Bridge/Routes/WorkflowRoutes.cs`, `WorkflowEditRoutes.cs`, `SetupRoutes.cs`, `TreesRoutes.cs`, `EntriesRoutes.cs`; web `src/workflow/` (`chart/`, `edit/`, `place/`), `src/agents/setup/` | The bridge doors; the chart, the editor and the place page |
 
 ## Its rules
 
@@ -146,10 +146,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     integrated. It suggests integrated where the line declares integration, a pull request where a plugin serves the remote's
     platform, else merge after accept. *Keep how it lands* writes no landing and no choice. (from D221, D227)
 43. `PLACE_APPLY` is the one adoption door. `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (from D227)
-44. The release's one migration converts the workflow records once through `WorkflowMigration.Convert`: each steps, `handed` or
-    `land`+`accept` newest gets the next version as a graph; each place on the landing rules follows the home default or a saved
-    copy of what its rules drew; a rule's `integrate` becomes its line's policy; the landing rules and work cycles leave
-    `driver.json`. A version the save refuses is left, said. (from D232)
+44. The release's one migration converts the workflow records once through `WorkflowMigration.Convert`, its `workflows` step
+    reading the repositories from the service's registry table: each steps, `handed` or `land`+`accept` newest gets the next
+    version as a graph; each place on the landing rules follows the home default or a saved copy of what its rules drew; a rule's
+    `integrate` becomes its line's policy; the landing rules and work cycles leave `driver.json`. A version the save refuses is
+    left, said. There is no door, receipt or undo. (from D232)
 45. No landing rule or work cycle is read or written: `driver.json` holds no `landings`, `workspaceLandings` or work cycles, and no
     door sets one. A hand-off pushes to the plugin its card names. (from D232)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it: the auto lander's look ends

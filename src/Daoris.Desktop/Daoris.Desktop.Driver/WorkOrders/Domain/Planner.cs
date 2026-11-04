@@ -1362,8 +1362,7 @@ public static class Planner
                 : 0;
             // The person's words to its session are their Try again: a failure they write to is forgiven as
             // its record leaves `failed`, and a quest the strikes parked goes on with them, as a retry would start it.
-            // transitional: strikes-key
-            var parks = snapshot.FailuresAt.TryGetValue(quest.Id, out var ruled) ? ruled : config.Strikes;
+            var parks = snapshot.FailuresAt.GetValueOrDefault(quest.Id);
             if (parks > 0 && strikes >= parks && !(continuing && into is { WordsWaiting: true }))
             {
                 return new(quest, StartVerdict.Exhausted,

@@ -32,8 +32,8 @@ internal static class HelpRoomSections
         new HelpRoomMakingAPlugin(),
         new HelpRoomOwnPlugins(),
         new HelpRoomDoors(),
-        // HELPOWED1 (D170 point 2): the doors owed, read beside the doors that exist.
-        new HelpRoomOwed(),
+        // D233 point 1: the acts done at a terminal that no proposal takes, read beside the doors that exist.
+        new HelpRoomTerminalActs(),
         new HelpRoomLanding(),
         new HelpRoomPlaces(),
         new HelpRoomWindow(),

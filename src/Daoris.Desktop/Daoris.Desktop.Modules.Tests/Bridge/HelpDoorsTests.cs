@@ -105,22 +105,6 @@ public sealed class HelpDoorsTests : Bridge
         Assert.Equal((true, "Deleted ask #a1b2c3d4."), ask);
     }
 
-    /// <summary>
-    /// DRIFT1d2: a yes to a departure is the local host's own accept route, the one the quest page's *Accept the departure*
-    /// and `daoris quest accept` call, and the service's sentence comes back as said.
-    /// </summary>
-    [Fact]
-    public async Task A_yes_to_a_departure_goes_through_the_local_hosts_own_accept_route()
-    {
-        var host = new StandInHost();
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(host));
-
-        var accepted = await Module().HelpDoors(service).AcceptDepartureAsync("#q3done00", CancellationToken.None);
-
-        Assert.Equal(["POST /api/quests/q3done00/accept"], host.Asked);
-        Assert.Equal((true, "Accepted quest #q3done00."), accepted);
-    }
-
     [Fact]
     public async Task A_delete_before_the_driver_is_up_is_the_cold_start_sentence()
     {
@@ -181,27 +165,6 @@ public sealed class HelpDoorsTests : Bridge
 
         var refused = Assert.ThrowsAny<Exception>(() => doors.SwitchPlugin("nobody", on: true));
         Assert.Contains("no plugin `nobody` on this machine", refused.Message);
-    }
-
-    /// <summary>
-    /// WSR5b: a hand-off card's Apply is the review's own door — a branch the landing record does not hold is
-    /// its refusal in its words, and one it holds needs the registry's checkout, so before the driver is up it
-    /// is the cold-start sentence. Nothing is spoken to either way.
-    /// </summary>
-    [Fact]
-    public async Task A_hand_off_goes_through_the_reviews_own_door()
-    {
-        var doors = Module().HelpDoors(null);
-
-        var unknown = await doors.HandAsync("engine", "feature/mine", null, CancellationToken.None);
-        Assert.False(unknown.Handed);
-        Assert.Contains("names no branch a landing made", unknown.Message);
-        Assert.Null(unknown.Plugin);
-
-        new LandedBranches(Home).Record(new LandedBranch(
-            "engine", "work", "feature/q2-second", "main", "abc1234", "s2a3b4c5", "q2", "Second", DateTimeOffset.UnixEpoch));
-        var cold = await Assert.ThrowsAnyAsync<Exception>(() => doors.HandAsync("engine", "feature/q2-second", null, CancellationToken.None));
-        Assert.Contains("still coming up", cold.Message);
     }
 
     /// <summary>

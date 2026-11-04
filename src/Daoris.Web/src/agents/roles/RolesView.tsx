@@ -1,8 +1,8 @@
 import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useAnswerStaffingFound, useDriver, useHarnesses, useLines, usePlugins, useRoles,
-  useSetRole, useSetRoles, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
+  helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useDriver, useHarnesses, useLines, usePlugins, useRoles,
+  useSetRole, useSetRoles, useStarts, useWorkflowCurrents, type RoleChangePress,
 } from '../../bridge/shell';
 import { useRegistry } from '../../data/queries';
 import { workspacesOf } from '../../data/workspaces';
@@ -102,8 +102,8 @@ export function useRoleEditing(notify: Notify) {
  *
  * @remarks
  * **The mode's one owner** (D168 point 3): this hook holds the open editor and every pending press, and hands the molecule its
- * answers, so `RolesCard` imports nothing of the bridge. Each press goes out as its route takes it (`SET_ROLE`, `SET_ROLES`,
- * `STAFFING_FOUND_ANSWER`) and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
+ * answers, so `RolesCard` imports nothing of the bridge. Each press goes out as its route takes it (`SET_ROLE`, `SET_ROLES`)
+ * and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
  * front, so opening the place asks the driver nothing of roles (D150 point 5).
  */
 export function useRolesMode({ notify, section = 'working', doors = {}, page: given, placed = false }: {
@@ -121,18 +121,6 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   const [editing, setEditing] = useState<Editing | null>(null);
   const { harnesses, agents, offers, staffing, catalogue, read, busy: editBusy, onSet: pressRole, onSetAll: pressRoles } = useRoleEditing(notify);
   const startRows = Array.isArray(starts.data?.starts) ? starts.data.starts : [];
-
-  // The changes of driver.json's actors another program made, which the driver kept for the person.
-  const found = useStaffingFound();
-  const answerFound = useAnswerStaffingFound();
-  const answerStaffingFound = (id: number, answer: 'take' | 'dismiss', answered: Answered) =>
-    answerFound.mutate({ found: id, answer }, {
-      onSuccess: () => {
-        notify(t(answer === 'take' ? 'settings.ai.role.found.taken' : 'settings.ai.role.found.dismissed'));
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    });
 
   // Intake's and Ask Daoris's rows say what they do now under their order: Intake's per circle, the driver's own resolution.
   const first = (id: string) => staffing.find((row) => row.id === id)?.choices[0]?.agent ?? null;
@@ -205,8 +193,8 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   const cardOf = (only?: string) => (
     <RolesCard
       catalogue={catalogue} read={read} staffing={staffing} agents={agents} about={about}
-      busy={editBusy || answerFound.isPending}
-      onSet={pressRole} onSetAll={pressRoles} found={found.data ?? []} onAnswerFound={answerStaffingFound}
+      busy={editBusy}
+      onSet={pressRole} onSetAll={pressRoles}
       editor={editing} onEditor={(next) => {
         setEditing(next);
         if (next && !next.isNew) page.onSelected(roleId(next.id));

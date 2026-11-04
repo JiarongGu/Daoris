@@ -91,8 +91,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 
         var kept = Deliveries.Read(view.Id);
         if (kept.Person is { } toPerson) return ToPerson(view, named, toPerson);
-        // The opinion's `handed` is its once-guard here: an unkeyed findings word, handed before the one door, has no key to answer a retry.
-        if (view.HandedTo is null) return await HandAsync(view, named, asked, ct).ConfigureAwait(false); // transitional: opinion-handed-guard
+        if (view.HandedTo is null) return await HandAsync(view, named, asked, ct).ConfigureAwait(false);
         if (kept.Answered is { } answered) return await AnsweredAsync(view, named, answered, kept, asked, ct).ConfigureAwait(false);
 
         // Handed: its record has the words, or its turn on them runs, until the turn ends and its answers are read.
@@ -144,7 +143,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     /// <summary>
     /// Hand a first pass's findings to the working session (design §6.3): once, through the local host's door, and only to an
     /// ended record of this machine's that takes words. A running or parked one takes them at its turn's end, so they wait; a
-    /// record that never goes on sends them to the person (design §6.7). COMMS1b (the comms design §4.2, §13 point 1): against a host with the
+    /// record that never goes on sends them to the person (design §6.7). COMMS1b (the comms design §4.2, §13 point 1): through the host's
     /// one door for solicited answers, the record read is the head of the working session's line, as that door walks it, and a park the person
     /// answered takes them beside their answer; the hand asks a settled answer under the opinion's key, and a settled or waiting one is handed.
     /// </summary>
@@ -158,8 +157,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             return await SendBackAsync(view, named, asked, chatLine, ct).ConfigureAwait(false);
         }
 
-        var answers = working is not null && await Service.Opens.AnswersAsync(ct).ConfigureAwait(false);
-        var record = answers ? SolicitedHand.Walk(await Service.RecordsAsync(ct).ConfigureAwait(false), view.Working).Head ?? working : working;
+        var record = working is null ? null : SolicitedHand.Walk(await Service.RecordsAsync(ct).ConfigureAwait(false), view.Working).Head ?? working;
 
         // FOUNDATION1i path 5: what never takes findings is the course's answer for a solicited answer; a conversation is the chat runner's,
         // which the line above sent it to where it has a run, and nothing else is the course's to say.
@@ -179,8 +177,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 
         // 🔴 Never into a step in flight (D136): a running turn takes another agent's claims at its end, and a park after the person's answer,
         // which through the one door is beside it (§13 point 1). The next look hands them, once the record has ended.
-        // transitional: solicited-older-host
-        if (answers ? !SolicitedHand.TakesNow(record!) : record!.Running || record.Parked) return Waiting(view, named, record);
+        if (!SolicitedHand.TakesNow(record!)) return Waiting(view, named, record!);
 
         // A settled answer (row p) is handed: the findings' word was kept and taken before, so nothing is said for it again.
         var hand = await Service.Opinions.HandWordAsync(view.Id, ct).ConfigureAwait(false);

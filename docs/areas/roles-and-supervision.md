@@ -22,8 +22,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | The seed | `Defaults/roles.json` | The eight seeded roles, machine-wide |
 | `RoleDoor` | `Roles/RoleDoor.cs` | The person's one door: judges a press, then writes role, staffing, policy and rules in one transaction |
 | `RoleVerb` | `Roles/RoleVerbs.cs` | `daoris driver role` and `role set/remove/default/policy/rules/supervisor/suggested` |
-| `RoleStaffing` | `Roles/RoleStaffing.cs` | `role_staffing` in the desktop store: import, the one writer, the copy onto `driver.json`, the found check |
-| `StaffingProjection`, `StaffingPart` | `Roles/StaffingProjection.cs`, `Conversion/StaffingPart.cs` | Changes found in the file's copy; the conversion's staffing part |
+| `RoleStaffing` | `Roles/RoleStaffing.cs` | `role_staffing` in the desktop store: import, the one writer |
+| `StaffingProjection`, `StaffingStep` | `Roles/StaffingProjection.cs`, `Install/Migration/StaffingStep.cs` | The store's rows as a record's fields; the migration's staffing step |
 | `ActorChoices`, `ActorKey` | `Roles/ActorChoices.cs`, `Settings/ActorKey.cs` | An order of 1 to 4 choices, its effective entries, its judge, who may be off |
 | `StartPlan`, `ReaskMove` | `Roles/StartPlan.cs`, `Roles/OneTurnReask.cs` | The one walk over a role's order, work to role, pass codes; the one re-ask |
 | `StaffPolicy` | `Roles/StaffPolicy.cs` | The policy record: rules, entries, conditions, actions, presets, digest, judge |
@@ -37,9 +37,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `StandingConfirmation`, `RoleHolders` | `Modules/Platform/StandingConfirmation.cs` | Appointments, generations, holders, the two offered flags |
 | Steward | `Roles/StewardCommand.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Platform/RoleActs.cs` | `steward <act>` over `ROLE_ACT`; the eight acts; pending operations |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
-| `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 18 proposal kinds, each judged by its route's code and applied by the person |
+| `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
 | `HelpModes`, `HelpSwap`, `HelpHousekeeping`, `HelpSettings`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access, what a start handed |
-| The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor, the conversion |
+| The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor |
 
 ## Its rules
 
@@ -69,14 +69,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 11. A staffing is an order of one to four choices, each `{ agent, model?, effort? }` in the tool's own words. An absent
     model or effort is *account default*: nothing is passed. One judge serves every door (`ActorChoices.Judge`). (from D205)
-12. The staffing lives in `role_staffing`. `driver.json`'s `actors`, `adapter`, `intakeAdapter` and `helperAdapter` are
-    imported once; a fresh home is seeded with each role's seed. (from D205, D212)
-13. Until the home is converted, every staffing write is copied onto those four keys for an older build. A change found
-    there waits for *Take it* or *Dismiss* (`driver actor found`). (from D205, D228)
-14. A role of the five with no stored order runs *as before*, from its old single-agent key at account default. (from D205)
-15. The staffing part of the conversion door writes Build, Intake, Ask Daoris, Chat and Brainstorm as they run, at account
-    default, Intake or Ask Daoris with no key written off. It keeps an unreadable entry, leaves Second opinion, Partner and
-    Helper to their caller's rule, removes the four keys and keeps them for Undo, and ends the copy. (from D228)
+12. The staffing lives in `role_staffing` alone, and every write is the store's. A fresh home is seeded with each role's
+    seed. (from D205, D212, D232)
+13. The release's migration imports an older home's `driver.json` staffing once, writes Build, Intake, Ask Daoris, Chat and
+    Brainstorm as they ran, at account default, Intake or Ask Daoris with no key written off, keeps an unreadable entry,
+    leaves Second opinion, Partner and Helper to their caller's rule, and takes the four keys out. (from D232)
+14. A role of the five with no stored order has no agent: nothing reads the old single-agent keys. (from D232)
+15. A change of `driver.json`'s staffing by hand is read nowhere. (from D232)
 16. A start walks its role's order choice by choice, each choice's accounts before the next. A choice that cannot run is
     passed with a code. Only the choice taken counts under the cap. (from D205, D197)
 17. With no choice ready, a driven start holds with one sentence naming the soonest way out. A conversation's press is
@@ -107,8 +106,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 28. A signed-out sign-in, a refused model and a reached budget are passes of the walk, never fields. (from D226)
 29. A move to another choice is a new part handed the brief at a part's end, never mid-turn. An uncertain send is never
     replayed. It is said as *move to another choice*, never *switch*. (from D226)
-30. On a home whose rules are not reached, a policy's moves and `most` bound its lines: 3 moves in 24 hours once any move
-    is set. On a reached home they are refused, naming `role rules`; a preset writes them as rules naming the role. (from D226, D229)
+30. A policy's moves and `most` are refused, naming `role rules`; a preset writes them as rules naming the role. The lines
+    read their moves and bound from the effective rules alone. (from D226, D229, D232)
 
 **The rule supervisor**
 
@@ -121,9 +120,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one
     choice acting at or past failures. A place's set is written whole at the revision read. (from D229)
 35. A home is reached when the machine's place holds a revision. A fresh home is seeded at its first start: answers alone
-    at 2, failures at 3 (the default `strikes`), tries at 5. A home with a `driver.json` is never seeded. (from D229)
-36. On a home not reached every rule write is refused `convert-first`, and today's numbers run: `strikes`, Daoris's own
-    answers-alone bound and the policies' moves. (from D229)
+    at 2, failures at 3, tries at 5. The release's migration writes an older home's caps as the machine's rules (answers
+    alone 2, failures at its `strikes`, tries 5, moves 3 a day), each policy's moves as rules at its role's place, and takes
+    those moves and `strikes` out. (from D229, D232)
+36. Every executor reads the effective rules: the answers-alone hold, the failures that park a quest, the tries of a
+    transient episode and a line's moves. A count no rule watches acts on nothing. (from D229, D232)
 37. A rule decides at the executor that acts on its count: answers alone in the admission's `at`, failures at the
     planner's start, tries at a run's start and past its episode, conditions where the staffing course reads a move. (from D229, D212)
 38. A rule acts between turns only. It never acts on an unknown count, never ends a running or quiet session, and never
@@ -169,7 +170,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **Ask Daoris**
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
-    quests, or proposes a change. A quest's or session's own acts stay in its own conversation. (from D161, D193)
+    quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
+    handing a landed branch to a landing plugin are the person's own presses, never proposed. (from D161, D193, D233)
 56. In restricted mode, the default, it reads and proposes. Each proposal is a kind under `Help/Proposals/`, judged by
     its route's own code against the machine now, and applied only by the person's *Apply* through that route. (from D89, D170)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings and checkouts, each request
@@ -177,8 +179,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 58. Full access runs its harness's unrestricted mode. Only the person chooses it (Settings, the panel's chip, `help
     mode`), never Ask Daoris. A change of mode or access takes the next turn and is said. (from D183)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
-60. Every driver verb and Settings control is a proposal's door, a door owed, or exempt with a reason, held by
-    `HelpCoverageTests`. A door owed is said as owed. (from D110, D170)
+60. A proposal kind, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every
+    action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
+    door its kind takes; *Done at a terminal* names the acts no proposal takes, by their commands. (from D110, D170, D233)
 61. A plugin's servers and skills reach Ask Daoris only where its manifest declares them for it, approved by the person
     in restricted mode. A plugin changes Daoris only through the proposal doors. (from D170, D183)
 62. The room says each role's staffing, policy and last seven days, so *why did this run on Opus?* is answered from
@@ -197,13 +200,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 - **The agent supervisor:** `QuestionSupervisorDecisions`, `SupervisorDecision`, `Modules/Bridge/SupervisorDoor.cs`.
 - **A steward act:** a row in `Modules/Bridge/StewardActRows.cs`, behind its own look.
 - **An Ask Daoris door:** a file of its own in `Help/Proposals/`, registered by one line in `HelpProposalKinds.All`, with
-  the service's writer `HelpProposalBox.<Kind>.cs`, the page's card, and its coverage row.
+  the service's writer `HelpProposalBox.<Kind>.cs`, the page's card, and its row in the room's doors table. Only where one is wanted.
 - **The page:** `Web/agents/roles/` and `Web/agents/setup/`.
 - **An old way kept:** an entry in `Transitional/Register.cs`.
 
 **Tests that pin it.** Driver: `Roles/*Tests` (catalogue, door, verbs, staffing, walk, judge, ledger, rules, decisions,
-holder key, steward), `Conversion/StaffingPartTests`, `Course/LineCourseTests`, `Course/StaffCourseLookTests`,
-`Loop/StaffPolicy*TickTests`, `Help/HelpCoverageTests`, `Help/HelpProposalKindsTests`, `Help/Proposals/*Tests`, and
+holder key, steward), `Install/HomeMigrationTests`, `Course/LineCourseTests`, `Course/StaffCourseLookTests`,
+`Loop/StaffPolicy*TickTests`, `Help/HelpProposalKindsTests`, `Help/Proposals/*Tests`, and
 `Knowledge/HelpRoom*Tests` with the room goldens. Modules: `Bridge/DriverModuleRoleTests`, `DriverModuleAppointmentTests`,
 `Platform/StandingConfirmationTests`, `RoleActTests`, `Holder*Tests`, `SupervisorScopeTests`. Service:
 `Help/HelpRoleProposalTests`, `Help/HelpProposalBoxKindsTests`, `Mcp/McpRoleFilterTests`, `Sessions/SupervisorWordTests`.
@@ -222,38 +225,31 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
    `Roles/RuledPolicy.cs:25,35` print the note's form. The verb's grammar reads right.
 4. D226 (seven conditions, each with its actions) vs `Roles/StaffPolicyDoor.cs:12-34` (moves for four; signed-out,
    model-refused and budget are the walk's). Code reads right.
-5. D226 (moves and `most` live in the policy) vs D229 and `Roles/RuledPolicy.cs:14-26` (on a reached home they are the
-   supervisor's rules). D229 reads right; D226's hold only on a home not reached.
-6. D205 points 2 and 7 (choices in `driver.json`'s `actors`) vs `Roles/RoleStaffing.cs:92-107` (`role_staffing`; the file
-   is a copy until conversion). Code reads right.
+5. D226 (moves and `most` live in the policy) vs D229 and `Roles/RuledPolicy.cs:14-26` (they are the supervisor's rules).
+   D229 reads right.
+6. D205 points 2 and 7 (choices in `driver.json`'s `actors`) vs `Roles/RoleStaffing.cs` (`role_staffing` alone). Code reads right.
 7. D205 points 8-9 (Settings → Actors, `driver actor`, `ACTORS`/`SET_ACTOR`, `actor_propose`) vs `driver role`,
-   `ROLES`/`SET_ROLE` and `role_propose` (`Help/Proposals/HelpRoleProposals.cs:20`); `driver actor` survives only as
-   `actor found` (`Roles/ActorVerbs.cs:39`). Code reads right.
+   `ROLES`/`SET_ROLE` and `role_propose` (`Help/Proposals/HelpRoleProposals.cs:20`). Code reads right.
 8. D89 (Ask Daoris's agent named under Settings → *Daoris's own AI* as a third job) vs the `ask-daoris` role's staffing
    (`Defaults/roles.json`, `Settings/ActorKey.cs:20`). Code reads right.
 9. D170 (never a shell) vs D183 full access (`Help/HelpMode.cs:17`). D183 reads right; D170 holds in restricted mode.
 10. D209 point 1 and its COMPANYVIEW1e note, and D205's COMPANYVIEW1b note (appointed and staffed under Settings → This
     Daoris, then Agents → Roles) vs `Web/agents/modes.ts:3-8,29-33` (the Roles mode is retired; its sections sit under
     Agents → Setup). Code reads right.
-11. D161's ENTRY1 note (landing and answering a quest's delivery stay in its own conversation, never a proposal) vs the
-    `accept` and `hand` kinds (`Help/Proposals/HelpAcceptProposals.cs:19`, `HelpHandProposals.cs:24`). Code is today;
-    the owner settles which stands.
-12. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
+11. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
     (`Help/Proposals/HelpRoleProposals.cs:145`). D110 means permission rules; it should say so.
-13. D208 points 4 and 8 (a workspace's supervisor later; held five minutes) vs SUPERVISOR1e as built (workspace
+12. D208 points 4 and 8 (a workspace's supervisor later; held five minutes) vs SUPERVISOR1e as built (workspace
     appointments, `Web/agents/setup/PlaceSupervisor.tsx`; a window of 1 to 60, `StandingConfirmation.cs:183-184`). Code reads right.
 
 ## Open
 
 - **CONTEXTDRIVE1e (rest):** `rule-holds` at the release, the `supervisor.rule` note, a rule's decision file,
   `SupervisorRuleActs`, and a workspace read as a repository's wider place.
-- **CONTEXTDRIVE1f:** the conversion door's `rules` part, so an existing home is reached (`Conversion/` holds only the
-  staffing and workflow parts).
 - **CONTEXTDRIVE1g, h, k:** the rules' editors on the page (no page code reads them yet); a rule's hold on the head and
   *What needs you*; the room's and glossary's words.
 - **CONTEXTDRIVE1n, j:** a conversation's course reads the rules; `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1l, m:** the kept reads (`answers-alone-bound`, `strikes-key`, `policy-moves`) and old doors deleted; the
-  installed proof.
+- **CONTEXTDRIVE1l, m:** `DriverConfig.Strikes` still parses `strikes`, which the migration takes out, so its readers
+  (`QuestRetry`, `WorkspaceSetupRules`, the setting proposals) see the default; the installed proof.
 - **STAFFPOLICY1d/f/h/i:** an agent's own ask and a hand-over take no policy; the use line's moves by condition
   (`Roles/RoleUse.cs`); selection by measurement; the installed proof.
 - **ONEWAY1af:** delete `actor-key-before` and `staffing-copy` once the staffing part's census ends.

@@ -191,8 +191,6 @@ public static class AttentionStateSlice
         new(PipeConfirmations.Event),
         // KNOWCENTRAL2e: what memory waits on the person, as the service was last read.
         new(MemoryWaits.Event),
-        // WORKFLOWCLEAN1g-ii: the conversion's census, as the loop last read it.
-        new(ConversionCensus.Event),
     ];
 
     /// <summary>
@@ -317,8 +315,6 @@ public static class AttentionStateSlice
             Git = Written(GitWaits(loop.Home)),
             // GITAUTH1f: each git go-ahead a door holds, from the home's run/git/asks/.
             GitAsks = Written(GitAskWaits(loop.Home)),
-            // WORKFLOWCLEAN1g-ii: the places still on old workflow shapes, from the census the loop keeps.
-            Conversion = loop.Conversion.Wait(),
             // INTEGRATE1o part o3: each run held at a declined request, from the node runtime's last look and its node records.
             Requests = Written(loop.RequestHolds.Select(hold => new
             {

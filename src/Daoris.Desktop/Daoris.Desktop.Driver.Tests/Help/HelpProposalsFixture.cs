@@ -177,16 +177,6 @@ public sealed class HelpStandInDoors : IHelpDoors
 {
     public List<string> Calls { get; } = [];
 
-    // IHelpAcceptDoors
-    public (bool Ok, string Message) Accepted { get; set; } =
-        (true, "Accepted the departure on quest `#q3done00`: what it held goes on.");
-
-    public Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"POST /api/quests/{id}/accept");
-        return Task.FromResult(Accepted);
-    }
-
     // IHelpAccountDoors
     public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort)
     {
@@ -294,16 +284,6 @@ public sealed class HelpStandInDoors : IHelpDoors
     {
         Calls.Add($"SESSION_DELETE {id}");
         return Task.FromResult(Deleted);
-    }
-
-    // IHelpHandDoors
-    /// <summary>What the hand-off's door answers (WSR5b): pushed by default, or its refusal in its own words.</summary>
-    public TreeHand? HandAnswer { get; init; }
-
-    public Task<TreeHand> HandAsync(string repository, string branch, string? plugin, CancellationToken ct)
-    {
-        Calls.Add($"HANDOFF {repository} {branch} {plugin ?? "(the rule's)"}".TrimEnd());
-        return Task.FromResult(HandAnswer ?? new TreeHand(true, $"handed `{branch}` to plugin `example.lands`. Plugin `example.lands`: pushed it.", branch));
     }
 
     // IHelpPauseDoors

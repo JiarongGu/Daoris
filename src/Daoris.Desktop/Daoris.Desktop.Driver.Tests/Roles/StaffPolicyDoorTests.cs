@@ -43,7 +43,7 @@ public sealed class StaffPolicyDoorTests : IDisposable
 
     private RoleStaffing Staffing { get; }
 
-    private RoleStaffing Make(Action? beforeCommit = null) => new(_home, () => StoreSettled.Yes) { BeforeCommit = beforeCommit, FileWait = TimeSpan.FromMilliseconds(200) };
+    private RoleStaffing Make(Action? beforeCommit = null) => new(_home, () => StoreSettled.Yes) { BeforeCommit = beforeCommit };
 
     private RoleCatalog Catalogue() => RoleCatalog.Read(Staffing.Location);
 
@@ -352,31 +352,6 @@ public sealed class StaffPolicyDoorTests : IDisposable
         Assert.Equal(2, Query("SELECT COUNT(*) FROM role_policy_revisions WHERE role = 'night'", row => row.GetInt32(0))[0]);
     }
 
-    [Fact]
-    public void Taking_what_the_check_found_and_the_check_s_turn_off_leave_the_policy_stale_and_the_role_in_order()
-    {
-        SetBuildPolicy(ThreeToOne());
-        RoleDoor.Apply(Staffing, RoleChange.Set(Role("intake")), null, null, new RolePolicyPress(Policy("order", [(Codex, ""), (Sonnet, "")])));
-
-        // An older build writes the file: build's choices changed, intake turned off.
-        var older = DriverConfig.Parse(File.ReadAllText(File_));
-        older = ActorChoices.With(older, "build", [Codex]);
-        older = ActorChoices.With(older, "intake", []);
-        AtomicFile.WriteText(File_, older.ToJson());
-        Assert.Equal(StaffingChecks.Found, Staffing.Check(StaffingCheckAt.Look).How);
-
-        Assert.Equal(StaffPolicyRead.Set, Staffing.Policy("build").State);
-        var intake = Staffing.Policy("intake");
-        Assert.Equal(StaffPolicyRead.Stale, intake.State);
-        Assert.Contains("no choices of its own", intake.Why);
-
-        Staffing.Take(Assert.Single(Staffing.Found()).Id);
-
-        var build = Staffing.Policy("build");
-        Assert.Equal(StaffPolicyRead.Stale, build.State);
-        Assert.Contains("set for other choices", build.Why);
-        Assert.Null(build.Applied);
-    }
 
     // ——— ROLES says each role's policy and next start, and a preview writes nothing.
 

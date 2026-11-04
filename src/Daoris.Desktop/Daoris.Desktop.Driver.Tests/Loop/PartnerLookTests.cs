@@ -335,7 +335,7 @@ public sealed class PartnerLookTests : IDisposable
     public async Task Against_the_one_door_a_keyed_attempt_a_restart_cut_is_asked_again_and_never_handed_twice(string where)
     {
         var host = Door();
-        Files.WriteReceipt(new PartnerReceipt("p1", "s1", PartnerDelivery.KeyOf("p1"), PartnerDelivery.Attempted, DateTimeOffset.UtcNow.AddMinutes(-1)) { Keyed = true });
+        Files.WriteReceipt(new PartnerReceipt("p1", "s1", PartnerDelivery.KeyOf("p1"), PartnerDelivery.Attempted, DateTimeOffset.UtcNow.AddMinutes(-1)));
         host.Set("s1", "said", new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
         {
             ["id"] = "pt-w9", ["text"] = "A partner's piece.", ["at"] = At.ToString("O"), ["files"] = new System.Text.Json.Nodes.JsonArray(), ["reopens"] = true,

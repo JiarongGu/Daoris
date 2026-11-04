@@ -56,7 +56,7 @@ public enum StaffingImported
 /// <summary>An import's outcome and, where it was held or unread, why.</summary>
 public sealed record StaffingImport(StaffingImported How, string? Said = null);
 
-/// <summary>Where the check runs (§19.15): a look takes both locks with no wait; a start and a write's end wait as a writer does.</summary>
+/// <summary>Where the check runs (§19.15): a look imports with no wait for the staffing's lock; a start waits as a writer does.</summary>
 public enum StaffingCheckAt
 {
     Start,
@@ -67,34 +67,24 @@ public enum StaffingCheckAt
 /// <summary>How a check came out.</summary>
 public enum StaffingChecks
 {
-    /// <summary>The file's staffing paths are at <c>written</c>: nothing to do.</summary>
+    /// <summary>The store holds the staffing: nothing to do.</summary>
     Same,
 
-    /// <summary>They are at the store's projection, a write's own cut before <c>written</c> moved: <c>written</c> set, nothing found.</summary>
-    Written,
-
-    /// <summary>Another writer changed them: kept in a found row, every turn-off applied, the file repaired where its baseline still stood.</summary>
-    Found,
-
-    /// <summary>A lock was held, or the store would not read: the comparison is left to the next check.</summary>
+    /// <summary>The store would not read: the check is left to the next one.</summary>
     Left,
 
-    /// <summary>The file does not read: nothing is found and nothing written, as a look says it today.</summary>
-    Unread,
-
-    /// <summary>The store holds no import yet: the file is the staffing, and a start or a look imports it.</summary>
+    /// <summary>The store holds no import yet: a start or a look imports it.</summary>
     NotImported,
 }
 
-/// <summary>A check's outcome, the found row it recorded or met, and what a refused repair or a held lock said.</summary>
-public sealed record StaffingChecked(StaffingChecks How, long? Found = null, string? Said = null);
+/// <summary>A check's outcome, and what a held import or a store that would not read said.</summary>
+public sealed record StaffingChecked(StaffingChecks How, string? Said = null);
 
 /// <summary>
-/// The roles' staffing in the desktop store (FOUNDATION1 w-s part 1, D212; the design §19.15, §13.3, §13.5, §13.6): <c>role_staffing</c>
-/// holding what <c>driver.json</c>'s staffing holds today, its projection row <c>written</c> and its found rows, imported once from the
-/// file. Read through Settings' port by every load of a wired home's file (part 3); written by <see cref="Set(string, IReadOnlyList{ActorChoice}?)"/>
-/// alone, every writer reaching it through <see cref="SetAt(string, string, IReadOnlyList{ActorChoice}?)"/> (part 4); checked at each start,
-/// look and write's end (part 5).
+/// The roles' staffing in the desktop store (FOUNDATION1 w-s part 1, D212; the design §19.15, §13.3, §13.5, §13.6): <c>role_staffing</c>,
+/// imported once from the file. Read through Settings' port by every load of a wired home's file (part 3); written by
+/// <see cref="Set(string, IReadOnlyList{ActorChoice}?)"/> alone, every writer reaching it through
+/// <see cref="SetAt(string, string, IReadOnlyList{ActorChoice}?)"/> (part 4), in the store alone (D232).
 /// </summary>
 /// <remarks>
 /// <para><b>Imported once, once the start's confirmation is settled</b> (§13.5, §19.7), under the staffing's record lock
@@ -105,8 +95,6 @@ public sealed record StaffingChecked(StaffingChecks How, long? Found = null, str
 /// <para><b>The home's own <c>driver.json</c></b>, the only one a home has (ONEWAY1c-i). One that does not read imports nothing and is
 /// asked again at the next start. A fresh home, with no file or one holding none of the four keys, is seeded instead (ONEWAY1b): each of
 /// the five roles with an order of its own written at its seed (<see cref="ActorChoices.Seed"/>), recorded <see cref="ImportClass.Seeded"/>.</para>
-/// <para><b>The copy onto the file</b> (the register's <c>staffing-copy</c>) runs only where an older build may still read the file's
-/// staffing; a converted home and a seeded one keep their staffing in the store alone (ONEWAY1c-ii).</para>
 /// <para><b>Opened for one use and closed</b>, as every family's store is, a read never creating or writing the store.</para>
 /// </remarks>
 /// <param name="home">The home whose store and <c>driver.json</c> these are.</param>
@@ -240,15 +228,9 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         }
     }
 
-    /// <summary>Whether a home's copy onto the file has ended (the register's <c>staffing-copy</c>), installed by the register as the driver loads.</summary>
-    internal static Func<string, bool> CopyEnded { get; set; } = _ => false;
-
-    /// <summary>Whether a write is still copied onto the file and the file checked against it.</summary>
-    internal bool Copies => !CopyEnded(home);
-
     /// <summary>
-    /// The staffing part's write (ONEWAY1b): each named role's row replaced by its own, none where it is null, in one transaction, nothing
-    /// projected. The caller holds the staffing's lock.
+    /// The migration's write (<see cref="StaffingStep"/>): each named role's row replaced by its own, none where it is null, in one
+    /// transaction. The caller holds the staffing's lock.
     /// </summary>
     internal void Replace(IReadOnlyList<(string Role, StaffingRow? Row)> rows)
     {
@@ -265,17 +247,6 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
                     ("$role", role), ("$state", row.State), ("$choices", row.Choices), ("$why", row.Why), ("$first", row.First), ("$at", at));
             }
         });
-    }
-
-    /// <summary>Every found row not yet answered, answered <c>cleared</c> (ONEWAY1b): the staffing part's clear, never undone. How many it cleared.</summary>
-    internal int ClearFound()
-    {
-        var open = Found().Count;
-        if (open == 0) return 0;
-        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        store.Write(Family, write => write.Execute(
-            "UPDATE role_staffing_found SET answer = 'cleared', answered_at = $at WHERE answered_at IS NULL", ("$at", Now())));
-        return open;
     }
 
     /// <summary>
@@ -348,18 +319,6 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         }
     }
 
-    /// <summary>The file step's seams, a test's: where a write's rename is cut or another writer lands.</summary>
-    internal KeepSeams? Seams { get; init; }
-
-    /// <summary>How long a write's file step waits for <c>driver.json</c>'s keeping lock; the keeping wait where null.</summary>
-    internal TimeSpan? FileWait { get; init; }
-
-    /// <summary>Run by the check after its found row's commit and before the file's replacement: the seam a test kills the repair at.</summary>
-    internal Action? AfterFound { get; init; }
-
-    /// <summary>Run by the check after the file's replacement and before <c>written</c>'s update: the second seam of the repair.</summary>
-    internal Action? AfterRepair { get; init; }
-
     /// <summary>The staffing wired for <paramref name="file"/>, or null where a composition root wired none.</summary>
     public static RoleStaffing? Of(string file) => RoleStaffingPort.Of(file) as RoleStaffing;
 
@@ -391,8 +350,8 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     /// <summary>
     /// The one write of the staffing (§19.15, steps 1 to 5): the staffing lock, a writer waiting past <see cref="LockWait"/> refused with
-    /// nothing written; each change by today's <c>ActorChoices.With</c>; the file before the store, against <c>written</c>; the commit; the
-    /// check. Before the import the file is the staffing, and is written as today under the same lock.
+    /// nothing written; each change by today's <c>ActorChoices.With</c>; the commit. Before the import the file is the staffing, and is
+    /// written under the same lock.
     /// </summary>
     /// <exception cref="DriverException">The judge's refusal, a lock held past its wait, or a write not done; said.</exception>
     public IReadOnlyList<string> Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes) => Set(changes, also: null);
@@ -416,7 +375,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
             return kept;
         }
 
-        Commit(read, Changed(StaffingProjection.Config(read), changes, kept), read.AsFound, also, [.. changes.Select(change => change.Actor)]);
+        Commit(Changed(StaffingProjection.Config(read), changes, kept), read.AsFound, also, [.. changes.Select(change => change.Actor)]);
         return kept;
     }
 
@@ -528,12 +487,10 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     }
 
     /// <summary>
-    /// The check (§19.15): at a start, a look of the lease holder's loop and a write's end, the file's four staffing paths compared with
-    /// <c>written</c> on <paramref name="source"/>, the text already read where there is one, and only where they differ both locks taken
-    /// and the comparison made again. A look takes them with no wait and leaves a held one to the next look. Before the import a start or a
-    /// look imports, once the start's confirmation is settled.
+    /// The check (§19.15): at a start, a look of the lease holder's loop and a write's end, whether the store holds the staffing; before the
+    /// import a start or a look imports, once the start's confirmation is settled, a look waiting for no lock.
     /// </summary>
-    public StaffingChecked Check(StaffingCheckAt at, string? source = null)
+    public StaffingChecked Check(StaffingCheckAt at)
     {
         StaffingRead? read;
         try
@@ -551,70 +508,8 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
             return new StaffingChecked(StaffingChecks.NotImported, Said: ImportFile(at == StaffingCheckAt.Look ? TimeSpan.Zero : LockWait).Said);
         }
 
-        // ONEWAY1c-ii: a home no older build reads the staffing of has no copy to compare.
-        if (!Copies) return new StaffingChecked(StaffingChecks.Same);
-        if (Shows(source) is not { } shown) return new StaffingChecked(StaffingChecks.Unread);
-        if (shown == read.Written && !Moved(read)) return new StaffingChecked(StaffingChecks.Same);
-
-        RecordLock held;
-        try
-        {
-            held = RecordLock.Take(RecordLock.PathOf(home, Record), at == StaffingCheckAt.Look ? TimeSpan.Zero : LockWait);
-        }
-        catch (IOException error)
-        {
-            return new StaffingChecked(StaffingChecks.Left, Said: error.Message);
-        }
-
-        using (held) return CheckHolding(at, keepWait: null);
+        return new StaffingChecked(StaffingChecks.Same);
     }
-
-    /// <summary>The found rows not yet taken or dismissed, oldest first, each with what it changed; none before the import.</summary>
-    public IReadOnlyList<StaffingFound> Found()
-    {
-        using var store = DesktopStoreReader.Open(Location);
-        if (store is null || !Imported(store)) return [];
-        return [.. store.Query(
-                "SELECT id, at, actors, adapter, intake_adapter, helper_adapter, written_actors, written_adapter, written_intake_adapter, written_helper_adapter"
-                + " FROM role_staffing_found WHERE answered_at IS NULL ORDER BY id",
-                row => (Id: row.GetInt64(0), At: row.GetString(1), Paths: StaffingProjection.Paths(row, 2), Written: StaffingProjection.Paths(row, 6)))
-            .Select(row => new StaffingFound(row.Id, row.At, row.Paths, row.Written, StaffingProjection.Changes(row.Written, row.Paths)))];
-    }
-
-    /// <summary>
-    /// <i>Take it</i> (§19.15, C8-1.3, O8-F4): a write that makes the store's staffing what the found file showed, path by path where it
-    /// differs from the row's <c>written</c>, read from the row and never from the file, with no <c>With</c> and no <c>Keep</c>; a turn-on
-    /// among them by this press. Steps 1 and 3 to 5 as any write's.
-    /// </summary>
-    /// <exception cref="DriverException">No such row waits, a lock held past its wait, or the write not done; said.</exception>
-    public void Take(long id)
-    {
-        using var held = Lock();
-        var read = Read() ?? throw NotKept();
-        var row = Found().FirstOrDefault(each => each.Id == id) ?? throw NoSuchFound(id);
-        var (after, asFound) = StaffingProjection.Taken(read, row.Paths, row.Written);
-        Commit(read, after, asFound, also: write => Answer(write, id, "taken"));
-    }
-
-    /// <summary><i>Dismiss</i>: the found row answered, the store's staffing unchanged.</summary>
-    /// <exception cref="DriverException">No such row waits, or a lock held past its wait; said.</exception>
-    public void Dismiss(long id)
-    {
-        using var held = Lock();
-        if (Read() is null) throw NotKept();
-        if (Found().All(each => each.Id != id)) throw NoSuchFound(id);
-        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        store.Write(Family, write => Answer(write, id, "dismissed"));
-    }
-
-    private static DriverException NotKept() => new("this home's staffing is not kept in the store yet, so there is nothing found to take or dismiss.");
-
-    private static DriverException NoSuchFound(long id) =>
-        new($"no change found numbered {id} waits to be taken or dismissed; `daoris settings actor found` lists the ones that do.");
-
-    private static void Answer(DesktopWrite write, long id, string answer) => write.Execute(
-        "UPDATE role_staffing_found SET answer = $answer, answered_at = $at WHERE id = $id AND answered_at IS NULL",
-        ("$answer", answer), ("$at", Now()), ("$id", id));
 
     private static DriverConfig Changed(
         DriverConfig config, IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes, List<string> kept)
@@ -641,186 +536,25 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         }
     }
 
-    /// <summary>
-    /// Steps 3 to 5 under the staffing lock: the projection onto the file against <c>written</c>, then one store transaction that writes the
-    /// staffing and sets <c>written</c>, then the check. A file whose paths moved, or whose lock was taken, is not written and the press is
-    /// not done; the check runs then too. Where nothing is copied any more (ONEWAY1c-ii) the store's transaction alone, the file left alone.
-    /// </summary>
-    private void Commit(
-        StaffingRead read, DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also, IReadOnlyList<string>? rekey = null)
-    {
-        if (!Copies)
-        {
-            try
-            {
-                Stored(after, asFound, also, rekey, projection: null);
-            }
-            catch (Exception error) when (Stored(error))
-            {
-                throw new DriverException($"the roles' staffing was not written: the store would not take it ({error.Message}).");
-            }
-
-            return;
-        }
-
-        var projection = StaffingProjection.Project(after, asFound, read.Written.Actors, Narrowing(after));
-        // transitional: staffing-copy
-        var filed = StaffingFile.Project(FileOfHome, read.Written, projection, FileWait, Seams);
-        if (filed.How == StaffingFiled.Unread) throw new DriverException($"{filed.Said} Nothing was written.");
-        if (filed.How is StaffingFiled.Moved or StaffingFiled.Refused)
-        {
-            // A lock held past the file step's wait is still held: the check leaves the comparison to the next one rather than wait again.
-            CheckHolding(StaffingCheckAt.Write, filed.How == StaffingFiled.Refused ? TimeSpan.Zero : null);
-            throw new DriverException($"the roles' staffing was not written: {filed.Said}");
-        }
-
-        try
-        {
-            Stored(after, asFound, also, rekey, projection);
-        }
-        catch (Exception error) when (Stored(error))
-        {
-            // The file holds a projection the store does not: this write's own check keeps it as found, so the next write proceeds.
-            CheckHolding(StaffingCheckAt.Write, keepWait: null);
-            throw new DriverException(
-                $"the roles' staffing was written to {Path.GetFileName(FileOfHome)} and the store would not take it ({error.Message}), so it is "
-                + "not done; what the file showed is kept as found.");
-        }
-
-        CheckHolding(StaffingCheckAt.Write, keepWait: null);
-    }
-
-    private static bool Stored(Exception error) => error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException;
-
-    /// <summary>The write's one store transaction: the staffing's rows, <c>written</c> where a projection was copied, the re-keyed policies and <paramref name="also"/>.</summary>
-    private void Stored(
-        DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also, IReadOnlyList<string>? rekey, StaffingPaths? projection)
-    {
-        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        store.Write(Family, write =>
-        {
-            var at = Now();
-            var bound = rekey is { Count: > 0 } && StaffPolicies.Has(write) ? BoundPolicies(write, rekey) : [];
-            StaffingProjection.Rows(write, after, asFound, at);
-            if (projection is not null) StaffingProjection.Written(write, projection, at);
-            Rekeyed(write, bound);
-            also?.Invoke(write);
-            BeforeCommit?.Invoke();
-        });
-    }
-
-    /// <summary>
-    /// The check's comparison under the staffing lock, <c>driver.json</c>'s keeping lock taken (no wait at a look): at <c>written</c>
-    /// nothing; at the store's projection <c>written</c> set; otherwise a found row kept whole, every turn-off it shows applied, the projection
-    /// written over the file against the paths observed, and <c>written</c> set in a transaction of its own. A repair whose baseline no longer
-    /// stands writes nothing and runs no check again.
-    /// </summary>
-    private StaffingChecked CheckHolding(StaffingCheckAt at, TimeSpan? keepWait)
-    {
-        KeepLock keep;
-        try
-        {
-            keep = KeepLock.Take(FileOfHome, keepWait ?? (at == StaffingCheckAt.Look ? TimeSpan.Zero : FileWait));
-        }
-        catch (IOException error)
-        {
-            return new StaffingChecked(StaffingChecks.Left, Said: error.Message);
-        }
-
-        using (keep)
-        {
-            try
-            {
-                return Compared(keep);
-            }
-            catch (Exception error) when (Stored(error))
-            {
-                return new StaffingChecked(StaffingChecks.Left, Said: error.Message);
-            }
-        }
-    }
-
-    private StaffingChecked Compared(KeepLock keep)
-    {
-        if (Read() is not { } read) return new StaffingChecked(StaffingChecks.NotImported);
-        // Read again under the locks: a conversion that took the keys out while this check waited ended the copy.
-        if (!Copies) return new StaffingChecked(StaffingChecks.Same);
-        if (Shows(null) is not { } shown) return new StaffingChecked(StaffingChecks.Unread);
-        var staffing = StaffingProjection.Config(read);
-        var narrowing = Narrowing(staffing);
-        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        if (shown == read.Written)
-        {
-            if (!StaffingProjection.Moved(read.Written, staffing, narrowing)) return new StaffingChecked(StaffingChecks.Same);
-
-            // FOUNDATION1w: a record that stopped or began to read outside a write moved the projection; the file is written onto it.
-            var moved = StaffingProjection.Project(staffing, read.AsFound, read.Written.Actors, narrowing);
-            var carried = StaffingFile.ProjectHolding(FileOfHome, keep, shown, moved);
-            if (carried.How is not (StaffingFiled.Written or StaffingFiled.Unchanged)) return new StaffingChecked(StaffingChecks.Left, Said: carried.Said);
-            store.Write(Family, write => StaffingProjection.Written(write, moved, Now()));
-            return new StaffingChecked(StaffingChecks.Written);
-        }
-
-        if (shown == StaffingProjection.Project(staffing, read.AsFound, read.Written.Actors, narrowing))
-        {
-            store.Write(Family, write => StaffingProjection.Written(write, shown, Now()));
-            return new StaffingChecked(StaffingChecks.Written);
-        }
-
-        var off = StaffingProjection.TurnedOff(read.Written, shown);
-        var after = off.Aggregate(staffing, (config, actor) => ActorChoices.With(config, actor, []));
-        var id = store.Write(Family, write =>
-        {
-            var now = Now();
-            var found = StaffingProjection.Recorded(write, shown, read.Written, now);
-            if (off.Count > 0) StaffingProjection.Rows(write, after, read.AsFound, now);
-            return found;
-        });
-
-        AfterFound?.Invoke();
-        var repaired = StaffingProjection.Project(after, read.AsFound, read.Written.Actors, Narrowing(after));
-        var filed = StaffingFile.ProjectHolding(FileOfHome, keep, shown, repaired);
-        if (filed.How is not (StaffingFiled.Written or StaffingFiled.Unchanged)) return new StaffingChecked(StaffingChecks.Found, id, filed.Said);
-
-        AfterRepair?.Invoke();
-        store.Write(Family, write => StaffingProjection.Written(write, repaired, Now()));
-        return new StaffingChecked(StaffingChecks.Found, id);
-    }
-
-    /// <summary>The roles the catalogue narrows in the file for <paramref name="staffing"/> (FOUNDATION1w); none where no role is configured.</summary>
-    private IReadOnlySet<string> Narrowing(DriverConfig staffing) => RoleCatalog.Read(Location).Narrowed(staffing);
-
-    private bool Moved(StaffingRead read)
+    /// <summary>Steps 3 to 5 under the staffing lock: one store transaction that writes the staffing, the re-keyed policies and <paramref name="also"/>.</summary>
+    private void Commit(DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also, IReadOnlyList<string>? rekey = null)
     {
         try
         {
-            var staffing = StaffingProjection.Config(read);
-            return StaffingProjection.Moved(read.Written, staffing, Narrowing(staffing));
+            using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
+            store.Write(Family, write =>
+            {
+                var bound = rekey is { Count: > 0 } && StaffPolicies.Has(write) ? BoundPolicies(write, rekey) : [];
+                StaffingProjection.Rows(write, after, asFound, Now());
+                Rekeyed(write, bound);
+                also?.Invoke(write);
+                BeforeCommit?.Invoke();
+            });
         }
-        catch (Exception error) when (Stored(error))
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
         {
-            return false;
+            throw new DriverException($"the roles' staffing was not written: the store would not take it ({error.Message}).");
         }
-    }
-
-    /// <summary>The four paths <paramref name="source"/> shows, or the file now where none is given; a file that is gone shows none, null where it does not read.</summary>
-    private StaffingPaths? Shows(string? source)
-    {
-        try
-        {
-            var text = source ?? (File.Exists(FileOfHome) ? DecodedFile() : "{}");
-            return StaffingFile.PathsOf(text);
-        }
-        catch (Exception error) when (error is JsonException or InvalidOperationException or DecoderFallbackException or IOException)
-        {
-            return null;
-        }
-    }
-
-    private string DecodedFile()
-    {
-        using var reader = new StreamReader(new MemoryStream(AtomicFile.ReadBytes(FileOfHome)), new UTF8Encoding(false));
-        return reader.ReadToEnd();
     }
 
     /// <summary>
