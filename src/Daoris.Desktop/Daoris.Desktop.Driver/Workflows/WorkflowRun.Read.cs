@@ -265,11 +265,13 @@ public static class WorkflowRunReader
         var workspace = RemoteTarget.Workspace(named);
         var process = WorkflowProcesses.Read(sources.Home, sources.Config, repository, named, run);
         var current = new CurrentWorkflow(WorkflowSteps.StartHolds(sources.Plugins), [], process.Binding?.Digest ?? "unread");
+        var checks = SessionChecks.Of(sources.Config, repository, process);
         if (process.Problem is not null || process.Unread is not null || process is not { Graph: { } graph, BoundRun: { } bound })
         {
             return new WorkflowRun(repository, workspace, current, [], [])
             {
                 Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Session = newest.Id, ChatRun = run,
+                ChatChecks = checks,
             };
         }
 
@@ -302,7 +304,7 @@ public static class WorkflowRunReader
             {
                 Branches = reads.Branches, Failures = FailedGates(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
             },
-            workspace) with { Session = newest.Id, ChatRun = run };
+            workspace) with { Session = newest.Id, ChatRun = run, ChatChecks = checks };
     }
 
     /// <summary>

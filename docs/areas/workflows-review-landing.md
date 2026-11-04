@@ -104,7 +104,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 20. A conversation's run binds its graph. Its subject is the candidate the person submits; a newer submission lapses it. A graph
     holding `quest.close` holds a conversation's press. (from D227)
 21. On a place that follows a saved workflow, a session's checks are `claimed.checks` on the graph; a `place checks` write is
-    refused. Under `light`, a session runs only the gates not marked heavy, and the heavy ones are refused. (from D192, D227)
+    refused; elsewhere they are the repository's rule. A conversation's run view names the checks its executions are held to, read
+    the same way. Under `light`, a session runs only the gates not marked heavy, and the heavy ones are refused. (from D192, D227)
 
 **Review and Accept**
 
@@ -118,7 +119,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     whether one is needed; the environment is still the `reviews` rule's. `SET_REVIEW required` there is refused. (from D154, D227)
 26. A second opinion is another maker's read-only reading before the landing. Its findings reach the working session once. What
     it disputes is answered by the person's *Reviewed* or *Accept…*. Under a saved graph the `opinion` node says whether one is
-    asked, and chooses among the reviewers the place declares. `SET_OPINION none` on a saved-graph place is refused.
+    asked, and chooses among the reviewers the place declares; with none declared it cannot start, said on its node. `SET_OPINION none` on a saved-graph place is refused.
     (from D155, D190, D227)
 27. Review's diff is a dependency graph of today's git reads, uncached, taking no lock and refreshing no index in a tree Daoris does
     not own. Leaving the page stops its git. (from D202)

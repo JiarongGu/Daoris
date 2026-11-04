@@ -152,6 +152,47 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, graph.GetProperty("ended").ValueKind);
     }
 
+    /// <summary>
+    /// A graph's step that lacks what its place declares cannot start, and says why: an <c>opinion</c> where the place declares no reviewers is
+    /// drawn so on its node; a <c>land</c> that integrates where the line declares no integration holds the run before any step.
+    /// </summary>
+    [Theory]
+    [InlineData("opinion")]
+    [InlineData("land")]
+    public async Task A_bound_step_that_lacks_its_declaration_cannot_start(string kind)
+    {
+        var (node, method) = kind == "opinion"
+            ? ("""{"id":"inspect","kind":"opinion","version":1,"reach":"observed"},""", "merge")
+            : ("", "integrate");
+        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse($$"""
+            {"schemaVersion":2,"entries":["write"],"end":"publish",
+             "nodes":[{"id":"write","kind":"claimed","version":1,"reach":"observed"},{{node}}
+                      {"id":"publish","kind":"land","version":1,"reach":"performed","options":{"method":"{{method}}"} }],
+             "wires":[{{(kind == "opinion"
+                 ? """{"id":"w>i","kind":"after","from":"write","to":"inspect"},{"id":"i>p","kind":"after","from":"inspect","to":"publish"}"""
+                 : """{"id":"w>p","kind":"after","from":"write","to":"publish"}""")}}]}
+            """)), kept: []);
+        Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
+            new WorkflowTaskChoice(null, "release"), [], T)));
+        var (module, _) = await UpAsync();
+
+        var run = (await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" })).GetProperty("runs")[0];
+
+        if (kind == "opinion")
+        {
+            var step = run.GetProperty("steps").EnumerateArray().Single(each => each.GetProperty("step").GetProperty("id").GetString() == "inspect");
+            Assert.Equal("cannot-start", step.GetProperty("state").GetString());
+            Assert.Contains("declares none", step.GetProperty("words").GetString());
+            return;
+        }
+
+        // A landing the line cannot carry holds the whole run before any step, saying why.
+        Assert.Empty(run.GetProperty("steps").EnumerateArray());
+        var problem = run.GetProperty("problem").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(problem));
+        Assert.DoesNotContain("no workflow is chosen", problem, StringComparison.Ordinal);
+    }
+
     /// <summary>A session's run is its quest's, and an ask's is each run of each chain it asked: the same records, read the same.</summary>
     [Fact]
     public async Task A_session_and_an_ask_read_the_same_run_as_the_quest()
@@ -196,9 +237,28 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var run = Assert.Single(chat.GetProperty("runs").EnumerateArray());
         Assert.Equal(("c2", 0), (run.GetProperty("session").GetString(), run.GetProperty("quests").GetArrayLength()));
         var mark = run.GetProperty("chat");
-        // A chat's run binds its graph now (WORKFLOWCLEAN1 1d), so its checks are the graph's and enforced.
-        Assert.Equal(("chat-c2", (string?)null, true),
+        // No workflow governs it, so its checks are its repository's rule, which its execution is held to.
+        Assert.Equal(("chat-c2", "light", true),
             (mark.GetProperty("run").GetString(), mark.GetProperty("checks").GetString(), mark.GetProperty("enforced").GetBoolean()));
+
+        // Bound to a graph whose `claimed` sets its own checks (WORKFLOWCLEAN1 1d): those are enforced, and its work is drawn working.
+        StoredSteps.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed","options":{"checks":"heavy-at-end"}},
+                      {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
+             "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
+            """)), kept: []);
+        Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "chat-c2", "engine", "aurora", null,
+            new WorkflowTaskChoice(null, "docs"), [], T)));
+        var unit = RunUnits.IdOf("chat-c2");
+        new NodeRecordFiles(Home, () => true).Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus> { ["claimed"] = new(unit, "claimed", NodeStates.Active) },
+        });
+        var bound = Assert.Single((await AnswerAsync(module, "WORKFLOW_RUN", new { session = "c2" })).GetProperty("runs").EnumerateArray());
+        Assert.Equal("heavy-at-end", bound.GetProperty("chat").GetProperty("checks").GetString());
+        var work = bound.GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("kind").GetString() == "work");
+        Assert.Equal(("working", "active"), (work.GetProperty("state").GetString(), work.GetProperty("detail").GetString()));
     }
 
     /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>
