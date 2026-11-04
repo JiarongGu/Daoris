@@ -29,7 +29,7 @@ public sealed class PullRequestOccasionTests
     {
         Assert.DoesNotContain(HookPoints.State, HookPoints.Loop);
         // The loop's set asks only what its points say; a plugin that speaks only the query is never kept running beside it.
-        Assert.DoesNotContain("AskStatesAsync", File.ReadAllText(SourceFiles.Driver("Hooks.cs")));
+        Assert.DoesNotContain("AskStatesAsync", File.ReadAllText(SourceFiles.Driver("HookSet.cs")));
     }
 
     /// <summary>Every ask is made from one of the occasions, and only the occasion's helper asks the plugins.</summary>
@@ -54,7 +54,7 @@ public sealed class PullRequestOccasionTests
     public void Only_the_occasions_helper_and_the_kits_trial_speak_the_query()
     {
         var speakers = Calls(@"\.StateAsync\s*\(")
-            .Where(call => !call.File.EndsWith("Hooks.cs", StringComparison.Ordinal))
+            .Where(call => !call.File.EndsWith("HookSet.cs",StringComparison.Ordinal))
             .Select(call => (Path.GetFileName(call.File), call.Method))
             .Distinct()
             .Order()

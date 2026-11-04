@@ -34,7 +34,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build while a delivery is unresolved |
 | `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: the connection, the writer stamp, settled-gated imports; its numbered steps are `DesktopStoreSteps.cs` beside it (`DesktopStore.Steps` is the door), its open options `DesktopStoreOptions.cs` |
 | `HomeMigration` | `Drv/Install/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
-| `Tools` | `Drv/Install/Tools.cs` | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |
+| `Tools` | `Drv/Install/Tools.cs` (records in `ToolWay.cs`, `ToolsRead.cs`) | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |
 | `ToolInstall`, `ToolResources`, `ToolsCommand` | `Drv/Install/` same names | Download, verify, lay out; the lists and locations; `daoris tool` |
 | Host locators | `Drv/Service/ServiceHostLocator.cs`, `Drv/Knowledge/KnowledgeConnector.cs` | Which HTTP host and connector run: the install's, then the home's `bin` |
 | Publish | `tools/desktop-publish.mjs`, `tools/service-publish.mjs` | Lay out or stage an install; build the two service hosts |
