@@ -246,7 +246,7 @@ public sealed class LookSaidTests : IDisposable
     /// <summary>The producers that hand the look their lines whole (2h's list, D196's NOTIFY2h note), and the passes whose runs end beside it.</summary>
     private static readonly string[] Producers =
     [
-        "ChannelReach.cs", "ReopenTelling.cs", "ReviewDesk.cs", "RuleProposals.cs", "AutoLander.cs", "WorkspaceSetup.cs",
+        "ChannelReach.cs", "ReopenTelling.cs", "ReviewDesk.cs", "RuleProposals.cs","WorkspaceSetup.cs",
         "RegistrationFollow.cs", "Hooks.cs", "BranchTidying.cs", "UncertainWords.cs", "DriverMeetings.cs", "DriverBrainstorms.cs",
         "DriverHelpers.cs",
     ];

@@ -26,7 +26,7 @@ public sealed class BuiltInNodesTests
 
     private static WorkUnit Unit(GrownBranch? branch = null, params LandedBranch[] landings) =>
         Assert.Single(WorkInventory.Units(new InventoryFacts(
-            branch is null ? [] : [branch], landings, [], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
+            branch is null ? [] : [branch], landings, [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
 
     private static NodeDeclaration Node(string kind) => new(kind, kind, 1, NodeReach.Observed);
 
@@ -129,7 +129,7 @@ public sealed class BuiltInNodesTests
         Assert.Equal((NodeStates.Reached, "session-branches.json#daoris/s1"), (merged.Status.State, merged.Status.Current?.Evidence?.Ref));
 
         var unowned = Assert.Single(WorkInventory.Units(new InventoryFacts(
-            [], [], [new SessionTree(Path.GetFullPath(Path.Combine("node-trees", "stray")), "default", "engine", "feature/stray")], [], [],
+            [], [], [new SessionTree(Path.GetFullPath(Path.Combine("node-trees", "stray")), "default", "engine", "feature/stray")], [],
             new HashSet<string>(), _ => false, Then)));
         Assert.Equal(NodeStates.Unknown, Applied(unowned, NodeKinds.Line).Status.State);
     }

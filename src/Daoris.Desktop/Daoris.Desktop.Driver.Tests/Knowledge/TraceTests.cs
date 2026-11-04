@@ -627,13 +627,6 @@ public sealed class TraceTests : IDisposable
             Plugin = "acme.lands", Pushed = true, PullRequest = "https://example.test/pull/7", AcceptedBy = AcceptedBy.Auto,
             Rule = new LandedRule("acme.lands", AutoAccept: true, LandingSource.Workspace),
         });
-        var due = new AutoLandings(_home);
-        due.Due(new AutoLanding("s2", "q1", "dashboards", "work", "C:/trees/dashboards-q1", At(10, 0)));
-        due.Tried("s2", new AutoTry(At(10, 1), AutoLandingCode.Uncommitted) { Tip = "9f8e7d6c5b4a", Status = "sha256:abcd", Uncommitted = 2 }, close: false);
-        due.Tried("s2", new AutoTry(At(10, 5), AutoLandingCode.Landed)
-        {
-            Tip = "1a2b3c4d5e6f708192", Status = "clean", Branch = "feature/q1-fix-the-dashboard-figure", Commits = 2,
-        }, close: true);
 
         var (exit, said, _) = await TraceAsync(new TraceAsk("s2"));
         var block = Block(said, "session s2");
@@ -642,9 +635,6 @@ public sealed class TraceTests : IDisposable
         Assert.Contains("2026-10-03 10:05 UTC · accepted automatically when its quest was done: its work is on `feature/q1-fix-the-dashboard-figure`.", block);
         Assert.Contains("pushed by plugin acme.lands, pull request https://example.test/pull/7; accepted automatically when its quest was done; "
             + "under the workspace's rule, naming plugin acme.lands, accepting automatically", block);
-        Assert.Contains("due to land automatically since 2026-10-03 10:00 UTC (auto-landings.json, this machine's), closed 2026-10-03 10:05 UTC", block);
-        Assert.Contains("2026-10-03 10:01 UTC · uncommitted · 2 uncommitted path(s) · at 9f8e7d6c5b4a", block);
-        Assert.Contains("2026-10-03 10:05 UTC · landed · branch feature/q1-fix-the-dashboard-figure · 2 commit(s)", block);
 
         // A landing recorded before LAND2b kept who accepted it: said not kept, and no rule is made up.
         new LandedBranches(_home).Record(new LandedBranch(
