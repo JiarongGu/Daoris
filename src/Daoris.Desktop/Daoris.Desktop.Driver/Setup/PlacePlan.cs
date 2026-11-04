@@ -419,7 +419,8 @@ public static class PlacePlans
         var driven = config.Drivable.Contains(repository, StringComparer.OrdinalIgnoreCase);
         var (followed, steps) = WorkflowProcesses.Otherwise(store, config, repository, workspace);
         var land = steps is null ? null : SetupPresets.LandOf(steps);
-        var match = land is null ? new SetupMatch(null, [$"{followed} cannot be read here"]) : SetupPresets.Match(driven, land);
+        var match = !driven ? new SetupMatch(SetupPresets.NotDriven, [])
+            : land is null ? new SetupMatch(null, [$"{followed} cannot be read here"]) : SetupPresets.Match(true, land);
         var policies = RoleWork.Codes.Select(work =>
         {
             try
@@ -448,6 +449,9 @@ public static class PlacePlans
         var (_, was) = WorkflowProcesses.Otherwise(store, config, repository, workspace);
         var after = applied.Store ?? store;
         var (_, now) = WorkflowProcesses.Otherwise(after, applied.After, repository, workspace);
+        // No workflow chosen asks nothing of the person, so what a copy asks of them replaces nothing it could lower.
+        if (WorkflowSelection.Resolve(config, repository, workspace, task: null).Workflow == WorkflowSelection.Current) was = [];
+        if (WorkflowSelection.Resolve(applied.After, repository, workspace, task: null).Workflow == WorkflowSelection.Current) now = [];
         List<string> lowered = was is null || now is null
             ? ["what its work follows could not be read here, so the change is taken as asking less of you"]
             : [.. Involvement.Lowers(now, was)];
@@ -483,5 +487,5 @@ public static class PlacePlans
     }
 
     /// <summary>The terminal's twin of a plan: <c>daoris place … --plan</c>, in the order its usage names the words.</summary>
-    public static string Terminal(PlaceAsk ask) => string.Join(' ', ["daoris-driver", "place", .. PlaceCommand.ArgsOf(ask)]);
+    public static string Terminal(PlaceAsk ask) => string.Join(' ', ["daoris", "place", .. PlaceCommand.ArgsOf(ask)]);
 }

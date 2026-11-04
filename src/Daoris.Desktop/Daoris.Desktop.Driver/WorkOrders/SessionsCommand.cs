@@ -32,10 +32,10 @@ public static class SessionsCommand
     public const string Usage =
         """
         usage: daoris session [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
-               daoris session stop <id> [--turn]  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
-               daoris session archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
+               daoris session stop <id> [--turn]  ·  session finish <id> [--note "…"]  ·  session decline <id> --reason "…"
+               daoris session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>
                daoris session say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
-               daoris session take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
+               daoris session take-back <id> [<word>]  ·  session reword <id> <word> "…"
                daoris session go-on-new <id>
                daoris session start-from <id>
                daoris session hand-over <id> --agent <adapter> [--account <name>]
@@ -43,8 +43,8 @@ public static class SessionsCommand
                daoris session helper <id> "<question>" [--agent <name>]
                daoris session helper --approve|--decline <ask>
                daoris session partner <id> "<piece>" --agent <name> [--paths <path>…]
-               daoris session partner <id> --list  ·  sessions partner <piece> --stop
-               daoris session supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
+               daoris session partner <id> --list  ·  session partner <piece> --stop
+               daoris session supervise [<id>]  ·  session supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
                daoris session handback <session|quest> [--json]
         """;
 

@@ -600,7 +600,7 @@ public sealed class HandOverTests : IDisposable
             + "or `--approve` or `--decline` for its agent's own ask to hand it over.", problem);
         Assert.Null(SessionsCommand.Read(["hand-over", "--agent", "codex-acp"], out _));
         Assert.Null(SessionsCommand.Read(["hand-over", "s1", "--agent"], out _));
-        Assert.Contains("sessions hand-over <id> --agent <adapter> [--account <name>]", SessionsCommand.Usage);
+        Assert.Contains("session hand-over <id> --agent <adapter> [--account <name>]", SessionsCommand.Usage);
         Assert.Contains("session hand-over <id> --agent <adapter> [--account <name>]", DriverCommand.Usage);
     }
 

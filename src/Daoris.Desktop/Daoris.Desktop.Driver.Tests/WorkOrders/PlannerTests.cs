@@ -431,8 +431,11 @@ public sealed class PlannerTests
     // The count is DERIVED from the session records the driver already writes, so there is no second
     // register to drift. What a person sets is the limit and the forgiveness.
 
-    private static Snapshot With(QuestView[] quests, IReadOnlyDictionary<string, int> strikes) =>
-        new(quests, [Repo()], [], strikes);
+    // The number of failed sessions that park a quest is its line's failures rule, which the staffing course reads into the snapshot.
+    private static readonly IReadOnlyDictionary<string, int> ParkAtThree = new Dictionary<string, int> { ["q1"] = 3 };
+
+    private static Snapshot With(QuestView[] quests, IReadOnlyDictionary<string, int> strikes, bool parks = true) =>
+        new(quests, [Repo()], [], strikes) { FailuresAt = parks ? ParkAtThree : new Dictionary<string, int>() };
 
     [Fact]
     public void A_quest_that_has_failed_too_often_is_parked_rather_than_started_again()
@@ -469,7 +472,7 @@ public sealed class PlannerTests
     public void A_limit_of_zero_never_parks_anything()
     {
         var plan = Planner.Plan(
-            With([Quest()], new Dictionary<string, int> { ["q1"] = 99 }),
+            With([Quest()], new Dictionary<string, int> { ["q1"] = 99 }, parks: false),
             Config() with { Strikes = 0 });
 
         Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
@@ -706,9 +709,9 @@ public sealed class PlannerTests
     public void Carrying_on_is_bounded_by_the_strikes()
     {
         var snapshot = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", null, "failed", "timed out.")))
-            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
 
-        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+        Assert.Equal(StartVerdict.Exhausted,Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
     }
 
     /// <summary>
@@ -787,7 +790,7 @@ public sealed class PlannerTests
     public void Carrying_on_an_interrupted_take_is_bounded_by_the_strikes()
     {
         var snapshot = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", null, "stopped", Orphans.Note, Interrupted: true)))
-            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
 
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
     }
@@ -849,7 +852,7 @@ public sealed class PlannerTests
     [Fact]
     public void Carrying_committed_work_on_is_bounded_by_the_strikes()
     {
-        var snapshot = Committed(FailedBeforeTake, 1) with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+        var snapshot = Committed(FailedBeforeTake, 1) with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
 
         var only = Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 }));
 
@@ -1665,7 +1668,7 @@ public sealed class PlannerTests
     public void Forgiven_strikes_still_work_and_a_stop_after_them_holds_rather_than_parks()
     {
         var parked = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", "D:/trees/s1", "failed", "timed out.")))
-            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
         var forgiven = (Config() with { Strikes = 3 }).WithForgiven("q1", 3);
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(parked, Config() with { Strikes = 3 })).Verdict);
         Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(parked, forgiven)).Verdict);

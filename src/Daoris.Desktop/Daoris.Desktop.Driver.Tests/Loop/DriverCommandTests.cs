@@ -501,10 +501,10 @@ public sealed class DriverCommandTests
         Assert.Contains("\n  session list [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
         Assert.Contains("\n  session stop <id> [--turn]  ·  session finish <id> [--note \"…\"]  ·  session decline <id> --reason \"…\"\n", usage);
         Assert.Contains("\n  session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>\n", usage);
-        Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
+        Assert.Contains("session stop <id> [--turn]", SessionsCommand.Usage);
         // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too, at a level (COWORK1a).
         Assert.Contains("\n  session say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now]\n", usage);
-        Assert.Contains("sessions say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
+        Assert.Contains("session say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         // ONEWAY1l's usage lines: the usage names `--level` alone for a say (ONEWAY1ai-i: the host's header teaches no verb now).
