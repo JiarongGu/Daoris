@@ -68,7 +68,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         File.WriteAllText(Path.Combine(tree, "src", "chunk.ts"), "export const a = 1;\n");
 
         var answer = JsonSerializer.SerializeToElement(
-            await TreesRoutes.PreviewAsync("s1a2b3c4", tree, "src/chunk.ts", CancellationToken.None),
+            await TreesReviewWires.PreviewAsync("s1a2b3c4", tree, "src/chunk.ts", CancellationToken.None),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         Assert.Equal("s1a2b3c4", answer.GetProperty("session").GetString());
@@ -95,11 +95,11 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{}");
         using var log = new MachineLog(Home, "desktop", () => new DateTimeOffset(2026, 9, 30, 7, 10, 0, TimeSpan.Zero));
 
-        await TreesRoutes.PreviewAsync("s1a2b3c4", tree, Path.Combine(tree, "src", "chunk.ts"), CancellationToken.None, log);
+        await TreesReviewWires.PreviewAsync("s1a2b3c4", tree, Path.Combine(tree, "src", "chunk.ts"), CancellationToken.None, log);
         await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None, log));
+            () => TreesReviewWires.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None, log));
         await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.PreviewAsync("s1a2b3c4", tree, "src/gone.ts", CancellationToken.None, log));
+            () => TreesReviewWires.PreviewAsync("s1a2b3c4", tree, "src/gone.ts", CancellationToken.None, log));
 
         var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         var lines = Directory.GetFiles(folder).SelectMany(file =>
@@ -127,7 +127,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     public void Each_reason_a_file_was_not_read_is_a_refusal_of_its_own(FilePreviewRefusal why, string code)
     {
         var error = Assert.Throws<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.FileAnswer("s1a2b3c4", "../other/secret.txt", FilePreviewResult.Refused(why)));
+            () => TreesReviewWires.FileAnswer("s1a2b3c4", "../other/secret.txt", FilePreviewResult.Refused(why)));
 
         Assert.Equal(code, error.Code);
         Assert.Contains(code, Refusals.All);
@@ -145,11 +145,11 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{}");
 
         var outside = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None));
+            () => TreesReviewWires.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None));
         var git = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.PreviewAsync("s1a2b3c4", tree, ".git/config", CancellationToken.None));
+            () => TreesReviewWires.PreviewAsync("s1a2b3c4", tree, ".git/config", CancellationToken.None));
         var none = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.PreviewAsync("s1a2b3c4", null, "src/chunk.ts", CancellationToken.None));
+            () => TreesReviewWires.PreviewAsync("s1a2b3c4", null, "src/chunk.ts", CancellationToken.None));
 
         Assert.Equal(Refusals.PreviewOutsideTree, outside.Code);
         Assert.Equal(Refusals.PreviewGitFolder, git.Code);
@@ -171,7 +171,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void A_review_of_a_session_with_no_landing_is_its_tree_and_says_no_landing()
     {
-        var answer = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false), Camel);
 
         Assert.Equal("abc1234567890", answer.GetProperty("base").GetString());
         Assert.Equal("tree", answer.GetProperty("source").GetString());
@@ -187,7 +187,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
             [new DiffFile("new.txt", "added", 1, 0, "@@ -0,0 +1 @@\n+x")], "1 more untracked file; their patches are not shown here.", "HEAD");
 
         var answer = JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false, uncommitted: dirty), Camel);
+            TreesReviewWires.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false, uncommitted: dirty), Camel);
 
         var uncommitted = answer.GetProperty("uncommitted");
         Assert.Equal("new.txt", uncommitted.GetProperty("files")[0].GetProperty("path").GetString());
@@ -202,9 +202,9 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     {
         var clean = new TreeDiff([], null, "HEAD");
 
-        var none = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
-        var empty = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false, uncommitted: clean), Camel);
-        var branch = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, uncommitted: clean), Camel);
+        var none = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+        var empty = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false, uncommitted: clean), Camel);
+        var branch = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, uncommitted: clean), Camel);
 
         Assert.Equal(JsonValueKind.Null, none.GetProperty("uncommitted").ValueKind);
         Assert.Equal(JsonValueKind.Null, empty.GetProperty("uncommitted").ValueKind);
@@ -219,7 +219,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     public void A_trees_review_says_how_far_the_line_is_past_it()
     {
         var answer = JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false, behind: new LineBehind("main", 3, 1)), Camel);
+            TreesReviewWires.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false, behind: new LineBehind("main", 3, 1)), Camel);
 
         var behind = answer.GetProperty("behind");
         Assert.Equal("main", behind.GetProperty("line").GetString());
@@ -231,9 +231,9 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void Behind_is_null_where_the_line_was_not_read_or_the_source_is_a_branch()
     {
-        var unread = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+        var unread = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
         var branch = JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, behind: new LineBehind("main", 2, 0)), Camel);
+            TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, behind: new LineBehind("main", 2, 0)), Camel);
 
         Assert.Equal(JsonValueKind.Null, unread.GetProperty("behind").ValueKind);
         Assert.Equal(JsonValueKind.Null, branch.GetProperty("behind").ValueKind);
@@ -247,10 +247,10 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     public void A_trees_review_names_the_branch_its_tree_stands_on_and_none_where_detached()
     {
         var named = JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false, treeBranch: "feature/TK-9-gap"), Camel);
-        var detached = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+            TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false, treeBranch: "feature/TK-9-gap"), Camel);
+        var detached = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
         var branch = JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, treeBranch: "daoris/s1"), Camel);
+            TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, treeBranch: "daoris/s1"), Camel);
 
         Assert.Equal("feature/TK-9-gap", named.GetProperty("treeBranch").GetString());
         Assert.Equal(JsonValueKind.Null, detached.GetProperty("treeBranch").ValueKind);
@@ -265,10 +265,10 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void A_trees_review_carries_the_drivers_own_offer_to_land_it()
     {
-        var offered = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer(
+        var offered = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer(
             "s1", Diff("abc"), "tree", null, treeGone: false, treeBranch: "daoris/s-1", offer: new LandOffer("daoris/s-1", "s-1", 2, 1)), Camel);
-        var none = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
-        var branch = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer(
+        var none = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+        var branch = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer(
             "s1", Diff("abc"), "branch", null, treeGone: true, offer: new LandOffer("daoris/s-1", "s-1", 2, 0)), Camel);
 
         var offer = offered.GetProperty("offer");
@@ -284,8 +284,8 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void The_landing_plan_says_how_many_paths_are_uncommitted()
     {
-        Assert.Equal(0, TreesRoutes.UncommittedCount(null));
-        Assert.Equal(5, TreesRoutes.UncommittedCount(5));
+        Assert.Equal(0, TreesReviewWires.UncommittedCount(null));
+        Assert.Equal(5, TreesReviewWires.UncommittedCount(5));
     }
 
     /// <summary>
@@ -321,7 +321,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         var entry = Landing() with { Plugin = "example.lands", Pushed = true, PullRequest = "https://example.test/org/engine/pull/7" };
         var review = new LandedReview(entry, LandedState.Standing, Diff("0123456789abcdef"));
 
-        var answer = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1a2b3c4", review.Changes, "branch", review, treeGone: true), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1a2b3c4", review.Changes, "branch", review, treeGone: true), Camel);
 
         Assert.Equal("branch", answer.GetProperty("source").GetString());
         Assert.Equal("0123456789abcdef", answer.GetProperty("base").GetString());
@@ -346,7 +346,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     {
         var review = new LandedReview(Landing() with { AcceptedBy = AcceptedBy.Auto }, LandedState.Standing);
 
-        var answer = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1a2b3c4", null, "branch", review, treeGone: true), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1a2b3c4", null, "branch", review, treeGone: true), Camel);
 
         Assert.Equal("auto", answer.GetProperty("landed").GetProperty("acceptedBy").GetString());
     }
@@ -358,7 +358,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         var entry = Landing() with { GoneAt = new DateTimeOffset(2026, 10, 1, 11, 0, 0, TimeSpan.Zero), RemovedAs = LandedKind.OnLine, RemovedOn = "origin/main" };
         var review = new LandedReview(entry, LandedState.Gone, Reads: new LandedReads(LandedKind.OnLine, "main", [], null));
 
-        var answer = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1a2b3c4", null, "branch", review, treeGone: true), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1a2b3c4", null, "branch", review, treeGone: true), Camel);
 
         Assert.Equal("", answer.GetProperty("base").GetString());
         Assert.Equal(0, answer.GetProperty("files").GetArrayLength());
@@ -385,7 +385,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         };
 
         var landed = JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1a2b3c4", null, "branch", new LandedReview(entry, LandedState.Gone), treeGone: true), Camel).GetProperty("landed");
+            TreesReviewWires.ReviewAnswer("s1a2b3c4", null, "branch", new LandedReview(entry, LandedState.Gone), treeGone: true), Camel).GetProperty("landed");
 
         Assert.Equal(JsonValueKind.Null, landed.GetProperty("removed").ValueKind);
         var withdrawn = landed.GetProperty("withdrawn");
@@ -395,7 +395,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
 
         var removed = Landing() with { GoneAt = at, RemovedAs = LandedKind.OnLine, RemovedOn = "main" };
         Assert.Equal(JsonValueKind.Null, JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1a2b3c4", null, "branch", new LandedReview(removed, LandedState.Gone), treeGone: true), Camel)
+            TreesReviewWires.ReviewAnswer("s1a2b3c4", null, "branch", new LandedReview(removed, LandedState.Gone), treeGone: true), Camel)
             .GetProperty("landed").GetProperty("withdrawn").ValueKind);
     }
 
@@ -410,7 +410,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         var gone = new LandedReview(Landing() with { GoneAt = DateTimeOffset.UnixEpoch }, LandedState.Gone);
 
         bool AsLanded(LandedReview review) => JsonSerializer.SerializeToElement(
-            TreesRoutes.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", review, treeGone: false), Camel)
+            TreesReviewWires.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", review, treeGone: false), Camel)
             .GetProperty("landed").GetProperty("asLanded").GetBoolean();
 
         Assert.True(AsLanded(standing));
@@ -423,7 +423,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     {
         var review = new LandedReview(Landing() with { LandedAt = DateTimeOffset.MinValue }, LandedState.Standing);
 
-        var answer = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1a2b3c4", null, "branch", review, treeGone: true), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesReviewWires.ReviewAnswer("s1a2b3c4", null, "branch", review, treeGone: true), Camel);
 
         Assert.Equal(JsonValueKind.Null, answer.GetProperty("landed").GetProperty("landedAt").ValueKind);
     }
@@ -434,16 +434,16 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     {
         var read = new FilePreviewResult(FilePreviewRefusal.None,
             new PreviewedFile("src/chunk.ts", 2, false, "a\n", false) { Branch = "feature/x" }, "feature/x");
-        var answer = JsonSerializer.SerializeToElement(TreesRoutes.FileAnswer("s1a2b3c4", "src/chunk.ts", read), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesReviewWires.FileAnswer("s1a2b3c4", "src/chunk.ts", read), Camel);
         Assert.Equal("feature/x", answer.GetProperty("branch").GetString());
 
         var disk = JsonSerializer.SerializeToElement(
-            TreesRoutes.FileAnswer("s1a2b3c4", "src/chunk.ts", new FilePreviewResult(FilePreviewRefusal.None, new PreviewedFile("src/chunk.ts", 2, false, "a\n", false))),
+            TreesReviewWires.FileAnswer("s1a2b3c4", "src/chunk.ts", new FilePreviewResult(FilePreviewRefusal.None, new PreviewedFile("src/chunk.ts", 2, false, "a\n", false))),
             Camel);
         Assert.Equal(JsonValueKind.Null, disk.GetProperty("branch").ValueKind);
 
         var error = Assert.Throws<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.FileAnswer("s1a2b3c4", "src", FilePreviewResult.Refused(FilePreviewRefusal.NotOnBranch, "feature/x")));
+            () => TreesReviewWires.FileAnswer("s1a2b3c4", "src", FilePreviewResult.Refused(FilePreviewRefusal.NotOnBranch, "feature/x")));
         Assert.Equal(Refusals.PreviewNotOnBranch, error.Code);
         Assert.Contains(error.Code, Refusals.All);
         Assert.Equal("src", error.Parameters!["path"]);
@@ -455,7 +455,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     public async Task A_landed_preview_with_no_checkout_here_is_no_tree()
     {
         var error = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
-            () => TreesRoutes.LandedPreviewAsync("s1a2b3c4", null, Landing(), null, "src/chunk.ts", CancellationToken.None));
+            () => TreesReviewWires.LandedPreviewAsync("s1a2b3c4", null, Landing(), null, "src/chunk.ts", CancellationToken.None));
 
         Assert.Equal(Refusals.PreviewNoTree, error.Code);
     }
@@ -469,14 +469,14 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     {
         var tree = DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine", "s-1");
 
-        Assert.Equal(Refusals.SessionNotReviewable, TreesRoutes.Unreviewable("s1a2b3c4", null, "abc1234").Code);
-        Assert.Equal(Refusals.SessionTreeGone, TreesRoutes.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
+        Assert.Equal(Refusals.SessionNotReviewable, TreesReviewWires.Unreviewable("s1a2b3c4", null, "abc1234").Code);
+        Assert.Equal(Refusals.SessionTreeGone, TreesReviewWires.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
         Directory.CreateDirectory(tree);
         // What a removal leaves where something held the folder open (D109 §5): gone all the same.
-        Assert.Equal(Refusals.SessionTreeGone, TreesRoutes.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
+        Assert.Equal(Refusals.SessionTreeGone, TreesReviewWires.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
         File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
-        Assert.Equal(Refusals.SessionNoBase, TreesRoutes.Unreviewable("s1a2b3c4", tree, null).Code);
-        Assert.Equal(Refusals.SessionRangeUnreadable, TreesRoutes.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
+        Assert.Equal(Refusals.SessionNoBase, TreesReviewWires.Unreviewable("s1a2b3c4", tree, null).Code);
+        Assert.Equal(Refusals.SessionRangeUnreadable, TreesReviewWires.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
         Assert.Contains(Refusals.SessionTreeGone, Refusals.All);
     }
 

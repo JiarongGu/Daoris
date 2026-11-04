@@ -8,8 +8,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A session as the rail acts on it over the bridge (`SessionsRoutes.cs`, MOD5): a stop, a parked
-/// session's resolution, and the openings and search read off this machine's own record.
+/// A session as the rail acts on it over the bridge: a stop, a parked
+/// session's resolution, the openings and search read off this machine's own record.
 /// </summary>
 public sealed class DriverModuleSessionsTests : DriverModuleBridge
 {
@@ -926,8 +926,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         var failed = new SessionGrouping("f41led00", SessionGroup.Ended, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, null) };
 
-        var row = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(failed), camel);
-        var bare = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(failed with { Lands = null }), camel);
+        var row = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(failed), camel);
+        var bare = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(failed with { Lands = null }), camel);
 
         var lands = row.GetProperty("lands");
         Assert.Equal(("daoris/s-4e6837ed", "s-4e6837ed", 1, JsonValueKind.Null),
@@ -951,8 +951,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
             Discards = new DiscardOffer("daoris/s-4e6837ed", "s-4e6837ed", new HeldWork(new ContentHold("main", Squash: true), kept, null)),
         };
 
-        var row = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(held), camel);
-        var bare = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(held with { Discards = null }), camel);
+        var row = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(held), camel);
+        var bare = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(held with { Discards = null }), camel);
 
         var discards = row.GetProperty("discards");
         Assert.Equal(
@@ -973,8 +973,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         var moved = new SessionGrouping("m0ved000", SessionGroup.Ended, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
 
-        var row = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(moved), camel);
-        var own = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(moved with { Work = new TreeWork(1, 0) }), camel);
+        var row = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(moved), camel);
+        var own = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(moved with { Work = new TreeWork(1, 0) }), camel);
 
         Assert.Equal("feature/x-fix", row.GetProperty("work").GetProperty("branch").GetString());
         Assert.Equal(JsonValueKind.Null, own.GetProperty("work").GetProperty("branch").ValueKind);

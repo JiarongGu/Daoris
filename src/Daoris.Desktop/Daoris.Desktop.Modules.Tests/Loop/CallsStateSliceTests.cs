@@ -114,7 +114,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
         // The pull's twin: the same session's `SESSION_GROUPS` row writes its `calling` alike.
         var row = new SessionGrouping("s1", SessionGroup.Working, ShownState.GoingOn) { Calling = new RunningCall("npm test", T0.AddMinutes(1)) };
         Assert.Equal(
-            JsonSerializer.SerializeToNode(SessionsRoutes.Grouped(row), IpcJson.Options)!["calling"]!.ToJsonString(),
+            JsonSerializer.SerializeToNode(SessionsGroupsWires.Grouped(row), IpcJson.Options)!["calling"]!.ToJsonString(),
             partition["s1"]!.ToJsonString());
         Assert.DoesNotContain("sk-hostile", JsonSerializer.Serialize(Pushes().Select(push => push.Data), IpcJson.Options));
     }
@@ -201,7 +201,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
         Assert.Equal(("npm test", true), (Written(held.Data)["s1"]!["title"]!.GetValue<string>(), Written(held.Data)["s1"]!["waiting"]!.GetValue<bool>()));
         var row = new SessionGrouping("s1", SessionGroup.Working, ShownState.GoingOn) { Calling = new RunningCall("npm test", since) { Waiting = true } };
         Assert.Equal(
-            JsonSerializer.SerializeToNode(SessionsRoutes.Grouped(row), IpcJson.Options)!["calling"]!.ToJsonString(),
+            JsonSerializer.SerializeToNode(SessionsGroupsWires.Grouped(row), IpcJson.Options)!["calling"]!.ToJsonString(),
             Written(held.Data)["s1"]!.ToJsonString());
 
         registry.Answer("s1", "900", "yes");

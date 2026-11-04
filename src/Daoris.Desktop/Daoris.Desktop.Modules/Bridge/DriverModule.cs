@@ -115,8 +115,8 @@ public sealed class DriverModule : ModuleBase
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1). Since PARALLEL1a from the facts the
         // judges keep on the loop: their judges registered here, and the room written again as the facts it said not read yet land.
-        HelpRoutes.KeepFacts(_context);
-        loop.DescribeHelp = cancellationToken => HelpRoutes.HelpMachineNowAsync(_context, cancellationToken);
+        HelpMachineDesk.KeepFacts(_context);
+        loop.DescribeHelp = cancellationToken => HelpMachineDesk.HelpMachineNowAsync(_context, cancellationToken);
         // A change told from elsewhere (the terminal's press, the loop's own) overtakes the reads under way as this module's
         // presses do (SWEEPFLIGHT1). The bus does not wait for its subscribers, so this is the backstop; a press made here
         // forgets them before it answers.
@@ -132,7 +132,7 @@ public sealed class DriverModule : ModuleBase
     /// The doors Ask Daoris's Apply goes through (HELP6): each the code a screen's own route runs. The module's one seam to
     /// them, since the tests build doors through a module (<c>DriverModuleBridge.Module()</c>) rather than a context.
     /// </summary>
-    public IHelpDoors HelpDoors(ServiceClient? service) => HelpRoutes.Doors(_context, service);
+    public IHelpDoors HelpDoors(ServiceClient? service) => new HelpScreenDoors(_context, service);
 
     /// <summary>The answers of the reads told by event (NOBLOCK1): the tests' window on a work under way.</summary>
     public HeldAnswers Held => _held;

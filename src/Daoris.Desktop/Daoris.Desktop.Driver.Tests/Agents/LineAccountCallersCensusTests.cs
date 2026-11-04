@@ -18,7 +18,7 @@ public sealed class LineAccountCallersCensusTests
     /// </summary>
     private static readonly string[] NotYetMoved =
     [
-        "Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs",
+        "Daoris.Desktop.Modules/Bridge/Routes/SessionsMoveDesk.cs",
         "Daoris.Desktop.Modules/Bridge/Routes/SessionsVerbs.cs",
     ];
 

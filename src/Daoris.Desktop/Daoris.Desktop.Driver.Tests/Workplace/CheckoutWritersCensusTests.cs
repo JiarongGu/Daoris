@@ -102,12 +102,12 @@ public sealed partial class CheckoutWritersCensusTests
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
         ["TreesConsole.cs"] = "`daoris tree sync --yes`'s pull, and the terminal's Accept and Accept all",
-        ["TreesRoutes.cs"] = "the window's Accept, a merge rule's move",
+        ["TreesLandDesk.cs"] = "the window's Accept, a merge rule's move",
         ["EntriesRoutes.cs"] = "the window's Accept on an entry, a merge rule's move",
         ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",
         ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
         ["TreesTidyDesk.cs"] = "the window's Bring up to date",
-        ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
+        ["HelpScreenDoors.cs"] = "Ask Daoris's Bring up to date",
         ["DriverWatch.cs"] = "the integration transport's promotions",
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
     };

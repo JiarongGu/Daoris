@@ -425,6 +425,11 @@
     }
   },
   "modules": {
+    "Bridge/Routes/HelpProposalFacts.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "tells Ask Daoris's own conversation by `IsHelp` to leave it out of a session delete's judgement; the start layer's (§2.3)"
+    },
     "Bridge/Routes/HelpRoutes.cs": {
       "reads": "tells",
       "row": "1q",

@@ -39,6 +39,9 @@ public sealed partial class ContinuedReadersCensusTests
         ["SessionWords.cs"] =
         [
             (How.Own, "the shell's record path: the word said again at the head through the shell's whole judge (the head's inbox, its turns or its record), with its key, level, files and display choice"),
+        ],
+        ["HeldWordsQueue.cs"] =
+        [
             (How.Own, "the pump: a held word said again at the head once, under its key, off the held file once the head took it; a second `continued` follows the next head, and a walk back to a record asked is said lost"),
         ],
         ["SessionsKeeping.cs"] =
@@ -70,7 +73,7 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "the terminal's carry-on word to a session its Accept carried on (LANDBACK1 part 1): said at its head under its key"),
         ],
-        ["TreesRoutes.cs"] =
+        ["TreesLandDesk.cs"] =
         [
             (How.Follows, "the window's Accept carrying a session on (LANDBACK1 part 1): Daoris's word said at its head under its key, never the person's"),
         ],

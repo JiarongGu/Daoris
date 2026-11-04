@@ -24,8 +24,8 @@ public sealed class HelpPlaceDoorTests : DriverModuleBridge
         var place = new HelpProposal("p1", "setup", "place", "atlas", null, null, null, "why", "h1", "proposed") { Place = new PlaceAsk(["atlas"], SetupPresets.Merge) };
         var press = place with { Door = "setup", Place = null };
 
-        Assert.True(HelpRoutes.JudgedAgainstPlaces([place]));
-        Assert.False(HelpRoutes.JudgedAgainstPlaces([press, place with { Place = null }]));
+        Assert.True(HelpProposalFacts.JudgedAgainstPlaces([place]));
+        Assert.False(HelpProposalFacts.JudgedAgainstPlaces([press, place with { Place = null }]));
     }
 
     [Fact]

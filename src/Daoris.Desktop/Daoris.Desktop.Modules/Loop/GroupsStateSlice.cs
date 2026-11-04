@@ -19,8 +19,8 @@ namespace Daoris.Desktop;
 /// ledger move by half a minute. Null before the service answers, which keeps the slice not judged.</para>
 ///
 /// <para><b>Two partitions, keyed</b> (<see cref="StateSlice.Keyed"/>): <see cref="Rows"/>, each row under its session as
-/// <see cref="SessionsRoutes.Grouped"/> writes it, and <see cref="Entries"/>, each entry under its key as
-/// <see cref="SessionsRoutes.Entry"/> writes it. A session's move pushes its row and its entry alone. Judged empty, a partition is pushed
+/// <see cref="SessionsGroupsWires.Grouped"/> writes it, and <see cref="Entries"/>, each entry under its key as
+/// <see cref="SessionsGroupsWires.Entry"/> writes it. A session's move pushes its row and its entry alone. Judged empty, a partition is pushed
 /// empty, never gone.</para>
 ///
 /// <para><b>The order is the window's to compose.</b> A list position is no field: one session moving would move every row after it.
@@ -155,7 +155,7 @@ public static class GroupsStateSlice
         foreach (var row in SessionGroups.Read(look))
         {
             if (rows.ContainsKey(row.Session)) continue;
-            var written = Written(SessionsRoutes.Grouped(row));
+            var written = Written(SessionsGroupsWires.Grouped(row));
             var record = records[row.Session];
             foreach (var field in OrderedBy(row.Group))
             {
@@ -173,7 +173,7 @@ public static class GroupsStateSlice
         var entries = new JsonObject();
         foreach (var entry in SessionGroups.ReadEntries(look))
         {
-            if (!entries.ContainsKey(entry.Key)) entries[entry.Key] = Pick(Written(SessionsRoutes.Entry(entry)), "entry");
+            if (!entries.ContainsKey(entry.Key)) entries[entry.Key] = Pick(Written(SessionsGroupsWires.Entry(entry)), "entry");
         }
 
         return [new SliceJudged(Entries, entries), new SliceJudged(Rows, rows)];

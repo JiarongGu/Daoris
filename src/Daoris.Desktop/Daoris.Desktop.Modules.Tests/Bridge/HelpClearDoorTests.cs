@@ -20,8 +20,8 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
     {
         var proposal = new HelpProposal("p1", kind, door, "q1", null, null, null, "why", "h1", "proposed");
 
-        Assert.Equal(read, HelpRoutes.JudgedAgainstHistory([proposal]));
-        Assert.False(HelpRoutes.JudgedAgainstHistory([]));
+        Assert.Equal(read, HelpProposalFacts.JudgedAgainstHistory([proposal]));
+        Assert.False(HelpProposalFacts.JudgedAgainstHistory([]));
     }
 
     [Fact]

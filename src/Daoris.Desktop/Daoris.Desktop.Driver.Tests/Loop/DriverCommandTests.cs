@@ -296,7 +296,7 @@ public sealed class DriverCommandTests
     public void Every_press_holds_its_landing_to_the_result_it_was_made_on()
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
-        var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
+        var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesLandDesk.cs"));
         var accepts = File.ReadAllText(SourceFiles.Driver("EntryAccepts.cs"));
 
         foreach (var door in new[] { console, route })
@@ -312,9 +312,8 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h8 (D173's note; D50's twin rule): every person's hand-off, the page's and Ask Daoris's card through the route's one
-    /// shared press and the terminal's <c>trees hand</c>, holds its push to the result of the session that last moved the branch, by the
-    /// driver's one helper (<c>PressQuests.HandedAsync</c>; <c>PressedResultTests</c> and <c>AutoLandingTests</c> hold the act).
+    /// Every person's hand-off, the page's and Ask Daoris's card through the route's one shared press and the terminal's
+    /// <c>trees hand</c>, holds its push to the result of the session that last moved the branch, by the driver's one helper.
     /// </summary>
     [Fact]
     public void Every_hand_off_holds_its_push_to_the_result_of_the_session_that_last_moved_its_branch()
@@ -330,7 +329,9 @@ public sealed class DriverCommandTests
             Assert.Contains("beforePush: pressed.BeforePush", door);
         }
 
-        Assert.Contains("await HandAsync(_loop, trees, root, entry, named, cancellationToken)", route);
+        Assert.Contains(
+            "await TreesRoutes.HandAsync(_loop, trees, root, entry, named, cancellationToken)",
+            File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesHandDesk.cs")));
         Assert.Contains("TreesRoutes.HandAsync(_loop, trees, root, entry, plugin, ct)", help);
     }
 
