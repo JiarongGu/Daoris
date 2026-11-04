@@ -158,8 +158,8 @@ public sealed class BrainstormFiles(string home)
                     new BrainstormBy(pass, Text(element, "maker") ?? "", Text(element, "adapter") ?? "", Text(element, "account")), role, state, codes, turns)
                 {
                     Actor = Text(element, "actor"), Choice = Text(element, "choice"),
-                    Asked = ServiceClient.ActorRead<ActorAsked>(element, "asked"),
-                    Ran = ServiceClient.ActorRead<ActorRan>(element, "ran"), Why = Text(element, "why"),
+                    Asked = SessionReads.ActorRead<ActorAsked>(element, "asked"),
+                    Ran = SessionReads.ActorRead<ActorRan>(element, "ran"), Why = Text(element, "why"),
                 });
             }
         }

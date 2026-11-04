@@ -1,3 +1,4 @@
+using Daoris.Contracts.Sessions;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -208,92 +209,24 @@ internal static class FinishedPosts
         internal async Task<RecordRefusal?> PostWorkRecordAsync(FinishedPost record, CancellationToken ct = default)
             {
                 var tree = record.Tree;
-                var body = ServiceClient.WriteJson(writer =>
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("workspace", record.Workspace);
-                    writer.WriteString("repository", record.Repository);
-                    writer.WriteString("folder", record.Folder);
-                    writer.WriteString("tree", tree.Tree);
-                    writer.WriteString("moved", record.Moved.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-                    Optional("unit", tree.Unit);
-                    writer.WriteString("branch", record.Manifest.Branch);
-                    Optional("line", tree.Line);
-                    writer.WriteStartObject("hold");
-                    writer.WriteString("kind", tree.Hold.Kind);
-                    Optional("where", tree.Hold.Where);
-                    Optional("form", tree.Hold.Form);
-                    writer.WriteEndObject();
-                    writer.WriteString("tip", tree.Tip);
-                    Optional("grewFrom", tree.GrewFrom);
-                    Optional("ref", tree.Ref);
-                    if (record.Commits is { } commits)
-                    {
-                        writer.WriteStartArray("commits");
-                        foreach (var commit in commits)
-                        {
-                            writer.WriteStartObject();
-                            writer.WriteString("id", commit.Id);
-                            writer.WriteString("subject", commit.Subject);
-                            writer.WriteStartArray("files");
-                            foreach (var (path, added, removed) in commit.Files)
-                            {
-                                writer.WriteStartObject();
-                                writer.WriteString("path", path);
-                                writer.WriteNumber("added", added);
-                                writer.WriteNumber("removed", removed);
-                                writer.WriteEndObject();
-                            }
-
-                            writer.WriteEndArray();
-                            writer.WriteEndObject();
-                        }
-
-                        writer.WriteEndArray();
-                    }
-                    else
-                    {
-                        writer.WriteNull("commits");
-                    }
-
-                    Optional("commitsUnread", record.Unread);
-                    writer.WriteStartObject("left");
-                    writer.WriteStartArray("names");
-                    foreach (var name in tree.Left.Names) writer.WriteStringValue(name);
-                    writer.WriteEndArray();
-                    writer.WriteNumber("count", tree.Left.Count);
-                    writer.WriteBoolean("cut", tree.Left.Cut);
-                    writer.WriteEndObject();
-                    writer.WriteBoolean("whole", tree.Whole);
-                    // Codex's read of the design, finding 6: the landing captured before the move, or why none is named.
-                    if (tree.Landing is { } landing)
-                    {
-                        writer.WriteStartObject("landing");
-                        writer.WriteString("branch", landing.Branch);
-                        Optional("line", landing.Line);
-                        writer.WriteString("at", landing.At.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-                        Optional("pullRequest", landing.PullRequest);
-                        writer.WriteEndObject();
-                    }
-                    else
-                    {
-                        writer.WriteNull("landing");
-                    }
-
-                    Optional("landingWhy", tree.LandingWhy);
-                    writer.WriteEndObject();
-
-                    void Optional(string name, string? text)
-                    {
-                        if (text is null) writer.WriteNull(name);
-                        else writer.WriteString(name, text);
-                    }
-                });
-
-                var (ok, status, payload, root) = await client.PostJsonAsync("/api/trees/record", body, ct).ConfigureAwait(false);
-                if (ok) return null;
-                if (status == 404) return new("the service has no door for a finished tree's record, so its folder keeps its days", NoDoor: true);
-                return new((root is { } refused ? Text(refused, "error") : null) ?? payload);
+                var sent = await client.SendAsync(
+                    new PostWorkRecord(
+                        record.Workspace, record.Repository, record.Folder, tree.Tree, record.Moved.ToUniversalTime(), tree.Unit, record.Manifest.Branch, tree.Line,
+                        new WorkRecordHoldWire(tree.Hold.Kind, tree.Hold.Where, tree.Hold.Form), tree.Tip, tree.GrewFrom, tree.Ref,
+                        record.Commits is { } commits
+                            ? [.. commits.Select(commit => new WorkRecordCommitWire(
+                                commit.Id, commit.Subject, [.. commit.Files.Select(file => new WorkRecordFileWire(file.Path, file.Added, file.Removed))]))]
+                            : null,
+                        record.Unread, new WorkRecordLeftWire([.. tree.Left.Names], tree.Left.Count, tree.Left.Cut), tree.Whole,
+                        // Codex's read of the design, finding 6: the landing captured before the move, or why none is named.
+                        tree.Landing is { } landing
+                            ? new WorkRecordLandingWire(landing.Branch, landing.Line, landing.At.ToUniversalTime(), landing.PullRequest)
+                            : null,
+                        tree.LandingWhy),
+                    ct).ConfigureAwait(false);
+                if (sent.Reply.Ok) return null;
+                if (sent.Reply.Status == 404) return new("the service has no door for a finished tree's record, so its folder keeps its days", NoDoor: true);
+                return new(RefusalWords.ErrorWords(sent.Reply.Payload) ?? sent.Reply.Payload);
             }
     }
 }

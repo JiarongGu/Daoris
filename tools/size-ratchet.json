@@ -107,7 +107,6 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs": 42228,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Heavy/HeavyExecutor.cs": 42747,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/QuestionSupervisorDecisions.cs": 50606,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs": 119907,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs": 47314,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs": 100352,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/LandingKey.cs": 42773,

@@ -73,7 +73,7 @@ public sealed class ReopenGoOnTests
     public void The_persons_words_equal_to_the_go_ons_sentence_and_an_older_hosts_word_are_synced_with_the_line_alone()
     {
         var sentence = ReopenTelling.GoneOnWords("q8", "q7", Grew);
-        var older = ServiceClient.ReadWord(System.Text.Json.JsonDocument.Parse(
+        var older = SessionReads.ReadWord(System.Text.Json.JsonDocument.Parse(
             $$"""{ "id": "w1", "text": {{System.Text.Json.JsonSerializer.Serialize(sentence)}}, "at": "2026-10-20T10:00:00Z", "files": [], "reopens": true }""").RootElement)!;
 
         Assert.False(ReopenTelling.BringsToSource(Step, Record(Persons(sentence))));

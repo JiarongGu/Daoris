@@ -89,7 +89,7 @@ public sealed class OpinionDoors
         var opinion = read.TryGetProperty("opinion", out var kept)
             ? OpinionViews.Read(kept.Deserialize((System.Text.Json.Serialization.Metadata.JsonTypeInfo<OpinionResponse>)ContractJson.Options.GetTypeInfo(typeof(OpinionResponse))))
             : null;
-        var word = read.TryGetProperty("said", out var said) ? ServiceClient.ReadWord(said) : null;
+        var word = read.TryGetProperty("said", out var said) ? SessionReads.ReadWord(said) : null;
         return new(answer, opinion, word);
     }
 }

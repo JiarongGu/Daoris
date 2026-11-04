@@ -17,39 +17,39 @@ public static class SnapshotReads
             // PARALLEL1b (D181 point 3): the four reads asked at once, so one door slow to answer holds its own read, not the reads after it.
             // Each is still the service's answer as it stood when asked; the plan was never one transaction across them.
             var questsRead = client.SendAsync(new Daoris.Contracts.Quests.ListQuests(), ct);
-            var registryRead = client.GetAsync("/api/registry", ct);
-            var activeRead = client.SessionsJsonAsync(false, ct);
+            var registryRead = client.RegistryAsync(ct);
+            var activeRead = client.SessionList.ListedAsync(false, ct);
             // A second read rather than deriving both from one (DRV6): `/api/sessions` means ACTIVE, the
             // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
             // put a second opinion about it on this side of the wire.
-            var recordsRead = client.SessionsJsonAsync(true, ct);
+            var recordsRead = client.SessionList.ListedAsync(true, ct);
             await Task.WhenAll(questsRead, registryRead, activeRead, recordsRead).ConfigureAwait(false);
             IReadOnlyList<QuestView> quests = [.. (await questsRead.ConfigureAwait(false)).Answered().Select(QuestViews.View)];
-            var repositories = ServiceClient.ReadRegistry(await registryRead.ConfigureAwait(false));
-            var active = ServiceClient.ReadSessions(await activeRead.ConfigureAwait(false));
+            var repositories = await registryRead.ConfigureAwait(false);
+            var active = SessionReads.Views(await activeRead.ConfigureAwait(false));
             var records = await recordsRead.ConfigureAwait(false);
-            var lastRun = ServiceClient.ReadLastRun(records);
+            var lastRun = SessionReads.LastRun(records);
             // The stand-downs a bring-forward would carry on (SYNCMERGE1b), which the last run never holds.
-            var stoodDown = ServiceClient.ReadStoodDown(records);
+            var stoodDown = SessionReads.StoodDown(records);
             // The closed quests a session written to served (MSG1b, D137 §2.2), read only where one waits: no open list holds them.
             var open = quests.Select(quest => quest.Id).ToList();
             var closed = lastRun.Any(run => run.Value.WordsWaiting && !open.Contains(run.Key, StringComparer.OrdinalIgnoreCase))
-                ? ServiceClient.ReadClosed(await client.QuestsJsonAsync(ct).ConfigureAwait(false), lastRun, open)
+                ? SessionReads.Closed(await client.EveryQuestAsync(ct).ConfigureAwait(false), lastRun, open)
                 : [];
             var (claims, whys, forwards, taken) = await CarryOnClaimsAsync(client, quests, lastRun, stoodDown, ct).ConfigureAwait(false);
-            return new Snapshot(quests, repositories, active, ServiceClient.ReadStrikes(records))
+            return new Snapshot(quests, repositories, active, SessionReads.Strikes(records))
             {
                 LastRun = lastRun,
-                FailedRuns = ServiceClient.ReadFailedRuns(records),
+                FailedRuns = SessionReads.FailedRuns(records),
                 StoodDown = stoodDown,
                 // The session a taken quest's reopen names, where a later one is its last here (FABRIC-CLOSE1c9): its words go on in it.
-                NamedByReopen = ServiceClient.ReadNamedByReopen(records, quests, lastRun),
-                Started = ServiceClient.ReadStarted(records, active),
+                NamedByReopen = SessionReads.NamedByReopen(records, quests, lastRun),
+                Started = SessionReads.Started(records, active),
                 Closed = closed,
                 // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
-                Takes = ServiceClient.ReadTakes(records, claims, whys, forwards, taken),
+                Takes = SessionReads.Takes(records, claims, whys, forwards, taken),
                 // Each record's entry, which a quest's publisher names its line by (SESSONE1d).
-                Entries = ServiceClient.ReadEntries(records),
+                Entries = SessionReads.Entries(records),
             };
         }
     }

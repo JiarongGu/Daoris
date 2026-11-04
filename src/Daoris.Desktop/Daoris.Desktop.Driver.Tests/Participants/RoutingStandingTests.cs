@@ -1,3 +1,4 @@
+using Daoris.Contracts.Registry;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -34,19 +35,20 @@ public sealed class RoutingStandingTests
     [Fact]
     public void The_registry_s_lanes_are_read_by_their_ids_and_a_host_from_before_lanes_answers_none()
     {
-        var read = ServiceClient.ReadRegistry(
-            """
-            [
-              {"repository":"engine","adopted":true,"root":"/work/engine","lanes":[{"id":"core","title":"Core"},{"id":"web"},{"title":"no id"},"stray"]},
-              {"repository":"game","adopted":true},
-              {"repository":"tools","lanes":"none"}
-            ]
-            """);
+        var read = new[]
+        {
+            Registered("engine", [new LaneWire("core", "Core", null, null), new LaneWire("web", null, null, null), new LaneWire(null, "no id", null, null)]),
+            Registered("game", null),
+            Registered("tools", []),
+        }.Select(RegistryDoors.ViewOf).ToList();
 
         Assert.Equal(["core", "web"], read[0].Lanes);
         Assert.Empty(read[1].Lanes);
         Assert.Empty(read[2].Lanes);
     }
+
+    private static RegistrationResponse Registered(string repository, IReadOnlyList<LaneWire>? lanes) =>
+        new(repository, true, true, null, [], [], [], 0, "/work/" + repository, false, false, "default", null, false, [], lanes);
 
     [Fact]
     public void A_repository_the_registry_answered_no_lanes_for_declares_none()
