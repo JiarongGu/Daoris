@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// <para><b>A frame that is not a measurement is ignored, never believed.</b> Somebody else's protocol version is free to change its
 /// shape, and a malformed update must become an absence rather than a zero on a person's screen, nor may it take the turn down.</para>
 /// </remarks>
-[TurnStage("measure", TurnPhase.Update)]
+[TurnStage("measure", TurnPhase.Update, "subagent")]
 internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
 {
     // The usage is read off the reader's thread, by the session's own readers and its outcome; one lock guards it and the models.

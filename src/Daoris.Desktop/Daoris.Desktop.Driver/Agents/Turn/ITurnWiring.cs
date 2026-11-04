@@ -27,6 +27,24 @@ internal interface ITurnWiring
     /// <summary>Whether a prompt is on the wire and not yet answered: what the agent does meanwhile is its turn's.</summary>
     bool Prompted();
 
+    /// <summary>The id the agent gave the session; null until it is open.</summary>
+    string? SessionId { get; }
+
+    /// <summary>Whether an update's params name the conversation whose load's replay is arriving.</summary>
+    bool Replayed(JsonElement parameters);
+
+    /// <summary>One more update counted into the session's outcome.</summary>
+    void Counted();
+
+    /// <summary>The background work the harness says it runs.</summary>
+    AcpBackground Background { get; }
+
+    /// <summary>The agent went on after an error answered its turn: the words that error left untold are taken now.</summary>
+    void Heard();
+
+    /// <summary>What the session runs beside itself, once it is open and when it is kept; null otherwise.</summary>
+    AcpStreams? Beside { get; }
+
     /// <summary>Where the session's permission requests are held for the person; null refuses each as it comes.</summary>
     PermissionHolds? Permissions { get; }
 
