@@ -341,10 +341,10 @@ public sealed class ConversationRoutes(DriverContext context)
     [GroundSession("CANCEL_TURN", "id")]
     [Says("CANCEL_TURN", "id:session")]
     [Publishes("CANCEL_TURN", StateScopes.Sessions, Session = "id")]
-    private async Task<object?> CancelTurnAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> CancelTurnAsync(CancelTurnPress press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        if (Flag(request, "said"))
+        var id = press.Id;
+        if (press.Said)
         {
             return await SessionsVerbs.SaidAsync(context, new SessionsAsk("stop-turn") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
         }
@@ -364,7 +364,7 @@ public sealed class ConversationRoutes(DriverContext context)
             throw new DriverException($"session {id} is run by another Daoris process on this machine, a terminal's: stop its turn there with Ctrl+C.");
         }
 
-        var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id, keep: Flag(request, "keep")).ConfigureAwait(false) : TurnStop.Nothing;
+        var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id, keep: press.Keep).ConfigureAwait(false) : TurnStop.Nothing;
         return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
     }
 
@@ -381,12 +381,11 @@ public sealed class ConversationRoutes(DriverContext context)
     [GroundRead("SESSION_QUEUE_EDIT", nameof(PipeReads.QueuedWord))]
     [Says("SESSION_QUEUE_EDIT", "session:session", "text:words", "level:level")]
     [Publishes("SESSION_QUEUE_EDIT", StateScopes.Sessions, Session = "session")]
-    private async Task<object?> SessionQueueEditAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionQueueEditAsync(SessionQueueEditPress press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var (session, id) = (press.Session, press.Id);
         string? text = null;
-        if (request.Payload is { } payload && payload.TryGetProperty("text", out var said) && said.ValueKind == JsonValueKind.String)
+        if (press.Text is { ValueKind: JsonValueKind.String } said)
         {
             text = said.GetString();
             if (string.IsNullOrWhiteSpace(text))
@@ -397,11 +396,11 @@ public sealed class ConversationRoutes(DriverContext context)
 
         // COWORK1a (the message-urgency design §8.2): `level` changes the urgency of a word that waits for a running turn, under its
         // own id; raised where the door takes words at its next step, it goes there.
-        MessageLevel? level = Optional(request, "level") is null ? null : LevelOf(request);
+        MessageLevel? level = press.Level is null ? null : LevelOf(press.Level);
 
         // RPC1d: `sessions take-back` and `reword` sent over the pipe ask for the verb's own words, which the service's take-back door
         // judges as the alone path asks it.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
             return await SessionsVerbs.SaidAsync(
                 context, new SessionsAsk(text is null ? "take-back" : "reword") { Ids = [session], Word = id, Text = text }, cancellationToken)
@@ -442,11 +441,9 @@ public sealed class ConversationRoutes(DriverContext context)
     [GroundSession("SESSION_QUEUE_MOVE", "to")]
     [Says("SESSION_QUEUE_MOVE", "session:session", "to:session")]
     [Publishes("SESSION_QUEUE_MOVE", StateScopes.Sessions, Session = "session")]
-    private async Task<object?> SessionQueueMoveAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionQueueMoveAsync(SessionQueueMovePress press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var to = PayloadHelper.GetRequiredValue<string>(request.Payload, "to");
+        var (session, id, to) = (press.Session, press.Id, press.To);
         var moved = await _loop.Words.MoveAsync(session, id, to, cancellationToken).ConfigureAwait(false);
         if (!moved.Moved) return new { Moved = false, moved.Why, moved.Message, moved.To };
         return moved.Again ? new { Moved = true, Again = true, moved.To } : (object)new { Moved = true, moved.To, Word = moved.Word?.Id };
@@ -553,9 +550,11 @@ public sealed class ConversationRoutes(DriverContext context)
     /// The level a press asked for (COWORK1a, ONEWAY1l): its <c>level</c>, else the person's default, urgent. A level this build
     /// does not know is refused in a sentence, before anything is kept.
     /// </summary>
-    internal static MessageLevel LevelOf(IpcRequest request)
+    internal static MessageLevel LevelOf(IpcRequest request) => LevelOf(Optional(request, "level"));
+
+    /// <summary>The level a <paramref name="word"/> names, the person's default where none; a level this build does not know is refused.</summary>
+    internal static MessageLevel LevelOf(string? word)
     {
-        var word = Optional(request, "level");
         if (word is not null && MessageLevels.Read(word) is null)
         {
             throw new DriverException($"`{word}` is no level: when it reads your words is ordinary, urgent or now; nothing was kept.");

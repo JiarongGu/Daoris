@@ -537,7 +537,7 @@ public sealed class LinesRoutes(DriverContext context)
     // The machine's whole, each row naming its workspace: a workspace's page counts its own rows, and Ask
     // Daoris's sync card, whose look is the machine's, waits by the whole.
     [DriverRoute("TREES_SYNC_SCOPE", PipeClass.Open)]
-    private async Task<object?> TreesSyncScopeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> TreesSyncScopeAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var (repositories, _) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
         var known = await new SessionTrees(_loop.Home).SyncScopeAsync(repositories, cancellationToken);
@@ -554,7 +554,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// page that does not read the slice, and for a unit's own read.
     /// </summary>
     [DriverRoute("WORK_STATE", PipeClass.Open)]
-    private async Task<object?> WorkStateAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkStateAsync(WorkStateRead read, CancellationToken cancellationToken)
     {
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
         var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -572,7 +572,7 @@ public sealed class LinesRoutes(DriverContext context)
             : new HashSet<string>();
         var (units, recovery) = await WorkInventories.ReadAsync(
             _loop.Home, roots, inUse, unread, cancellationToken, looked is null ? null : WorkInventories.RecordedOf(looked.Records), closed);
-        if (Optional(request, "unit") is { } named)
+        if (read.Unit is { } named)
         {
             units = WorkInventories.Named(units, named);
             recovery = [];
@@ -587,15 +587,15 @@ public sealed class LinesRoutes(DriverContext context)
             // FABRIC-PERFORM1g, additive: the plugin steps whose attempt is held for the person, of every unit (a quest's too), or of the
             // units the name picked. An install no graph naming a plugin's performed node governs keeps no node record, and lists none.
             Held = HeldAnswer(HeldAttempts.Read(new NodeRecordFiles(_loop.Home), quests: _loop.LastQuests)
-                .Where(held => Optional(request, "unit") is not { } picked || held.Unit == picked || units.Any(unit => unit.Unit == held.Unit))),
+                .Where(held => read.Unit is not { } picked || held.Unit == picked || units.Any(unit => unit.Unit == held.Unit))),
             // FABRIC-PERFORM1j, additive: the node records that do not read, each stopping its unit until a person mends it; with a name,
             // those of the units it picked, by the unit a record names or its file's key.
             Unreadable = UnreadableAnswer(HeldAttempts.Unreadable(new NodeRecordFiles(_loop.Home))
-                .Where(record => Optional(request, "unit") is not { } picked
+                .Where(record => read.Unit is not { } picked
                     || units.Select(unit => unit.Unit).Append(picked).Any(unit => HeldAttempts.Picks(record, unit)))),
             // FABRIC-CLOSE1j, additive: the closure graphs ended by the person's own done, or closed only in part, read from the same records.
             Ends = EndsAnswer(GraphEnds.Read(new NodeRecordFiles(_loop.Home))
-                .Where(end => Optional(request, "unit") is not { } picked || end.Unit == picked || units.Any(unit => unit.Unit == end.Unit))),
+                .Where(end => read.Unit is not { } picked || end.Unit == picked || units.Any(unit => unit.Unit == end.Unit))),
         };
     }
 

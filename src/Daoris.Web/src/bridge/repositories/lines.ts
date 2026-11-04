@@ -198,11 +198,11 @@ export const useWorkState = (unit: string | null = null, enabled = true) => {
   // asks the shell again. Elsewhere each variant keeps its own pull, after the first snapshot where one is on its way.
   const pushed = usePushedLive(workSlice.name);
   const select = useCallback((all: WorkState) => workOf(all, unit), [unit]);
-  const pull = async () => readWorkState(await call<unknown>('WORK_STATE', unit ? { unit } : {}));
+  const pull = async () => readWorkState(await call('WORK_STATE', unit ? { unit } : {}));
   return useQuery(pushed
     ? {
       queryKey: keys.workState(null),
-      queryFn: () => readPushed(client, workSlice.name, async () => readWorkState(await call<unknown>('WORK_STATE', {}))),
+      queryFn: () => readPushed(client, workSlice.name, async () => readWorkState(await call('WORK_STATE', {}))),
       select, enabled: isAvailable && enabled, staleTime: Infinity, refetchOnWindowFocus: false,
     }
     : {

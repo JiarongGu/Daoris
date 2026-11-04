@@ -144,7 +144,7 @@ public sealed class SystemRoutes(DriverContext context)
     // KEEP1b: with the rule's days (`days`, null under `never`), and for each version nothing uses when its current unused stretch began
     // (`unusedSince`) and when the rule takes it (`goes`), from `keeping.json`; both absent where no pass has found it unused yet.
     [DriverRoute("SYSTEM_DOWNLOADS", PipeClass.Open)]
-    private Task<object?> DownloadsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> DownloadsAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.Run(() =>
         {
             var home = _context.Loop.Home;

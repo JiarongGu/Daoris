@@ -3,6 +3,18 @@ namespace Daoris.Desktop;
 /// <summary>A session's conversation: the newest page, an earlier one (<c>Before</c>), or only what is newer (<c>After</c>).</summary>
 public sealed record SessionHistoryRead(string Id, long? After, long? Before, long? Limit);
 
+/// <summary>A running turn stopped; <c>Keep</c> keeps what waits for the next turn, <c>Said</c> asks for the verb's own words.</summary>
+public sealed record CancelTurnPress(string Id, bool Said = false, bool Keep = false);
+
+/// <summary>A word that waits behind a running turn moved to another session.</summary>
+public sealed record SessionQueueMovePress(string Session, string Id, string To);
+
+/// <summary>
+/// A waiting word taken back (no <c>Text</c>), reworded (a text) or raised (a <c>Level</c> alone). The text is the value as sent, since
+/// words reworded to blank are refused rather than read as none.
+/// </summary>
+public sealed record SessionQueueEditPress(string Session, string Id, System.Text.Json.JsonElement? Text, string? Level, bool Said = false);
+
 /// <summary>A session by its id: the press that ends its chat, stops its wait, reads its options or its queue, or starts from it.</summary>
 public sealed record SessionIdPress(string Id, bool Said = false);
 

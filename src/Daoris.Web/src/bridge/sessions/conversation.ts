@@ -309,7 +309,7 @@ export const useCancelTurn = () =>
     // The id alone is the withdrawal; `withdrawn` then comes back empty under `keep`.
     mutationFn: async (stop: string | { id: string; keep?: boolean }): Promise<TurnStop> => {
       const { id, keep } = typeof stop === 'string' ? { id: stop, keep: false } : stop;
-      const answer = await call<{ cancelled?: unknown; withdrawn?: unknown }>('CANCEL_TURN', { id, ...(keep ? { keep: true } : {}) });
+      const answer = (await call('CANCEL_TURN', { id, ...(keep ? { keep: true } : {}) })) as { cancelled?: unknown; withdrawn?: unknown } | null;
       return { cancelled: answer?.cancelled === true, withdrawn: messagesOf(answer?.withdrawn) };
     },
   });
@@ -326,10 +326,10 @@ export const useEditQueued = (session: string | null) => {
   const edit = useMutation({
     mutationFn: async (change: { id: string; text?: string; level?: Level }): Promise<QueueEdit> => {
       if (session === null) return { done: false, why: 'taken' };
-      const answer = await call<{ done?: unknown; why?: unknown }>('SESSION_QUEUE_EDIT', {
+      const answer = (await call('SESSION_QUEUE_EDIT', {
         session, id: change.id, ...(change.text === undefined ? {} : { text: change.text }),
         ...(change.level === undefined ? {} : { level: change.level }),
-      });
+      })) as { done?: unknown; why?: unknown } | null;
       return answer?.done === true ? { done: true } : { done: false, why: 'taken' };
     },
   });
@@ -351,7 +351,7 @@ export const useMoveQueued = () =>
   useMutation({
     mutationFn: async (move: { session: string; id: string; to: string }): Promise<QueueMove> => {
       try {
-        const answer = await call<{ moved?: unknown; why?: unknown; message?: unknown; to?: unknown }>('SESSION_QUEUE_MOVE', move);
+        const answer = (await call('SESSION_QUEUE_MOVE', move)) as { moved?: unknown; why?: unknown; message?: unknown; to?: unknown } | null;
         return {
           moved: answer?.moved === true,
           why: typeof answer?.why === 'string' && answer.why ? answer.why : null,

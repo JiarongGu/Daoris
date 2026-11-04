@@ -9,5 +9,8 @@ public sealed record DiscardBranchPress(string? Named, string? Repository, strin
 /// <summary>A landing branch withdrawn, its commits kept on a recovery ref; <c>Plan</c> changes nothing.</summary>
 public sealed record WithdrawLandingBranchPress(string Repository, string Branch, string? Why, bool Plan = false);
 
+/// <summary>The units' milestones, or with <c>Unit</c> the ones that name picks (its id, session or branch).</summary>
+public sealed record WorkStateRead(string? Unit);
+
 /// <summary>A held attempt of a node worded with its <c>Resolution</c>.</summary>
 public sealed record WorkHeldPress(string Unit, string Node, int Attempt, string Resolution);
