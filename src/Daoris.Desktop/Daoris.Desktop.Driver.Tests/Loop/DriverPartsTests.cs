@@ -35,7 +35,7 @@ public sealed class DriverPartsTests : IDisposable
                 "answered", "intakes", "start", "bind", "endings", "landing"],
             order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 20),
+            [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 21),
                 LookPhase.Planned, LookPhase.Planned, LookPhase.Planned, LookPhase.Begun, LookPhase.Begun, LookPhase.After],
             order.Select(part => (LookPhase)part.Phase));
 

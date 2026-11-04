@@ -318,7 +318,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Equal("Claude Code", agent.Product);
         Assert.Equal([new HelpAccount("work", "out")], agent.Accounts);
         // A key is an account's handle and never its value (AGT3), and the room carries neither.
-        Assert.DoesNotContain("sk-", HelpRoom.Render(machine));
+        // A credential's shape: `sk-` at a word's start, then its key's run (`ask-daoris` holds `sk-` inside a word and is no key).
+        Assert.DoesNotMatch(@"\bsk-[A-Za-z0-9_-]{8,}", HelpRoom.Render(machine));
         Assert.DoesNotContain("/profiles/work", HelpRoom.Render(machine));
         // A checkout is named only where the helper may read it (D107), in the reading list; since HELPMODE1c4 by name alone, as its
         // tool takes it, and no root at all.

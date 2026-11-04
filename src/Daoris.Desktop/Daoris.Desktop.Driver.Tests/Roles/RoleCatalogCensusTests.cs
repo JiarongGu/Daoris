@@ -29,7 +29,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
-        ("the migration's staffing step", ["Daoris.Desktop.Driver/Install/Migration/StaffingStep.cs"]),
+        ("the migration's staffing step", ["Daoris.Desktop.Driver/Transitional/Migration/StaffingStep.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
         ("the judges themselves", ["Daoris.Desktop.Driver/Roles/ActorChoices.cs", "Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),

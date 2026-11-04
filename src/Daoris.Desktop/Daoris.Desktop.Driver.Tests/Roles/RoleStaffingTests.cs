@@ -326,9 +326,9 @@ public sealed class RoleStaffingTests : IDisposable
                 "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
                 "Help/Proposals/HelpRoleProposals.cs",
-                // D232: the release's migration writes an older home's orders into the family once.
-                "Install/Migration/StaffingStep.cs",
                 "Loop/Watch/WatchRun.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
+                // D232: the release's migration writes an older home's orders into the family once.
+                "Transitional/Migration/StaffingStep.cs",
             ],
             naming);
     }

@@ -19,7 +19,7 @@ namespace Daoris.Driver;
 internal static class AnswersAlone
 {
     /// <summary>How many go-ons by answers alone a line takes in a row: a first value the owner may move (§2.3).</summary>
-    public const int Bound = 2;
+    public const int Bound = SupervisorRuleBook.AnswersAloneBound;
 
     /// <summary>
     /// Whether a word is an answer the line goes on by with nobody between: a helper's, a second opinion's findings, or the supervisor's

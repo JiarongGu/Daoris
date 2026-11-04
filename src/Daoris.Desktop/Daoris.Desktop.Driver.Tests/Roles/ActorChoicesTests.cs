@@ -46,17 +46,13 @@ public sealed class ActorChoicesTests
     }
 
     [Fact]
-    public void As_before_each_actor_reads_today_s_keys_at_account_default()
+    public void An_actor_with_no_stored_order_reads_none_whatever_the_single_agent_keys_hold()
     {
         var config = DriverConfig.Empty with { Adapter = "claude-code" };
         config = config.WithIntake("codex-acp").WithHelper("claude-code-acp");
 
-        Assert.Equal([new ActorEffective("claude-code", null, null, "before")], ActorChoices.Effective("build", config));
-        Assert.Equal([new ActorEffective("claude-code", null, null, "before")], ActorChoices.Effective("chat", config));
-        Assert.Equal([new ActorEffective("claude-code", null, null, "before")], ActorChoices.Effective("brainstorm", config));
-        Assert.Equal([new ActorEffective("codex-acp", null, null, "before")], ActorChoices.Effective("intake", config));
-        Assert.Equal([new ActorEffective("claude-code-acp", null, null, "before")], ActorChoices.Effective("ask-daoris", config));
-        // Second opinion and Partner name no agent of their own, and Helper as before is HelperChoice.Candidates: their callers decide.
+        foreach (var actor in ActorChoices.Ids) Assert.Empty(ActorChoices.Effective(actor, config));
+        // Second opinion and Partner name no agent of their own, and Helper is HelperChoice.Candidates: their callers decide.
         Assert.Empty(ActorChoices.Effective("opinion", config));
         Assert.Empty(ActorChoices.Effective("partner", config));
         Assert.Empty(ActorChoices.Effective("helper", config));
@@ -109,10 +105,10 @@ public sealed class ActorChoicesTests
     [Fact]
     public void Set_build_then_clear_chat_then_change_build_leaves_chat_on_the_agent_it_ran()
     {
-        // Round 3 (Codex 7): a cleared Chat reads `adapter` until the next write that would change it, which freezes Chat where it stood.
+        // A cleared Chat reads no agent of its own, and the next write that changes `adapter` freezes it where `adapter` stood.
         var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "claude-code" }, "build", [Codex]);
         config = ActorChoices.With(config, "chat", null);
-        Assert.Equal("codex-acp", ActorChoices.FirstAgent("chat", config));
+        Assert.Null(ActorChoices.FirstAgent("chat", config));
 
         config = ActorChoices.With(config, "build", [Opus], out var kept);
 
@@ -131,7 +127,7 @@ public sealed class ActorChoicesTests
 
         Assert.Empty(kept);
         Assert.False(after.Actors.ContainsKey("chat"));
-        Assert.Equal("claude-code", ActorChoices.FirstAgent("chat", after));
+        Assert.Null(ActorChoices.FirstAgent("chat", after));
     }
 
     [Fact]
@@ -180,14 +176,15 @@ public sealed class ActorChoicesTests
     }
 
     [Fact]
-    public void The_old_intake_and_helper_doors_take_their_actor_back_to_as_before()
+    public void The_old_intake_and_helper_doors_clear_their_actor_and_the_key_names_no_agent_to_run()
     {
         var config = ActorChoices.With(DriverConfig.Empty, "intake", [Codex]);
 
         config = config.WithIntake("claude-code-acp");
 
         Assert.False(config.Actors.ContainsKey("intake"));
-        Assert.Equal("claude-code-acp", ActorChoices.FirstAgent("intake", config));
+        Assert.Equal("claude-code-acp", config.IntakeAdapter);
+        Assert.Null(ActorChoices.FirstAgent("intake", config));
     }
 
     /// <summary>
@@ -252,7 +249,7 @@ public sealed class ActorChoicesTests
         var unreadable = DriverConfig.Parse("""{ "adapter": "claude-code", "actors": { "build": [{ "model": "opus" }] } }""");
         Assert.Throws<ActorUnreadableException>(() => ActorChoices.FirstAgent("build", unreadable));
         Assert.Null(ActorKey.FirstAgent("build", unreadable));
-        Assert.Equal("claude-code", ActorKey.FirstAgent("chat", unreadable));
+        Assert.Null(ActorKey.FirstAgent("chat", unreadable));
     }
 
     [Fact]
