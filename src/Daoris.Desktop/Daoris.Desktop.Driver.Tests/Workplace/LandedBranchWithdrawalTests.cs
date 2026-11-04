@@ -135,7 +135,7 @@ public sealed class LandedBranchWithdrawalTests : IDisposable
     [Fact]
     public void The_terminals_verb_routes_a_landings_name_to_the_withdrawal_and_its_usage_names_it()
     {
-        var console = File.ReadAllText(Path.Combine(SourceFiles.Project("Daoris.Desktop.Driver.Host"), "TreesConsole.cs"));
+        var console = TreesConsoleSource.Read(SourceFiles.Project("Daoris.Desktop.Driver.Host"));
 
         var owners = console.IndexOf("new LandedBranchWithdrawal(trees, home).Owners(named", StringComparison.Ordinal);
         Assert.True(owners > 0);

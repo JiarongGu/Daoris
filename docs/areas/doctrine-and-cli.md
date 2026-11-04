@@ -36,6 +36,7 @@ one `change` skill, and `co-working` as a pack.
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
+| Host composition | `Daoris.Desktop.Driver.Host/Program.cs`, `DriveConsole.cs`, `TreesConsole.cs`, `Trees*Verb.cs`, `TreesUsage.cs` | The program routes the words once and hands each group to its console; the headless loop is `DriveConsole`; `daoris tree` dispatches in `TreesConsole` to the verbs that own their bodies |
 | Set-up press | `Driver/Setup/SetupPress.cs`, `Setup/Domain/SetupPressRules.cs`, `SetupBrief.cs` | Which set-up a line calls for, its refusals, its quest and the exact-verb rule |
 | Place and workspace plan | `Driver/Setup/Place*.cs`, `WorkspaceSetup*.cs`, `Domain/WorkspaceSetupRules.cs`, `SetupOrder.cs` | `daoris place`: a place's set-up, and a workspace's paced adoption |
 | Doctrine status read | `Driver/Setup/DoctrineStatusRead.cs`, `Domain/DoctrineStatus.cs`, `ReconcileBrief.cs` | Reads `daoris status --json` in a checkout; the reconcile quest's words |

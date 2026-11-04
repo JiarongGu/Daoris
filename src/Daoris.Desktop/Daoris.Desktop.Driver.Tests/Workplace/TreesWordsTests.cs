@@ -346,7 +346,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("LandCarry.WhyOf(")]
     public void TreesConsoleUsesTheWords(string call)
     {
-        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
 
         Assert.Contains(call, console);
     }
