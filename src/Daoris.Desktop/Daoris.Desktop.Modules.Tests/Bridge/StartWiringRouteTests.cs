@@ -135,7 +135,7 @@ public sealed class StartWiringRouteTests : Bridge
         var answer = await AnswerAsync(module, "STARTS", new { workspaces = new[] { "default" } });
 
         var start = answer.GetProperty("starts")[0];
-        Assert.Contains("--profile stale", start.GetProperty("refusal").GetString());
+        Assert.Contains("--account stale", start.GetProperty("refusal").GetString());
     }
 
     /// <summary>🔴 The route carries names only: never a home, a binary path or a key (AGT3).</summary>
