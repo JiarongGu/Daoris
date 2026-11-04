@@ -46,14 +46,14 @@ public sealed class ToolsRoutes(DriverContext context)
     // event (NOBLOCK1): its files and the system's path held the window up to 1.4 s, so an ask is answered from what is held.
     [DriverRoute("TOOLS_LIST", PipeClass.Open)]
     [ByEvent("TOOLS_LIST", Untold = "the system's path and an action's end, which TOOLS_ENDED tells")]
-    private async Task<object?> ToolsListAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ToolsListAsync(ToolsListRead press, CancellationToken cancellationToken)
     {
         var home = _loop.Home;
         var read = Tools.Read(home);
         var lists = ToolResources.ReadLists(home, AppContext.BaseDirectory, read);
         var platform = ToolResources.Current;
         var merged = ToolResources.Merge(lists, platform);
-        var ask = Flag(request, "ask");
+        var ask = press.Ask;
 
         var rows = await Task.WhenAll(Tools.Declared.Select(async declared =>
         {
@@ -132,10 +132,10 @@ public sealed class ToolsRoutes(DriverContext context)
     [GroundRead("TOOLS_USE", nameof(PipeReads.ToolChoice))]
     [NotAlready("TOOLS_USE", "checks a file's version or downloads a managed one")]
     [Publishes("TOOLS_USE", StateScopes.Tools)]
-    private async Task<object?> ToolsUseAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ToolsUseAsync(ToolsUsePress press, CancellationToken cancellationToken)
     {
-        var declared = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool"));
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
+        var declared = DeclaredTool(press.Tool);
+        var action = press.Action;
         var home = _loop.Home;
 
         switch (action)
@@ -150,14 +150,14 @@ public sealed class ToolsRoutes(DriverContext context)
                 // Checked before it is written (§4.1): a file that is there, by its whole path, that starts and answers a
                 // version. The library's operation (PUSH1f2c), which `daoris tool use … file` calls alone; its coded
                 // refusals are the module's one mapping's (ToolCodes).
-                var file = Optional(request, "file") ?? "";
+                var file = press.File ?? "";
                 var version = await ToolChoices.UseFileAsync(home, declared.Id, file, VersionOfAsync, cancellationToken);
                 Used(declared.Id, "file", null);
                 return new { Tool = declared.Id, Way = "file", File = file, Version = version };
             }
 
             case "managed":
-                return StartTool(declared, "use", Optional(request, "version"));
+                return StartTool(declared, "use", press.Version);
 
             default:
                 throw new DriverException($"`{action}` is not a way a tool is run — one of: system, managed, file.");
@@ -169,17 +169,17 @@ public sealed class ToolsRoutes(DriverContext context)
     [Owner("TOOLS_DOWNLOAD", None = OwnerNone.MachineSetting)]
     [GroundRead("TOOLS_DOWNLOAD", nameof(PipeReads.ToolVersions))]
     [Publishes("TOOLS_DOWNLOAD", StateScopes.Tools)]
-    private object? ToolsDownload(IpcRequest request) =>
-        StartTool(DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool")), "download", Optional(request, "version"));
+    private object? ToolsDownload(ToolsDownloadPress press) =>
+        StartTool(DeclaredTool(press.Tool), "download", press.Version);
 
     // The person's stop. `stopped: false` is an answer: nothing ran to stop, and a stop that went nowhere must not look
     // delivered. The action's end is the news either way, so the stop declares nothing.
     [DriverRoute("TOOLS_STOP", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("TOOLS_STOP", None = OwnerNone.MachineSetting)]
     [GroundRead("TOOLS_STOP", nameof(PipeReads.ToolRunning))]
-    private object? ToolsStop(IpcRequest request)
+    private object? ToolsStop(ToolsStopPress press)
     {
-        var tool = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool")).Id;
+        var tool = DeclaredTool(press.Tool).Id;
         return new { Tool = tool, Stopped = ToolRuns.Cancel(tool) };
     }
 
@@ -191,10 +191,10 @@ public sealed class ToolsRoutes(DriverContext context)
     [Owner("TOOLS_DELETE", None = OwnerNone.MachineSetting)]
     [GroundRead("TOOLS_DELETE", nameof(PipeReads.ToolVersions))]
     [Publishes("TOOLS_DELETE", StateScopes.Tools)]
-    private async Task<object?> ToolsDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ToolsDeleteAsync(ToolsDeletePress press, CancellationToken cancellationToken)
     {
-        var declared = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool"));
-        var version = PayloadHelper.GetRequiredValue<string>(request.Payload, "version");
+        var declared = DeclaredTool(press.Tool);
+        var version = press.Version;
         var home = _loop.Home;
         var folder = await Task.Run(() => ToolInstall.DeleteAsync(
             home, declared.Id, version, token => LiveSessions.ReadAsync(_loop.Service, DaorisHome.Entry(home, HomeEntry.SessionPids), token),
@@ -223,10 +223,10 @@ public sealed class ToolsRoutes(DriverContext context)
     [GroundRead("TOOLS_LOCATION", nameof(PipeReads.ToolLocations))]
     [NotAlready("TOOLS_LOCATION", "edits the list of locations in place")]
     [Publishes("TOOLS_LOCATION", StateScopes.Tools)]
-    private object? ToolsLocation(IpcRequest request)
+    private object? ToolsLocation(ToolsLocationPress press)
     {
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
-        var address = PayloadHelper.GetRequiredValue<string>(request.Payload, "address").Trim();
+        var action = press.Action;
+        var address = press.Address.Trim();
         switch (action)
         {
             case "add":
@@ -247,10 +247,9 @@ public sealed class ToolsRoutes(DriverContext context)
     [Owner("TOOLS_GIT_SET", None = OwnerNone.MachineSetting)]
     [GroundRead("TOOLS_GIT_SET", nameof(PipeReads.GitSetting))]
     [Publishes("TOOLS_GIT_SET", StateScopes.Tools)]
-    private async Task<object?> ToolsGitSetAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ToolsGitSetAsync(ToolsGitSetPress press, CancellationToken cancellationToken)
     {
-        var key = PayloadHelper.GetRequiredValue<string>(request.Payload, "key");
-        var value = Optional(request, "value");
+        var (key, value) = (press.Key, press.Value);
         var version = await ToolChoices.SetGitAsync(_loop.Home, key, string.IsNullOrWhiteSpace(value) ? null : value.Trim(),
             GitVersions.AskAsync, cancellationToken);
         return new { Key = key, Value = string.IsNullOrWhiteSpace(value) ? null : value.Trim(), Version = version?.ToString() };
@@ -265,26 +264,26 @@ public sealed class ToolsRoutes(DriverContext context)
     [GroundRead("GIT_IDENTITY", nameof(PipeReads.GitIdentity))]
     [NotAlready("GIT_IDENTITY", "adds, tests, changes or removes one identity of the machine's set, which holds the secret apart")]
     [Publishes("GIT_IDENTITY", StateScopes.Tools)]
-    private async Task<object?> GitIdentityAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> GitIdentityAsync(GitIdentityPress press, CancellationToken cancellationToken)
     {
         var home = _loop.Home;
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
-        var name = Optional(request, "identity");
+        var action = press.Action;
+        var name = press.Identity;
 
         switch (action)
         {
             case "add-ssh":
             {
-                var identity = await GitIdentityActs.AddSshAsync(home, Needed(request, "host"), Needed(request, "label"), Optional(request, "name"),
-                    Optional(request, "email"), Optional(request, "import"), Flag(request, "rsa"), cancellationToken).ConfigureAwait(false);
+                var identity = await GitIdentityActs.AddSshAsync(home, Needed(press.Host, "host"), Needed(press.Label, "label"), press.Name,
+                    press.Email, press.Import, press.Rsa, cancellationToken).ConfigureAwait(false);
                 GitHolds.LiftAll(home);
                 return GitAdded(home, identity);
             }
 
             case "add-https":
             {
-                var identity = await GitIdentityHttps.AddHttpsAsync(home, Needed(request, "host"), Needed(request, "label"), Optional(request, "user"),
-                    Optional(request, "name"), Optional(request, "email"), Optional(request, "token"), "https", cancellationToken).ConfigureAwait(false);
+                var identity = await GitIdentityHttps.AddHttpsAsync(home, Needed(press.Host, "host"), Needed(press.Label, "label"), press.User,
+                    press.Name, press.Email, press.Token, "https", cancellationToken).ConfigureAwait(false);
                 GitHolds.LiftAll(home);
                 return GitAdded(home, identity);
             }
@@ -293,8 +292,8 @@ public sealed class ToolsRoutes(DriverContext context)
             {
                 var target = GitIdentityActs.Find(home, name ?? throw new DriverException("name the git identity."));
                 var answer = target.Way == GitIdentity.Https
-                    ? await GitIdentityHttps.TestHttpsAsync(home, name, Needed(request, "repository"), cancellationToken).ConfigureAwait(false)
-                    : await GitIdentityActs.TestAsync(home, name, Optional(request, "trust"), cancellationToken).ConfigureAwait(false);
+                    ? await GitIdentityHttps.TestHttpsAsync(home, name, Needed(press.Repository, "repository"), cancellationToken).ConfigureAwait(false)
+                    : await GitIdentityActs.TestAsync(home, name, press.Trust, cancellationToken).ConfigureAwait(false);
                 if (answer.Result == "reached") GitHolds.LiftAll(home, "test");
                 return new
                 {
@@ -304,15 +303,15 @@ public sealed class ToolsRoutes(DriverContext context)
             }
 
             case "rename":
-                return GitShown(GitIdentityActs.Rename(home, name ?? throw new DriverException("name the git identity."), Needed(request, "label")));
+                return GitShown(GitIdentityActs.Rename(home, name ?? throw new DriverException("name the git identity."), Needed(press.Label, "label")));
 
             case "commits-as":
-                return GitShown(Flag(request, "clear")
+                return GitShown(press.Clear
                     ? GitIdentityActs.CommitsAs(home, name ?? throw new DriverException("name the git identity."), null, null)
-                    : GitIdentityActs.CommitsAs(home, name ?? throw new DriverException("name the git identity."), Optional(request, "name"), Optional(request, "email")));
+                    : GitIdentityActs.CommitsAs(home, name ?? throw new DriverException("name the git identity."), press.Name, press.Email));
 
             case "read-only":
-                return GitShown(GitIdentityActs.ReadOnly(home, name ?? throw new DriverException("name the git identity."), Flag(request, "on")));
+                return GitShown(GitIdentityActs.ReadOnly(home, name ?? throw new DriverException("name the git identity."), press.On));
 
             case "remove":
             {
@@ -323,7 +322,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
             case "default":
             {
-                var chosen = GitIdentityActs.Default(home, Needed(request, "host"), name);
+                var chosen = GitIdentityActs.Default(home, Needed(press.Host, "host"), name);
                 GitHolds.LiftAll(home);
                 return new { Identity = chosen?.Id };
             }
@@ -340,11 +339,11 @@ public sealed class ToolsRoutes(DriverContext context)
     [GroundRead("GIT_USE", nameof(PipeReads.GitPointers))]
     [NotAlready("GIT_USE", "writes one pointer into the choices of a repository's remote, a workspace's host or the machine's host")]
     [Publishes("GIT_USE", StateScopes.Tools | StateScopes.Driver)]
-    private async Task<object?> GitUseAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> GitUseAsync(GitUsePress press, CancellationToken cancellationToken)
     {
-        var scope = PayloadHelper.GetRequiredValue<string>(request.Payload, "scope");
-        await UseGitAsync(_loop.Home, _loop.Service, scope, Optional(request, "repository"), Optional(request, "workspace"), Optional(request, "remote"),
-            Optional(request, "host"), Optional(request, "value"), cancellationToken).ConfigureAwait(false);
+        var scope = press.Scope;
+        await UseGitAsync(_loop.Home, _loop.Service, scope, press.Repository, press.Workspace, press.Remote,
+            press.Host, press.Value, cancellationToken).ConfigureAwait(false);
         return new { Scope = scope };
     }
 
@@ -396,17 +395,17 @@ public sealed class ToolsRoutes(DriverContext context)
     [Owner("GIT_ANSWER", None = OwnerNone.ActsOnNothing)]
     [GroundWait("GIT_ANSWER", "git-ask", "ask")]
     [Publishes("GIT_ANSWER", StateScopes.Tools)]
-    private Task<object?> GitAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> GitAnswerAsync(GitAnswerPress press, CancellationToken cancellationToken)
     {
-        var ask = Needed(request, "ask");
-        var answer = Needed(request, "answer");
+        var ask = Needed(press.Ask, "ask");
+        var answer = Needed(press.Answer, "answer");
         if (answer is not ("allow" or "refuse")) throw new DriverException("a git go-ahead is answered allow or refuse.");
         var waiting = GitAsks.Answer(_loop.Home, ask, answer == "allow", DateTimeOffset.UtcNow);
         return Task.FromResult<object?>(new { Ask = ask, Answer = answer, Waiting = waiting });
     }
 
-    private static string Needed(IpcRequest request, string name) =>
-        Optional(request, name) ?? throw new DriverException($"`{name}` is needed.");
+    private static string Needed(string? value, string name) =>
+        value ?? throw new DriverException($"`{name}` is needed.");
 
     private static object GitAdded(string home, GitIdentity identity) => new
     {
@@ -423,9 +422,9 @@ public sealed class ToolsRoutes(DriverContext context)
     [ClassedBy("TOOLS_GIT", "way", PipeClass.Open, "\"system\"", "\"managed\"")]
     [Owner("TOOLS_GIT", None = OwnerNone.MachineSetting)]
     [GroundFiles("TOOLS_GIT", "file", "file", Quick = true)]
-    private async Task<object?> ToolsGitAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ToolsGitAsync(ToolsGitPress press, CancellationToken cancellationToken)
     {
-        var way = PayloadHelper.GetRequiredValue<string>(request.Payload, "way");
+        var way = press.Way;
         var home = _loop.Home;
         var git = DeclaredTool("git");
         var now = Tools.Resolve(home, git.Id);
@@ -441,7 +440,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
             case "managed":
             {
-                var version = Optional(request, "version") ?? throw new DriverException("a managed git is compared at a version.");
+                var version = press.Version ?? throw new DriverException("a managed git is compared at a version.");
                 var (file, problem) = Tools.ManagedExecutable(home, git.Id, version);
                 then = file ?? throw Refusals.Because(Refusals.ToolNotDownloaded, problem!, ("tool", git.Name), ("version", version));
                 break;
@@ -449,7 +448,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
             case "file":
             {
-                var named = Optional(request, "file") ?? "";
+                var named = press.File ?? "";
                 if (!Tools.IsWholePath(named) || !File.Exists(named))
                 {
                     throw Refusals.Because(
@@ -490,10 +489,10 @@ public sealed class ToolsRoutes(DriverContext context)
     // *Browse…* (§4.1): the system's file picker, which the application hands in. Null is the person cancelling.
     [DriverRoute("TOOLS_PICK", PipeClass.Window)]
     [Owner("TOOLS_PICK", None = OwnerNone.NamesNothing)]
-    private object? ToolsPick(IpcRequest request) =>
+    private object? ToolsPick(ToolsPickRead press) =>
         _pickFile is null
             ? new { Can = false, File = (string?)null }
-            : new { Can = true, File = _pickFile(Optional(request, "title"), Optional(request, "window")) };
+            : new { Can = true, File = _pickFile(press.Title, press.Window) };
 
     /// <summary>
     /// A download or a use, started through the driver's actions (§3.6) and answered once it has started; a version

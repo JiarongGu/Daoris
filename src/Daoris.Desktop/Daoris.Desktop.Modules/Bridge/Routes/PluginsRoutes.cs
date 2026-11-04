@@ -125,9 +125,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // from the loop's own record, since this process runs the loop. A plugin no longer here is PLUGIN_UNKNOWN, which
     // the page reads as gone by the code (D48 §6).
     [DriverRoute("PLUGIN", PipeClass.Open)]
-    private async Task<object?> PluginAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginAsync(PluginIdRead press, CancellationToken cancellationToken)
     {
-        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
+        var entry = InstalledPlugin(_loop, press.Id);
         // Off the caller's thread: the data folder is counted for up to two seconds (PluginPage.CountTime).
         return await Task.Run(
             () => PluginPage.Read(_loop.Home, entry.Manifest.Id, _loop.Health, OffersFolder), cancellationToken).ConfigureAwait(false);
@@ -137,10 +137,10 @@ public sealed class PluginsRoutes(DriverContext context)
     // the machine log under the home. `since` is the span the page chose (`1d`, `7d`, `30d`), the log's own spans;
     // absent, the page's opening period. Its words this run are the console's ring, read apart (`TAIL_SESSION`).
     [DriverRoute("PLUGIN_ACTIVITY", PipeClass.Open)]
-    private async Task<object?> PluginActivityAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginActivityAsync(PluginActivityRead press, CancellationToken cancellationToken)
     {
         var period = PluginActivity.DefaultPeriod;
-        if (Optional(request, "since") is { } since)
+        if (press.Since is { } since)
         {
             period = MachineLogReader.ParseSince(since) ?? throw Refusals.Because(
                 Refusals.LogFilterUnknown,
@@ -148,7 +148,7 @@ public sealed class PluginsRoutes(DriverContext context)
                 ("filter", "since"), ("value", since));
         }
 
-        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
+        var entry = InstalledPlugin(_loop, press.Id);
         // Off the caller's thread: a month of the log's files may be read.
         return await Task.Run(
             () => PluginActivity.Read(_loop.Home, entry.Manifest.Id, DateTimeOffset.UtcNow - period), cancellationToken).ConfigureAwait(false);
@@ -158,9 +158,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // press, read as Ask Daoris's judge reads a folder. A refusal is an ANSWER here, since the drawer shows it in place
     // of the plugin; nothing is copied.
     [DriverRoute("PLUGIN_READ", PipeClass.Open)]
-    private object? PluginRead(IpcRequest request)
+    private object? PluginRead(PluginFolderPress press)
     {
-        var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
+        var folder = press.Folder;
         var (manifest, refusal) = ReadPluginFolder(folder);
         return new
         {
@@ -193,9 +193,9 @@ public sealed class PluginsRoutes(DriverContext context)
     [Owner("PLUGIN_ADD", None = OwnerNone.MachineSetting)]
     [GroundFiles("PLUGIN_ADD", "plugin-folder", "folder")]
     [Publishes("PLUGIN_ADD", Installs)]
-    private object? PluginAdd(IpcRequest request)
+    private object? PluginAdd(PluginFolderPress press)
     {
-        var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
+        var folder = press.Folder;
         var (_, refusal) = ReadPluginFolder(folder);
         if (refusal is not null) throw new DriverException($"{refusal} Nothing was copied.");
         var added = PluginInstall.Add(_loop.Home, Path.GetFullPath(folder), AdapterSet.Built().Names);
@@ -209,9 +209,9 @@ public sealed class PluginsRoutes(DriverContext context)
     // start gate, off the window's thread (PROCSTART2).
     [DriverRoute("PLUGIN_OPEN_FOLDER", PipeClass.Window)]
     [Owner("PLUGIN_OPEN_FOLDER", None = OwnerNone.ActsOnNothing)]
-    private async Task<object?> PluginOpenFolderAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginOpenFolderAsync(PluginOpenFolderPress press, CancellationToken cancellationToken)
     {
-        var which = PayloadHelper.GetRequiredValue<string>(request.Payload, "which");
+        var which = press.Which;
         string folder;
         switch (which)
         {
@@ -221,7 +221,7 @@ public sealed class PluginsRoutes(DriverContext context)
             case "install" or "data":
             {
                 var entry = InstalledPlugin(_loop,
-                    Optional(request, "id") ?? throw new DriverException($"opening a plugin's {which} folder needs its id."));
+                    press.Id ?? throw new DriverException($"opening a plugin's {which} folder needs its id."));
                 folder = which == "install" ? entry.Folder : entry.Data;
                 if (which == "data" && !Directory.Exists(folder))
                 {
@@ -265,13 +265,13 @@ public sealed class PluginsRoutes(DriverContext context)
     [Owner("PLUGIN_UPDATE", None = OwnerNone.MachineSetting)]
     [GroundFiles("PLUGIN_UPDATE", "plugin-update", "id", "shipped")]
     [Publishes("PLUGIN_UPDATE", Installs)]
-    private async Task<object?> PluginUpdateAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginUpdateAsync(PluginUpdatePress press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         // LANDPIN3: `shipped` asks for the install's own copy of an example, whatever record the installed one has; it is the
         // person's press, and a copy they changed is refused (PluginInstall.PlanUpdate).
-        var shipped = request.Payload is { } asked && asked.TryGetProperty("shipped", out var wants) && wants.ValueKind == JsonValueKind.True;
-        if (request.Payload is { } payload && payload.TryGetProperty("apply", out var apply) && apply.ValueKind == JsonValueKind.True)
+        var shipped = press.Shipped;
+        if (press.Apply)
         {
             var updated = await UpdatePluginAsync(_context, id, shipped).ConfigureAwait(false);
             return new { updated.Id, Applied = true, Refusal = (string?)null, Source = updated.Source.Said, updated.From, Changes = ChangesOf(updated.Changes) };
@@ -295,10 +295,10 @@ public sealed class PluginsRoutes(DriverContext context)
     [Owner("PLUGIN_INSTALL", None = OwnerNone.MachineSetting)]
     [GroundFiles("PLUGIN_INSTALL", "plugin-offer", "offer")]
     [Publishes("PLUGIN_INSTALL", Installs)]
-    private async Task<object?> PluginInstallAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginInstallAsync(PluginInstallPress press, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        var offer = PayloadHelper.GetRequiredValue<string>(request.Payload, "offer");
+        var offer = press.Offer;
         var added = PluginInstall.AddOffer(_loop.Home, OffersFolder, offer, AdapterSet.Built().Names);
         _loop.Nudge();
         return new { added.Id, added.Name, added.Version };
@@ -310,14 +310,13 @@ public sealed class PluginsRoutes(DriverContext context)
     [Owner("PLUGIN_ACTION", None = OwnerNone.MachineSetting)]
     [GroundRead("PLUGIN_ACTION", nameof(PipeReads.PluginState))]
     [Publishes("PLUGIN_ACTION", Installs)]
-    private async Task<object?> PluginActionAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginActionAsync(PluginActionPress press, CancellationToken cancellationToken)
     {
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var (action, id) = (press.Action, press.Id);
         // RPC1e: `daoris plugin approve|withdraw` sent over the pipe asks for the verb's own words, a refusal among them as its
         // exit 2, the approvals written by the verb's own path under this Daoris's home.
-        if (Flag(request, "said") && PluginsCommand.GrantWords(
-                action, id, Optional(request, "server") ?? "", Named(request, "writes")) is { } words)
+        if (press.Said && PluginsCommand.GrantWords(
+                action, id, press.Server ?? "", press.Writes) is { } words)
         {
             var said = await TerminalSaid.RunAsync(output => PluginsCommand.RunAsync(words, output, _loop.Home, _loop.Log, cancellationToken))
                 .ConfigureAwait(false);
@@ -349,17 +348,14 @@ public sealed class PluginsRoutes(DriverContext context)
             // HELPPLUG1c: `writes`, beside `help-approve`, names the writes the person ticked, each on its own; absent, every one.
             case "help-approve" or "help-reads":
             {
-                IReadOnlyList<string>? writes = action == "help-reads" ? []
-                    : request.Payload is { } payload && payload.TryGetProperty("writes", out var named) && named.ValueKind == JsonValueKind.Array
-                        ? [.. named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!)]
-                        : null;
+                IReadOnlyList<string>? writes = action == "help-reads" ? [] : press.Writes;
                 HelpGrants.Approve(
                     _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), entry.Manifest.Id,
-                    PayloadHelper.GetRequiredValue<string>(request.Payload, "server"), writes);
+                    ActField.Needs(press.Server, "server"), writes);
                 break;
             }
             case "help-withdraw":
-                HelpGrants.Withdraw(_loop.Home, entry.Manifest.Id, PayloadHelper.GetRequiredValue<string>(request.Payload, "server"));
+                HelpGrants.Withdraw(_loop.Home, entry.Manifest.Id, ActField.Needs(press.Server, "server"));
                 break;
             default:
                 throw Refusals.Because(
@@ -385,16 +381,10 @@ public sealed class PluginsRoutes(DriverContext context)
     [DriverRoute("PLUGIN_NEW", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("PLUGIN_NEW", None = OwnerNone.MachineSetting)]
     [GroundFiles("PLUGIN_NEW", "plugin-new", "folder", "id")]
-    private async Task<object?> PluginNewAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginNewAsync(PluginNewPress press, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        var points = request.Payload is { } payload && payload.TryGetProperty("points", out var named)
-            && named.ValueKind == JsonValueKind.Array
-                ? named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToList()
-                : [];
-        var plan = PluginKit.Plan(
-            PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), points,
-            PayloadHelper.GetRequiredValue<string>(request.Payload, "folder"));
+        var plan = PluginKit.Plan(press.Id, [.. press.Points ?? []], press.Folder);
         var files = PluginKit.Write(plan);
         return new { plan.Id, plan.Folder, plan.Points, Files = files };
     }
@@ -405,11 +395,11 @@ public sealed class PluginsRoutes(DriverContext context)
     [DriverRoute("PLUGIN_TRY", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_TRY", None = OwnerNone.MachineSetting)]
     [GroundFiles("PLUGIN_TRY", "plugin-try", "id", "folder")]
-    private async Task<object?> PluginTryAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginTryAsync(PluginTryPress press, CancellationToken cancellationToken)
     {
-        var options = new TrialOptions(Point: Optional(request, "point"));
+        var options = new TrialOptions(Point: press.Point);
         PluginTrial trial;
-        if (Optional(request, "id") is { } id)
+        if (press.Id is { } id)
         {
             var took = System.Diagnostics.Stopwatch.StartNew();
             trial = await PluginTrials.TryInstalledAsync(_loop.Home, id, options, cancellationToken);
@@ -419,7 +409,7 @@ public sealed class PluginsRoutes(DriverContext context)
         }
         else
         {
-            trial = Optional(request, "folder") is { } folder
+            trial = press.Folder is { } folder
                 ? await PluginTrials.TryFolderAsync(_loop.Home, folder, options, cancellationToken)
                 : throw new DriverException("a try needs an installed plugin's id or a folder.");
         }
@@ -443,9 +433,9 @@ public sealed class PluginsRoutes(DriverContext context)
     [Owner("PLUGIN_TOOLS", None = OwnerNone.MachineSetting)]
     [GroundFiles("PLUGIN_TOOLS", "plugin-try", "id")]
     [Publishes("PLUGIN_TOOLS", StateScopes.Plugins)]
-    private async Task<object?> PluginToolsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginToolsAsync(PluginIdRead press, CancellationToken cancellationToken)
     {
-        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
+        var entry = InstalledPlugin(_loop, press.Id);
         var tools = entry.Manifest.Tools;
         var checks = _context.ToolChecks ?? ((home, declared, ct) => PluginToolSetUp.CheckAsync(home, declared, ct));
         var found = await checks(_loop.Home, tools, cancellationToken).ConfigureAwait(false);
@@ -460,11 +450,10 @@ public sealed class PluginsRoutes(DriverContext context)
     [Owner("PLUGIN_TOOL_FIX", None = OwnerNone.MachineSetting)]
     [GroundFiles("PLUGIN_TOOL_FIX", "plugin-try", "id")]
     [Publishes("PLUGIN_TOOL_FIX", StateScopes.Plugins)]
-    private async Task<object?> PluginToolFixAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginToolFixAsync(PluginToolFixPress press, CancellationToken cancellationToken)
     {
-        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
-        var toolId = PayloadHelper.GetRequiredValue<string>(request.Payload, "tool");
-        var check = PayloadHelper.GetRequiredValue<int>(request.Payload, "check");
+        var entry = InstalledPlugin(_loop, press.Id);
+        var (toolId, check) = (press.Tool, press.Check);
         var tools = entry.Manifest.Tools;
         var setUp = _context.ToolSetUps ?? ((home, declared, tool, number, ct) => PluginToolSetUp.RunAsync(home, declared, tool, number, ct));
         var done = await setUp(_loop.Home, tools, toolId, check, cancellationToken).ConfigureAwait(false);
@@ -481,12 +470,6 @@ public sealed class PluginsRoutes(DriverContext context)
             Standing = done.Found is { } found ? ToolStanding.Of(found, tools) : null,
         };
     }
-
-    /// <summary>The strings an array the payload names holds, or null where it names none.</summary>
-    private static IReadOnlyList<string>? Named(IpcRequest request, string name) =>
-        request.Payload is { } payload && payload.TryGetProperty(name, out var named) && named.ValueKind == JsonValueKind.Array
-            ? [.. named.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
-            : null;
 
     /// <summary>Where an installed plugin came from, for its row: a folder, an offer, none recorded, or a record that does not read.</summary>
     private static object SourceOf(string installFolder)
