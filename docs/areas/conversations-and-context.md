@@ -21,7 +21,7 @@ of everything it handed, section by section.
 | `MoveStore`, `MoveRecords` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases |
 | `ConversationMoves`, `MoveTakeUp` | `Course/ConversationMoves.cs`, `Course/MoveTakeUp.cs` | The conversations' move holder; takes up a dead shell's moves at come-up and at each look |
 | `MoveDelivery`, `MoveResolve`, `MoveBoxImports` | `Course/` | Delivers moved words; settles a held move; imports an older build's boxes once |
-| `ChatRunner` | `Loop/Chat/ChatRunner.cs` (hub, 202 KB) | Starts and runs conversations on both doors; composes a first message; builds the registered executors and reaches each through its kind's door |
+| `ChatRunner` | `Loop/Chat/ChatRunner.cs` (hub, 145 KB) | Starts and runs conversations on both doors; composes a first message; builds the registered executors and reaches each through its kind's door |
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
 | `HelpStart` | `Help/HelpStart.cs` | Ask Daoris's start: placed in its workspace's room, the machine read within its bound, run; its replacement's open |
 | `ChatHelp`, `IChatHelping` | `Help/ChatHelp.cs`, `Course/Chat/ChatHelping.cs` | Executor `help-rooms`: a start from an earlier Ask Daoris conversation's words, a workspace's running one set aside, the room as it stands; the course reaches it by its port |
@@ -32,6 +32,7 @@ of everything it handed, section by section.
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops |
 | `ProtocolChat`, `NativeChat` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt |
 | `ChatOptions` | `Loop/Chat/ChatOptions.cs` | A conversation's model and effort as its agent offers them, the person's change of either (never the mode), and the change as last kept |
+| `ChatTold` | `Loop/Chat/ChatTold.cs` | What a new conversation is told with its first message, held from its start: its process, its execution's checks, its standing block's facts |
 | `ChatAccountReads` | `Loop/Chat/ChatAccountReads.cs` | A refused call read for its account: a limit cools it, a refused sign-in signs it out; what a part going on from a limit carries |
 | `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made |
 | `ChatHelperWords` | `Course/Chat/ChatHelperWords.cs` | Executor `helper-words`: a helper's answer said to the conversation that asked, as its next turn |
@@ -190,7 +191,7 @@ of everything it handed, section by section.
   rules are the roles area's.
 - **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, in `Help/Proposals/` with its
   row in the room's doors table.
-- **Never grow the hubs.** `Loop/Chat/ChatRunner.cs` (202 KB), `ChatTurns.cs` (72 KB) and `Course/Chat/ChatGoOn.cs`
+- **Never grow the hubs.** `Loop/Chat/ChatRunner.cs` (145 KB), `ChatTurns.cs` (72 KB) and `Course/Chat/ChatGoOn.cs`
   (66 KB) are over budget. New behaviour goes in its own file (D231). Agents comes before Participants and Context in the
   structure gate (D166).
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),

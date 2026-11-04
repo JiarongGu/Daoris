@@ -120,6 +120,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
         Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
         _chatRuns = new ChatRunBinds(home, service, _events);
+        _told = new ChatTold(_context, _chatRuns);
 
         // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
@@ -330,14 +331,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
         ownTree ?? config.OpensOwnTree(repository);
 
-    // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
-    // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
-    // CONTEXTONE1c: what the standing block a new conversation is told with its first message is composed from, taken by it like its process.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, StandingFacts> _toldBlock =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
-        new(StringComparer.OrdinalIgnoreCase);
+    private readonly ChatTold _told;
 
     /// <summary>
     /// *Hand a conversation over* (MIXAGENT1a-i, D163): judged and kept in its box, then taken at once, or as its turn ends where
@@ -721,7 +715,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         {
             var bound = _chatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
             answers = ChatRunBinds.AnswersFindings(bound);
-            _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct, bound).ConfigureAwait(false);
+            _told.HoldProcess(sessionId, await _told.ProcessAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct, bound).ConfigureAwait(false));
         }
         else if (from is not null)
         {
@@ -730,7 +724,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // MAKERTRAIL2 (LIMITGOON2): a part on another maker than the one before it, which left work uncommitted in the tree, is told
             // that maker's trailer too, as a driven carry-on is.
             var left = leftBy is not null && await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) is { Count: > 0 } ? leftBy : null;
-            _toldProcess[sessionId] = new ProcessBriefing(CommitTrailers.For(resolved, left), commits.Rule.Mode, commits.Source);
+            _told.HoldProcess(sessionId, new ProcessBriefing(CommitTrailers.For(resolved, left), commits.Rule.Mode, commits.Source));
         }
 
         // SESSCTX1b: a conversation that continues another reads the kept folders of its line's parts, whose files its brief names.
@@ -751,8 +745,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // A start that failed, or was cancelled, has no first message to tell it with.
             if (started?.SessionId is null)
             {
-                _toldProcess.TryRemove(sessionId, out _);
-                _toldBlock.TryRemove(sessionId, out _);
+                _told.Forget(sessionId);
             }
         }
     }
@@ -1017,7 +1010,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
             // CONTEXTONE1c (D230 point 3): its standing block, on its harness, told with a new conversation's first message and never at a
             // go-on, which resumes the same conversation; a hand-over's adds the memory its brief hands on (WithProcess).
-            if (place.Block is { } block && goOn is null) _toldBlock[sessionId] = StandingBlocks.OnHarness(block, resolved, workTree);
+            if (place.Block is { } block && goOn is null) _told.HoldBlock(sessionId, StandingBlocks.OnHarness(block, resolved, workTree));
 
             // The run's bracket, before what names its process is composed: what this start is handed of the downloads kept on its record
             // (KEEP1b), a go-on as a first start, and its process's lineage token issued (COWORKVIEW1a), a go-on's the one issued at its move,
@@ -1043,7 +1036,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // CHATFLOW1h (the chat-flow design §4.4): a conversation in a tree of its own is held to its run's checks at every execution, its open, a
             // hand-over's next record and a go-on alike: the tree locked in its id for `run-heavy` to find, the checks kept by it, each heavy gate's
             // command denied under `light`, and the conversation told only then.
-            var heavy = await HeldChecksAsync(sessionId, workTree, place, config, resolved, ct).ConfigureAwait(false);
+            var heavy = await _told.HeldChecksAsync(sessionId, workTree, place, config, resolved, ct).ConfigureAwait(false);
             if (resolved.TakesSettings)
             {
                 var file = PermissionRules.Load(_home);
@@ -1151,7 +1144,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
             SpawnSkills.Remove(skills);
-            LetGoChecks(sessionId);
+            _told.LetGoChecks(sessionId);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await Conclude(
                 sessionId, "failed",
@@ -1741,19 +1734,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         return told ? draft with { Palette = palette with { Text = null } } : draft;
     }
 
-    /// <summary>
-    /// The start's process, maker and standing block, consumed by the first ordinary or handed-over message: a hand-over's block says the
-    /// memory its brief hands on (CONTEXTONE1c).
-    /// </summary>
-    internal ChatMessage WithProcess(string sessionId, ChatMessage message)
-    {
-        if (_toldBlock.TryRemove(sessionId, out var block))
-        {
-            message = message with { Block = StandingBlock.Compose(block with { Memory = message.Brief?.Memory ?? [] }) };
-        }
-
-        return _toldProcess.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
-    }
+    /// <inheritdoc cref="ChatTold.With"/>
+    internal ChatMessage WithProcess(string sessionId, ChatMessage message) => _told.With(sessionId, message);
 
     /// <summary>
     /// A text-only door keeps the person's words where it keeps the agent's — the console. In the record they would be half a
@@ -1974,75 +1956,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary>The repository's process the agent was told, as the record keeps it (<see cref="ChatRecorded.ToldProcess"/>).</summary>
     internal static SessionEvent? ToldProcess(ChatMessage message) => ChatRecorded.ToldProcess(message);
 
-    /// <summary>
-    /// What a conversation in a tree of its own is told of its process (PROCESS1d-ii, D164's amendment point 4): the commit rule
-    /// standing for its repository and its landing, in <see cref="ProcessWords.Conversation"/>'s words with the rule's facts.
-    /// </summary>
-    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ISessionAdapter? adapter = null)
-    {
-        // A copy of the tree's dependencies is told with the process, so the agent does not run the install that would delete it
-        // (TREEDEPS1b, D51's TREEDEPS1 note); no new note code, it rides the process's own.
-        var words = ProcessWords.Conversation(commits, plan);
-        if (adapter is not null) words = $"{words}\n\n{CommitTrailers.For(adapter)}";
-        if (!string.IsNullOrEmpty(dependencies)) words = $"{words}\n\n{dependencies}";
-        return new(words, commits.Rule.Mode, commits.Source);
-    }
-
-    // The checks each live execution keeps by its id for `run-heavy` (CHATFLOW1h), let go as it ends.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _checksKept = new(StringComparer.Ordinal);
-
-    private void LetGoChecks(string sessionId)
-    {
-        if (_checksKept.TryRemove(sessionId, out var kept)) SessionChecks.LetGo(kept);
-    }
-
-    /// <summary>
-    /// What a conversation in a tree of its own is handed of its run's checks at one execution (CHATFLOW1h, the chat-flow design §4.4): its tree
-    /// locked in its id, its checks kept by it for the execution's life, and the deny rules and words they compose; none for a place that is no
-    /// repository's tree. The words join what the process told it, once, so the conversation hears the checks only as they are enforced.
-    /// </summary>
-    private async Task<HeavyHanded> HeldChecksAsync(
-        string sessionId, string workTree, ChatPlace place, DriverConfig config, ISessionAdapter resolved, CancellationToken ct)
-    {
-        if (!place.Keeps || !new SessionTrees(_home).Holds(workTree)) return HeavyHanded.None;
-        if (await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
-        {
-            _output?.Append(sessionId, $"— its tree could not be locked in its name: {unlocked}");
-        }
-
-        if (await _chatRuns.ChecksAsync(sessionId, workTree, config).ConfigureAwait(false) is not { } checks) return HeavyHanded.None;
-        if (SessionChecks.Hold(_home, sessionId, checks.Checks, checks.Minutes) is { } kept) _checksKept[sessionId] = kept;
-        var heavy = HeavyTold.Hand(workTree, _home, checks.Repository, checks.Checks, resolved.TakesSettings);
-        if (heavy.Words is { } words && _toldProcess.TryGetValue(sessionId, out var told))
-        {
-            _toldProcess[sessionId] = told with { Words = $"{told.Words}\n\n{words}" };
-        }
-
-        return heavy;
-    }
-
-    /// <summary>
-    /// <see cref="ProcessTold"/> for the tree a new conversation just grew: its landing read as Review's press would read it. A
-    /// landing that cannot be read leaves its lead unsaid, never the start: the record is open, so the run that follows concludes
-    /// it, cancelled or not, and the commit rule is said either way.
-    /// </summary>
-    /// <param name="process">The chat run's bound process (CHATFLOW1c), which plans its landing as its press's gate does; null reads the rule.</param>
-    private async Task<ProcessBriefing> ProcessToldAsync(
-        string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ISessionAdapter adapter, CancellationToken ct,
-        IWorkplaceProcess? process = null)
-    {
-        LandingPlan? plan;
-        try
-        {
-            plan = await new SessionTrees(_home).PlanAsync(tree, new LandingSubject(sessionId, null, null), ct, process).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            plan = null;
-        }
-
-        return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies, adapter);
-    }
+    /// <inheritdoc cref="ChatTold.Process"/>
+    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ISessionAdapter? adapter = null) =>
+        ChatTold.Process(commits, plan, dependencies, adapter);
 
     /// <inheritdoc cref="ChatAccountReads.Limited"/>
     internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null) =>
@@ -2120,9 +2036,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             _context.Browsers.TryRemove(sessionId, out _);
             _context.Drafts.TryRemove(sessionId, out _);
             _context.Palettes.TryRemove(sessionId, out _);
-            _toldProcess.TryRemove(sessionId, out _);
-            LetGoChecks(sessionId);
-            _toldBlock.TryRemove(sessionId, out _);
+            _told.Ended(sessionId);
             // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
             // it to go on, unless the person stopped it, which ends them with it.
             var personStopped = _processes.StopMade(sessionId) is { Reason: null };
