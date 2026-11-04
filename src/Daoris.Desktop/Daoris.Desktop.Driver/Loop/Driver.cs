@@ -1059,188 +1059,17 @@ public sealed class Driver(
         OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree, process: process);
     }
 
-    /// <summary>
-    /// Look until nothing runs and a look starts nothing — the deterministic mode a gate drives (D115 §3.1):
-    /// a queue that is empty, held, or waiting on the person, with no session of this driver's still working
-    /// and no ending left unreported.
-    /// </summary>
-    /// <remarks>
-    /// A look no longer waits for its sessions, so between looks this waits for the next ending or the
-    /// watch's pace, whichever is first — the sync beside the sessions and the lost-claim stop ride every
-    /// look, as they ride the watch's (D68 §5, §6). A failure or a close lets go only once every session has
-    /// written how it ended, as a look that waited for its sessions did (REV3), and has said what ended (DEV3a).
-    /// </remarks>
-    /// <param name="said">
-    /// Handed each look's report as the look ends (DEV3a), a look that failed or was closed what it had said before (DEV3c), and
-    /// before a failure or a close lets go, what ended while it waited: what the headless host prints, so a look's lines reach
-    /// the person whatever ends the run after it.
-    /// </param>
-    public async Task<IReadOnlyList<TickReport>> RunUntilIdleAsync(CancellationToken ct = default, Action<TickReport>? said = null)
-    {
-        var reports = new List<TickReport>();
-        try
-        {
-            while (true)
-            {
-                var report = await TickAsync(ct, failed: said).ConfigureAwait(false);
-                reports.Add(report);
-                said?.Invoke(report);
-                if (!report.Progressed && Context.Runs.Idle) return reports;
+    /// <summary>Look until nothing runs and a look starts nothing, the mode a gate drives: <see cref="LoopRuns.UntilIdleAsync"/>.</summary>
+    public Task<IReadOnlyList<TickReport>> RunUntilIdleAsync(CancellationToken ct = default, Action<TickReport>? said = null) =>
+        Looping.UntilIdleAsync(ct, said);
 
-                await Context.Runs.NextAsync(_syncBeside, ct).ConfigureAwait(false);
-                ct.ThrowIfCancellationRequested();
-            }
-        }
-        catch
-        {
-            await LetGoAsync(said).ConfigureAwait(false);
-            throw;
-        }
-    }
+    /// <summary>One look, then every session it started to its end, the headless host's <c>--once</c>: <see cref="LoopRuns.OnceAsync"/>.</summary>
+    public Task<TickReport> RunOnceAsync(CancellationToken ct = default, Action<TickReport>? said = null) => Looping.OnceAsync(ct, said);
 
-    /// <summary>
-    /// One look, then every session it started to its end — the headless host's <c>--once</c>, and a test that
-    /// reads one start whole. The endings join the look's own report, as they did when a look waited for its
-    /// sessions.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 It never lets go before what its look started has ended (DEV3a): each session's ending written to the service and
-    /// to the machine log, and said. A pass beside the sessions that fails is a line, and the next pass tries again; a run that
-    /// left there let the process end with its sessions still working, and a lost-claim stop already made went unsaid.
-    /// </remarks>
-    /// <param name="said">
-    /// Handed the look's report as the look ends, each pass beside its sessions that said anything as that pass ends (DEV3b),
-    /// then what ended (DEV3a), which together are the report returned: what the headless host prints, so a line reaches the
-    /// person as it is made, whatever ends the run after it. A look that fails hands it what it had said before (DEV3c).
-    /// </param>
-    public async Task<TickReport> RunOnceAsync(CancellationToken ct = default, Action<TickReport>? said = null)
-    {
-        TickReport look;
-        try
-        {
-            look = await TickAsync(ct, failed: said).ConfigureAwait(false);
-        }
-        catch
-        {
-            // A look that failed after opening a session still waits for it, as a look always did: its record
-            // is written before the failure is said.
-            await LetGoAsync(said).ConfigureAwait(false);
-            throw;
-        }
+    private LoopRuns Looping =>
+        LazyInitializer.EnsureInitialized(ref _looping, () => new LoopRuns(this, (ct, failed) => TickAsync(ct, failed), _syncBeside, () => LookPasses));
 
-        said?.Invoke(look);
-        var settled = await SettleAsync(ct, said).ConfigureAwait(false);
-        return look with
-        {
-            Events = [.. look.Events, .. settled.Events],
-            Concluded = [.. look.Concluded, .. settled.Concluded],
-        };
-    }
-
-    /// <summary>
-    /// What a run that failed or was closed does before it lets go (REV3, DEV3a): it waits until every session it started has
-    /// written how it ended, then hands <paramref name="said"/> what ended, so the endings are said rather than lost with the
-    /// process. Nothing is asked of the service: it may be what failed.
-    /// </summary>
-    private async Task LetGoAsync(Action<TickReport>? said)
-    {
-        await Context.Runs.SettledAsync().ConfigureAwait(false);
-        if (said is null) return;
-
-        var ended = Context.Runs.Drain();
-        if (ended.Count == 0) return;
-        said(new TickReport([], [.. ended.Select(run => Lines.Ran(run.Look, run.Ended is { ByPerson: true }, run.Line))], Progressed: false, Concluded: [.. ended.Select(run => run.Ended).OfType<SessionEnded>()]));
-    }
-
-    /// <summary>
-    /// Wait until nothing this driver started runs, then report what ended. While they work, the sync runs
-    /// beside them at the watch's pace, each pass followed by the lost-claim stop (D68 §5, §6).
-    /// </summary>
-    /// <remarks>
-    /// A pass that fails is said and the next tries again (DEV3a), as a look's sync is, since leaving here would leave the
-    /// sessions with nothing watching. Only the close leaves, and what was gathered and what ended is handed to
-    /// <paramref name="said"/> before it does.
-    /// </remarks>
-    /// <param name="said">
-    /// Handed each pass that said anything as the pass ends (DEV3b), then what ended: together, the report returned.
-    /// </param>
-    private async Task<TickReport> SettleAsync(CancellationToken ct, Action<TickReport>? said = null)
-    {
-        var events = new List<string>();
-        var concluded = new List<SessionEnded>();
-        // What is gathered and not yet said. 🔴 Each pass is said as it ends (DEV3b): kept for the run's end, a lost-claim stop
-        // the family rehearsal's run had made went with the process, ended from outside before its sessions had all ended.
-        var pending = new List<string>();
-        void Say(IReadOnlyList<SessionEnded> ended)
-        {
-            List<string> lines;
-            lock (pending)
-            {
-                lines = [.. pending];
-                pending.Clear();
-            }
-
-            if (lines.Count == 0 && ended.Count == 0) return;
-            events.AddRange(lines);
-            said?.Invoke(new TickReport([], lines, Progressed: false, Concluded: ended));
-        }
-
-        var settled = Context.Runs.SettledAsync();
-        try
-        {
-            // SESSWATCH1a (the session-watch design §2): woken at the pace whether or not a remote syncs, so the watcher judges the
-            // sessions it waits for, and a --quiet-end ends one nobody watches; with no remote, the watcher's look alone.
-            while (!settled.IsCompleted && !ct.IsCancellationRequested)
-            {
-                using var pace = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var first = await Task.WhenAny(settled, Task.Delay(_syncBeside, pace.Token)).ConfigureAwait(false);
-                await pace.CancelAsync().ConfigureAwait(false);
-                if (first == settled || ct.IsCancellationRequested) break;
-
-                try
-                {
-                    lock (pending) pending.AddRange(LookIn(Lines));
-                    if (sync is not null)
-                    {
-                        await LookPasses.Of<LookSync>().OnceAsync(pending, ct).ConfigureAwait(false);
-                        await LookPasses.Of<LostClaimStop>().StopAsync(pending, ct).ConfigureAwait(false);
-                    }
-                }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
-                {
-                    // 🔴 Closing (REV3): the sessions are ending on this same token, and each writes how it ended.
-                    // Leaving before them left them unrecorded when the process exited.
-                    break;
-                }
-                catch (Exception error)
-                {
-                    lock (pending) pending.Add(Lines.Retry("sync", $"sync  a pass beside the running sessions failed, and the next tries again: {error.Message}"));
-                }
-
-                Say([]);
-            }
-
-            await settled.ConfigureAwait(false);
-
-            try
-            {
-                await LookPasses.Of<EndingsLook>().EndAsync(pending, concluded, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (!ct.IsCancellationRequested)
-            {
-                // What ended is drained into the report before the pass after it runs, so a failed pass loses none of it.
-                lock (pending) pending.Add(Lines.Retry("sync", $"sync  the pass after the sessions ended failed, and the next look tries again: {error.Message}"));
-            }
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            Say(concluded);
-            throw;
-        }
-
-        Say(concluded);
-        return new TickReport([], events, Progressed: false, Concluded: concluded);
-    }
+    private LoopRuns? _looping;
 
     /// <returns>
     /// The console line, whether a session actually opened, — when one ended here — what it ended
@@ -1419,65 +1248,9 @@ public sealed class Driver(
         bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
         IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false)
     {
-        // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
-        if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
-
-        var rules = PermissionRules.Load(home);
-        var composed = PermissionRules.Compose(rules, workspace, repository);
-        // GITAUTH1f (§6.8): `no-push`'s forms follow the session's git access, and the classifier is told as git access says it.
-        var gitWrite = GitAccessKeys.Resolve(home, repository, workspace).Of(GitAccessKeys.Write).Value;
-        composed = GitAccessPolicy.Compose(composed, gitWrite);
-        var pushTold = GitAccessPolicy.HardDeny(PermissionRules.HardDeny(rules), gitWrite);
-        var folders = new[] { kept, said }.Concat(continued ?? []).OfType<string>().Where(folder => folder.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        foreach (var folder in folders)
-        {
-            composed = composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(folder)] };
-        }
-
-        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? "", said ?? "", .. folders]));
-
-        // 🔴 What the session's job needs, beside the person's rules (FG5): an intake's room names its tools
-        // in its own settings file, and over the protocol door only what is handed at spawn counts. The
-        // first real intake was refused `WebFetch` that way. A deny the person wrote still wins.
-        if (job is { Count: > 0 })
-        {
-            composed = composed with { Allow = [.. composed.Allow, .. job.Where(rule => !composed.Allow.Contains(rule))] };
-        }
-
-        // A helper's session (MIXAGENT2a-ii) is the reviewer's shape with its own one tool.
-        if (opinion || helper) composed = OpinionPermissions.Shape(composed, helper);
-
-        // A partner's session (COAGENT1b) writes its copy and calls its reading tools and its answer: `PartnerPermissions`, the server's
-        // refusals by role beside it.
-        if (partner) composed = PartnerPermissions.Shape(composed);
-
-        // A brainstorm's pass (BRAINSTORM1a2) reads its room and gives its one answer: the `brainstorm` posture, never the reviewer's.
-        if (brainstorm is not null) composed = BrainstormPermissions.Shape(composed, tree, brainstorm);
-
-        // FABRIC-PIPELINE1b (the pipeline design §3.2's third layer): under a light pipeline each heavy gate's declared command, exactly,
-        // beside `no-push`, and the classifier told; a deny the person wrote still stands beside them.
-        if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
-        IReadOnlyList<string> heavyTold = heavy?.HardDeny is { } sentence ? [sentence] : [];
-
-        var file = SpawnSettings.Write(
-            home, sessionId, composed,
-            brainstorm is not null ? [.. pushTold, BrainstormPermissions.HardDeny]
-            : partner ? [.. pushTold, PartnerPermissions.HardDeny]
-            : helper ? [.. pushTold, OpinionPermissions.HelperHardDeny]
-            : opinion ? [.. pushTold, OpinionPermissions.HardDeny] : [.. pushTold, .. heavyTold],
-            // A partner is held to its copy whatever the person's defaults say (COAGENT1b, the co-agent design §7.4).
-            PermissionRules.GuardsTree(rules) || partner ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
-            // Which agent made each call, and each subagent's start and stop (FABRIC-C1a): the part's children bound by its lineage.
-            ChildLineage.HookFor(home, sessionId));
-        var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
-        if (adapter.Wire == SessionWire.Pipe)
-        {
-            adapter.HandSettings(info, file);
-            return (file, null, handed);
-        }
-
-        return (file, adapter.AcpSessionMeta(file, plugins ?? []), handed);
+        return SessionRules.Hand(
+            home, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
+            continued, heavy, partner);
     }
 
     /// <summary>
@@ -1492,12 +1265,8 @@ public sealed class Driver(
     /// <see cref="HandRules"/> writes for it with <c>partner</c>, its classifier's hard denials and its tree guard, which always holds it.
     /// What its effective configuration's digest is taken over (<see cref="PartnerConfigurations"/>).
     /// </summary>
-    internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository)
-    {
-        var rules = PermissionRules.Load(home);
-        return (PartnerPermissions.Shape(PermissionRules.Compose(rules, workspace, repository)),
-            [.. PermissionRules.HardDeny(rules), PartnerPermissions.HardDeny], true);
-    }
+    internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository) =>
+        SessionRules.PartnerHanded(home, workspace, repository);
 
     /// <summary>
     /// The permission rules a session was handed beside its instruction (CONTEXT1, D143 point 1), kept in its instruction's
@@ -1506,231 +1275,39 @@ public sealed class Driver(
     /// </summary>
     /// <param name="takes">Whether the session's agent takes Daoris's rules at all (<see cref="ISessionAdapter.TakesSettings"/>).</param>
     /// <param name="handed">The rules as handed: the composition, with any read of the quest's files, reach across and job's own.</param>
-    internal static HandedSection RulesHanded(bool takes, PermissionFile file, RuleLists handed, string? workspace, string? repository)
-    {
-        const string Name = HandedSections.Rules;
-        const string Source = HandedSources.Permissions;
-        if (!takes)
-        {
-            return new HandedSection(Name, Source, "the permission rules: none handed, since its agent takes no rules from Daoris")
-            {
-                Shown = 0,
-                None = HandedNones.Agent,
-            };
-        }
+    internal static HandedSection RulesHanded(bool takes, PermissionFile file, RuleLists handed, string? workspace, string? repository) =>
+        SessionRules.Handed(takes, file, handed, workspace, repository);
 
-        var count = handed.Allow.Count + handed.Ask.Count + handed.Deny.Count;
-        var hard = PermissionRules.HardDeny(file).Count;
-        var guard = PermissionRules.GuardsTree(file);
-        if (count == 0 && hard == 0 && !guard)
-        {
-            return new HandedSection(Name, Source, "the permission rules: none handed, since none were composed for it")
-            {
-                Shown = 0,
-                None = HandedNones.Empty,
-            };
-        }
+    private AccountEndings Accounts => LazyInitializer.EnsureInitialized(ref _accounts, () => new AccountEndings(home, config, service, Context));
 
-        var scope = $"workspace `{RemoteTarget.Workspace(workspace)}`" + (repository is { Length: > 0 } named ? $" and repository `{named}`" : "");
-        var beside = new List<string>();
-        if (hard > 0) beside.Add(InstructionAccounting.Plural(hard, "hard denial"));
-        if (guard) beside.Add("the tree guard");
-        return new HandedSection(
-            Name, Source,
-            $"the permission rules: {count} handed beside it ({handed.Allow.Count} allow, {handed.Ask.Count} ask, {handed.Deny.Count} deny), "
-            + $"composed from this machine's rules for {scope}" + (beside.Count > 0 ? "; " + InstructionAccounting.Joined(beside) : ""))
-        {
-            Shown = count,
-            Cuts = file.Problem is null
-                ? null
-                : [new HandedCut(HandedCuts.RulesUnread, "this machine's rules file could not be read, so only the defaults were handed")],
-        };
-    }
+    private AccountEndings? _accounts;
 
-    /// <summary>
-    /// 🔴 A turn the door refused for an account's limit (TOOL4d, D125 §2, §5.2), read from the door's failure by the
-    /// adapter's table and never from the transcript: the account the session ran as cools until the reset the agent
-    /// named, the record says <c>limit</c> — which is never a strike — and its note says until when, naming no account.
-    /// </summary>
-    /// <remarks>
-    /// <para>Only a <c>failed</c> conclusion: a refused turn after the work reached its close or its wait ended as that, the
-    /// person's stop is theirs, and a timeout carries no door failure. A failure no table recognises is a failure as
-    /// today, and the strikes bound it.</para>
-    /// <para>🔴 <b>The note carries the facts, never the agent's sentence</b> (AGT3c): the sentence names its reset in the zone
-    /// of the machine it was said on, and in English, and the note travels to every machine. The cooling line carries the reset
-    /// as a moment each reader words in its own zone and language; the sentence stays in the transcript and the conversation,
-    /// the raw view, which stay here.</para>
-    /// </remarks>
-    /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
-    /// <param name="used">The context the door reported, for the log; null where it reported none.</param>
-    /// <param name="byCode">A limit the reader read by its code with no sentence (AGENTERRORS1a, §3.1): cooled for D125's hour.</param>
+    /// <summary>A turn the door refused for an account's limit: <see cref="AccountEndings.Limited"/>.</summary>
     internal (SessionConclusion Conclusion, bool Limit) AccountLimited(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
-        AcpUsage? used, LimitSeen? byCode = null)
-    {
-        if (conclusion.State != "failed" || turnFailed is not { Length: > 0 }) return (conclusion, false);
+        AcpUsage? used, LimitSeen? byCode = null) =>
+        Accounts.Limited(conclusion, adapter, selection, turnFailed, sessionId, used, byCode);
 
-        (CoolingEntry Entry, LimitSeen Seen)? limited;
-        // The cool-offs that ended lately, read before this one replaces its account's (LIMITRESUME1b): a reset that did not lift it.
-        var now = Context.Harnesses.Clock();
-        IReadOnlyList<CoolingEntry> ended;
-        try { ended = AccountCooling.Offered(home, now); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { ended = []; }
+    /// <summary>The windows of the account a session runs as, kept for the next start's walk: <see cref="AccountEndings.Said"/>.</summary>
+    internal Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) =>
+        Accounts.Said(adapter, selection, sessionId);
 
-        try
-        {
-            limited = Context.Harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff, byCode);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // The limit could not be read for a disk that would not answer: the record still says the agent's words. A cool-off the
-            // file would not take is no such case: the roster holds it in memory, and the end is limited (LIMITRESUME1b).
-            return (conclusion, false);
-        }
+    /// <summary>A credential its provider refused: <see cref="AccountEndings.Refused"/>.</summary>
+    internal SessionConclusion AccountRefused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended) =>
+        Accounts.Refused(conclusion, adapter, selection, ended);
 
-        if (limited is not { } read) return (conclusion, false);
+    /// <summary>The account a refused credential holds: <see cref="AccountEndings.Refuse"/>.</summary>
+    internal Noted RefuseAccount(ISessionAdapter adapter, HarnessSelection selection, string owner) => Accounts.Refuse(adapter, selection, owner);
 
-        var (entry, seen) = read;
-        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, Context.Events.TurnsEnded(sessionId) + 1, used?.Used));
-        // LIMITRESUME1b (the design §3.1, round 3's Codex 10): kept in memory only, said once in the machine log for this entry.
-        if (AccountCooling.Unwritten(home, entry.Agent, entry.Account)) service.AccountSaid(AccountLine.CoolingUnkept(sessionId, adapter.Name, selection.Profile, seen));
-        var noted = conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, Context.Harnesses.Zone));
-
-        // 🔴 LIMITRESUME1b (the design §3.3's bound): an attempt refused with the same kind of limit within the margin after its account's
-        // cool-off ended met a reset that did not lift it (an admin's spend limit can outlast the window the sentence names). Said once,
-        // on this end, and in the machine log; it still waits for the next cool-off and never parks.
-        if (LimitResume.NotLifted(ended, entry, now) is { } notLifted)
-        {
-            noted = noted.Then(" ", notLifted);
-            service.AccountSaid(AccountLine.NotLifted(sessionId, adapter.Name, selection.Profile, seen));
-        }
-
-        return (noted, true);
-    }
-
-    /// <summary>
-    /// What a session's door says about the windows of the account it runs as (TOOL6c, D130 §5.2), kept by the roster as the
-    /// door carries it, for the next start's walk. A reading not kept costs a start's ranking, never the session.
-    /// </summary>
-    /// <remarks>
-    /// Asked once by every start that holds a session (a driven one, an intake, a carry-on, an opinion's or a helper's pass), where
-    /// its account is chosen: so the session's turns are bound to that account in the usage history here (USAGECAP1a2).
-    /// </remarks>
-    internal Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId)
-    {
-        UsageTurns.Bound(home, Context.Events, sessionId, TurnBinding.Of(adapter, selection.Profile));
-        return info =>
-        {
-            try
-            {
-                Context.Harnesses.Said(adapter.Name, selection.Profile, info, sessionId);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                // Nothing kept is nothing said: the walk reads the account as unknown, as it did before the door spoke.
-            }
-        };
-    }
-
-    /// <summary>
-    /// 🔴 A credential its provider refused is read from what the harness itself said of its ending (AGT3b, AGT3c), and the
-    /// account is held so no further session sits through the same minutes of retries.
-    /// </summary>
-    /// <remarks>
-    /// <para>Never from words its agent could write (AGT3c, D125 point 1's rule for a limit): an agent whose output ends quoting
-    /// the phrase, reading a log or testing an error path, would hold an account its provider never refused. A door that
-    /// carries only text gives nothing but its transcript, so there the exit, which only the harness sets, must say it failed
-    /// (<see cref="HarnessEnding.Transcript"/>).</para>
-    /// <para>And it reads signed out (ROSTER1b, D150 §5.3), kept as a reading is, so the hold outlives this process and the page
-    /// says the account's state; its line is one no strike counts (<see cref="NoteCodes.AccountsOwn"/>).</para>
-    /// </remarks>
-    /// <param name="ended">What the harness said of its ending, by its door (<see cref="Ending"/>).</param>
-    internal SessionConclusion AccountRefused(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended)
-    {
-        if (conclusion.State != "failed" || adapter.Toolchain is not { Refused: { Length: > 0 } refusedWords } refusing
-            || !Observation.Refused(ended, refusedWords))
-        {
-            return conclusion;
-        }
-
-        return conclusion.Then(" ", RefuseAccount(adapter, selection, refusing.Owner(adapter.Name)));
-    }
-
-    /// <summary>
-    /// The account a refused credential holds (AGT3b) and reads signed out (ROSTER1b), named by <paramref name="owner"/>; its line for the
-    /// record. What <see cref="AccountRefused"/> applies, and a resume's open refused for access applies as the reader read it (Codex's
-    /// owed read of D210, finding 6).
-    /// </summary>
-    internal Noted RefuseAccount(ISessionAdapter adapter, HarnessSelection selection, string owner)
-    {
-        // The hold a later start says names the account by the person's name, read now (ACCT2b); the note, which travels and
-        // whose cleaner knows only the record's own id, keeps the id.
-        var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(Context.Harnesses.Home, owner), profile) : null;
-        var hold = RefusedAccounts.RefusedHold(owner, selection.Profile, named);
-        Context.Harnesses.Refuse(adapter.Name, selection.Profile, hold.Note, hold);
-        Context.Harnesses.SignedOut(adapter.Name, selection.Profile);
-        return RefusedAccounts.RefusedNote(owner, selection.Profile);
-    }
-
-    /// <summary>
-    /// 🔴 A start its agent refused for its sign-in (ROSTER1b, D150 §5.3), read from the door's failure by the adapter's table
-    /// (<see cref="SignInRefusals"/>) and never from the transcript: the account it ran as reads signed out, kept under the home
-    /// with its time as a reading is, so the next start walks past it as it walks past any account read signed out (TOOL6g),
-    /// and a start held on it names it and its sign-in. The note says why it ended, by a line no strike counts
-    /// (<see cref="NoteCodes.AccountsOwn"/>): the fault is the account's, never the quest's.
-    /// </summary>
-    /// <remarks>
-    /// <para>Seen on the install (2026-10-04): every account read <i>never read</i> after an update, so the rotation started a
-    /// quest on an account nobody had signed in to, four times in two minutes, and the third failure parked it.</para>
-    /// <para>The tool's own sign-in is never asked by a walk (TOOL6g), so a reading alone would start it into the same refusal at
-    /// every look: it is held as AGT3b holds a refused one, until a person looks again.</para>
-    /// </remarks>
-    /// <param name="turnFailed">What the protocol door said refusing the call (ACPEND1), or null.</param>
-    /// <summary>
-    /// 🔴 The pipe door's refusal of the model its actor asked (D205 §3.3's pipe exception, §3.5(a), MODELROLE1c3), read from row a's
-    /// measured words on a silent turn (<see cref="HarnessEnding.ModelRefused"/>): the one refusal after a prompt was handed that is no
-    /// failure of the quest's. The account's <c>refused</c> reading for that model is kept, so the next start's walk passes the account
-    /// without spawning, and the part ends with the account's line, which no strike counts (<see cref="NoteCodes.AccountsOwn"/>), naming
-    /// the agent and the model but no account, since the note travels.
-    /// </summary>
-    /// <param name="model">The model its actor's choice named (<see cref="ActorAsked.NamedModel"/>); null keeps the conclusion, since a
-    /// model the person's own command or environment named is no choice a reading passes.</param>
+    /// <summary>The pipe door's refusal of the model its actor asked: <see cref="AccountEndings.ModelRefused"/>.</summary>
     internal SessionConclusion ModelRefused(
-        SessionConclusion conclusion, string agent, HarnessSelection selection, string? model, HarnessEnding ended, string sessionId)
-    {
-        if (conclusion.State != "failed" || !ended.ModelRefused || model is not { Length: > 0 }) return conclusion;
+        SessionConclusion conclusion, string agent, HarnessSelection selection, string? model, HarnessEnding ended, string sessionId) =>
+        Accounts.ModelRefused(conclusion, agent, selection, model, ended, sessionId);
 
-        if (AgentOffers.Refused(home, agent, selection.Version, selection.Profile, model, DateTimeOffset.UtcNow) is { } unkept)
-        {
-            Log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
-        }
-
-        Log?.Write("info", "actor.refused", [("session", sessionId), ("agent", agent), ("model", model), ("code", AgentOffers.RefusedCode)]);
-        return conclusion.Then(" ", Noted.Of(
-            NoteCodes.AccountRefusedModel,
-            $"`{agent}` refused `{model}` on the account it ran on, so that account is passed for that model until the agent offers it again. "
-            + "It is not counted as a failed session.",
-            ("agent", agent), ("model", model)));
-    }
-
-    /// <param name="ended">The run's ending: a refusal its door's own code reads as access is the account's sign-in, whatever its words (LIMITPICK1).</param>
+    /// <summary>A start its agent refused for its sign-in: <see cref="AccountEndings.SignedOut"/>.</summary>
     internal SessionConclusion AccountSignedOut(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
-        conclusion.State == "failed"
-        && RefusedAccounts.SignInRefused(Context.Harnesses, adapter, selection.Profile, turnFailed, AccessByCode(adapter, ended)) is { } line
-            ? conclusion.Then(" ", line)
-            : conclusion;
-
-    /// <summary>
-    /// Whether the refusal a run ended on reads access by a code or kind its door declares (D210 point 5): the one reader's, its words read
-    /// apart, since a credential its provider refused by its words is AGT3b's (<see cref="AccountRefused"/>).
-    /// </summary>
-    private bool AccessByCode(ISessionAdapter adapter, HarnessEnding? ended) =>
-        ended?.Refusal is { } refused
-        && AgentErrors.Read(Context.Adapters, adapter, DoorFailure.OfPrompt(refused), Context.Harnesses.Clock(), Context.Harnesses.Zone)
-            is { Kind: AgentErrorKind.Access } read
-        && !read.By.Contains(":words:", StringComparison.Ordinal);
+        Accounts.SignedOut(conclusion, adapter, selection, turnFailed, ended);
 
     /// <summary>
     /// What a start's landing is named for, as its session is told it (WSR5, LAND2c): a chain's step lands on its chain's branch,
