@@ -26,7 +26,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
 {
     private readonly DriverLoop _loop = loop;
 
-    [DriverRoute("ACCOUNTS")]
+    [DriverRoute("ACCOUNTS", PipeClass.Open)]
     private async Task<object?> AccountsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var running = await RunningAsync(cancellationToken).ConfigureAwait(false);
@@ -365,7 +365,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// (<see cref="HarnessRoster.ReadUsageAsync"/>): never one cooling, refused, read signed out or a key, nor one a session of
     /// Daoris's runs on. What it answers lands in <c>windows.json</c>, which <c>ACCOUNTS</c> answers under the roster's key.
     /// </summary>
-    [DriverRoute("ACCOUNTS_READ")]
+    [DriverRoute("ACCOUNTS_READ", PipeClass.Open)]
     [Publishes("ACCOUNTS_READ", StateScopes.Harnesses)]
     private async Task<object?> ReadAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -392,7 +392,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// should take a waiting start now, not at the next poll. The accounts' lists and what each start runs on sit under the
     /// roster's key, which it declares (STATEHUB1h, D169).
     /// </remarks>
-    [DriverRoute("ACCOUNT_USE")]
+    [DriverRoute("ACCOUNT_USE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("ACCOUNT_USE", None = OwnerNone.MachineSetting)]
+    [NotAlready("ACCOUNT_USE", "signs in or out of an account")]
     [Publishes("ACCOUNT_USE", StateScopes.Harnesses)]
     private object? AccountUse(IpcRequest request)
     {

@@ -31,8 +31,9 @@ public sealed class EntriesRoutes(DriverContext context)
     /// An entry's Accept (point 1): <c>ENTRY_LANDING</c> says where its parts would land, each part's plan and what superseded it;
     /// <c>LAND_ENTRY</c> lands them, leaving out only the parts the page sends in <c>leaveOut</c> (point 3).
     /// </summary>
-    [DriverRoute("ENTRY_LANDING")]
-    [DriverRoute("LAND_ENTRY")]
+    [DriverRoute("ENTRY_LANDING", PipeClass.Open)]
+    [DriverRoute("LAND_ENTRY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("LAND_ENTRY", Entry = "entry")]
     [Publishes("LAND_ENTRY", Lands, Subject = "entry")]
     private async Task<object?> EntryAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -64,8 +65,9 @@ public sealed class EntriesRoutes(DriverContext context)
     /// in its own repository, by its own rule and gates. The answer is per repository: a refusal holds only its own, and the others
     /// land.
     /// </summary>
-    [DriverRoute("ASK_LANDING")]
-    [DriverRoute("LAND_ASK")]
+    [DriverRoute("ASK_LANDING", PipeClass.Open)]
+    [DriverRoute("LAND_ASK", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("LAND_ASK", Ask = "ask")]
     [Publishes("LAND_ASK", Lands, Subject = "ask")]
     private async Task<object?> AskAsync(IpcRequest request, CancellationToken cancellationToken)
     {

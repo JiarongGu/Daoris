@@ -24,7 +24,7 @@ web paths are under `src/Daoris.Web/src/`.
 | `StateSlices` and the 16 slices | `Modules/Platform/StateSlices.cs`, `Modules/Loop/*StateSlice.cs` | Machine state judged in .NET and pushed (`STATE_PUSH`, `STATE_MANIFEST`, `STATE_SLICE`) |
 | `DriverLoop`, `HostSupervisor` | `Modules/Loop/DriverLoop.cs`, `Modules/Loop/HostSupervisor.cs` | The in-process loop that owns the slices; the host started or adopted, handed the person key |
 | `PersonRoutes` | `Modules/Bridge/Routes/PersonRoutes.cs` | `PERSON_KEY` and the person's confirmations, answered to the page |
-| `InstancePipe`, `PipeCensus`, `PipeConfirmations` | `Modules/Platform/` | A terminal's verbs into the running Daoris; each route classed `Open`, `Person`, `Window` or `Role` |
+| `InstancePipe`, `PipeCensus`, `RouteMarks`, `PipeConfirmations` | `Modules/Platform/` | A terminal's verbs into the running Daoris; each route classed `Open`, `Person`, `Window` or `Role` by its mark, read at start |
 | `WindowsModule` | `Modules/Windows/WindowsModule.cs` | `DAORIS.WINDOWS`: `OPEN`, `OPEN_BROWSER`, `SET_THEME`, `SET_BADGE`, `SET_TITLE`, `SET_NOTICE_WORDS` |
 | Notifier | `App/SessionNotifier.cs`, `Modules/Windows/SessionBalloon.cs`, `MainWindowScopes.cs` | OS balloons in the window's language; which window a click brings forward |
 | Taskbar | `App/TaskbarBadge.cs`, `Modules/Windows/WaitingCount.cs`, `WaitingBadge.cs` | Each main window's count on its button and in its title |
@@ -51,7 +51,11 @@ web paths are under `src/Daoris.Web/src/`.
 2. The page reaches the machine only through bridge modules: `DAORIS.DRIVER`, `REGISTRY`, `REMOTES`, `BROWSER`,
    `WINDOWS`, `TERMINAL`, `UPDATE`, `LOG`. They are the shell's alone. No machine-local fact becomes an HTTP route. (from D47, D50)
 3. A driver route is a `[DriverRoute]` handler in `Routes/<Domain>Routes.cs`, named like the page's `bridge/<domain>.ts`
-   that sends it. A refusal the person can act on is answered as data with a code the page words. (from D169, D182)
+   that sends it. A refusal the person can act on is answered as data with a code the page words. The mark carries the
+   route's pipe class and, for a person's or a role's press, its drain. Beside it, `[Owner]` says what a person's or a
+   window's route marks owner-set, `[ClassedBy]` names a payload's look form, and `[NotAlready]` says why a setting is never
+   already. Another module's routes are marked on its class (`[ModuleRoute]`, `[WindowModule]`). The pipe's census and owner
+   rows are read from the marks at start, and a route whose marks are incomplete fails that first use. (from D169, D182, D231)
 4. A press declares the scopes it changed with `[Publishes]`. `StatePublisher` raises `STATE_CHANGED {scopes, sessions?}`
    after a successful answer, including a refusal answered as data. No handler raises it by hand. A read declares nothing. (from D169)
 5. The dispatcher runs `RefusalLog`, `UiStallWatch`, `OffTheWindow`, then `StatePublisher`. A route leaves the window's
@@ -204,8 +208,8 @@ web paths are under `src/Daoris.Web/src/`.
   `work/frame/`, the strip in `work/strip/`, atoms in `design/ui.tsx`, flows in `design/` and graphs in `design/canvas/`.
   A folder past twenty sources splits into named scopes (`test/structure.test.ts` with `structure.json`).
 - **A new driver route** follows `.claude/knowledge/bridge-presses.md`. It needs the handler and its `[Publishes]`, the
-  page's copy in `test/publishing.ts`, the desktop README's row, the hook in `bridge/<domain>.ts`, its `PipeCensus` class
-  (and its wording and grounds if `Person`), and its words in both catalogues.
+  page's copy in `test/publishing.ts`, the desktop README's row, the hook in `bridge/<domain>.ts`, its class, drain and owner
+  in its marks (and its wording and grounds if `Person`), and its words in both catalogues.
 - **A new pushed slice** follows `.claude/knowledge/pushed-slices.md`: the `StateSlice` owner, its wakes, the
   `DriverLoop.Slices` entry, the page's `SliceSpec` and `ShellSignals`' `PUSHED`.
 - **A wait on the person** follows `.claude/knowledge/person-waits.md`; **new words** `translation-parity.md`, plus a

@@ -21,7 +21,7 @@ public sealed class SystemRoutes(DriverContext context)
     //
     // OWNSPACE2 (D175 point 3): its `toolHome` lists what Daoris's sessions left in the person's own tool home, read-only. There
     // is no press: removing them is OWNSPACE2e's, hardened, and until then a person removes a folder by hand.
-    [DriverRoute("SYSTEM_WIRING")]
+    [DriverRoute("SYSTEM_WIRING", PipeClass.Open)]
     private async Task<object?> WiringAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var measure = request.Payload is { ValueKind: JsonValueKind.Object } payload
@@ -51,7 +51,7 @@ public sealed class SystemRoutes(DriverContext context)
     // and the run lock's holder. A read: it declares nothing and removes nothing. `{ measure: true }` counts every kind, `{ measure: [ids] }`
     // those, each a bounded walk in the background, one kind after another; each kind's end tells `wiring`, so the card fills in kind by
     // kind (WIRING-SIZES-LIVE1's need). The open walks nothing. Off the window's thread; the reader's own JSON whole, so a null stays a field.
-    [DriverRoute("SYSTEM_SPACE")]
+    [DriverRoute("SYSTEM_SPACE", PipeClass.Open)]
     private Task<object?> SpaceAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var asked = SpaceAsked(request.Payload);
@@ -78,7 +78,9 @@ public sealed class SystemRoutes(DriverContext context)
     // `{ units, early }` starts a run removing exactly those, each judged again right before it goes, under the home's run lock, and answers
     // at once `{ run, joined }`; a run under way here is joined, and one held elsewhere is refused as data, `{ why: held, held, message }`.
     // The run's progress is `SYSTEM_SPACE`'s `run`; each kind's end and the whole's tell `wiring`. The removal is the person's delete.
-    [DriverRoute("SYSTEM_SPACE_FREE")]
+    [DriverRoute("SYSTEM_SPACE_FREE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [ClassedBy("SYSTEM_SPACE_FREE", "plan", PipeClass.Open, "true")]
+    [Owner("SYSTEM_SPACE_FREE", None = OwnerNone.MachineSetting)]
     [Publishes("SYSTEM_SPACE_FREE", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
     private Task<object?> FreeSpaceAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -141,7 +143,7 @@ public sealed class SystemRoutes(DriverContext context)
     // listed (a walk of each version's folder, off the window's thread). A read: it declares nothing and removes nothing.
     // KEEP1b: with the rule's days (`days`, null under `never`), and for each version nothing uses when its current unused stretch began
     // (`unusedSince`) and when the rule takes it (`goes`), from `keeping.json`; both absent where no pass has found it unused yet.
-    [DriverRoute("SYSTEM_DOWNLOADS")]
+    [DriverRoute("SYSTEM_DOWNLOADS", PipeClass.Open)]
     private Task<object?> DownloadsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.Run(() =>
         {
@@ -155,7 +157,8 @@ public sealed class SystemRoutes(DriverContext context)
     // the answer. What it moves: This Daoris's sizes, and the Tools' and agents' pages that say which versions are downloaded.
     // KEEP1b (D195 point 6): the downloads' one act, each version judged under the use files' locks, held to its rename, and kept while a
     // running session was handed it.
-    [DriverRoute("SYSTEM_DOWNLOADS_CLEAR")]
+    [DriverRoute("SYSTEM_DOWNLOADS_CLEAR", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SYSTEM_DOWNLOADS_CLEAR", None = OwnerNone.MachineSetting)]
     [Publishes("SYSTEM_DOWNLOADS_CLEAR", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
     private Task<object?> ClearDownloadsAsync(IpcRequest request, CancellationToken cancellationToken)
     {

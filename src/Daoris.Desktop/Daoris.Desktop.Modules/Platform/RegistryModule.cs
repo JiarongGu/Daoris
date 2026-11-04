@@ -23,6 +23,10 @@ namespace Daoris.Desktop;
 /// already exists, uncommitted, for that repository's own review (REV3 CLEAN1 corrected "never
 /// writes").</para>
 /// </remarks>
+[ModuleRoute("PICK_FOLDER", PipeClass.Window)]
+[ModuleRoute("WRITE_DECLARATION", PipeClass.Person, Drain = PipeDrain.Passes)]
+[Owner("PICK_FOLDER", None = OwnerNone.NamesNothing)]
+[Owner("WRITE_DECLARATION", None = OwnerNone.NamesNothing)]
 public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.REGISTRY";

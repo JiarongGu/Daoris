@@ -19,7 +19,8 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // What a session's own presses change (STATEHUB1d, D169): its record among the sessions, and the driver's state its loop,
     // nudged, reads again; a resolve moves its quest too.
-    [DriverRoute("STOP_SESSION")]
+    [DriverRoute("STOP_SESSION", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("STOP_SESSION", Session = "id")]
     [Publishes("STOP_SESSION", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> StopSessionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -50,36 +51,14 @@ public sealed class SessionsRoutes(DriverContext context)
         return new { answer.Stopped, answer.Orphan, answer.Elsewhere };
     }
 
-    // The person's answer to a session parked at a checkpoint (D52 §4). It goes through the
-    // DRIVER rather than straight to the service because the two halves must move together:
-    // this machine lets the process go, and only then does the record say it ended.
     /// <summary>
-    /// The three moves a person may make on a parked session — `completed`, `declined`, `stopped`,
-    /// each carrying what they want the record to say (design §4).
+    /// The person's answer to a parked session: `completed`, `declined` or `stopped`, with what the record should say. It goes
+    /// through the driver because the process goes first: a record saying `completed` while this machine holds the process is the
+    /// lie the observed lifecycle prevents. Whether the move is legal stays the ledger's; declining needs a reason; a move with no
+    /// note still writes one, since the store keeps the previous note and would read beside the parked analysis.
     /// </summary>
-    /// <remarks>
-    /// <para><b>Narrowed here, not re-judged.</b> The ledger allows a fourth from `awaiting-person`
-    /// — back to `working` — and that one is the DRIVER's observation, not a button: a person
-    /// resumes a conversation by answering it, which is the composer's job. Narrowing the person's
-    /// verbs is a surface rule and belongs on the surface; everything about whether the move is
-    /// legal at all stays the ledger's (D36), and its refusal reaches the person verbatim.</para>
-    ///
-    /// <para><b>The process goes first.</b> A record that says `completed` while this machine still
-    /// holds the process is exactly the lie the observed lifecycle exists to prevent — so the
-    /// process is let go, and the record moves after. `Stop` answering false is not an error: the
-    /// common case is a session parked with nothing of ours still running.</para>
-    ///
-    /// <para><b>Declining needs a reason</b>, the same rule the quest door already holds and for the
-    /// same reason: the note is the part whoever reads the record can act on.</para>
-    ///
-    /// <para><b>A move with no note still writes one.</b> The store keeps the previous note when a
-    /// move carries none (deliberately — a later move must not erase what an earlier one recorded),
-    /// so a session finished at a checkpoint would otherwise read <i>reached completed</i> beside
-    /// the analysis it was parked with, which says the opposite of what happened. The stamped
-    /// sentence also carries the one fact the state cannot: `completed` normally means the session
-    /// closed its own quest, and this one means a person decided it was done.</para>
-    /// </remarks>
-    [DriverRoute("RESOLVE_SESSION")]
+    [DriverRoute("RESOLVE_SESSION", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("RESOLVE_SESSION", Session = "id")]
     [Publishes("RESOLVE_SESSION", StateScopes.Sessions | StateScopes.Quests | StateScopes.Driver, Session = "id")]
     private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -124,7 +103,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // (D143 point 4), the same door `daoris session go-on-new` calls (D50); the loop is nudged so its next look carries
     // them on. What cannot is `sent: false` with its code, for the page to word, and the driver's sentence beside it. The
     // page's press is a later row.
-    [DriverRoute("SESSION_GO_ON_NEW")]
+    [DriverRoute("SESSION_GO_ON_NEW", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_GO_ON_NEW", Session = "id")]
     [Publishes("SESSION_GO_ON_NEW", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionGoOnNewAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -145,7 +125,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // and `off` do not hold it), judged as that verb judges: a question within the bound, an agent of one word, and a session of
     // this machine's that may ask. Everything else is the driver's, at its next look, which the nudge brings sooner. What cannot is
     // `asked: null` with its code for the page to word, and the verb's sentence beside it; the page never reads a path.
-    [DriverRoute("SESSION_HELPER_ASK")]
+    [DriverRoute("SESSION_HELPER_ASK", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_HELPER_ASK", Session = "id")]
     [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionHelperAskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -193,7 +174,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // The asks a session made of helpers (MIXAGENT2b), oldest first, each as the driver's look left it: its state and code, the
     // helper's session once started and the agent it started on. Read off the home's `helpers` folder, the driver's own files;
     // what the state keeps for the driver alone (the last words, the word it was handed as) is not the page's.
-    [DriverRoute("SESSION_HELPERS")]
+    [DriverRoute("SESSION_HELPERS", PipeClass.Open)]
     private Task<object?> SessionHelpersAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -224,7 +205,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // (`PartnerPersonAsk`): the piece within its bound, an agent named in one word, the paths inside, a session of this machine's that
     // may lead one, and its tree's commit read as the piece's exact base. Everything else is the driver's, at its next look, which the
     // nudge brings sooner. What cannot is `asked: null` with its code for the page to word, and the verb's sentence beside it.
-    [DriverRoute("SESSION_PARTNER_ASK")]
+    [DriverRoute("SESSION_PARTNER_ASK", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_PARTNER_ASK", Session = "id")]
     [Publishes("SESSION_PARTNER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionPartnerAskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -251,7 +233,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // it: the piece and its paths, the agent, where it stands and why, its partner's record once started, its frozen commit and ref
     // once imported, and the files Daoris read in it with those beyond its paths. Read off the home's `partners` folder, the driver's
     // own files; the partner's own words stay its answer's, which reaches the session as a word.
-    [DriverRoute("SESSION_PARTNERS")]
+    [DriverRoute("SESSION_PARTNERS", PipeClass.Open)]
     private Task<object?> SessionPartnersAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -293,7 +275,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // *What needs you*: each the driver's look holds `waiting` with no code under the `helpers` rule's `ask`, the one state the yes
     // and the no answer, oldest first, with the session that asked. A read off the home's `helpers` folder: it declares nothing,
     // and sits under the sessions' key on the page, which every tick asks again; the look says a new one in its report.
-    [DriverRoute("HELPER_WAITS")]
+    [DriverRoute("HELPER_WAITS", PipeClass.Open)]
     private Task<object?> HelperWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var files = new HelperFiles(_loop.Home);
@@ -309,7 +291,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // state the driver's look reads (`HelperJudge`), written where the ask waits on that yes: no state yet, or `waiting` with no
     // code. A yes again is the same yes. A person's own ask needs none, one past its start is past it, one waiting on a slot or an
     // agent waits on no yes, and one this session does not hold is gone: each `approved: false` with its code, its state untouched.
-    [DriverRoute("SESSION_HELPER_APPROVE")]
+    [DriverRoute("SESSION_HELPER_APPROVE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_HELPER_APPROVE", Session = "session")]
     [Publishes("SESSION_HELPER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHelperApproveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -331,7 +314,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // word yet. A no again is the same no, with no second note. A person's own ask needs none, one with the person's yes waits on the
     // look, one past its start is past it, one waiting on a slot or an agent waits on none, and one this session does not hold is
     // gone: each `declined: false` with its code, its state untouched.
-    [DriverRoute("SESSION_HELPER_DECLINE")]
+    [DriverRoute("SESSION_HELPER_DECLINE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_HELPER_DECLINE", Session = "session")]
     [Publishes("SESSION_HELPER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHelperDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -348,7 +332,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // A session's agent's ask to hand it over (MIXAGENT1c, D163 point 3), as the driver's look left it, for the session's page: its
     // note (the agent's claim), when, its state, code and the agent it goes to; null where its agent asked none. A read off the home's
     // sessions folder, the driver's own files: it declares nothing, and the look says a change in its report.
-    [DriverRoute("SESSION_HAND_OVER_ASK")]
+    [DriverRoute("SESSION_HAND_OVER_ASK", PipeClass.Open)]
     private Task<object?> SessionHandOverAskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -368,7 +352,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // the holder's act; null where none is kept, and for a record that is not
     // parked (Fable's read, Q7), whatever a file says. A read off the home's sessions folder, the files leaving the window's thread
     // first (UIFREEZE1): it declares nothing, and the page asks it only of a park of this machine's.
-    [DriverRoute("SESSION_QUESTION")]
+    [DriverRoute("SESSION_QUESTION", PipeClass.Open)]
     private async Task<object?> SessionQuestionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -409,7 +393,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // state written `taken` first so no look keeps a second box; anything else is `approved` with the agent the look named, for the
     // look, nudged, to take as the rule's `on` would. `ask` names the one the page showed, else the session's own. A word that waits on
     // nothing is `approved: false` with its code, its state untouched.
-    [DriverRoute("SESSION_HAND_OVER_APPROVE")]
+    [DriverRoute("SESSION_HAND_OVER_APPROVE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_HAND_OVER_APPROVE", Session = "session")]
     [Publishes("SESSION_HAND_OVER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHandOverApproveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -448,7 +433,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // The person's no to their session's agent's ask to hand it over (MIXAGENT1c, D163 point 3), beside the yes: refused `declined` at
     // once, with the coded note the look writes for every refusal (`handover.refused`), where the look holds it waiting on their word.
     // One not read yet, one with their yes, one past it and one gone are `declined: false` with its code, its state untouched.
-    [DriverRoute("SESSION_HAND_OVER_DECLINE")]
+    [DriverRoute("SESSION_HAND_OVER_DECLINE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_HAND_OVER_DECLINE", Session = "session")]
     [Publishes("SESSION_HAND_OVER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHandOverDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -465,7 +451,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // The person's *Leave it running* on a quiet session's row (SESSWATCH1a, D200, the session-watch design §2.3): the watcher stands down
     // for it until it is heard again, its episode ends `left` with its coded note, and the row goes. `{ left, why, message }`; a session
     // that brings no row is `left: false`, `why: not-quiet`. A move of the watcher's memory alone, which wakes the attention slice.
-    [DriverRoute("SESSION_QUIET_LEAVE")]
+    [DriverRoute("SESSION_QUIET_LEAVE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_QUIET_LEAVE", Session = "id")]
     [Publishes("SESSION_QUIET_LEAVE", StateScopes.Sessions, Session = "id")]
     private Task<object?> SessionQuietLeaveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -482,7 +469,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // part handed the brief, and the person's words that waited for it go to that part, never to a resume of the run that hung.
     // `{ stopped, why, message }`: refused `not-quiet` where it brings no quiet row (a busy one is offered no end), `not-quest` for an
     // intake, `gone` where its run ended first, each with nothing changed.
-    [DriverRoute("SESSION_QUIET_CARRY_ON")]
+    [DriverRoute("SESSION_QUIET_CARRY_ON", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_QUIET_CARRY_ON", Session = "id")]
     [Publishes("SESSION_QUIET_CARRY_ON", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SessionQuietCarryOnAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -511,7 +499,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // standing allow), and when its bound releases it (`until`, PERMUNTIL1: the page's one source for the bound). A read off the
     // driver's memory (`HeldPermissions`), which a restart empties with the agents that asked; the attention slice's own projection,
     // so the pushed rows and the route say each hold alike.
-    [DriverRoute("PERMISSION_WAITS")]
+    [DriverRoute("PERMISSION_WAITS", PipeClass.Open)]
     private Task<object?> PermissionWaitsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new { Waits = AttentionStateSlice.PermissionWaits(HeldPermissions.Of(_loop.Events)) });
 
@@ -520,7 +508,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // Daoris never answers one by itself (D37, D52); a standing allow is a rule's to give (D74). What cannot is `answered: false` with
     // its code (`unheld`, `unoffered`, `standing`) and the registry's sentence, the hold left as it was. Its session hears the answer
     // at once, off its own reader, and the hold's end is told through the registry's `Changed`; the route publishes nothing.
-    [DriverRoute("SESSION_PERMISSION_ANSWER")]
+    [DriverRoute("SESSION_PERMISSION_ANSWER", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_PERMISSION_ANSWER", Session = "session")]
     private Task<object?> SessionPermissionAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -533,7 +522,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // design §8.3), oldest first: each session whose answers would take its line on a third time in a row with nobody between, the agent
     // that answered, the answers' ids and since when. A read off the home's marks (`GoOnMarks`), which the look and the conversations
     // write; it declares nothing, and sits under the sessions' key on the page, which every tick asks again.
-    [DriverRoute("ANSWER_WAITS")]
+    [DriverRoute("ANSWER_WAITS", PipeClass.Open)]
     private Task<object?> AnswerWaitsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new { Waits = AttentionStateSlice.AnswerWaits(_loop.Home) });
 
@@ -541,7 +530,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // kept as their word and the mark taken away, so the driver's next look, nudged, or the conversation's own go-on takes the answer on;
     // false is *Not now*, the answer kept for them, going on only beside a word of theirs. Where nothing holds an answer of the session
     // for them, `answered: false` with its code (`unheld`), and nothing is written.
-    [DriverRoute("SESSION_ANSWER_ALONE")]
+    [DriverRoute("SESSION_ANSWER_ALONE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_ANSWER_ALONE", Session = "session")]
     [Publishes("SESSION_ANSWER_ALONE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private Task<object?> SessionAnswerAloneAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -564,7 +554,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // The supervisor's decisions on a session (SUPERVISOR1a-i, D208; the supervisor design §6.1, §6.2): those live in this shell's
     // memory as they stand, and every other read from the session's files as history (`earlier`), granting nothing. A read: `{ decisions }`,
     // oldest first, each its question's snapshot, choice, reasons, holder, state, when it goes on and when it last moved.
-    [DriverRoute("SESSION_SUPERVISOR")]
+    [DriverRoute("SESSION_SUPERVISOR", PipeClass.Open)]
     private Task<object?> SessionSupervisorAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -592,7 +582,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // taken under the session's decision lock. While held the decision is overruled with nothing to take back; while released its word
     // is taken back through the take-back door first. From admitted on nothing changes, and the answer says the state. `{ done, state }`,
     // `done` false with `state` null where no decision of the session is live by that id.
-    [DriverRoute("SUPERVISOR_OVERRULE")]
+    [DriverRoute("SUPERVISOR_OVERRULE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SUPERVISOR_OVERRULE", Session = "id")]
     [Publishes("SUPERVISOR_OVERRULE", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SupervisorOverruleAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -611,7 +602,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // the pipe's census. Refused on every door but a terminal's the judge's role method covered (`PipeDoor.Role`, never the presses'
     // standing flag); kept as a held decision on the park, its repository the appointment's. `{ kept, decision?, goesOnAt?, why? }`,
     // refused as data and keeping nothing.
-    [DriverRoute("SUPERVISOR_ANSWER")]
+    [DriverRoute("SUPERVISOR_ANSWER", PipeClass.Role, Drain = PipeDrain.Passes)]
     [Publishes("SUPERVISOR_ANSWER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SupervisorAnswerAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await SupervisorDoor.AnswerAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
@@ -619,7 +610,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // The supervisor's leaving a question to the owner (SUPERVISOR1b, D208 §3.1): `{ id, question, generation, proof, bound, reasons }`,
     // the role's second act, `Role` in the pipe's census and judged as the answer is. Kept as a decision of state `left`, final at once:
     // nothing reaches the session, and the owner's card says *left to you* with the bound and the reasons. `{ kept, decision?, why? }`.
-    [DriverRoute("SUPERVISOR_DEFER")]
+    [DriverRoute("SUPERVISOR_DEFER", PipeClass.Role, Drain = PipeDrain.Passes)]
     [Publishes("SUPERVISOR_DEFER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SupervisorDeferAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await SupervisorDoor.DeferAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
@@ -629,7 +620,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // under the judge's lock (§3.4 step 8: still admitted, its holder's hash present, its appointment live) and runs its role's table's
     // handler; the steward's table is empty in this build, so every act is refused `not-role` at the judge. `{ done, why?, answer?,
     // roles, brief }`, refused as data.
-    [DriverRoute("ROLE_ACT")]
+    [DriverRoute("ROLE_ACT", PipeClass.Role, Drain = PipeDrain.Waits)]
     [Publishes("ROLE_ACT", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> RoleActAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await SupervisorDoor.ActAsync(_loop.Pipe, request.Payload, cancellationToken, _context.OwnerScopesOf(), _context.StewardWorldOf()).ConfigureAwait(false);
@@ -639,7 +630,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // service and the question files, so an ask is answered from what is held and the verb asks until an answer computed after
     // its own first ask (`at`) comes. A read naming no key:
     // `{ waiting: [{ session, repository, question, asked, generation }], at }`.
-    [DriverRoute("SUPERVISOR_WAITING")]
+    [DriverRoute("SUPERVISOR_WAITING", PipeClass.Open)]
     [ByEvent("SUPERVISOR_WAITING", Untold = "the question files, and the verb waits for an answer made after its own ask")]
     private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
         new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
@@ -647,7 +638,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // The steward's acts this run, newest first, and its live appointment's generation (STEWARDROLE1b, D209 §3.3), what its holder's verb
     // reads before it proves an act: from the judge's memory alone, so it answers at once. A read naming no key:
     // `{ generation, acts: [{ id, act, repository, quest, session, at, standing, waiting }] }`, the generation null where none is live.
-    [DriverRoute("STEWARD_ACTS")]
+    [DriverRoute("STEWARD_ACTS", PipeClass.Open)]
     private object? StewardActs(IpcRequest request) => _loop.Pipe?.StandingConfirmation is { } judge
         ? new { Generation = judge.LiveGeneration(Roles.Steward), Acts = judge.StewardActsNow() }
         : new { Generation = (string?)null, Acts = (IReadOnlyList<StewardActNow>)[] };
@@ -657,7 +648,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // It grants nothing, admits no act and reaches no act's handler: the holder reads it as claims and answers it by an act, judged as
     // ROLE_ACT judges every act, or declines it. `{ filed, request?, why? }`, refused as data (`not-offered` while the build does not offer
     // the steward, `form`, `not-role`, `desk-full`).
-    [DriverRoute("STEWARD_REQUEST")]
+    [DriverRoute("STEWARD_REQUEST", PipeClass.Open)]
     [Publishes("STEWARD_REQUEST", StateScopes.Driver)]
     private object? StewardRequest(IpcRequest request)
     {
@@ -670,7 +661,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // The steward's desk (STEWARDROLE1c, D209 §6.2), what its holder's `steward desk` prints, fenced, as the callers' claims: from the
     // judge's memory alone, newest first, never a caller's key. A read: `{ requests: [{ id, act, target, why, filed, state, closed,
     // answeredBy, reason }] }`, none while the build does not offer the steward.
-    [DriverRoute("STEWARD_DESK")]
+    [DriverRoute("STEWARD_DESK", PipeClass.Open)]
     private object? StewardDeskRead(IpcRequest request) => new
     {
         Requests = _loop.Pipe?.StandingConfirmation is { StewardOffered: true } judge ? judge.Desk.Now().Select(DeskRow).ToList() : new List<object>(),
@@ -693,7 +684,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // What a person first said in each of these sessions (RAIL1): a conversation's identity, from
     // this machine's own record — never the session record, which travels (D47 §4). Told by event (NOBLOCK1): each record's
     // read held the window up to 7.5 s, so an ask is answered from what is held and this runs on a task of its own.
-    [DriverRoute("SESSION_OPENINGS")]
+    [DriverRoute("SESSION_OPENINGS", PipeClass.Open)]
     [ByEvent("SESSION_OPENINGS", Untold = "a session's first words, which SESSION_EVENTS tells and no scope or slice does")]
     private async Task<object?> SessionOpeningsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -715,7 +706,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// chats included, with the declared and the changed paths that meet, or <c>not-read</c> where git cannot say (D137). Read-only;
     /// git's reads make it, and a tree's read is kept only for an ended clean one, so it is read again at each ask.
     /// </summary>
-    [DriverRoute("SESSION_RELATED")]
+    [DriverRoute("SESSION_RELATED", PipeClass.Open)]
     [ByEvent("SESSION_RELATED", Untold = "the sessions' working trees, which git reads at each ask (an uncommitted edit counts)")]
     private async Task<object?> SessionRelatedAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -732,7 +723,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// answers its turns, those whose door said what they consumed, and the four counts summed, a count none said null; an id
     /// with no turn is left out.
     /// </summary>
-    [DriverRoute("SESSION_SPENT")]
+    [DriverRoute("SESSION_SPENT", PipeClass.Open)]
     private object? SpentOf(IpcRequest request)
     {
         var spent = new Dictionary<string, SessionSpent>(StringComparer.Ordinal);
@@ -748,7 +739,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// The record of the finished tree a session ran in (KEEPSIZE1), for its page once its tree is let go: what the service kept of its
     /// landing, tip, recovery ref and commits, passed through as it answers. Null where none is kept.
     /// </summary>
-    [DriverRoute("SESSION_RECORD")]
+    [DriverRoute("SESSION_RECORD", PipeClass.Open)]
     [ByEvent("SESSION_RECORD", Untold = "the service's record of the finished tree, kept when the driver posts it")]
     private async Task<object?> SessionRecordAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -762,7 +753,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// A session's memory rows for its page (KNOWCENTRAL2e; the memory coordinator design §1, §4), passed through as the service answers
     /// them: its writes, ends and proposals with their states. None from a host with no door.
     /// </summary>
-    [DriverRoute("SESSION_MEMORY")]
+    [DriverRoute("SESSION_MEMORY", PipeClass.Open)]
     [ByEvent("SESSION_MEMORY", Untold = "the service's memory rows, which its applier and a quest's close move")]
     private async Task<object?> SessionMemoryAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -775,7 +766,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // KNOWCENTRAL2e (the design §1, §3, §4): the person's decision on a session's memory, an awaiting end approved or declined by its row
     // (`op`, `approve`), or the ended session's staged changes kept or dropped (`keep`). The service judges; a refusal is answered as data,
     // `refused` with its words.
-    [DriverRoute("SESSION_MEMORY_DECIDE")]
+    [DriverRoute("SESSION_MEMORY_DECIDE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_MEMORY_DECIDE", Session = "session")]
     [Publishes("SESSION_MEMORY_DECIDE", StateScopes.Sessions, Session = "session")]
     private async Task<object?> SessionMemoryDecideAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -805,7 +797,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// row held the window's thread up to 65.9 s, so an ask is answered from what is held and this runs on a task of its own; the
     /// record is read once per ask.</para>
     /// </remarks>
-    [DriverRoute("SESSION_WHERE")]
+    [DriverRoute("SESSION_WHERE", PipeClass.Open)]
     [ByEvent("SESSION_WHERE", Reads = StateScopes.Sessions | StateScopes.Landing | StateScopes.Sweep, Slices = new[] { SweepStateSlice.Name })]
     private async Task<object?> SessionWhereAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -865,23 +857,12 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Where each session is listed by state (SESSUX1a, D126 §2.4): its group, the word its row shows, and what its second
-    /// line says, in the order a list shows them, read by the driver library's one reader, which the terminal's
-    /// <c>sessions</c> prints too. With <c>ids</c>, those sessions' alone.
+    /// Where each session is listed by state: its group, its row's word and its second line, read by the driver library's one
+    /// reader, which the terminal's <c>sessions</c> prints too. No git at a window's tick: a tree is read as the machine's facts
+    /// judged it, so more windows never mean more git. Nothing machine-local comes back but a running call's title, the agent's
+    /// own words, transcript-class and answered over this bridge alone.
     /// </summary>
-    /// <remarks>
-    /// <para><b>From the records, the quests, the planner's verdicts, the trees and the marks</b>: the loop's last look where
-    /// it has looked, a plan over a fresh snapshot where it has not. Never from what a session printed.</para>
-    ///
-    /// <para><b>No git at a window's tick</b> (PUSH1c1, D182 point 4): an ended session's tree that could be to review is read as the
-    /// machine's facts judged it, a part per repository (<see cref="HelpFacts.WithTreesAsync"/>), so more windows never mean more git.
-    /// Only a tree no part judged yet is walked here, once the parts' first judgement was waited for.</para>
-    ///
-    /// <para><b>Nothing machine-local comes back</b>: ids, groups, words and counts. A tree's path stays here. The one
-    /// exception is a working session's running call (WAITSAY1b): its title is the agent's own words, which may name a file,
-    /// transcript-class as its conversation is (D47 §4) and answered over this bridge alone, as <c>SESSION_HISTORY</c> is.</para>
-    /// </remarks>
-    [DriverRoute("SESSION_GROUPS")]
+    [DriverRoute("SESSION_GROUPS", PipeClass.Open)]
     private async Task<object?> SessionGroupsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ids = Ids(request);
@@ -931,7 +912,8 @@ public sealed class SessionsRoutes(DriverContext context)
     /// <para><b>Unarchive needs no service</b>: it takes marks away, and one that was not archived is said, never refused
     /// (D48 §6).</para>
     /// </remarks>
-    [DriverRoute("SESSION_ARCHIVE")]
+    [DriverRoute("SESSION_ARCHIVE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_ARCHIVE", Sessions = "ids")]
     [Publishes("SESSION_ARCHIVE", StateScopes.Sessions)]
     private async Task<object?> SessionArchiveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -996,7 +978,8 @@ public sealed class SessionsRoutes(DriverContext context)
     /// go of (<c>stayed</c>, SESSDEL1, empty when everything went), never a path. <c>session.deleted</c> is written to the machine
     /// log with no word of it.</para>
     /// </remarks>
-    [DriverRoute("SESSION_DELETE")]
+    [DriverRoute("SESSION_DELETE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_DELETE", Session = "id")]
     [Publishes("SESSION_DELETE", StateScopes.Sessions | StateScopes.Help, Session = "id")]
     private async Task<object?> SessionDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1124,7 +1107,8 @@ public sealed class SessionsRoutes(DriverContext context)
     ///
     /// <para><b>Nothing machine-local comes back</b>: whether it opened, and nothing else.</para>
     /// </remarks>
-    [DriverRoute("SESSION_OPEN_FOLDER")]
+    [DriverRoute("SESSION_OPEN_FOLDER", PipeClass.Window)]
+    [Owner("SESSION_OPEN_FOLDER", None = OwnerNone.ActsOnNothing)]
     private async Task<object?> SessionOpenFolderAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -1196,7 +1180,7 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // What sessions said, searched (RAIL1): the person's words and the agent's, from this machine's
     // own record, bounded and saying so.
-    [DriverRoute("SESSION_SEARCH")]
+    [DriverRoute("SESSION_SEARCH", PipeClass.Open)]
     private async Task<object?> SessionSearchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var query = PayloadHelper.GetRequiredValue<string>(request.Payload, "q");

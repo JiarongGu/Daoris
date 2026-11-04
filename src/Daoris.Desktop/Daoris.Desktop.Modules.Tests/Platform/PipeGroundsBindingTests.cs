@@ -253,12 +253,12 @@ public sealed class PipeGroundsBindingTests
         var unsaid = PipeTargets.Daoris.Rows
             .Where(each => each.Value.Grounds.OfType<ReadGround>().Any(ground => ground.Kind == PipeGroundKind.Setting && ground.Sets is null))
             .Select(each => each.Key)
-            .Where(each => !PipeTargets.NotAlready.ContainsKey(each))
+            .Where(each => !PipeTargets.Daoris.NotAlready.ContainsKey(each))
             .Order(StringComparer.Ordinal)
             .ToList();
 
         Assert.Empty(unsaid);
-        Assert.All(PipeTargets.NotAlready, each => Assert.False(string.IsNullOrWhiteSpace(each.Value)));
-        Assert.All(PipeTargets.NotAlready.Keys, each => Assert.True(PipeTargets.Daoris.Rows.ContainsKey(each), each));
+        Assert.All(PipeTargets.Daoris.NotAlready, each => Assert.False(string.IsNullOrWhiteSpace(each.Value)));
+        Assert.All(PipeTargets.Daoris.NotAlready.Keys, each => Assert.True(PipeTargets.Daoris.Rows.ContainsKey(each), each));
     }
 }

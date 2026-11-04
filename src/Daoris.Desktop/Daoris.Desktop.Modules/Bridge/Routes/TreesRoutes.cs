@@ -28,37 +28,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// <summary>What a press at the second opinion's gate changes: every plan and gate, and the sessions whose reviewer it moved.</summary>
     private const StateScopes Gates = StateScopes.Sessions | StateScopes.Landing;
 
-    // What a session actually did (SURF6, design §5). The evidence string says that work
-    // happened; this says what it was. Desktop-only by construction, like the console: it is
-    // read off a checkout, and only the machine holding one can answer at all.
     /// <summary>
-    /// One session's landed work, as a diff (SURF6).
+    /// One session's work, as a diff read off its tree, and nothing written: the acts that change it are their own routes. Unreviewable
+    /// is information with its own sentence (no tree here, no range, a tree gone). A landed session reads as landed: once its tree
+    /// is gone, from the landed branch's refs and objects, never touching the person's checkout. One read per session, shared by the
+    /// session alone; <c>READ_LEAVE</c> or a window's end stops its caller, and the last to leave stops the read.
     /// </summary>
-    /// <remarks>
-    /// <para><b>Read-only, and that is the whole of this route.</b> It runs `git diff` in the tree the
-    /// record names and returns what git said. Nothing here writes, merges or removes anything — the
-    /// acts that do are the person's and are their own routes, so a surface that only shows the work
-    /// cannot accidentally change it.</para>
-    ///
-    /// <para><b>Unreviewable is INFORMATION, not a failure</b> (D48 §6's class): a record mirrored
-    /// from another machine names no tree here, a record made before the base commit was written has
-    /// no range, and a tree that has been discarded is gone. None of those is a fault, and each has a
-    /// different sentence, so the page can say which.</para>
-    ///
-    /// <para><b>A landed session reads as landed</b> (REVIEW2, D113). Where this machine's landing record holds
-    /// the session's landing, the answer says where its work landed — the branch, when, the pull request a
-    /// plugin opened — and where that branch stands now. The tree is read first while it is here, since it
-    /// holds what the session did and anything it did after its landing; once it is gone, the changes are
-    /// read from the landed branch in the repository's own checkout, from where its work grew from, and a
-    /// branch gone since is said with whether its work reads on the line. Every read there is of refs and
-    /// objects: the person's checkout is never touched.</para>
-    ///
-    /// <para><b>One read per session, stopped when nobody waits</b> (GITAPP1a-iii, D202, the git-app design P1.6). Shared by the
-    /// session alone (<see cref="OneFlightAttribute.By"/>), so two windows on one review start one read; each call's <c>read</c> id
-    /// waits under its window's bridge lifetime, and <c>READ_LEAVE</c> or the window's destruction stops that caller. The last to
-    /// leave stops the read under this token, and each git runner kills its process and awaits its exit before it returns.</para>
-    /// </remarks>
-    [DriverRoute("SESSION_DIFF")]
+    [DriverRoute("SESSION_DIFF", PipeClass.Open)]
     [OneFlight("SESSION_DIFF", By = "id")]
     private async Task<object?> DiffAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -87,7 +63,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// <c>SESSION_DIFF</c> carried. That call stops waiting, and its read stops only where no other window waits on it. Answers
     /// <c>{ left }</c>: false for an id already answered, or never asked, which changes nothing. A read that changes no state.
     /// </summary>
-    [DriverRoute("READ_LEAVE")]
+    [DriverRoute("READ_LEAVE", PipeClass.Window)]
+    [Owner("READ_LEAVE", None = OwnerNone.NamesNothing)]
     private object? LeaveRead(IpcRequest request) =>
         new { Left = _reads.Leave(PayloadHelper.GetRequiredValue<string>(request.Payload, "read")) };
 
@@ -104,7 +81,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// checkout, or whose record names no tree here, answers none, as its start told it none. The rules are as resolved now, which a
     /// press of Accept reads; a rule changed since the session's start was not told to it.
     /// </remarks>
-    [DriverRoute("SESSION_PROCESS")]
+    [DriverRoute("SESSION_PROCESS", PipeClass.Open)]
     private async Task<object?> ProcessAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -280,7 +257,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// for. One code for both, because the person's next move is the same — type the path, which both
     /// doors expand as typed (`docs/2026-09-25-message-content-evidence.md`).
     /// </remarks>
-    [DriverRoute("SESSION_FILES")]
+    [DriverRoute("SESSION_FILES", PipeClass.Open)]
     private async Task<object?> FilesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -321,7 +298,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// The answer names the branch, so the page says the file is as that branch holds it. The no-tree answer is
     /// left for a session with neither its tree nor the landing's branch here.</para>
     /// </remarks>
-    [DriverRoute("SESSION_FILE")]
+    [DriverRoute("SESSION_FILE", PipeClass.Open)]
     private async Task<object?> FileAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -436,7 +413,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// refusal that names what would be lost, so the page asks, shows that sentence, and only then
     /// sends `force`. Destroying work is never a side effect of tidying (D51 rule 7).</para>
     /// </remarks>
-    [DriverRoute("DISCARD_SESSION_TREE")]
+    [DriverRoute("DISCARD_SESSION_TREE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("DISCARD_SESSION_TREE", Session = "id")]
     [Publishes("DISCARD_SESSION_TREE", Discards, Session = "id")]
     private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -492,8 +470,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// session and what the person first said — this machine's own record, never the session record's.
     /// A refusal is an answer, as the merge door's are.
     /// </remarks>
-    [DriverRoute("LANDING")]
-    [DriverRoute("LAND_SESSION_TREE")]
+    [DriverRoute("LANDING", PipeClass.Open)]
+    [DriverRoute("LAND_SESSION_TREE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("LAND_SESSION_TREE", Session = "id")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
     private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -933,11 +912,15 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// Never Ask Daoris's (§9, D110): asking spends an account at the person's choice, and going on, or reading it themselves, is a
     /// judgement no agent has made. Each answers the gate as it then stands, in <see cref="Opinion"/>'s shape.
     /// </remarks>
-    [DriverRoute("OPINION_GATE")]
-    [DriverRoute("ASK_OPINION")]
-    [DriverRoute("OPINION_ANYWAY")]
-    [DriverRoute("OPINION_MYSELF")]
-    [DriverRoute("STOP_OPINION")]
+    [DriverRoute("OPINION_GATE", PipeClass.Open)]
+    [DriverRoute("ASK_OPINION", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [DriverRoute("OPINION_ANYWAY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [DriverRoute("OPINION_MYSELF", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [DriverRoute("STOP_OPINION", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("ASK_OPINION", Session = "id")]
+    [Owner("OPINION_ANYWAY", Session = "id")]
+    [Owner("OPINION_MYSELF", Session = "id")]
+    [Owner("STOP_OPINION", Session = "id")]
     [Publishes("ASK_OPINION", Gates, Session = "id")]
     [Publishes("OPINION_ANYWAY", Gates, Session = "id")]
     [Publishes("OPINION_MYSELF", Gates, Session = "id")]
@@ -1077,7 +1060,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// is as of that look, at most <see cref="DriverConfig.PollSeconds"/> old; a person's press nudges the loop, so it is not left
     /// waiting a whole poll, and the tick the loop forwards when what waits changes has the page ask again.</para>
     /// </remarks>
-    [DriverRoute("OPINION_WAITS")]
+    [DriverRoute("OPINION_WAITS", PipeClass.Open)]
     private Task<object?> OpinionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         _ = _loop.Service ?? throw NotReady();
@@ -1131,8 +1114,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// A refusal is an answer, as a landing's is. The checkout is the registry's, since the tree may have been
     /// tidied away; a repository with no checkout here is answered in the same sentence form.
     /// </remarks>
-    [DriverRoute("HANDOFF_PLAN")]
-    [DriverRoute("HANDOFF")]
+    [DriverRoute("HANDOFF_PLAN", PipeClass.Open)]
+    [DriverRoute("HANDOFF", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HANDOFF", Session = "id")]
     [Publishes("HANDOFF", StateScopes.HandOff | StateScopes.Sweep, Session = "id")]
     private async Task<object?> HandOffAsync(IpcRequest request, CancellationToken cancellationToken)
     {

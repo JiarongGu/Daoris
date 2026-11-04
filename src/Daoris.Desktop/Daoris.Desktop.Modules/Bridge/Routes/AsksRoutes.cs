@@ -26,7 +26,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// An ask's channel as the person reads it, moving no mark: every item in time order, how many are past the mark, and the
     /// mark. <c>entry</c> reads as that entry would, and <c>since</c> only the items after a moment.
     /// </summary>
-    [DriverRoute("CHANNEL_READ")]
+    [DriverRoute("CHANNEL_READ", PipeClass.Open)]
     private async Task<object?> ChannelReadAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ask = Asked(request);
@@ -41,7 +41,8 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// or not. Their words, so every session on the ask reads them (D167 point 7). Answers <c>posted</c> with the message kept, or
     /// the service's code where it refused. The channel sits under the asks' key, which it declares (STATEHUB1h, D169).
     /// </summary>
-    [DriverRoute("CHANNEL_POST")]
+    [DriverRoute("CHANNEL_POST", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("CHANNEL_POST", Ask = "ask")]
     [Publishes("CHANNEL_POST", StateScopes.Asks)]
     private async Task<object?> ChannelPostAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -64,7 +65,8 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// moves back. Answers the channel as it then reads, and declares the asks (STATEHUB1h, D169): every window's unread count
     /// falls with it.
     /// </summary>
-    [DriverRoute("CHANNEL_MARK")]
+    [DriverRoute("CHANNEL_MARK", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("CHANNEL_MARK", None = OwnerNone.ActsOnNothing)]
     [Publishes("CHANNEL_MARK", StateScopes.Asks)]
     private async Task<object?> ChannelMarkAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -82,7 +84,8 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// session, or the code that says why not (<c>no-part</c>, <c>gone</c>, <c>held</c>, or the say door's own). It moves the asks' key,
     /// whose channel's receipts change with it.
     /// </summary>
-    [DriverRoute("CHANNEL_FORWARD")]
+    [DriverRoute("CHANNEL_FORWARD", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("CHANNEL_FORWARD", Ask = "ask")]
     [Publishes("CHANNEL_FORWARD", StateScopes.Asks)]
     private async Task<object?> ChannelForwardAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -101,7 +104,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// The asks the mirrored channel messages name that this machine does not hold (SESSONE2h): the Asks list's <i>Teammates' asks</i>.
     /// Each is read at <c>CHANNEL_READ</c> by its id; the service holds no record of it, so it has no title.
     /// </summary>
-    [DriverRoute("ASKS_ELSEWHERE")]
+    [DriverRoute("ASKS_ELSEWHERE", PipeClass.Open)]
     private async Task<object?> AsksElsewhereAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();

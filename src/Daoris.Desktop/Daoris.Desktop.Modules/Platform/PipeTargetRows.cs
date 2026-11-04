@@ -19,42 +19,6 @@ internal static class PipeTargetRows
 {
     private static readonly TimeSpan Page = PipeGround.PageBound;
 
-    /// <summary>
-    /// The routes whose <c>setting</c> ground names no value it sets, so they are never <c>already</c>, each with why (the confirm-wait
-    /// design §15.3 item 12): an edit merged into a rule, an act beside the value, a list edited in place, or a key.
-    /// </summary>
-    public static readonly IReadOnlyDictionary<string, string> NotAlready = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["SET_LANDING"] = "merges into the repository's landing rule",
-        ["SET_REVIEW"] = "merges into the repository's review rule",
-        ["SET_OPINION"] = "merges into the repository's opinion rule",
-        ["SET_HELPERS"] = "merges into the repository's helpers rule",
-        ["SET_HAND_OVER"] = "merges into the repository's hand-over rule",
-        ["SET_COMMITS"] = "merges into the repository's commits rule",
-        ["SET_ACCESS"] = "merges into the repository's access rule",
-        ["SET_GIT_ACCESS"] = "merges into the repository's git access",
-        ["SET_READ_ACROSS"] = "merges into the repository's reading across",
-        ["SET_WRITE_ACROSS"] = "adds or removes one repository of the list it writes to",
-        ["RULE_ACTION"] = "edits a rule list in place",
-        ["SET_KEEP"] = "merges into a kind's keeping rule",
-        ["SET_AGENT_SETTINGS"] = "merges into a profile's settings",
-        ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
-        ["SET_ROLES"] = "edits several roles' rows of the catalogue in place, each revision moving, in one transaction",
-        ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
-        ["WORKFLOW_USE"] = "merges into the place's choice, which keeps its other kinds and its landed route",
-        ["WORKFLOW_KIND"] = "merges into the workspace's kinds, keeping the others",
-        ["WORKFLOW_SAVE"] = "adds a version beside the ones kept, or makes a workflow",
-        ["WORKFLOW_VERIFY"] = "starts a run of the accepted gates beside the route, and sets no value",
-        ["INTEGRATION_GATES"] = "reads the declaration at the line's tip and accepts it by its blob",
-        ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
-        ["TOOLS_LOCATION"] = "edits the list of locations in place",
-        ["GIT_IDENTITY"] = "adds, tests, changes or removes one identity of the machine's set, which holds the secret apart",
-        ["GIT_USE"] = "writes one pointer into the choices of a repository's remote, a workspace's host or the machine's host",
-        ["ACCOUNT_USE"] = "signs in or out of an account",
-        ["DAORIS.REMOTES.SET"] = "carries a key the read redacts",
-        ["DAORIS.REMOTES.REMOVE"] = "removes a workspace's wiring and its key",
-    };
-
     public static Dictionary<string, PipeGroundRow> All()
     {
         var rows = new Dictionary<string, PipeGroundRow>(StringComparer.Ordinal);

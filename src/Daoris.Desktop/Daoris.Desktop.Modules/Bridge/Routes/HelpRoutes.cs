@@ -30,20 +30,12 @@ public sealed class HelpRoutes(DriverContext context)
     // are built (PART10e).
     private string OffersFolder => _context.OffersFolder;
 
-    // Ask Daoris's conversation (HELP1a, D89): the one this machine is running in the press's workspace, carried on — one per
-    // workspace (ASKSCOPE1a) — or a new one in its room, written from the machine as the driver holds it now.
-    //
-    // HELPSTART1 (D89's note): answered once the conversation is placed, its record open, with `starting`; the room is read and
-    // its agent spawned after, off the request, its end told as the conversation's events. On a loaded machine the room's
-    // session look alone took 24.9 s, and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to
-    // the next press in its workspace. Its record opens, so it declares the sessions (STATEHUB1h, D169); the history lists it
-    // once it is spoken in.
-    //
-    // ASKSCOPE1a (D158's ASKSCOPE1 note, points 1-3): `workspace`, the one the person's window is on, is read here at the press
-    // and carried to the record, so a window that changes workspace while it starts moves nothing; every answer names it, so a
-    // late one is known for the workspace it was asked in. None is `default`'s, as before. A name this machine does not hold is
-    // refused before anything is opened.
-    [DriverRoute("START_HELP")]
+    // Ask Daoris's conversation, one per workspace: the one running in the press's workspace, carried on, or a new one in its room.
+    // Answered once the conversation is placed, with `starting`, its agent spawned after, off the request, since on a loaded
+    // machine the room's look alone took 24.9 s and the page stops waiting at 30. `workspace` is read at the press and carried to
+    // the record, so a window that changes workspace while it starts moves nothing; a name this machine does not hold is refused.
+    [DriverRoute("START_HELP", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("START_HELP", None = OwnerNone.OwnConversation)]
     [Publishes("START_HELP", StateScopes.Sessions)]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -401,7 +393,7 @@ public sealed class HelpRoutes(DriverContext context)
     // person, each judged with the route's own code first. One the route would refuse is never
     // shown: it is settled refused, and the agent hears why in the route's words. Told by event (NOBLOCK1): its pending list and
     // the service's facts held the window up to 1.3 s, so an ask is answered from what is held and this runs on a task of its own.
-    [DriverRoute("HELP_PROPOSALS")]
+    [DriverRoute("HELP_PROPOSALS", PipeClass.Open)]
     [ByEvent("HELP_PROPOSALS", Untold = "each proposal judged against the checkouts' git and the service's records, which no scope tells")]
     private async Task<object?> HelpProposalsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -507,7 +499,8 @@ public sealed class HelpRoutes(DriverContext context)
     // their routes, so it declares every family a door it holds may move (STATEHUB1h, D169): the driver's file and what reads
     // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
     // a repository moved, finished history cleared, and the proposal itself.
-    [DriverRoute("HELP_APPLY")]
+    [DriverRoute("HELP_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HELP_APPLY", ByPlan = true)]
     [Publishes("HELP_APPLY", Applies)]
     private async Task<object?> HelpApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -595,7 +588,8 @@ public sealed class HelpRoutes(DriverContext context)
 
     // The person's Not now: nothing changes but the proposal, and the agent is told so. A go's Dismiss (ASKDISMISS1) takes its card
     // away and is told to nobody: a go changes nothing, so its dismiss is no word on the quest or ask it names.
-    [DriverRoute("HELP_DISMISS")]
+    [DriverRoute("HELP_DISMISS", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HELP_DISMISS", None = OwnerNone.ActsOnNothing)]
     [Publishes("HELP_DISMISS", StateScopes.Help)]
     private async Task<object?> HelpDismissAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1189,7 +1183,7 @@ public sealed class HelpRoutes(DriverContext context)
     // service answered, as `HelpPublished` keeps them beside its other files. The page reads each one's state from the pushed quests,
     // asks and sessions. A read of this machine's home, off the window's thread (UIFREEZE1): it declares nothing, and its key is under
     // `help`, which an Apply publishes. Desktop-only, as the conversation is.
-    [DriverRoute("HELP_PUBLISHED")]
+    [DriverRoute("HELP_PUBLISHED", PipeClass.Open)]
     private Task<object?> HelpPublishedAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -1215,7 +1209,7 @@ public sealed class HelpRoutes(DriverContext context)
     // before the page is taken, and the answer says how many there are and where the next page starts. `workspace` is the
     // terminal's `--workspace` (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6): that workspace's conversations, searched and counted
     // before the page; none named is every workspace's, as the list was and as `--all` says, each row naming its own.
-    [DriverRoute("HELP_CONVERSATIONS")]
+    [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
     private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         // RPC1e: `help list` in the verb's words, `--json` its own answer.
@@ -1264,7 +1258,7 @@ public sealed class HelpRoutes(DriverContext context)
     // newest first, as the start kept it (`HelpWired`): `{ session, recorded, receipts }`, a conversation from before answering
     // `recorded: false`. Read from the home alone, off the window's thread (UIFREEZE1), answered as the file's own JSON so a null is
     // kept. A read: it declares nothing. Desktop-only: its folders are this machine's, and no shared host or feed carries it.
-    [DriverRoute("HELP_WIRED")]
+    [DriverRoute("HELP_WIRED", PipeClass.Open)]
     private Task<object?> HelpWiredAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -1274,7 +1268,8 @@ public sealed class HelpRoutes(DriverContext context)
 
     // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again. A history act
     // declares the history and the conversations the panel shows (STATEHUB1h, D169), as pinning and starting from one do.
-    [DriverRoute("HELP_RENAME")]
+    [DriverRoute("HELP_RENAME", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("HELP_RENAME", Session = "id")]
     [Publishes("HELP_RENAME", Kept, Session = "id")]
     private async Task<object?> HelpRenameAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1294,7 +1289,8 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     // Pin an Ask Daoris conversation to the top of its history, or unpin it.
-    [DriverRoute("HELP_PIN")]
+    [DriverRoute("HELP_PIN", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("HELP_PIN", Session = "id")]
     [Publishes("HELP_PIN", Kept, Session = "id")]
     private async Task<object?> HelpPinAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1318,7 +1314,8 @@ public sealed class HelpRoutes(DriverContext context)
     // A new Ask Daoris conversation from an earlier one (ASKHIST1): opened as START_HELP opens one, on the helper's agent, its
     // workspace's running conversation set aside first, and Daoris's brief of the earlier line handed with the person's first
     // words (D233). Its end reaches the page as a start's does.
-    [DriverRoute("HELP_START_FROM")]
+    [DriverRoute("HELP_START_FROM", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HELP_START_FROM", Session = "id")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
     private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
     {

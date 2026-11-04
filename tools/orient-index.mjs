@@ -780,7 +780,7 @@ function moduleHandlers(ctx) {
     const lines = ctx.lines(file);
     if (/^[A-Z][A-Za-z]*Routes\.cs$/.test(file.slice(file.lastIndexOf('/') + 1))) {
       lines.forEach((line, i) => {
-        const mark = /\[DriverRoute\("([A-Z][A-Z_]*)"\)\]/.exec(line);
+        const mark = /\[DriverRoute\("([A-Z][A-Z_]*)"[,)]/.exec(line);
         if (!mark) return;
         let j = i + 1;
         while (j < lines.length && /^\s*\[/.test(lines[j])) j += 1;

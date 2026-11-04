@@ -34,7 +34,7 @@ public sealed class WorkRoutes(DriverContext context)
     /// and last abandon here (design §1, §2.1, §3.2, §4.2). The abandon's half is the first press: <c>abandon.pieces</c> is
     /// what the second press sends back.
     /// </summary>
-    [DriverRoute("WORK_PLAN")]
+    [DriverRoute("WORK_PLAN", PipeClass.Open)]
     private async Task<object?> WorkPlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
@@ -125,7 +125,8 @@ public sealed class WorkRoutes(DriverContext context)
     /// What went, what stayed, how many changed since the list and each shared decline's answer come back as facts and words
     /// from fixed lists; an abandon with nothing listed is said, never refused (D48 §6).
     /// </summary>
-    [DriverRoute("WORK_ABANDON")]
+    [DriverRoute("WORK_ABANDON", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORK_ABANDON", Ask = "ask", Quest = "quest")]
     [Publishes("WORK_ABANDON", Moves)]
     private async Task<object?> WorkAbandonAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -214,7 +215,8 @@ public sealed class WorkRoutes(DriverContext context)
     /// until *Resume*. What it stopped and what it could not reach come back; a pause with nothing to hold is said, never
     /// refused (D48 §6).
     /// </summary>
-    [DriverRoute("WORK_PAUSE")]
+    [DriverRoute("WORK_PAUSE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("WORK_PAUSE", Ask = "ask", Quest = "quest")]
     [Publishes("WORK_PAUSE", Moves)]
     private async Task<object?> WorkPauseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -238,7 +240,8 @@ public sealed class WorkRoutes(DriverContext context)
     /// Resume the work (design §2.4): the pause gone, each stop it made released, and what still holds each quest named by the
     /// planner's verdict. A resume of what is not paused is said, never refused (D48 §6).
     /// </summary>
-    [DriverRoute("WORK_RESUME")]
+    [DriverRoute("WORK_RESUME", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORK_RESUME", Ask = "ask", Quest = "quest")]
     [Publishes("WORK_RESUME", Moves)]
     private async Task<object?> WorkResumeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
