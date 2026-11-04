@@ -2,23 +2,25 @@ using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 using static Daoris.Desktop.DriverArguments;
+using static Daoris.Desktop.GitAnswers;
 
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Git's reads and acts, the page's `bridge/git.ts`, for Repositories' Branches, History and Changes tabs: each the driver's own,
-/// through the git the agents run.
+/// Git's reads and the working-tree acts, the page's `bridge/git.ts`, for Repositories' Branches, History and Changes tabs: each the
+/// driver's own, through the git the agents run. The ref acts' doors are here and their bodies <see cref="GitRefDesk"/>'s.
 /// </summary>
-public sealed class GitRoutes(DriverLoop loop)
+public sealed class GitRoutes(DriverContext context)
 {
-    private readonly DriverLoop _loop = loop;
+    private readonly DriverLoop _loop = context.Loop;
 
     // One reader for the module's life, so its answers, kept by whole commit ids (D147 §4.2), outlive a call: a page asking the
     // same commit twice starts no second git.
     private readonly GitReads _gitReads = new();
 
-    // The acts this module runs, journaled in the home's store; one object, so a run's reconciler knows its own acts.
-    private readonly ActRuns _acts = new(new ActJournal(loop.Home));
+    private readonly ActRuns _acts = context.GitActs;
+
+    private readonly GitRefDesk _refs = new(context);
 
     // The list, read as the terminal's `git branches` reads it. 🔴 No machine path leaves: a branch's tree by its folder's name,
     // and a sentence that named a root names the repository.
@@ -343,28 +345,7 @@ public sealed class GitRoutes(DriverLoop loop)
     [GroundRepository("GIT_REF_CREATE", "repository", "workspace")]
     [Says("GIT_REF_CREATE", "repository:repository", "name:words")]
     [Publishes("GIT_REF_CREATE", StateScopes.Driver)]
-    private async Task<object?> GitRefCreateAsync(GitRefAct act, CancellationToken cancellationToken)
-    {
-        var repository = act.Repository ?? throw new DriverException("a ref act names its repository.");
-        var kind = act.Kind;
-        var name = act.Name;
-        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name)) throw new DriverException("a create names its kind, `branch` or `tag`, and its name.");
-        _ = _loop.Service ?? throw NotReady();
-
-        var verb = new GitRefVerb(kind, repository, name, act.At, Yes: true);
-        var world = new GitRefWorld(async (_, token) => await CheckoutOfAsync(repository, act.Workspace, token).ConfigureAwait(false), () => _acts);
-        if (act.Said)
-        {
-            var writer = new StringWriter { NewLine = "\n" };
-            var code = await GitRefCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
-            var lines = writer.ToString().Split('\n');
-            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
-        }
-
-        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
-        var run = await GitRefActs.CreateAsync(_acts, new RefAsk(repository, checkout, kind, name, verb.At), "window", "window", cancellationToken).ConfigureAwait(false);
-        return Answered(run, checkout, repository);
-    }
+    private Task<object?> GitRefCreateAsync(GitRefAct act, CancellationToken cancellationToken) => _refs.GitRefCreateAsync(act, cancellationToken);
 
     // *Delete* on a branch or a lightweight tag, at `at`, the commit the page showed: refused where the ref stands elsewhere, and for
     // the held branches, an annotated tag and an occupied branch.
@@ -373,31 +354,7 @@ public sealed class GitRoutes(DriverLoop loop)
     [GroundRepository("GIT_REF_DELETE", "repository", "workspace")]
     [Says("GIT_REF_DELETE", "repository:repository", "name:words")]
     [Publishes("GIT_REF_DELETE", StateScopes.Driver)]
-    private async Task<object?> GitRefDeleteAsync(GitRefAct act, CancellationToken cancellationToken)
-    {
-        var repository = act.Repository ?? throw new DriverException("a ref act names its repository.");
-        var kind = act.Kind;
-        var name = act.Name;
-        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name)) throw new DriverException("a delete names its kind, `branch` or `tag`, and its name.");
-        _ = _loop.Service ?? throw NotReady();
-
-        var verb = new GitRefVerb(kind, repository, name, act.At, Yes: true, Delete: true);
-        var world = new GitRefWorld(
-            async (_, token) => await CheckoutOfAsync(repository, act.Workspace, token).ConfigureAwait(false), () => _acts,
-            async (_, checkout, token) => (await CanonicalLine.ResolveAsync(checkout, repository, act.Workspace, DriverConfig.Load(_loop.ConfigPath), token).ConfigureAwait(false)).Branch);
-        if (act.Said)
-        {
-            var writer = new StringWriter { NewLine = "\n" };
-            var code = await GitRefCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
-            var lines = writer.ToString().Split('\n');
-            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
-        }
-
-        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
-        var line = await world.LineOf!(repository, checkout, cancellationToken).ConfigureAwait(false);
-        var run = await GitRefActs.DeleteAsync(_acts, new RefDeleteAsk(repository, checkout, kind, name, verb.At, line), "window", "window", cancellationToken).ConfigureAwait(false);
-        return Answered(run, checkout, repository);
-    }
+    private Task<object?> GitRefDeleteAsync(GitRefAct act, CancellationToken cancellationToken) => _refs.GitRefDeleteAsync(act, cancellationToken);
 
     // *Rename* on a branch or a lightweight tag, then its section under config.lock. An outcome `partial` stopped between the two:
     // the page offers GIT_REF_FINISH and GIT_REF_UNDO.
@@ -406,68 +363,7 @@ public sealed class GitRoutes(DriverLoop loop)
     [GroundRepository("GIT_REF_RENAME", "repository", "workspace")]
     [Says("GIT_REF_RENAME", "repository:repository", "name:words", "to:words")]
     [Publishes("GIT_REF_RENAME", StateScopes.Driver)]
-    private async Task<object?> GitRefRenameAsync(GitRefRenameAct act, CancellationToken cancellationToken)
-    {
-        var repository = act.Repository ?? throw new DriverException("a ref act names its repository.");
-        var kind = act.Kind;
-        var name = act.Name;
-        var to = act.To;
-        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(to)) throw new DriverException("a rename names its kind, `branch` or `tag`, its name and the name it takes.");
-        _ = _loop.Service ?? throw NotReady();
-
-        var verb = new GitRefVerb(kind, repository, name, act.At, Yes: true, RenameTo: to);
-        var world = new GitRefWorld(
-            async (_, token) => await CheckoutOfAsync(repository, act.Workspace, token).ConfigureAwait(false), () => _acts,
-            async (_, checkout, token) => (await CanonicalLine.ResolveAsync(checkout, repository, act.Workspace, DriverConfig.Load(_loop.ConfigPath), token).ConfigureAwait(false)).Branch);
-        if (act.Said)
-        {
-            var writer = new StringWriter { NewLine = "\n" };
-            var code = await GitRefCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
-            var lines = writer.ToString().Split('\n');
-            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
-        }
-
-        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
-        var line = await world.LineOf!(repository, checkout, cancellationToken).ConfigureAwait(false);
-        var run = await GitRefActs.RenameAsync(_acts, new RefRenameAsk(repository, checkout, kind, name, to, verb.At, line), "window", "window", cancellationToken).ConfigureAwait(false);
-        return Answered(run, checkout, repository);
-    }
-
-    // Whether *Fetch* is offered on a repository's Branches, and the command a person types. Told by event: it starts git, no network.
-    [DriverRoute("GIT_FETCH_PLAN", PipeClass.Open)]
-    [ByEvent("GIT_FETCH_PLAN", Untold = "the checkout's origin settings and the install's doors, which no scope tells")]
-    private async Task<object?> GitFetchPlanAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
-        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) => GitFetchActs.PlanReadAsync(_loop.Home, root, token));
-
-    // *Fetch* of origin's branches, one `fetch` step that moves refs/remotes/origin/* alone; a terminal's verb asks it for its words.
-    [DriverRoute("GIT_FETCH", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("GIT_FETCH", Repository = "repository", Workspace = "workspace")]
-    [GroundRepository("GIT_FETCH", "repository", "workspace")]
-    [Says("GIT_FETCH", "repository:repository")]
-    [Publishes("GIT_FETCH", StateScopes.Driver)]
-    private async Task<object?> GitFetchAsync(GitFetchAct act, CancellationToken cancellationToken)
-    {
-        var repository = act.Repository ?? throw new DriverException("a fetch names its repository.");
-        _ = _loop.Service ?? throw NotReady();
-
-        var verb = new GitFetchVerb(repository, Yes: true);
-        var world = new GitRefWorld(async (_, token) => await CheckoutOfAsync(repository, act.Workspace, token).ConfigureAwait(false), () => _acts);
-        if (act.Said)
-        {
-            var writer = new StringWriter { NewLine = "\n" };
-            var code = await GitFetchCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
-            var lines = writer.ToString().Split('\n');
-            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
-        }
-
-        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
-        var run = await GitFetchActs.FetchAsync(_acts, new FetchAsk(repository, checkout, act.Workspace), "window", "window", cancellationToken).ConfigureAwait(false);
-        return new
-        {
-            run.Act, run.Outcome, run.Refused, Said = WithoutRoots(run.Said, [checkout], repository) ?? "",
-            Notes = run.Notes is null ? null : WithoutRoots(run.Notes, [checkout], repository),
-        };
-    }
+    private Task<object?> GitRefRenameAsync(GitRefRenameAct act, CancellationToken cancellationToken) => _refs.GitRefRenameAsync(act, cancellationToken);
 
     // GITAPP2e: the Finish beside a stopped rename's answer, the section moved alone where the ref and the section stand as the act journaled them.
     [DriverRoute("GIT_REF_FINISH", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -475,15 +371,7 @@ public sealed class GitRoutes(DriverLoop loop)
     [GroundRepository("GIT_REF_FINISH", "repository", "workspace")]
     [Says("GIT_REF_FINISH", "repository:repository")]
     [Publishes("GIT_REF_FINISH", StateScopes.Driver)]
-    private async Task<object?> GitRefFinishAsync(GitActTarget target, CancellationToken cancellationToken)
-    {
-        var repository = target.Repository ?? throw new DriverException("a ref act names its repository.");
-        var act = target.Act ?? throw new DriverException("a finish names the act it finishes.");
-        _ = _loop.Service ?? throw NotReady();
-        if (await CheckoutOfAsync(repository, target.Workspace, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
-        var run = await GitRefActs.FinishAsync(_acts, repository, checkout, act, "window", "window", cancellationToken).ConfigureAwait(false);
-        return Answered(run, checkout, repository);
-    }
+    private Task<object?> GitRefFinishAsync(GitActTarget target, CancellationToken cancellationToken) => _refs.GitRefFinishAsync(target, cancellationToken);
 
     // GITAPP2c: the Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
     // GITAPP2d: and beside a delete's, the ref made again where the name is free and its section put back.
@@ -492,15 +380,20 @@ public sealed class GitRoutes(DriverLoop loop)
     [GroundRepository("GIT_REF_UNDO", "repository", "workspace")]
     [Says("GIT_REF_UNDO", "repository:repository")]
     [Publishes("GIT_REF_UNDO", StateScopes.Driver)]
-    private async Task<object?> GitRefUndoAsync(GitActTarget target, CancellationToken cancellationToken)
-    {
-        var repository = target.Repository ?? throw new DriverException("a ref act names its repository.");
-        var act = target.Act ?? throw new DriverException("an undo names the act it undoes.");
-        _ = _loop.Service ?? throw NotReady();
-        if (await CheckoutOfAsync(repository, target.Workspace, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
-        var run = await GitRefActs.UndoAsync(_acts, repository, checkout, act, "window", "window", cancellationToken).ConfigureAwait(false);
-        return Answered(run, checkout, repository);
-    }
+    private Task<object?> GitRefUndoAsync(GitActTarget target, CancellationToken cancellationToken) => _refs.GitRefUndoAsync(target, cancellationToken);
+
+    // Whether *Fetch* is offered on a repository's Branches, and the command a person types. Told by event: it starts git, no network.
+    [DriverRoute("GIT_FETCH_PLAN", PipeClass.Open)]
+    [ByEvent("GIT_FETCH_PLAN", Untold = "the checkout's origin settings and the install's doors, which no scope tells")]
+    private Task<object?> GitFetchPlanAsync(GitCheckoutRead read, CancellationToken cancellationToken) => _refs.GitFetchPlanAsync(read, cancellationToken);
+
+    // *Fetch* of origin's branches, one `fetch` step that moves refs/remotes/origin/* alone; a terminal's verb asks it for its words.
+    [DriverRoute("GIT_FETCH", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_FETCH", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_FETCH", "repository", "workspace")]
+    [Says("GIT_FETCH", "repository:repository")]
+    [Publishes("GIT_FETCH", StateScopes.Driver)]
+    private Task<object?> GitFetchAsync(GitFetchAct act, CancellationToken cancellationToken) => _refs.GitFetchAsync(act, cancellationToken);
 
     // A branch's history edited from objects, through the journal. `plan: true` answers what the edit would take and changes nothing;
     // the press carries the ids its plan pinned (`pins`) and is refused as data where any moved.
@@ -510,145 +403,11 @@ public sealed class GitRoutes(DriverLoop loop)
     [GroundRepository("GIT_HISTORY_EDIT", "repository", "workspace")]
     [Says("GIT_HISTORY_EDIT", "repository:repository", "branch:words")]
     [Publishes("GIT_HISTORY_EDIT", StateScopes.Driver)]
-    private async Task<object?> GitHistoryEditAsync(GitHistoryEditAct act, CancellationToken cancellationToken)
-    {
-        var repository = act.Repository ?? throw new DriverException("a history edit names its repository.");
-        var (edit, branch, target) = (act.Edit, act.Branch, act.Target);
-        if (edit is not (GitHistoryEdits.Pick or GitHistoryEdits.Revert or GitHistoryEdits.Rebase) || string.IsNullOrWhiteSpace(branch) || string.IsNullOrWhiteSpace(target))
-        {
-            throw new DriverException("a history edit names its edit (`pick`, `revert` or `rebase`), its branch and its target.");
-        }
+    private Task<object?> GitHistoryEditAsync(GitHistoryEditAct act, CancellationToken cancellationToken) => _refs.GitHistoryEditAsync(act, cancellationToken);
 
-        // The pipe opens `plan: true` as a look; a payload saying `said` beside it would run as the press, so it is refused.
-        if (act.Plan && act.Said) throw new DriverException("a history edit's plan and its words are asked apart.");
-        _ = _loop.Service ?? throw NotReady();
-        var workspace = act.Workspace;
-        var world = new GitHistoryWorld(
-            async (_, token) => await CheckoutOfAsync(repository, workspace, token).ConfigureAwait(false),
-            async (_, root, token) => (await CanonicalLine.ResolveAsync(root, repository, workspace, DriverConfig.Load(_loop.ConfigPath), token).ConfigureAwait(false)).Branch,
-            () => _acts, _loop.Home);
-        var pins = PinsOf(act.Pins);
-        if (act.Said)
-        {
-            var writer = new StringWriter { NewLine = "\n" };
-            var code = await GitHistoryCommand.ExecuteAsync(new GitHistoryVerb(edit, repository, branch, target, Yes: true), pins, world, "terminal", "window", writer, writer, cancellationToken)
-                .ConfigureAwait(false);
-            var lines = writer.ToString().Split('\n');
-            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
-        }
-
-        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
-        var ask = new HistoryEditAsk(_loop.Home, repository, checkout, edit, branch, target)
-        {
-            Line = await world.LineOf(repository, checkout, cancellationToken).ConfigureAwait(false), Pins = pins,
-        };
-        if (act.Plan)
-        {
-            var (plan, refusal) = await GitHistoryEdits.PlanAsync(ask, cancellationToken).ConfigureAwait(false);
-            return plan is null
-                ? new { Refused = true, Said = WithoutRoots(refusal, [checkout], repository) ?? "" }
-                : new
-                {
-                    Refused = false, Said = "",
-                    Plan = new { plan.Edit, plan.Branch, plan.Tip, plan.Onto, Commits = plan.Commits.Select(each => new { each.Id, each.Subject }), plan.Commands },
-                };
-        }
-
-        var run = await GitHistoryEdits.EditAsync(_acts, ask, "window", "window", cancellationToken).ConfigureAwait(false);
-        return new { run.Run.Act, run.Run.Outcome, run.Run.Refused, Said = WithoutRoots(run.Run.Said, [checkout], repository) ?? "", run.Tip, run.Kept };
-    }
-
-    /// <summary>The ids a shown plan pinned, as the page or the verb sends them back; null where none was sent.</summary>
-    private static HistoryEditPins? PinsOf(JsonElement? sent) =>
-        sent is { } pins && pins.ValueKind == JsonValueKind.Object
-        && pins.TryGetProperty("tip", out var tip) && tip.ValueKind == JsonValueKind.String
-        && pins.TryGetProperty("onto", out var onto) && onto.ValueKind == JsonValueKind.String
-        && pins.TryGetProperty("commits", out var commits) && commits.ValueKind == JsonValueKind.Array
-            ? new HistoryEditPins(tip.GetString()!, onto.GetString()!, [.. commits.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)])
-            : null;
-
-    private static object NoCheckout(string repository) => new
-    {
-        Refused = true, Code = Refusals.GitNoCheckout, Said = $"{repository} has no checkout on this machine, so nothing was changed.",
-    };
-
-    /// <summary>An act's run as the page reads it: the record, its outcome, and the words with the checkout's path said as the repository (D47 §4).</summary>
-    private static object Answered(ActRun run, string checkout, string repository) => new
-    {
-        run.Act, run.Outcome, run.Refused, Said = WithoutRoots(run.Said, [checkout], repository) ?? "",
-    };
-
-    /// <summary>The first checkout of the repository that exists on this machine, or null.</summary>
-    private async Task<string?> CheckoutOfAsync(string repository, string? workspace, CancellationToken cancellationToken)
-    {
-        var service = _loop.Service ?? throw NotReady();
-        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, workspace);
-        return rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root;
-    }
-
-    /// <summary>
-    /// A read of the repository the payload names, answered as the driver answered it: its value, or a code the page words and
-    /// the sentence beside it, and the git commands that give the same answer. A repository with no checkout here is an answer
-    /// too, so the page words it as it words the rest. Writes nothing.
-    /// </summary>
-    private async Task<object?> GitAnsweredAsync<T>(
-        string? named, string? workspace, CancellationToken cancellationToken, Func<string, CancellationToken, Task<GitAnswer<T>>> read) where T : class
-    {
-        var repository = named ?? throw new DriverException("a Git read names its repository.");
-        var service = _loop.Service ?? throw NotReady();
-        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, workspace);
-        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
-        {
-            return new
-            {
-                Value = (T?)null, Refusal = Refusals.GitNoCheckout,
-                Problem = $"{repository} has no checkout on this machine, so there is no Git history here to read.",
-                Commands = Array.Empty<string>(), Remembered = false,
-            };
-        }
-
-        var answer = await read(root, cancellationToken).ConfigureAwait(false);
-        return new
-        {
-            answer.Value,
-            Refusal = GitRefusalCode(answer.Refusal),
-            Problem = WithoutRoots(answer.Problem, [root], repository),
-            answer.Commands,
-            answer.Remembered,
-        };
-    }
-
-    /// <summary>The code the page words for a refusal the driver gave, or null where it answered (D147).</summary>
-    private static string? GitRefusalCode(GitReadRefusal refusal) => refusal switch
-    {
-        GitReadRefusal.None => null,
-        GitReadRefusal.NotTop => Refusals.GitNotTop,
-        GitReadRefusal.NotACommit => Refusals.GitNotACommit,
-        GitReadRefusal.NotAPath => Refusals.GitNotAPath,
-        GitReadRefusal.NotAPage => Refusals.GitNotAPage,
-        GitReadRefusal.TooManyTips => Refusals.GitTooManyTips,
-        _ => Refusals.GitNotAnswered,
-    };
-
-    /// <summary>
-    /// 🔴 A sentence with the checkout's path said as the repository (D47 §4): the driver's sentences name the root they were
-    /// asked of, in either slash, and the machine's path is the desktop's alone.
-    /// </summary>
-    private static string? WithoutRoots(string? problem, IEnumerable<string?> roots, string repository)
-    {
-        if (problem is null) return null;
-        foreach (var root in roots.OfType<string>().Where(root => root.Length > 0))
-        {
-            var full = Path.GetFullPath(root);
-            foreach (var form in new[] { full, root, full.Replace('\\', '/'), root.Replace('\\', '/'), full.Replace('/', '\\'), root.Replace('/', '\\') }
-                         .Distinct(StringComparer.Ordinal).OrderByDescending(form => form.Length))
-            {
-                problem = problem.Replace(form, $"{repository}'s checkout", StringComparison.OrdinalIgnoreCase);
-            }
-        }
-
-        return problem;
-    }
+    private Task<object?> GitAnsweredAsync<T>(
+        string? named, string? workspace, CancellationToken cancellationToken, Func<string, CancellationToken, Task<GitAnswer<T>>> read) where T : class =>
+        GitAnswers.GitAnsweredAsync(_loop, named, workspace, cancellationToken, read);
 
     /// <summary>A page the page asks for: absent is the first, and one past what a count holds is a page the driver refuses.</summary>
     private static int GitPage(long? asked) =>

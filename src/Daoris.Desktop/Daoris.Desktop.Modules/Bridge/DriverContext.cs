@@ -43,6 +43,9 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     /// </summary>
     public ReadLeaves Reads { get; } = new();
 
+    /// <summary>The acts the git domains run, journaled in the home's store; one object, so a run's reconciler knows its own acts.</summary>
+    public ActRuns GitActs { get; } = new(new ActJournal(loop.Home));
+
     /// <summary>
     /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press (PLUG9 d, D103).
     /// Null finds them beside the running application, else beside the home; a test names its own, since every test's home
