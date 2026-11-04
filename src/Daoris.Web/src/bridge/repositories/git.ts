@@ -248,7 +248,7 @@ export const useCheckoutBranch = ({ repository, workspace }: { repository: strin
 export const useGitTryAgain = () =>
   useMutation({
     mutationFn: ({ repositories, workspace }: { repositories: readonly string[]; workspace?: string }) =>
-      call<{ lifted: number }>('GIT_TRY_AGAIN', { repositories: [...repositories], ...(workspace ? { workspace } : {}) }),
+      call('GIT_TRY_AGAIN', { repositories: [...repositories], ...(workspace ? { workspace } : {}) }) as Promise<{ lifted: number }>,
   });
 
 /** What `GIT_REF_CREATE`, `GIT_REF_DELETE`, `GIT_REF_RENAME`, `GIT_REF_FINISH` and `GIT_REF_UNDO` answer (GITAPP2c to e): the journal's act and its outcome, or a refusal as data with the driver's sentence. */
@@ -366,9 +366,9 @@ const graphPage = (isAvailable: boolean, repository: string | null, tips: readon
   const workspace = options.workspace ?? '';
   return {
     queryKey: keys.gitGraph(repository ?? '', tips, page, sinceParted, workspace),
-    queryFn: () => call<GitAnswer<GitGraphPage>>('GIT_GRAPH', {
-      repository, tips, ...(page ? { page } : {}), ...(sinceParted ? { sinceParted: true } : {}), ...(workspace ? { workspace } : {}),
-    }),
+    queryFn: () => call('GIT_GRAPH', {
+      repository, tips: [...tips], ...(page ? { page } : {}), ...(sinceParted ? { sinceParted: true } : {}), ...(workspace ? { workspace } : {}),
+    }) as Promise<GitAnswer<GitGraphPage>>,
     enabled: isAvailable && Boolean(repository) && tips.length > 0,
   };
 };
@@ -378,7 +378,7 @@ export const useGitCommit = (repository: string | null, commit: string | null, w
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: keys.gitCommit(repository ?? '', commit ?? '', workspace),
-    queryFn: () => call<GitAnswer<GitCommitDetail>>('GIT_COMMIT', { repository, commit, ...(workspace ? { workspace } : {}) }),
+    queryFn: () => call('GIT_COMMIT', { repository, commit, ...(workspace ? { workspace } : {}) }) as Promise<GitAnswer<GitCommitDetail>>,
     enabled: isAvailable && Boolean(repository) && Boolean(commit),
     staleTime: Infinity,
   });
@@ -390,9 +390,9 @@ export const useGitHistory = (repository: string | null, commit: string | null, 
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: keys.gitHistory(repository ?? '', commit ?? '', path ?? '', page, workspace),
-    queryFn: () => call<GitAnswer<GitFileHistory>>('GIT_HISTORY', {
+    queryFn: () => call('GIT_HISTORY', {
       repository, commit, path, ...(page ? { page } : {}), ...(workspace ? { workspace } : {}),
-    }),
+    }) as Promise<GitAnswer<GitFileHistory>>,
     enabled: isAvailable && Boolean(repository) && Boolean(commit) && Boolean(path),
     staleTime: Infinity,
   });
@@ -404,7 +404,7 @@ export const useGitBlame = (repository: string | null, commit: string | null, pa
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: keys.gitBlame(repository ?? '', commit ?? '', path ?? '', workspace),
-    queryFn: () => call<GitAnswer<GitBlame>>('GIT_BLAME', { repository, commit, path, ...(workspace ? { workspace } : {}) }),
+    queryFn: () => call('GIT_BLAME', { repository, commit, path, ...(workspace ? { workspace } : {}) }) as Promise<GitAnswer<GitBlame>>,
     enabled: isAvailable && Boolean(repository) && Boolean(commit) && Boolean(path),
     staleTime: Infinity,
   });
@@ -828,9 +828,9 @@ export const useGitCompare = (repository: string | null, left: string | null, ri
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: keys.gitCompare(repository ?? '', left ?? '', right ?? '', everything, workspace),
-    queryFn: () => call<GitAnswer<GitCompare>>('GIT_COMPARE', {
+    queryFn: () => call('GIT_COMPARE', {
       repository, left, right, ...(everything ? { everything: true } : {}), ...(workspace ? { workspace } : {}),
-    }),
+    }) as Promise<GitAnswer<GitCompare>>,
     enabled: isAvailable && Boolean(repository) && Boolean(left) && Boolean(right),
     staleTime: Infinity,
   });
