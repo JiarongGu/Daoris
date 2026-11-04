@@ -132,19 +132,20 @@ public abstract class BranchTidyingFixture : IDisposable
         return tree;
     }
 
-    /// <summary>This home's trees, with `engine`'s landing rule the branch form: Accept makes a branch of the person's and records it.</summary>
+    /// <summary>This home's trees, with a run bound to a <c>land</c> that makes a branch of the person's and records it.</summary>
     protected SessionTrees LandingTrees()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        _lands = GraphLand.Gate(_home, GraphLand.Branch("feature/{quest}-{slug}"));
         return new SessionTrees(_home);
     }
 
-    /// <summary>A session's tree with one commit, landed by Accept on a branch the record keeps (the branch form's rule).</summary>
+    private IWorkplaceGate? _lands;
+
+    /// <summary>A session's tree with one commit, landed on a branch the record keeps, by the bound <c>land</c>.</summary>
     protected async Task<(TreeOpened Tree, string Branch)> LandingAsync(SessionTrees trees, string root, LandingSubject subject)
     {
         var tree = await TreeWithWorkAsync(trees, root);
-        var landed = await trees.LandAsync(tree.Path, subject);
+        var landed = await trees.LandAsync(tree.Path, subject, gate: _lands ?? GraphLand.Gate(_home, GraphLand.Branch("feature/{quest}-{slug}")));
         Assert.True(landed.Landed, landed.Message);
         return (tree, landed.Branch!);
     }

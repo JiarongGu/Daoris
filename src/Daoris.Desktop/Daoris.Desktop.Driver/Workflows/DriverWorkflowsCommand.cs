@@ -6,8 +6,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris workflow …</c> (PUSH1f2b, D194, the alone-path design §5; D157, the workflow design §4.7): the terminal's door
-/// to workflows, the words <c>daoris workflow …</c> hands this program. <c>show --repository|--workspace [--kind]</c> draws what
+/// <c>daoris workflow …</c> (D194, the alone-path design §5; D157, the workflow design §4.7): the terminal's door to workflows; a
+/// run's <c>run</c>, <c>keep</c>, <c>skip</c>, <c>stop</c> and <c>changes</c> are the host's. <c>show --repository|--workspace [--kind]</c> draws what
 /// work there follows: Current, read from the rules as they stand, or the named workflow a choice gives. The rest are named workflows,
 /// one file each under the home's <c>workflows</c>: <c>list</c>, <c>show &lt;id&gt;[@&lt;version&gt;]</c>, <c>new</c>, <c>edit</c>,
 /// <c>apply</c>, <c>export</c> and <c>import</c>; and the choice in <c>driver.json</c>, <c>use</c> and <c>kind</c>. A writer says its
@@ -17,18 +17,19 @@ namespace Daoris.Driver;
 /// <para>A write is the person's press: sent to the running Daoris's route (<c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c>, <c>WORKFLOW_KIND</c>,
 /// <c>WORKFLOW_LANDED</c>) and confirmed in its window, else done on the terminal's word, refused from a session's terminal, and
 /// holding the home's lease (<see cref="VerbLeases"/>); a read holds nothing. <c>new</c>, <c>use</c> and <c>kind</c> run the typed operations
-/// (<see cref="WorkflowOperations"/>) the window's <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c> run (AGENTSPLACE1c),
-/// and say their result. The landed route, <c>use … --landed</c>, accepts the gates at the line's tip as the window's
-/// <c>WORKFLOW_LANDED</c> does, and is that route while Daoris runs. A file imported goes a version at a time, each confirmed.</para>
-/// <para>Today's text is kept (<c>fixtures/driver-workflows-text.json</c>). Exit codes are the CLI's: 1 where a version would not read
-/// or a choice is refused, 2 where the words cannot be done.</para>
+/// (<see cref="WorkflowOperations"/>) the window's routes run, and say their result. The landed route, <c>use … --landed</c>, accepts
+/// the gates at the line's tip as the window's <c>WORKFLOW_LANDED</c> does, and is that route while Daoris runs. A file imported goes a
+/// version at a time, each confirmed.</para>
+/// <para>Exit codes are the CLI's: 1 where a version would not read or a choice is refused, 2 where the words cannot be done.</para>
 /// </remarks>
+[CommandGroup("workflow", "show", "list", "defaults", "new", "edit", "apply", "export", "import", "use", "kind", "run", "keep", "skip", "stop",
+    "changes")]
 public static class DriverWorkflowsCommand
 {
     /// <summary>The sub-verbs that write a workflow or the choice; with <c>--plan</c> each only says what it would write.</summary>
     public static IReadOnlySet<string> Writes { get; } = ChoiceGrammar.WorkflowWrites;
 
-    /// <summary>The sub-verbs the usage names; <c>edit</c> is still answered, with the refusal that names the editor and <c>apply</c> (WORKFLOWCLEAN1 1b).</summary>
+    /// <summary>The sub-verbs the usage names; <c>edit</c> is still answered, with the refusal that names the editor and <c>apply</c>.</summary>
     public static IReadOnlyList<string> Verbs { get; } = ["list", "defaults", "show", "use", "kind", "new", "apply", "export", "import"];
 
     public const string Usage = "`driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; "
@@ -66,7 +67,7 @@ public static class DriverWorkflowsCommand
         private bool _hold;
         private Deferred? _write;
 
-        /// <summary>A session's terminal that writes says nothing until its write is known to be refused or sent (REVIEW2 3).</summary>
+        /// <summary>A session's terminal that writes says nothing until its write is known to be refused or sent.</summary>
         private bool Session() => world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 };
 
         private void Say(string line)
@@ -801,7 +802,7 @@ public static class DriverWorkflowsCommand
         }
 
         /// <summary>
-        /// A new version that is a graph (FABRIC-GRAPH1f), against the base: judged whole as the driver judges it, said with its digest,
+        /// A new version that is a graph, against the base: judged whole as the driver judges it, said with its digest,
         /// and saved unless <c>--plan</c>. The same graph as the base's is nothing to do.
         /// </summary>
         /// <param name="what">What the graph is, said after the workflow's name, where it is not a file's.</param>

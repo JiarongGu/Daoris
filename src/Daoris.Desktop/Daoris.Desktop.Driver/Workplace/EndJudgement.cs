@@ -91,7 +91,7 @@ internal sealed record EndCycle(string Form, bool Plugin = false, bool Squash = 
     public static EndCycle Accepts(DriverConfig config, string repository, string? workspace, IWorkplaceProcess? process = null)
     {
         var named = process is { Named: true } ? process : null;
-        return Of(named?.Landing ?? LandingRules.Choose(config, repository, workspace), named?.Record);
+        return Of(named?.Landing ?? LandingRules.Line(config, repository, workspace), named?.Record);
     }
 
     /// <summary>

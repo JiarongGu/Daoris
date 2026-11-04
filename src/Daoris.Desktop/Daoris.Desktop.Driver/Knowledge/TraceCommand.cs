@@ -34,6 +34,7 @@ internal sealed record TraceAskRead(string Id, AskView? Ask, string? Unread);
 /// <para>Exit codes are the family's: 0 the chain read, its missing links said · 1 nothing here names the id, or it names
 /// several · 2 could not: the usage, or a store the answer needed did not answer.</para>
 /// </remarks>
+[CommandGroup("trace", Whole = true)]
 public static class TraceCommand
 {
     public const string Usage =

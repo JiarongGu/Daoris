@@ -97,9 +97,10 @@ public abstract class LandingPluginFixture : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
 
-    protected void Rule(LandingRule rule, bool workspace = false) =>
-        (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+    /// <summary>The gate the landings here land by: a run bound to a graph whose <c>land</c> the test names.</summary>
+    protected IWorkplaceGate? Lands { get; private set; }
+
+    protected void Rule(string land) => Lands = GraphLand.Gate(Home, land);
 
     /// <summary>
     /// A repository whose `origin` is a bare repository beside it, nothing pushed there yet — somewhere a push lands without leaving the

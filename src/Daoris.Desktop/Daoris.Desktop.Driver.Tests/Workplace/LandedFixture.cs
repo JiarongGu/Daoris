@@ -18,13 +18,15 @@ public abstract class LandedFixture : IDisposable
     protected readonly string Scratch;
     protected readonly string Home;
 
+    /// <summary>The gate the landings here land by: a run bound to a graph whose <c>land</c> makes a branch <c>feature/{quest}-{slug}</c>.</summary>
+    protected IWorkplaceGate Lands { get; set; }
+
     protected LandedFixture()
     {
         Scratch = Path.Combine(RepoRoot(), "_fixtures", "landed", Guid.NewGuid().ToString("N")[..8]);
         Home = Path.Combine(Scratch, "daoris-home");
         Directory.CreateDirectory(Home);
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"));
     }
 
     public void Dispose()
@@ -39,7 +41,7 @@ public abstract class LandedFixture : IDisposable
     protected static LandedItem Landed(SweepPlan plan, string branch) => plan.Landed.Single(item => item.Branch == branch);
 
     /// <summary>A session's tree, one commit, and the press — the branch form, so a landing makes and records a branch.</summary>
-    protected static async Task<TreeLanding> LandAsync(
+    protected async Task<TreeLanding> LandAsync(
         SessionTrees trees, string root, string file, string content, LandingSubject subject, string? from = null,
         (string File, string Content)? extra = null)
     {
@@ -48,7 +50,7 @@ public abstract class LandedFixture : IDisposable
         if (extra is { } more) await File.WriteAllTextAsync(Path.Combine(tree.Path, more.File), more.Content);
         await GitAsync(tree.Path, "add", "-A");
         await GitAsync(tree.Path, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", subject.Title ?? "work");
-        var landed = await trees.LandAsync(tree.Path, subject);
+        var landed = await trees.LandAsync(tree.Path, subject, gate: Lands);
         Assert.True(landed.Landed, landed.Message);
         return landed;
     }
@@ -78,11 +80,10 @@ public abstract class LandedFixture : IDisposable
     /// <returns>The session's tree, its branch, and the branch the landing made.</returns>
     protected async Task<(string Tree, string Branch, string Landing)> OlderSquashAsync(SessionTrees trees, string root)
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        var squash = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1", "q1", "Fix the gap"));
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: squash);
         Assert.True(landed.Landed, landed.Message);
         await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", $"merge {landed.Branch}", landed.Branch!);
         await CommitAsync(root, "work.txt", "the work, changed again\n", "the line changes it again");
@@ -95,12 +96,12 @@ public abstract class LandedFixture : IDisposable
     /// onto the line, so B's files read there and A's shared file does not, and A is inside B.
     /// </summary>
     /// <returns>Both landings, and the first session's tree and branch, whose commit only A and B hold.</returns>
-    protected static async Task<(TreeLanding A, TreeLanding B, string Tree, string Branch)> InsideLandingAsync(SessionTrees trees, string root)
+    protected async Task<(TreeLanding A, TreeLanding B, string Tree, string Branch)> InsideLandingAsync(SessionTrees trees, string root)
     {
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await File.WriteAllTextAsync(Path.Combine(first.Path, "shared.txt"), "one\ntwo\n");
         await CommitAsync(first.Path, "a.txt", "a\n", "First");
-        var a = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "First"));
+        var a = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "First"), gate: Lands);
         Assert.True(a.Landed, a.Message);
         var b = await LandAsync(trees, root, "shared.txt", "one\ntwo\nthree\n", new LandingSubject("s2", "q2", "Second"), from: a.Branch, extra: ("b.txt", "b\n"));
         await SquashAsync(root, b.Branch!);

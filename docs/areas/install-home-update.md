@@ -236,7 +236,7 @@ drains, swaps, rolls back and refuses.
    `Mod/Update/InstallHome.cs:171,196` (an install's home is `<install>/data`). The code and D172's HOMELAYOUT3 note read right.
 4. D172 point 6 (the move runs "at a start after a confirmed update") vs `Mod/Update/HomePlacing.cs:32-35` (any start with the
    update at rest, never the first after a swap). The code reads right.
-5. D139 §3 (`daoris-driver update`) vs `Drv/Platform/CommandWords.cs:36,85` (the verb is `daoris update`; the old name is
+5. D139 §3 (`daoris-driver update`) vs `Drv/Install/UpdateCommand.cs`' mark (the verb is `daoris update`; the old name is
    refused). The tree reads right; `Drv/Install/UpdateCommand.cs:21-23` and `ToolsCommand.cs:91` still print the old name.
 6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs:57-59` (the driver alone)
    and `DaorisHome.cs:428` (`cache/tools`). The code reads right.

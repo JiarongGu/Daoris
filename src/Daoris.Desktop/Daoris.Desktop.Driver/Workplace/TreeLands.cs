@@ -27,14 +27,12 @@ internal sealed record Branched(
 }
 
 /// <summary>
-/// A session tree's work landed as its repository's rule says (D51 rule 6, WSR1, D87, D100; PART10l-ii, out of
-/// <c>SessionTrees.cs</c>): the plan said before the press, the merge into the line, the branch form and a chain's advance, and
-/// the rule's tidy after. Over the trees' context, the layout's answer of a tree's branch, the head's own judgement of what the
-/// line holds by content (<see cref="TreeWorkReads"/>), the removal and the tidy. The front keeps its public calls.
+/// A session tree's work landed as its run's bound <c>land</c> says (D51 rule 6, WSR1, D87, D100; PART10l-ii, out of
+/// <c>SessionTrees.cs</c>): the plan said before the press, the merge into the line, the branch form and a chain's advance. Over the
+/// trees' context, the layout's answer of a tree's branch and the head's own judgement of what the line holds by content
+/// (<see cref="TreeWorkReads"/>). The front keeps its public calls.
 /// </summary>
-internal sealed class TreeLands(
-    TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeRemovals removals, TreeTidies tidies, TreeLandSyncs syncs,
-    EndKeeping ends)
+internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeLandSyncs syncs)
 {
     /// <summary>
     /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into
@@ -116,7 +114,7 @@ internal sealed class TreeLands(
         var (workspace, repository) = context.OwnerOf(full);
         // The rule it lands by, its access setup's landing composed in (AUTONOMY1c2): the session is told it is accepted automatically
         // exactly where the look would land it.
-        var landing = process is { Named: true } named ? named.Landing : LandingRules.Effective(context.Config(), repository, workspace);
+        var landing = process is { Named: true } named ? named.Landing : LandingRules.Line(context.Config(), repository, workspace);
         // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
         if (process?.LandingCannot is not null)
         {
@@ -631,7 +629,7 @@ internal sealed class TreeLands(
         // edited, so nothing changes under it. Under Current the rule is read again here, as before.
         var process = gate?.Process;
         var named = delivering is null && process is { Named: true } ? process : null;
-        var landing = named?.Landing ?? LandingRules.Effective(context.Config(), repository, workspace);
+        var landing = named?.Landing ?? LandingRules.Line(context.Config(), repository, workspace);
         // LANDNODE1b2: a delivery lands as its intent says, and keeps of the rule only what setup keeps.
         if (delivering is not null) landing = delivering.Over(landing);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
@@ -710,7 +708,7 @@ internal sealed class TreeLands(
             // which is never edited, its graph holding no review before its `land`.
             Func<string?> standing = named is { } version
                 ? () => version.Landing.Rule.AutoAccept ? null : "its workflow's graph holds a review before its landing"
-                : () => LandingRules.Effective(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically";
+                : () => LandingRules.Line(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically";
             var (delivery, refusal) = await CurrentDeliveries.StartAsync(
                 context.Home, context.Plugins, landing, repository, workspace, root, subject, tip, line, tree, name, acceptedBy, hold?.Waited == true,
                 standing, ct, bound).ConfigureAwait(false);
@@ -941,8 +939,8 @@ internal sealed class TreeLands(
         // and its delete): each of those reads git as it stands, never what the planning was told.
         GitFacts.Close();
 
-        // LANDSYNC1 (D87's amendment point 7): the session follows what landed, so its next turn starts in sync with the line. Before the
-        // rule's tidy, whose proof then finds the tree's branch inside what landed; where it cannot move, the landing stands and says why.
+        // LANDSYNC1 (D87's amendment point 7): the session follows what landed, so its next turn starts in sync with the line; where it
+        // cannot move, the landing stands and says why.
         if (landed.Landed && replayed is not null && replaying is not null && !followed)
         {
             var stays = await syncs.MoveTreeAsync(full, replaying, replayed.Now, repository, workspace,
@@ -950,45 +948,7 @@ internal sealed class TreeLands(
             landed = landed with { Message = BeforeTreeStays(landed.Message, LandingSyncWords.Followed(stays)) };
         }
 
-        // The tidy the person's rule asked for (D88): the tree and its branch go once the work lands, behind
-        // the same proof an unforced removal makes — never forced.
-        if (!landed.Landed || !landing.Rule.Tidy) return landed;
-        // Read before the tree goes (LAND3): the repository it belongs to and the branch it was on.
-        var (factsCode, commonDir, _, pressedOut, _) = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
-        if (factsCode == 0)
-        {
-            // FABRIC-END2: what the line holds now (a merge's work) is kept before the tidy takes the branch, so its entry outlives it as a
-            // trace; work handed to a landing branch stays open on its unit. The end judgement's own writer, in the lease's process only.
-            var checkout = Path.GetDirectoryName(commonDir.Trim())!;
-            var judged = (await context.LineAsync(checkout, repository, workspace, ct).ConfigureAwait(false)).Branch;
-            await ends.KeepAsync(checkout, repository, workspace, judged, ct).ConfigureAwait(false);
-        }
-
-        var tidied = await removals.RemoveAsync(path, force: false, ct, landing: true).ConfigureAwait(false);
-        landed = landed with
-        {
-            // 🔴 The sentence that the tree stays goes when the tidy removed it: the message said both
-            // (found landing TK-2202, 2026-09-29).
-            Message = tidied.Removed
-                ? landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" Cleaned up, as the rule says: {tidied.Message}"
-                : landed.Message + $" The rule says to clean up, and the tree stays: {tidied.Message}",
-        };
-        if (factsCode != 0) return landed with { Tidied = [] };
-
-        // LAND3: every other session branch the landed work holds goes too — a chain's earlier step, whose commits rode
-        // into this one, stayed behind on the owner's install. The ref is the branch made, or the line a merge went into.
-        var root = Path.GetDirectoryName(commonDir.Trim())!;
-        var into = landing.Rule.Form == LandingForm.Branch
-            ? landed.Branch
-            : (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        if (into is null) return landed with { Tidied = [] };
-        // A squash holds no session commit, so what it squashed is what it holds (PROCESS1b-ii point 3); the branch made holds that, and a
-        // removal rests on it at the commit read (FABRIC-END4a, third review), a commit holding the one the squash made (fourth review).
-        var held = await tidies.TidyHeldAsync(
-                root, repository, workspace, squashedTip ?? $"refs/heads/{into}", pressedOut.Trim(), inUse, ct, holder: $"refs/heads/{into}",
-                madeAt: squashedInto)
-            .ConfigureAwait(false);
-        return landed with { Message = landed.Message + TreeTidies.TidiedSaid(held, into), Tidied = held };
+        return landed;
     }
 
     /// <summary>
@@ -1499,7 +1459,7 @@ internal sealed class TreeLands(
         var lead = leadTree is { Length: > 0 } && Directory.Exists(leadTree) ? Path.GetFullPath(leadTree) : null;
         var full = lead ?? Path.GetFullPath(anyTree);
         var (workspace, repository) = context.OwnerOf(full);
-        var landing = LandingRules.Choose(context.Config(), repository, workspace);
+        var landing = LandingRules.Line(context.Config(), repository, workspace);
         if (lead is not null) return await ForWorkAsync(lead, workspace, repository, landing.Rule, entry, ct).ConfigureAwait(false);
         return context.Recorded.Landing(entry.Session) is { } landed
             ? await ForWorkAsync(full, workspace, repository, landing.Rule, entry, ct, landed.Tip).ConfigureAwait(false)

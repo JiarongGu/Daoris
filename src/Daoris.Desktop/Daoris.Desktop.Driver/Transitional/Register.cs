@@ -33,27 +33,11 @@ public static class TransitionalRegister
     [
         new()
         {
-            Id = "current-followed",
-            Kept = "Workplace/Landing.cs:887, Workflows/Nodes/NodeGraphs.cs:1121",
-            Reaches = "A place on Current, and a unit bound to Current: its landing rule chosen and drawn as the workflow it follows.",
-            Ends = "No place resolves to Current, no Current-bound unit is open, and no leftover rule is held.",
-            Row = "WORKFLOWCLEAN1z",
-        },
-        new()
-        {
             Id = "auto-lander",
             Kept = "Workplace/AutoLander.cs:57",
-            Reaches = "Work landed by the old doors (the auto lander's choosing, the presses' landing in place, the tidy) for a run on Current or `handed`.",
-            Ends = "As the read above ends.",
+            Reaches = "Work the auto lander's look chose by its due list, and the presses' landing in place, beside the runtime's `land`.",
+            Ends = "The runtime's `land` is the one lander: the look's choosing and the presses' in-place landing are deleted.",
             Row = "WORKFLOWCLEAN1z",
-        },
-        new()
-        {
-            Id = "work-cycles",
-            Kept = "Workflows/Nodes/NodeGraphs.cs:1205",
-            Reaches = "A place on Current whose quests close by a work cycle, which a saved workflow does not run yet.",
-            Ends = "driver.json holds no `workCycles` and no `workspaceWorkCycles`, once a saved workflow runs a work cycle and the place is converted.",
-            Row = "WORKFLOWCLEAN1j",
         },
         new()
         {
@@ -63,6 +47,15 @@ public static class TransitionalRegister
                 + "section: the codes stay declared, and the page's `work.handed.section.*` rows word them. The migration writes the logs' accounts as the block.",
             Ends = "The page's handed account, its fixtures and its cuts name the standing block alone.",
             Row = "NOCOMPAT1",
+        },
+        new()
+        {
+            Id = "routes-by-hand",
+            Kept = "Service/ServiceClient.cs:57",
+            Reaches = "Every HTTP route not yet declared in Daoris.Contracts: sent by a method of its own here, and mapped by hand in the HTTP "
+                + "host's Program.cs, whose own marker stands where its declared routes are mapped.",
+            Ends = "No app.Map* call is left in the host's Program.cs and no method that writes a route's path is left in ServiceClient.",
+            Row = "CODESHAPE1",
         },
     ];
 }

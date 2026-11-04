@@ -228,50 +228,6 @@ public sealed class LandingKeyTests
         Assert.Null(LandingKey.IntegrateRefused(none.RootElement));
     }
 
-    /// <summary>A door with no field for <c>integrate</c> (Setup's row, Ask Daoris, the terminal) keeps the rule's, as it keeps a cycle; and judges it.</summary>
-    [Fact]
-    public void A_door_with_no_field_for_integrate_keeps_the_rule_s_and_one_its_new_form_cannot_carry_refuses_the_edit()
-    {
-        var config = DriverConfig.Empty.WithLanding("engine", Branch with { AutoAccept = true, Integrate = Declared with { Request = LandingIntegrate.Done } });
-
-        var edited = config.WithLanding("engine", new LandingRule(LandingForm.Branch, "work/{quest}", AutoAccept: true));
-
-        Assert.Equal(Declared with { Request = LandingIntegrate.Done }, edited.Landings["engine"].Integrate);
-        Assert.Equal("work/{quest}", edited.Landings["engine"].Pattern);
-        Assert.Contains("never a merge rule", Assert.Throws<DriverException>(() => config.WithLanding("engine", LandingRule.Merge)).Message);
-        Assert.Contains("`autoAccept`", Assert.Throws<DriverException>(() => config.WithLanding("engine", Branch)).Message);
-        // Cleared by its own setter, which leaves the rest of the rule as it is.
-        var cleared = config.WithLandingIntegrate("engine", null);
-        Assert.Null(cleared.Landings["engine"].Integrate);
-        Assert.True(cleared.Landings["engine"].AutoAccept);
-        Assert.Contains("no landing rule", Assert.Throws<DriverException>(() => config.WithLandingIntegrate("shop-api", Declared)).Message);
-    }
-
-    /// <summary>
-    /// <c>land</c> is set only where a whole-set verification runs on the line (the design §4.5): here, the level's own landed route
-    /// naming a verification pipeline whose gates the person accepted (D192 point 7).
-    /// </summary>
-    [Fact]
-    public void Landing_an_unconfirmed_failure_is_set_only_where_the_level_s_own_landed_route_verifies_the_line()
-    {
-        var landing = Declared with { Reached = LandingIntegrate.Land };
-        var withRule = DriverConfig.Empty.WithLanding("engine", Branch).WithWorkspaceLanding("shop", Branch);
-        var route = new WorkflowChoice(null, []) { Landed = new WorkflowLanded("verify-line", "0123456789abcdef0123456789abcdef01234567") };
-
-        Assert.Contains("no whole-set verification", Assert.Throws<DriverException>(() => withRule.WithLandingIntegrate("engine", landing)).Message);
-        var unaccepted = withRule with { Workflows = new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase) { ["engine"] = route with { Landed = route.Landed! with { Gates = null } } } };
-        Assert.Throws<DriverException>(() => unaccepted.WithLandingIntegrate("engine", landing));
-        var current = withRule with { Workflows = new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase) { ["engine"] = route with { Landed = new WorkflowLanded(WorkflowKey.Current, "none") } } };
-        Assert.Throws<DriverException>(() => current.WithLandingIntegrate("engine", landing));
-        var verified = withRule with
-        {
-            Workflows = new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase) { ["Engine"] = route },
-            WorkspaceWorkflows = new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase) { ["shop"] = route },
-        };
-        Assert.Equal(LandingIntegrate.Land, verified.WithLandingIntegrate("engine", landing).Landings["engine"].Integrate!.Reached);
-        Assert.Equal(LandingIntegrate.Land, verified.WithWorkspaceLandingIntegrate("shop", landing).WorkspaceLandings["shop"].Integrate!.Reached);
-    }
-
     [Fact]
     public void A_cycle_is_kept_as_written_in_a_rule_and_a_value_that_is_no_rule_says_why()
     {

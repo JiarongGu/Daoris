@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (no door set) asks nothing; and the look's inventory read names only the integrating repositories' branch units, with none of the service's
 /// quests or asks read for them, its cost measured over many repositories.
 /// </summary>
-public sealed class IntegrateWatchTests(ITestOutputHelper output) : IDisposable
+public sealed class IntegrateWatchTests : IDisposable
 {
     private const string T1 = "1111111111111111111111111111111111111111";
 
@@ -45,13 +45,6 @@ public sealed class IntegrateWatchTests(ITestOutputHelper output) : IDisposable
             AcceptedBy = AcceptedBy.Person,
             Integrate = new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule),
         });
-
-    private static DriverConfig Plain(params string[] repositories) =>
-        repositories.Aggregate(DriverConfig.Empty, (config, repository) => config.WithLanding(repository, new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")));
-
-    private static DriverConfig Integrating(string repository) =>
-        Plain().WithLanding(repository, new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .WithLandingIntegrate(repository, new LandingIntegrate(Request: LandingIntegrate.Owner));
 
     /// <summary>The ask a unit's node makes, admitted as the door admits it: a request kept for the unit and the tip, waiting queued.</summary>
     private sealed class Door : IIntegrationDoor
@@ -173,70 +166,5 @@ public sealed class IntegrateWatchTests(ITestOutputHelper output) : IDisposable
             try { await watching.WaitAsync(Poll.Patience); }
             catch (OperationCanceledException) { }
         }
-    }
-
-    /// <summary>Only a choice naming nothing but <c>integrate</c> reads narrowed: a plugin's node, or a cycle that acts, needs every repository's units.</summary>
-    [Fact]
-    public void The_read_is_narrowed_only_where_integrate_alone_arms_the_runtime()
-    {
-        var runtime = new NodeRuntime(new NodeRecordFiles(_home), new ObservedPort(), () => Then, () => true);
-        Assert.True(NodeRuntime.IntegratesAlone(Integrating("engine")));
-        Assert.True(runtime.ReadsIntegratingOnly(Integrating("engine")));
-        Assert.False(NodeRuntime.IntegratesAlone(Plain("engine")));
-        Assert.False(runtime.ReadsIntegratingOnly(Plain("engine")));
-
-        var cycle = DriverConfig.Parse("""
-            { "landings": { "engine": { "form": "branch", "pattern": "feature/{quest}", "integrate": { "request": "owner" } } },
-              "workCycles": { "shop": { "quest": { "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-                "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }], "wires": [] } } } }
-            """);
-        Assert.False(NodeRuntime.IntegratesAlone(cycle));
-        Assert.False(runtime.ReadsIntegratingOnly(cycle));
-
-        Assert.True(NodeRuntime.Integrating(Integrating("engine"), "engine", "default"));
-        Assert.False(NodeRuntime.Integrating(Integrating("engine"), "shop", "default"));
-    }
-
-    /// <summary>
-    /// F51, measured: over forty repositories of three landed branches each, one carrying <c>integrate</c>, the look's inventory read names only
-    /// that repository's three branch units and asks the service for no quest or ask; the read with no narrowing names every unit and asks.
-    /// </summary>
-    [Fact]
-    public async Task The_look_reads_only_the_integrating_repositories_branch_units_and_the_cost_is_measured()
-    {
-        Directory.CreateDirectory(_home);
-        var repositories = Enumerable.Range(0, 40).Select(index => index == 0 ? "engine" : $"repo-{index}").ToList();
-        foreach (var repository in repositories)
-        {
-            _ledger.Register(repository, Path.Combine(_home, repository));
-            for (var branch = 0; branch < 3; branch++) Land(repository, $"feature/q{branch}-ship");
-        }
-
-        var config = repositories.Aggregate(Integrating("engine"), (all, repository) =>
-            repository == "engine" ? all : all.WithLanding(repository, new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")));
-        var client = _ledger.Client();
-        var asked = 0;
-        var quests = 0;
-        _ledger.Before = (request, _) =>
-        {
-            if (request.RequestUri!.AbsolutePath is "/api/quests" or "/api/asks" or "/api/sessions") Interlocked.Increment(ref quests);
-            return Task.CompletedTask;
-        };
-
-        var clock = Stopwatch.StartNew();
-        var narrowed = await DriverWatch.ReadNodeUnitsAsync(_home, client, CancellationToken.None, narrowedTo: config);
-        var narrowedIn = clock.Elapsed;
-        asked = Volatile.Read(ref quests);
-        clock.Restart();
-        var full = await DriverWatch.ReadNodeUnitsAsync(_home, client, CancellationToken.None);
-        var fullIn = clock.Elapsed;
-
-        Assert.Equal(3, narrowed.Units.Count);
-        Assert.All(narrowed.Units, unit => Assert.Equal(("engine", WorkUnitKind.Branch), (unit.Owner.Repository, unit.Kind)));
-        Assert.Equal(0, asked);
-        Assert.Equal(120, full.Units.Count(unit => unit.Kind == WorkUnitKind.Branch));
-        Assert.True(Volatile.Read(ref quests) > 0);
-        Assert.Equal(40, narrowed.Roots.Count);
-        output.WriteLine($"inventory read over 40 repositories: narrowed {narrowedIn.TotalMilliseconds:F0} ms for {narrowed.Units.Count} units, full {fullIn.TotalMilliseconds:F0} ms for {full.Units.Count} units");
     }
 }

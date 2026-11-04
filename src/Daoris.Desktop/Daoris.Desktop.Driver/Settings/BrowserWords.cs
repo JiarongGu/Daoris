@@ -5,6 +5,7 @@ namespace Daoris.Driver;
 /// the lines the TypeScript verb said (<c>fixtures/driver-files-text.json</c>). A file that could not be read is said first and the
 /// verb exits 1 with the default held.
 /// </summary>
+[CommandGroup("browser", "favorite", "extensions", "use", "links", Nested = ["favorite: list add remove"])]
 public static class BrowserWords
 {
     public static FileSaid Favorites(string home, FavoritesRead read)

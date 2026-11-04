@@ -38,8 +38,7 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
             id = Plugin,
             hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.Land, HookPoints.State } },
         }));
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        Lands = GraphLand.Gate(Home, GraphLand.PullRequest("feature/{quest}-{slug}", Plugin));
     }
 
     private SessionTrees Trees() => new(Home, new LandingPlugins(

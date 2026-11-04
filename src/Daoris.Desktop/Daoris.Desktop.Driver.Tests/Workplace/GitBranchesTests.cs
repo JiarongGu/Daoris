@@ -24,7 +24,7 @@ public sealed class GitBranchesTests : LandedFixture
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "s.txt", "s\n", "s1");
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s-real", "q1", "First"));
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s-real", "q1", "First"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);
         await GitAsync(root, "push", "--quiet", "origin", landed.Branch!);
         await GitAsync(root, "branch", "topic");

@@ -35,7 +35,7 @@ public sealed class TerminalLandRebaseTests : LandedFixture
         await CommitAsync(root, "shared.txt", "one\nfrom the line\n", "the line's own");
         var tip = await HeadAsync(tree.Path);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
         Assert.False(refused.Landed, refused.Message);
         var told = await RebaseTelling.TellTreeAsync(SayAsync, Subject.Session, tree.Path, refused.Conflict!);
 
@@ -52,7 +52,7 @@ public sealed class TerminalLandRebaseTests : LandedFixture
         await GitAsync(tree.Path, "add", "shared.txt");
         await GitAsync(tree.Path, "-c", "core.editor=:", "rebase", "--continue");
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Null(landed.Conflict);
@@ -69,7 +69,7 @@ public sealed class TerminalLandRebaseTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "shared.txt", "one\nfrom the tree\n", "the work");
         await CommitAsync(root, "shared.txt", "one\nfrom the line\n", "the line's own");
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         var told = await RebaseTelling.TellTreeAsync(
             (_, _, _, _) => Task.FromResult<SayAnswer?>(new SayAnswer(false, "the session is running.")), Subject.Session, tree.Path, refused.Conflict!);

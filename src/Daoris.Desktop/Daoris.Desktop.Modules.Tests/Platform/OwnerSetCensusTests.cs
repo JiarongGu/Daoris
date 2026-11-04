@@ -71,7 +71,7 @@ public sealed class OwnerSetCensusTests
     /// <summary>A mutating route declaring none fails, as one declaring another field does, whatever its reason says.</summary>
     [Theory]
     [InlineData("STOP_SESSION", OwnerNone.NamesNothing)]
-    [InlineData("SET_LANDING", OwnerNone.MachineSetting)]
+    [InlineData("SET_LINE", OwnerNone.MachineSetting)]
     [InlineData("SESSION_QUEUE_EDIT", OwnerNone.ActsOnNothing)]
     public void A_mutating_route_declaring_none_fails(string route, string why)
     {

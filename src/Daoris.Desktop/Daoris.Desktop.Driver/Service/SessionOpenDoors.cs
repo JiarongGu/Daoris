@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Contracts.Knowledge;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -78,31 +79,17 @@ public sealed class SessionOpenDoors
         }
     }
 
+    // A host that does not answer the protocol, or answers what does not read, keeps no mark.
     private async Task ReadProtocolAsync(CancellationToken ct)
     {
-        var reply = await _service.SendAsync(ServiceVerb.Get, "/api/protocol", null, ct).ConfigureAwait(false);
-        string? run = null;
-        int opens = 0, head = 0;
-        if (reply.Ok)
-        {
-            using var json = JsonDocument.Parse(reply.Payload);
-            run = json.RootElement.ValueKind == JsonValueKind.Object ? Text(json.RootElement, "run") : null;
-            if (run is not null && json.RootElement.TryGetProperty("marks", out var marks) && marks.ValueKind == JsonValueKind.Object)
-            {
-                opens = Mark(marks, "opens");
-                head = Mark(marks, "head");
-            }
-        }
-
+        var protocol = (await _service.SendAsync(new ReadProtocol(), ct).ConfigureAwait(false)).Answer;
+        var run = protocol?.Run;
+        var marks = run is null ? null : protocol!.Marks;
         lock (_marks)
         {
-            (_run, _opens, _head, _known) = (run, opens, head, true);
+            (_run, _opens, _head, _known) = (run, marks?.GetValueOrDefault("opens") ?? 0, marks?.GetValueOrDefault("head") ?? 0, true);
         }
     }
-
-    /// <summary>A mark's version as the protocol answers it; 0 for none, or one that is not a whole number.</summary>
-    private static int Mark(JsonElement marks, string name) =>
-        marks.TryGetProperty(name, out var mark) && mark.ValueKind == JsonValueKind.Number && mark.TryGetInt32(out var version) ? version : 0;
 
     /// <summary>
     /// The host's <c>head</c> mark (FOUNDATION1d-ii, the design §19.12): 1 where its say door refuses a word said to a record that is not its line's

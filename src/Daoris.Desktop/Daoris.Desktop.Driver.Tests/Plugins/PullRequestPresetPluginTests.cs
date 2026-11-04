@@ -19,8 +19,7 @@ public sealed class PullRequestPresetPluginTests : LandingPluginFixture
     {
         var (root, origin) = await RepositoryWithOriginAsync("engine");
         InstallRealPlugin();
-        DriverConfig.Empty.WithLine("engine", "main")
-            .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id)).Save(ConfigPath);
+        DriverConfig.Empty.WithLine("engine", "main").Save(ConfigPath);
 
         var error = new StringWriter();
         var exit = await DriverChoicesCommand.RunAsync(["workflow", "new", "made", "--from", "pull-request"], new DriverChoicesWorld

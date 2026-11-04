@@ -17,7 +17,7 @@ public sealed class KnowledgeWorkplacePortsTests
         Assert.Equal(AutoLandings.FileName, read.AutoLandingsFileName);
         Assert.Equal(CanonicalLine.Judged(DriverConfig.Empty, "app", "default", null, null),
             read.JudgedLine(DriverConfig.Empty, "app", "default", null, null));
-        Assert.Equal(LandingRules.Choose(DriverConfig.Empty, "app", "default"), read.ChooseLanding(DriverConfig.Empty, "app", "default"));
+        Assert.Equal(LandingRules.Line(DriverConfig.Empty, "app", "default"), read.ChooseLanding(DriverConfig.Empty, "app", "default"));
         var state = new PullRequestState("completed");
         Assert.Equal(PullRequestWords.Row(state, null, null, null), read.PullRequestRow(state, null));
         Assert.Equal(HistoryCommand.Count(2, "file"), read.HistoryCount(2, "file"));

@@ -42,15 +42,11 @@ public sealed class IntegrationRequestsTests : IDisposable
     private bool _refUnread;
     private bool _ancestryUnread;
 
-    private static readonly LandingRule BranchRule = new(LandingForm.Branch, "feature/{quest}-{slug}");
-
-    private static DriverConfig Config(LandingIntegrate? integrate, bool autoAccept = false) =>
-        DriverConfig.Empty.WithLine("engine", "main")
-            .WithLanding("engine", BranchRule with { AutoAccept = autoAccept })
-            .WithLandingIntegrate("engine", integrate);
+    private static DriverConfig Config(LandingIntegrate? integrate) =>
+        DriverConfig.Empty.WithLine("engine", "main").WithLinePolicy("engine", integrate);
 
     private static readonly DriverConfig Owner = Config(new LandingIntegrate(Request: LandingIntegrate.Owner));
-    private static readonly DriverConfig Done = Config(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared), autoAccept: true);
+    private static readonly DriverConfig Done = Config(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
     private static readonly DriverConfig Steward = Config(new LandingIntegrate(Request: LandingIntegrate.Steward, Gates: LandingIntegrate.Declared));
 
     /// <summary>A landing the person accepted, its review skipped in the person's words, its unit and the quest it served.</summary>
@@ -432,7 +428,7 @@ public sealed class IntegrationRequestsTests : IDisposable
     [Fact]
     public async Task An_automatic_landing_under_owner_waits_for_the_card_and_steward_waits_for_its_act()
     {
-        var ownerAuto = Config(new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates), autoAccept: true);
+        var ownerAuto = Config(new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates));
         Refused(await AdmitAsync(ownerAuto, new Records([Written(AcceptedBy.Auto, LandingIntegrate.Owner)]), Node()), IntegrationRefusals.AwaitsOwner,
             $"`{Branch}` was landed automatically under `request: owner`, so its landing is no request: it waits for the owner's card");
 

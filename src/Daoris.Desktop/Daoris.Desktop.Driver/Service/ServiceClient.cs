@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Daoris.Contracts;
+using Daoris.Contracts.Knowledge;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -8,8 +10,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The driver's half of the conversation with the service — a client through the same doors as every
 /// other component (D46 §7). Deliberately NOT a reference to the service's assemblies: the doors are
-/// the contract, and a driver that could reach the store directly would drift from every client that
-/// cannot.
+/// the contract, declared in Daoris.Contracts, and a driver that could reach the store directly would
+/// drift from every client that cannot.
 /// </summary>
 /// <remarks>
 /// It writes each request and reads each answer, and the HTTP is behind
@@ -49,6 +51,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var answer = await _doors.SendAsync(verb, path, json, ct).ConfigureAwait(false);
         Opens.Observe(answer);
         return answer;
+    }
+
+    // A route the contracts do not declare yet has a method of its own below.
+    // transitional: routes-by-hand
+    /// <summary>A route the contracts declare, sent as its record and read as its answer; a refusal comes back as one.</summary>
+    public async Task<Sent<TAnswer>> SendAsync<TAnswer>(IRoute<TAnswer> request, CancellationToken ct = default) where TAnswer : class
+    {
+        var (verb, path, json) = RouteRequest.Of(request);
+        return Sent<TAnswer>.Read($"{_base}{path}", await SendAsync(verb, path, json, ct).ConfigureAwait(false));
     }
 
     /// <summary>A record a door class opened, told to <see cref="Opened"/>'s watchers as this client's own doors tell them (LOG1b).</summary>
@@ -1101,19 +1112,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct = default) =>
         ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false));
 
-    /// <summary>
-    /// The path of each entry the index holds as one repository's own (D47 §4's door), once per entry — what a set-up
-    /// quest says the workspace already knows of it (LAYOUT7, D124 §2.2). Canonical doctrine is not its own.
-    /// </summary>
-    public async Task<IReadOnlyList<string>> EntryPathsAsync(string repository, CancellationToken ct = default)
-    {
-        using var document = JsonDocument.Parse(
-            await GetAsync($"/api/entries?repository={Uri.EscapeDataString(repository)}", ct).ConfigureAwait(false));
-        return document.RootElement.ValueKind == JsonValueKind.Array
-            ? [.. document.RootElement.EnumerateArray().Select(entry => Text(entry, "path")).OfType<string>()]
-            : [];
-    }
-
     /// <summary>One ask as it stands — how an intake's end is observed. Null when the service has none.</summary>
     public async Task<AskView?> FindAskAsync(string id, CancellationToken ct = default)
     {
@@ -1608,22 +1606,16 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <c>closure</c> and (CLOSECAP1) <c>closeOutcome</c>, the outcome door's recovery: both must be answered. A host from before
     /// answers none, or <c>closure</c> alone, and is not asked to keep what it cannot recover.
     /// </summary>
-    public async Task<bool> KnowsClosureAsync(CancellationToken ct = default)
-    {
-        using var document = JsonDocument.Parse(await GetAsync("/api/status", ct).ConfigureAwait(false));
-        return Flag(document.RootElement, "closure") && Flag(document.RootElement, "closeOutcome");
-    }
+    public async Task<bool> KnowsClosureAsync(CancellationToken ct = default) =>
+        (await SendAsync(new ReadStatus(), ct).ConfigureAwait(false)).Answered() is { Closure: true, CloseOutcome: true };
 
     /// <summary>
     /// Whether this client's host judges a bind in a workspace synced through a remote by the remote's handshake (FABRIC-CLOSE1i):
     /// <c>/api/status</c>'s <c>closeRemote</c>, beside the two <see cref="KnowsClosureAsync"/> reads. A host before it answers none, and is
     /// asked no bind there.
     /// </summary>
-    public async Task<bool> KnowsRemoteClosureAsync(CancellationToken ct = default)
-    {
-        using var document = JsonDocument.Parse(await GetAsync("/api/status", ct).ConfigureAwait(false));
-        return Flag(document.RootElement, "closure") && Flag(document.RootElement, "closeOutcome") && Flag(document.RootElement, "closeRemote");
-    }
+    public async Task<bool> KnowsRemoteClosureAsync(CancellationToken ct = default) =>
+        (await SendAsync(new ReadStatus(), ct).ConfigureAwait(false)).Answered() is { Closure: true, CloseOutcome: true, CloseRemote: true };
 
     /// <summary>
     /// A workflow request's quest (INTEGRATE1p, <c>POST /api/quests</c> with the request's key): the same key sent again answers the quest it
@@ -3017,39 +3009,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var answer = await _doors.SendAsync(ServiceVerb.Get, $"/api/history?{query}", null, ct).ConfigureAwait(false);
         var root = Answered(answer.Ok, answer.Status, answer.Payload);
         return [.. Items(root, "units").Select(ReadHistoryUnit)];
-    }
-
-    /// <summary>
-    /// One wording's search of one repository's records for a brainstorm's packet (BRAINSTORM1a, D176 point 2; D151 §6): the
-    /// knowledge service's <c>/api/search</c>, local records only, each hit's entry read whole for its text, and the tier its header
-    /// names, <c>meaning</c> where the semantic tier answered, else <c>words</c>. Only reads: a search moves nothing.
-    /// </summary>
-    /// <exception cref="DriverException">A host that refused the search, or one older than the door, in its words.</exception>
-    public async Task<BrainstormSearch> BrainstormSearchAsync(string words, string repository, CancellationToken ct = default)
-    {
-        var path = $"/api/search?q={Uri.EscapeDataString(words)}&repositories={Uri.EscapeDataString(repository)}&limit=12";
-        var answer = await _doors.SendAsync(ServiceVerb.Get, path, null, ct).ConfigureAwait(false);
-        if (!answer.Ok) throw new DriverException($"the service would not search `{repository}`: {answer.Payload}");
-
-        var found = new List<BrainstormFound>();
-        using (var document = JsonDocument.Parse(answer.Payload))
-        {
-            foreach (var hit in document.RootElement.ValueKind == JsonValueKind.Array ? document.RootElement.EnumerateArray() : default)
-            {
-                if (Text(hit, "id") is not { } id || Text(hit, "path") is not { Length: > 0 } relative) continue;
-                var entry = await _doors.SendAsync(ServiceVerb.Get, $"/api/entry?id={Uri.EscapeDataString(id)}", null, ct).ConfigureAwait(false);
-                if (!entry.Ok) continue;
-                using var read = JsonDocument.Parse(entry.Payload);
-                found.Add(new BrainstormFound(
-                    Text(hit, "kind")?.ToLowerInvariant() ?? "entry", relative,
-                    hit.TryGetProperty("firstLine", out var first) && first.ValueKind == JsonValueKind.Number ? first.GetInt32() : null,
-                    hit.TryGetProperty("lastLine", out var last) && last.ValueKind == JsonValueKind.Number ? last.GetInt32() : null,
-                    Text(read.RootElement, "body") ?? "", words));
-            }
-        }
-
-        // The words tier always answers a search (BM25, D151 §6); the header says where meaning answered beside it.
-        return new BrainstormSearch(found, answer.Tier?.Contains("semantic", StringComparison.Ordinal) == true ? BrainstormTier.Meaning : BrainstormTier.Words);
     }
 
     /// <summary>

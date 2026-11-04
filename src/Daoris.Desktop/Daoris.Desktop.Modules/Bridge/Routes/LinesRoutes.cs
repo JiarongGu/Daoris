@@ -132,7 +132,7 @@ public sealed class LinesRoutes(DriverContext context)
             // The policy that reaches each line (the Line row, WORKFLOWCLEAN1h): its own, else its workspace's; left out where none is set.
             Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
             // How each one's work lands (WSR1), from the same file and the same circles.
-            Landings = lines.Select(line => (line, landing: LandingRules.Choose(config, line.Repository, line.Workspace)))
+            Landings = lines.Select(line => (line, landing: LandingRules.Line(config, line.Repository, line.Workspace)))
                 .Select(pair => new
                 {
                     pair.line.Repository,
@@ -221,71 +221,6 @@ public sealed class LinesRoutes(DriverContext context)
         };
     }
 
-    // A repository's landing rule or a workspace's, or either cleared with no form — the same file
-    // `daoris place landing` edits: one truth, two doors (D50).
-    [DriverRoute("SET_LANDING", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("SET_LANDING", Repository = "repository", Workspace = "workspace")]
-    [GroundScoped("SET_LANDING", "landings", "workspaceLandings")]
-    [Says("SET_LANDING", "repository:repository")]
-    [NotAlready("SET_LANDING", "merges into the repository's landing rule")]
-    [Publishes("SET_LANDING", StateScopes.Landing | StateScopes.Lines)]
-    private object? SetLanding(IpcRequest request)
-    {
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
-        if ((repository is null) == (workspace is null))
-        {
-            throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
-        }
-
-        // WORKFLOWCLEAN1 1a: where the place follows a saved workflow, how work lands is that workflow's and the line's policy is the line's, so no
-        // rule is written. It stays working for an unconverted place on Current until the lit wave (row 1y) retires it whole.
-        if (WorkflowSelection.Resolve(DriverConfig.Load(_loop.ConfigPath), repository, workspace, null).Workflow != WorkflowSelection.Current)
-        {
-            throw new DriverException(RetiredLanding);
-        }
-
-        // *Accept automatically* rides the rule (LAND2a, D145): a save that dropped it would switch it off unasked.
-        var rule = Optional(request, "form") is { } form
-            ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"), Flag(request, "autoAccept"))
-            : null;
-        // The ticket's key and the squash (DOORS1b, D164's DOORS1a note) are set where the press names them, an empty key taking
-        // it away; a press naming neither keeps the ones the rule set here holds, where the new rule can hold them.
-        if (rule is not null)
-        {
-            var config = DriverConfig.Load(_loop.ConfigPath);
-            var standing = (workspace is not null ? config.WorkspaceLandings : config.Landings)
-                .TryGetValue((workspace ?? repository)!, out var own) ? own : null;
-            rule = LandingKept(rule, standing, request.Payload);
-        }
-
-        // AGENTSPLACE1d: `integrate` is set where the press names an object, withdrawn on null, and kept when it is not named.
-        var withdraw = false;
-        if (rule is not null && request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("integrate", out var asked))
-        {
-            if (asked.ValueKind == JsonValueKind.Null) withdraw = true;
-            else rule = rule with { Integrate = LandingKey.IntegrateOf(asked, out var shape) ?? throw new DriverException(shape!) };
-        }
-
-        var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
-        _context.Change(config =>
-        {
-            if (withdraw && (workspace is not null ? config.WorkspaceLandings : config.Landings).TryGetValue((workspace ?? repository)!, out var held)
-                && held.Integrate is not null)
-            {
-                config = workspace is not null ? config.WithWorkspaceLandingIntegrate(workspace, null) : config.WithLandingIntegrate(repository!, null);
-            }
-
-            return LandingRules.Put(config, repository, workspace, rule, catalog);
-        });
-        return DriverRoutes.State(_loop);
-    }
-
-    /// <summary>What a press of <c>SET_LANDING</c> is told where the place follows a saved workflow (the cleanup design §1.4): where its two halves went.</summary>
-    internal const string RetiredLanding =
-        "retired: a landing rule is no longer written. How work lands is the workflow a place follows (Workflow › Landing, or Set up…), "
-        + "and how the line integrates is its policy (Line).";
-
     /// <summary>A rule's <c>integrate</c> as the file writes it (and a press may send it), each key null where absent; null where the rule has none.</summary>
     internal static object? IntegrateWire(LandingIntegrate? integrate) => integrate is null ? null : new
     {
@@ -299,39 +234,6 @@ public sealed class LinesRoutes(DriverContext context)
         integrate.Overlap,
         integrate.Line,
     };
-
-    /// <summary>
-    /// The rule a landing press leaves (DOORS1b): its <c>key</c> where the press names one (a string; empty or null is none), else
-    /// the standing rule's where the new one is a branch whose pattern says <c>{ticket}</c>; its <c>squash</c> where the press says
-    /// <c>true</c> or <c>false</c>, else the standing rule's on a branch. A merge keeps neither, and one the press names is the
-    /// rule's shape to refuse (<see cref="LandingRules.Problem(LandingRule)"/>). Ask Daoris's <c>landing</c> card keeps them alike.
-    /// </summary>
-    internal static LandingRule LandingKept(LandingRule rule, LandingRule? standing, JsonElement? payload)
-    {
-        var (keyNamed, key) = (false, (string?)null);
-        bool? squash = null;
-        if (payload is { ValueKind: JsonValueKind.Object } root)
-        {
-            if (root.TryGetProperty("key", out var written) && written.ValueKind is JsonValueKind.String or JsonValueKind.Null)
-            {
-                keyNamed = true;
-                key = written.ValueKind == JsonValueKind.String && written.GetString() is { Length: > 0 } shape ? shape : null;
-            }
-
-            if (root.TryGetProperty("squash", out var said) && said.ValueKind is JsonValueKind.True or JsonValueKind.False)
-            {
-                squash = said.GetBoolean();
-            }
-        }
-
-        var branch = rule.Form == LandingForm.Branch;
-        var ticketed = branch && (rule.Pattern ?? "").Contains("{ticket}", StringComparison.Ordinal);
-        return rule with
-        {
-            Key = keyNamed ? key : ticketed ? standing?.Key : null,
-            Squash = squash ?? (branch && standing?.Squash == true),
-        };
-    }
 
     // The clean-up (WSR3, D88): every session branch here with what it holds — then, on the
     // person's press, those the proof clears, and only those the page listed to go (`only`).

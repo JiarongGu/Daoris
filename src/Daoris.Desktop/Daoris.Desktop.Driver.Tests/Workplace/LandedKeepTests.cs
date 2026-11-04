@@ -125,7 +125,7 @@ public sealed class LandedKeepTests : LandedFixture
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "shared.txt", "one\ntwo\n", "the work");
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s5", "q5", "Leaned"));
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s5", "q5", "Leaned"), gate: Lands);
         await SquashAsync(root, landed.Branch!);
 
         var busy = new HashSet<string> { tree.Path };

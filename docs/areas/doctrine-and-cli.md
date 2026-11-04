@@ -34,8 +34,8 @@ one `change` skill, and `co-working` as a pack.
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do), `doctor` (look-alike documents), the LF pin |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
-| Command tree | `Daoris.Desktop.Driver/Platform/CommandWords.cs`, `Loop/CommandTree.cs` | Every group and verb of `daoris`, and the carried CLI's path |
-| Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a doctrine word through the CLI an install carries, marked `DAORIS_HANDED=driver` |
+| Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
+| Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
 | Set-up press | `Driver/Setup/SetupPress.cs`, `Setup/Domain/SetupPressRules.cs`, `SetupBrief.cs` | Which set-up a line calls for, its refusals, its quest and the exact-verb rule |
 | Place and workspace plan | `Driver/Setup/Place*.cs`, `WorkspaceSetup*.cs`, `Domain/WorkspaceSetupRules.cs`, `SetupOrder.cs` | `daoris place`: a place's set-up, and a workspace's paced adoption |
 | Doctrine status read | `Driver/Setup/DoctrineStatusRead.cs`, `Domain/DoctrineStatus.cs`, `ReconcileBrief.cs` | Reads `daoris status --json` in a checkout; the reconcile quest's words |
@@ -146,16 +146,18 @@ one `change` skill, and `co-working` as a pack.
 36. `daoris` is the one name. The CLI owns the doctrine commands; every other word goes whole to the desktop's program,
     the one `DAORIS_DRIVER_PROGRAM` names (an existing apphost) or the install's `app/daoris-driver/`, never `PATH`. With
     neither it says where the program is, exit 2, and does nothing. (from D194)
-37. `DAORIS_HANDED` keeps a word from being handed back: the CLI refuses a non-doctrine word the program handed, and the
-    program refuses a doctrine word the CLI handed. An install's `app/bin/daoris` runs the program, which runs a doctrine
-    word through the CLI in `app/cli/` on the tools' Node.js (22 or later). (from D124, D194)
+37. Each program hands the other a word it does not own, once: `DAORIS_HANDED` names who handed it. The CLI refuses a
+    non-doctrine word the program handed, exit 2; the program refuses, with its usage and exit 2, a word no group owns that
+    the CLI handed. An install's `app/bin/daoris` runs the program, which runs a word no group owns through the CLI in
+    `app/cli/` on the tools' Node.js (22 or later), and says so where none is carried. (from D124, D194)
 38. No CLI module touches the network. The one spawn is the seam's `startChild`, and nothing a doctrine command reaches can
     spawn. The package has no runtime dependencies. (from D8, D33)
 39. Exit codes are 0 clean, 1 policy failure, 2 tool error. A failure nobody anticipated is 2, said in one line.
     (from D8)
-40. The groups and verbs are declared in `CommandWords.cs` and the driver tests' `fixtures/command-tree.json`; the CLI's
-    rows are held to the same file. A management verb is a driver group, never a CLI row. No word is kept for an older name:
-    an old form is no command. (from D194, D232)
+40. Each half of the tree is declared by the code that owns it: a program group by `[CommandGroup]` on its library command,
+    collected at start, one owner per group; a doctrine command by its row in the CLI's `COMMANDS`. Neither half holds the
+    other's list. A management verb is a driver group, never a CLI row. No word is kept for an older name: an old form is no
+    command. (from D194, D228, D232)
 
 **The devkit's universal gates**
 
@@ -204,9 +206,10 @@ one `change` skill, and `co-working` as a pack.
 - The region's shape: `tierrender.ts` (text) and `region.ts` (markers).
 - The update check, keep or reconcile: `commands.ts` (`commandStatus`), `keep.ts`, `reconcile.ts`. A change to the
   `status --json` shape also changes the driver's `Setup/Domain/DoctrineStatus.cs`.
-- A new doctrine command: a module under `src/Daoris.Cli/src/cli/`, its row in `COMMANDS`, its lines in
-  `test/fixtures/cli-usage/help.txt`, and its name in `CommandWords.Doctrine` and `fixtures/command-tree.json`.
-- A management verb: a driver group in `CommandWords.cs` and a command in the driver library. Never the CLI.
+- A new doctrine command: a module under `src/Daoris.Cli/src/cli/`, its row in `COMMANDS`, and its lines in
+  `test/fixtures/cli-usage/help.txt`. The program needs nothing: it hands the CLI any word no group owns.
+- A management verb: a command in the driver library marked `[CommandGroup]` (`.claude/knowledge/command-group.md` lists
+  every place a group goes). Never the CLI.
 - A set-up behaviour: the pure rules in `Setup/Domain/` first, then `SetupPress.cs` or `WorkspaceSetup.cs`.
 - A gate every repository runs: a new gate type in `Daoris.Devkit.Core`, registered in `GateRunner`.
 
@@ -219,7 +222,8 @@ one `change` skill, and `co-working` as a pack.
 - `test/dogfood.test.ts`: canon frontmatter, no private names in the canon, this repository checks clean, no CLI module on
   the network, one spawn, `check` with no canon. `test/structure.test.ts` holds the CLI's module structure.
 - Driver: `Daoris.Desktop.Driver.Tests/Setup/` (`SetupPressTests`, `SetupBriefTests`, `SetupQuestsTests`,
-  `WorkspaceSetup*Tests`, `PlacePlanTests`, `PlaceApplyTests`, `DoctrineStatusTests`) and `fixtures/command-tree.json`.
+  `WorkspaceSetup*Tests`, `PlacePlanTests`, `PlaceApplyTests`, `DoctrineStatusTests`); `Loop/CommandTreeTests` (every word a
+  group declares routes) and the CLI's `cli-tree.test.ts` (every row runs in the CLI).
 - Devkit: `src/Daoris.Devkit/Daoris.Devkit.Tests/`.
 
 **The gates that bite**
@@ -239,10 +243,10 @@ one `change` skill, and `co-working` as a pack.
 3. D230 point 2 (the lock's canon digest orders the canons) vs `canon.ts:141-145` and `commands.ts:168-172` (the digest
    tells two canons apart and never orders them): the code reads right.
 4. D35 (`connect` is the CLI's one online command) vs `dogfood.test.ts:659` (no CLI module touches the network) and
-   `CommandWords.cs:72,117` (`connect` is the driver's `repository connect`): the code reads right.
-5. D194 point 1 (`daoris driver|agent|plugin|tool` families) vs its own 2026-11-03 note and `CommandWords.cs:41-89` (one tree
-   of groups, no `driver` group): the note and the code read right.
-6. D117 point 7 and D124 point 5 (`daoris-driver setup [--workspace]`) vs `CommandWords.cs:63` and
+   `Service/RegistryWords.cs`' mark (`connect` is the driver's `repository connect`): the code reads right.
+5. D194 point 1 (`daoris driver|agent|plugin|tool` families) vs its own 2026-11-03 note and the `[CommandGroup]` marks (one
+   tree of groups, no `driver` group): the note and the code read right.
+6. D117 point 7 and D124 point 5 (`daoris-driver setup [--workspace]`) vs `Setup/PlaceCommand.cs`' mark and
    `WorkspaceSetupCommand.cs:24` (`daoris place … --adoption`): the code reads right.
 7. `CommandWords.cs` (one name, `daoris`) vs about a hundred doc comments and the older `CHANGELOG.md` entries that still
    spell `daoris-driver …` or `daoris driver …`: the code reads right. `app/daoris-driver/` is the program's folder, kept.

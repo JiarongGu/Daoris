@@ -102,7 +102,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         if (repository.Length == 0) return null;
 
         var commits = CommitRules.Resolve(config, repository, workspace);
-        var landing = LandingRules.Choose(config, repository, workspace);
+        var landing = LandingRules.Line(config, repository, workspace);
         return new
         {
             Commits = new { Repository = repository, Workspace = workspace, Rule = LinesRoutes.CommitWire(commits.Rule), commits.Source },

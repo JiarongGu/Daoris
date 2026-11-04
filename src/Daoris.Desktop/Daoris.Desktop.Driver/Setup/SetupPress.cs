@@ -47,7 +47,6 @@ public static class SetupPress
         var plan = new SetupPlan(row.Repository)
         {
             Workspace = row.Workspace,
-            Landing = LandingRules.Choose(config, row.Repository, row.Workspace),
             Adapter = config.Adapter,
             Builds = builds,
             Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
@@ -129,7 +128,6 @@ public static class SetupPress
         var plan = new SetupPlan(row.Repository)
         {
             Workspace = row.Workspace,
-            Landing = LandingRules.Choose(config, row.Repository, row.Workspace),
             Adapter = config.Adapter,
             Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
             Case = SetupCase.Reconcile,

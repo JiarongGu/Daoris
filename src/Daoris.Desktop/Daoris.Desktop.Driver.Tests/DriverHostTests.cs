@@ -55,16 +55,16 @@ public sealed class DriverHostTests : IDisposable
         Assert.False(File.Exists(LockFile));
     }
 
-    /// <summary>A word nobody answers used to fall through to the loop too. Now it is the usage, and says so.</summary>
+    /// <summary>A word no group owns is the CLI's; a build that carries no CLI says so, exit 2, and starts nothing.</summary>
     [Fact]
-    public async Task A_word_nobody_answers_is_the_usage_and_starts_nothing()
+    public async Task A_word_no_group_owns_is_handed_to_the_cli_and_starts_nothing()
     {
         await using var service = CountingService.Start();
 
         var (code, said) = await RunAsync(service, "watch");
 
         Assert.Equal(2, code);
-        Assert.Contains("no command `watch`", said);
+        Assert.Contains("`watch` is no group of this program", said);
         Assert.Equal(0, service.Requests);
     }
 

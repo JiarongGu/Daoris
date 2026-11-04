@@ -269,10 +269,6 @@ public sealed class HelpRoomTests : IDisposable
         {
             Drivable = ["console-ui", "reports-db"], Holds = ["reports-db"], Trees = ["console-ui"],
             Cap = 4, Adapter = "claude-code", IntakeAdapter = "claude-code-acp", HelperAdapter = "claude-code-acp",
-            WorkspaceLandings = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["work"] = new("branch", "feature/{slug}-{quest}", Tidy: true),
-            },
         };
         var snapshot = new Snapshot(
             [],
