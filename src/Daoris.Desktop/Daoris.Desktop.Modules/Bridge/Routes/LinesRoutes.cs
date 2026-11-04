@@ -240,47 +240,47 @@ public sealed class LinesRoutes(DriverContext context)
     /// over every checkout, so an ask while one runs shares it (<see cref="OneFlightAttribute"/>); the press is never shared.
     /// </summary>
     [DriverRoute("SWEEP_PLAN", PipeClass.Open)]
+    [OneFlight("SWEEP_PLAN")]
+    private async Task<object?> SweepPlanAsync(SweepPlanRead read, CancellationToken cancellationToken)
+    {
+        // `trees clean --workspace` takes one workspace's checkouts alone, as that workspace's Branches tab does; none takes every one.
+        var workspace = read.Workspace;
+        // the pull-request answers kept before this look, so what its asks wrote reaches the pushed list at once (below).
+        var kept = new LandedBranches(_loop.Home).Entries();
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken, workspace);
+        // a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
+        var pluginLines = new List<string>();
+        var trees = read.Said ? Asking(pluginLines) : new SessionTrees(_loop.Home);
+
+        // LANDRETIRE1 part 2: which quests a landing the line does not hold names are closed, the service's, read once for the list.
+        var closed = await LandedStanding.ClosedAsync(kept, (_loop.Service ?? throw NotReady()).EveryQuestAsync, cancellationToken);
+        var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken, closed);
+        // The person's look asks the plugins and keeps their answers in the landing record, which no watch hears and
+        // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now
+        //, rather than at its next ref move or deadline. Asked of no plugin again: the part reads what was kept.
+        SweepStateSlice.Asked(_loop.Facts, kept, new LandedBranches(_loop.Home).Entries());
+        // the session each kept branch's tree is, so its row says how to land it as that session's page does. The
+        // records are read only where a row could offer one, and records that do not read offer none: the list stands.
+        var records = plan.Sessions.Any(OffersLanding)
+            ? await SessionBranchDoors.RecordsOrNoneAsync(_loop.Service ?? throw NotReady(), cancellationToken)
+            : [];
+        // `trees clean` asks for the verb's words beside the list's fields (`said`); the page does not.
+        return read.Said
+            ? SweepAnswer(plan, records, TreesPlanWords.CleanPlan(plan, records, new TreesAsk(TreesLook.Clean) { Workspace = workspace }).After(pluginLines))
+            : SweepAnswer(plan, records);
+    }
+
+    // The clean-up's press: those the proof clears, and only those the page listed to go (`only`).
     [DriverRoute("SWEEP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SWEEP", Workspace = "workspace")]
     [GroundRead("SWEEP", nameof(PipeReads.SweepPlan))]
     [Publishes("SWEEP", Moves)]
-    [OneFlight("SWEEP_PLAN")]
-    private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SweepAsync(SweepPress press, CancellationToken cancellationToken)
     {
-        // `trees clean --workspace` takes one workspace's checkouts alone, as that workspace's Branches tab does; none takes every one.
-        var workspace = Optional(request, "workspace");
-        // the pull-request answers kept before this look, so what its asks wrote reaches the pushed list at once (below).
-        var kept = request.Type == "SWEEP_PLAN" ? new LandedBranches(_loop.Home).Entries() : null;
+        var workspace = press.Workspace;
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken, workspace);
-        // a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
-        var pluginLines = new List<string>();
-        var trees = kept is not null && Flag(request, "said") ? Asking(pluginLines) : new SessionTrees(_loop.Home);
-
-        if (kept is not null)
-        {
-            // LANDRETIRE1 part 2: which quests a landing the line does not hold names are closed, the service's, read once for the list.
-            var closed = await LandedStanding.ClosedAsync(kept, (_loop.Service ?? throw NotReady()).EveryQuestAsync, cancellationToken);
-            var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken, closed);
-            // The person's look asks the plugins and keeps their answers in the landing record, which no watch hears and
-            // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now
-            //, rather than at its next ref move or deadline. Asked of no plugin again: the part reads what was kept.
-            SweepStateSlice.Asked(_loop.Facts, kept, new LandedBranches(_loop.Home).Entries());
-            // the session each kept branch's tree is, so its row says how to land it as that session's page does. The
-            // records are read only where a row could offer one, and records that do not read offer none: the list stands.
-            var records = plan.Sessions.Any(OffersLanding)
-                ? await SessionBranchDoors.RecordsOrNoneAsync(_loop.Service ?? throw NotReady(), cancellationToken)
-                : [];
-            // `trees clean` asks for the verb's words beside the list's fields (`said`); the page does not.
-            return Flag(request, "said")
-                ? SweepAnswer(plan, records, TreesPlanWords.CleanPlan(plan, records, new TreesAsk(TreesLook.Clean) { Workspace = workspace }).After(pluginLines))
-                : SweepAnswer(plan, records);
-        }
-
-        HashSet<string>? only = null;
-        if (request.Payload is { } payload && payload.TryGetProperty("only", out var named) && named.ValueKind == JsonValueKind.Array)
-        {
-            only = named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal);
-        }
+        var trees = new SessionTrees(_loop.Home);
+        var only = press.Only?.ToHashSet(StringComparer.Ordinal);
 
         // A workspace the registry does not name is refused, naming the ones it does, rather than clean nothing and say all is well.
         if (workspace is not null && TreesCommand.Take(
@@ -381,10 +381,10 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundRead("RECOVERY_DROP", nameof(PipeReads.RecoveryRefs))]
     [Says("RECOVERY_DROP", "repository:repository")]
     [Publishes("RECOVERY_DROP", Moves)]
-    private async Task<object?> DropRecoveriesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DropRecoveriesAsync(RecoveryDropPress press, CancellationToken cancellationToken)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-        var asked = RecoveriesAsked(request.Payload);
+        var repository = press.Repository;
+        var asked = RecoveriesAsked(press.Refs);
         var service = _loop.Service ?? throw NotReady();
 
         var root = Checkouts(await service.RegistryAsync(cancellationToken), repository, null)
@@ -395,25 +395,12 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     /// <summary>The refs a press names, each with the commit the page showed (<c>{ ref, commit }</c>); a call naming none is malformed.</summary>
-    public static IReadOnlyList<RecoveryDrop> RecoveriesAsked(JsonElement? payload)
+    public static IReadOnlyList<RecoveryDrop> RecoveriesAsked(IReadOnlyList<RecoveryRefAsked>? refs)
     {
-        if (payload is not { ValueKind: JsonValueKind.Object } body || !body.TryGetProperty("refs", out var refs) || refs.ValueKind != JsonValueKind.Array)
-        {
-            throw new ArgumentException("`refs` must name the recovery refs to delete.");
-        }
-
-        var asked = new List<RecoveryDrop>();
-        foreach (var each in refs.EnumerateArray())
-        {
-            if (each.ValueKind != JsonValueKind.Object || !each.TryGetProperty("ref", out var named) || named.ValueKind != JsonValueKind.String)
-            {
-                throw new ArgumentException("each of `refs` must be `{ ref, commit }`.");
-            }
-
-            asked.Add(new(named.GetString()!, each.TryGetProperty("commit", out var shown) && shown.ValueKind == JsonValueKind.String ? shown.GetString() : null));
-        }
-
-        return asked;
+        if (refs is null) throw new ArgumentException("`refs` must name the recovery refs to delete.");
+        return [.. refs.Select(each => each.Ref is { } named
+            ? new RecoveryDrop(named, each.Commit)
+            : throw new ArgumentException("each of `refs` must be `{ ref, commit }`."))];
     }
 
     /// <summary>What a delete of recovery refs became on the wire: what went, what was kept and why, and the sentence the terminal says.</summary>
@@ -433,65 +420,53 @@ public sealed class LinesRoutes(DriverContext context)
     /// the page listed (`only`). A row not done is an answer with the tree layer's sentence. `workspace` keeps both to its checkouts.
     /// </summary>
     [DriverRoute("TREES_SYNC_PLAN", PipeClass.Open)]
+    private async Task<object?> TreesSyncPlanAsync(TreesSyncPlanRead read, CancellationToken cancellationToken)
+    {
+        var named = read.Repository;
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, named, cancellationToken, read.Workspace);
+        // a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
+        var pluginLines = new List<string>();
+        var trees = read.Said ? Asking(pluginLines) : new SessionTrees(_loop.Home);
+        var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, cancellationToken, SyncScopeOf(named, read.Also, read.All));
+        // `trees sync` asks for the verb's words beside the list's fields (`said`); the page does not.
+        if (read.Said)
+        {
+            var asked = new TreesAsk(TreesLook.Sync) { Repository = named, Workspace = read.Workspace, All = read.All };
+            return new
+            {
+                Lines = plan.Lines.Select(PullRow).ToArray(),
+                Rebases = plan.Rebases.Select(RebaseRow).ToArray(),
+                Deletes = plan.Deletes.Select(LandedRow).ToArray(),
+                Looked = plan.Looked.Select(SyncRepositoryRow).ToArray(),
+                Apart = plan.Apart.Select(SyncRepositoryRow).ToArray(),
+                Said = TreesPlanWords.SyncPlan(plan, asked, DateTimeOffset.UtcNow).After(pluginLines).ToWire(),
+            };
+        }
+
+        return new
+        {
+            Lines = plan.Lines.Select(PullRow).ToArray(),
+            Rebases = plan.Rebases.Select(RebaseRow).ToArray(),
+            Deletes = plan.Deletes.Select(LandedRow).ToArray(),
+            // What the look took, and every other repository with a checkout, listed apart for the person to include.
+            Looked = plan.Looked.Select(SyncRepositoryRow).ToArray(),
+            Apart = plan.Apart.Select(SyncRepositoryRow).ToArray(),
+        };
+    }
+
+    // The press of the sync list: the rows it listed (`only`), and the repositories the person included besides.
     [DriverRoute("TREES_SYNC", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TREES_SYNC", Repository = "repository", Workspace = "workspace")]
     [GroundRead("TREES_SYNC", nameof(PipeReads.SyncPlan))]
     [Says("TREES_SYNC", "repository:repository")]
     [Publishes("TREES_SYNC", Moves)]
-    private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> TreesSyncAsync(TreesSyncPress press, CancellationToken cancellationToken)
     {
-        var named = Optional(request, "repository");
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, named, cancellationToken, Optional(request, "workspace"));
-        // a terminal's list says a plugin's own lines as they come, under its name, as its alone path does; the page's says none.
-        var pluginLines = new List<string>();
-        var trees = request.Type == "TREES_SYNC_PLAN" && Flag(request, "said") ? Asking(pluginLines) : new SessionTrees(_loop.Home);
-        // Which repositories it takes: those holding Daoris's branches, and the ones the person included — every
-        // one (`all`), the ones ticked (`also`), or the one named. The press takes each a listed row names besides.
-        var also = Names(request, "also");
-        if (named is not null) also.Add(named);
-        var scope = Flag(request, "all") ? SyncScope.Everything : SyncScope.Named(also);
-        static object Repository(SyncRepository each) => new { each.Repository, each.Workspace, each.Holds };
-
-        static string? Short(string? commit) => commit is null ? null : Daoris.Driver.TextBounds.ShortCommit(commit, 8);
-        object Pull(LinePull pull) => new
-        {
-            pull.Repository, pull.Workspace, pull.Line, pull.Kind, From = Short(pull.From), To = Short(pull.To), pull.Commits,
-            pull.Fetch, pull.Detail, pull.Moves,
-            // Where the fetch failed: when this checkout last heard from origin, and how origin is reached.
-            pull.LastFetch, pull.Reach,
-        };
-        if (request.Type == "TREES_SYNC_PLAN")
-        {
-            var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, cancellationToken, scope);
-            // `trees sync` asks for the verb's words beside the list's fields (`said`); the page does not.
-            if (Flag(request, "said"))
-            {
-                var asked = new TreesAsk(TreesLook.Sync) { Repository = named, Workspace = Optional(request, "workspace"), All = Flag(request, "all") };
-                return new
-                {
-                    Lines = plan.Lines.Select(Pull).ToArray(),
-                    Rebases = plan.Rebases.Select(RebaseRow).ToArray(),
-                    Deletes = plan.Deletes.Select(LandedRow).ToArray(),
-                    Looked = plan.Looked.Select(Repository).ToArray(),
-                    Apart = plan.Apart.Select(Repository).ToArray(),
-                    Said = TreesPlanWords.SyncPlan(plan, asked, DateTimeOffset.UtcNow).After(pluginLines).ToWire(),
-                };
-            }
-
-            return new
-            {
-                Lines = plan.Lines.Select(Pull).ToArray(),
-                Rebases = plan.Rebases.Select(RebaseRow).ToArray(),
-                Deletes = plan.Deletes.Select(LandedRow).ToArray(),
-                // What the look took, and every other repository with a checkout, listed apart for the person to include.
-                Looked = plan.Looked.Select(Repository).ToArray(),
-                Apart = plan.Apart.Select(Repository).ToArray(),
-            };
-        }
-
-        HashSet<string>? only = request.Payload is { } payload && payload.TryGetProperty("only", out var listed) && listed.ValueKind == JsonValueKind.Array
-            ? Names(request, "only").ToHashSet(StringComparer.Ordinal)
-            : null;
+        var named = press.Repository;
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, named, cancellationToken, press.Workspace);
+        var trees = new SessionTrees(_loop.Home);
+        var scope = SyncScopeOf(named, press.Also, press.All);
+        var only = press.Only?.ToHashSet(StringComparer.Ordinal);
 
         // The sessions in use, asked again while each repository's trees are held for its replays: the
         // driver may have opened one in a listed tree between the list and this press.
@@ -499,7 +474,7 @@ public sealed class LinesRoutes(DriverContext context)
 
         // `trees sync --yes` takes the checkouts its words name, as the verb takes them, and says so where it takes none: a
         // workspace the registry does not name, or no checkout of the repository named.
-        var ask = new TreesAsk(TreesLook.Sync) { Repository = named, Workspace = Optional(request, "workspace"), All = Flag(request, "all") };
+        var ask = new TreesAsk(TreesLook.Sync) { Repository = named, Workspace = press.Workspace, All = press.All };
         if (repositories.Count == 0)
         {
             var taken = TreesCommand.Take(await service.RegistryAsync(cancellationToken), ask);
@@ -513,24 +488,48 @@ public sealed class LinesRoutes(DriverContext context)
 
         // The verb fetches as it presses (`fetch`); the page's press acts on what its list fetched, and sends none. The lines the press
         // moved are followed by the registry at once where the verb asks (`follow`), as the page's next look would.
-        var done = await trees.SyncAsync(repositories, inUse, only, fetch: Flag(request, "fetch"), cancellationToken,
+        var done = await trees.SyncAsync(repositories, inUse, only, fetch: press.Fetch, cancellationToken,
             inUseNow: async token => await InUseAsync(service, token), scope: scope, beside: token => BranchTidying.BesideAsync(service, token));
         _loop.Nudge();
-        var followed = Flag(request, "follow")
+        var followed = press.Follow
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
             : null;
         return new
         {
-            Lines = done.Lines.Select(result => new { Line = Pull(result.Pull), result.Moved, result.Message }).ToArray(),
+            Lines = done.Lines.Select(result => new { Line = PullRow(result.Pull), result.Moved, result.Message }).ToArray(),
             Rebases = done.Rebases.Select(result => new { Branch = RebaseRow(result.Item), result.Replayed, result.Message }).ToArray(),
             Deletes = done.Deletes.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
             Changed = done.Lines.Count(result => result.Moved) + done.Rebases.Count(result => result.Replayed) + done.Deletes.Count(result => result.Removed),
             // What the press left apart and the lines the registry followed, which the verb says; the page ignores both.
-            Apart = done.Apart.Select(Repository).ToArray(),
+            Apart = done.Apart.Select(SyncRepositoryRow).ToArray(),
             Followed = followed?.Out ?? [],
             Said = TreesWords.Sync(done, DateTimeOffset.UtcNow, followed).ToWire(),
         };
     }
+
+    /// <summary>
+    /// Which repositories a sync takes: every one (<c>all</c>), the ones ticked (<c>also</c>) and the one named; the press takes each a
+    /// listed row names besides.
+    /// </summary>
+    private static SyncScope SyncScopeOf(string? named, IReadOnlyList<string>? also, bool all)
+    {
+        if (all) return SyncScope.Everything;
+        var taken = (also ?? []).ToHashSet(StringComparer.Ordinal);
+        if (named is not null) taken.Add(named);
+        return SyncScope.Named(taken);
+    }
+
+    private static object SyncRepositoryRow(SyncRepository each) => new { each.Repository, each.Workspace, each.Holds };
+
+    private static string? Short(string? commit) => commit is null ? null : Daoris.Driver.TextBounds.ShortCommit(commit, 8);
+
+    private static object PullRow(LinePull pull) => new
+    {
+        pull.Repository, pull.Workspace, pull.Line, pull.Kind, From = Short(pull.From), To = Short(pull.To), pull.Commits,
+        pull.Fetch, pull.Detail, pull.Moves,
+        // Where the fetch failed: when this checkout last heard from origin, and how origin is reached.
+        pull.LastFetch, pull.Reach,
+    };
 
     // Which repositories a look would take: every one with a checkout here, and whether it holds a branch
     // of Daoris's. Read on the machine, never fetched, so the screen can say what a look will fetch before it is asked.
@@ -708,12 +707,6 @@ public sealed class LinesRoutes(DriverContext context)
             Message = HeldAttempts.Said(done, attempt, word),
         });
     }
-
-    /// <summary>The strings of a payload's array field, or none where it has no such array.</summary>
-    private static HashSet<string> Names(IpcRequest request, string field) =>
-        request.Payload is { } payload && payload.TryGetProperty(field, out var names) && names.ValueKind == JsonValueKind.Array
-            ? names.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal)
-            : new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
     /// A session branch's row: what the proof found, and whether its discard is offered beside it, by the

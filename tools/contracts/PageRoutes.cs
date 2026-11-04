@@ -86,9 +86,11 @@ public static class PageRoutes
         if (!declared.ContainsKey(record.Name))
         {
             var fields = RoutePayload.Fields(record).Select(field => $"  {field.Name}{FieldType(field, declared)};").ToList();
-            declared[record.Name] = fields.Count == 0
-                ? $"export type {record.Name} = Record<string, never>;"
-                : $"export type {record.Name} = {{\n{string.Join('\n', fields)}\n}};";
+            declared[record.Name] = RoutePayload.Fields(record) is [{ Read: PayloadRead.Whole }]
+                ? $"export type {record.Name} = Record<string, unknown>;"
+                : fields.Count == 0
+                    ? $"export type {record.Name} = Record<string, never>;"
+                    : $"export type {record.Name} = {{\n{string.Join('\n', fields)}\n}};";
         }
 
         return record.Name;

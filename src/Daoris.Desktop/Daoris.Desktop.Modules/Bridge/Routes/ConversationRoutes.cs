@@ -40,33 +40,31 @@ public sealed class ConversationRoutes(DriverContext context)
     [GroundRepository("START_CHAT", "repository")]
     [Says("START_CHAT", "repository:repository", "adapter:agent", "text:words")]
     [Publishes("START_CHAT", StateScopes.Sessions | StateScopes.Driver)]
-    private async Task<object?> StartChatAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> StartChatAsync(StartChatPress press, CancellationToken cancellationToken)
     {
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var repository = press.Repository;
         var chat = _loop.Chat ?? throw NotReady();
 
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A blank adapter is none named, and Chat's order is walked (D205 §4.1, MODELROLE1d); one named is the person's pick, its model
         // Chat's first entry for that agent (§3.5(d)). This route took a blank one as a name (REV3 CLEAN1); the page happens never to
         // send one.
-        var named = Optional(request, "adapter");
-        var (adapter, order) = ActorChoices.NewChat(config, named);
+        var (adapter, order) = ActorChoices.NewChat(config, press.Adapter);
 
         // The end of a conversation is news the page wants without asking: the drawer is
         // probably open, and a record that moved silently reads as one that hung.
         Task OnEnded(string session, string state) => DriverLoop.Ended(_events, session, state);
         // The per-session picker (D49 §4). Absent takes the workspace's default, then the
         // machine's, then the harness's own configuration home.
-        var profile = Optional(request, "profile");
+        var profile = press.Profile;
 
         // The opening words (NEW1a, D162): the conversation opens on them. Absent, blank or whitespace is the old empty start.
-        var text = Optional(request, "text");
+        var text = press.Text;
         if (!string.IsNullOrWhiteSpace(text))
         {
-            var files = request.Payload is { } payload ? FilesOf(payload) : [];
             var started = await chat.StartWithAsync(
-                repository, adapter, config, text, files, Optional(request, "requestId"),
-                ownTree: TreeChoice(request), profile: profile, onEnded: OnEnded, ct: cancellationToken, order: order);
+                repository, adapter, config, text, UploadsOf(press.Files), press.RequestId,
+                ownTree: press.OwnTree, profile: profile, onEnded: OnEnded, ct: cancellationToken, order: order);
             _loop.Nudge();
             return new { started.SessionId, started.Sent, started.Why, started.Message };
         }
@@ -75,7 +73,7 @@ public sealed class ConversationRoutes(DriverContext context)
             repository, adapter, config, OnEnded, profile,
             // The per-conversation tree choice (D51). Absent falls back to the repository's
             // standing opt-in, which the runner reads from the same config.
-            ownTree: TreeChoice(request),
+            ownTree: press.OwnTree,
             ct: cancellationToken, order: order, picked: !string.IsNullOrWhiteSpace(profile));
 
         _loop.Nudge();
@@ -93,25 +91,22 @@ public sealed class ConversationRoutes(DriverContext context)
     [GroundRead("SESSION_INPUT", nameof(PipeReads.AttachedFiles))]
     [Says("SESSION_INPUT", "id:session", "text:words", "level:level", "paths:files", "said:form")]
     [Publishes("SESSION_INPUT", StateScopes.Sessions | StateScopes.Help, Session = "id")]
-    private async Task<object?> SessionInputAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionInputAsync(SessionInputPress press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
+        var id = press.Id;
+        var text = press.Text;
         // COWORK1a (D188 point 1): `level` is when the words should reach a working session, `ordinary`, `urgent` or `now`; none is
         // the person's default, urgent. No level stops a turn.
-        var level = LevelOf(request);
+        var level = LevelOf(press.Level);
         // RPC1d: `sessions say` sent over the pipe asks for the verb's own words and names the files it was given by their paths on this
         // machine, which the verb reads as it does alone; the page asks for none and attaches its files whole.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
-            var paths = request.Payload is { } named && named.TryGetProperty("paths", out var listed) && listed.ValueKind == JsonValueKind.Array
-                ? listed.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!).ToList()
-                : [];
             return await SessionsVerbs.SaidAsync(
                 context,
                 new SessionsAsk("say")
                 {
-                    Ids = [id], Text = text, Files = paths, Level = Optional(request, "level"),
+                    Ids = [id], Text = text, Files = [.. press.Paths ?? []], Level = press.Level,
                 },
                 cancellationToken)
                 .ConfigureAwait(false);
@@ -122,7 +117,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // so a label never answers a question it was not offered for. Fable's read, Q4: words that begin with one of its answers, as
         // the page composes a press, are marked with it, so the conversation draws a choice and the session is handed one.
         string? choice = null;
-        var asking = Optional(request, "question");
+        var asking = press.Question;
         if (asking is { } question)
         {
             if (new QuestionFiles(_loop.Home).Read(id) is not { } asked || asked.Id != question)
@@ -136,7 +131,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // FLOWCHART2d (D223): the workflow draft open in the person's editor, which the page sends where its fingerprint moved since this
         // conversation was told: refused whole past its bound before anything is kept, else handed with these words beside the palette it is
         // composed from, which the room has no reader of.
-        if (request.Payload is { } sent && sent.TryGetProperty("draft", out var drafted) && drafted.ValueKind != JsonValueKind.Null)
+        if (press.Draft is { } drafted && drafted.ValueKind != JsonValueKind.Null)
         {
             var draft = WorkflowDraftTold.Read(drafted);
             var palette = WorkflowEditRoutes.PaletteOf(_loop.Home).Compact();
@@ -144,13 +139,13 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         // What the person attached, kept for its session before the words go (CONV4c).
-        var files = request.Payload is { } payload ? FilesOf(payload) : [];
+        var files = UploadsOf(press.Files);
         // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now` is the
         // person's *Send now* (STEER2a), which a running session carries out by its door.
         // COWORK1c: `key`, the press's own where the page names one, so a press that arrives twice keeps one word; the shell gives each
         // press one otherwise.
         var said = await _loop.Words
-            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"), choice, asking)
+            .SayAsync(id, text, files, press.Preface, door: "screen", cancellationToken, level, press.Key, choice, asking)
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
@@ -547,12 +542,9 @@ public sealed class ConversationRoutes(DriverContext context)
             : new { reach.Reaches, reach.Why, reach.To, Steers = reach.Door?.Steers, KeepingStop = reach.Door?.KeepingStop };
 
     /// <summary>
-    /// The level a press asked for (COWORK1a, ONEWAY1l): its <c>level</c>, else the person's default, urgent. A level this build
-    /// does not know is refused in a sentence, before anything is kept.
+    /// The level a press asked for (COWORK1a, ONEWAY1l): the <paramref name="word"/> it names, else the person's default, urgent. A level
+    /// this build does not know is refused in a sentence, before anything is kept.
     /// </summary>
-    internal static MessageLevel LevelOf(IpcRequest request) => LevelOf(Optional(request, "level"));
-
-    /// <summary>The level a <paramref name="word"/> names, the person's default where none; a level this build does not know is refused.</summary>
     internal static MessageLevel LevelOf(string? word)
     {
         if (word is not null && MessageLevels.Read(word) is null)
@@ -607,9 +599,12 @@ public sealed class ConversationRoutes(DriverContext context)
     /// the shape a quest's uploads take. Bytes that are not base64 are refused in a sentence — kept,
     /// they would be a file nobody sent.
     /// </summary>
-    public static IReadOnlyList<ChatUpload> FilesOf(JsonElement payload)
+    public static IReadOnlyList<ChatUpload> FilesOf(JsonElement payload) => UploadsOf(DriverArguments.Sent(payload, "files"));
+
+    /// <summary>The uploads a <c>files</c> field holds, none where it is no list.</summary>
+    public static IReadOnlyList<ChatUpload> UploadsOf(JsonElement? sent)
     {
-        if (!payload.TryGetProperty("files", out var files) || files.ValueKind != JsonValueKind.Array) return [];
+        if (sent is not { ValueKind: JsonValueKind.Array } files) return [];
 
         var uploads = new List<ChatUpload>();
         foreach (var file in files.EnumerateArray())

@@ -7,8 +7,8 @@ import type { DriverPayloads, DriverRoute } from './generated/routes';
 /** A route whose handler takes a payload record, which the generated routes carry. */
 export type TypedRoute = keyof DriverPayloads;
 
-/** A route whose handler still reads its request by hand. */
-export type ByHandRoute = Exclude<DriverRoute, TypedRoute>;
+/** A route whose handler reads nothing off its request. */
+export type NoPayloadRoute = Exclude<DriverRoute, TypedRoute>;
 
 /** The record a typed route sends. */
 export type Payload<R extends TypedRoute> = DriverPayloads[R]['payload'];
@@ -20,13 +20,13 @@ type Bound = { timeoutMs?: number };
 
 /**
  * One call onto the driver's module, the route one the module answers, as generated from its marks. A typed route sends its
- * generated payload and is answered its generated answer; a route read by hand names its answer's type and sends any payload. A
+ * generated payload and is answered its generated answer; a route that reads no payload names its answer's type. A
  * route whose work is long passes its own bound: without one the bridge gives up after its default 30 seconds, while the host
  * carries on unheard.
  */
 export function call<R extends TypedRoute>(type: R, payload: Payload<R>, options?: Bound): Promise<Answer<R>>;
-// A route whose handler still reads the request: the caller names its answer, and its payload goes unchecked.
-export function call<TData>(type: ByHandRoute, payload?: Record<string, unknown>, options?: Bound): Promise<TData>;
+// A route that reads no payload: the caller names its answer.
+export function call<TData>(type: NoPayloadRoute,payload?: Record<string, unknown>, options?: Bound): Promise<TData>;
 export function call(type: DriverRoute, payload?: Record<string, unknown>, options?: Bound): Promise<unknown> {
   return getBridge().invoke<unknown>('DAORIS.DRIVER', type, {
     ...(payload ? { payload } : {}),

@@ -61,7 +61,7 @@ export const useSystemSpace = () => {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: keys.systemSpace,
-    queryFn: () => call<SystemSpace>('SYSTEM_SPACE'),
+    queryFn: () => call('SYSTEM_SPACE', {}) as Promise<SystemSpace>,
     enabled: isAvailable,
     retry: 2,
     // KEEP1e: a press's run under way reads again too, each kind's end told by the bus where there is one.
@@ -73,7 +73,7 @@ export const useSystemSpace = () => {
   });
   const count = async (kinds?: string[]) => {
     const asked = Date.now();
-    const answered = await call<SystemSpace>('SYSTEM_SPACE', { measure: kinds ?? true });
+    const answered = await call('SYSTEM_SPACE', { measure: kinds ?? true }) as SystemSpace;
     // A read that landed meanwhile is newer than this answer (FABRIC-EVENT5b, as the wiring's measure keeps it).
     if ((client.getQueryState(keys.systemSpace)?.dataUpdatedAt ?? 0) <= asked) client.setQueryData(keys.systemSpace, answered);
     return answered;
@@ -101,9 +101,9 @@ export const useSystemDownloads = (open: boolean) => {
 export const useClearDownloads = () =>
   useMutation({
     mutationFn: (versions: Pick<DownloadedVersion, 'kind' | 'name' | 'version' | 'unfinished'>[]) =>
-      call<{ cleared: DownloadCleared[] }>('SYSTEM_DOWNLOADS_CLEAR', {
+      call('SYSTEM_DOWNLOADS_CLEAR', {
         versions: versions.map(({ kind, name, version, unfinished }) => ({ kind, name, version, unfinished })),
-      }),
+      }) as Promise<{ cleared: DownloadCleared[] }>,
   });
 
 /**
@@ -122,10 +122,10 @@ const sent = (unit: SpaceUnit) => ({
  * answered `held`, nothing done. What a run moves is asked again by the state hub, as the route declares it.
  */
 export const useSpaceFree = () => {
-  const list = useMutation({ mutationFn: () => call<SpacePlan>('SYSTEM_SPACE_FREE', { plan: true }) });
+  const list = useMutation({ mutationFn: () => call('SYSTEM_SPACE_FREE', { plan: true }) as Promise<SpacePlan> });
   const free = useMutation({
     mutationFn: ({ now, early }: { now: SpaceUnit[]; early: SpaceUnit[] }) =>
-      call<SpaceStarted>('SYSTEM_SPACE_FREE', { units: now.map(sent), early: early.map(sent) }),
+      call('SYSTEM_SPACE_FREE', { units: now.map(sent), early: early.map(sent) }) as Promise<SpaceStarted>,
   });
   return { list, free };
 };

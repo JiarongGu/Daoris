@@ -28,5 +28,22 @@ public sealed record SessionHandOverPress(
 /// </summary>
 public sealed record SessionGoAheadPress(string Id, string Ask, bool Approved, long? Number, string? Words, bool? GoesOn);
 
+/// <summary>
+/// A conversation started in a repository, on the <c>Adapter</c> named or Chat's order, under a <c>Profile</c>, in a tree of its own or not
+/// (<c>OwnTree</c>, none leaving it to the repository's standing choice). <c>Text</c> are the opening words and <c>Files</c> what is attached
+/// to them, each <c>{ name, content }</c> with the bytes as base64; <c>RequestId</c> keeps a press that arrives twice to one start.
+/// </summary>
+public sealed record StartChatPress(
+    string Repository, string? Adapter, string? Profile, string? Text, System.Text.Json.JsonElement? Files, string? RequestId, bool? OwnTree);
+
+/// <summary>
+/// The person's words to a session. <c>Level</c> is when they should reach a working session; <c>Question</c> names the park's question
+/// they answer; <c>Draft</c> is the workflow draft open in the editor; <c>Preface</c> is where the person is; <c>Key</c> keeps a press that
+/// arrives twice to one word; <c>Said</c> asks for the verb's own words, and then <c>Paths</c> name the files on this machine.
+/// </summary>
+public sealed record SessionInputPress(
+    string Id, string Text, string? Level, string? Question, System.Text.Json.JsonElement? Draft, System.Text.Json.JsonElement? Files,
+    string? Preface, string? Key, IReadOnlyList<string>? Paths, bool Said = false);
+
 /// <summary>One option of a session's chat set to a value.</summary>
 public sealed record SetSessionOptionPress(string Id, string Option, string Value);
