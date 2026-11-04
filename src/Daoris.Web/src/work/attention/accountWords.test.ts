@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Quest } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { clockOf, moment } from '../../locales/format';
 import { byTool, type ToolDoor } from '../../agents/tools';
 import type { PushedAccountFacts, PushedNamed } from './accountWords';
@@ -41,7 +42,7 @@ const waiting = (over: Partial<PushedAttention> = {}): PushedAttention => ({
   ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: 'q1', from: 'game', to: 'engine', title: 'Expose a streaming budget', body: 'b', status: 'Open',
   filed: '2026-10-05T10:30:00Z', updated: '2026-10-05T10:30:00Z', workspace: 'work', ...over,
 });

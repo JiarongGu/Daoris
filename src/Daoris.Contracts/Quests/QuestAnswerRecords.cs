@@ -4,6 +4,16 @@ namespace Daoris.Contracts.Quests;
 // missing, since the exchange refuses what a caller left out naming which; an answer always carries its values, so a reader of one
 // is told which may be absent.
 
+/// <summary>What the page reads a quest's status and note parts as, which the wire carries as a word and as JSON text.</summary>
+public static class QuestPageTypes
+{
+    public const string Status = "'Open' | 'Taken' | 'Done' | 'Declined'";
+
+    public const string NoteParts =
+        "({ code: string; values?: Record<string, unknown> | null; text?: string | null; words?: undefined }"
+        + " | { words: string; by?: string | null; code?: undefined })[]";
+}
+
 /// <summary>A chain's step.</summary>
 /// <param name="SetUpIn">The environment a set-up step shows the chain's work in; absent on every other step.</param>
 public sealed record QuestStepResponse(string To, string Title, string Body, string? SetUpIn = null);

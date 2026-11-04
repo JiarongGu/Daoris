@@ -11,11 +11,12 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { type Ask, fileKept, type Quest } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { ASKS_SLICE, asksIn, keys, QUESTS_SLICE, questsIn } from '../../data/queries';
 import { asksSlice, questsSlice } from './quests';
 import { mergeKeyed } from '../state/slices';
 
-const quest = (id: string, extra: Partial<Quest> = {}): Quest => ({
+const quest = (id: string, extra: Partial<Quest> = {}): Quest => aQuest({
   id, from: 'person', to: 'engine', title: `quest ${id}`, body: 'the body', status: 'Open', filed: '2026-10-19T08:00:00+00:00',
   updated: '2026-10-19T09:00:00+00:00', workspace: 'default', ...extra,
 });

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -82,7 +83,9 @@ public sealed class PageTypes
         {
             var nullable = property.IsGetNullable || Nullable.GetUnderlyingType(property.PropertyType) is not null;
             var optional = nullable || property.AssociatedParameter is { HasDefaultValue: true };
-            return $"  {property.Name}{(optional ? "?" : "")}: {Ts(property.PropertyType)}{(nullable ? " | null" : "")};";
+            var marked = type.GetProperties().FirstOrDefault(p => string.Equals(p.Name, property.Name, StringComparison.OrdinalIgnoreCase))
+                ?.GetCustomAttribute<PageTypeAttribute>()?.TypeScript;
+            return $"  {property.Name}{(optional ? "?" : "")}: {marked ?? Ts(property.PropertyType)}{(nullable ? " | null" : "")};";
         }).ToList();
         _types[type.Name] = fields.Count == 0
             ? $"export type {type.Name} = Record<string, never>;"

@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { GoAhead, Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { sessionWidths } from '../../design/storyWidths';
@@ -32,6 +33,7 @@ const SESSION: Session = {
 };
 
 const QUEST: Quest = {
+  ...aQuest(),
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

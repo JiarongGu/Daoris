@@ -72,11 +72,11 @@ export function RequirementItem({ number, requirement, answer, waiting = false }
  * - **An accepted one says when**, and offers no second yes; a done that answered none says so, and a quest still to
  *   close says how its done will answer.
  */
-export function QuestRequirements({ id, requirements, answers = [], status, held = false, accepted, next, accepting = false, onAccept, className }: {
+export function QuestRequirements({ id, requirements, answers: given, status, held = false, accepted, next, accepting = false, onAccept, className }: {
   /** The quest's id, which a next step's `{parent}` names. */
   id: string;
   requirements: QuestRequirement[];
-  answers?: QuestAnswer[];
+  answers?: QuestAnswer[] | null;
   status: 'Open' | 'Taken' | 'Done' | 'Declined';
   /** A departure holds it for the person's yes. */
   held?: boolean;
@@ -90,6 +90,7 @@ export function QuestRequirements({ id, requirements, answers = [], status, held
   className?: string;
 }) {
   const { t } = useTranslation();
+  const answers = given ?? [];
   const answerOf = (number: number) => answers.find((answer) => answer.requirement === number) ?? null;
   const closed = status === 'Done' || status === 'Declined';
   return (

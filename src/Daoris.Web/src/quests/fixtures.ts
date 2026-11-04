@@ -1,4 +1,5 @@
 import type { Quest, Session } from '../data/api';
+import { aQuest } from './aQuest';
 import type { Consideration, TrustHold } from '../data/signals';
 import type { GraphEnd } from '../work/head/milestone';
 
@@ -10,6 +11,7 @@ const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toI
 
 /** Open, a day old, carrying a link and two files, one kept here and one elsewhere. */
 export const OPEN: Quest = {
+  ...aQuest(),
   id: 'abc123', from: 'game', to: 'engine', status: 'Open',
   title: 'Expose a streaming budget on the chunk API',
   body: 'World streaming needs a per-frame cap; today hydration is unbounded.\n\nEvidence: seams whenever more than three chunks hydrate in one frame.',
@@ -29,6 +31,7 @@ export const SITTING: Quest = { ...OPEN, id: 'aa11bb', title: 'Document the save
 
 /** Taken, its taker waiting on another repository's answer (D79). */
 export const QUESTION: Quest = {
+  ...aQuest(),
   id: 'q2q2q2', from: 'engine', to: 'backend', status: 'Open', title: 'What does the notes endpoint take?',
   body: 'We need the contract before the client can be written.', filed: hoursAgo(5), updated: hoursAgo(5),
 };
@@ -60,8 +63,8 @@ export const DELETABLE: Quest = { ...OPEN, deletable: true };
 
 /** What the person required (DRIFT1c, D133 §3): their words, each with the check that proves them. */
 const REQUIRED: NonNullable<Quest['requirements']> = [
-  { quote: 'use the v3 bridge', check: 'the tiles arrive through the v3 bridge, as its trace shows' },
-  { quote: 'keep the budget under the ceiling the engine sets', check: 'no frame hydrates more than the ceiling in a playtest' },
+  { quote: 'use the v3 bridge', check: 'the tiles arrive through the v3 bridge, as its trace shows', evidence: [] },
+  { quote: 'keep the budget under the ceiling the engine sets', check: 'no frame hydrates more than the ceiling in a playtest', evidence: [] },
 ];
 
 /** Taken, with what the person required and no answer yet: its done answers each. */
@@ -97,8 +100,8 @@ export const ACCEPTED: Quest = { ...HELD, id: 'ac0ac0', held: false, accepted: h
 export const HELD_CJK: Quest = {
   ...HELD, id: 'hz0hz0', from: '游戏', to: '引擎', title: '冷缓存时按帧流式加载瓦片',
   requirements: [
-    { quote: '用 v3 桥接', check: '瓦片经由 v3 桥接到达，追踪记录可证' },
-    { quote: '每帧的加载量不能超过引擎设定的上限', check: '试玩中没有任何一帧超过上限' },
+    { quote: '用 v3 桥接', check: '瓦片经由 v3 桥接到达，追踪记录可证', evidence: [] },
+    { quote: '每帧的加载量不能超过引擎设定的上限', check: '试玩中没有任何一帧超过上限', evidence: [] },
   ],
   answers: [
     { requirement: 1, met: '瓦片经由 v3 桥接传输，完成说明里的追踪记录列出了每一跳' },

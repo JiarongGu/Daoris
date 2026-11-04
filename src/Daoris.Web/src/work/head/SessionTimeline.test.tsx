@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { SessionTimeline, TimelineEntry } from './SessionTimeline';
 
 const NOW = new Date('2026-09-21T12:00:00Z');
@@ -19,7 +20,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

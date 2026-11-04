@@ -1,13 +1,14 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Quest } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import { ChainLine } from './ChainLine';
 import { buildChain } from './chain';
 
 // SESS2 H7: the chain above a session as one line of stops, the head's quest named *this quest*, and
 // the whole strip a press away.
 
-const quest = (id: string, extra: Partial<Quest> = {}): Quest => ({
+const quest = (id: string, extra: Partial<Quest> = {}): Quest => aQuest({
   id, from: 'game', to: 'engine', title: `quest ${id}`, body: '', status: 'Open',
   filed: '2026-09-23T00:00:00Z', updated: '2026-09-23T00:00:00Z', ...extra,
 });

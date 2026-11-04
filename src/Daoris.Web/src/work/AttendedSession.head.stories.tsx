@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 import type { Quest } from '../data/api';
+import { aQuest } from '../quests/aQuest';
 import { chinese } from '../design/storyLanguage';
 import { MAIN_WIDTHS } from '../design/storyWidths';
 import i18n from '../locales/i18n';
@@ -28,7 +29,7 @@ const ENTRY = EVIDENCE_ENTRIES[0]!;
 const ATTENDED = EVIDENCE_SESSIONS.find((session) => session.id === 'ap000003')!;
 const ROWS = Object.fromEntries(EVIDENCE_SESSIONS.map((session) => [session.id, { session, root: 'C:/work/app' }]));
 
-const quest = (over: Partial<Quest> & { id: string }): Quest => ({
+const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
   from: 'db', to: 'app', title: over.id, body: '', status: 'Taken', filed: at(400), updated: at(60), ...over,
 });
 const THEN = [{ to: 'db', title: 'Report the index back', body: '' }];

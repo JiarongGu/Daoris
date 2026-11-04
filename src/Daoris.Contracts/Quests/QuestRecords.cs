@@ -57,7 +57,7 @@ public sealed record QuestAnswerWire(int? Requirement, string? Met, string? Depa
 /// <param name="Ended">On a settled conflict only: <c>dropped</c> or <c>brought-forward</c>.</param>
 /// <param name="Forward">The bring-forward that settled it, or else this machine's latest that lost again.</param>
 public sealed record QuestConflictResponse(
-    string Machine, string Attempted, string? Note, DateTimeOffset At, long Sequence,
+    string Machine, [property: PageType(QuestPageTypes.Status)] string Attempted, string? Note, DateTimeOffset At, long Sequence,
     bool? LostToTheReopen = null, string? Ended = null, QuestForwardResponse? Forward = null);
 
 /// <summary>A bring-forward's take and where it stands as a claim reads one: <c>held</c>, <c>unconfirmed</c> or <c>lost</c>.</summary>
@@ -91,7 +91,7 @@ public sealed record AskWorkflowChoiceResponse(string? Kind, string? Workflow, D
 /// <param name="Request">The workflow request's key, <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>.</param>
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
-    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
+    [property: PageType(QuestPageTypes.Status)] string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
     IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments,
     IReadOnlyList<QuestStepResponse> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts,
     string? Awaits = null,
@@ -104,7 +104,7 @@ public sealed record QuestResponse(
     string? Hold = null, bool AwaitsEvidence = false, QuestEvidenceVerdictResponse? Evidence = null,
     QuestReviewChoiceResponse? Review = null, string? SetUpIn = null, IReadOnlyList<QuestSetUpWire>? SetUps = null,
     IReadOnlyList<QuestReviewVerdictWire>? Verdicts = null,
-    JsonElement? NoteParts = null,
+    [property: PageType(QuestPageTypes.NoteParts)] JsonElement? NoteParts = null,
     string? Closure = null, QuestSubmissionWire? Submission = null,
     QuestSubmissionRefResponse? GrewFrom = null, QuestSubmissionRefResponse? SourceReopened = null,
     QuestReopenWire? Reopened = null,
