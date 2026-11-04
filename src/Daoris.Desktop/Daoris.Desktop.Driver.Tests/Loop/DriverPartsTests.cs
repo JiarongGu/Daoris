@@ -29,10 +29,14 @@ public sealed class DriverPartsTests : IDisposable
 
         var order = driver.LookPasses.Order;
         Assert.Equal(
-            ["sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor", "landing"],
+            ["sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor",
+                "alone", "unable", "pieces", "handovers", "policy", "committed", "overlaps", "overlaps-told", "roster", "channel", "reopens",
+                "reviews", "opinions", "helpers", "partners", "brainstorms", "meetings",
+                "answered", "intakes", "bind", "endings", "landing"],
             order.Select(part => part.Name));
         Assert.Equal(
-            [LookPhase.Before, LookPhase.Before, .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 3), LookPhase.After],
+            [LookPhase.Before, LookPhase.Before, .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 19),
+                LookPhase.Planned, LookPhase.Planned, LookPhase.Begun, LookPhase.Begun, LookPhase.After],
             order.Select(part => (LookPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
@@ -52,7 +56,32 @@ public sealed class DriverPartsTests : IDisposable
             driver.LookPasses.In(LookPhase.Read),
             pass => Assert.IsType<SnapshotLook>(pass),
             pass => Assert.IsType<PausedLook>(pass),
-            pass => Assert.IsType<SupervisorLook>(pass));
+            pass => Assert.IsType<SupervisorLook>(pass),
+            pass => Assert.IsType<AloneLook>(pass),
+            pass => Assert.IsType<UnableLook>(pass),
+            pass => Assert.IsType<PiecesOnFileLook>(pass),
+            pass => Assert.IsType<HandOversLook>(pass),
+            pass => Assert.IsType<StaffPolicyLook>(pass),
+            pass => Assert.IsType<CommittedLook>(pass),
+            pass => Assert.IsType<OverlapsLook>(pass),
+            pass => Assert.IsType<OverlapsToldLook>(pass),
+            pass => Assert.IsType<RosterLook>(pass),
+            pass => Assert.IsType<ChannelLook>(pass),
+            pass => Assert.IsType<ReopensLook>(pass),
+            pass => Assert.IsType<ReviewsLook>(pass),
+            pass => Assert.IsType<OpinionsLook>(pass),
+            pass => Assert.IsType<HelpersLook>(pass),
+            pass => Assert.IsType<PartnersLook>(pass),
+            pass => Assert.IsType<BrainstormsLook>(pass),
+            pass => Assert.IsType<MeetingsLook>(pass));
+        Assert.Collection(
+            driver.LookPasses.In(LookPhase.Planned),
+            pass => Assert.IsType<AnsweredIntakesLook>(pass),
+            pass => Assert.IsType<IntakesLook>(pass));
+        Assert.Collection(
+            driver.LookPasses.In(LookPhase.Begun),
+            pass => Assert.IsType<BindRunsLook>(pass),
+            pass => Assert.IsType<EndingsLook>(pass));
         Assert.IsType<UnresolvedDeliveries>(Assert.Single(driver.LookPasses.In(LookPhase.After)));
     }
 
@@ -68,6 +97,9 @@ public sealed class DriverPartsTests : IDisposable
         Assert.Contains("written by the snapshot pass", Assert.Throws<InvalidOperationException>(() => state.Mark).Message);
         Assert.Contains("written by the snapshot pass", Assert.Throws<InvalidOperationException>(() => state.ReservedBefore).Message);
         Assert.Contains("written by the supervisor pass", Assert.Throws<InvalidOperationException>(() => state.Alone).Message);
+        Assert.Contains("written by the roster pass", Assert.Throws<InvalidOperationException>(() => state.Looked).Message);
+        Assert.Contains("written by the opinions pass", Assert.Throws<InvalidOperationException>(() => state.Passes).Message);
+        Assert.Contains("written by the opinions pass", Assert.Throws<InvalidOperationException>(() => state.JudgedOpinions).Message);
         Assert.Same(concluded, state.Concluded);
 
         state.Mark = 0;
