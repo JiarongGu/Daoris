@@ -157,7 +157,7 @@ public sealed class BuiltInNodesTests
     /// <summary>
     /// FABRIC-CUTOVER1a (the cutover design §2.2): on a run's subject, <c>claimed</c> reaches on its quest's done only where that quest's steps
     /// name none still to come in its repository, as the close and the opinion's gate read a chain; a look's set-up step is no step of the
-    /// work. On a quest unit of Current's work cycle it reads as today.
+    /// work. On a quest unit bound to a graph it reads as today.
     /// </summary>
     [Fact]
     public void Claimed_on_a_runs_subject_waits_for_its_chains_last_step_here()

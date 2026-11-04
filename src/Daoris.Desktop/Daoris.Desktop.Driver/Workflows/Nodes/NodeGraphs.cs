@@ -834,7 +834,7 @@ public static class NodeGraphs
     }
 
     /// <summary>
-    /// A whole graph from its JSON (a <c>workCycles</c> entry, a named graph): the graph and what its save refuses, or no graph and the one
+    /// A whole graph from its JSON (a named graph, a bound quest's closure): the graph and what its save refuses, or no graph and the one
     /// <see cref="GraphRefusal.Unreadable"/> problem naming where it is not a graph's shape. Never read in part.
     /// </summary>
     /// <param name="json">The graph's JSON.</param>

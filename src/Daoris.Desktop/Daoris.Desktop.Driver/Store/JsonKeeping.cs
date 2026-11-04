@@ -206,7 +206,7 @@ public static class JsonKeeping
 
     /// <summary>
     /// <paramref name="text"/> read as JavaScript's <c>JSON.parse</c> reads it, where a key is written twice in one object: once, in its
-    /// first place, with its last value (the re-check's finding 3: the work cycles' kinds read the first here and the last in the CLI);
+    /// first place, with its last value (a graph's kinds read the first here and the last in the CLI);
     /// else <paramref name="text"/> itself.
     /// </summary>
     public static string Once(string text)

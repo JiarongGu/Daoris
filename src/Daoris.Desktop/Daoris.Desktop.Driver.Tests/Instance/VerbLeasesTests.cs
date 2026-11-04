@@ -72,7 +72,7 @@ public sealed class VerbLeasesTests
     [InlineData("driver helpers engine --mode on")]
     [InlineData("driver handover engine --mode on")]
     [InlineData("driver commits engine --mode ask")]
-    // The family's last verbs (PUSH1f2b): a landing's cycle, a work cycle, the brainstorm policy set or cleared, and a workflow's writes.
+    // The family's last verbs (PUSH1f2b): a landing's cycle, the brainstorm policy set or cleared, and a workflow's writes.
     [InlineData("driver landing engine merge --cycle cycle.json")]
     [InlineData("driver landing engine merge --no-cycle")]
     [InlineData("driver work-cycle engine quest cycle.json")]

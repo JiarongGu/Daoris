@@ -823,7 +823,7 @@ public static class QuestReads
 }
 
 /// <summary>
-/// The bind at the take (FABRIC-CLOSE1b; §E5's cutover): a quest whose work cycle holds <c>quest.close</c> is bound to that graph when its
+/// The bind at the take (FABRIC-CLOSE1b; §E5's cutover): a quest whose graph holds <c>quest.close</c> is bound to that graph when its
 /// session opens, before the session can say <c>done</c>, and only where every machine of its circle and the host run a build that knows a
 /// bound quest (FABRIC-CLOSE1e's compatibility).
 /// </summary>

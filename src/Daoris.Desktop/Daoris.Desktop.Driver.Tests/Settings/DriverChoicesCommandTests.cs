@@ -181,7 +181,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
 
     /// <summary>
     /// A change no route takes acts here on the terminal's word (D171's PUSH1f note, kept by D194 point 5), refused from a session's
-    /// terminal before anything is read or written: a landing's cycle, a work cycle, the brainstorm policy and a workflow's write.
+    /// terminal before anything is read or written: a landing's cycle, the brainstorm policy and a workflow's write.
     /// </summary>
     [Theory]
     [InlineData("landing engine merge --no-cycle")]
