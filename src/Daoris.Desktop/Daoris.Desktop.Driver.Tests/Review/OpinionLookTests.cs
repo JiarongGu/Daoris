@@ -240,7 +240,7 @@ public sealed class OpinionLookTests : IDisposable
         var route = (await new OpinionPresses(_home, host.Client()).GateAsync("s1")).Gate!;
         Assert.Equal((route.Opinion.State, route.Opinion.Required, route.Opinion.Says), (kept.Gate.State, kept.Gate.Required, kept.Gate.Says));
         Assert.Equal((OpinionGateStates.Unavailable, true), (kept.Gate.State, kept.Gate.Required));
-        Assert.Equal((route.Process?.Landing ?? LandingRules.Choose(Config(), "reports", "work")).Rule.AutoAccept, kept.Auto);
+        Assert.Equal((route.Process?.Landing ?? LandingRules.Line(Config(), "reports", "work")).Rule.AutoAccept, kept.Auto);
         Assert.Equal(("s1", "q1", "reports"), (kept.Session, kept.Quest, kept.Repository));
     }
 

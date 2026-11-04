@@ -102,10 +102,6 @@ public sealed class DriverConfigKeepsTests
         var text = Changed(twice.GetProperty("changes"), crlf: false);
         var config = DriverConfig.Parse(text);
         Assert.Equal(twice.GetProperty("notify").GetBoolean(), config.Notify);
-        Assert.Equal(
-            twice.GetProperty("workCycles").EnumerateObject()
-                .SelectMany(owner => owner.Value.EnumerateObject().Select(kind => $"{owner.Name}/{kind.Name} {NodeGraphHomes.Compact(kind.Value)}")),
-            config.WorkCycles.SelectMany(owner => owner.Value.Select(kind => $"{owner.Key}/{kind.Key} {kind.Value}")));
 
         var folder = Path.Combine(Path.GetTempPath(), "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
         var path = Path.Combine(folder, "driver.json");
@@ -135,9 +131,6 @@ public sealed class DriverConfigKeepsTests
             "trees" => config.WithTrees(Text("repository"), edit.GetProperty("on").GetBoolean()),
             // CONFIGMERGE1: a target declared or taken back, through the door the terminal's `write-across` goes through.
             "write-across" => config.WithWriteAcross(Text("repository"), Text("to"), edit.GetProperty("on").GetBoolean()),
-            "landing" => config.WithLanding(Text("repository"), Rule(edit.GetProperty("rule"))),
-            "workspace-landing" => config.WithWorkspaceLanding(Text("workspace"), Rule(edit.GetProperty("rule"))),
-            "landing-clear" => config.WithLanding(Text("repository"), null),
             "line" => config.WithLine(Text("repository"), Text("branch")),
             "intake" => config.WithIntake(Text("adapter")),
             "help-mode" => config.WithHelpMode(Text("mode")),
@@ -167,7 +160,6 @@ public sealed class DriverConfigKeepsTests
                 Gb: edit.TryGetProperty("gb", out var gb) ? gb.GetInt32() : null,
                 Percent: edit.TryGetProperty("percent", out var percent) ? percent.GetInt32() : null,
                 Off: edit.TryGetProperty("off", out var off) && off.GetBoolean())),
-            "work-cycle-clear" => config.WithWorkCycle(Text("repository"), Text("kind"), null),
             var op => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
         };
     }
@@ -191,17 +183,6 @@ public sealed class DriverConfigKeepsTests
                 gate.TryGetProperty("cwd", out var cwd) ? cwd.GetString() : null,
                 Heavy: true)),
         ];
-
-    private static LandingRule Rule(JsonElement rule)
-    {
-        string? Text(string field) => rule.TryGetProperty(field, out var value) ? value.GetString() : null;
-        bool On(string field) => rule.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.True;
-        return new LandingRule(Text("form")!, Text("pattern"), Tidy: On("tidy"), Plugin: Text("plugin"), AutoAccept: On("autoAccept"), Key: Text("key"), Squash: On("squash"))
-        {
-            // INTEGRATE1d: a rule's `integrate`, read as the file's is.
-            Integrate = rule.TryGetProperty("integrate", out var integrate) ? LandingKey.IntegrateOf(integrate, out _) : null,
-        };
-    }
 
     private static readonly JsonDocument Table =
         JsonDocument.Parse(System.IO.File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "driver-config-keeps.json")));

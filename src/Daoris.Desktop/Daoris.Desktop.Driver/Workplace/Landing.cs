@@ -179,13 +179,8 @@ public sealed record LeftOutCommit(string Sha, string Subject, string Why, strin
 public sealed record LandingConflict(string Says, string Words);
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
-/// <param name="Plugin">What the rule's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
-/// <param name="Tidied">
-/// What the rule's tidy did with the other session branches the landed work holds (LAND3), each removed or kept and why —
-/// null where no tidy ran. The message says the same, so the landing's note keeps it.
-/// </param>
-public sealed record TreeLanding(
-    bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null, IReadOnlyList<TidiedBranch>? Tidied = null)
+/// <param name="Plugin">What the landing's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
+public sealed record TreeLanding(bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null)
 {
     /// <summary>
     /// A refusal's code (LAND2b), one of <see cref="AutoLandingCode"/>: <c>uncommitted</c>, <c>nothing</c>, <c>exists</c> or, where a
@@ -587,26 +582,6 @@ public static class LandingRules
     public static string? Problem(LandingRule rule) => LandingKey.Problem(rule);
 
     /// <summary>
-    /// A landing rule set, or cleared with null (D100): its plugin, where it names one and its shape holds, asked of the plugins
-    /// <paramref name="catalog"/> holds before anything is written, as <c>daoris place landing</c> asks it.
-    /// </summary>
-    /// <exception cref="DriverException">The rule's shape, or its plugin cannot land work here; nothing was written.</exception>
-    public static DriverConfig Put(DriverConfig config, string? repository, string? workspace, LandingRule? rule, IWorkplacePluginCatalog catalog)
-    {
-        if ((repository is null) == (workspace is null))
-        {
-            throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
-        }
-
-        if (rule is { Plugin: { } plugin } && Problem(rule) is null && PluginProblem(plugin, catalog) is { } problem)
-        {
-            throw new DriverException($"{problem} Nothing was written.");
-        }
-
-        return workspace is not null ? config.WithWorkspaceLanding(workspace, rule) : config.WithLanding(repository!, rule);
-    }
-
-    /// <summary>
     /// Why the plugin a rule names cannot land work on this machine, in a sentence, or null when it can
     /// (D100): not installed, switched off, refused by the catalogue, or speaking on no
     /// <see cref="HookPoints.Land"/> point. Asked when the rule is set and again at the press, so a plugin
@@ -883,44 +858,12 @@ public static class LandingRules
         return LandingSubject.Of(session, current);
     }
 
-    /// <summary>The repository's rule, else its workspace's (a repository in no workspace is in `default`'s), else merge.</summary>
-    // transitional: current-followed
-    public static Landing Choose(DriverConfig config, string repository, string? workspace)
-    {
-        var chosen = Unpolicied(config, repository, workspace);
-        // WORKFLOWCLEAN1 1a: the line's policy, where one is set, is what integration reads; a rule's own `integrate` is the transitional one.
-        return config.LinePolicyOf(repository, workspace) is { } policy
-            ? chosen with { Rule = chosen.Rule with { Integrate = policy } }
-            : chosen;
-    }
-
-    private static Landing Unpolicied(DriverConfig config, string repository, string? workspace)
-    {
-        if (config.Landings.TryGetValue(repository, out var own)) return new(own, LandingSource.Repository);
-        if (config.WorkspaceLandings.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)) return new(shared, LandingSource.Workspace);
-        return new(LandingRule.Merge, LandingSource.Default);
-    }
-
     /// <summary>
-    /// The rule work lands by (AUTONOMY1c2, D184 points 2, 3 and 5): the chosen rule (<see cref="Choose"/>), its switch on where it is a
-    /// branch rule and the repository's access setup resolves <c>landing</c> to <c>rule</c>, full access among them, and where that was
-    /// set (<see cref="Landing.Access"/>). Every place that judges whether done work lands with no press reads it, so none disagrees: the
-    /// conclusion, the look's judgement and the gate's process (<see cref="WorkflowProcess.Current"/>), the landing's own refusal and the
-    /// session's plan. Composed here and never written to <c>driver.json</c>, so the settings page, which reads the file's rules, still
-    /// shows each rule's own switch. A merge rule keeps no switch whatever the setup: a merge writes into the person's checkout with no
-    /// step after it (D51 rule 6, D145), so <i>Accept…</i> stays.
+    /// The line's landing as the doors outside a run read it: a branch carrying the line's policy (<see cref="DriverConfig.LinePolicyOf"/>)
+    /// where one is set, else a merge. A run's own landing is its bound <c>land</c>'s.
     /// </summary>
-    public static Landing Effective(DriverConfig config, string repository, string? workspace)
-    {
-        var chosen = Choose(config, repository, workspace);
-        // WORKFLOWCLEAN1 1c (the cleanup design §2.4): a place on a saved workflow lands by that workflow, so `full` opens no landing pause
-        // there; the composition is Current's transitional units' alone (§4.7).
-        if (WorkplaceWorkflows.Current.FollowsSaved(config, repository, workspace)) return chosen;
-        var access = WorkplaceAccessSetup.Current.Resolve(config, repository, workspace);
-        if (access.Value(AccessKey.Landing) != AccessKey.Rule || chosen.Rule is { AutoAccept: true }) return chosen;
-        var source = access.Source(AccessKey.Landing);
-        return chosen.Rule.Form == LandingForm.Branch
-            ? chosen with { Rule = chosen.Rule with { AutoAccept = true }, Access = source }
-            : chosen with { Access = source };
-    }
+    public static Landing Line(DriverConfig config, string repository, string? workspace) =>
+        config.LinePolicyOf(repository, workspace) is { } policy
+            ? new(new LandingRule(LandingForm.Branch) { Integrate = policy }, LandingSource.Default)
+            : new(LandingRule.Merge, LandingSource.Default);
 }

@@ -133,8 +133,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         var repository = entry.Repository;
         var branch = entry.Branch;
         var workspace = RemoteTarget.Workspace(entry.Workspace);
-        var rule = LandingRules.Choose(context.Config(), repository, workspace).Rule;
-        var plugin = named is { Length: > 0 } ? named : rule.Form == LandingForm.Branch ? rule.Plugin : null;
+        var plugin = named is { Length: > 0 } ? named : null;
         (HandPlan, LandingFrame?, string?) Refused(string why, int commits = 0) =>
             (new HandPlan(repository, branch, plugin, why, entry.PullRequest, commits), null, null);
 

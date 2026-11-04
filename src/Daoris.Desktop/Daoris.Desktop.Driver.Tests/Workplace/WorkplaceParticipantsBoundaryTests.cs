@@ -241,60 +241,7 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         }
     }
 
-    // ——— The effective landing and the merges note at each access source
-
-    private static AccessSetting Pause(string pause, string value) =>
-        new() { Pauses = new Dictionary<string, string>(StringComparer.Ordinal) { [pause] = value } };
-
-    private static DriverConfig Setup(DriverConfig config, string? repository = null, string? workspace = null, string? machine = null) =>
-        config with
-        {
-            Access = repository is null ? config.Access
-                : new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase) { ["engine"] = Pause("landing", repository) },
-            WorkspaceAccess = workspace is null ? config.WorkspaceAccess
-                : new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase) { ["aurora"] = Pause("landing", workspace) },
-            MachineAccess = machine is null ? config.MachineAccess : Pause("landing", machine),
-        };
-
-    [Theory]
-    [InlineData(LandingForm.Branch, false, null, null, null, false, null)]
-    [InlineData(LandingForm.Branch, false, "rule", null, null, true, "repository")]
-    [InlineData(LandingForm.Branch, false, null, "rule", null, true, "workspace")]
-    [InlineData(LandingForm.Branch, false, null, null, "rule", true, "machine")]
-    [InlineData(LandingForm.Branch, false, "person", "rule", "rule", false, null)]
-    [InlineData(LandingForm.Branch, false, "rule", "person", "person", true, "repository")]
-    [InlineData(LandingForm.Branch, true, null, null, null, true, null)]
-    [InlineData(LandingForm.Branch, true, "person", null, null, true, null)]
-    [InlineData(LandingForm.Merge, false, "rule", null, null, false, "repository")]
-    [InlineData(LandingForm.Merge, false, null, "rule", null, false, "workspace")]
-    [InlineData(LandingForm.Merge, false, null, null, "rule", false, "machine")]
-    [InlineData(LandingForm.Merge, false, "person", null, null, false, null)]
-    public void The_effective_landing_reads_the_resolved_landing_pause_at_each_source(
-        string form, bool own, string? repository, string? workspace, string? machine, bool accepts, string? access)
-    {
-        var rule = form == LandingForm.Merge ? LandingRule.Merge : new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, AutoAccept: own);
-        var config = Setup(DriverConfig.Empty.WithWorkspaceLanding("aurora", rule), repository, workspace, machine);
-
-        var effective = LandingRules.Effective(config, "ENGINE", "aurora");
-
-        Assert.Equal((form, accepts, access, LandingSource.Workspace), (effective.Rule.Form, effective.Rule.AutoAccept, effective.Access, effective.Source));
-        Assert.Equal(rule with { AutoAccept = accepts }, effective.Rule);
-        Assert.Equal(rule, LandingRules.Choose(config, "engine", "aurora").Rule);
-    }
-
-    [Fact]
-    public void The_effective_landing_reads_full_access_and_a_workspace_in_any_case_as_the_resolution_does()
-    {
-        var rule = new LandingRule(LandingForm.Branch, "feature/{quest}");
-        var full = DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) with { MachineAccess = AccessSetting.FullAccess };
-
-        Assert.Equal(("machine", true), (LandingRules.Effective(full, "engine", "aurora").Access, LandingRules.Effective(full, "engine", "aurora").Rule.AutoAccept));
-        var shared = DriverConfig.Empty.WithWorkspaceLanding("Aurora", rule) with
-        {
-            WorkspaceAccess = new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase) { ["AURORA"] = AccessSetting.FullAccess },
-        };
-        Assert.Equal(("workspace", true), (LandingRules.Effective(shared, "engine", " aurora ").Access, LandingRules.Effective(shared, "engine", " aurora ").Rule.AutoAccept));
-    }
+    // ——— The merges note at each access source
 
     [Theory]
     [InlineData(null, "its", "default")]

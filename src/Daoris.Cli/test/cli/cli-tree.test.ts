@@ -1,29 +1,30 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { COMMANDS, HANDED_VARIABLE, runCli } from '../../src/cli.ts';
 
 /**
- * ONEWAY1ai-i (D228; the oneway design §11): one name, `daoris`, one tree. The CLI owns the doctrine commands, offline, at the root;
- * every other word is the desktop's program's, handed to it whole, and a word handed once is never handed back. The tree is declared
- * once, in the driver tests' `fixtures/command-tree.json`, which the driver's table is held to as well (`CommandWordsTests`).
+ * One name, `daoris`, one tree (D228). The CLI's rows declare the doctrine commands, offline, at the root; every other word is the
+ * desktop's program's, handed to it whole, and a word handed once is never handed back. The program's groups are declared by its own
+ * commands, so neither half holds the other's list.
  */
-const repository = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
-const TREE = JSON.parse(readFileSync(
-  join(repository, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'command-tree.json'), 'utf8')) as {
-  doctrine: string[]; groups: { name: string }[];
-};
 
-test('ONEWAY1ai-i the CLI\'s commands are the tree\'s doctrine commands, and every one is doctrine', () => {
-  const names = COMMANDS.map((command) => command.name);
-  assert.deepEqual([...names].sort(), [...TREE.doctrine].sort());
+test('every doctrine command the CLI declares is its own, run here and never handed', async () => {
+  assert.ok(COMMANDS.length >= 9, 'the rows emptied — this test is worthless if they are');
   assert.deepEqual(COMMANDS.filter((command) => command.kind !== 'doctrine').map((command) => command.name), []);
-  for (const group of TREE.groups) assert.ok(!names.includes(group.name), `\`${group.name}\` is a group of the desktop's program, not the CLI's`);
+  for (const command of COMMANDS) {
+    const handed: string[][] = [];
+    const out: string[] = [];
+    const code = await runCli([command.name, '--help'], process.cwd(), (line) => out.push(line), (words) => {
+      handed.push([...words]);
+      return 2;
+    }, null);
+    assert.equal(code, 0, `daoris ${command.name} --help`);
+    assert.deepEqual(handed, [], `daoris ${command.name} was handed to the desktop's program`);
+    assert.match(out.join('\n'), new RegExp(`^ {2}${command.name}\\b`, 'm'));
+  }
 });
 
-test('ONEWAY1ai-i every other word goes to the desktop\'s program whole, with nothing written first', async () => {
+test('every other word goes to the desktop\'s program whole, with nothing written first', async () => {
   for (const argv of [
     ['session', 'say', 's-1', 'a "quoted" & 100% 中文 word'],
     ['place', 'drive', 'engine'],
@@ -48,7 +49,7 @@ test('ONEWAY1ai-i every other word goes to the desktop\'s program whole, with no
   }
 });
 
-test('ONEWAY1ai-i a word the desktop\'s program handed here is never handed back', async () => {
+test('a word the desktop\'s program handed here is never handed back', async () => {
   const handed: string[][] = [];
   const out: string[] = [];
   const code = await runCli(['session', 'list'], process.cwd(), (line) => out.push(line), (words) => {
@@ -61,7 +62,7 @@ test('ONEWAY1ai-i a word the desktop\'s program handed here is never handed back
   assert.equal(HANDED_VARIABLE, 'DAORIS_HANDED');
 });
 
-test('ONEWAY1ai-i the CLI\'s own usage names the doctrine commands and says the rest is the desktop\'s program\'s', () => {
+test('the CLI\'s own usage names the doctrine commands and says the rest is the desktop\'s program\'s', () => {
   const out: string[] = [];
   assert.equal(runCli(['--help'], process.cwd(), (line) => out.push(line), () => 2, null), 0);
   const help = out.join('\n');

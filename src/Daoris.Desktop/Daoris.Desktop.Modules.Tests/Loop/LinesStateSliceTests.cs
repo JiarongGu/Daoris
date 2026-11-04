@@ -91,7 +91,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
     [Fact]
     public async Task Each_repository_is_a_partition_of_its_rows_of_what_LINES_answers_and_every_field_LINES_answers_is_classed()
     {
-        DriverConfig.Empty.WithLine("alpha", "trunk").WithWorkspaceLanding("w2", LandingRule.Merge).Save(DriverConfigPath);
+        DriverConfig.Empty.WithLine("alpha", "trunk").Save(DriverConfigPath);
         _service.Registry = Registry(("alpha", "w1", true), ("beta", "w2", false));
         var (loop, module, slice) = await UpAsync();
         await LandedAsync(loop);

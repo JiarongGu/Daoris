@@ -344,7 +344,7 @@ public static class PlacePlans
         }
 
         // An integration needs the line's policy, however the line is integrated: the default one where the line has none (the design §1.2).
-        if (land.Method == LandNodes.Integrate && LandingRules.Choose(config, name, workspace).Rule.Integrate is null)
+        if (land.Method == LandNodes.Integrate && config.LinePolicyOf(name, workspace) is null)
         {
             config = config.WithLinePolicy(name, new LandingIntegrate());
             changes.Add(new("SET_LINE", Delivery, "how its line integrates", "no policy", "the default policy"));
@@ -398,7 +398,7 @@ public static class PlacePlans
                     .Select(quest => new PlaceReleased(quest.Id, quest.Short ?? quest.Title))]
                 : [];
             var declares = tip.Text is { } text && IntegrationDeclaration.Read(text).Facts is not null;
-            var plugin = SetupPresets.PluginFor(tip.Host, LandingRules.Choose(config, row.Repository, workspace).Rule.Plugin, plugins);
+            var plugin = SetupPresets.PluginFor(tip.Host, null, plugins);
             // A delivery is the person's choice where it is driven by a rule set somewhere; the default rule chose nothing.
             var chosen = before.Driven && before.Values.Landing.Source != PlaceSource.Default;
             var (suggested, why) = SetupPresets.Suggestion(before.Match, chosen, declares, plugin);

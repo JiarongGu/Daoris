@@ -214,7 +214,7 @@ catalogues (`i18n:check`).
 - D109 §1 and D147 point 3 (the line fetch runs with the person's credentials and helper) vs D198 and `TreeRefs.cs:128`
   through `WorkingTree.cs:984`: D198 and the code read right.
 - D147 point 1 (Git a place on the activity bar) vs D150 and `ProjectsView.tsx:44` (Git inside Repositories): D150 reads right.
-- D147 points 4-5 (`daoris-driver git push`, the person's push) vs `Platform/CommandWords.cs:58` (no push verb): the code
+- D147 points 4-5 (`daoris-driver git push`, the person's push) vs `Workplace/GitBranchesCommand.cs`' mark (no push verb): the code
   reads right; the push is GITAPP2g, open.
 - D204's head ("proposed, not yet read; nothing built") vs its 2026-10-31 acceptance note and the built acts
   (`ActRuns.cs:67`): the note and the code read right.

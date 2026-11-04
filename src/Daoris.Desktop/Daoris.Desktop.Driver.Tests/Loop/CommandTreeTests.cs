@@ -3,12 +3,29 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1ai-i (D228; the oneway design §11): one name, <c>daoris</c>, and one command tree, its words held to the fixture in
-/// <c>CommandWordsTests</c>. A person's words are routed once into the words each command reads; a doctrine command is the CLI's, and a
-/// word handed once is never handed back.
+/// One name, <c>daoris</c>, and one command tree (D228). A person's words are routed once into the words each command reads; a word no
+/// group owns is the CLI's, and a word handed once is never handed back.
 /// </summary>
 public sealed class CommandTreeTests
 {
+    /// <summary>Every group a unit declares, and each of its sub-verbs, routes to the group's command; a group that needs a sub-verb says its usage.</summary>
+    [Fact]
+    public void Every_word_a_group_declares_routes_to_its_command()
+    {
+        Assert.True(CommandWords.Groups.Count >= 30, $"only {CommandWords.Groups.Count} groups are declared: the collection no longer reaches the commands");
+        foreach (var group in CommandWords.Groups)
+        {
+            var bare = CommandTree.Route([group.Name]);
+            Assert.Equal(group.Whole || group.Takes is not null ? TreeRouteKind.Run : TreeRouteKind.Usage, bare.Kind);
+            Assert.Equal(group.Name, bare.Group);
+            foreach (var verb in group.Verbs)
+            {
+                var route = CommandTree.Route([group.Name, verb, "x"]);
+                Assert.True(route.Kind == TreeRouteKind.Run && route.Group == group.Name, $"`daoris {group.Name} {verb}` routes as {route.Kind}: {route.Said}");
+            }
+        }
+    }
+
     /// <summary>Each group's words, routed into the words its command reads: the one place the two spellings meet.</summary>
     [Theory]
     [InlineData("session say s-1 hello", "sessions say s-1 hello")]
@@ -29,7 +46,6 @@ public sealed class CommandTreeTests
     [InlineData("quest done 12", "quest done 12")]
     [InlineData("workflow new docs --from x", "driver workflow new docs --from x")]
     [InlineData("workflow run --session s-1", "workflow run --session s-1")]
-    [InlineData("convert --plan", "convert --plan")]
     [InlineData("gate run --look", "run-heavy --look")]
     [InlineData("gate verify engine", "verify engine")]
     [InlineData("press result r-1", "result r-1")]
@@ -60,13 +76,18 @@ public sealed class CommandTreeTests
         Assert.Equal(inward.Split(' '), route.Words);
     }
 
+    /// <summary>A word no group owns is handed to the CLI whole, a typo too, which the CLI refuses; one the CLI handed here is refused with the usage.</summary>
     [Fact]
-    public void ONEWAY1ai_i_doctrine_is_the_clis_and_is_never_handed_back()
+    public void A_word_no_group_owns_is_the_clis_and_is_never_handed_back()
     {
         Assert.Equal(TreeRouteKind.Doctrine, CommandTree.Route(["check"]).Kind);
         Assert.Equal(TreeRouteKind.Doctrine, CommandTree.Route(["--version"]).Kind);
         Assert.Equal(TreeRouteKind.Doctrine, CommandTree.Route(["sync", "--dry-run"]).Kind);
-        Assert.Equal(TreeRouteKind.Refused, CommandTree.Route(["check"], handedBy: "cli").Kind);
+        Assert.Equal(["sessionz", "list"], CommandTree.Route(["sessionz", "list"]).Words);
+
+        var handedBack = CommandTree.Route(["check"], handedBy: "cli");
+        Assert.Equal((TreeRouteKind.Usage, null, false), (handedBack.Kind, handedBack.Group, handedBack.Asked));
+        Assert.Equal("no command `check`, here or in the CLI that handed it here.", handedBack.Said);
         // A group's word the CLI handed is this program's own.
         Assert.Equal(TreeRouteKind.Run, CommandTree.Route(["session", "list"], handedBy: "cli").Kind);
     }
@@ -84,11 +105,10 @@ public sealed class CommandTreeTests
         Assert.True(CommandTree.Route(["--help"]).Asked);
         Assert.False(CommandTree.Route([]).Asked);
 
-        // A group that needs a sub-verb says its own lines, exit 2; a word no group has says so.
+        // A group that needs a sub-verb says its own lines, exit 2; help for a word no group has says so.
         var bare = CommandTree.Route(["session"]);
         Assert.Equal((TreeRouteKind.Usage, "session", false), (bare.Kind, bare.Group, bare.Asked));
-        var unknown = CommandTree.Route(["sessionz"]);
-        Assert.Equal(TreeRouteKind.Usage, unknown.Kind);
-        Assert.Contains("no command `sessionz`", unknown.Said);
+        var unknown = CommandTree.Route(["help", "sessionz"]);
+        Assert.Equal((TreeRouteKind.Usage, "no group `sessionz`."), (unknown.Kind, unknown.Said));
     }
 }

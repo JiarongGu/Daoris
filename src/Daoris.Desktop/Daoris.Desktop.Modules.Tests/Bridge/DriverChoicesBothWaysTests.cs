@@ -20,7 +20,6 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     private static DriverConfig Before() =>
         DriverConfig.Empty.WithDrivable("engine", true).WithDrivable("game", true).WithHold("game", true).WithTrees("docs", true)
             .WithLine("engine", "main").WithWorkspaceLine("aurora", "main")
-            .WithLanding("engine", LandingRule.Merge).WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{quest}"))
             .WithReadAcross("engine", true).WithWorkspaceReadAcross("aurora", false).WithWriteAcross("game", "tools", true)
             .WithStanding("engine", "the old words", Moment).WithLanguage("engine", "en").WithWorkspaceLanguage("aurora", "zh")
             .WithStrikes(3).WithForgiven("q1", 3);

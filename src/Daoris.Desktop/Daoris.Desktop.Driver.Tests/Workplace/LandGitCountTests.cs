@@ -39,36 +39,12 @@ public sealed class LandGitCountTests : IDisposable
         GitSeed.Discard(_scratch);
     }
 
-    /// <summary>The look's automatic landing of a branch, the rule's tidy behind it.</summary>
-    [Fact]
-    public async Task An_automatic_landing_asks_git_for_each_fact_once()
-    {
-        var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, AutoAccept: true));
-        var world = new World();
-        var tree = await DoneSessionAsync(world, root, "s1", "q1");
-        var lander = new AutoLander(_home, world, new SessionTrees(_home),
-            new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _ => { });
-        var (chosen, _) = await lander.ChooseAsync(Config());
-        Assert.Single(chosen);
-
-        var starts = new List<string>();
-        using (Counting(starts))
-        {
-            var said = Assert.Single(await lander.LandAsync(chosen));
-            Assert.Contains("its work is on `feature/q1-fix-the-gap`", said);
-        }
-
-        Assert.False(Directory.Exists(tree), "the rule's tidy took the tree");
-        Judge(starts, AutomaticCeiling);
-    }
-
-    /// <summary>The press on a squash rule with a tidy: the branch made of one commit, the tree and its branch gone.</summary>
+    /// <summary>A squash landing: the branch made of one commit.</summary>
     [Fact]
     public async Task A_squash_landing_asks_git_for_each_fact_once()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, Squash: true));
+        var gate = GraphLand.Gate(_home, GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "first.txt", "the first step", "the first step");
@@ -78,19 +54,18 @@ public sealed class LandGitCountTests : IDisposable
         TreeLanding landed;
         using (Counting(starts))
         {
-            landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Fix the gap"), inUse: NoneRunning);
+            landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Fix the gap"), inUse: NoneRunning, gate: gate);
         }
 
         Assert.True(landed.Landed, landed.Message);
         Judge(starts, SquashCeiling);
     }
 
-    /// <summary>The press on a merge rule with a tidy: the work merged into the line, the tree and its branch gone.</summary>
+    /// <summary>A merge landing: the work merged into the line.</summary>
     [Fact]
     public async Task A_merge_landing_asks_git_for_each_fact_once()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Merge, Tidy: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "first.txt", "the first step", "the first step");
@@ -235,7 +210,6 @@ public sealed class LandGitCountTests : IDisposable
     // LANDNODE1c3: every landing under Current performs its delivery, each effect's outcome read after it and never assumed: the branch's ref
     // made through one ref transaction (its symbolic-ref check and `update-ref --stdin`) and read back, a merge's line read after its press
     // (`rev-parse`, `merge-base --is-ancestor`), the ceilings 47, 50 and 61.
-    private const int AutomaticCeiling = 47;
     private const int SquashCeiling = 50;
     private const int MergeCeiling = 61;
 
@@ -291,39 +265,6 @@ public sealed class LandGitCountTests : IDisposable
         lock (starts) starts.Add(program + " " + string.Join(' ', arguments) + "  @ " + where);
         return Process.Start(info);
     });
-
-    private sealed class World : IAutoLandingWorld
-    {
-        public Dictionary<string, QuestView> Quests { get; } = new(StringComparer.OrdinalIgnoreCase);
-        public List<SessionRecord> Records { get; } = [];
-        public Task<QuestView?> QuestAsync(string id, CancellationToken ct) => Task.FromResult(Quests.GetValueOrDefault(id));
-        public Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<SessionRecord>>([.. Records]);
-        public Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) =>
-            Task.FromResult<IReadOnlySet<string>>(Records.Where(r => r.Live && r.Tree is not null).Select(r => r.Tree!).ToHashSet());
-        public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests.Values]);
-        public Task<AskView?> AskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
-        public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => Task.FromResult<OpinionView?>(null);
-    }
-
-    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
-
-    private void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
-
-    private async Task<string> DoneSessionAsync(World world, string root, string session, string quest)
-    {
-        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
-        await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
-        world.Quests[quest] = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", "Done");
-        world.Records.Add(new SessionRecord(session, "engine", "completed")
-        {
-            Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow,
-        });
-        var verdict = AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session, world.Quests[quest],
-            "Done", "completed", opened.Path, "aurora");
-        Assert.Equal(AutoConcluded.Due, verdict);
-        return opened.Path;
-    }
 
     /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): the counts are the landing's own starts.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);

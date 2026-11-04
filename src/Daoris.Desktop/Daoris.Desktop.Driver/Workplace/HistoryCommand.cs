@@ -40,6 +40,7 @@ public sealed record HistoryAsk(HistoryScope Scope, string? Id)
 /// one, so one it keeps is information · 2 could not: a file the disk would not let go of, the usage, or a service that did not
 /// answer (the host says its sentence).</para>
 /// </remarks>
+[CommandGroup("history", "clear", Takes = "(read)", Whole = true)]
 public static class HistoryCommand
 {
     public const string Usage =

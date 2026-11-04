@@ -64,7 +64,6 @@ public sealed class ChatGraphRunTests : AutoLandingFixture
     private async Task<(string Root, string Tree, GrownBranch Branch)> ChatAsync()
     {
         var root = await RepositoryAsync("engine");
-        Rule(LandingRule.Merge);
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "c1.txt", "the work of c1", "the work of c1");
         _world.Records.Add(new SessionRecord("c1", "engine", "completed") { Tree = opened.Path, Created = DateTimeOffset.UtcNow });

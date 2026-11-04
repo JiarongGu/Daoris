@@ -51,6 +51,7 @@ public sealed record LogArguments(LogFilter Filter, bool Json, string? Problem);
 /// else a person keeps in the folder is theirs. A file that vanishes or will not open between the listing
 /// and the read (a prune, another process) is passed over.</para>
 /// </remarks>
+[CommandGroup("logs", Whole = true)]
 public static class MachineLogReader
 {
     /// <summary>Every process kind that writes a file: the design's §2.</summary>

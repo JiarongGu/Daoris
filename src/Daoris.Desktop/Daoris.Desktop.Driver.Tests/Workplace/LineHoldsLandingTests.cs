@@ -48,7 +48,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         Assert.Equal(["more of the work", "the notes"], plan.Lands!.Select(commit => commit.Subject));
         Assert.Null(plan.Conflict);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.StartsWith("put the work on `feature/0fda18-fix-the-gap` — 2 commit(s) replayed onto `main`, leaving out 1 the line holds: "
@@ -79,7 +79,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
         await CommitAsync(tree.Path, "notes.txt", "notes\n", "the notes");
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal([LeftOutWhy.Content, LeftOutWhy.Content], landed.LeftOut!.Select(commit => commit.Why));
@@ -101,7 +101,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         var picked = await HeadAsync(root);
         await CommitAsync(root, "b.txt", "b\nand the line's own\n", "the line goes on with it");
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         var left = Assert.Single(landed.LeftOut!);
@@ -133,7 +133,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         Assert.Equal(picked, Assert.Single(plan.LeftOut!).Sha);
         Assert.Equal(["fix the third", "fix the ninth", "the notes"], plan.Lands!.Select(commit => commit.Subject));
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal([LeftOutWhy.Content, LeftOutWhy.Empty, LeftOutWhy.Empty], landed.LeftOut!.Select(commit => commit.Why));
@@ -161,7 +161,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Contains("shared.txt", plan.Conflict!.Says);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(landed.Landed, landed.Message);
         Assert.Equal(AutoLandingCode.Refused, landed.Refusal);
@@ -189,7 +189,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         var tip = await HeadAsync(tree.Path);
 
         var plan = await trees.PlanAsync(tree.Path, Subject);
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.Null(plan.LeftOut);
         Assert.Null(plan.Lands);
@@ -204,7 +204,6 @@ public sealed class LineHoldsLandingTests : LandedFixture
     [Fact]
     public async Task The_merge_form_merges_only_what_the_line_lacks()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
@@ -230,7 +229,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
         await GitAsync(root, "remote", "set-url", "origin", Path.Combine(Scratch, "gone.git"));
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains("`origin` was not fetched (", landed.Message);

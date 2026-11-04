@@ -32,7 +32,7 @@ public sealed class ContentLandingTests : LandedFixture
         await SquashAsync(root, tree.Branch);
         var before = await StateAsync(root, tree);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(landed.Landed, landed.Message);
         Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
@@ -49,7 +49,6 @@ public sealed class ContentLandingTests : LandedFixture
     [Fact]
     public async Task A_squash_merged_trees_merge_is_refused_and_the_line_does_not_move()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Tidy: true)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
@@ -64,7 +63,6 @@ public sealed class ContentLandingTests : LandedFixture
         Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
         Assert.StartsWith("Its work is on `main` by content (a squash merge), so it is not landed again", landed.Message);
         Assert.Equal(before, await StateAsync(root, tree));
-        Assert.True(Directory.Exists(tree.Path), "the rule's tidy never runs for a landing that did not happen");
     }
 
     /// <summary>A cherry-pick onto a branch of the person's: refused naming that branch, which keeps its tip.</summary>
@@ -78,7 +76,7 @@ public sealed class ContentLandingTests : LandedFixture
         await CherryPickAsync(root, tree.Branch, "feature/x");
         var before = await StateAsync(root, tree);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
         Assert.StartsWith(
@@ -101,7 +99,7 @@ public sealed class ContentLandingTests : LandedFixture
         await SquashAsync(root, tree.Branch);
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "local.db"), "rows only this tree has\n");
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
         Assert.Contains("so it is not landed again: that would make a second copy of it. Its tree stays: ", landed.Message);
@@ -128,7 +126,7 @@ public sealed class ContentLandingTests : LandedFixture
         await CommitAsync(root, "notes.txt", "other notes\n", "the notes, taken otherwise");
         await GitAsync(root, "checkout", "--quiet", "main");
 
-        var landed = await trees.LandAsync(redo.Path, Subject);
+        var landed = await trees.LandAsync(redo.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Null(landed.Refusal);

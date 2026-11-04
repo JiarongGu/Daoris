@@ -109,7 +109,6 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
 
     private async Task<(string Root, TreeOpened Tree, SessionTrees Trees)> MergeRuleAsync()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Tidy: false)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");

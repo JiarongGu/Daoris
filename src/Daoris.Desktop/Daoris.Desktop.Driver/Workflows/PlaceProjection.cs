@@ -135,8 +135,6 @@ public static class PlaceProjection
         }
 
         bool Named(IReadOnlyList<string> list, string repository) => list.Contains(repository, StringComparer.OrdinalIgnoreCase);
-        var unreadRepositories = config.UnreadLandings("landings");
-        var unreadWorkspaces = config.UnreadLandings("workspaceLandings");
 
         IReadOnlyList<PlaceWork> WorksAt(RolePlace place)
         {
@@ -171,10 +169,9 @@ public static class PlaceProjection
             return works;
         }
 
-        static List<PlaceNeed> NeedsOf(IReadOnlyList<PlaceWork> works, IEnumerable<UnreadLanding> unread)
+        static List<PlaceNeed> NeedsOf(IReadOnlyList<PlaceWork> works)
         {
             var needs = new List<PlaceNeed>();
-            needs.AddRange(unread.Select(each => new PlaceNeed("landing-unread", each.Said)));
             if (works.FirstOrDefault(work => work.Held is not null) is { } held) needs.Add(new PlaceNeed("work-held", held.Work));
             if (works.FirstOrDefault(work => work.PolicyFailed is not null) is { } bad) needs.Add(new PlaceNeed("policy-failed", bad.Work));
             return needs;
@@ -183,7 +180,7 @@ public static class PlaceProjection
         PlaceValues ValuesOf(string repository, string? workspace, string level) => ValuesAt(config, repository, workspace, level, workflows);
 
         var machineWorks = WorksAt(new RolePlace());
-        var machineNeeds = NeedsOf(machineWorks, []);
+        var machineNeeds = NeedsOf(machineWorks);
         if (failed is not null) machineNeeds.Insert(0, new PlaceNeed("catalogue-unread", failed));
         var machine = new PlaceRow(null, null, false, false, false, false, false, null, machineWorks, machineNeeds);
 
@@ -195,7 +192,7 @@ public static class PlaceProjection
             var workspace = RemoteTarget.Workspace(known.Workspace);
             var driven = Named(config.Drivable, known.Repository);
             var works = WorksAt(new RolePlace(workspace, known.Repository));
-            var needs = NeedsOf(works, unreadRepositories.Where(each => string.Equals(each.Name, known.Repository, StringComparison.OrdinalIgnoreCase)));
+            var needs = NeedsOf(works);
             var checkout = known.Root is { Length: > 0 };
             if (driven && !checkout) needs.Add(new PlaceNeed("no-checkout"));
             if (driven && !known.Adopted) needs.Add(new PlaceNeed("not-adopted"));
@@ -211,9 +208,8 @@ public static class PlaceProjection
         {
             var driven = group.Count(known => Named(config.Drivable, known.Repository));
             var works = WorksAt(new RolePlace(group.Key));
-            var unread = unreadWorkspaces.Where(each => string.Equals(each.Name, group.Key, StringComparison.OrdinalIgnoreCase));
             workspaces.Add(new PlaceWorkspace(
-                new PlaceRow(group.Key, null, false, false, false, false, false, ValuesOf("", group.Key, PlaceSource.WorkspaceLevel), works, NeedsOf(works, unread)),
+                new PlaceRow(group.Key, null, false, false, false, false, false, ValuesOf("", group.Key, PlaceSource.WorkspaceLevel), works, NeedsOf(works)),
                 driven, group.Count() - driven, group.Count(known => !Named(config.Drivable, known.Repository) && Stands(known))));
         }
 

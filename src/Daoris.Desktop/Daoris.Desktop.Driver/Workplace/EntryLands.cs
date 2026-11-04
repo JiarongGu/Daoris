@@ -407,7 +407,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     {
         var full = Path.GetFullPath(tree);
         var (workspace, repository) = context.OwnerOf(full);
-        var landing = process is { Named: true } named ? named.Landing : LandingRules.Choose(context.Config(), repository, workspace);
+        var landing = process is { Named: true } named ? named.Landing : LandingRules.Line(context.Config(), repository, workspace);
         if (landing.Rule.Form != LandingForm.Branch) return null;
 
         // A conversation's entry comes named for its first part's work (ACCEPTFOOT2, `TreeLands.EntryForWorkAsync`), whichever part's

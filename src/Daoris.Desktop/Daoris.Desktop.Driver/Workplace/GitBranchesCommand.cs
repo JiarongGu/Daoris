@@ -42,6 +42,8 @@ public sealed record GitBranchesSources(IReadOnlyList<RepoView> Registry, Driver
 /// <para>Exit codes are the family's: 0 listed, each repository git could not read said on its row · 1 the repository named has
 /// no checkout here · 2 could not: the usage, or the service did not answer.</para>
 /// </remarks>
+[CommandGroup("git", "branches", "branch", "tag", "fetch", "pick", "revert", "rebase", "review", "identity", "use", "access", "asks", "answer",
+    Whole = true)]
 public static class GitBranchesCommand
 {
     public const string Usage =

@@ -87,51 +87,6 @@ public sealed class LandingTests : IDisposable
         Assert.Equal("team/engine/s1a2b3c4", LandingRules.Expand("team/{repository}/{session}", names));
     }
 
-    [Fact]
-    public void The_repositorys_rule_wins_then_its_workspaces_then_merge()
-    {
-        var branch = new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}");
-        var config = DriverConfig.Empty
-            .WithWorkspaceLanding("aurora", branch)
-            .WithLanding("engine", LandingRule.Merge);
-
-        Assert.Equal(new Landing(LandingRule.Merge, LandingSource.Repository), LandingRules.Choose(config, "engine", "aurora"));
-        Assert.Equal(new Landing(branch, LandingSource.Workspace), LandingRules.Choose(config, "game", "aurora"));
-        Assert.Equal(new Landing(LandingRule.Merge, LandingSource.Default), LandingRules.Choose(config, "game", "forge"));
-        // A repository in no workspace is in `default`'s, as its line is (D86).
-        Assert.Equal(LandingSource.Workspace,
-            LandingRules.Choose(DriverConfig.Empty.WithWorkspaceLanding("default", branch), "game", null).Source);
-    }
-
-    [Fact]
-    public void The_rules_are_kept_in_driver_json_and_one_that_could_not_land_is_not()
-    {
-        var config = DriverConfig.Parse("""
-            {
-              "landings": { "engine": { "form": "merge" }, "odd": { "form": "push" }, "bad": { "form": "branch", "pattern": "fixed" } },
-              "workspaceLandings": { "aurora": { "form": "branch", "pattern": "feature/{quest}-{slug}" } }
-            }
-            """);
-
-        Assert.Equal(LandingRule.Merge, config.Landings["engine"]);
-        Assert.False(config.Landings.ContainsKey("odd"));
-        Assert.False(config.Landings.ContainsKey("bad"));
-        var again = DriverConfig.Parse(config.ToJson());
-        Assert.Equal("feature/{quest}-{slug}", again.WorkspaceLandings["aurora"].Pattern);
-
-        var cleared = config.WithLanding("engine", null).WithWorkspaceLanding("aurora", null);
-        var written = cleared.ToJson();
-        // FABRIC-GRAPH1's review: rules the reader could not take (`odd`, `bad`) are the person's text, kept as they stand and still
-        // not read; only what the edit changed goes.
-        Assert.Contains("\"odd\"", written, StringComparison.Ordinal);
-        Assert.Contains("\"bad\"", written, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"engine\"", written, StringComparison.Ordinal);
-        Assert.DoesNotContain("workspaceLandings", written, StringComparison.Ordinal);
-        Assert.Empty(DriverConfig.Parse(written).Landings);
-        Assert.Throws<DriverException>(() => config.WithLanding("engine", new LandingRule(LandingForm.Branch, "fixed")));
-        Assert.Throws<DriverException>(() => config.WithLanding("engine", new LandingRule("push")));
-    }
-
     /// <summary>
     /// WSR4 (D100): a rule may name the plugin that pushes its branch and opens the pull request — only
     /// the branch form, since the plugin starts from the branch Daoris made, and only an id a plugin
@@ -150,29 +105,6 @@ public sealed class LandingTests : IDisposable
 
         if (problem is null) Assert.Null(said);
         else Assert.Contains(problem, said);
-    }
-
-    [Fact]
-    public void A_rules_plugin_is_kept_in_driver_json_and_a_merge_naming_one_is_not_read()
-    {
-        var config = DriverConfig.Parse("""
-            {
-              "landings": { "odd": { "form": "merge", "plugin": "example.github-pull-request" } },
-              "workspaceLandings": { "aurora": { "form": "branch", "pattern": "feature/{quest}-{slug}", "plugin": "example.github-pull-request" } }
-            }
-            """);
-
-        Assert.False(config.Landings.ContainsKey("odd"));
-        Assert.Equal("example.github-pull-request", config.WorkspaceLandings["aurora"].Plugin);
-        Assert.Equal("example.github-pull-request", DriverConfig.Parse(config.ToJson()).WorkspaceLandings["aurora"].Plugin);
-        // Written only when named: a rule with none reads as it always has. `odd`, a merge naming a plugin, is not read and stays as
-        // the person wrote it (FABRIC-GRAPH1's review), so the edited rule itself is what must carry no plugin.
-        var renamed = config.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "review/{session}")).ToJson();
-        var aurora = System.Text.Json.Nodes.JsonNode.Parse(renamed)!["workspaceLandings"]!["aurora"]!.AsObject();
-        Assert.False(aurora.ContainsKey("plugin"));
-        Assert.Null(DriverConfig.Parse(renamed).WorkspaceLandings["aurora"].Plugin);
-        Assert.Contains("\"odd\"", renamed, StringComparison.Ordinal);
-        Assert.Throws<DriverException>(() => config.WithLanding("engine", new LandingRule(LandingForm.Merge, Plugin: "example.github-pull-request")));
     }
 
     /// <summary>
@@ -208,12 +140,12 @@ public sealed class LandingTests : IDisposable
         await GitAsync(root, "branch", "elsewhere");
         await GitAsync(root, "checkout", "--quiet", "elsewhere");
         await File.WriteAllTextAsync(Path.Combine(root, "in-flight.txt"), "the person's own work\n");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"));
+        var landed = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"));
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("feature/0fda18-fix-the-api-gap", landed.Branch);
@@ -233,7 +165,7 @@ public sealed class LandingTests : IDisposable
     public async Task A_conversations_branch_is_named_for_its_oldest_commit_never_its_opening()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{slug}-{session}"));
+        Rule(GraphLand.Branch("feature/{slug}-{session}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the conversation's work", "Cap the chunk budget");
@@ -241,7 +173,7 @@ public sealed class LandingTests : IDisposable
         var subject = new LandingSubject("s1a2b3c4", null, "ok so that is merged now, what about the rest");
 
         var plan = await trees.PlanAsync(opened.Path, subject);
-        var landed = await trees.LandAsync(opened.Path, subject);
+        var landed = await LandAsync(trees, opened.Path, subject);
 
         Assert.Equal("feature/cap-the-chunk-budget-s1a2b3c4", plan.Target);
         Assert.True(landed.Landed, landed.Message);
@@ -253,7 +185,7 @@ public sealed class LandingTests : IDisposable
     public async Task A_conversations_oldest_commit_with_no_message_names_it_work()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{slug}-{session}"));
+        Rule(GraphLand.Branch("feature/{slug}-{session}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await File.WriteAllTextAsync(Path.Combine(opened.Path, "work.txt"), "the conversation's work\n");
@@ -272,12 +204,12 @@ public sealed class LandingTests : IDisposable
         var root = await RepositoryAsync("engine");
         await GitAsync(root, "branch", "feature/0fda18-fix");
         var before = (await GitAsync(root, "rev-parse", "feature/0fda18-fix")).Trim();
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var landed = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
 
         Assert.False(landed.Landed);
         Assert.Contains("Daoris does not move a branch it did not make", landed.Message);
@@ -288,16 +220,16 @@ public sealed class LandingTests : IDisposable
     public async Task Nothing_to_land_and_work_not_committed_are_each_refused_in_their_own_words()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "review/{session}"));
+        Rule(GraphLand.Branch("review/{session}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
-        var empty = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", null, null));
+        var empty = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", null, null));
         Assert.False(empty.Landed);
         Assert.Contains("nothing to land", empty.Message);
 
         await File.WriteAllTextAsync(Path.Combine(opened.Path, "loose.txt"), "not committed\n");
-        var dirty = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", null, null));
+        var dirty = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", null, null));
         Assert.False(dirty.Landed);
         Assert.Contains("uncommitted", dirty.Message);
         Assert.Empty((await GitAsync(root, "branch", "--list", "review/*")).Trim());
@@ -315,7 +247,7 @@ public sealed class LandingTests : IDisposable
         var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
         Assert.Equal(new LandingPlan(LandingForm.Merge, "main", LandingSource.Default), plan);
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var landed = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains("the work", await GitAsync(root, "log", "main", "--oneline"));
     }
@@ -324,13 +256,13 @@ public sealed class LandingTests : IDisposable
     public async Task The_plan_names_the_branch_a_press_would_make()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), workspace: true);
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
-        var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"));
+        var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"), process: _gate!.Process);
 
-        Assert.Equal(new LandingPlan(LandingForm.Branch, "feature/0fda18-fix-the-api-gap", LandingSource.Workspace), plan);
+        Assert.Equal((LandingForm.Branch, "feature/0fda18-fix-the-api-gap"), (plan.Form, plan.Target));
     }
 
     // ——— LANDNAME1a: an entered branch name replaces the rule's wholesale
@@ -339,7 +271,7 @@ public sealed class LandingTests : IDisposable
     public async Task An_entered_name_replaces_the_rules_whole_name_and_the_record_keeps_it()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
@@ -349,7 +281,7 @@ public sealed class LandingTests : IDisposable
         Assert.Equal("my/own-name", plan.Target);
         Assert.Null(plan.Problem);
 
-        var landed = await trees.LandAsync(opened.Path, subject);
+        var landed = await LandAsync(trees, opened.Path, subject);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("my/own-name", landed.Branch);
@@ -362,12 +294,12 @@ public sealed class LandingTests : IDisposable
     public async Task A_blank_entered_name_keeps_the_rules()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "   " });
+        var landed = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "   " });
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("feature/0fda18-fix", landed.Branch);
@@ -377,14 +309,14 @@ public sealed class LandingTests : IDisposable
     public async Task An_entered_name_git_would_not_take_is_refused_in_words_about_the_name()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
         var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "no good..name" };
 
         Assert.NotNull((await trees.PlanAsync(opened.Path, subject)).Problem);
-        var landed = await trees.LandAsync(opened.Path, subject);
+        var landed = await LandAsync(trees, opened.Path, subject);
 
         Assert.False(landed.Landed);
         Assert.Contains("`no good..name`", landed.Message);
@@ -398,12 +330,12 @@ public sealed class LandingTests : IDisposable
         var root = await RepositoryAsync("engine");
         await GitAsync(root, "branch", "theirs");
         var before = (await GitAsync(root, "rev-parse", "theirs")).Trim();
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "theirs" });
+        var landed = await LandAsync(trees, opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "theirs" });
 
         Assert.False(landed.Landed);
         Assert.Contains("`theirs`", landed.Message);
@@ -422,7 +354,7 @@ public sealed class LandingTests : IDisposable
         var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "my/own-name" };
 
         Assert.Contains("merge", (await trees.PlanAsync(opened.Path, subject)).Problem);
-        var landed = await trees.LandAsync(opened.Path, subject);
+        var landed = await LandAsync(trees, opened.Path, subject);
 
         Assert.False(landed.Landed);
         Assert.Contains("makes no branch", landed.Message);
@@ -459,7 +391,7 @@ public sealed class LandingTests : IDisposable
     public async Task A_quest_following_the_chain_from_another_ask_moves_the_chains_branch_on()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var quests = new Dictionary<string, QuestView>
         {
             ["q1"] = new("q1", "ask #a1", "engine", "Fix the gap", "", "Done"),
@@ -469,14 +401,14 @@ public sealed class LandingTests : IDisposable
         var trees = new SessionTrees(_home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        var landed = await trees.LandAsync(first.Path, await LandingRules.SubjectAsync("s1", "q1", Find, null));
+        var landed = await LandAsync(trees, first.Path, await LandingRules.SubjectAsync("s1", "q1", Find, null));
         Assert.True(landed.Landed, landed.Message);
         var tip = (await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim();
 
         var drill = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
         await CommitAsync(drill.Path, "drill.txt", "the drill-down", "the drill-down");
         var head = (await GitAsync(drill.Path, "rev-parse", "HEAD")).Trim();
-        var advanced = await trees.LandAsync(drill.Path, await LandingRules.SubjectAsync("s3", "q3", Find, null));
+        var advanced = await LandAsync(trees, drill.Path, await LandingRules.SubjectAsync("s3", "q3", Find, null));
 
         Assert.True(advanced.Landed, advanced.Message);
         Assert.Equal("feature/q1-fix-the-gap", advanced.Branch);
@@ -501,18 +433,18 @@ public sealed class LandingTests : IDisposable
     public async Task An_advance_is_refused_where_the_work_grows_apart_the_branch_moved_or_a_tree_stands_on_it()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        Assert.True((await LandAsync(trees, first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
         const string chain = "feature/q1-fix-the-gap";
         var tip = (await GitAsync(root, "rev-parse", chain)).Trim();
 
         // Grown from the line, not from the chain's work: no fast-forward.
         var apart = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(apart.Path, "apart.txt", "work beside the chain", "work beside");
-        var grewApart = await trees.LandAsync(apart.Path, new LandingSubject("s2", "q1", "Fix the gap"));
+        var grewApart = await LandAsync(trees, apart.Path, new LandingSubject("s2", "q1", "Fix the gap"));
         Assert.False(grewApart.Landed);
         Assert.Equal(AutoLandingCode.Exists, grewApart.Refusal);
         Assert.Contains("does not grow from `feature/q1-fix-the-gap`", grewApart.Message);
@@ -526,7 +458,7 @@ public sealed class LandingTests : IDisposable
         var theirs = (await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture",
             "commit-tree", tree, "-p", tip, "-m", "somebody's commit")).Trim();
         await GitAsync(root, "update-ref", $"refs/heads/{chain}", theirs);
-        var moved = await trees.LandAsync(next.Path, new LandingSubject("s3", "q1", "Fix the gap"));
+        var moved = await LandAsync(trees, next.Path, new LandingSubject("s3", "q1", "Fix the gap"));
         Assert.False(moved.Landed);
         Assert.Contains("moved since Daoris landed on it", moved.Message);
         Assert.Equal(theirs, (await GitAsync(root, "rev-parse", chain)).Trim());
@@ -535,7 +467,7 @@ public sealed class LandingTests : IDisposable
         await GitAsync(root, "update-ref", $"refs/heads/{chain}", tip);
         var elsewhere = Path.Combine(_scratch, "elsewhere");
         await GitAsync(root, "worktree", "add", "--quiet", elsewhere, chain);
-        var standing = await trees.LandAsync(next.Path, new LandingSubject("s3", "q1", "Fix the gap"));
+        var standing = await LandAsync(trees, next.Path, new LandingSubject("s3", "q1", "Fix the gap"));
         Assert.False(standing.Landed);
         Assert.Contains("is checked out at", standing.Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
@@ -551,7 +483,7 @@ public sealed class LandingTests : IDisposable
     public async Task The_plan_says_the_refusal_a_standing_branch_would_meet_before_the_press()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         const string chain = "feature/q1-fix-the-gap";
 
@@ -562,11 +494,11 @@ public sealed class LandingTests : IDisposable
         var notOurs = await trees.PlanAsync(theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"));
         Assert.True(notOurs.Stands);
         Assert.Contains("Daoris does not move a branch it did not make", notOurs.Problem);
-        Assert.StartsWith(notOurs.Problem!, (await trees.LandAsync(theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"))).Message);
+        Assert.StartsWith(notOurs.Problem!, (await LandAsync(trees, theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"))).Message);
 
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        Assert.True((await LandAsync(trees, first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
         var tip = (await GitAsync(root, "rev-parse", chain)).Trim();
         var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
         await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
@@ -589,7 +521,7 @@ public sealed class LandingTests : IDisposable
         await GitAsync(root, "worktree", "add", "--quiet", elsewhere, chain);
         var checkedOut = await trees.PlanAsync(next.Path, subject);
         Assert.Contains("is checked out at", checkedOut.Problem);
-        Assert.StartsWith(checkedOut.Problem!, (await trees.LandAsync(next.Path, subject)).Message);
+        Assert.StartsWith(checkedOut.Problem!, (await LandAsync(trees, next.Path, subject)).Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
     }
 
@@ -603,11 +535,11 @@ public sealed class LandingTests : IDisposable
     public async Task A_chains_branch_whose_work_already_reads_on_the_line_is_not_moved_on(string how)
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var trees = new SessionTrees(_home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        Assert.True((await LandAsync(trees, first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
         const string chain = "feature/q1-fix-the-gap";
         var tip = (await GitAsync(root, "rev-parse", chain)).Trim();
         var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
@@ -622,66 +554,12 @@ public sealed class LandingTests : IDisposable
             await GitAsync(root, [.. identity, "commit", "-m", "the first work, squashed"]);
         }
 
-        var refused = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
+        var refused = await LandAsync(trees, next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
 
         Assert.False(refused.Landed);
         Assert.Equal(AutoLandingCode.Completed, refused.Refusal);
         Assert.Contains("already reads on `main` — its pull request was merged", refused.Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
-    }
-
-    /// <summary>
-    /// D82 as D145 amends it: with the rule's tidy, the step before's session branch goes at its landing, so the next step grows
-    /// from the chain's landed branch, says so, and its done moves that branch on.
-    /// </summary>
-    [Fact]
-    public async Task A_next_step_grows_from_the_chains_branch_once_the_tidy_took_the_step_befores()
-    {
-        var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true));
-        var trees = new SessionTrees(_home);
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
-        Assert.Empty((await GitAsync(root, "branch", "--list", first.Branch)).Trim());
-        const string chain = "feature/q1-fix-the-gap";
-
-        var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch, landed: chain);
-
-        Assert.Equal(chain, next.GrewFrom);
-        Assert.Contains($"`{chain}`, the branch its chain landed on", next.BasedOn);
-        Assert.Equal((await GitAsync(root, "rev-parse", chain)).Trim(), (await GitAsync(next.Path, "rev-parse", "HEAD")).Trim());
-        await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
-        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
-        Assert.True(advanced.Landed, advanced.Message);
-        Assert.NotNull(advanced.AdvancedFrom);
-        Assert.False(Directory.Exists(next.Path), "the rule's tidy follows an advance as it follows a landing");
-    }
-
-    /// <summary>
-    /// SESSONE1d (D167 point 4, D82): a further part of a session whose tree the tidy took at its landing grows a tree from the branch
-    /// that work landed on, and its opening says so and whose tree is gone.
-    /// </summary>
-    [Fact]
-    public async Task A_further_part_whose_sessions_tree_the_tidy_took_grows_from_the_branch_its_work_landed_on()
-    {
-        var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true));
-        var trees = new SessionTrees(_home);
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "work.txt", "the first part's work", "the first work");
-        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
-        Assert.False(Directory.Exists(first.Path));
-        const string landed = "feature/q1-fix-the-gap";
-
-        var next = await trees.OpenAsync(root, "engine", "aurora", landed: landed, partOf: "s1");
-
-        Assert.Equal(landed, next.GrewFrom);
-        Assert.Contains($"`{landed}`, the branch its session's work landed on (not merged yet)", next.BasedOn);
-        Assert.Contains("the tree session `s1` worked in is gone", next.BasedOn);
-        Assert.Equal((await GitAsync(root, "rev-parse", landed)).Trim(), (await GitAsync(next.Path, "rev-parse", "HEAD")).Trim());
-        // The fact the page says (LANG1a): the branch it started at.
-        Assert.Contains(next.Opening!.Parts[0].Values, fact => fact.Key == "basedOn" && Equals(fact.Value, landed));
     }
 
     /// <summary>SESSONE1d: where no branch holds that work, the part grows from the line, and says that the tree it would have gone into is gone.</summary>
@@ -709,7 +587,7 @@ public sealed class LandingTests : IDisposable
     public async Task The_plugin_is_told_the_open_pull_request_at_an_advance_and_who_accepted_it()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "example.lands", AutoAccept: true));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", "example.lands"));
         Plugin("example.lands", """{ "id": "example.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }""");
         var frames = new List<System.Text.Json.JsonElement>();
         var trees = new SessionTrees(_home, new LandingPlugins(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(new FakeLander(frame =>
@@ -722,11 +600,11 @@ public sealed class LandingTests : IDisposable
         }))));
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        Assert.True((await LandAsync(trees, first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
         var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
         await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
 
-        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"), acceptedBy: AcceptedBy.Auto);
+        var advanced = await LandAsync(trees, next.Path, new LandingSubject("s2", "q1", "Fix the gap"), acceptedBy: AcceptedBy.Auto);
 
         Assert.True(advanced.Landed, advanced.Message);
         Assert.Equal(2, frames.Count);
@@ -759,9 +637,13 @@ public sealed class LandingTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
 
-    private void Rule(LandingRule rule, bool workspace = false) =>
-        (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
-            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+    private IWorkplaceGate? _gate;
+
+    private void Rule(string land) => _gate = GraphLand.Gate(_home, land);
+
+    /// <summary>The press's landing of <paramref name="path"/>, by the run's bound <c>land</c> where a test bound one.</summary>
+    private Task<TreeLanding> LandAsync(SessionTrees trees, string path, LandingSubject subject, string acceptedBy = AcceptedBy.Person) =>
+        trees.LandAsync(path, subject, acceptedBy: acceptedBy, gate: _gate);
 
     /// <summary>
     /// A repository on `main` with one commit, its README: a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROC1h;

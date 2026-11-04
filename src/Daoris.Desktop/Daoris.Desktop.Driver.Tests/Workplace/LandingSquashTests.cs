@@ -46,7 +46,7 @@ public sealed class LandingSquashTests : IDisposable
     public async Task A_squash_lands_one_commit_of_the_sessions_work_onto_the_line_s_tip()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "first.txt", "the first step", "the first step");
@@ -55,7 +55,7 @@ public sealed class LandingSquashTests : IDisposable
         var line = (await GitAsync(root, "rev-parse", "main")).Trim();
         var sessionTip = (await GitAsync(root, "rev-parse", tree.Branch)).Trim();
 
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning, gate: _gate);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains($"put the work on `{Named}`", landed.Message);
@@ -88,7 +88,7 @@ public sealed class LandingSquashTests : IDisposable
     public async Task A_conversations_squash_is_subjected_by_its_work_and_a_quests_by_its_title(bool conversation)
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{session}-{slug}", Squash: true));
+        Rule(GraphLand.Branch("feature/{session}-{slug}", squash: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "first.txt", "the first step", "Add the first step");
@@ -97,7 +97,7 @@ public sealed class LandingSquashTests : IDisposable
             ? new LandingSubject("s1", null, "please could you fix the gap in the login screen")
             : new LandingSubject("s1", "0fda18", "Fix the gap");
 
-        var landed = await trees.LandAsync(tree.Path, subject, inUse: NoneRunning);
+        var landed = await trees.LandAsync(tree.Path, subject, inUse: NoneRunning, gate: _gate);
 
         Assert.True(landed.Landed, landed.Message);
         var branch = (await GitAsync(root, "for-each-ref", "--format=%(refname:short)", "refs/heads/feature/")).Trim();
@@ -116,13 +116,13 @@ public sealed class LandingSquashTests : IDisposable
     public async Task The_head_Discard_and_the_removal_read_a_squashed_session_as_landed()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work", "the work");
         Assert.Equal(1, (await trees.WorkAsync(tree.Path))!.Commits);
 
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning, gate: _gate);
 
         Assert.True(landed.Landed, landed.Message);
         var work = await trees.WorkAsync(tree.Path);
@@ -145,31 +145,6 @@ public sealed class LandingSquashTests : IDisposable
     }
 
     /// <summary>
-    /// A chain's earlier step, whose commits rode into the accepted one, is an ancestor of the squashed tip: the rule's tidy takes
-    /// it with the pressed session, as it does where the branch holds the commits themselves (LAND3).
-    /// </summary>
-    [Fact]
-    public async Task A_squashing_landings_tidy_takes_the_chains_earlier_branch_its_squash_holds()
-    {
-        var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, Squash: true));
-        var trees = new SessionTrees(_home);
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "first.txt", "the first step", "the first step");
-        var second = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
-        await CommitAsync(second.Path, "second.txt", "the verify step", "the verify step");
-
-        var landed = await trees.LandAsync(second.Path, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: NoneRunning);
-
-        Assert.True(landed.Landed, landed.Message);
-        Assert.False(await BranchAsync(root, second.Branch), "the pressed session's branch goes on the record's proof");
-        Assert.False(Directory.Exists(second.Path));
-        Assert.False(await BranchAsync(root, first.Branch), "the earlier step's branch the squash holds goes too");
-        Assert.Equal(new TidiedBranch(first.Branch, Removed: true, Tree: true), Assert.Single(landed.Tidied!));
-        Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", $"main..{Named}")).Trim());
-    }
-
-    /// <summary>
     /// A chain's later landing (point 4) squashes only what was added since the recorded tip: one more commit on the pull
     /// request's branch, its tree the new tip's, its parent the branch's tip, its body the new commits alone, and the record moved
     /// to the new tip. A session whose tip does not grow from the recorded one is refused, and nothing moves.
@@ -178,11 +153,11 @@ public sealed class LandingSquashTests : IDisposable
     public async Task A_chains_later_landing_adds_one_commit_and_moves_the_record_on()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var trees = new SessionTrees(_home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "first.txt", "the first step", "the first step");
-        var once = await trees.LandAsync(first.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
+        var once = await trees.LandAsync(first.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning, gate: _gate);
         Assert.True(once.Landed, once.Message);
         var squashedOnce = (await GitAsync(root, "rev-parse", Named)).Trim();
 
@@ -191,7 +166,7 @@ public sealed class LandingSquashTests : IDisposable
         await CommitAsync(second.Path, "third.txt", "the docs step", "the docs step");
         var secondTip = (await GitAsync(root, "rev-parse", second.Branch)).Trim();
 
-        var grown = await trees.LandAsync(second.Path, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: NoneRunning);
+        var grown = await trees.LandAsync(second.Path, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: NoneRunning, gate: _gate);
 
         Assert.True(grown.Landed, grown.Message);
         Assert.Equal(squashedOnce, grown.AdvancedFrom);
@@ -213,7 +188,7 @@ public sealed class LandingSquashTests : IDisposable
         // Grown from the line, not from the chain: no squash of it would be what the pull request's branch already says.
         var stray = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(stray.Path, "stray.txt", "a stray step", "a stray step");
-        var refused = await trees.LandAsync(stray.Path, new LandingSubject("s3", "0fda18", "Fix the gap"), inUse: NoneRunning);
+        var refused = await trees.LandAsync(stray.Path, new LandingSubject("s3", "0fda18", "Fix the gap"), inUse: NoneRunning, gate: _gate);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("does not grow from", refused.Message);
@@ -229,14 +204,14 @@ public sealed class LandingSquashTests : IDisposable
     public async Task Accept_is_refused_where_git_has_no_identity_and_nothing_is_made()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work", "the work");
         await GitAsync(root, "config", "user.name", "");
         await GitAsync(root, "config", "user.email", "");
 
-        var refused = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
+        var refused = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning, gate: _gate);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("git config user.name", refused.Message);
@@ -252,7 +227,7 @@ public sealed class LandingSquashTests : IDisposable
     public async Task A_tree_on_its_own_branch_lands_as_it_stands_and_is_never_squashed()
     {
         var root = await RepositoryAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await GitAsync(tree.Path, "checkout", "-b", "feature/TK-1-own");
@@ -260,7 +235,7 @@ public sealed class LandingSquashTests : IDisposable
         await CommitAsync(tree.Path, "second.txt", "the second step", "the second step");
         var own = (await GitAsync(root, "rev-parse", "feature/TK-1-own")).Trim();
 
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning, gate: _gate);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("feature/TK-1-own", landed.Branch);
@@ -270,8 +245,9 @@ public sealed class LandingSquashTests : IDisposable
         Assert.Null(trees.Recorded.Of("engine", "feature/TK-1-own")?.Squashed);
     }
 
-    private void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+    private IWorkplaceGate? _gate;
+
+    private void Rule(string land) => _gate = GraphLand.Gate(_home, land);
 
     private static async Task<bool> BranchAsync(string root, string branch) =>
         (await GitAsync(root, "branch", "--list", branch)).Trim().Length > 0;

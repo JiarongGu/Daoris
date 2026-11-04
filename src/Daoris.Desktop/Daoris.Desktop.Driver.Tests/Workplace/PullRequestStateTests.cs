@@ -37,12 +37,8 @@ public sealed class PullRequestStateTests : LandedFixture
             id = Plugin,
             hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.Land, HookPoints.State } },
         }));
-        Rule(tidy: false);
+        Lands = GraphLand.Gate(Home, GraphLand.PullRequest("feature/{quest}-{slug}", Plugin));
     }
-
-    private void Rule(bool tidy) =>
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: tidy, Plugin: Plugin))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     private SessionTrees Trees() => new(Home, new LandingPlugins(
         Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Platform(this)), clock: () => _now));
@@ -55,107 +51,6 @@ public sealed class PullRequestStateTests : LandedFixture
         Target = target,
         How = MergeHow.Squash,
     };
-
-    /// <summary>
-    /// LAND3's tidy, after the landing's plugin step (design §2.1 occasion 1): an earlier landing's pull request completed by
-    /// squash, the platform deleted its branch and so did the person, and its session branch held commits no branch of theirs
-    /// holds. The next landing in the repository asks, and that session branch goes with its tree, kept on the entry.
-    /// </summary>
-    [Fact]
-    public async Task The_tidy_takes_a_session_branch_a_squash_merged_pull_request_carried()
-    {
-        var (root, origin) = await RepositoryWithOriginAsync("engine");
-        var trees = Trees();
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "first.txt", "the first work\n", "the first work");
-        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "First"));
-        Assert.True(landed.Landed, landed.Message);
-        var source = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
-        var merge = await SquashOnPlatformAsync(origin, landed.Branch!);
-        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
-        await GitAsync(root, "branch", "-D", landed.Branch!);
-        _answers[landed.Branch!] = () => Completed(merge, source);
-
-        Rule(tidy: true);
-        var second = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(second.Path, "second.txt", "other work\n", "other work");
-        var next = await trees.LandAsync(second.Path, new LandingSubject("s2", "q2", "Second"), inUse: NoneRunning);
-
-        Assert.True(next.Landed, next.Message);
-        Assert.Equal("", (await GitAsync(root, "branch", "--list", first.Branch)).Trim());
-        Assert.False(Directory.Exists(first.Path), "its tree went with it");
-        Assert.Contains(new TidiedBranch(first.Branch, Removed: true, Tree: true) { CarriedBy = landed.Branch }, next.Tidied!);
-        Assert.Contains($"whose work `{landed.Branch}`'s completed pull request carried", next.Message);
-        var entry = trees.Recorded.Landing("s1")!;
-        Assert.Equal(PullRequestStates.Completed, entry.PullRequestState!.State);
-        Assert.Equal(Plugin, entry.PullRequestState.Plugin);
-        var carried = Assert.Single(entry.Carried);
-        Assert.Equal((first.Branch, CarriedBy.Tidy), (carried.Branch, carried.By));
-    }
-
-    /// <summary>
-    /// 🔴 FABRIC-END4a, the fourth review's P1 (TreeTidies.cs:133 and :136, PullRequestAsks.cs:279): the carried tidy asks about the tip it
-    /// read, never the branch's live name. A session branch at A, one commit past what the pull request carried, moved to B, which it carried,
-    /// as it was asked, and back to A before its delete, keeps A: B's proof is not A's.
-    /// </summary>
-    [Fact]
-    public async Task A_carried_tidy_whose_branch_moved_away_and_back_keeps_it()
-    {
-        var (root, origin) = await RepositoryWithOriginAsync("engine");
-        var trees = Trees();
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "first.txt", "the first work\n", "the first work");
-        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "First"));
-        Assert.True(landed.Landed, landed.Message);
-        var source = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
-        var merge = await SquashOnPlatformAsync(origin, landed.Branch!);
-        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
-        await GitAsync(root, "branch", "-D", landed.Branch!);
-        _answers[landed.Branch!] = () => Completed(merge, source);
-        // The answer kept while the session branch is still what the pull request carried, so the carried tidy has a carrier to ask.
-        await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
-        Assert.Equal(PullRequestStates.Completed, trees.Recorded.Landing("s1")!.PullRequestState!.State);
-        // A: a commit the pull request never carried, its tree removed by hand so the branch stands alone.
-        await CommitAsync(first.Path, "more.txt", "more work\n", "more work");
-        var a = (await GitAsync(root, "rev-parse", first.Branch)).Trim();
-        await GitAsync(root, "worktree", "remove", first.Path);
-
-        Rule(tidy: true);
-        var second = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(second.Path, "second.txt", "other work\n", "other work");
-        // The carried tidy reads the branch, then asks the carrier about it: the branch is at B while it is asked, and at A from the next
-        // git start on. (The asks before it ask the same of the branch by name, after reading the pull request's source commit.)
-        var (read, moved, back) = (false, false, false);
-        WorkingTree.Started.Value = arguments =>
-        {
-            if (moved && !back)
-            {
-                back = true;
-                GitNow(root, "update-ref", $"refs/heads/{first.Branch}", a);
-            }
-            else if (read && !moved && arguments is ["merge-base", "--is-ancestor", var revision, var over] && over == source
-                     && (revision == a || revision == $"refs/heads/{first.Branch}"))
-            {
-                moved = true;
-                GitNow(root, "update-ref", $"refs/heads/{first.Branch}", source);
-            }
-
-            read = arguments is ["rev-parse", "--verify", "--quiet", var named] && named == $"refs/heads/{first.Branch}";
-        };
-        try
-        {
-            var next = await trees.LandAsync(second.Path, new LandingSubject("s2", "q2", "Second"), inUse: NoneRunning);
-
-            Assert.True(next.Landed, next.Message);
-            Assert.True(back, "the branch moved to what was carried and back as it was asked");
-            Assert.Equal(a, (await GitAsync(root, "rev-parse", first.Branch)).Trim());
-            Assert.DoesNotContain(next.Tidied!, each => each.Branch == first.Branch && each.Removed);
-        }
-        finally
-        {
-            WorkingTree.Started.Value = null;
-        }
-    }
 
     /// <summary>
     /// The clean-up's look asks; its press acts on what was kept (design §2.1 occasion 2, §2.3). A landed branch squash-merged
@@ -258,10 +153,10 @@ public sealed class PullRequestStateTests : LandedFixture
         var trees = Trees();
         var carried = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
-        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"));
+        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"), gate: Lands);
         var unknown = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(unknown.Path, "unknown.txt", "unknown\n", "unknown");
-        var other = await trees.LandAsync(unknown.Path, new LandingSubject("s2", "q2", "Unconfirmed"));
+        var other = await trees.LandAsync(unknown.Path, new LandingSubject("s2", "q2", "Unconfirmed"), gate: Lands);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
         // The line changes its file again after the squash, so its work is not on the line by content either (SQUASHTIDY1):
@@ -302,7 +197,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var trees = Trees();
         var carried = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
-        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"));
+        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"), gate: Lands);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
         await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
@@ -342,7 +237,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var trees = Trees();
         var carried = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
-        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"));
+        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"), gate: Lands);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
         await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
@@ -371,7 +266,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var trees = Trees();
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "merged.txt", "merged\n", "merged");
-        var landing = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"));
+        var landing = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"), gate: Lands);
         Assert.True(landing.Landed, landing.Message);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!, then: ("merged.txt", "changed on the line since\n"));
@@ -435,7 +330,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var trees = Trees();
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "merged.txt", "merged\n", "Merged");
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"));
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);
         // Its session branch is gone, as a tidy leaves it, so no session branch leans on the landed one.
         await GitAsync(root, "worktree", "remove", "--force", tree.Path);
@@ -477,8 +372,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var gone = await LandAsync(trees, root, "gone.txt", "gone\n", new LandingSubject("s1", "q1", "Gone"));
         // The plugin that pushed it is no longer on this machine.
         trees.Recorded.Pushed("engine", gone.Branch!, new PluginLanding("acme.gone", Pushed: true, null, "pushed"), trees.Recorded.Of("engine", gone.Branch!)!.Tip);
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"));
         var unpushed = await LandAsync(trees, root, "unpushed.txt", "unpushed\n", new LandingSubject("s2", "q2", "Unpushed"));
 
         var plan = await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());

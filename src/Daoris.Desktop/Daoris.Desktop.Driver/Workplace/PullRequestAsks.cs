@@ -93,7 +93,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, LandedBranch? again, CancellationToken ct,
         IReadOnlyCollection<LandedBranch>? moment = null)
     {
-        var rule = LandingRules.Choose(context.Config(), repository, workspace).Rule;
+        var rule = LandingRules.Line(context.Config(), repository, workspace).Rule;
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         // The repository's refs read once for its entries (PROC1d-ii), and only where one is due.
         var refs = RefSnapshot.Take(root);
@@ -171,7 +171,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         {
             asked = asked with { Final = true };
         }
-        else if (PullRequestAsking.PluginFor(entry, LandingRules.Choose(context.Config(), entry.Repository, workspace).Rule) is null)
+        else if (PullRequestAsking.PluginFor(entry, LandingRules.Line(context.Config(), entry.Repository, workspace).Rule) is null)
         {
             asked = asked with { Code = PullRequestCodes.NoPlugin, Why = PullRequestWords.NoPlugin };
         }

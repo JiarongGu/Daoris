@@ -20,10 +20,10 @@ export { HANDED_VARIABLE };
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
 /**
- * The doctrine commands, in the order `daoris --help` prints them (MOD7), and nothing else: the tree's other groups are the desktop's
- * program's (ONEWAY1ai-i, the oneway design §11), which this dispatcher hands every other word to, whole. Each row is a module of its
- * own under `cli/` carrying its verb, its usage lines and its handler, and its lines in the golden usage
- * (`test/fixtures/cli-usage/help.txt`); `cli-tree.test.ts` holds the rows to the tree's `fixtures/command-tree.json`.
+ * The doctrine commands, in the order `daoris --help` prints them, and nothing else: these rows are the one declaration of them. The
+ * tree's other groups are the desktop's program's, declared by its own commands, which this dispatcher hands every other word to,
+ * whole. Each row is a module of its own under `cli/` carrying its verb, its usage lines and its handler, and its lines in the golden
+ * usage (`test/fixtures/cli-usage/help.txt`); `cli-tree.test.ts` holds that each row runs here.
  *
  * Only this file imports the rows, and no row imports this file: a row that reached the table would reach the hand-off through it,
  * and a doctrine command would then reach the one spawn. `cli.test.ts` and `dogfood.test.ts` hold both halves.
