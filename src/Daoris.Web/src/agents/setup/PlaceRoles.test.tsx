@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import type { StructurePlaceAsk } from '../../data/wiring';
+import type { RoleRow, StructurePlaceAsk } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { DRIVER_STATE, respond, show, WIRING } from '../../test/shellHarness';
 import { useListPanes } from '../../work/frame/listPanes';
@@ -318,8 +318,14 @@ describe('A place page, Roles', () => {
     expect(rowOf('building').getByRole('button', { name: 'Give aurora its own… for building' })).toBeTruthy();
   });
 
-  // SETUPUX1v: a workspace's supervisor, which the Setup tab held, is a line of its place's Roles, with a door to the Appointed row beneath it.
-  it("holds a workspace's supervisor among its roles, its door the place's own Appointed row, and a repository's place none", async () => {
+  // A workspace's supervisor is a role of the catalogue, placed at the workspace: its place's Roles holds it among the Appointed roles.
+  const SUPERVISOR: RoleRow = {
+    id: 'supervisor', state: 'set', seeded: false, name: { en: 'Supervisor', zh: '督导' }, takes: [], scopeKind: 'workspace', scopeId: 'aurora', revision: 1,
+    hold: { kind: 'supervisor', acts: ['answer'], holder: 'rules', window: 5 },
+  };
+
+  it("holds a workspace's supervisor among its Appointed roles, held by its rules, and a repository's place none", async () => {
+    roles = { ...CATALOGUE, roles: [...CATALOGUE.roles, SUPERVISOR] };
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /aurora\s*2 driven/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
@@ -329,12 +335,10 @@ describe('A place page, Roles', () => {
       return found!;
     });
     expect(within(row).getByText('Supervisor')).toBeTruthy();
-    expect(within(row).getByText(/Not offered yet: the supervisor's appointment waits/)).toBeTruthy();
-    await userEvent.click(within(row).getByRole('button', { name: 'Open Appointed roles' }));
-    await waitFor(() => expect(document.activeElement).toHaveAttribute('data-place-row', 'appointed'));
-  });
+    expect(document.querySelector('[data-place-row="appointed"]')).not.toBeNull();
+    expect(within(row.closest('[data-setting-row]') as HTMLElement).getByText(/^Held by your rules · answer a question/)).toBeTruthy();
 
-  it("gives a repository's Roles no supervisor line of the workspace's", async () => {
+    cleanup();
     await openEngine();
     expect(document.querySelector('[data-place-row="supervisor"]')).toBeNull();
   });
@@ -366,10 +370,10 @@ describe('A place page, Roles', () => {
     expect(rowOf('building').getByRole('button', { name: "Back to aurora's, for building" })).toBeDisabled();
   });
 
-  it('says a dark appointed role as one quiet line', async () => {
+  it('draws no Appointed row where the catalogue places no appointed role, and no quiet line in its stead', async () => {
     await openEngine();
-    const line = await screen.findByText('Supervisor · Not offered in this build.');
-    expect(line).toHaveAttribute('data-appointed-dark');
+    expect(document.querySelector('[data-place-row="appointed"]')).toBeNull();
+    expect(screen.queryByText(/Not offered in this build/)).toBeNull();
     expect(screen.queryByRole('heading', { name: 'This Daoris' })).toBeNull();
   });
 

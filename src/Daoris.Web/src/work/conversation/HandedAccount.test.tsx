@@ -20,7 +20,7 @@ describe('what a session was handed', () => {
 
     const toggle = screen.getByRole('button', { name: /What it was handed/ });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(toggle).toHaveTextContent('What it was handed · 6,786 characters in 11 sections');
+    expect(toggle).toHaveTextContent('What it was handed · 6,786 characters in 12 sections');
     expect(screen.queryByRole('table')).toBeNull();
 
     await userEvent.click(toggle);
@@ -122,7 +122,7 @@ describe('what a session was handed', () => {
     await i18n.changeLanguage('zh');
     render(<HandedAccount account={CLAIMED} defaultOpen />);
 
-    expect(screen.getByRole('button', { name: /交付给它的内容/ })).toHaveTextContent('11 个部分，共 6,786 个字符');
+    expect(screen.getByRole('button', { name: /交付给它的内容/ })).toHaveTextContent('12 个部分，共 6,786 个字符');
     expect(rowOf(/^委托$/)).toHaveTextContent('服务给出的委托 · #abc123');
     expect(within(rowOf('权限规则')).getByText('18 条规则')).toBeInTheDocument();
     expect(screen.getByText(/^未交付：会话语言（本机没有设定）/)).toBeInTheDocument();

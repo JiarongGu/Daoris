@@ -39,8 +39,7 @@ function constants(text: string, name: string, others: Record<string, Record<str
   return found;
 }
 
-const cleanups = driverSource('LandedCleanups.cs');
-const landedKind = constants(cleanups, 'LandedKind');
+const landedKind = constants(driverSource('LandedKind.cs'), 'LandedKind');
 
 afterEach(async () => { await i18n.changeLanguage('en'); });
 

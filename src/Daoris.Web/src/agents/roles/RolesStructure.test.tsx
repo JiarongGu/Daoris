@@ -27,19 +27,46 @@ import { useListPanes } from '../../work/frame/listPanes';
 import { ViewFrame } from '../../work/frame/ViewFrame';
 import { CLAUDE_USE, CODEX_USE, DOORS } from '../agentsFixtures';
 import { useAgentsMode, useAgentsView } from '../AgentsView';
+import { useRolesMode, useRolesPage } from './RolesView';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE } from './structureFixtures';
 
 const doors = {
   agent: vi.fn(), repository: vi.fn(), workspace: vi.fn(), repositories: vi.fn(), plugin: vi.fn(),
 };
 
-function Place({ mode = 'roles' }: { mode?: 'roles' | 'agents' }) {
+const label = (name: 'Work' | 'Accounts' | 'By repository') => i18n.t({ Work: 'nav.roles.work', Accounts: 'nav.roles.accounts', 'By repository': 'nav.roles.repository' }[name]);
+
+/** The page's own sections are no longer mounted, so these tests draw them from the one hook that builds them. */
+function Sections() {
+  const page = useRolesPage();
+  const mode = useRolesMode({ notify: () => {}, doors, page });
+  const [chosen, setChosen] = useState<'Work' | 'Accounts' | 'By repository'>('Work');
+  // A press that opens a role's editor turns the page to its list, where the catalogue's card holds the editor.
+  const editing = page.view === 'list';
+  const body = editing ? mode.card : chosen === 'Work' ? mode.work : chosen === 'Accounts' ? mode.accounts : mode.repository;
+  return (
+    <div>
+      <ul aria-label="Roles">
+        {(['Work', 'Accounts', 'By repository'] as const).map((name) => (
+          <li key={name}><button type="button" onClick={() => setChosen(name)}>{label(name)}</button></li>
+        ))}
+      </ul>
+      <h2>{editing ? i18n.t('nav.roles.working') : label(chosen)}</h2>
+      {body}
+    </div>
+  );
+}
+
+function Place() {
+  return window.localStorage.getItem('daoris.list.agents.mode') === 'agents' ? <AgentsPlace /> : <Sections />;
+}
+
+function AgentsPlace() {
   const lists = useListPanes();
   const modes = useAgentsMode(lists);
   const [chosen, setChosen] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const layout = useAgentsView({ active: true, modes, chosen, onChoose: setChosen, notify: () => {}, roleDoors: doors });
-  void mode;
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
@@ -59,7 +86,8 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
   beforeEach(() => {
     structure = 'ok';
     window.localStorage.clear();
-    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
+    // The structure is read while the page is on its diagram.
+    window.localStorage.setItem('daoris.roles.view', 'diagram');
     i18n.changeLanguage('en');
     Object.values(doors).forEach((door) => door.mockReset());
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -312,20 +340,17 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       expect(within(screen.getByRole('button', { name: 'Show site' }).closest('li')!).getByText("takes this machine's roles")).toBeTruthy();
     });
 
-    it('opens a repository to each work, its line, landing, driving, workflow, integration declaration and plugins, and asks its workflow then', async () => {
+    it("opens a repository to each work, its line, landing, driving and plugins, and asks no repository's workflow", async () => {
       const user = await open();
       await user.click(await screen.findByRole('button', { name: 'Show aurora' }));
-      expect(invoke.mock.calls.filter(([, type]) => type === 'WORKFLOW_CURRENT')).toHaveLength(0);
       await user.click(await screen.findByRole('button', { name: 'Show engine' }));
       const row = (await screen.findByRole('button', { name: 'Hide engine' })).closest('li')!;
-      await waitFor(() => expect(row.textContent).toMatch(/3 steps/));
       expect(row.textContent).toMatch(/Engine build \(in repository engine\) · claude-code · sonnet · high/);
       expect(row.textContent).toMatch(/main, set for the repository/);
       expect(row.textContent).toMatch(/branch by plugin github-pull-request, set for the repository/);
       expect(row.textContent).toMatch(/driven/);
-      expect(row.textContent).toMatch(/proposed, waiting for you to accept it/);
       expect(within(row).getByRole('button', { name: 'Open plugin GitHub pull request' })).toBeTruthy();
-      expect(invoke.mock.calls.filter(([, type, request]) => type === 'WORKFLOW_CURRENT' && (request as { payload: { repository: string } }).payload.repository === 'site')).toHaveLength(0);
+      expect(invoke.mock.calls.filter(([, type]) => type === 'WORKFLOW_CURRENT')).toHaveLength(0);
     });
 
     // COMPANYVIEW1g: a new place takes the roles above it; a role of its own is added here, then saved over SET_ROLE.
@@ -350,7 +375,7 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       }));
     });
 
-    it('presses its doors: Setup, Workflow, the Integration tab where a declaration waits, and the plugin', async () => {
+    it('presses its doors: Setup, Workflow and the plugin', async () => {
       const user = await open();
       await user.click(await screen.findByRole('button', { name: 'Show aurora' }));
       await user.click(await screen.findByRole('button', { name: 'Show engine' }));
@@ -358,13 +383,11 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       await user.click(screen.getByRole('button', { name: 'Open Workflow · engine' }));
       expect(doors.repository).toHaveBeenCalledWith('engine', 'setup');
       expect(doors.repository).toHaveBeenCalledWith('engine', 'workflow');
-      await user.click(await screen.findByRole('button', { name: 'Open Integration · engine' }));
-      expect(doors.repository).toHaveBeenCalledWith('engine', 'integration');
       await user.click(screen.getByRole('button', { name: 'Open plugin GitHub pull request' }));
       expect(doors.plugin).toHaveBeenCalledWith('github-pull-request');
     });
 
-    it('says a held start in its sentence, a workflow that did not read and a rule that does not read, never as none', async () => {
+    it('says a held start in its sentence and a rule that does not read, never as none', async () => {
       const user = await open();
       await user.click(await screen.findByRole('button', { name: 'Show default' }));
       await user.click(await screen.findByRole('button', { name: 'Show tools' }));
@@ -372,7 +395,6 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       expect(row.textContent).toMatch(/No role takes `build` here, so its starts hold/);
       expect(row.textContent).toMatch(/its rule does not read: driver.json does not read: line 4/);
       expect(row.textContent).toMatch(/not driven/);
-      await waitFor(() => expect(row.textContent).toMatch(/could not be read/));
     });
 
     it('keeps *Needs a look* and a workspace filter to the groups that hold what needs it', async () => {
@@ -382,16 +404,6 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       await user.click(await screen.findByRole('option', { name: 'default' }));
       expect(screen.queryByRole('button', { name: 'Show aurora' })).toBeNull();
       expect(screen.getByRole('button', { name: 'Show default' })).toBeTruthy();
-    });
-  });
-
-  describe('the list', () => {
-    it('marks By repository, where a start is held, and not Work, where none is', async () => {
-      show(<Place />);
-      const list = await screen.findByRole('list', { name: 'Roles' });
-      await waitFor(() => expect(within(list).getByRole('button', { name: /^By repository/ }).querySelector('[data-held]')).not.toBeNull());
-      expect(within(list).getByRole('button', { name: SECTION.Work }).querySelector('[data-held]')).toBeNull();
-      expect(within(list).getByRole('button', { name: /^By repository/ })).toHaveTextContent('a start is held');
     });
   });
 

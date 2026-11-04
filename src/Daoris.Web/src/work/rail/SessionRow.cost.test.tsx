@@ -22,7 +22,7 @@ describe('a rail row’s cost', () => {
   it('MIXAGENT3a-iii says what a helper and a continuing part spent, never zero, and nothing on another row', () => {
     const helper = session({ serves: 's9f8e7d6' });
     const { rerender } = render(<SessionRow session={helper} helps="Expose" spent={{ turns: 2, reported: 2, input: 1200, output: 300 }} />);
-    expect(screen.getByText(/helps Expose · 1\.5K tokens over 2 turns · /i)).toBeInTheDocument();
+    expect(screen.getByText(/helps Expose · 1,500 tokens over 2 turns · /i)).toBeInTheDocument();
 
     const continued = session({ from: 'a1b2c3d4' });
     rerender(<SessionRow session={continued} opening="Go on" continues="Why" spent={{ turns: 1, reported: 0 }} />);

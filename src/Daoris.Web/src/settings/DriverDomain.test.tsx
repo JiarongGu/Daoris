@@ -22,6 +22,13 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from './SettingsView';
+
+/** The page has drawn and the driver's state has been asked and answered: what an older shell leaves out is then known to be absent. */
+const driverRead = async () => {
+  await screen.findByRole('checkbox', { name: 'Announce what needs you or ended' });
+  await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'STATE')).toBe(true));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+};
 import { moment } from '../locales/format';
 import i18n from '../locales/i18n';
 import { code } from '../test/code';
@@ -199,7 +206,7 @@ describe('the driver domain', () => {
   it('says nothing about the home on a shell that has never heard of one', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
-    await screen.findByLabelText('Failures before a quest parks');
+    await driverRead();
 
     // What is absent is the path a newer shell answers.
     expect(screen.queryByText(/somewhere\/Daoris\/data/)).toBeNull();
@@ -218,7 +225,7 @@ describe('the driver domain', () => {
     await screen.findByRole('checkbox', { checked: true });
 
     // The number dial is reachable by its label, and the why is a note, not a paragraph.
-    expect(screen.getByLabelText('Sessions at once on this machine')).toBeTruthy();
+    expect(await screen.findByLabelText('Sessions at once on this machine')).toBeTruthy();
     expect(screen.getByRole('note', { name: /Nobody should have to watch a driver/ })).toBeTruthy();
     expect(screen.queryByText(/Nobody should have to watch a driver/)).toBeNull();
   });
@@ -252,7 +259,7 @@ describe('the driver domain', () => {
 
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
-    await screen.findByLabelText('Failures before a quest parks');
+    await driverRead();
     expect(screen.queryByLabelText('Sessions at once on this machine')).toBeNull();
   });
 
@@ -286,7 +293,7 @@ describe('the driver domain', () => {
 
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
-    await screen.findByLabelText('Failures before a quest parks');
+    await driverRead();
     expect(screen.queryByLabelText('Cool-off when no time is named')).toBeNull();
   });
 

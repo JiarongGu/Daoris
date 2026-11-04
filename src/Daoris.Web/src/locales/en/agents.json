@@ -319,7 +319,6 @@
   "agents.setup.more": "Show more",
   "agents.setup.none.headline": "Choose a place",
   "agents.setup.none.body": "This machine, a workspace or a repository: its page says how it is set.",
-  "agents.setup.need.landing-unread": "Its landing could not be read",
   "agents.setup.need.work-held": "A start is held",
   "agents.setup.need.policy-failed": "A work's rule could not be read",
   "agents.setup.need.catalogue-unread": "The roles could not be read",

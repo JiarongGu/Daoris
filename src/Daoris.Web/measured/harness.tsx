@@ -21,7 +21,6 @@ import * as waitPanel from '../src/work/waits/WaitPanel.stories';
 import * as roles from '../src/agents/roles/StructureCanvas.stories';
 import * as place from '../src/agents/setup/PlacePage.stories';
 import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
-import * as convertReview from '../src/agents/setup/ConvertReview.stories';
 import * as placeWorkflow from '../src/workflow/place/PlaceWorkflowView.stories';
 import * as editor from '../src/workflow/edit/WorkflowEditor.stories';
 import * as proposal from '../src/workflow/edit/WorkflowEditor.proposal.stories';
@@ -73,8 +72,6 @@ const books: Record<string, Record<string, ComponentType>> = {
   place: composeStories(place) as unknown as Record<string, ComponentType>,
   // *Set up…*'s review (SETUPUX1k): two columns at 80rem, one below, and where Apply sits at 680 px (39rem).
   review: composeStories(setUpReview) as unknown as Record<string, ComponentType>,
-  // The conversion's review (WORKFLOWCLEAN1g-i): two columns at 80rem, one below, and where Apply sits.
-  convertReview: composeStories(convertReview) as unknown as Record<string, ComponentType>,
   // A place's Workflow section on its own (SETUPUX1o): the chart in its column at 80rem, one press away at 39 and 25rem.
   placeWorkflow: composeStories(placeWorkflow) as unknown as Record<string, ComponentType>,
   // The workflow editor (FLOWCHART2b): its chart drawn at 80 and 39rem with a ＋ on each way, and the rail at 25rem.

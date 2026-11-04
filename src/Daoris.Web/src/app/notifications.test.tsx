@@ -66,8 +66,6 @@ let service: unknown[] = [];
 // The `notices` slice's messages partition (NOTIFY2g), keyed by ask; none where the shell pushes no notices.
 let messages: Record<string, unknown> | null = null;
 const NEWEST = { id: 'm2', at: base.updated, who: 'agent', repository: 'db', line: 'Stop before you land.', level: 'urgent', toEveryone: true };
-// Whether the shell tells what waits at the service (NOTIFY2j); an older one answers none of it, and the page polls.
-let tells = true;
 let keyed = false;
 
 function respond(url: string): Response {
@@ -86,7 +84,7 @@ function start(rows: PushedAttention[] = ROWS) {
   invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
     if (module === 'DAORIS.DRIVER' && type === 'PERSON_KEY') return { key: keyed || service.length > 0 ? 'k'.repeat(32) : null };
-    if (module === 'DAORIS.DRIVER' && type === 'SERVICE_CONFIRMATIONS' && tells) return { seq: 1, waiting: service };
+    if (module === 'DAORIS.DRIVER' && type === 'SERVICE_CONFIRMATIONS') return { seq: 1, waiting: service };
     if (module === 'DAORIS.DRIVER' && type === 'PERSON_CONFIRMATIONS') return { seq: 1, waiting };
     if (module === 'DAORIS.DRIVER' && type === 'PERSON_CONFIRM_SHOWN') return { shown: true };
     if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE' && request?.payload?.slice === 'attention') {
@@ -138,7 +136,6 @@ describe('Notifications, in the window', () => {
   beforeEach(() => {
     waiting = [SAY];
     service = [];
-    tells = true;
     keyed = false;
     messages = null;
     focused = vi.spyOn(document, 'hasFocus').mockReturnValue(false);
@@ -228,17 +225,6 @@ describe('Notifications, in the window', () => {
 
     act(() => { handlers.get('DAORIS.SERVICE_CONFIRMATIONS')!({ seq: 3, waiting: [] }); });
     await waitFor(() => expect(screen.queryByText("A terminal asks for a review's verdict.")).toBeNull());
-  });
-
-  it("polls the service's list where the shell is older than the telling, and counts what waits there", async () => {
-    tells = false;
-    waiting = [];
-    service = [SERVICE];
-    start([]);
-
-    await waitFor(() => expect(within(bell()).getByText('1')).toHaveAttribute('data-tone', 'warn'));
-    const fetched = (vi.mocked(fetch).mock.calls as unknown as [RequestInfo | URL][]).map(([input]) => String(input));
-    expect(fetched).toContain('/api/confirmations');
   });
 
   it('leads Overview with its summary, each line a door into Notifications at its group, and wears no badge on Overview', async () => {

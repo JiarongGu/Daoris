@@ -127,13 +127,14 @@ describe("Notifications' steward line", () => {
     await i18n.changeLanguage('zh');
     render(<StewardLine standing={STANDING} onReverse={vi.fn()} />);
     const region = within(screen.getByRole('region', { name: '管家' }));
-    expect(region.getByText('已任命管家 · 自 Daoris 启动以来 8 项操作')).toBeInTheDocument();
+    expect(region.getByText('管家的终端 · 自 Daoris 启动以来 8 项操作')).toBeInTheDocument();
     expect(region.getByRole('list', { name: '管家已停止' })).toBeInTheDocument();
     await userEvent.click(region.getByRole('button', { name: '显示管家的操作' }));
     expect(region.getAllByText('管家代你')).toHaveLength(8);
     expect(region.getByRole('button', { name: '停止驱动' })).toBeInTheDocument();
     expect(region.getAllByRole('button', { name: '重试' })).toHaveLength(2);
-    expect(region.getByRole('button', { name: '停用' })).toBeInTheDocument();
+    // The turn-off is the role's, not the line's (as the English line's).
+    expect(region.queryByRole('button', { name: '停用' })).toBeNull();
     expect(screen.getByRole('region', { name: '管家' }).textContent).not.toMatch(/这台机器|渠道|总管|任务|\{\{|undefined/);
   });
 

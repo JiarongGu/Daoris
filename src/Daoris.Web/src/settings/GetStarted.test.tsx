@@ -93,7 +93,7 @@ describe('Get started', () => {
     const login = within(agent).getByText(code('daoris agent login <agent>'));
     expect([...login.children].map((word) => word.textContent)).toEqual(['daoris', 'agent', 'login', '<agent>']);
     for (const word of login.children) expect(word).toHaveClass('inline-block', 'max-w-full');
-    expect(within(step(/repositories/)).getByText(code('daoris import <folder>'))).toBeInTheDocument();
+    expect(within(step(/repositories/)).getByText(code('daoris repository import <folder>'))).toBeInTheDocument();
     expect(within(step(/agents may do/)).getByText(code('daoris agent rules'))).toBeInTheDocument();
 
     await user.click(within(agent).getByRole('button', { name: 'copy daoris agent login <agent>' }));
@@ -134,7 +134,7 @@ describe('Get started', () => {
     expect(items.map((item) => item.getAttribute('aria-label'))).toEqual(['3. A workspace and its repositories']);
     expect(within(items[0]!).getByText('to do')).toBeInTheDocument();
     expect(within(items[0]!).queryByRole('button', { name: /Add repository/ })).toBeNull();
-    expect(within(items[0]!).getByText(code('daoris connect'))).toBeInTheDocument();
+    expect(within(items[0]!).getByText(code('daoris repository connect'))).toBeInTheDocument();
     expect(screen.getByText(/the desktop's Get started shows them/)).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Set up with Ask Daoris' })).toBeNull();

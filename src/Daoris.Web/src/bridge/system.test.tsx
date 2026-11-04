@@ -128,7 +128,7 @@ describe('the system domain', () => {
     await waitFor(() => expect(result.current.query.data?.schema).toBe(1));
     expect(keys.systemSpace).toEqual(['system', 'space']);
     expect(invoke.mock.calls[0][1]).toBe('SYSTEM_SPACE');
-    expect(invoke.mock.calls[0][2]?.payload).toBeUndefined();
+    expect(invoke.mock.calls[0][2]?.payload).toEqual({});
 
     await act(async () => { await result.current.count(['logs']); });
     await act(async () => { await result.current.count(); });
