@@ -39,11 +39,9 @@ public sealed class OpinionResumeTickTests : IDisposable
 
     public OpinionResumeTickTests()
     {
-        Directory.CreateDirectory(_home);
-        // The answers-alone rule the count's sentence names.
-        SeededRules.In(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
+        SeededRules.In(_home);
         Git(_repository, "init", "-q", "-b", "main");
         Git(_repository, "config", "user.email", "opinion@example.com");
         Git(_repository, "config", "user.name", "XAGENT1e");
