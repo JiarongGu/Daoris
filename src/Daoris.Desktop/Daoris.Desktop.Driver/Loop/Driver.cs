@@ -310,6 +310,12 @@ public sealed class Driver(
 
     Task<LineCourse> IRunWiring.DecideLimitOwnAsync(PriorSession limited, ResumeChoice own, CancellationToken ct) => DecideLimitOwnAsync(limited, own, ct);
 
+    Task<WorkflowBind> IRunWiring.BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct) => BindAtStartAsync(quest, workspace, ct);
+
+    Action<string>? IRunWiring.RunReturned => RunReturned;
+
+    ReviewDesk? IRunWiring.Reviews => Reviews;
+
     void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => CountMove(line, role, condition, from, to);
 
     AcpMcpServer? IRunWiring.Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc) => Connector(sessionId, scope, proc);
@@ -1706,7 +1712,7 @@ public sealed class Driver(
 
         // The agent, a clean checkout, the account and the access setup, each of which may hold the start before anything is grown,
         // locked or opened.
-        var run = new RunRound(start, registry, movedOff, new RunState());
+        var run = new RunRound(start, registry, movedOff, fresh, new RunState());
         foreach (var stage in RunStages.In(RunPhase.Choose))
         {
             if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
@@ -1867,70 +1873,13 @@ public sealed class Driver(
         }
 
         var workTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
-
-        // 🔴 STEWARDROLE1b (D209 §3.1a, Codex's final read, finding 2): a start a steward's act caused works only in a tree this home
-        // opened, judged here where its directory is actually chosen, since a new part resumes its record's directory and an earlier
-        // session may have worked in the checkout. Otherwise it is held for the owner, never relocated, and the steward's operation on it
-        // ends; the owner's own Try again or Drive makes it theirs, and the start then runs as before.
-        if (Context.Roles is { } roles && roles.Caused(quest.To, quest.Id) && !Context.Trees.Holds(workTree))
+        run.State.WorkTree = workTree;
+        foreach (var stage in RunStages.In(RunPhase.Placed))
         {
-            await fresh.LetGoAsync().ConfigureAwait(false);
-            roles.HeldForOwner(quest.Id);
-            return Hold(Considerations.CheckoutHeld);
+            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
         }
 
-        // STEWARDROLE1b (§5.1a, finding 8): the steward's Try again is consumed here, its final consumer, in one step of the run's memory
-        // after every await above; a revoke or the owner's act since cancelled it, and the start runs nothing of the steward's.
-        if (start.Resumes is { StewardStopped: true } released && config.RoleReleaseFor(quest.Id) is { Kind: RoleReleaseKinds.Stop } release
-            && string.Equals(release.Session, released.Session, StringComparison.Ordinal) && !config.Releases(quest.Id, released.Session)
-            && Context.Roles?.Take(quest.Id, release) != true)
-        {
-            await fresh.LetGoAsync().ConfigureAwait(false);
-            return Hold($"the steward's Try again of session `{released.Session}` was withdrawn before it started, so nothing of the steward's starts it.");
-        }
-
-        // FABRIC-CUTOVER1g (D190's binding moment, the cutover design §8; amends D157 point 11): the run is bound here, once its tree is
-        // open and before its take names a closure graph below, so the take names the graph its run is bound to and no look binds it later
-        // to something else. A start held before this binds nothing; one held or refused after it keeps its run bound to what it chose, so
-        // a choice changed since applies to the next run. A bind not made, or a binding that does not read, holds the start, said, and the
-        // next look tries again, its fresh tree let go as a refused open's is.
-        var runBound = await BindAtStartAsync(quest, start.Workspace, ct).ConfigureAwait(false);
-        if (runBound.Holds)
-        {
-            await fresh.LetGoAsync().ConfigureAwait(false);
-            return Hold(runBound.Why!);
-        }
-
-        // ROLESTEP1b: the walk above took the role its run's bind would name; a bind that named another since holds the start, its count given
-        // back, and the next look walks the role the run is bound to.
-        if (runBound.Binding?.RoleOf(NodeKinds.Claimed)?.Role is var boundRole && !string.Equals(boundRole, stepRole, StringComparison.Ordinal))
-        {
-            await fresh.LetGoAsync().ConfigureAwait(false);
-            Context.Harnesses.Release(selection.Number);
-            var taker = boundRole is null ? "its work's own role" : $"the role `{boundRole}`";
-            return Hold($"its run was bound as it started, its work step taken by {taker}, which it did not walk, so it starts on that role at the next look.");
-        }
-
-        // FABRIC-CUTOVER1c (the cutover design §3): a run bound already to a named version may be a graph run that ended and whose chain has come
-        // back here; the runtime is asked, and re-arms for it until a pass judges it where its record holds its end.
-        if (runBound is { Came: WorkflowBindCame.Already, Run: { } returned, Binding.IsCurrent: false }) RunReturned?.Invoke(returned);
-
-        // A set-up step follows its repository's own procedure, which its tree must hold (REVIEWENV1c, design §2.1): checked
-        // here, once the tree exists, and held before any record, a fresh tree going as a refused open's does.
-        var setUp = ReviewSetUps.Environment(config, quest, start.Workspace);
-        if (setUp is not null && ReviewSetUps.ProcedureMissing(setUp, quest, workTree) is { } unfollowable)
-        {
-            await fresh.LetGoAsync().ConfigureAwait(false);
-            return Hold(unfollowable);
-        }
-
-        // A local set-up step's tab, opened before its session so its instruction names a tab the person sees (REVIEWENV1d,
-        // design §2.3 step 1): a tab an agent opens over CDP has no window. A browser that will not open one holds the start.
-        if (setUp is not null && Reviews is { } desk && await desk.OpenForStepAsync(quest, setUp, ct).ConfigureAwait(false) is { } unshowable)
-        {
-            await fresh.LetGoAsync().ConfigureAwait(false);
-            return Hold(unshowable);
-        }
+        var (runBound, setUp) = (run.State.Bound, run.State.SetUp);
 
         // 🔴 Can this harness use what the repository allows it? (DEPLOY1.) Claude Code ignores a
         // repository's `permissions.allow` until a person has accepted that path, so a session in an

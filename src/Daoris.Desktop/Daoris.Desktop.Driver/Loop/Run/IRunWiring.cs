@@ -49,6 +49,15 @@ internal interface IRunWiring
     /// <summary>Whether a line a limit cut off resumes on its own account, now ready again.</summary>
     Task<LineCourse> DecideLimitOwnAsync(PriorSession limited, ResumeChoice own, CancellationToken ct);
 
+    /// <summary>The run bound to its workflow as it starts, once its tree is open; a bind not made, or a binding that does not read, holds.</summary>
+    Task<WorkflowBind> BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct);
+
+    /// <summary>Told a graph run that ended and whose chain came back to a start, so the runtime re-arms for it; null where nothing listens.</summary>
+    Action<string>? RunReturned { get; }
+
+    /// <summary>The desk a local set-up step's tab opens on; null where no shell carries one.</summary>
+    ReviewDesk? Reviews { get; }
+
     /// <summary>A move of a line from one choice to another, counted against its role's bound.</summary>
     void CountMove(string line, string role, string condition, ActorEffective from, string? to);
 

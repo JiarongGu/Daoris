@@ -11,4 +11,11 @@ internal enum RunPhase
     /// access setup. A hold here records nothing and leaves nothing to undo.
     /// </summary>
     Choose,
+
+    /// <summary>
+    /// Once the tree the session runs in is open and held, before its record opens: what may still hold the start there, a steward's
+    /// start outside a tree of this home, the run's workflow binding and a set-up step's procedure and tab. A hold here lets the fresh
+    /// tree go.
+    /// </summary>
+    Placed,
 }

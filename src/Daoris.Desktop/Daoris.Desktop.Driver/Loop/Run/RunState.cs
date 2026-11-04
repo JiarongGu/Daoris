@@ -27,6 +27,9 @@ internal sealed class RunState
     private Slot<ActorEffective?> _movedTo;
     private Slot<ResolvedAccess> _access;
     private Slot<DrivenAccess> _permissions;
+    private Slot<string> _workTree;
+    private Slot<WorkflowBind> _bound;
+    private Slot<ReviewEnvironment?> _setUp;
 
     /// <summary>
     /// The agent the start runs on: a hand-over's, held until the quest leaves this machine, else a continuation's record's own, else
@@ -144,6 +147,27 @@ internal sealed class RunState
     {
         get => _permissions.Get(nameof(Permissions), "access");
         set => _permissions.Set(value);
+    }
+
+    /// <summary>The tree the session runs in: the one opened for it, the one its earlier session or part went on in, else the checkout.</summary>
+    public string WorkTree
+    {
+        get => _workTree.Get(nameof(WorkTree), "tree");
+        set => _workTree.Set(value);
+    }
+
+    /// <summary>The run's workflow binding as the start made it, before its take names a closure graph.</summary>
+    public WorkflowBind Bound
+    {
+        get => _bound.Get(nameof(Bound), "bind");
+        set => _bound.Set(value);
+    }
+
+    /// <summary>The set-up step this start follows, or null where it is no set-up step.</summary>
+    public ReviewEnvironment? SetUp
+    {
+        get => _setUp.Get(nameof(SetUp), "setup");
+        set => _setUp.Set(value);
     }
 
     /// <summary>The model a continuation's record carries to its agent: the entry it moved to's, else the one its record asked.</summary>

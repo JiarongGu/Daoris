@@ -6,8 +6,11 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="registry">The registry as the look's snapshot answered it: what the session may reach across.</param>
 /// <param name="movedOff">The account the first run of this start was refused for its sign-in; a walk that gives it again holds.</param>
-internal sealed class RunRound(Consideration start, IReadOnlyList<RepoView> registry, string? movedOff, RunState state)
+/// <param name="fresh">The tree this start opens, let go on each way out that starts nothing.</param>
+internal sealed class RunRound(Consideration start, IReadOnlyList<RepoView> registry, string? movedOff, FreshTree fresh, RunState state)
 {
+    public FreshTree Fresh { get; } = fresh;
+
     public Consideration Start { get; } = start;
 
     public QuestView Quest => Start.Quest;
