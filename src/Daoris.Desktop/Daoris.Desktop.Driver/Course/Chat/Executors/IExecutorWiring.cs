@@ -2,18 +2,20 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What an executor may reach of the chat runner that builds it: the runner's shared state, its own start, run and walk
-/// (<see cref="IChatRunning"/>), and the doors a start says and ends through. The runner implements it; an executor names only these, never
-/// the runner, so it lives in the subdomain of its job and the runner holds the order and the wiring alone.
+/// (<see cref="IChatRunning"/>), the doors a start says and ends through, and the other executors (<see cref="Of{T}"/>). The runner
+/// implements it; an executor names only these, never the runner, so it lives in the subdomain of its job and the runner holds the order
+/// and the wiring alone.
 /// </summary>
 internal interface IExecutorWiring : IChatRunning
 {
     ChatContext Context { get; }
 
-    /// <summary>The hand-over the runner holds, made after the executors: read when an executor runs.</summary>
-    ChatHandOver HandOver { get; }
-
-    /// <summary>Ask Daoris's conversations the runner holds, made after the executors: read when an executor runs.</summary>
-    IChatHelping Help { get; }
+    /// <summary>
+    /// Another executor, by its type or its port's: the one way an executor reaches a sibling, so no executor is handed another through a
+    /// constructor or a callback the runner sets. Read when the executor runs: the set is the runner's once every executor is built.
+    /// </summary>
+    T Of<T>()
+        where T : IExecutor;
 
     /// <summary>Hands a live conversation a person's message: false where nothing listens.</summary>
     /// <exception cref="DriverException">The files are more than a message carries.</exception>

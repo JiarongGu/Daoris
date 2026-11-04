@@ -6,11 +6,11 @@ namespace Daoris.Driver;
 /// <see cref="HandOver"/> judges and keeps the box; <see cref="HandOverTake"/> runs the sequence with the runner's own end, start
 /// and say.
 /// </summary>
-/// <param name="runner">
-/// The runner whose conversations these are: its start begins the new conversation, as every door's does, and its turns say
-/// whether one is talking.
-/// </param>
-internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
+/// <remarks>
+/// A registered executor: the runner's start begins the new conversation, as every door's does, and its turns say whether one is talking.
+/// </remarks>
+[Executor("hand-over", ExecutorPhase.Move)]
+internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
 {
     /// <summary>How long the old conversation's end is waited for before the new one starts: a stop, not a wind-up.</summary>
     private static readonly TimeSpan HandOverEnd = TimeSpan.FromSeconds(15);
@@ -30,16 +30,16 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
     /// <summary>The states a record is live in, where nothing here may end it (it runs in another process).</summary>
     private static readonly HashSet<string> LiveStates = new(StringComparer.OrdinalIgnoreCase) { "queued", "starting", "working", "awaiting-person" };
 
-    private readonly ChatContext _context = context;
+    private ChatContext _context => wiring.Context;
 
-    private readonly IChatRunning _runner = runner;
+    private IChatRunning _runner => wiring;
 
     /// <summary>
     /// The conversations' move record the hand-over is decided in and taken from (FOUNDATION1f-v part a; the foundation design §3.3), over the
     /// home's one store file the limit move and the curve share: a hand-over keeps its move there and writes no box. A test hands one of its
     /// own run; the runner hands every move the one holder it comes up through.
     /// </summary>
-    internal ConversationMoves Moves { get; set; } = new(context.Home, context.Service, context.Events, context.Output);
+    internal ConversationMoves Moves { get; set; } = new(wiring.Context.Home, wiring.Context.Service, wiring.Context.Events, wiring.Context.Output);
 
     /// <summary>
     /// A move's take is over, however it came out, its move ended in the store (HANDWORDS1, TAKEWAITS1): the person's words held while it was

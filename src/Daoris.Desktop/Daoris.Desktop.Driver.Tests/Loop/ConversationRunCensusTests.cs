@@ -24,9 +24,12 @@ public sealed class ConversationRunCensusTests
         (@"\bWaitForExitAsync\s*\(", "a wait on the exit"),
     ];
 
+    /// <summary>The runner's files and its transports', which it hands each conversation's turns.</summary>
+    private static readonly string[] Transports = ["ProtocolChat.cs", "NativeChat.cs"];
+
     private static IEnumerable<(string File, string Source)> Runner() =>
         SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Where(file => Path.GetFileName(file).StartsWith("ChatRunner", StringComparison.Ordinal))
+            .Where(file => Path.GetFileName(file).StartsWith("ChatRunner", StringComparison.Ordinal) || Transports.Contains(Path.GetFileName(file)))
             .Select(file => (Path.GetFileName(file), Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", "")));
 
     [Fact]

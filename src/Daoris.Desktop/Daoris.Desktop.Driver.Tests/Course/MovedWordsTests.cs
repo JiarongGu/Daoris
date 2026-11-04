@@ -37,9 +37,11 @@ public sealed class MovedWordsTests : IDisposable
 
         public ChatContext Context { get; set; } = null!;
 
-        public ChatHandOver HandOver { get; set; } = null!;
+        /// <summary>The executors the move reaches: Ask Daoris's port, never asked here, and the hand-over the world adds.</summary>
+        public List<IExecutor> Executors { get; } = [new NoHelp()];
 
-        public IChatHelping Help { get; } = new NoHelp();
+        public T Of<T>()
+            where T : IExecutor => Executors.OfType<T>().Single();
 
         public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null) =>
             throw new NotSupportedException();
@@ -132,8 +134,9 @@ public sealed class MovedWordsTests : IDisposable
             client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), Events);
         var runner = new Opening(client) { Context = context };
-        runner.HandOver = new ChatHandOver(context, runner);
-        return (context, runner, runner.HandOver, ledger, client);
+        var handOver = new ChatHandOver(runner);
+        runner.Executors.Add(handOver);
+        return (context, runner, handOver, ledger, client);
     }
 
     /// <summary>A word kept on <paramref name="session"/> the first time a chat's open is asked, after the move read its words.</summary>

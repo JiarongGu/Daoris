@@ -25,21 +25,36 @@ public sealed class ChatRunnerPartsTests : IDisposable
             new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
 
         var order = runner.Executors.Order;
-        Assert.Equal(["help", "start-from", "briefed-move", "help-access", "replacement"], order.Select(part => part.Name));
         Assert.Equal(
-            [ExecutorPhase.Start, ExecutorPhase.Start, ExecutorPhase.Move, ExecutorPhase.Move, ExecutorPhase.Move],
-            order.Select(part => (ExecutorPhase)part.Phase));
+            [
+                "help", "help-rooms", "start-from",
+                "briefed-move", "curve-move", "go-on", "hand-over", "help-access", "helper-words", "limit-move", "limit-wait", "replacement",
+            ],
+            order.Select(part => part.Name));
+        Assert.Equal([.. Enumerable.Repeat(ExecutorPhase.Start, 3), .. Enumerable.Repeat(ExecutorPhase.Move, 9)], order.Select(part => (ExecutorPhase)part.Phase));
 
         // What each phase holds, in the order the runner built it.
         Assert.Collection(
             runner.Executors.In(ExecutorPhase.Start),
             executor => Assert.IsType<HelpStart>(executor),
+            executor => Assert.IsType<ChatHelp>(executor),
             executor => Assert.IsType<WordsStart>(executor));
         Assert.Collection(
             runner.Executors.In(ExecutorPhase.Move),
             executor => Assert.IsType<BriefedMove>(executor),
+            executor => Assert.IsType<CurveMove>(executor),
+            executor => Assert.IsType<ChatGoOn>(executor),
+            executor => Assert.IsType<ChatHandOver>(executor),
             executor => Assert.IsType<HelpAccessSwap>(executor),
+            executor => Assert.IsType<ChatHelperWords>(executor),
+            executor => Assert.IsType<LimitMove>(executor),
+            executor => Assert.IsType<LimitWaits>(executor),
             executor => Assert.IsType<ChatReplacement>(executor));
+
+        // A sibling is reached through the wiring by its type, or its port's: the same instance the runner built.
+        IExecutorWiring wiring = runner;
+        Assert.Same(runner.Executors.Of<ChatHelp>(), wiring.Of<IChatHelping>());
+        Assert.Same(runner.GoOn, wiring.Of<ChatGoOn>());
     }
 
     [Fact]

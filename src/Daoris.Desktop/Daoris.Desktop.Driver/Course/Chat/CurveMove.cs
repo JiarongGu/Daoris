@@ -21,19 +21,20 @@ namespace Daoris.Driver;
 /// the conversation's own agent; another agent is the <c>handOver</c> rule's (MIXAGENT1c). Where none has room it stays and says
 /// nothing: the person's offer (MIXAGENT1b) is the fallback. <c>switch: off</c> moves nothing.</para>
 /// </remarks>
-/// <param name="handOver">The hand-over a move takes: a move by the curve is a hand-over with its agent unchanged.</param>
-internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
+[Executor("curve-move", ExecutorPhase.Move)]
+internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
 {
-    private readonly ChatContext _context = context;
+    private ChatContext _context => wiring.Context;
 
-    private readonly ChatHandOver _handOver = handOver;
+    // A move by the curve is a hand-over with its agent unchanged.
+    private ChatHandOver _handOver => wiring.Of<ChatHandOver>();
 
     /// <summary>
     /// The conversations' move record (FOUNDATION1f-iii part a): the curve's move is decided there, as the live limit move's is since f-ii, over
     /// the home's one store file, so the shell's come-up takes a dead shell's curve move up through either holder. A test hands one over a store
     /// of its own run.
     /// </summary>
-    internal ConversationMoves Moves { get; set; } = new(context.Home, context.Service, context.Events, context.Output);
+    internal ConversationMoves Moves { get; set; } = new(wiring.Context.Home, wiring.Context.Service, wiring.Context.Events, wiring.Context.Output);
 
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     public event Action<string, SwitchChoice>? Judged;

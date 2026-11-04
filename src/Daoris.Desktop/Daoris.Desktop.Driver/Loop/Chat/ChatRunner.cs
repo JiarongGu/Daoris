@@ -33,8 +33,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary>Each running conversation's run over its process (ONEWAY1h-iii), which a person's finish closes.</summary>
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, TransportRun> _runs = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Each conversation's composer change as last kept (D205 §4.2), which the next change is reconciled with.</summary>
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActorOverride> _overrides = new(StringComparer.Ordinal);
+    private readonly ChatOptions _options;
+
+    private readonly ChatAccountReads _accounts;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _updateCuts = new();
     /// <summary>The shell crossed its close boundary: no further turn starts.</summary>
     public bool Closing => _context.Closing;
@@ -68,31 +69,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     // fields stay here too, the same objects, for the front itself (PART10h left them).
     private readonly ChatContext _context;
 
-    // A conversation handed over, and one moved by its account's usage curve: classes over the context, the front keeping its
-    // users' calls (PART10g).
-    private readonly ChatHandOver _handOver;
-
     // CHATFLOW1c: a conversation's chat run, bound when its tree opens or at a turn's end (the chat-flow design §4.3).
     private readonly ChatRunBinds _chatRuns;
 
-    private readonly CurveMove _curve;
-
-    // LIMITGOON1: a conversation whose turn its account's limit refused goes on, in the same conversation, on the next account.
-    private readonly LimitMove _limit;
-
     // What the conversations' turns are judged by (NOTIFY1a): the person's words, their stops and each turn's end.
     private readonly AttentionWatch _answers = new();
-
-    // Ask Daoris's conversations, the helpers' words and an ended chat's going-on: classes over the context too (PART10h). The
-    // go-on holds the runner and reads the other two.
-    private readonly ChatHelp _help;
-
-    private readonly ChatHelperWords _words;
-
-    private readonly ChatGoOn _goOn;
-
-    // LIMITRESUME1c: the conversations that wait for an account to be ready, and the look's limits stage that wakes them.
-    private readonly LimitWaits _waits;
 
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
@@ -134,27 +115,19 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
         _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
+        _options = new ChatOptions(_context);
+        _accounts = new ChatAccountReads(_context);
 
-        // Before the classes below, whose events may reach an executor as soon as they hear the record.
         Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
-        _handOver = new ChatHandOver(_context, this);
         _chatRuns = new ChatRunBinds(home, service, _events);
-        _curve = new CurveMove(_context, _handOver);
-        _help = new ChatHelp(_context, this);
-        _limit = new LimitMove(_context, this, _handOver, _help);
-        _words = new ChatHelperWords(_context);
-
-        // The go-on hears the record's events from its construction: the person's words to an ended chat (MSG1d, MSG1c).
-        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words, Executors.Of<BriefedMove>(), _limit);
-
-        // LIMITRESUME1c (D206 §3.4, §3.5): a conversation with no other account waits for its limit, and the look wakes it.
-        _waits = new LimitWaits(_context, _limit, _goOn);
-        _limit.Stays = _waits.Wait;
-        _goOn.Waits = _waits.Add;
+        _told = new ChatTold(_context, _chatRuns);
 
         // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
-        Moves = _limit.Moves;
+        Moves = Executors.Of<LimitMove>().Moves;
+
+        // Once every executor is there to reach: the person's words to an ended chat are taken up as the record hears them (MSG1d, MSG1c).
+        GoOn.Hear();
     }
 
     /// <summary>
@@ -172,7 +145,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     /// <param name="onEnded">Told when a new conversation ends, as a start's is.</param>
     public Task<IReadOnlyList<ChatStart>> TakeHandOversAsync(Func<string, string, Task> onEnded, CancellationToken ct = default) =>
-        _handOver.TakeAllAsync(onEnded, ct);
+        Executors.Of<ChatHandOver>().TakeAllAsync(onEnded, ct);
 
     /// <summary>
     /// The look's <c>limits</c> stage (LIMITRESUME1c, D206 §3.4; <see cref="LimitWaits.LookAsync"/>): each conversation that waits for an
@@ -181,10 +154,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <param name="onEnded">Told when a conversation it woke ends, as a start's is.</param>
     public Task<IReadOnlyList<ChatStart>> WakeLimitsAsync(
         DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _waits.LookAsync(config, onEnded, ct);
+        Waits.LookAsync(config, onEnded, ct);
 
     /// <summary>How many times the limits stage asked the service: a test holds that a look with no wait come asks nothing.</summary>
-    internal int LimitsAsked => _waits.Asked;
+    internal int LimitsAsked => Waits.Asked;
 
     /// <summary>
     /// The conversations' move record this runner's live limit move and curve move write and its come-up takes up (FOUNDATION1f-ii part b,
@@ -193,8 +166,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     internal ConversationMoves Moves
     {
-        get => _limit.Moves;
-        set => _limit.Moves = _curve.Moves = _handOver.Moves = value;
+        get => Executors.Of<LimitMove>().Moves;
+        set => Executors.Of<LimitMove>().Moves = Curve.Moves = Executors.Of<ChatHandOver>().Moves = value;
     }
 
     /// <summary>
@@ -220,7 +193,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             return $"conversation `{sessionId}` does not wait for its account's limit.";
         }
 
-        var record = await _goOn.LimitWordOffAsync(sessionId).ConfigureAwait(false);
+        var record = await GoOn.LimitWordOffAsync(sessionId).ConfigureAwait(false);
         if (record is not { Kind: "chat", Teammate: false }) return $"session `{sessionId}` is no conversation of this machine's.";
         _context.Marks.Mark(sessionId, record.Waiting.Select(word => word.Id).OfType<string>(), GoOnMarks.StoppedWaiting, DateTimeOffset.UtcNow);
         _context.Note(sessionId, LimitNotes.StoppedWaiting());
@@ -261,7 +234,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
         try
         {
-            return await _limit.MoveEndedAsync(sessionId, lost: null, config, onEnded, ct, holding: true, switching: true).ConfigureAwait(false)
+            return await Executors.Of<LimitMove>().MoveEndedAsync(sessionId, lost: null, config, onEnded, ct, holding: true, switching: true).ConfigureAwait(false)
                    ?? new StartedFrom(null, false, null, $"`{sessionId}` did not go on in a new part now.");
         }
         finally
@@ -275,18 +248,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// The ended chats whose words wait from while no runner heard them are taken up, as the shell comes up (MSG1c2,
     /// <see cref="ChatGoOn.TakeUpAsync"/>).
     /// </summary>
-    public Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default) => _goOn.TakeUpAsync(ct);
+    public Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default) => GoOn.TakeUpAsync(ct);
 
     /// <summary>Go on with an ended chat the person wrote to (MSG1c, <see cref="ChatGoOn.GoOnAsync"/>).</summary>
     public Task<ChatStart> GoOnAsync(
         string sessionId, DriverConfig? config = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _goOn.GoOnAsync(sessionId, config, onEnded, ct);
+        GoOn.GoOnAsync(sessionId, config, onEnded, ct);
 
     /// <summary>
     /// The person let an answer the answers-alone bound held go on (COWORK1e, <see cref="ChatGoOn.AnswerGoesOn"/>): said as an open
     /// conversation's next turn, or gone on with where it ended.
     /// </summary>
-    public void AnswerGoesOn(string sessionId) => _goOn.AnswerGoesOn(sessionId);
+    public void AnswerGoesOn(string sessionId) => GoOn.AnswerGoesOn(sessionId);
 
     /// <summary>
     /// A conversation this runner took up by itself ended (MSG1c2): the session and the state its record took, as a start's
@@ -294,8 +267,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     public event Action<string, string>? TakenUpEnded
     {
-        add => _goOn.TakenUpEnded += value;
-        remove => _goOn.TakenUpEnded -= value;
+        add => GoOn.TakenUpEnded += value;
+        remove => GoOn.TakenUpEnded -= value;
     }
 
     /// <summary>
@@ -304,8 +277,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     public event Action<string>? TakeEnded
     {
-        add => _handOver.TakeEnded += value;
-        remove => _handOver.TakeEnded -= value;
+        add => Executors.Of<ChatHandOver>().TakeEnded += value;
+        remove => Executors.Of<ChatHandOver>().TakeEnded -= value;
     }
 
     /// <summary>
@@ -314,8 +287,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp
     {
-        get => _help.DescribeHelp;
-        set => _help.DescribeHelp = value;
+        get => Executors.Of<ChatHelp>().DescribeHelp;
+        set => Executors.Of<ChatHelp>().DescribeHelp = value;
     }
 
     /// <summary>
@@ -333,13 +306,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     public Task<HelpPlaced> PlaceHelpFromAsync(
         string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default,
         IReadOnlyList<ActorEffective>? order = null) =>
-        _help.PlaceHelpFromAsync(earlier, adapter, config, workspace, ct, order);
+        Executors.Of<ChatHelp>().PlaceHelpFromAsync(earlier, adapter, config, workspace, ct, order);
 
     /// <summary>Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1, <see cref="ChatHelp.StartHelpFromAsync"/>).</summary>
     public Task<ChatStart> StartHelpFromAsync(
         string earlier, string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _help.StartHelpFromAsync(earlier, adapter, config, machine, onEnded, ct);
+        Executors.Of<ChatHelp>().StartHelpFromAsync(earlier, adapter, config, machine, onEnded, ct);
 
     /// <inheritdoc cref="WordsStart.StartFromAsync"/>
     public Task<StartedFrom> StartFromAsync(
@@ -358,14 +331,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
         ownTree ?? config.OpensOwnTree(repository);
 
-    // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
-    // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
-    // CONTEXTONE1c: what the standing block a new conversation is told with its first message is composed from, taken by it like its process.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, StandingFacts> _toldBlock =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
-        new(StringComparer.OrdinalIgnoreCase);
+    private readonly ChatTold _told;
 
     /// <summary>
     /// *Hand a conversation over* (MIXAGENT1a-i, D163): judged and kept in its box, then taken at once, or as its turn ends where
@@ -377,7 +343,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     public Task<HandedOver> HandOverAsync(
         string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default, string? model = null, string? effort = null) =>
-        _handOver.HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct, model, effort);
+        Executors.Of<ChatHandOver>().HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct, model, effort);
 
     /// <summary>
     /// Judge a conversation by its account's usage curve and, where the decision says so, move it (SWITCH1c-ii,
@@ -385,28 +351,28 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </summary>
     internal Task<SwitchChoice?> MoveByCurveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
-        _curve.MoveAsync(sessionId, config, onEnded, ct);
+        Curve.MoveAsync(sessionId, config, onEnded, ct);
 
     /// <summary>The curve's move, whose <see cref="CurveMove.Decided"/> a test hears (FOUNDATION1h branch 1): the runner names no course type.</summary>
-    internal CurveMove Curve => _curve;
+    internal CurveMove Curve => Executors.Of<CurveMove>();
 
     /// <summary>The briefed move, whose <see cref="BriefedMove.Decided"/> a test hears (FOUNDATION1h branch 4): the runner names no course type.</summary>
     internal BriefedMove Briefed => Executors.Of<BriefedMove>();
 
     /// <summary>The conversation's go-on, whose <see cref="ChatGoOn.Decided"/> a test hears (FOUNDATION1h branch 7): the runner names no course type.</summary>
-    internal ChatGoOn GoOn => _goOn;
+    internal ChatGoOn GoOn => Executors.Of<ChatGoOn>();
 
     /// <summary>The helper's words, whose <see cref="ChatHelperWords.Decided"/> a test hears (FOUNDATION1h branch 7).</summary>
-    internal ChatHelperWords HelperWords => _words;
+    internal ChatHelperWords HelperWords => Executors.Of<ChatHelperWords>();
 
     /// <summary>The limit's wake, whose <see cref="LimitWaits.Decided"/> a test hears (FOUNDATION1h branch 6): the runner names no course type.</summary>
-    internal LimitWaits Waits => _waits;
+    internal LimitWaits Waits => Executors.Of<LimitWaits>();
 
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, SwitchChoice>? CurveJudged
     {
-        add => _curve.Judged += value;
-        remove => _curve.Judged -= value;
+        add => Curve.Judged += value;
+        remove => Curve.Judged -= value;
     }
 
     /// <summary>
@@ -749,7 +715,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         {
             var bound = _chatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
             answers = ChatRunBinds.AnswersFindings(bound);
-            _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct, bound).ConfigureAwait(false);
+            _told.HoldProcess(sessionId, await _told.ProcessAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct, bound).ConfigureAwait(false));
         }
         else if (from is not null)
         {
@@ -758,7 +724,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // MAKERTRAIL2 (LIMITGOON2): a part on another maker than the one before it, which left work uncommitted in the tree, is told
             // that maker's trailer too, as a driven carry-on is.
             var left = leftBy is not null && await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) is { Count: > 0 } ? leftBy : null;
-            _toldProcess[sessionId] = new ProcessBriefing(CommitTrailers.For(resolved, left), commits.Rule.Mode, commits.Source);
+            _told.HoldProcess(sessionId, new ProcessBriefing(CommitTrailers.For(resolved, left), commits.Rule.Mode, commits.Source));
         }
 
         // SESSCTX1b: a conversation that continues another reads the kept folders of its line's parts, whose files its brief names.
@@ -779,8 +745,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // A start that failed, or was cancelled, has no first message to tell it with.
             if (started?.SessionId is null)
             {
-                _toldProcess.TryRemove(sessionId, out _);
-                _toldBlock.TryRemove(sessionId, out _);
+                _told.Forget(sessionId);
             }
         }
     }
@@ -993,8 +958,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // MODELROLE1d (D205 §4.2): a conversation going on re-applies the person's last composer change over its asked choice, so its
         // resume sets what they last left; the record's asked stays as its open set it.
         var overriding = goOn is null ? null : ActorOverride.Read(goOn.Record.Override);
-        if (overriding is not null) _overrides[sessionId] = overriding;
-        else _overrides.TryRemove(sessionId, out _);
+        _options.Kept(sessionId, overriding);
         var carrying = actorAsked.Overlaid(overriding);
 
         // AGENTPROVIDER1m-i (ONEWAY1h-iii): the run over today's transports holds the conversation's process, its capture and its end, its stop
@@ -1046,7 +1010,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
             // CONTEXTONE1c (D230 point 3): its standing block, on its harness, told with a new conversation's first message and never at a
             // go-on, which resumes the same conversation; a hand-over's adds the memory its brief hands on (WithProcess).
-            if (place.Block is { } block && goOn is null) _toldBlock[sessionId] = StandingBlocks.OnHarness(block, resolved, workTree);
+            if (place.Block is { } block && goOn is null) _told.HoldBlock(sessionId, StandingBlocks.OnHarness(block, resolved, workTree));
 
             // The run's bracket, before what names its process is composed: what this start is handed of the downloads kept on its record
             // (KEEP1b), a go-on as a first start, and its process's lineage token issued (COWORKVIEW1a), a go-on's the one issued at its move,
@@ -1072,7 +1036,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // CHATFLOW1h (the chat-flow design §4.4): a conversation in a tree of its own is held to its run's checks at every execution, its open, a
             // hand-over's next record and a go-on alike: the tree locked in its id for `run-heavy` to find, the checks kept by it, each heavy gate's
             // command denied under `light`, and the conversation told only then.
-            var heavy = await HeldChecksAsync(sessionId, workTree, place, config, resolved, ct).ConfigureAwait(false);
+            var heavy = await _told.HeldChecksAsync(sessionId, workTree, place, config, resolved, ct).ConfigureAwait(false);
             if (resolved.TakesSettings)
             {
                 var file = PermissionRules.Load(_home);
@@ -1180,7 +1144,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
             SpawnSkills.Remove(skills);
-            LetGoChecks(sessionId);
+            _told.LetGoChecks(sessionId);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await Conclude(
                 sessionId, "failed",
@@ -1235,7 +1199,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // A full-access conversation the person narrowed mid-turn ends as its turn ends (HELPMODE1a5).
             HelpTurnChanged(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
-            _handOver.Due(sessionId, queue, config, onEnded);
+            Executors.Of<ChatHandOver>().Due(sessionId, queue, config, onEnded);
             // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once;
             // one whose turn its account's limit refused goes on, in the same conversation, on the next account (LIMITGOON1), and only that.
             if (CurveMove.TurnJustEnded(queue, judged))
@@ -1243,8 +1207,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 judged = queue.LastTurnEnded;
                 // CHATFLOW1c: a chat whose run is not bound yet (its tree grew before this build, or its bind failed) binds now.
                 if (bindsRun) _ = _chatRuns.TurnEndedAsync(sessionId, workTree, config);
-                if (Interlocked.Exchange(ref limitedTurn, 0) == 1) _limit.Due(sessionId, config, onEnded);
-                else _curve.Due(sessionId, config, onEnded);
+                if (Interlocked.Exchange(ref limitedTurn, 0) == 1) Executors.Of<LimitMove>().Due(sessionId, config, onEnded);
+                else Curve.Due(sessionId, config, onEnded);
             }
 
             // A turn the person's words started has ended (NOTIFY1a): judged last, so a listener's failure moves nothing above.
@@ -1269,7 +1233,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 // On this door the words went once their prompt is on the wire.
                 wentOn: goOn is null ? null : () =>
                 {
-                    if (goOn.Sent(named: false)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
+                    if (goOn.Sent(named: false)) _ = GoOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 })
             {
                 // AGENTERRORS1b (D210, the agent-errors design §5.1, §7): a transient failure of one of its turns is tried again in this same
@@ -1298,7 +1262,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 Asked = carrying,
                 Carried = overriding is not null ? null
                     : notCarried => _ = _service.TryKeepActorAsync(sessionId, null, choice, notCarried, ct: CancellationToken.None),
-                OffersRead = options => KeepOffers(resolved.Name, selection, sessionId, options),
+                OffersRead = options => _options.KeepOffers(resolved.Name, selection, sessionId, options),
                 Pending = pending,
                 Shown = said => _context.TakeShown(sessionId, said),
                 ModelRefused = pending is null ? null : async refusal =>
@@ -1324,7 +1288,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 // On this door the words went once their line is on stdin and the harness has opened the conversation.
                 wentOn: goOn is null ? null : () =>
                 {
-                    if (goOn.Sent(named: true)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
+                    if (goOn.Sent(named: true)) _ = GoOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 })
             {
                 Shown = said => _context.TakeShown(sessionId, said),
@@ -1388,7 +1352,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
             Named = goOn is null ? null : () =>
             {
-                if (goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
+                if (goOn.Named()) _ = GoOn.WentOnAsync(sessionId, goOn, resolved.Name);
             },
             Protocol = chat is null ? null : Held(run, chat, sessionId, workTree, place.Posture ?? resolved.AcpPosture, meta, offered, resolved, Said),
         });
@@ -1413,7 +1377,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 () => RunAsync(
                     actor, sessionId, message, resolved, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)),
                 () => goOn.Ask.Refused is { Lost: true } lost
-                    ? _goOn.LostAsync(goOn.Record, lost, resolved.Name, config, onEnded, held: false, CancellationToken.None)
+                    ? GoOn.LostAsync(goOn.Record, lost, resolved.Name, config, onEnded, held: false, CancellationToken.None)
                     : Task.FromResult(new ChatStart(null, "")));
         }
 
@@ -1463,7 +1427,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // process is among those stopped below rather than spawned after them.
         var atClose = _context.Turned.ToDictionary(pair => pair.Key, pair => pair.Value.Turns.State);
         _context.Close();
-        _goOn.Stop();
+        GoOn.Stop();
         var update = _processes.Close.Build;
         foreach (var (id, chat) in _context.Turned)
         {
@@ -1770,19 +1734,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         return told ? draft with { Palette = palette with { Text = null } } : draft;
     }
 
-    /// <summary>
-    /// The start's process, maker and standing block, consumed by the first ordinary or handed-over message: a hand-over's block says the
-    /// memory its brief hands on (CONTEXTONE1c).
-    /// </summary>
-    internal ChatMessage WithProcess(string sessionId, ChatMessage message)
-    {
-        if (_toldBlock.TryRemove(sessionId, out var block))
-        {
-            message = message with { Block = StandingBlock.Compose(block with { Memory = message.Brief?.Memory ?? [] }) };
-        }
-
-        return _toldProcess.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
-    }
+    /// <inheritdoc cref="ChatTold.With"/>
+    internal ChatMessage WithProcess(string sessionId, ChatMessage message) => _told.With(sessionId, message);
 
     /// <summary>
     /// A text-only door keeps the person's words where it keeps the agent's — the console. In the record they would be half a
@@ -1884,10 +1837,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
         var record = await _context.ReadAgainAsync(ask.Session, ct).ConfigureAwait(false);
         if (record is not { Kind: "chat" }) return new(SendBack.CannotGoOn, ContinueWhy.Of(ContinueWhy.Refused).Code);
-        if (_goOn.CannotGoOnWithFindings(record) is { } never) return new(SendBack.CannotGoOn, never.Code);
+        if (GoOn.CannotGoOnWithFindings(record) is { } never) return new(SendBack.CannotGoOn, never.Code);
         if (await ask.Hand(ask.Session, ct).ConfigureAwait(false) is null) return new(SendBack.Refused);
 
-        var started = await _goOn.GoOnWithFindingsAsync(ask.Session, ask.Answered, ct).ConfigureAwait(false);
+        var started = await GoOn.GoOnWithFindingsAsync(ask.Session, ask.Answered, ct).ConfigureAwait(false);
         // Held, the findings wait on its record: the next word, a wake or the next look goes on with them; refused, the go-on marked why.
         return started.SessionId is not null ? new(SendBack.Reserved) : new(SendBack.Waiting, started.Message);
     }
@@ -1951,97 +1904,12 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         return Task.FromResult(TurnStop.Nothing);
     }
 
-    /// <summary>
-    /// A conversation's model and effort, as its agent offered them (AGT6b, D98) — empty for one on a door
-    /// that carries none, one whose agent offered none, one still opening, and one nothing here holds.
-    /// </summary>
-    public IReadOnlyList<AcpConfigOption> Options(string sessionId) =>
-        _context.Turned.TryGetValue(sessionId, out var turned) && turned is ProtocolChat { Session: { } session }
-            ? ThePersons(session.ConfigOptions)
-            : [];
+    /// <inheritdoc cref="ChatOptions.Of"/>
+    public IReadOnlyList<AcpConfigOption> Options(string sessionId) => _options.Of(sessionId);
 
-    /// <summary>
-    /// Change a conversation's model or effort (AGT6b, D98): <c>session/set_config_option</c> on its
-    /// session, as the tool's own console's <c>/model</c> would — and the record says the person did.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 <b>Only the options that are the person's</b>: the model and the thought level. The mode is the
-    /// posture Daoris runs a session under (D37, D81), and a menu that widened it is the approval surface
-    /// D52 refuses, so it is refused here before anything reaches the agent — the page never offers it,
-    /// and this holds whatever a page sends. A value is the agent's to judge: it refuses one it does not
-    /// take, in its own words.
-    /// </remarks>
-    /// <returns>The conversation's options after the change, the person's only.</returns>
-    /// <exception cref="DriverException">Nothing here holds it, its door carries no options, or the option is not the person's.</exception>
-    public async Task<IReadOnlyList<AcpConfigOption>> SetOptionAsync(
-        string sessionId, string configId, string value, CancellationToken ct)
-    {
-        if (!_context.Turned.TryGetValue(sessionId, out var turned) || turned is not ProtocolChat chat)
-        {
-            throw new DriverException(turned is not null || _context.Talking.ContainsKey(sessionId)
-                ? $"conversation `{sessionId}` runs on a door that carries no options to change — only the protocol "
-                  + "door carries the model and effort an agent offers."
-                : $"nothing on this machine holds conversation `{sessionId}` — it has ended, or runs elsewhere.");
-        }
-
-        var session = chat.Session
-            ?? throw new DriverException($"conversation `{sessionId}` is still opening — its options are not known yet.");
-        var option = session.ConfigOptions.FirstOrDefault(offered => offered.Id == configId)
-            ?? throw new DriverException($"the agent offered no option `{configId}` for conversation `{sessionId}`.");
-        if (!option.ThePersons)
-        {
-            throw new DriverException(
-                $"the conversation's `{configId}` is the posture Daoris runs it under (D81), not the person's to change "
-                + "here — its model and its effort are.");
-        }
-
-        var after = await session.SetConfigOptionAsync(configId, value, ct).ConfigureAwait(false);
-        // Only returned configuration is acknowledged. An empty answer says nothing about what the setter asked.
-        var model = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "model")?.Current;
-        var effort = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "thought_level")?.Current;
-        // MODELROLE1d (D205 §4.2): kept as values, reconciled from the returned configuration with the change before it, never merged
-        // blindly: an effort-only change keeps the model, and a model change clears the effort the new model resets.
-        var before = _overrides.TryGetValue(sessionId, out var kept) ? kept : null;
-        var reconciled = ActorOverride.Reconciled(before, option.Category ?? "", session.LastAcknowledgedOptions);
-        if (reconciled is not null && reconciled != before)
-        {
-            _overrides[sessionId] = reconciled;
-            // The agent took the change already: a provenance write that fails is logged, never the press's failure.
-            using (var keepLog = new MachineLog(_home, "driver"))
-            {
-                await _service.TryKeepActorAsync(sessionId, keepLog, changed: reconciled.Written, ct: ct).ConfigureAwait(false);
-            }
-            if (_context.ActorRuns.TryGetValue(sessionId, out var actorRun)) actorRun.Report([], new(DateTimeOffset.UtcNow, model, effort));
-        }
-        // Said as the agent names them, so a reader later knows what ran the turns after this one.
-        var chosen = option.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value;
-        // CONVNOTE2c: the option and its value are the agent's own names, facts the page words the sentence around.
-        var set = Noted.Of(
-            NoteCodes.ChatOptionSet, $"the person set {option.Name} to {chosen} for this conversation.",
-            ("option", option.Name), ("chosen", chosen));
-        _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
-        return ThePersons(after);
-    }
-
-    /// <summary>
-    /// What a conversation's open listed, kept as its agent's offer reading on its account (D205 §9.2, MODELROLE1d), as a driven open's
-    /// is; a reading that cannot be kept is logged, never the conversation's failure.
-    /// </summary>
-    private void KeepOffers(string agent, HarnessSelection selection, string sessionId, IReadOnlyList<AcpConfigOption> options)
-    {
-        IReadOnlyList<string>? Values(string category) =>
-            options.FirstOrDefault(option => option.Category == category) is { } option ? [.. option.Choices.Select(each => each.Value)] : null;
-        if (AgentOffers.Offered(_home, agent, selection.Version, selection.Profile, Values("model"), Values("thought_level"), DateTimeOffset.UtcNow)
-            is { } unkept)
-        {
-            using var log = new MachineLog(_home, "driver");
-            log.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
-        }
-    }
-
-    /// <summary>The options a person may set (<see cref="AcpConfigOption.ThePersons"/>), in the agent's order.</summary>
-    private static IReadOnlyList<AcpConfigOption> ThePersons(IReadOnlyList<AcpConfigOption> options) =>
-        [.. options.Where(option => option.ThePersons)];
+    /// <inheritdoc cref="ChatOptions.SetAsync"/>
+    public Task<IReadOnlyList<AcpConfigOption>> SetOptionAsync(string sessionId, string configId, string value, CancellationToken ct) =>
+        _options.SetAsync(sessionId, configId, value, ct);
 
     // The chat runner's port (Course's IChatRunning): the operations the course's executors call, forwarded as they are. The public ones
     // implement it where they stand; the internal ones, whose places are internal records, answer it here.
@@ -2068,9 +1936,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
     ChatContext IExecutorWiring.Context => _context;
 
-    ChatHandOver IExecutorWiring.HandOver => _handOver;
-
-    IChatHelping IExecutorWiring.Help => _help;
+    T IExecutorWiring.Of<T>() => Executors.Of<T>();
 
     Task IExecutorWiring.ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded) =>
         Conclude(sessionId, state, note, onEnded);
@@ -2090,133 +1956,19 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary>The repository's process the agent was told, as the record keeps it (<see cref="ChatRecorded.ToldProcess"/>).</summary>
     internal static SessionEvent? ToldProcess(ChatMessage message) => ChatRecorded.ToldProcess(message);
 
-    /// <summary>
-    /// What a conversation in a tree of its own is told of its process (PROCESS1d-ii, D164's amendment point 4): the commit rule
-    /// standing for its repository and its landing, in <see cref="ProcessWords.Conversation"/>'s words with the rule's facts.
-    /// </summary>
-    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ISessionAdapter? adapter = null)
-    {
-        // A copy of the tree's dependencies is told with the process, so the agent does not run the install that would delete it
-        // (TREEDEPS1b, D51's TREEDEPS1 note); no new note code, it rides the process's own.
-        var words = ProcessWords.Conversation(commits, plan);
-        if (adapter is not null) words = $"{words}\n\n{CommitTrailers.For(adapter)}";
-        if (!string.IsNullOrEmpty(dependencies)) words = $"{words}\n\n{dependencies}";
-        return new(words, commits.Rule.Mode, commits.Source);
-    }
+    /// <inheritdoc cref="ChatTold.Process"/>
+    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ISessionAdapter? adapter = null) =>
+        ChatTold.Process(commits, plan, dependencies, adapter);
 
-    // The checks each live execution keeps by its id for `run-heavy` (CHATFLOW1h), let go as it ends.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _checksKept = new(StringComparer.Ordinal);
+    /// <inheritdoc cref="ChatAccountReads.Limited"/>
+    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null) =>
+        _accounts.Limited(sessionId, adapter, profile, failure, coolOff, byCode);
 
-    private void LetGoChecks(string sessionId)
-    {
-        if (_checksKept.TryRemove(sessionId, out var kept)) SessionChecks.LetGo(kept);
-    }
+    /// <inheritdoc cref="ChatAccountReads.Carried"/>
+    private RotatedOpening.Carried? LimitCarried(string? carries) => _accounts.Carried(carries);
 
-    /// <summary>
-    /// What a conversation in a tree of its own is handed of its run's checks at one execution (CHATFLOW1h, the chat-flow design §4.4): its tree
-    /// locked in its id, its checks kept by it for the execution's life, and the deny rules and words they compose; none for a place that is no
-    /// repository's tree. The words join what the process told it, once, so the conversation hears the checks only as they are enforced.
-    /// </summary>
-    private async Task<HeavyHanded> HeldChecksAsync(
-        string sessionId, string workTree, ChatPlace place, DriverConfig config, ISessionAdapter resolved, CancellationToken ct)
-    {
-        if (!place.Keeps || !new SessionTrees(_home).Holds(workTree)) return HeavyHanded.None;
-        if (await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
-        {
-            _output?.Append(sessionId, $"— its tree could not be locked in its name: {unlocked}");
-        }
-
-        if (await _chatRuns.ChecksAsync(sessionId, workTree, config).ConfigureAwait(false) is not { } checks) return HeavyHanded.None;
-        if (SessionChecks.Hold(_home, sessionId, checks.Checks, checks.Minutes) is { } kept) _checksKept[sessionId] = kept;
-        var heavy = HeavyTold.Hand(workTree, _home, checks.Repository, checks.Checks, resolved.TakesSettings);
-        if (heavy.Words is { } words && _toldProcess.TryGetValue(sessionId, out var told))
-        {
-            _toldProcess[sessionId] = told with { Words = $"{told.Words}\n\n{words}" };
-        }
-
-        return heavy;
-    }
-
-    /// <summary>
-    /// <see cref="ProcessTold"/> for the tree a new conversation just grew: its landing read as Review's press would read it. A
-    /// landing that cannot be read leaves its lead unsaid, never the start: the record is open, so the run that follows concludes
-    /// it, cancelled or not, and the commit rule is said either way.
-    /// </summary>
-    /// <param name="process">The chat run's bound process (CHATFLOW1c), which plans its landing as its press's gate does; null reads the rule.</param>
-    private async Task<ProcessBriefing> ProcessToldAsync(
-        string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ISessionAdapter adapter, CancellationToken ct,
-        IWorkplaceProcess? process = null)
-    {
-        LandingPlan? plan;
-        try
-        {
-            plan = await new SessionTrees(_home).PlanAsync(tree, new LandingSubject(sessionId, null, null), ct, process).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            plan = null;
-        }
-
-        return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies, adapter);
-    }
-
-    /// <summary>
-    /// A conversation's turn the door refused, read for an account's limit (TOOL4d, D125 §2.3): where the adapter's table
-    /// recognises it, the account the conversation runs as cools, the log says so, and the line for its record comes back
-    /// with its code (CONVNOTE1b), as a session record's cooling line carries it. Null is a refusal as today. The
-    /// conversation goes on: the process is still there, and so is the person.
-    /// </summary>
-    /// <param name="coolOff">The machine's <c>cooloff</c> (TOOL4e), for a limit that names no time; the default when null.</param>
-    /// <param name="byCode">
-    /// The reader's reading of the same failure where it read a limit by its code or kind with no sentence (FOUNDATION1g part a, the
-    /// agent-errors design §3.2), as a driven run passes it: cooled for D125's unstated default. Null reads the sentence alone.
-    /// </param>
-    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null)
-    {
-        (CoolingEntry Entry, LimitSeen Seen)? limited;
-        try
-        {
-            limited = _harnesses.Limited(adapter.Name, profile, failure, sessionId, coolOff, byCode);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-
-        if (limited is not { } read) return null;
-
-        _service.AccountSaid(AccountLine.Limited(
-            sessionId, adapter.Name, profile, read.Seen, _events.TurnsEnded(sessionId) + 1, used: null));
-        return CoolingWords.ConversationOf(read.Entry, _harnesses.Zone);
-    }
-
-    /// <summary>
-    /// What a conversation that goes on from a limit carries (LIMITGOON1), for its opening line and <c>account.rotated</c>: the one it
-    /// continues, the turn the limit refused (its last ended, since a conversation's refused turn ends <c>error</c> in its record, after
-    /// <see cref="Limited"/> counted it) and its context there. Null for a start that carries none.
-    /// </summary>
-    private RotatedOpening.Carried? LimitCarried(string? carries) =>
-        carries is null ? null : new RotatedOpening.Carried(carries, _events.TurnsEnded(carries), RotatedOpening.ContextOf(null, _events, carries));
-
-    /// <summary>
-    /// A conversation's call the door refused, read for the account's sign-in (SIGNIN1b, D125 ROSTER1b) by the reader a driven
-    /// start's conclusion uses (<see cref="RefusedAccounts.SignInRefused"/>): where the adapter's table recognises it, the account the
-    /// conversation runs as reads signed out, kept as a reading is, so the next start walks past it, and the line for its record
-    /// comes back. Null is a refusal as today. Read from the door's failure, never from the transcript (AGT3c).
-    /// </summary>
-    internal Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure)
-    {
-        try
-        {
-            return RefusedAccounts.SignInRefused(_harnesses, adapter, profile, failure);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            // A reading not written, or an adapter a plugin no longer declares, costs the next start one more refusal, never
-            // this conversation: this runs inside the refused turn's own handling.
-            return null;
-        }
-    }
+    /// <inheritdoc cref="ChatAccountReads.SignedOut"/>
+    internal Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure) => _accounts.SignedOut(adapter, profile, failure);
 
     /// <summary>What a conversation's watch knows of it beyond its process (MSG1c).</summary>
     /// <param name="Adapter">The adapter it runs on, whose conversation id is kept for it.</param>
@@ -2263,7 +2015,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     {
         // 🔴 CHATGOONWAKE1: declared first, so disposed last: a word shown to its ended record while this run still held it goes on once
         // everything of this run is let go.
-        using var letGo = new Disposer(() => _goOn.LetGo(sessionId));
+        using var letGo = new Disposer(() => GoOn.LetGo(sessionId));
         using var actorLogging = actorLog;
         await using var actorWatching = actorRun;
         using var actorUnbound = new Disposer(() => _context.ActorRuns.TryRemove(sessionId, out _));
@@ -2284,9 +2036,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             _context.Browsers.TryRemove(sessionId, out _);
             _context.Drafts.TryRemove(sessionId, out _);
             _context.Palettes.TryRemove(sessionId, out _);
-            _toldProcess.TryRemove(sessionId, out _);
-            LetGoChecks(sessionId);
-            _toldBlock.TryRemove(sessionId, out _);
+            _told.Ended(sessionId);
             // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
             // it to go on, unless the person stopped it, which ends them with it.
             var personStopped = _processes.StopMade(sessionId) is { Reason: null };
@@ -2337,7 +2087,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
             if (goOn?.Ask.Refused is { } refused)
             {
-                await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                await GoOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return false;
             }
 
@@ -2368,7 +2118,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // An agent that would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended.
             if (goOn?.Ask.Refused is { } refused)
             {
-                await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                await GoOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return false;
             }
 
@@ -2465,7 +2215,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             Servers = servers,
             TypedFailures = resolved.Toolchain?.ErrorWords?.TypedFailures == true, // CODEXSTATUS1
             // Its model and effort, told each time they change, so the page offers what the agent does (AGT6b).
-            Options = options => OptionsChanged?.Invoke(sessionId, ThePersons(options)),
+            Options = options => OptionsChanged?.Invoke(sessionId, ChatOptions.ThePersons(options)),
             Configure = session =>
             {
                 chat.Configure(session);
@@ -2519,677 +2269,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 }
             },
         };
-    }
-
-    /// <summary>
-    /// One conversation on the protocol door (CONV3b): its session once opened, and its turns one at a
-    /// time, in the order the person sent them (<see cref="ChatTurns"/>).
-    /// </summary>
-    /// <remarks>
-    /// <para><b>A message is recorded as it is SENT, not as it is typed</b> — the queue's rule, and the
-    /// reason it exists.</para>
-    ///
-    /// <para><b>A stop is <c>session/cancel</c></b>, which keeps the session: the agent winds its turn up
-    /// and answers the prompt <c>cancelled</c>, and that answer is the turn's end in the record.</para>
-    ///
-    /// <para><b>A turn that could not be sent is said</b>, on the transcript and in the record, and the
-    /// conversation goes on: the process is still there, and so is the person.</para>
-    ///
-    /// <para><b>On the next-step door</b> (MSG1c, D137 §2.1), where the agent said it takes a prompt during a turn, a word
-    /// said while a turn runs goes at once, shown waiting with its reach and taken where the agent hands the turn off to it
-    /// (D136's door, a chat's now). A stop with such a word on its way says the agent may have read it.</para>
-    /// </remarks>
-    private sealed class ProtocolChat : ITurnedChat, IEpisodeWords
-    {
-        IChatTurns ITurnedChat.Turns => Turns;
-
-        // Its run once its session opened, or null where it could not: its session is the run's (ONEWAY1h-iii).
-        private readonly TaskCompletionSource<TransportRun?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly Func<bool> _stopped;
-        private readonly Func<string, LimitSeen?, Noted?>? _limited;
-        private readonly Func<string, Noted?>? _signedOut;
-        // The retry its session was handed, whose last reading says the failure's code (FOUNDATION1g part a); null before the open or with none.
-        private volatile TransientRetry? _retried;
-        private readonly Action? _wentOn;
-        private Action<string> _line = _ => { };
-        private Action<SessionEvent> _record = _ => { };
-
-        // The words handed to the running turn and not yet answered (MSG1c), and those a stop was asked while on their way.
-        private readonly object _gate = new();
-        private readonly HashSet<string> _onTheirWay = new(StringComparer.Ordinal);
-        private readonly HashSet<string> _stoppedUnder = new(StringComparer.Ordinal);
-
-        // AGENTERRORS1b (the agent-errors design §5.1, §7): the answers of the words steered into the turn on the wire, as the session gave
-        // them, for a transient episode to settle (the turns those words opened are the episode's to await); and the turn's own cut: the
-        // person's stop ends a wait between tries, which no prompt of the session's is open to answer.
-        private readonly Queue<Task<string>> _sentAnswers = new();
-        private CancellationTokenSource _cut = new();
-        private volatile bool _stopAsked;
-        private volatile bool _unwanted;
-
-        /// <param name="limited">
-        /// A refused turn's failure, read for an account's limit (TOOL4d), with the reader's limit by its code where it read one
-        /// (FOUNDATION1g part a): the line its record takes, with its code (CONVNOTE1b), or null.
-        /// </param>
-        /// <param name="signedOut">
-        /// A refused call's failure, read for the account's sign-in (SIGNIN1b): the line its record takes, or null.
-        /// </param>
-        /// <param name="goOn">The ended chat's conversation this one goes on in, resumed rather than opened (MSG1c); null for a new one.</param>
-        /// <param name="wentOn">Told once the words it goes on with are on the wire (MSG1c).</param>
-        public ProtocolChat(
-            Action<ChatQueue> changed, Func<bool> stopped, Func<string, LimitSeen?, Noted?>? limited = null,
-            Func<string, Noted?>? signedOut = null, ResumeAsk? goOn = null, Action? wentOn = null)
-        {
-            _stopped = stopped;
-            _limited = limited;
-            _signedOut = signedOut;
-            _wentOn = wentOn;
-            GoOn = goOn;
-            Turns = new ChatTurns(
-                ready: async () => await _open.Task.ConfigureAwait(false) is not null,
-                take: TurnAsync,
-                interrupt: CancelAsync,
-                changed,
-                steer: Steer,
-                steerNow: SteerNow,
-                nextStep: () => Session is { NextStep: true },
-                settled: SettleSteeredAsync);
-        }
-
-        /// <summary>
-        /// What a transient failure of a turn is tried again with (AGENTERRORS1b, D210): handed to its session once the session is open, so a
-        /// failure at the open keeps today's end. Null keeps today's end for every failure.
-        /// </summary>
-        public ChatRetry? Retry { get; init; }
-
-        /// <summary>What its actor asks, set on the session before its first prompt (D205 §3.2, MODELROLE1d); null sets nothing.</summary>
-        public ActorAsked? Asked { get; init; }
-
-        /// <summary>Told what was carried where it differs from <see cref="Asked"/>.</summary>
-        public Action<ActorAsked>? Carried { get; init; }
-
-        /// <summary>Told what the open listed, its agent's offer reading on its account (D205 §9.2).</summary>
-        public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; init; }
-
-        /// <summary>Its pending start (MODELROLE1d2, D205 §3.5(b)), which a refusal at its open moves its words to; null for none.</summary>
-        public ChatPending? Pending { get; init; }
-
-        /// <summary>
-        /// What a message shows of the words a keyed open moved to this part (FOUNDATION1d-ii part 4, <see cref="ChatContext.TakeShown"/>):
-        /// each moved word's own event, recorded before the write in place of the message's one joined event; null for every other message.
-        /// </summary>
-        public Func<ChatMessage, IReadOnlyList<SessionEvent>?>? Shown { get; init; }
-
-        /// <summary>
-        /// Asked where its agent refused <see cref="Asked"/>'s model at the open, before any prompt (D205 §3.5(b)): a later entry to set on
-        /// this same session, or null, and the open ends <c>choice-not-offered</c>. Null keeps MODELROLE1d's not-carried reading.
-        /// </summary>
-        public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; init; }
-
-        /// <summary>The refusal that ended its open before any prompt (D205 §3.5(b)), or null.</summary>
-        public ModelRefusal? NotOffered { get; set; }
-
-        public ChatTurns Turns { get; }
-
-        /// <summary>The ended chat's conversation this one goes on in (MSG1c), or null for a new conversation.</summary>
-        public ResumeAsk? GoOn { get; }
-
-        /// <summary>The session, once it opened, as its run holds it (ONEWAY1h-iii); null while it opens, or when it could not.</summary>
-        public AcpSession? Session => _open.Task.IsCompletedSuccessfully ? _open.Task.Result?.Session : null;
-
-        /// <summary>What its actor asked, set on the session the run made before its open (D205 §3.2, §3.5(b), §9.2).</summary>
-        public void Configure(AcpSession session)
-        {
-            session.Carry = Asked;
-            session.Carried = Carried;
-            session.OffersRead = OffersRead;
-            session.ModelRefused = ModelRefused;
-        }
-
-        /// <summary>The session is open on its run — or could not be, and then every turn asked for is dropped.</summary>
-        public void Opened(TransportRun? run, Action<string> line, Action<SessionEvent> record)
-        {
-            _line = line;
-            _record = record;
-            if (run?.Session is { } session && Retry is { } retry)
-            {
-                _retried = Retried(retry);
-                session.Retries(_retried, this);
-            }
-
-            _open.TrySetResult(run);
-        }
-
-        /// <summary>
-        /// The retry its session is handed (AGENTERRORS1b, the agent-errors design §5.1, §7): the reader and the clock it was built with, the
-        /// owner's check, and what the episode says in this conversation, the one line, a quiet event each wait and try, and Daoris's go-on.
-        /// </summary>
-        private TransientRetry Retried(ChatRetry retry) => new()
-        {
-            Read = retry.Read,
-            Clock = retry.Clock,
-            // The owner's check (§5.5): the conversation wants another turn unless its session or the turn was stopped by the person.
-            Wanted = _ =>
-            {
-                if (!_stopAsked && !_stopped()) return Task.FromResult(true);
-                _unwanted = true;
-                return Task.FromResult(false);
-            },
-            // Daoris's go-on is shown once, as the conversation's own word beside the person's (the first try's alone); it is kept on no
-            // record: a conversation's process is gone with a restart, and nothing of an episode outlives it.
-            KeepGoOn = (episode, text, _) => Task.FromResult<IAgentWord?>(
-                new ChatMessage(text, []) { Daoris = new DaorisWord(DaorisKeys.TransientRetry(retry.Session, episode.Began)) }),
-            Began = (episode, next) =>
-            {
-                var noted = TransientRetry.Retrying(retry.Agent, episode.Words, next);
-                _line(noted.Note);
-                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts });
-            },
-            Tried = (episode, number, next) =>
-            {
-                retry.Tried?.Invoke(episode, number, next);
-                _record(new SessionEvent { Kind = SessionEventKind.Transient, Try = number });
-            },
-            WaitsUntil = (_, until) => _record(new SessionEvent { Kind = SessionEventKind.Transient, Next = until }),
-            // AGENTERRORS1b2: a limit refused the try before its agent took the person's words it carried. They are recorded as a refused
-            // turn's words are, after the try's quiet event, so `LimitHeld` holds them for the wake or the move, which receive them once;
-            // never the failed turn's own, recorded before the episode's first event, nor Daoris's go-on.
-            LimitRefused = words =>
-            {
-                foreach (var word in words.Where(word => !word.IsDaoris))
-                {
-                    _record(ChatMessage.Words(ChatMessage.FromAgent(word)));
-                }
-            },
-        };
-
-        // The words an episode holds, waits on and carries are this conversation's turns' (AGENTERRORS1b); the answers it settles are the
-        // steered words' own.
-        void IEpisodeWords.Settling() => Turns.Settling();
-
-        Task IEpisodeWords.Waiting() => Turns.Waiting();
-
-        void IEpisodeWords.Waited() => Turns.Waited();
-
-        IReadOnlyList<IAgentWord> IEpisodeWords.TakeHeld() => Turns.TakeHeld();
-
-        Task<string>? IEpisodeWords.TakeSent()
-        {
-            lock (_gate) return _sentAnswers.TryDequeue(out var answer) ? answer : null;
-        }
-
-        /// <summary>
-        /// A call the door refused, opening the session or taking a turn, read for the account's sign-in (SIGNIN1b, D125
-        /// ROSTER1b): where it was, the account reads signed out and the record says so, its English beside the line's parts as
-        /// a session record's note carries them. Only the door's failure is read (AGT3c), as a driven start's conclusion reads it.
-        /// </summary>
-        public void ReadSignIn(Exception error)
-        {
-            if (error is not DriverException || _signedOut?.Invoke(error.Message) is not { } signedOut) return;
-            _line($"— {signedOut.Note}");
-            _record(new SessionEvent { Kind = SessionEventKind.Note, Text = signedOut.Note, Parts = signedOut.Parts });
-        }
-
-        /// <summary>
-        /// A word said while a turn is on the wire, handed to it at once where the agent said it takes words then (MSG1c,
-        /// D137 §2.1): shown waiting with its reach under a fresh id, then sent as a prompt of the same session. What
-        /// completes when the agent has answered it; null where the door takes no word during a turn.
-        /// </summary>
-        /// <remarks>Called under the turns' lock: nothing here calls back into them.</remarks>
-        private Task? Steer(ChatMessage message)
-        {
-            if (Session is not { NextStep: true } session) return null;
-
-            // Its own id, so the words shown while they wait pair with the same words where the session took them (D136 §3): the
-            // record's, where it kept them first (COWORK1c), never one of the door's own.
-            var words = Identified(message);
-            if (Told(words) is { } told) _record(told);
-            _line($"— the person added, which reaches the conversation at its next step: {words.Text}");
-            _record(ChatMessage.Words(words) with { Reaches = "next-step", Level = words.LevelSaid });
-            // The session's own answer, kept for a transient episode to settle (AGENTERRORS1b): the word's turn is the episode's to await.
-            var answer = session.SayAsync(words, CancellationToken.None);
-            lock (_gate)
-            {
-                _onTheirWay.Add(words.Id!);
-                _sentAnswers.Enqueue(answer);
-            }
-
-            return AnsweredAsync(words, answer);
-        }
-
-        /// <summary>
-        /// The person's *Send now* into the turn on the wire (STEER2a, D136's 2026-10-16 note), where the agent steers: shown with
-        /// the reach <c>now</c> under a fresh id, then steered into the running turn, cutting the step in flight. The session
-        /// takes them where the agent answers <c>injected</c>, through its taken listener; any other answer costs only them, said
-        /// by the session in the record. What completes when the agent has answered; null where it never said it steers.
-        /// </summary>
-        /// <remarks>Called under the turns' lock: nothing here calls back into them.</remarks>
-        private Task? SteerNow(ChatMessage message)
-        {
-            if (Session is not { Steers: true } session) return null;
-
-            var words = Identified(message);
-            if (Told(words) is { } told) _record(told);
-            _line($"— the person sent now, which the conversation takes at once: {words.Text}");
-            _record(ChatMessage.Words(words) with { Reaches = SendNowWhy.Spelled(TurnReach.Steered), Level = MessageLevels.Now });
-            return session.SteeredAsync(words, CancellationToken.None, "conversation", handBack: back => Turns.HandBack(ChatMessage.FromAgent(back) with { Said = true }));
-        }
-
-        /// <summary>A word handed to the turn on the wire under the record's id where it was kept there (COWORK1c), or a fresh one of its own.</summary>
-        private static ChatMessage Identified(ChatMessage message) =>
-            message is { Kept: true, Id: not null } ? message : message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
-
-        /// <summary>
-        /// A word handed to the running turn, answered: said where the agent refused it, where it never reached the agent, or
-        /// where the person's stop was asked while it was on its way and the agent answered it cancelled, since it may have
-        /// read it and its answer was not kept (STEER1 §3).
-        /// </summary>
-        private async Task AnsweredAsync(ChatMessage words, Task<string> answered)
-        {
-            // The words' id beside each line, so the page settles any it still shows waiting (MSG1f).
-            SessionEvent Said(Noted why) => new()
-            {
-                Kind = SessionEventKind.Note, Text = why.Note, Parts = why.Parts.Count > 0 ? why.Parts : null, Words = [words.Id!],
-            };
-
-            SessionEvent? said = null;
-            try
-            {
-                var reason = await answered.ConfigureAwait(false);
-                bool stoppedUnder;
-                lock (_gate) stoppedUnder = _stoppedUnder.Contains(words.Id!);
-                // With its code, which the page words in the reader's language (MSG1c3).
-                said = ChatTurns.Lost(words.Id!, stoppedUnder, reason);
-            }
-            catch (AcpRefusal refused)
-            {
-                // A word the agent would not take costs that word, in its own words, never the conversation.
-                said = Said(WordsNotes.Refused(refused.Words, "conversation"));
-            }
-            catch (AcpWordTurnFailed)
-            {
-                // AGENTERRORS1b (the design §4.2, shape 2): the word was taken, so the turn that failed is the one it opened: the turn's
-                // failure, settled where the turn's words are (`SettleSteeredAsync`), never a note of this word's.
-            }
-            catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException or InvalidOperationException)
-            {
-                said = Said(WordsNotes.NeverReached(error.Message));
-            }
-            finally
-            {
-                lock (_gate)
-                {
-                    _onTheirWay.Remove(words.Id!);
-                    _stoppedUnder.Remove(words.Id!);
-                }
-            }
-
-            if (said is null) return;
-            _line(said.Text!);
-            _record(said);
-        }
-
-        private async Task TurnAsync(ChatMessage message, Action sent)
-        {
-            if (await _open.Task.ConfigureAwait(false) is not { Session: { } session }) return;
-
-            // AGENTERRORS1b: this turn's own cut and stop, and the answers of words steered into an earlier turn, all over.
-            CancellationToken cut;
-            lock (_gate)
-            {
-                _cut.Dispose();
-                _cut = new CancellationTokenSource();
-                cut = _cut.Token;
-                _sentAnswers.Clear();
-            }
-
-            _stopAsked = false;
-            _unwanted = false;
-            try
-            {
-                if (message.GoesOn is { } goOn)
-                {
-                    // 🔴 The words an ended chat goes on with (MSG1c, D137 §2.2, §3.1): the driver's first line, then each word
-                    // under the id its record gave it, then one prompt of one block each; off the record once on the wire.
-                    foreach (var opening in goOn.Opening())
-                    {
-                        if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) _line(note);
-                        _record(opening);
-                    }
-
-                    // The files said with the words, a link each after their blocks (MSG1d3).
-                    await PromptedAsync(session, cut, () => session.PromptAsync(goOn.Blocks, CancellationToken.None, () =>
-                    {
-                        sent();
-                        _wentOn?.Invoke();
-                    }, goOn.Files)).ConfigureAwait(false);
-                    return;
-                }
-
-                foreach (var recorded in Recorded(message, Shown?.Invoke(message))) _record(recorded);
-                // Each attached file a `resource_link` to where it is kept (CONV4c).
-                await PromptedAsync(session, cut, () => session.PromptAsync(message.Prompt, CancellationToken.None, sent, message.Files))
-                    .ConfigureAwait(false);
-            }
-            catch (Exception error)
-            {
-                // Ended in the record by `Failed`: the turn's end is in it. Anything that is no failure of the door's is not ours.
-                if (!Failed(error, cut)) throw;
-            }
-            finally
-            {
-                // The episode is over, whatever ended it: a word said from now goes as it did.
-                Turns.Waited();
-            }
-        }
-
-        /// <summary>
-        /// One turn's prompt (AGENTERRORS1b, D210, the agent-errors design §5.1, §7): where the conversation was handed a retry, a transient
-        /// failure is tried again on this same process, inside the turn, so the turn is one however many tries it takes: the queue is not
-        /// released, no turn ends in the record, and nothing is counted, notified or moved until the turn does. Any other failure comes
-        /// out as it came, and one past the bound as <see cref="AcpTransientExhausted"/>.
-        /// </summary>
-        private async Task PromptedAsync(AcpSession session, CancellationToken cut, Func<Task<string>> prompt)
-        {
-            if (Retry is null)
-            {
-                await prompt().ConfigureAwait(false);
-                return;
-            }
-
-            await session.RetriedAsync(prompt, cut).ConfigureAwait(false);
-            // The person's stop met the episode between tries: no prompt of the session's was open to answer it, so the turn ends here.
-            if (_unwanted)
-            {
-                _line("— the turn ended: it was stopped while it waited to try again");
-                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
-            }
-        }
-
-        /// <summary>
-        /// What became of the words steered into the turn on the wire, settled before the turn is found to have ended (AGENTERRORS1b, the
-        /// design §4.2, §5.1): one whose own prompt was refused after it was taken (<see cref="AcpWordTurnFailed"/>) is the turn's prompt
-        /// failing, so a transient one is tried again here, in the turn, which lasts. Any other answer is its word's own, said by its
-        /// <see cref="AnsweredAsync"/>.
-        /// </summary>
-        private async Task SettleSteeredAsync()
-        {
-            if (Retry is null || Session is not { } session) return;
-            CancellationToken cut;
-            lock (_gate) cut = _cut.Token;
-            while (true)
-            {
-                Task<string>? answer;
-                lock (_gate) answer = _sentAnswers.TryDequeue(out var next) ? next : null;
-                if (answer is null) return;
-
-                try
-                {
-                    await answer.ConfigureAwait(false);
-                }
-                catch (AcpWordTurnFailed failed)
-                {
-                    try
-                    {
-                        await session.RecoveredAsync(failed.Refusal, cut).ConfigureAwait(false);
-                    }
-                    catch (Exception error)
-                    {
-                        // Ended in the record by `Failed`; a settling that no failure of the door's ended is the pump's, which ends the turn.
-                        if (!Failed(error, cut)) throw;
-                    }
-                    finally
-                    {
-                        Turns.Waited();
-                    }
-                }
-                catch (Exception)
-                {
-                    // Its word's own note, said by AnsweredAsync.
-                }
-            }
-        }
-
-        /// <summary>
-        /// A turn's prompt failed: the turn's end, in the record. False for an exception that is no failure of the door's, left to its
-        /// catcher. A past-the-bound episode ends it with <c>chat.transient-stopped</c> (AGENTERRORS1b); the person's stop is a stopped
-        /// turn; any other failure is a turn the door would not take, read for the account's limit and sign-in.
-        /// </summary>
-        private bool Failed(Exception error, CancellationToken cut)
-        {
-            if (error is OperationCanceledException && cut.IsCancellationRequested)
-            {
-                // The person's stop ended the wait between tries: a stopped turn, nobody's failure.
-                _line("— the turn ended: it was stopped while it waited to try again");
-                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
-                return true;
-            }
-
-            if (error is not (DriverException or IOException or ObjectDisposedException or InvalidOperationException)) return false;
-
-            if (_stopped())
-            {
-                // 🔴 The person stopped the session, which ended the agent and this turn's prompt
-                // with it (REV3). That is not the turn failing, and a note saying so would blame
-                // the agent for the person's act. The turn ends as a stopped turn does.
-                _line("— the turn ended: the session was stopped");
-                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
-                return true;
-            }
-
-            if (error is AcpTransientExhausted exhausted && Retry is { } retry)
-            {
-                // AGENTERRORS1b (§7): every try failed, so the turn ends `error` and the next word is a turn of this same conversation.
-                // No limit, no sign-in and no door note: the provider's outage is not the account's.
-                var stopped = Noted.Of(
-                    NoteCodes.ChatTransientStopped,
-                    $"{retry.Agent}'s provider kept failing, so this turn ends; your next words go on in this conversation:",
-                    ("agent", retry.Agent));
-                if (exhausted.Episode.Words is { Length: > 0 } words) stopped = stopped.Then(" ", Noted.Said(words, NoteBy.Program));
-                _line($"— {stopped.Note}");
-                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = stopped.Note, Parts = stopped.Parts });
-                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-                return true;
-            }
-
-            var notTaken = DoorNotes.TurnNotTaken(error.Message);
-            _line($"— {notTaken.Note}");
-            _record(new SessionEvent { Kind = SessionEventKind.Note, Text = notTaken.Note, Parts = notTaken.Parts });
-
-            // A refusal the door carried, read for an account's limit (TOOL4d) before the turn's end is recorded, so
-            // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4). Its English
-            // beside the line's parts (CONVNOTE1b), as a refused sign-in's is, so the page words it in either language.
-            // The reader's own reading of this failure, which reads a limit by its code where the sentence says none (§3.2), as a driven
-            // run's conclusion passes it (FOUNDATION1g part a): the last one the session's retry kept, `Acp.ReadFailure` running before a
-            // prompt's failure is thrown.
-            var byCode = _retried?.Last is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null;
-            if (error is DriverException && _limited?.Invoke(error.Message, byCode) is { } cooling)
-            {
-                _line($"— {cooling.Note}");
-                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling.Note, Parts = cooling.Parts });
-            }
-
-            // And for the account's sign-in (SIGNIN1b), so the next start walks past an account its agent refused here.
-            ReadSignIn(error);
-
-            // 🔴 And the turn ENDS (REV3). Only a turn event closes a turn on the page, so a refused
-            // one drew *working…* under this very note until the next message — while the composer,
-            // told by the queue that nothing was taking, offered to send.
-            _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-            return true;
-        }
-
-        private async Task CancelAsync()
-        {
-            if (!_open.Task.IsCompletedSuccessfully || _open.Task.Result is not { Session: { } session } run) return;
-
-            // 🔴 A person's stop is never refused, even with a word on its way (D137 §2.1): the agent may still act on that
-            // word with its answer dropped (STEER1 §3), and its record says so once the word is answered.
-            lock (_gate) _stoppedUnder.UnionWith(_onTheirWay);
-            // AGENTERRORS1b: a stop met between tries has no prompt of the session's to answer it: the wait it ends is the turn's, cut here,
-            // and the owner's check refuses a try the stop met anywhere else. A try on the wire is stopped as any turn is.
-            _stopAsked = true;
-            if (session.WaitsOnTransient)
-            {
-                CancellationTokenSource cut;
-                lock (_gate) cut = _cut;
-                try
-                {
-                    await cut.CancelAsync().ConfigureAwait(false);
-                }
-                catch (ObjectDisposedException)
-                {
-                    // The turn it meant to stop ended.
-                }
-            }
-
-            try
-            {
-                // The run's stop that keeps the conversation: `session/cancel`.
-                await run.StopTurnAsync(CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
-            {
-                // The agent is gone, and its turn with it.
-                _line($"— the stop could not reach the agent: {error.Message}");
-            }
-        }
-
-        /// <summary>
-        /// The turns already asked for, then its run's close, once its open settled: <c>session/close</c>, then the end of input — after which
-        /// the agent exits on its own, and that exit is what the record concludes from.
-        /// </summary>
-        public async Task FinishAsync(Func<Task> close)
-        {
-            await Turns.FinishAsync().ConfigureAwait(false);
-            await _open.Task.ConfigureAwait(false);
-            await close().ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>
-    /// One conversation on the native door's structured wire (CONV4a): its turns one at a time, each a
-    /// line on the harness's stdin, each ended by the <c>result</c> the capture reads.
-    /// </summary>
-    /// <remarks>
-    /// <para>🔴 <b>A mid-turn message used to be written at once</b>, where Claude Code may fold it into
-    /// the turn still running and the record took it in the middle of that turn. It waits now, as the
-    /// protocol door's always did.</para>
-    ///
-    /// <para><b>The person's words are recorded, then sent</b>: the harness can answer before a record
-    /// written afterwards lands, and the answer would sit above the question.</para>
-    /// </remarks>
-    private sealed class NativeChat : ITurnedChat
-    {
-        IChatTurns ITurnedChat.Turns => Turns;
-
-        private readonly object _gate = new();
-        private TaskCompletionSource? _turn;
-
-        /// <summary>
-        /// What a message shows of the words a keyed open moved to this part (FOUNDATION1d-ii part 4, <see cref="ChatContext.TakeShown"/>):
-        /// each moved word's own event, recorded before the write in place of the message's one joined event; null for every other message.
-        /// </summary>
-        public Func<ChatMessage, IReadOnlyList<SessionEvent>?>? Shown { get; init; }
-
-        /// <param name="ready">
-        /// What a conversation going on waits for before its words go (MSG1c): its process tracked, so a send reaches it.
-        /// Null for a new conversation, whose first message comes from the person once it is running.
-        /// </param>
-        /// <param name="wentOn">Told once the words it goes on with are on stdin (MSG1c).</param>
-        public NativeChat(
-            string sessionId, ISessionAdapter adapter, SessionProcesses processes, Action<SessionEvent> record,
-            Action<ChatQueue> changed, Task<bool>? ready = null, Action? wentOn = null)
-        {
-            Interrupts = adapter.FrameInterrupt() is not null;
-            Turns = new ChatTurns(
-                ready: () => ready ?? Task.FromResult(true),
-                take: (message, sent) =>
-                {
-                    var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    lock (_gate) _turn = ended;
-                    string line;
-                    if (message.GoesOn is { } goOn)
-                    {
-                        // The words an ended chat goes on with (MSG1c, D137 §2.2): the driver's first line, then each word under
-                        // the id its record gave it, then all of them as one message, joined by a blank line, each with where
-                        // its files are kept (MSG1d3). SESSCTX1c: said once, though a resume tried once more takes them again.
-                        if (!goOn.Spoken)
-                        {
-                            foreach (var opening in goOn.Opening()) record(opening);
-                        }
-
-                        line = adapter.FrameMessage(goOn.Prompt);
-                    }
-                    else
-                    {
-                        foreach (var recorded in Recorded(message, Shown?.Invoke(message))) record(recorded);
-                        // Each attached file named by its path, which the agent reads with its own tool
-                        // (CONV4c, measured); the record keeps the person's words, not these lines.
-                        line = adapter.FrameMessage(message.PromptWithFiles);
-                    }
-
-                    if (!processes.Send(sessionId, line))
-                    {
-                        // Nothing is listening: the process is going, and its watch concludes the record. SESSCTX1c: the words a
-                        // conversation goes on with are said by its watch, which tries the same resume once more or says why it could not.
-                        if (message.GoesOn is null)
-                        {
-                            var gone = WordsNotes.NotSent();
-                            record(new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts });
-                        }
-
-                        Gone();
-                        return Task.CompletedTask;
-                    }
-
-                    sent();
-                    if (message.GoesOn is not null) wentOn?.Invoke();
-                    return ended.Task;
-                },
-                interrupt: () =>
-                {
-                    if (adapter.FrameInterrupt() is { } stop) processes.Send(sessionId, stop);
-                    return Task.CompletedTask;
-                },
-                changed);
-        }
-
-        public ChatTurns Turns { get; }
-
-        /// <summary>
-        /// Whether its harness takes a stop that keeps the conversation (COWORK1a): Claude Code's <c>interrupt</c> control request.
-        /// The keeping stop is offered only where it does.
-        /// </summary>
-        public bool Interrupts { get; }
-
-        /// <summary>The turn's end is in the record: the next message may go.</summary>
-        public void TurnEnded()
-        {
-            TaskCompletionSource? turn;
-            lock (_gate)
-            {
-                turn = _turn;
-                _turn = null;
-            }
-
-            turn?.TrySetResult();
-        }
-
-        /// <summary>The harness has gone: nothing waiting is sent, and a turn waiting on its end stops waiting.</summary>
-        /// <param name="personStopped">The person stopped it (COWORK1c): what was kept for its turns leaves its record with it.</param>
-        public void Gone(bool personStopped = false)
-        {
-            Turns.Gone(personStopped);
-            TurnEnded();
-        }
-
-        /// <summary>The turns already asked for, then its run's close, the end of input: the harness winds up and exits on its own.</summary>
-        public async Task FinishAsync(Func<Task> close)
-        {
-            await Turns.FinishAsync().ConfigureAwait(false);
-            await close().ConfigureAwait(false);
-        }
     }
 
     private async Task Conclude(
