@@ -252,11 +252,11 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     [Fact]
     public void The_shells_watch_takes_a_terminals_words_with_the_screens_judge()
     {
-        var source = File.ReadAllText(SourceFiles.Module("DriverLoop.cs"));
+        var source = File.ReadAllText(SourceFiles.Module("LoopRun.cs"));
 
         var watch = source[source.IndexOf("new SessionRequestWatch(homeDirectory", StringComparison.Ordinal)..];
         watch = watch[..watch.IndexOf(';')];
-        Assert.Contains("Say = Words.HoldAsync", watch);
+        Assert.Contains("Say = loop.Words.HoldAsync", watch);
     }
 
     private async Task<DriverLoop> UpAsync(StandIn service)

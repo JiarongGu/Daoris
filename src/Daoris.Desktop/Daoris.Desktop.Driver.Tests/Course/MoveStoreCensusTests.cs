@@ -182,8 +182,8 @@ public sealed class MoveStoreCensusTests
         Assert.DoesNotContain("TakeUpBoxesAsync", goOn);
 
         var loop = CourseCensusTests.WithoutComments(File.ReadAllText(
-            Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs")));
-        Assert.Matches(@"new ConversationMoves\(homeDirectory, service, Events, Output\)", loop);
+            Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "Loop", "LoopRun.cs")));
+        Assert.Matches(@"new ConversationMoves\(homeDirectory, service, loop\.Events, loop\.Output\)", loop);
         Assert.Matches(@"Limits = async \(looked, token\) =>\s*\{\s*await moves\.LookAsync\(token\)[^;]*;\s*await chat\.WakeLimitsAsync\(", loop);
     }
 

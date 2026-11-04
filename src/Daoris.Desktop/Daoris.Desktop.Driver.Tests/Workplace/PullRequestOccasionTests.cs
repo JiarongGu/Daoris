@@ -162,6 +162,9 @@ public sealed class PullRequestOccasionTests
             .Append(SourceFiles.Driver("OpinionDeliverer.cs"))
             .Append(SourceFiles.Driver("OpinionGateLook.cs"))
             .Append(SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs"))
+            // The modules' loop's run and what it makes of each look.
+            .Append(SourceFiles.Find("Daoris.Desktop.Modules", "LoopRun.cs"))
+            .Append(SourceFiles.Find("Daoris.Desktop.Modules", "LookTold.cs"))
             .ToList();
 
         Assert.True(loop.Count >= 3, $"expected the loop's files, found {loop.Count}");
