@@ -638,6 +638,4 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
     /// <summary>One real turn (BRAINSTORM1a, BRAINSTORM1a2), by <see cref="BrainstormTurnRunner"/>.</summary>
     internal Task<BrainstormTurnRun> TurnAsync(BrainstormTurn turn, CancellationToken ct) => Turns.TurnAsync(turn, ct);
-
-    }
 }

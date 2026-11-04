@@ -244,4 +244,5 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
         {
             return false;
         }
+    }
 }
