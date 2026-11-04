@@ -43,7 +43,7 @@ public sealed class Driver(
     // The sessions still running (DEV3), shared by the watch across the driver it builds for each look,
     // since a session outlives the look that started it. Null keeps this driver's own, which is what a
     // one-look run and a gate's run-until-idle want.
-    RunningSessions? running = null) : ILandingWiring, IPluginWiring, ISetupWiring, ILookStagesWiring
+    RunningSessions? running = null) : ILandingWiring, IPluginWiring, ISetupWiring, ILookStagesWiring, IRunWiring
 {
     /// <summary>
     /// How one quest's start is run, from its holds to its record's conclusion: <see cref="RunAsync"/>, unless a
@@ -264,6 +264,50 @@ public sealed class Driver(
     private PartSet<ILookPass>? _lookPasses;
 
     private static readonly Lazy<IReadOnlyList<PartDeclaration>> LookOrder = new(() => Parts.Declared<LookPassAttribute>(typeof(Driver).Assembly));
+
+    /// <summary>
+    /// A driven session's run's stages, registered by their modules (<see cref="RunStageAttribute"/>), ordered once per process and built
+    /// once per driver with this driver as their wiring; each phase's run at its anchor in <see cref="RunAsync"/>.
+    /// </summary>
+    internal PartSet<IRunStage> RunStages =>
+        LazyInitializer.EnsureInitialized(ref _runStages, () => Parts.Build(RunOrder.Value, type => (IRunStage)Activator.CreateInstance(type, this)!));
+
+    private PartSet<IRunStage>? _runStages;
+
+    private static readonly Lazy<IReadOnlyList<PartDeclaration>> RunOrder = new(() => Parts.Declared<RunStageAttribute>(typeof(Driver).Assembly));
+
+    LoopContext IRunWiring.Context => Context;
+
+    DriverContinuations IRunWiring.GoOns => GoOns;
+
+    SessionWatch IRunWiring.Watch => Watch;
+
+    string? IRunWiring.ConfigPath => ConfigPath;
+
+    TimeProvider IRunWiring.RetryClock => RetryClock;
+
+    ITransportHost IRunWiring.Transport => new DriverTransportHost(this);
+
+    TimeSpan IRunWiring.BackgroundLook => BackgroundLook;
+
+    Task<string?> IRunWiring.StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) => StepRoleAsync(quest, workspace, ct);
+
+    RoleCatalog? IRunWiring.CatalogueForReport() => CatalogueForReport();
+
+    IReadOnlyList<ActorEffective> IRunWiring.QuestOrder(Consideration start, IReadOnlyList<string>? fence, string? handed, string? role) =>
+        QuestOrder(start, fence, handed, role);
+
+    Task<SettledSelection> IRunWiring.WalkBuildPassesAsync(
+        Consideration start, IReadOnlyList<RepoView> registry, CancellationToken ct, bool counts, (ActorEffective Entry, string? Account)? refused,
+        long except, string? role) => WalkBuildPassesAsync(start, registry, ct, counts, refused, except, role);
+
+    LineCourse IRunWiring.DecideResume(PriorSession record, string questStatus, ResumeChoice resume) => DecideResume(record, questStatus, resume);
+
+    Task<LineCourse> IRunWiring.DecideLimitOwnAsync(PriorSession limited, ResumeChoice own, CancellationToken ct) => DecideLimitOwnAsync(limited, own, ct);
+
+    void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => CountMove(line, role, condition, from, to);
+
+    AcpMcpServer? IRunWiring.Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc) => Connector(sessionId, scope, proc);
 
     string ILookWiring.Home => home;
 
@@ -1655,271 +1699,22 @@ public sealed class Driver(
         var root = start.Root!;
         var isolated = config.OpensOwnTree(quest.To);
 
-        // The agent this start runs on (MIXAGENT1a-ii, D163 point 1): the one a hand-over named for the quest, held until the quest
-        // leaves this machine; else a continuation's record's own (FOUNDATION1j part ii; the foundation design §2.4 and §7 row 5, D205
-        // point 1): the agent its asked choice was asked of, never the machine's `adapter` key, so a part that ran on Build's second choice
-        // goes on there; a first start's is the walk's, below. A local, and a parameter wherever it is passed on: starts run side by side.
-        var handedQuest = new HandedQuests(home).Read(quest.Id);
-        // ROLESTEP1b: the role the run's work step names, which every walk of this start takes in place of the work's, never another.
-        var stepRole = await StepRoleAsync(quest, start.Workspace, ct).ConfigureAwait(false);
-        // The role whose policy this start answers to: its step's, else the role its line was bound to, else the work's at its place (never the seeded Build's by default).
-        var policyRole = stepRole ?? StaffCourse.RoleOf(Context.Harnesses.StaffFor(home), start.Workspace, quest, start.Resumes);
-        var agent = StartPlan.AgentFor(
-            StartWork(quest), config, handed: handedQuest?.Agent, catalogue: CatalogueForReport(), place: PlaceOf(start), role: stepRole);
-        // Each hold names the agent the start asked, which the look's report of a wait names (the design §2.4's second row).
-        StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why) { Agent = agent };
-        if (handedQuest is null && start.Resumes is { } goesOnFrom)
+        // The agent, a clean checkout, the account and the access setup, each of which may hold the start before anything is grown,
+        // locked or opened.
+        var run = new RunRound(start, registry, movedOff, new RunState());
+        foreach (var stage in RunStages.In(RunPhase.Choose))
         {
-            try
-            {
-                agent = StartPlan.ContinuedOn(
-                    goesOnFrom, config, StartWork(quest), Context.Conversations.RoleOf(goesOnFrom.Session)?.Role, CatalogueForReport(), PlaceOf(start));
-            }
-            catch (DriverException error)
-            {
-                return Hold(error.Message);
-            }
+            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
         }
 
-        // Whether this start carries on from the very session the quest was handed over from: the one whose instruction and note say so.
-        var handedFrom = handedQuest is not null && start.Resumes is { } earlier
-                         && string.Equals(earlier.Session, handedQuest.From, StringComparison.Ordinal);
-        string? passedAccount = null;
-        // MODELROLE1c (D205 §4.0): the entry of Build's order this start runs, kept on its record as its choice and carried to its agent; null
-        // for a continuation, which keeps its record's asked choice (§3.5(a)).
-        ActorEffective? chosen = null;
-        // What the walk passed before the entry it took (D205 §4.6), said in the opening note's actor line.
-        IReadOnlyList<BuildPass> buildPasses = [];
-
-        // 🔴 SESSCTX1c (D189's amendment): the person's words waiting on a record whose agent this machine no longer has wait for the
-        // person, its conversation saying so with the hand-over's offer, since only they can choose the agent it goes on with. Asked
-        // where the roster or the access setup refuses the agent, before anything is spawned; any other start's refusal holds as before.
-        StartRun? AgentGone()
-        {
-            if (!start.GoesOn || start.Resumes is not { WordsWaiting: true } waiting
-                || Context.Adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            var gone = Continuations.AgentGone(agent, waiting.Session);
-            GoOns.HeldSaying(waiting, gone);
-            return Hold(gone.Note);
-        }
-
-        // Clean tree, or nothing: uncommitted changes are somebody's work in flight (D46 §3). No
-        // session record exists yet, so a hold here costs nothing and destroys nothing. VACUOUS for a
-        // repository opted into session trees (D51 rule 5) — a fresh tree is clean by construction,
-        // and the person's work in flight in the root no longer holding the driver is the point of
-        // the whole decision.
-        if (!isolated)
-        {
-            var (clean, detail) = await WorkingTree.CleanAsync(root, ct).ConfigureAwait(false);
-            if (!clean)
-            {
-                return Hold(detail);
-            }
-        }
-
-        // The harness, and which account it runs as (D49 §4) — asked BEFORE the record is opened, in
-        // the same place and for the same reason as the clean-tree rule above: a session record for a
-        // spawn that could never have happened would hold the repository and explain nothing. A
-        // missing binary and a logged-out profile are the same shape of answer, and each names the
-        // action that fixes it.
-        // Held, never thrown (REV3): an adapter name the roster does not know — a typo in `driver.json` —
-        // threw from here out of the tick, every tick, losing the report's holds and considerations
-        // with it. The intake's twin already held on the same sentence.
-        HarnessSelection selection;
-        ResumeChoice? resume = null;
-        // 🔴 LIMITRESUME1b (D206; the limit-resume design §3.3): the record an account's limit ended, which this start resumes in its own
-        // conversation where its own account is ready again, decided here inside the carry-on's own start, never beside the look (round 2's
-        // B1): the same look would plan the carry-on, and its walk land briefed on the account just freed. A hand-over made from it is the
-        // person's press and decides the start instead (step 0).
-        var limitedLine = LimitResume.Line(start.Quest, start.Resumes, handedFrom);
-        // 🔴 WALKAGENT1 (D206 point 6, D205 §3.5): a driven line an account's limit cut off takes its agent from Build's own order, never
-        // from the machine's legacy `adapter` key, which a stored order does not keep in step and which carried a line on to an agent the
-        // role does not list, asking the part before's model there. Its own agent where the role lists it (step 1 resumes there), else the
-        // role's first; and where the role lists more than one choice, or its one choice is another agent than the line ran on, the carry-on
-        // walks the choices as a new start does (below), each asking its own model and effort. A handed quest and an actor as before keep
-        // their agent and wait, as D206 point 6 has them.
-        var limitWalks = false;
-        // STAFFPOLICY1e: the move the role's policy decided at that record's end: the line walks as at a limit, the choice it left passed
-        // (the agent marked not answering), and its own conversation is not resumed.
-        var policyMove = start.Resumes is { } leaving && handedQuest is null
-                         && Context.Harnesses.StaffFor(home).Moves.Moving().TryGetValue(quest.Id, out var decidedMove)
-                         && string.Equals(decidedMove.Session, leaving.Session, StringComparison.Ordinal)
-            ? decidedMove
-            : null;
-        var cutLine = limitedLine is { Limit: true } ? limitedLine : policyMove is not null ? start.Resumes : null;
-        if (cutLine is { } cut && handedQuest is null)
-        {
-            try
-            {
-                var role = QuestOrder(start, role: stepRole);
-                if (role.Count > 0)
-                {
-                    agent = role.FirstOrDefault(entry => string.Equals(entry.Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))?.Agent
-                            ?? role[0].Agent;
-                    limitWalks = policyMove is not null || role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase);
-                    // STAFFPOLICY1e: a role that waits on a limit keeps the choice and waits for its accounts' reset (D197's walk of its
-                    // accounts stays inside the choice), until its `upTo` has passed.
-                    if (limitWalks && policyMove is null && cut.Limit
-                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), policyRole, cut, Context.Harnesses.Clock(), new StaffPlace(quest.To, start.Workspace, quest.Id)) is LineCourse.Wait)
-                    {
-                        limitWalks = false;
-                    }
-                }
-            }
-            catch (DriverException error)
-            {
-                return AgentGone() ?? Hold(error.Message);
-            }
-        }
-
-        // AGENTERRORS1a2: a released transient record's words go on by MSG1b's GoOn, their words alone and no go-on of Daoris's, on an
-        // account no limit cools (the design §5.1, R3-O4, R3-O8); only Try again's start with no word waiting takes step 1's go-on.
-        var limitedWords = limitedLine is not null && !Planner.EndedTransient(limitedLine);
-        // Whether this start resumes that record's own conversation on its own account: the limit's intent, separate from any words waiting.
-        var limitResume = false;
-        // 🔴 PRESSMODEL1 (D163 point 1, D205 §3.5(a), §4.0): a continuation of a quest held on another agent whose record asked its choice of
-        // an agent other than this one (the person's press to go on now with it, D206 point 7, or any hand-over) asks THIS agent's own
-        // choice: the role's first entry for it where the role lists one, else its own default with no model asked. The part before's
-        // model, `sonnet` under Build's first choice, is that agent's to refuse; carried there, Codex refused it and the part ended before
-        // any prompt. Read from the record's asked agent, so a line a press already moved and the refusal holds goes on at the next look.
-        ActorEffective? movedTo = null;
+        var (agent, handedQuest, stepRole, policyRole, handedFrom) =
+            (run.State.Agent, run.State.HandedQuest, run.State.StepRole, run.State.PolicyRole, run.State.HandedFrom);
+        var (selection, chosen, buildPasses, passedAccount) = (run.State.Selection, run.State.Chosen, run.State.BuildPasses, run.State.PassedAccount);
+        var (limitWalks, policyMove, resume, limitResume) = (run.State.LimitWalks, run.State.PolicyMove, run.State.Resume, run.State.LimitResume);
+        var (access, permissions) = (run.State.Access, run.State.Permissions);
+        StartRun Hold(string why) => run.Hold(why);
+        string? CarriedModel(PriorSession? record) => run.State.CarriedModel(record);
         var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        string? CarriedModel(PriorSession? record) => movedTo is { } movedEntry ? movedEntry.Model : record?.Asked?.NamedModel;
-        try
-        {
-            if (handedQuest is not null && start.Resumes?.Asked is { } wasAsked
-                && !string.Equals(wasAsked.Agent, agent, StringComparison.OrdinalIgnoreCase))
-            {
-                chosen = movedTo = QuestOrder(start, handed: agent, role: stepRole)[0];
-            }
-
-            if (policyMove is null && GoOns.ResumesOwn(start, agent) is { } words)
-            {
-                // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
-                // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's. A limited record's
-                // words go where its line goes, never waiting on its cooling account while another could take them (step 2). So do an
-                // ended record's of a line the driver carries on (LIMITSWITCH1, D137's note of 2026-10-25): an open or taken quest's. And a
-                // closed quest's session's (LIMITSWITCH2): the shell's chat runner goes on in a new part of it, so where it has one and the
-                // person's words wait, they go on at once too, the runner's ended move walking and counting the start itself. LIMITSWITCH3:
-                // and Daoris's own word that states a fact (a rebase), which the same move carries said as Daoris's.
-                var carried = quest.Status is "Open" or "Taken";
-                resume = await Context.Harnesses
-                    .ResumeAsync(
-                        agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct,
-                        limited: limitedWords, model: CarriedModel(words),
-                        line: carried
-                            ? LineKind.DrivenOpen
-                            : LineKind.DrivenClosed(carries: Context.GoesOnLost is not null && words.Waiting.Any(DaorisWords.NewPartCarries)))
-                    .ConfigureAwait(false);
-                selection = resume.Selection;
-                limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
-            }
-            else if (policyMove is null && !start.GoesOn && limitedLine is not null && GoOns.LimitResumes(limitedLine, agent)
-                     && await Context.Harnesses
-                             .ResumeAsync(agent, config, start.Workspace, limitedLine.Profile, StartKind.Driven, line: LineKind.DrivenLimit, ct: ct, limited: true,
-                                 model: CarriedModel(limitedLine))
-                             .ConfigureAwait(false) is { } own
-                     && await DecideLimitOwnAsync(limitedLine, own, ct).ConfigureAwait(false) is LineCourse.Resume)
-            {
-                // Step 1: its own account ready, its maker's reading asked, the judge passing and a door known to fail closed, so its
-                // own conversation resumes there, asked before the walk, so its own account wins where another is ready too.
-                resume = own;
-                selection = own.Selection;
-                limitResume = true;
-            }
-            else if (handedQuest is null && start.Resumes is null)
-            {
-                // A new quest's first start walks Build's order, choice by choice, each choice's accounts before the next (MODELROLE1c,
-                // D205 §4.1): its agent is the entry the walk took.
-                var walked = await WalkBuildPassesAsync(start, registry, ct, role: stepRole).ConfigureAwait(false);
-                (selection, chosen, buildPasses) = (walked.Selection, walked.Chosen, walked.Passes);
-                agent = chosen?.Agent ?? agent;
-            }
-            else if (limitWalks)
-            {
-                // WALKAGENT1: a line at a limit walks Build's order the same way, choice by choice, each choice's accounts before the next,
-                // asking each its own model and effort. Where none can run it waits for the earliest reset of any account of any choice
-                // (D206 point 2): the walk's `Cooling` is that soonest, and the hold below says it.
-                var walked = await WalkBuildPassesAsync(start, registry, ct, role: stepRole).ConfigureAwait(false);
-                (selection, chosen, buildPasses) = (walked.Selection, walked.Chosen, walked.Passes);
-                agent = chosen?.Agent ?? agent;
-                // STAFFPOLICY1e: a limit's move to another choice counts against the line's bound, and spends the yes that released it.
-                if (limitedLine is { Limit: true } leftLimit && selection.Allowed)
-                {
-                    StaffCourse.LimitMoved(Context.Harnesses.StaffFor(home), policyRole, quest.Id, leftLimit, chosen);
-                }
-            }
-            else
-            {
-                // A carry-on and a first start take the walk as any start does (D130 §16.2): no context stays with an account. A
-                // handed quest asks for the account its hand-over named first, and the walk goes on within the named agent's, its model
-                // Build's entry for that agent (D205 §4.0, `handed`). A carry-on keeps its record's asked choice (§3.5(a)).
-                // Each account judged by its reading for the model: the carry-on's record's asked, a handed quest's Build entry (§3.5(a), (d)).
-                if (handedQuest is not null && start.Resumes is null) chosen = QuestOrder(start, handed: agent, role: stepRole)[0];
-                var model = chosen is not null ? chosen.Model : CarriedModel(start.Resumes);
-                (selection, passedAccount) = await Context.Harnesses
-                    .SelectHandedAsync(agent, config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct, model)
-                    .ConfigureAwait(false);
-            }
-        }
-        catch (DriverException error)
-        {
-            return AgentGone() ?? Hold(error.Message);
-        }
-
-        if (resume is not null && DecideResume(start.Resumes!, quest.Status, resume) is LineCourse.Wait)
-        {
-            // The words wait for the account's reset (MSG1g, D125 §2), held as any start on a cooling account is, so the look
-            // says the wait once and a screen shows the quest waiting for an account; the record's conversation says why, with
-            // the door out of the wait. Nothing was spawned or probed to learn it.
-            var why = DriverContinuations.WaitsFor(quest, start.Resumes!, resume.Selection);
-            GoOns.HeldSaying(start.Resumes!, ResumeWords.NotYetOn(resume, DriverContinuations.DoorOf(quest, start.Resumes!)));
-            return Hold(why) with { Cooling = resume.Selection.Cooling };
-        }
-
-        if (!selection.Allowed)
-        {
-            // LIMITRESUME1b (the design §3.3 step 3): a line a limit cut off, with no account it may run on ready, waits with a sentence
-            // of its own naming the earliest reset and whose account, said on its record once per wait; the next look past it takes it.
-            if (limitedLine is not null && selection.Cooling is { } earliest)
-            {
-                var waits = LimitResume.Waits(
-                    earliest, Context.Harnesses.Zone, AccountNames.Of(home, earliest.Agent), signedOut: selection.SignedOut?.Accounts);
-                GoOns.HeldSaying(limitedLine, waits);
-                return Hold(waits.Note) with { Cooling = earliest, SignedOut = selection.SignedOut };
-            }
-
-            // A cooling account's hold carries its cool-off (TOOL4d), so the look says the wait once and a screen shows
-            // the quest waiting for an account; and the accounts it passed not signed in (TOOL6g), so both say the sign-in.
-            return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
-        }
-
-        if (movedOff is not null && string.Equals(selection.Profile, movedOff, StringComparison.OrdinalIgnoreCase))
-        {
-            Context.Harnesses.Release(selection.Number);
-            return Hold("the walk gave the account that was refused for its sign-in, and no other is free");
-        }
-
-        // The access setup this start runs under (AUTONOMY1a, D184 point 1), resolved once here from the file this look read, so its
-        // record keeps the one it started under, as D183 keeps Ask Daoris's mode. Its permission prompts name the harness's mode
-        // (AUTONOMY1b, D184 point 3); one its harness has none of is held here, before any tree grows or any record opens, naming the
-        // harness (D183 point 1), never run in its own mode under that label. A resume goes on under the same.
-        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
-        DrivenAccess permissions;
-        try
-        {
-            permissions = DrivenAccess.For(access, quest.To, Context.Adapters.Resolve(agent));
-        }
-        catch (DriverException error)
-        {
-            return AgentGone() ?? Hold(error.Message);
-        }
-
-        if (permissions.Refusal is { } unsupported) return Hold(unsupported);
 
         // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
         // the same reason every refusal above is asked before it: a failure here holds the quest
