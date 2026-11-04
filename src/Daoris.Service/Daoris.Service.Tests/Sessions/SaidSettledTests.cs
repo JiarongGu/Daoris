@@ -190,7 +190,7 @@ public sealed class SaidSettledTests : IAsyncLifetime
         var word = (await SayAsync(record.Id, "producer/older")).Word!;
 
         // The statement an older build ran (`SessionStore.TakeSaidAsync` before row p), word for word.
-        await ExecuteAsync("UPDATE sessions SET said = $said, answer = NULL WHERE id = $id AND origin IS NULL", ("$said", DBNull.Value), ("$id", record.Id));
+        await ExecuteAsync("UPDATE sessions SET said = $said WHERE id = $id AND origin IS NULL", ("$said", DBNull.Value), ("$id", record.Id));
 
         Assert.Equal([(record.Id, word.Id, "producer/older")], (await RowsAsync()).Select(row => (row.Session, row.Word, row.Key)).ToList());
         Assert.Equal(record.Id, (await SayAsync(record.Id, "producer/older")).SettledOn);
