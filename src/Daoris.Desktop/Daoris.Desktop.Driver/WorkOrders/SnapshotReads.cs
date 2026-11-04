@@ -18,11 +18,11 @@ public static class SnapshotReads
             // Each is still the service's answer as it stood when asked; the plan was never one transaction across them.
             var questsRead = client.SendAsync(new Daoris.Contracts.Quests.ListQuests(), ct);
             var registryRead = client.GetAsync("/api/registry", ct);
-            var activeRead = client.GetAsync("/api/sessions", ct);
+            var activeRead = client.SessionsJsonAsync(false, ct);
             // A second read rather than deriving both from one (DRV6): `/api/sessions` means ACTIVE, the
             // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
             // put a second opinion about it on this side of the wire.
-            var recordsRead = client.GetAsync("/api/sessions?includeClosed=true", ct);
+            var recordsRead = client.SessionsJsonAsync(true, ct);
             await Task.WhenAll(questsRead, registryRead, activeRead, recordsRead).ConfigureAwait(false);
             IReadOnlyList<QuestView> quests = [.. (await questsRead.ConfigureAwait(false)).Answered().Select(QuestViews.View)];
             var repositories = ServiceClient.ReadRegistry(await registryRead.ConfigureAwait(false));

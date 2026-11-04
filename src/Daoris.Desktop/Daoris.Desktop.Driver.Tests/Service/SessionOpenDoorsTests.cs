@@ -1,11 +1,12 @@
 using System.Text.Json;
+using Daoris.Contracts.Sessions;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
 public sealed class SessionOpenDoorsTests
 {
-    private const string Body = """{"repository":"Owner","adapter":"stub","from":"left"}""";
+    private static readonly OpenChat Body = new("Owner", "stub", null, null, null, From: "left");
 
     private sealed class Host : IServiceDoors
     {
@@ -56,14 +57,14 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host();
         using var client = new ServiceClient(host);
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var answer = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.Equal("/api/protocol", host.Heard[0].Path);
         Assert.Contains("\"opens\":\"key\"", host.Heard[1].Body);
         Assert.Equal("opened", answer.SessionId);
         Assert.Equal("key", answer.Opens);
         Assert.Empty(answer.Transfer!);
         Assert.False(answer.Held);
-        await client.Opens.OpenAsync("/api/sessions/chat", Body, "second", "left");
+        await client.Opens.OpenAsync(Body,"second", "left");
         Assert.Equal(1, host.Heard.Count(call => call.Path == "/api/protocol"));
     }
 
@@ -72,7 +73,7 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { Run = null, AnswerRun = null };
         using var client = new ServiceClient(host);
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var answer = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.DoesNotContain("opens", host.Heard[1].Body);
         Assert.Equal("opened", answer.SessionId);
         Assert.Null(answer.Opens);
@@ -86,9 +87,9 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { AnswerRun = run };
         using var client = new ServiceClient(host);
-        await client.Opens.OpenAsync("/api/sessions/chat", Body, "first", "left");
+        await client.Opens.OpenAsync(Body,"first", "left");
         host.Run = run;
-        await client.Opens.OpenAsync("/api/sessions/chat", Body, "second", "left");
+        await client.Opens.OpenAsync(Body,"second", "left");
         Assert.Equal("/api/protocol", host.Heard[2].Path);
         Assert.Equal("/api/sessions/chat", host.Heard[3].Path);
         if (run is null) Assert.DoesNotContain("opens", host.Heard[3].Body);
@@ -99,13 +100,13 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { Lose = true };
         using var client = new ServiceClient(host);
-        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left")).Held);
+        Assert.True((await client.Opens.OpenAsync(Body,"key", "left")).Held);
         host.Lose = false;
         // Replacement after GET /api/protocol but before POST: the response has neither run nor echo.
         host.AnswerRun = null;
         host.Echo = false;
         var retryAt = host.Heard.Count;
-        var retry = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var retry = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.Equal("/api/protocol", host.Heard[retryAt].Path);
         Assert.True(retry.Held);
         Assert.Null(retry.SessionId);
@@ -117,12 +118,12 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { Lose = true };
         using var client = new ServiceClient(host);
-        await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        await client.Opens.OpenAsync(Body,"key", "left");
         host.Run = null;
         host.AnswerRun = null;
         host.Lose = false;
         var retryAt = host.Heard.Count;
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var answer = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.Equal("/api/protocol", host.Heard[retryAt].Path);
         Assert.Single(host.Heard.Where(call => call.Body is not null));
         Assert.True(answer.Held);
@@ -134,10 +135,10 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { BrokenAnswer = true };
         using var client = new ServiceClient(host);
-        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left")).Held);
+        Assert.True((await client.Opens.OpenAsync(Body,"key", "left")).Held);
         var retryAt = host.Heard.Count;
         host.BrokenAnswer = false;
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var answer = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.Equal("/api/protocol", host.Heard[retryAt].Path);
         Assert.Equal("opened", answer.SessionId);
     }
@@ -147,7 +148,7 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { Echo = false, AnswerRun = null };
         using var client = new ServiceClient(host);
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var answer = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.Equal("opened", answer.SessionId);
         Assert.False(answer.Held);
     }
@@ -164,13 +165,13 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { RawAnswer = payload };
         using var client = new ServiceClient(host);
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var answer = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.True(answer.Held);
         Assert.Null(answer.SessionId);
         Assert.Equal(["candidate"], answer.Candidates);
         var retryAt = host.Heard.Count;
         host.RawAnswer = null;
-        var replay = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var replay = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.Equal("/api/protocol", host.Heard[retryAt].Path);
         Assert.Equal("opened", replay.SessionId);
         Assert.False(replay.Held);
@@ -181,9 +182,9 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { Run = null, AnswerRun = null, RawAnswer = "{}" };
         using var client = new ServiceClient(host);
-        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left")).Held);
+        Assert.True((await client.Opens.OpenAsync(Body,"key", "left")).Held);
         host.RawAnswer = null;
-        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left")).Held);
+        Assert.True((await client.Opens.OpenAsync(Body,"key", "left")).Held);
         Assert.Single(host.Heard.Where(call => call.Body is not null));
     }
 
@@ -250,9 +251,9 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { Mark = mark, Run = mark == 0 ? null : "first", AnswerRun = mark == 0 ? null : "first" };
         using var client = new ServiceClient(host);
-        const string Carrying = """{"repository":"Owner","adapter":"stub","from":"left","moves":{"from":"stale","words":[],"read":[]}}""";
+        var carrying = Body with { Moves = new OpenMovesRequest("stale", [], []) };
 
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Carrying, "key", "left", moves: Moves);
+        var answer = await client.Opens.OpenAsync(carrying, "key", "left", moves: Moves);
 
         var request = host.Heard.Last(call => call.Body is not null).Body!;
         Assert.DoesNotContain("stale", request);
@@ -282,12 +283,12 @@ public sealed class SessionOpenDoorsTests
         };
         using var client = new ServiceClient(host);
 
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left", moves: Moves);
+        var answer = await client.Opens.OpenAsync(Body,"key", "left", moves: Moves);
 
         Assert.Equal([new MovedWord("w1", "w1", "press/1", "key/w1", 0), new MovedWord("w2", "w2", null, "key/w2", 1)], answer.Moved);
 
         host.RawAnswer = """{"session":{"id":"opened"},"opens":"other","transfer":[{"id":"w1","order":0}]}""";
-        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "other", "left", moves: Moves)).Held);
+        Assert.True((await client.Opens.OpenAsync(Body,"other", "left", moves: Moves)).Held);
     }
 
     [Fact]
@@ -295,7 +296,7 @@ public sealed class SessionOpenDoorsTests
     {
         using var host = new Host { BrokenAnswer = true, RawCandidates = "{}" };
         using var client = new ServiceClient(host);
-        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        var answer = await client.Opens.OpenAsync(Body,"key", "left");
         Assert.True(answer.Held);
         Assert.Null(answer.SessionId);
         Assert.Empty(answer.Candidates!);
