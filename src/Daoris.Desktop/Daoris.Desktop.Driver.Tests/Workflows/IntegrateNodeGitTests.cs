@@ -15,12 +15,15 @@ public sealed class IntegrateNodeGitTests : LandedFixture
 {
     private const string Pattern = "feature/{quest}-{slug}";
     private const string Unit = "unit-a";
+    private const string Run = "r1";
+
+    private static readonly string RunUnit = RunUnits.IdOf(Run);
 
     private readonly ObservedPort _port = new();
 
-    /// <summary><c>engine</c>'s line, its policy <paramref name="integrate"/> or none; its landings are the fixture's bound <c>land</c>'s.</summary>
-    private void Save(LandingIntegrate? integrate) =>
-        DriverConfig.Empty.WithLine("engine", "main").WithLinePolicy("engine", integrate)
+    /// <summary><c>engine</c>'s line, its policy gates <paramref name="gates"/> or none: who requests is the bound graph's <c>integrate</c>.</summary>
+    private void Save(string? gates = null) =>
+        DriverConfig.Empty.WithLine("engine", "main").WithLinePolicy("engine", gates is null ? null : new LandingIntegrate(Gates: gates))
             .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     private NodeRecordFiles Files => new(Home, () => true);
@@ -29,34 +32,44 @@ public sealed class IntegrateNodeGitTests : LandedFixture
 
     private IntegrationStore Requests() => new(Home, () => StoreSettled.Yes);
 
-    /// <summary>One session's tree with one commit, landed by <paramref name="acceptedBy"/>.</summary>
-    private async Task<(string Branch, string Tip)> LandedAsync(SessionTrees trees, string root, string quest, string acceptedBy = AcceptedBy.Person)
+    /// <summary>The landings as they stood before the bound graph's <c>integrate</c> was kept with them: each record without it.</summary>
+    private void ForgetIntegrate()
+    {
+        var path = DaorisHome.Entry(Home, HomeEntry.Landings);
+        var file = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        foreach (var each in file["branches"]?.AsArray() ?? []) each?.AsObject().Remove("integrate");
+        File.WriteAllText(path, file.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    /// <summary>The gate of run <paramref name="run"/>, bound to a graph whose <c>land</c> makes the branch and whose <c>integrate</c> asks with <paramref name="request"/>.</summary>
+    private IWorkplaceGate Integrating(string request, string run = Run) =>
+        GraphLand.Gate(Home, GraphLand.Integrate(Pattern), run: run, integrate: request);
+
+    /// <summary>One session's tree with one commit, landed by <paramref name="acceptedBy"/> under run <paramref name="run"/>'s graph asking <paramref name="request"/>.</summary>
+    private async Task<(string Branch, string Tip, string Session)> LandedAsync(
+        SessionTrees trees, string root, string quest, string request, string acceptedBy = AcceptedBy.Person, string run = Run)
     {
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, $"{quest}.txt", $"the work of {quest}\n", $"the work of {quest}");
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), acceptedBy: acceptedBy, gate: Lands);
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), acceptedBy: acceptedBy, gate: Integrating(request, run));
         Assert.True(landed.Landed, landed.Message);
-        return (landed.Branch!, (await GitAsync(root, "rev-parse", landed.Branch!)).Trim());
+        return (landed.Branch!, (await GitAsync(root, "rev-parse", landed.Branch!)).Trim(), opened.Branch);
     }
 
-    /// <summary>The branch unit of a landed branch as the inventory gives it, the record's own landing among its records.</summary>
-    private WorkUnit UnitOf(SessionTrees trees, string branch)
-    {
-        var entry = trees.Recorded.Of("engine", branch)!;
-        return new WorkUnit(Unit, WorkUnitKind.Branch, new WorkOwner("engine", "aurora", "session-branches.json", WorkRecord.DriverWriter),
-            new WorkSubject(branch, entry.Tip), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
-        {
-            Records = new WorkUnitRecords(null, [entry], null),
-        };
-    }
+    /// <summary>The run's quest, done, and the branch unit its session worked, the record's own landing among its records.</summary>
+    private IReadOnlyList<WorkUnit> UnitsOf(SessionTrees trees, string branch, string session, string run = Run, string unit = Unit) =>
+        [RunHome.QuestUnit(RunHome.Quest(run, "Done")),
+         RunHome.Branch(unit, session, DateTimeOffset.UtcNow.AddHours(-1), [run], trees.Recorded.Of("engine", branch)!)];
 
-    private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string root, WorkUnit unit, bool whole = true) =>
+    private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string root, IReadOnlyList<WorkUnit> units, bool whole = true) =>
         runtime.PassAsync(new NodeRuntimeLook(DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), whole)
         {
-            Units = _ => Task.FromResult(new NodeUnitsRead([unit], new Dictionary<string, string> { ["engine"] = root })),
+            Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),
+            Bound = NodeRuntime.BoundIn(Home),
+            Tips = NodeTips.ReadAsync,
         }, CancellationToken.None);
 
-    private NodeStatus Status(string node = "integrate") => Files.Read(Unit)!.Statuses[node];
+    private NodeStatus Status(string node = "integrate", string run = Run) => Files.Read(RunUnits.IdOf(run))!.Statuses[node];
 
     /// <summary>
     /// A person's Accept under <c>owner</c>, where <c>integrate</c> stood, is the request: the real door admits it by the landing's record and
@@ -66,22 +79,22 @@ public sealed class IntegrateNodeGitTests : LandedFixture
     public async Task A_persons_accept_under_owner_is_requested_by_the_node_and_a_restart_finds_it_by_its_key()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save();
         var trees = new SessionTrees(Home);
-        var (branch, tip) = await LandedAsync(trees, root, "q1");
+        var (branch, tip, session) = await LandedAsync(trees, root, "q1", LandingIntegrate.Owner);
 
-        await PassAsync(Runtime(), root, UnitOf(trees, branch));
+        await PassAsync(Runtime(), root, UnitsOf(trees, branch, session));
 
         var request = Assert.Single(Requests().Open());
-        Assert.Equal((branch, tip, IntegrationRoutes.Node, Unit, "main"), (request.Branch, request.Tip, request.Route, request.Unit, request.Line));
+        Assert.Equal((branch, tip, IntegrationRoutes.Node, RunUnit, "main"), (request.Branch, request.Tip, request.Route, request.Unit, request.Line));
         Assert.Equal(IntegrationRequester.NodeStart, request.Requester);
         Assert.Equal(NodeStates.Active, Status().State);
 
-        await PassAsync(Runtime(), root, UnitOf(trees, branch));
+        await PassAsync(Runtime(), root, UnitsOf(trees, branch, session));
 
         Assert.Equal(request.Id, Assert.Single(Requests().Open()).Id);
-        Assert.Equal(request.Id, Requests().FindByKey(Unit, tip)!.Id);
-        Assert.Equal((NodeStates.Active, 1), (Status().State, Assert.Single(Files.Read(Unit)!.Attempts).Attempt));
+        Assert.Equal(request.Id, Requests().FindByKey(RunUnit, tip)!.Id);
+        Assert.Equal((NodeStates.Active, 1), (Status().State, Assert.Single(Files.Read(RunUnit)!.Attempts).Attempt));
     }
 
     /// <summary>
@@ -92,17 +105,18 @@ public sealed class IntegrateNodeGitTests : LandedFixture
     public async Task A_rule_gaining_integrate_over_a_standing_landing_requests_none_of_them()
     {
         var root = await RepositoryAsync("engine");
-        Save(null);
+        Save();
         var trees = new SessionTrees(Home);
-        var (branch, _) = await LandedAsync(trees, root, "q1");
+        var (branch, _, session) = await LandedAsync(trees, root, "q1", LandingIntegrate.Owner);
+        ForgetIntegrate();
+        trees = new SessionTrees(Home);
         Assert.Null(trees.Recorded.Of("engine", branch)!.Integrate);
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
 
-        var pass = await PassAsync(Runtime(), root, UnitOf(trees, branch));
+        var pass = await PassAsync(Runtime(), root, UnitsOf(trees, branch, session));
 
-        Assert.Equal((NodeStates.Reached, NodeStates.Ready), (Status("handed").State, Status().State));
+        Assert.Equal((NodeStates.Reached, NodeStates.Ready), (Status("landing").State, Status().State));
         Assert.Empty(Requests().Open());
-        Assert.Empty(Files.Read(Unit)!.Attempts);
+        Assert.Empty(Files.Read(RunUnit)!.Attempts);
         Assert.Contains(pass.Said, line => line.Contains("its integration waits", StringComparison.Ordinal));
     }
 
@@ -114,21 +128,21 @@ public sealed class IntegrateNodeGitTests : LandedFixture
     public async Task An_automatic_landing_under_owner_waits_for_the_card_and_under_done_is_requested()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates));
+        Save(LandingIntegrate.NoGates);
         var trees = new SessionTrees(Home);
-        var (waiting, _) = await LandedAsync(trees, root, "q1", AcceptedBy.Auto);
+        var (waiting, _, waitingSession) = await LandedAsync(trees, root, "q1", LandingIntegrate.Owner, AcceptedBy.Auto);
         Assert.Equal((AcceptedBy.Auto, LandingIntegrate.Owner), (trees.Recorded.Of("engine", waiting)!.AcceptedBy, trees.Recorded.Of("engine", waiting)!.Integrate!.Request));
 
-        await PassAsync(Runtime(), root, UnitOf(trees, waiting));
+        await PassAsync(Runtime(), root, UnitsOf(trees, waiting, waitingSession));
         Assert.Equal(NodeStates.Ready, Status().State);
         Assert.Empty(Requests().Open());
 
-        Save(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
-        var (done, tip) = await LandedAsync(trees, root, "q2", AcceptedBy.Auto);
-        await PassAsync(Runtime(), root, UnitOf(trees, done) with { Id = "unit-b" });
+        Save(LandingIntegrate.Declared);
+        var (done, tip, doneSession) = await LandedAsync(trees, root, "q2", LandingIntegrate.Done, AcceptedBy.Auto, run: "r2");
+        await PassAsync(Runtime(), root, UnitsOf(trees, done, doneSession, "r2", "unit-b"));
 
         var request = Assert.Single(Requests().Open());
-        Assert.Equal((done, tip, "unit-b"), (request.Branch, request.Tip, request.Unit));
+        Assert.Equal((done, tip, RunUnits.IdOf("r2")), (request.Branch, request.Tip, request.Unit));
     }
 
     /// <summary>A branch that moved after its landing is refused by git's own word and fails the node with the door's code, said.</summary>
@@ -136,12 +150,12 @@ public sealed class IntegrateNodeGitTests : LandedFixture
     public async Task A_branch_that_moved_after_its_landing_fails_the_node_as_moved()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save();
         var trees = new SessionTrees(Home);
-        var (branch, _) = await LandedAsync(trees, root, "q1");
+        var (branch, _, session) = await LandedAsync(trees, root, "q1", LandingIntegrate.Owner);
         await CommitOnAsync(root, branch, "later.txt", "a later commit\n", "a later commit");
 
-        var pass = await PassAsync(Runtime(), root, UnitOf(trees, branch));
+        var pass = await PassAsync(Runtime(), root, UnitsOf(trees, branch, session));
 
         Assert.Equal((NodeStates.Failed, IntegrationRefusals.Moved), (Status().State, Status().Code));
         Assert.Contains(pass.Said, line => line.Contains("(moved)", StringComparison.Ordinal));
@@ -156,34 +170,35 @@ public sealed class IntegrateNodeGitTests : LandedFixture
     public async Task A_second_landing_tip_waits_for_the_first_requests_outcome_in_the_store()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save();
         var trees = new SessionTrees(Home);
+        var gate = Integrating(LandingIntegrate.Owner);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the work\n", "the work");
-        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: Lands);
+        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: gate);
         Assert.True(landed.Landed, landed.Message);
         var tip1 = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
         var runtime = Runtime();
-        await PassAsync(runtime, root, UnitOf(trees, landed.Branch!));
+        await PassAsync(runtime, root, UnitsOf(trees, landed.Branch!, first.Branch));
         var opened = Assert.Single(Requests().Open());
         Assert.Equal(tip1, opened.Tip);
 
         var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
         await CommitAsync(next.Path, "more.txt", "more work\n", "more work");
-        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"), gate: Lands);
+        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"), gate: gate);
         Assert.True(advanced.Landed, advanced.Message);
         var tip2 = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
         Assert.NotEqual(tip1, tip2);
 
-        await PassAsync(runtime, root, UnitOf(trees, landed.Branch!));
+        await PassAsync(runtime, root, UnitsOf(trees, landed.Branch!, next.Branch));
         Assert.Equal(opened.Id, Assert.Single(Requests().Open()).Id);
         Assert.Equal(1, Status().Unreconciled);
 
         Assert.True(Requests().Close(opened.Id, IntegrationRequestCloses.Settled));
-        await PassAsync(runtime, root, UnitOf(trees, landed.Branch!));
+        await PassAsync(runtime, root, UnitsOf(trees, landed.Branch!, next.Branch));
 
         var second = Assert.Single(Requests().Open());
         Assert.Equal((tip2, NodeStates.Active, 2), (second.Tip, Status().State, Status().Attempt));
-        Assert.Equal(tip1, Requests().FindByKey(Unit, tip1)!.Tip);
+        Assert.Equal(tip1, Requests().FindByKey(RunUnit, tip1)!.Tip);
     }
 }

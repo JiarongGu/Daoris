@@ -13,18 +13,22 @@ public sealed class NodeGitReadsGitTests : LandedFixture
 {
     private const string Plugin = "acme.deploy";
     private const string Branch = "feature/q1-ship";
+    private const string Run = "r1";
 
     private static readonly NodeDeclaration Notify = new(Plugin + "/notify", Plugin + "/notify", 1, NodeReach.Performed)
     {
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
     };
 
-    /// <summary>Branches landed on a branch the plugin pushes, the cycle notifying once the pull request is reached.</summary>
+    /// <summary>Run <c>q1</c>'s graph: the work landed on a branch the plugin pushes, then notifying once the pull request is reached.</summary>
     private const string Cycle = """
-        { "landings": { "engine": { "form": "branch", "pattern": "feature/{quest}-{slug}", "plugin": "acme.deploy", "cycle": {
-            "schemaVersion": 2, "entries": [], "end": "notify",
-            "nodes": [{ "id": "notify", "kind": "acme.deploy/notify", "version": 1, "reach": "performed" }],
-            "wires": [{ "id": "w1", "kind": "after", "from": "pull-request", "to": "notify" }] } } } }
+        {"schemaVersion":2,"entries":["claimed"],"end":"notify",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request","plugin":"acme.deploy","pattern":"feature/{quest}-{slug}"}},
+                  {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"},
+                  {"id":"notify","kind":"acme.deploy/notify","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"},{"id":"l>p","kind":"after","from":"landing","to":"pushed"},
+                  {"id":"p>pr","kind":"after","from":"pushed","to":"pull-request"},{"id":"w1","kind":"after","from":"pull-request","to":"notify"}]}
         """;
 
     [Fact]
@@ -33,28 +37,27 @@ public sealed class NodeGitReadsGitTests : LandedFixture
         var root = await RepositoryAsync("engine");
         await GitAsync(root, "branch", Branch);
         var landed = (await GitAsync(root, "rev-parse", Branch)).Trim();
+        await GitAsync(root, "branch", "daoris/s1", landed);
         await GitAsync(root, "update-ref", "refs/remotes/origin/" + Branch, landed);
         await CommitAsync(root, "ahead.txt", "ahead\n", "the platform's merge took a newer commit");
         var source = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
 
         var completed = new PullRequestState(PullRequestStates.Completed) { MergeCommit = source, SourceCommit = source, Target = "main", Plugin = Plugin };
-        var landing = new LandedBranch("engine", "default", Branch, "main", landed, "s1", "q1", null, DateTimeOffset.UtcNow)
+        var landing = RunHome.Landing("unit-a", Branch, landed, DateTimeOffset.UtcNow, Run) with
         {
-            Units = ["unit-a"], Pushed = true, PushedTip = landed, Plugin = Plugin, PullRequestState = completed,
+            Pushed = true, PushedTip = landed, Plugin = Plugin, PullRequestState = completed,
         };
-        WorkUnit unit = new("unit-a", WorkUnitKind.Branch, new WorkOwner("engine", "default", "session-branches.json", WorkRecord.DriverWriter),
-            new WorkSubject("daoris/s1", landed), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
-        {
-            Records = new WorkUnitRecords(null, [landing], null),
-        };
+        var unit = RunHome.Branch("unit-a", "daoris/s1", DateTimeOffset.UtcNow.AddHours(-1), [Run], landing) with { Subject = new WorkSubject("daoris/s1", landed) };
+        RunHome.Bind(Home, Run, RunHome.SaveGraph(Home, Cycle), DateTimeOffset.UtcNow);
 
         var port = new ObservedPort();
         var records = new NodeRecordFiles(Home, () => true);
         var runtime = new NodeRuntime(records, port, () => DateTimeOffset.UtcNow, () => true);
-        var look = new NodeRuntimeLook(DriverConfig.Parse(Cycle), Whole: true)
+        var look = new NodeRuntimeLook(DriverConfig.Empty, Whole: true)
         {
-            Units = _ => Task.FromResult(new NodeUnitsRead([unit], new Dictionary<string, string> { ["engine"] = root })),
+            Units = _ => Task.FromResult(new NodeUnitsRead([RunHome.QuestUnit(RunHome.Quest(Run, "Done")), unit], new Dictionary<string, string> { ["engine"] = root })),
             Steps = () => [Notify],
+            Bound = NodeRuntime.BoundIn(Home),
             Tips = NodeTips.ReadAsync,
             Remotes = NodeTips.RemotesAsync,
             Holds = NodeTips.HoldsAsync,
@@ -74,12 +77,13 @@ public sealed class NodeGitReadsGitTests : LandedFixture
             WorkingTree.Started.Value = null;
         }
 
-        var record = records.Read("unit-a")!;
-        Assert.Equal(NodeStates.Reached, record.Statuses["pushed"].State);
+        var record = records.Read(RunUnits.IdOf(Run))!;
+        Assert.True(record.Statuses["pushed"].State == NodeStates.Reached, string.Join(", ", record.Statuses.Select(each => $"{each.Key}={each.Value.State}/{each.Value.Code}")));
         Assert.Equal(NodeStates.Reached, record.Statuses["pull-request"].State);
         Assert.Equal(landed, Assert.Single(port.Sent).SubjectRevision);
-        Assert.Equal(1, started.Count(line => line.StartsWith("for-each-ref", StringComparison.Ordinal)));
+        // One read of the checkout's refs for the session branch's tip (the landing is judged on it) and one for the remote-tracking refs.
+        Assert.Equal(2, started.Count(line => line.StartsWith("for-each-ref", StringComparison.Ordinal)));
         Assert.Equal($"merge-base --is-ancestor {landed} {source}", Assert.Single(started, line => line.StartsWith("merge-base", StringComparison.Ordinal)));
-        Assert.Equal(2, started.Count);
+        Assert.Equal(3, started.Count);
     }
 }

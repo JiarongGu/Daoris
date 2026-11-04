@@ -13,7 +13,10 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
 {
     private const string Pattern = "feature/{quest}-{slug}";
     private const string Unit = "unit-a";
+    private const string Run = "r1";
     private const string Declaration = """{ "gates": [ { "name": "unit", "run": "node check.mjs" } ] }""" + "\n";
+
+    private static readonly string RunUnit = RunUnits.IdOf(Run);
 
     private readonly ObservedPort _port = new();
     private readonly List<IntegrationEvent> _told = [];
@@ -72,51 +75,53 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         },
     };
 
-    /// <summary>The rule under <c>request: done</c> with its gates declared and the line's declaration accepted, as the choice's door requires.</summary>
-    private async Task DoneRuleAsync(string root)
+    /// <summary>The line's policy with its gates declared and the line's declaration accepted, as the choice's door requires.</summary>
+    private async Task DeclaredGatesAsync(string root)
     {
         await CommitAsync(root, LandedGates.File, Declaration, "the declaration");
         var blob = (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
         DriverConfig.Empty.WithLine("engine", "main")
-            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared))
+            .WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.Declared))
             .WithIntegrationGates("engine", blob)
             .Save(ConfigPath);
     }
 
+    /// <summary>The gate of run <c>r1</c>, bound to a graph whose <c>land</c> makes the branch and whose <c>integrate</c> asks with <paramref name="request"/>.</summary>
+    private IWorkplaceGate Integrating(string request) => GraphLand.Gate(Home, GraphLand.Integrate(Pattern), run: Run, integrate: request);
+
     /// <summary>One session's tree with one commit, landed at the quest's done (the automatic landing) or by the person's Accept.</summary>
-    private async Task<(string Branch, string Tip, TreeOpened Tree)> LandedAsync(SessionTrees trees, string root, string quest, string acceptedBy)
+    private async Task<(string Branch, string Tip, TreeOpened Tree)> LandedAsync(
+        SessionTrees trees, string root, string quest, string acceptedBy, string request)
     {
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, $"{quest}.txt", $"the work of {quest}\n", $"the work of {quest}");
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), acceptedBy: acceptedBy, gate: Lands);
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), acceptedBy: acceptedBy, gate: Integrating(request));
         Assert.True(landed.Landed, landed.Message);
         return (landed.Branch!, (await GitAsync(root, "rev-parse", landed.Branch!)).Trim(), opened);
     }
 
     /// <summary>
-    /// The branch unit of a landed branch as the inventory gives it, its landing's record as it was last read standing (the tidy removes the
-    /// branch once the line holds it); ended where the end judgement found the line holding it.
+    /// The run's quest, done, and the branch unit its session worked as the inventory gives it, the landing's record as it was last read
+    /// standing (the tidy removes the branch once the line holds it); ended where the end judgement found the line holding it.
     /// </summary>
-    private WorkUnit UnitOf(SessionTrees trees, string branch, string? ended = null)
+    private IReadOnlyList<WorkUnit> UnitsOf(SessionTrees trees, string branch, string session, string? ended = null)
     {
         var entry = _entries[branch] = trees.Recorded.Of("engine", branch) ?? _entries[branch];
         var end = ended is null
             ? new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open")
             : new MilestoneEnd(WorkEndState.Ended, EndBy.Merged, "main", ended, DateTimeOffset.UtcNow, "the line holds it");
-        return new WorkUnit(Unit, WorkUnitKind.Branch, new WorkOwner("engine", "aurora", "session-branches.json", WorkRecord.DriverWriter),
-            new WorkSubject(branch, entry.Tip), end, [])
-        {
-            Records = new WorkUnitRecords(null, [entry], null),
-        };
+        return [RunHome.QuestUnit(RunHome.Quest(Run, "Done")), RunHome.Branch(Unit, session, DateTimeOffset.UtcNow.AddHours(-1), [Run], entry) with { End = end }];
     }
 
-    private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string root, WorkUnit unit) =>
+    private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string root, IReadOnlyList<WorkUnit> units) =>
         runtime.PassAsync(new NodeRuntimeLook(Config, true)
         {
-            Units = _ => Task.FromResult(new NodeUnitsRead([unit], new Dictionary<string, string> { ["engine"] = root })),
+            Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),
+            Bound = NodeRuntime.BoundIn(Home),
+            Tips = NodeTips.ReadAsync,
         }, CancellationToken.None);
 
-    private NodeStatus Status(string node) => Files.Read(Unit)!.Statuses[node];
+    private NodeStatus Status(string node) => Files.Read(RunUnit)!.Statuses[node];
 
     private static async Task<bool> HoldsAsync(string root, string tip) =>
         await GitExitAsync(root, "merge-base", "--is-ancestor", tip, "main") == 0;
@@ -139,21 +144,21 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     });
 
     /// <summary>
-    /// The proof's first case (§17.4, R4): a done quest under <c>request: done</c> through Current's branch graph. Its automatic landing is the
+    /// The proof's first case (§17.4, R4): a done quest under <c>request: done</c> through its bound graph. Its automatic landing is the
     /// request; the node asks the door, the transport runs the line's run off the pass and wakes it, the node is reached on its settled request,
     /// the line holds the tip, the checkout was only fast-forwarded, and <c>line</c> observes it with <c>work.integrated</c> told once.
     /// </summary>
     [Fact]
-    public async Task A_done_quest_under_request_done_is_integrated_through_currents_branch_graph()
+    public async Task A_done_quest_under_request_done_is_integrated_through_its_bound_graph()
     {
         var root = await RepositoryAsync("engine");
-        await DoneRuleAsync(root);
+        await DeclaredGatesAsync(root);
         var trees = new SessionTrees(Home);
-        var (branch, tip, _) = await LandedAsync(trees, root, "q1", AcceptedBy.Auto);
+        var (branch, tip, tree) = await LandedAsync(trees, root, "q1", AcceptedBy.Auto, LandingIntegrate.Done);
         var before = (await GitAsync(root, "rev-parse", "main")).Trim();
         var runtime = Runtime(root);
 
-        await PassAsync(runtime, root, UnitOf(trees, branch));
+        await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch));
 
         var request = Assert.Single(Store().Open());
         Assert.Equal((branch, tip, IntegrationRoutes.Node), (request.Branch, request.Tip, request.Route));
@@ -165,16 +170,16 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         Assert.Equal("", (await GitAsync(root, "status", "--porcelain")).Trim());
         Assert.Equal(IntegrationRequestCloses.Settled, Store().Request(request.Id)!.ClosedWhy);
 
-        await PassAsync(runtime, root, UnitOf(trees, branch));
+        await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch));
         Assert.Equal((NodeStates.Reached, NodeSource.Integration), (Status("integrate").State, Status("integrate").By));
 
         // The look's end judgement finds the line holding the landing's tip (D102), which `line` observes.
-        var pass = await PassAsync(runtime, root, UnitOf(trees, branch, ended: tip));
+        var pass = await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch, ended: tip));
         Assert.Equal(NodeStates.Reached, Status("line").State);
-        Assert.Equal([$"{Unit} engine"], _integrated);
+        Assert.Equal([$"{RunUnit} engine"], _integrated);
         Assert.Contains(pass.Said, said => said.Contains("integrated into its line", StringComparison.Ordinal));
 
-        await PassAsync(runtime, root, UnitOf(trees, branch, ended: tip));
+        await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch, ended: tip));
         Assert.Single(_integrated);
         Assert.Equal(
             ["integration.queued", "integration.formed", "integration.replayed", "integration.promoted", "integration.settled", "integration.tidied", "integration.closed"],
@@ -189,7 +194,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         {"schemaVersion":2,"entries":["work"],"end":"line",
          "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
                   {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
-                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate"}},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate","pattern":"feature/{quest}-{slug}"}},
                   {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"done","conflicts":"session"}},
                   {"id":"line","kind":"line","version":1,"reach":"observed"}],
          "wires":[{"id":"a","kind":"after","from":"work","to":"requests"},{"id":"b","kind":"after","from":"requests","to":"landing"},
@@ -201,7 +206,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     /// step as its provenance, so the run's <c>integrate</c> asks the door on the node's route with the version's <c>request: done</c>, as the
     /// runtime's start asks it, and the transport integrates it: the line holds the tip and the request is settled.
     /// </summary>
-    /// <summary>Quest q1's run bound to <paramref name="graph"/> saved as the version <c>integrated</c>, and the process its landing follows.</summary>
+    /// <summary>Run <c>r1</c> bound to <paramref name="graph"/> saved as the version <c>integrated</c>, and the process its landing follows.</summary>
     private WorkflowProcess Preset(string graph)
     {
         Directory.CreateDirectory(WorkflowStore.FolderOf(Home));
@@ -210,8 +215,8 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         var version = Assert.Single(new WorkflowFiles(Home).Load("integrated")!.Read.Versions);
         Assert.True(version.Problem is null, version.Problem);
         Assert.True(WorkflowRunBindings.Bind(Home,
-            new WorkflowRunBinding("q1", "engine", "aurora", "integrated", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest }));
-        var process = WorkflowProcesses.Read(Home, Config, "engine", "aurora", "q1", new AcceptedGates(["unit"]));
+            new WorkflowRunBinding(Run, "engine", "aurora", "integrated", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest }));
+        var process = WorkflowProcesses.Read(Home, Config, "engine", "aurora", Run, new AcceptedGates(["unit"]));
         Assert.True(process is { Problem: null, Named: true }, process.Problem);
         return process;
     }
@@ -227,7 +232,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     public async Task A_done_quest_under_the_integrated_into_the_line_presets_graph_is_integrated()
     {
         var root = await RepositoryAsync("engine");
-        await DoneRuleAsync(root);
+        await DeclaredGatesAsync(root);
         var gate = Following(Preset(PresetGraph));
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
@@ -240,7 +245,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         var asked = await NodeRuntime.HomeDoor(Home).AskAsync(
             new IntegrationAsk("engine", "aurora", root, landed.Branch!, IntegrationRoutes.Node, IntegrationRequester.NodeStart)
             {
-                Unit = "run:q1", Tip = tip, Request = LandingIntegrate.Done, Conflicts = LandingIntegrate.Session,
+                Unit = RunUnit, Tip = tip, Request = LandingIntegrate.Done, Conflicts = LandingIntegrate.Session,
             }, Config, CancellationToken.None);
         Assert.True(asked.Admitted, asked.Message);
         Transport(root).Send(new IntegrationLineSend("engine", "aurora", "main"));
@@ -259,8 +264,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     public async Task A_stopped_handed_refuses_its_request()
     {
         var root = await RepositoryAsync("engine");
-        DriverConfig.Empty.WithLine("engine", "main")
-            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Owner)).Save(ConfigPath);
+        DriverConfig.Empty.WithLine("engine", "main").Save(ConfigPath);
         var process = Preset(PresetGraph.Replace("\"automatic\"", "\"you\"", StringComparison.Ordinal).Replace("\"done\"", "\"owner\"", StringComparison.Ordinal));
         var run = RunUnits.IdOf(process.Run!);
         var stopped = new NodeRecord(run)
@@ -299,12 +303,12 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     {
         var root = await RepositoryAsync("engine");
         DriverConfig.Empty.WithLine("engine", "main")
-            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates)).Save(ConfigPath);
+            .WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.NoGates)).Save(ConfigPath);
         var trees = new SessionTrees(Home);
-        var (branch, tip, tree) = await LandedAsync(trees, root, "q1", AcceptedBy.Person);
+        var (branch, tip, tree) = await LandedAsync(trees, root, "q1", AcceptedBy.Person, LandingIntegrate.Owner);
         var runtime = Runtime(root);
 
-        await PassAsync(runtime, root, UnitOf(trees, branch));
+        await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch));
         var request = Assert.Single(Store().Open());
         Assert.Equal(tip, request.Tip);
         await CommitAsync(tree.Path, "later.txt", "a later revision\n", "a later revision");
@@ -313,15 +317,16 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
 
         Assert.True(await HoldsAsync(root, tip), "the line holds the frozen tip");
         Assert.False(await HoldsAsync(root, later), "the later revision is not integrated");
-        await PassAsync(runtime, root, UnitOf(trees, branch));
-        Assert.Equal((NodeStates.Reached, 1), (Status("integrate").State, Assert.Single(Files.Read(Unit)!.Attempts).Attempt));
+        await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch));
+        // The run's session moved on, so its landing no longer stands at the session's tip and the node waits behind it: no second attempt is made.
+        Assert.Equal((NodeStates.Blocked, 1), (Status("integrate").State, Assert.Single(Files.Read(RunUnit)!.Attempts).Attempt));
         Assert.Empty(Store().Open());
 
         // Offered: the session's tree still lands it, at the person's next Accept, and only that press makes its landing.
         var subject = new LandingSubject("s-q1", "q1", "Fix the gap");
         Assert.Null((await trees.PlanAsync(tree.Path, subject)).Problem);
         Assert.Empty(Store().Open());
-        var next = await trees.LandAsync(tree.Path, subject, gate: Lands);
+        var next = await trees.LandAsync(tree.Path, subject, gate: Integrating(LandingIntegrate.Owner));
         Assert.True(next.Landed, next.Message);
         Assert.Equal("a later revision", (await GitAsync(root, "log", "--format=%s", $"main..{next.Branch}")).Trim());
     }

@@ -15,10 +15,7 @@ public sealed class IntegrateWatchTests : IDisposable
     private const string T1 = "1111111111111111111111111111111111111111";
 
     private const string Rules = """
-        { "drivable": ["engine", "shop"], "adapter": "stub", "cap": 3, "pollSeconds": 600, "trees": ["engine", "shop"],
-          "landings": {
-            "engine": { "form": "branch", "pattern": "feature/{quest}-{slug}", "integrate": { "request": "owner" } },
-            "shop": { "form": "branch", "pattern": "feature/{quest}-{slug}" } } }
+        { "drivable": ["engine", "shop"], "adapter": "stub", "cap": 3, "pollSeconds": 600, "trees": ["engine", "shop"] }
         """;
 
     private static readonly DateTimeOffset Then = new(2026, 10, 30, 9, 0, 0, TimeSpan.Zero);
@@ -39,11 +36,28 @@ public sealed class IntegrateWatchTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private void Land(string repository, string branch, string tip = T1) =>
-        new LandedBranches(_home).Record(new LandedBranch(repository, "default", branch, "main", tip, "s-" + branch, "q1", null, Then)
+    /// <summary>A repository at <paramref name="root"/> with one commit and <paramref name="branch"/> on it: the branch's tip.</summary>
+    private static async Task<string> BranchAsync(string root, string branch)
+    {
+        Directory.CreateDirectory(root);
+        foreach (var arguments in new[]
+        {
+            new[] { "init", "--quiet", "-b", "main" }, new[] { "config", "user.email", "fixture@example.test" }, new[] { "config", "user.name", "Fixture" },
+            new[] { "commit", "--quiet", "--allow-empty", "-m", "first" }, new[] { "branch", branch },
+        })
+        {
+            var run = await GitFixture.RunAsync(root, arguments);
+            Assert.True(run.ExitCode == 0, run.Stderr);
+        }
+
+        return (await GitFixture.GitAsync(root, "rev-parse", branch)).Trim();
+    }
+
+    private void Land(string repository, string branch, string quest, string tip = T1) =>
+        new LandedBranches(_home).Record(new LandedBranch(repository, "default", branch, "main", tip, "s-" + branch, quest, null, Then)
         {
             AcceptedBy = AcceptedBy.Person,
-            Integrate = new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule),
+            Integrate = new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Version),
         });
 
     /// <summary>The ask a unit's node makes, admitted as the door admits it: a request kept for the unit and the tip, waiting queued.</summary>
@@ -94,8 +108,14 @@ public sealed class IntegrateWatchTests : IDisposable
         _ledger.Register("engine", Path.Combine(_home, "engine")).Register("shop", Path.Combine(_home, "shop"));
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, Rules);
-        Land("engine", "feature/q1-ship");
-        Land("shop", "feature/q2-ship");
+        // The graph judges a landing on the branch's tip in the checkout, which the watch reads from git.
+        var tip = await BranchAsync(Path.Combine(_home, "engine"), "feature/q1-ship");
+        // Quest q1's run is bound to a graph whose integrate asks with the owner; the shop's landing serves a quest with no run.
+        _ledger.Publish("q1", "engine");
+        _ledger.Move("q1", "Done");
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, IntegratingWorkflow.Graph(LandingIntegrate.Owner, LandingIntegrate.Session)), Then);
+        Land("engine", "feature/q1-ship", "q1", tip);
+        Land("shop", "feature/q2-ship", "q2");
 
         // The runtime writes its records only where this process holds the home, as the desktop does while it runs.
         using var desktop = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _);
@@ -133,7 +153,8 @@ public sealed class IntegrateWatchTests : IDisposable
             await Poll.Until(() => !watch.Running.Passing, () => "the wake's pass never ended", Poll.Patience);
 
             var ask = Assert.Single(_door.Asked);
-            Assert.Equal(("engine", "feature/q1-ship", T1, IntegrationRequester.NodeStart), (ask.Repository, ask.Branch, ask.Tip, ask.Requester));
+            Assert.Equal(("engine", "feature/q1-ship", tip, IntegrationRequester.NodeStart), (ask.Repository, ask.Branch, ask.Tip, ask.Requester));
+            Assert.Equal(RunUnits.IdOf("q1"), ask.Unit);
         }
         finally
         {

@@ -13,7 +13,7 @@ internal static class IntegratingWorkflow
     public static string Graph(string request, string conflicts) => $$$"""
         {"schemaVersion":2,"entries":["claimed"],"end":"line",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate"}},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate","pattern":"feature/{quest}-{slug}"}},
                   {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}","conflicts":"{{{conflicts}}}"}},
                   {"id":"line","kind":"line","version":1,"reach":"observed"}],
          "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"},{"id":"l>i","kind":"after","from":"landing","to":"integrate"},
