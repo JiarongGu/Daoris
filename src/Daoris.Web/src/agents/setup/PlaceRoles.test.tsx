@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import type { StructurePlaceAsk } from '../../data/wiring';
+import type { RoleRow, StructurePlaceAsk } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { DRIVER_STATE, respond, show, WIRING } from '../../test/shellHarness';
 import { useListPanes } from '../../work/frame/listPanes';
@@ -319,9 +319,9 @@ describe('A place page, Roles', () => {
   });
 
   // A workspace's supervisor is a role of the catalogue, placed at the workspace: its place's Roles holds it among the Appointed roles.
-  const SUPERVISOR = {
+  const SUPERVISOR: RoleRow = {
     id: 'supervisor', state: 'set', seeded: false, name: { en: 'Supervisor', zh: '督导' }, takes: [], scopeKind: 'workspace', scopeId: 'aurora', revision: 1,
-    hold: { kind: 'supervisor' as const, acts: ['answer'], holder: 'rules' as const, window: 5 },
+    hold: { kind: 'supervisor', acts: ['answer'], holder: 'rules', window: 5 },
   };
 
   it("holds a workspace's supervisor among its Appointed roles, held by its rules, and a repository's place none", async () => {

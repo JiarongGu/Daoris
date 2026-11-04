@@ -35,6 +35,7 @@ import { sweepSlice } from '../bridge/repositories/lines';
 import { useStateSlices } from '../bridge/state/slices';
 import { useStateHub } from '../bridge/state/stateHub';
 import { PlaceSessions } from '../agents/setup/PlaceSessions';
+import { PLACES } from '../agents/setup/setupFixtures';
 import { code } from '../test/code';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import {
@@ -42,6 +43,9 @@ import {
 } from '../test/projectsView';
 
 const CHOSEN = 'daoris.list.projects.chosen';
+
+/** The workspace aurora as the places' read draws it, which the workspace place's Sessions take. */
+const AURORA_PLACE = PLACES({}).workspaces[0]!.place;
 
 /** The window's state hub, as `ShellSignals` mounts it: what a press moved is asked again here, never by the press's hook. */
 function Hub() {
@@ -365,7 +369,7 @@ describe("a workspace's page (UX6g)", () => {
   it("sets its sessions' language and reach on the place's Sessions, each on DAORIS.DRIVER, and says what changed", async () => {
     machine();
     const notify = vi.fn();
-    show(<PlaceSessions place={{ kind: 'workspace', row: { workspace: 'aurora' }, asked: null }} notify={notify} />);
+    show(<PlaceSessions place={{ kind: 'workspace', row: AURORA_PLACE, asked: null }} notify={notify} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Defaults' }));
     const defaults = screen.getByRole('region', { name: 'Defaults' });
@@ -402,7 +406,7 @@ describe("a workspace's page (UX6g)", () => {
     });
     const notify = vi.fn();
     // The access rows are the workspace place's Sessions now, opened on a pause of its own.
-    show(<PlaceSessions place={{ kind: 'workspace', row: { workspace: 'aurora' }, asked: 'access' }} notify={notify} />);
+    show(<PlaceSessions place={{ kind: 'workspace', row: AURORA_PLACE, asked: 'access' }} notify={notify} />);
     const access = await screen.findByRole('region', { name: "Sessions' access" });
     const row = (label: string) => within(access).getByText(label, { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
 
