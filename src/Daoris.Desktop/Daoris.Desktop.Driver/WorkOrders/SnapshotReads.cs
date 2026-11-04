@@ -16,7 +16,7 @@ public static class SnapshotReads
         {
             // PARALLEL1b (D181 point 3): the four reads asked at once, so one door slow to answer holds its own read, not the reads after it.
             // Each is still the service's answer as it stood when asked; the plan was never one transaction across them.
-            var questsRead = client.GetAsync("/api/quests", ct);
+            var questsRead = client.SendAsync(new Daoris.Contracts.Quests.ListQuests(), ct);
             var registryRead = client.GetAsync("/api/registry", ct);
             var activeRead = client.GetAsync("/api/sessions", ct);
             // A second read rather than deriving both from one (DRV6): `/api/sessions` means ACTIVE, the
@@ -24,7 +24,7 @@ public static class SnapshotReads
             // put a second opinion about it on this side of the wire.
             var recordsRead = client.GetAsync("/api/sessions?includeClosed=true", ct);
             await Task.WhenAll(questsRead, registryRead, activeRead, recordsRead).ConfigureAwait(false);
-            var quests = ServiceClient.ReadQuests(await questsRead.ConfigureAwait(false));
+            IReadOnlyList<QuestView> quests = [.. (await questsRead.ConfigureAwait(false)).Answered().Select(QuestViews.View)];
             var repositories = ServiceClient.ReadRegistry(await registryRead.ConfigureAwait(false));
             var active = ServiceClient.ReadSessions(await activeRead.ConfigureAwait(false));
             var records = await recordsRead.ConfigureAwait(false);
@@ -34,7 +34,7 @@ public static class SnapshotReads
             // The closed quests a session written to served (MSG1b, D137 §2.2), read only where one waits: no open list holds them.
             var open = quests.Select(quest => quest.Id).ToList();
             var closed = lastRun.Any(run => run.Value.WordsWaiting && !open.Contains(run.Key, StringComparer.OrdinalIgnoreCase))
-                ? ServiceClient.ReadClosed(await client.GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false), lastRun, open)
+                ? ServiceClient.ReadClosed(await client.QuestsJsonAsync(ct).ConfigureAwait(false), lastRun, open)
                 : [];
             var (claims, whys, forwards, taken) = await CarryOnClaimsAsync(client, quests, lastRun, stoodDown, ct).ConfigureAwait(false);
             return new Snapshot(quests, repositories, active, ServiceClient.ReadStrikes(records))
