@@ -112,7 +112,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// Why the words wait (MSG1g): the account, its reset and that its conversation is there, then the door out of the wait. A
+    /// Why the words wait: the account, its reset and that its conversation is there, then the door out of the wait. A
     /// taken or open quest's session goes on in a new session at the person's choice; a closed quest's has nothing to carry it
     /// on by itself, so its door is a conversation with the words (D137 §2.2). Machine-local: it names the account.
     /// </summary>

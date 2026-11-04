@@ -58,7 +58,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
     private int _busy;
 
-    /// <summary>A brainstorm's minute, and a meeting's (AGENTROOM1a): a minute, unless a test shortens it.</summary>
+    /// <summary>A brainstorm's minute, and a meeting's: a minute, unless a test shortens it.</summary>
     internal TimeSpan Minute => _context.BrainstormMinute ?? TimeSpan.FromMinutes(1);
 
     private TimeProvider Clock => _context.BrainstormClock;
