@@ -10,33 +10,10 @@ import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './
 import { type GitAccessEdit, type GitAccessLevel, GitAccessRows, resolveGitAccess } from './repository/GitAccess';
 import { UpdateSection } from './Update';
 
-/**
- * The home's hint for how the home stands to the account's DAORIS_HOME, which a terminal's daoris reads
- * (D105; LEFT1, then LEFT2). Read from the state's `homeAccount` (`InstallHome.AccountOf`), never from the
- * notice's English, which is the host's sentence passed through as it was said.
- *
- * - `same`: a terminal reads this folder, and the hint says so.
- * - `overridden`: this install's own `data/` replaced another the account names; the notice under the row
- *   says which folder a terminal reads, and the hint points there.
- * - `this-start`: DAORIS_HOME was named for this start alone. D105 respects it and writes no notice, so the
- *   hint itself says a terminal does not read this folder.
- *
- * A shell older than the field says nothing of it, and the hint says what it always said.
- */
-const HOME_HINT: Record<string, string> = {
-  overridden: 'settings.home.hintOverridden',
-  'this-start': 'settings.home.hintThisStart',
-};
-
 /** What the Driver domain shows, as the shell's state answers it; a field a shell does not answer is absent. */
 export type DriverFacts = {
   /** Where this machine's Daoris lives; none while the shell has not answered. */
   home?: string | null;
-  homeAccount?: string | null;
-  homeNotice?: string | null;
-  hostNotice?: string | null;
-  /** Whether this shell answers This Daoris's read (WIRING1c): the home row is its door then, and the older row otherwise. */
-  placeAnswers: boolean;
   /** Where plugins are looked for (UX6j); none on an older shell, and the row is absent. */
   pluginsFolder: string | null;
   /** The installed plugins, for the Plugins section (PLUGSET1); none on an older shell or before it answers, and the section is absent. */
@@ -93,13 +70,9 @@ export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onCap, onA
           person is most likely to have come here to change. */}
       <Card>
         <SettingList>
-          {/* Where this machine's Daoris lives (D63): the card's first row since D75, where it had
-              floated above the card with no label once the page lost its "This machine" heading. The
-              notice is the shell's own sentence about what the start did, carried in the state rather
-              than only raised: a toast raised before the page subscribed reached nobody. */}
-          {/* The home's page is This Daoris since WIRING1c, and this row is its door (the this-Daoris design §2). A shell that
-              answers no wiring is older than that page, so the row stays as it was: path, hint and the two notices. */}
-          {facts.home && facts.placeAnswers && (
+          {/* Where this machine's Daoris lives (D63), the card's first row; the home's page is This Daoris since WIRING1c,
+              and this row is its door (the this-Daoris design §2). */}
+          {facts.home && (
             <SettingRow
               label={t('settings.home.label')}
               hint={t('settings.daoris.door')}
@@ -110,28 +83,6 @@ export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onCap, onA
                 </>
               )}
             />
-          )}
-          {facts.home && !facts.placeAnswers && (
-            <SettingRow
-              label={t('settings.home.label')}
-              why={t(HOME_HINT[facts.homeAccount ?? ''] ?? 'settings.home.hint')}
-              control={<PathText path={facts.home} className="text-small text-ink-soft" />}
-            >
-              {facts.homeNotice && (
-                <p className="border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-                  {facts.homeNotice}
-                </p>
-              )}
-              {/* The host this window adopted serves another install's page (case study 4d). A
-                  standing fact, so a standing line: the toast that carried it fired before this page
-                  existed to hear it, which is how the second deployment showed a new window, an old
-                  page, and no surface saying so. */}
-              {facts.hostNotice && (
-                <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-                  {facts.hostNotice}
-                </p>
-              )}
-            </SettingRow>
           )}
           {facts.pluginsFolder && (
             <SettingRow

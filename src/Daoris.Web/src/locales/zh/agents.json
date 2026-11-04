@@ -147,7 +147,6 @@
   "agents.roles.filter.needsLook": "需要留意",
   "agents.roles.filter.clear": "清除筛选",
   "agents.roles.reading": "正在读取角色…",
-  "agents.roles.notOffered": "此外壳不提供：它不回答角色所依托的内容，这里没有可显示的内容。",
   "agents.roles.readFailed": "无法读取角色所依托的内容；请稍后重试。",
   "agents.roles.catalogueFailed": "角色无法读取，因此每项工作的启动都被搁置：{{why}}",
   "agents.roles.nothing": "没有符合这些筛选的内容。",

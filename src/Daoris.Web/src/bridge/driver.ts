@@ -507,7 +507,7 @@ export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../
 /**
  * The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role with its work, place and choices, the works a role may
  * take, whether this home keeps the catalogue, and the roles Daoris suggests. `daoris role` says the same. Under the driver's
- * key, so every press that changes the driver's state asks it again. Null in a browser and from an older shell, which answers no roles.
+ * key, so every press that changes the driver's state asks it again. Null in a browser, which answers no roles.
  */
 const readRoles = (raw: unknown): RoleCatalogue | null => {
   const answer = raw as Partial<RoleCatalogue> | null;
@@ -561,8 +561,7 @@ const readRoleStructure = (raw: unknown): RoleStructure | null => {
  * The roles' structure for the places and works asked (COMPANYVIEW1c): each place's role per work as a start finds it, each work's rule
  * with where it was set, and each choice's state from the last readings alone, so opening a view asks no account (D150 point 5). Told by
  * event (NOBLOCK1), under the driver's key with the catalogue, so every press that changes the driver's state asks it again. Null until
- * the shell's first reading lands; a shell that does not know the route is the query's error, `refusedNoRoute`'s, so a view tells *not
- * offered by this shell* from a failed read and from an empty one.
+ * the shell's first reading lands.
  */
 export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[], { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();

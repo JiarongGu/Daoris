@@ -53,7 +53,7 @@ const SECTION = { Work: /^Work(?!ing)/, Accounts: /^Accounts/, 'By repository': 
 const section = (name: keyof typeof SECTION) => screen.findByRole('button', { name: SECTION[name] });
 
 describe('The Roles mode, Work, Accounts and By repository', () => {
-  let structure: 'ok' | 'noroute' | 'failed' | 'pending' = 'ok';
+  let structure: 'ok' | 'failed' | 'pending' = 'ok';
   const asked = () => invoke.mock.calls.filter(([, type]) => type === 'ROLE_STRUCTURE').length;
 
   beforeEach(() => {
@@ -77,7 +77,6 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
         case 'PLUGINS': return { folder: 'plugins', plugins: PLUGINS };
         case 'LINES': return LINES;
         case 'ROLE_STRUCTURE':
-          if (structure === 'noroute') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
           if (structure === 'failed') throw new Error('the structure did not read');
           if (structure === 'pending') return { pending: true };
           return STRUCTURE;
@@ -208,7 +207,6 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
     });
 
     it.each([
-      ['noroute', /Not offered by this shell/],
       ['failed', /could not be read/],
       ['pending', /Reading the roles/],
     ] as const)('says a read that is %s, never an empty list', async (state, words) => {
@@ -407,16 +405,6 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       const used = await screen.findByRole('list', { name: 'Used by' });
       expect(within(used).getAllByRole('listitem').length).toBeGreaterThanOrEqual(3);
       expect(used.textContent).toMatch(/Build · building and design and decisions · choice 1/);
-    });
-
-    it('draws no section where the shell does not offer the read', async () => {
-      structure = 'noroute';
-      window.localStorage.setItem('daoris.list.agents.mode', 'agents');
-      show(<Place />);
-      const user = userEvent.setup();
-      await user.click(await screen.findByRole('button', { name: /^Claude Code/ }));
-      await screen.findByRole('button', { name: /^Hide Ways in|^Show Ways in/ });
-      await waitFor(() => expect(screen.queryByRole('button', { name: 'Show Used by' })).toBeNull());
     });
 
     it('says a read that failed, never an empty list', async () => {

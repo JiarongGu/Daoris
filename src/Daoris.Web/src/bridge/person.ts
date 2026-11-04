@@ -7,7 +7,7 @@ import {
   type AppointmentAnswer, type AppointmentNow, type DeskRequestNow, type HolderNow, inWindow, type StandingAnswer,
   type StandingConfirmationNow, type StandingUnread, type StewardActNow, WINDOW,
 } from '../person/standing';
-import { call, confirmBound, refusedNoRoute } from './call';
+import { call, confirmBound } from './call';
 import { notPushed } from './state/slices';
 
 // The person's door in the window (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door design §2.2 and §4.2): the person
@@ -107,42 +107,30 @@ function serviceOf(told: unknown): ServiceConfirmationsTold | null {
   };
 }
 
-/** The shell's answer while it tells what waits at the service; `older` where it is older than the telling (NOTIFY2j). */
-type ServiceRead = ServiceConfirmationsTold | 'older';
-
 /**
  * What waits at the service for the person's confirmation (PERSONDOOR1b's doors, D156 §4.2), asked only while the page holds the
  * person key: its Confirm and Refuse take the key, and a host handed none lists none. **Told, not polled** (NOTIFY2j, D196 point 4):
  * the shell holds one wait on the service and tells every window what waits at each change (`SERVICE_CONFIRMATIONS`), so each
- * window counts the one list it was told; read as the page mounts, for a window opened mid-wait. A shell older than the telling,
- * and a browser, keep the poll of the service's list. `read` says whether this window has read it at all, so its first read is
- * told apart from an arrival.
+ * window counts the one list it was told; read as the page mounts, for a window opened mid-wait. A browser keeps the poll of the
+ * service's list. `read` says whether this window has read it at all, so its first read is told apart from an arrival.
  */
 export function useServiceConfirmations(held: boolean): { waiting: Confirmation[]; read: boolean } {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   useShenoraEvent<ServiceConfirmationsTold>('DAORIS', 'SERVICE_CONFIRMATIONS', (told) => {
     const now = serviceOf(told);
-    const kept = client.getQueryData<ServiceRead>(keys.serviceTold);
+    const kept = client.getQueryData<ServiceConfirmationsTold>(keys.serviceTold);
     // Kept once this window has read, where it is newer: the bus may deliver one late, and the read may land after a telling.
-    if (!now || kept === undefined || kept === 'older') return;
+    if (!now || kept === undefined) return;
     if (now.seq !== null && kept.seq !== null && now.seq <= kept.seq) return;
-    client.setQueryData<ServiceRead>(keys.serviceTold, now);
+    client.setQueryData<ServiceConfirmationsTold>(keys.serviceTold, now);
   });
   const told = useQuery({
     queryKey: keys.serviceTold,
-    queryFn: async (): Promise<ServiceRead> => {
-      let answer: unknown;
-      try {
-        answer = await call<ServiceConfirmationsTold>('SERVICE_CONFIRMATIONS');
-      } catch (error) {
-        if (refusedNoRoute(error)) return 'older';
-        throw error;
-      }
-      const read = serviceOf(answer);
-      if (!read) return 'older';
-      const kept = client.getQueryData<ServiceRead>(keys.serviceTold);
-      return kept && kept !== 'older' && kept.seq !== null && read.seq !== null && kept.seq >= read.seq ? kept : read;
+    queryFn: async (): Promise<ServiceConfirmationsTold> => {
+      const read = serviceOf(await call<ServiceConfirmationsTold>('SERVICE_CONFIRMATIONS')) ?? { seq: null, waiting: [] };
+      const kept = client.getQueryData<ServiceConfirmationsTold>(keys.serviceTold);
+      return kept && kept.seq !== null && read.seq !== null && kept.seq >= read.seq ? kept : read;
     },
     enabled: isAvailable && held,
     // The telling keeps it current: nothing asks again by itself.
@@ -152,11 +140,11 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
   const polled = useQuery({
     queryKey: keys.serviceAsks,
     queryFn: ({ signal }) => api.confirmations(signal),
-    enabled: held && (!isAvailable || told.data === 'older'),
+    enabled: held && !isAvailable,
     refetchInterval: 5_000,
     retry: false,
   });
-  const list = told.data && told.data !== 'older' ? told.data.waiting : polled.data;
+  const list = told.data ? told.data.waiting : polled.data;
   return { waiting: (list ?? []).filter((each) => each.state === 'waiting').map((each): Confirmation => ({
     source: 'service',
     id: each.id,

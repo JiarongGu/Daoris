@@ -663,7 +663,6 @@ describe('the real glossary and catalogues', () => {
       // 远端 is the glossary's own word for a Daoris remote, which this sentence means; git remote's entry avoids it (FABRIC-CLOSE1i2).
       'projects.workspace.machines.none:zh',
       'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
-      'settings.home.hint:en', 'settings.home.hintOverridden:en', 'settings.home.hintThisStart:en',
       // COWORKVIEW1a: a subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
       'work.atWork.child.finished:zh',
     ]);

@@ -398,12 +398,10 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
  * *Change…*; a kind whose entry lies on another volume says that volume on its row, and a kind the floor frees early says so.
  *
  * @remarks
- * A molecule: drawn from props, so every state is reachable without a shell. `space` absent is the first load; `older` a shell that
- * answers no `SYSTEM_SPACE`.
+ * A molecule: drawn from props, so every state is reachable without a shell. `space` absent is the first load.
  */
-export function WiringSpace({ space, older = false, busy = false, onCount, downloads, onDownloads, onKeep, editing: opened, onFreeUp, freeing }: {
+export function WiringSpace({ space, busy = false, onCount, downloads, onDownloads, onKeep, editing: opened, onFreeUp, freeing }: {
   space?: SystemSpace;
-  older?: boolean;
   busy?: boolean;
   /** Count the kinds named, or every kind. */
   onCount: (kinds?: string[]) => void;
@@ -422,13 +420,6 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
   const { t } = useTranslation();
   const [editing, setEditing] = useState<string | null>(opened ?? null);
   const title = t('settings.daoris.card.space');
-  if (older) {
-    return (
-      <WiringCard id="settings-daoris-space" title={title}>
-        <p className="m-0 py-2 text-small text-ink-soft">{t('settings.daoris.space.older')}</p>
-      </WiringCard>
-    );
-  }
   if (!space) {
     return (
       <div aria-busy="true">

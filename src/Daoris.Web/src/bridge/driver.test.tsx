@@ -22,7 +22,6 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { keys } from '../data/queries';
-import { refusedNoRoute } from './call';
 import { useDriverReady, useNudge, usePlaces, useRoleStructure, useRoleStructureChain, useSyncNow } from './driver';
 import { useLines } from './repositories/lines';
 
@@ -117,9 +116,9 @@ describe('the driver domain', () => {
 
   /**
    * COMPANYVIEW1c: the roles' structure is asked by event naming its places and works, under the driver's key, and read field by field,
-   * a part the shell left out read as none; a shell that does not know the route stays the query's error, so *not offered* is told apart.
+   * a part the shell left out read as none.
    */
-  it('the roles structure is asked by event naming its places, and an older shell is the query error', async () => {
+  it('the roles structure is asked by event naming its places', async () => {
     const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
@@ -146,15 +145,10 @@ describe('the driver domain', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ROLE_STRUCTURE', {
       payload: { chain: { workspace: 'aurora', repository: 'engine' }, works: ['build'], held: expect.any(String) },
     });
-
-    invoke.mockImplementation(async () => { throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }); });
-    const older = renderHook(() => useRoleStructure([]), { wrapper: wrapper(new QueryClient({ defaultOptions: { queries: { retry: false } } })) });
-    await waitFor(() => expect(older.result.current.isError).toBe(true));
-    expect(refusedNoRoute(older.result.current.error)).toBe(true);
   });
 
-  /** AGENTSPLACE1a: the places by event, a part the shell left out read as none, and an older shell the query error. */
-  it('the places are asked by event with their page and fold, and an older shell is the query error', async () => {
+  /** AGENTSPLACE1a: the places by event, and a part the shell left out read as none. */
+  it('the places are asked by event with their page and fold', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
     invoke.mockImplementation(async () => ({
@@ -171,12 +165,5 @@ describe('the driver domain', () => {
     expect(result.current.data?.workspaces[0]).toMatchObject({ driven: 1, notDriven: 41 });
     expect(result.current.data?.repositories[0].needs).toEqual([]);
     expect(result.current.data?.undriven).toBeNull();
-
-    invoke.mockImplementation(async () => { throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }); });
-    const older = renderHook(() => usePlaces(), { wrapper: ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>
-    ) });
-    await waitFor(() => expect(older.result.current.isError).toBe(true));
-    expect(refusedNoRoute(older.result.current.error)).toBe(true);
   });
 });

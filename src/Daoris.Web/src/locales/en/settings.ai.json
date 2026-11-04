@@ -65,7 +65,6 @@
   "settings.ai.roles.open": "Open Roles",
   "settings.ai.roles.body": "Each role takes one kind of work in one place: this machine, a workspace or a repository. A start takes the role of its most specific place and runs on the first of its choices that can run, in your order, saying so when it took a later one; Brainstorm runs all its choices at once. A work no role takes waits until you give it one; running work goes on.",
   "settings.ai.roles.unkept": "This home keeps no role catalogue yet, so no role can be changed here until Daoris has started on it.",
-  "settings.ai.roles.notOffered": "Not offered by this shell: each role's order is shown below, and none can be changed here.",
   "settings.ai.roles.readFailed": "The roles could not be read, so the catalogue is not shown; try again in a moment.",
   "settings.ai.roles.none": "No role is set yet.",
   "settings.ai.roles.useDefault": "Use the default",

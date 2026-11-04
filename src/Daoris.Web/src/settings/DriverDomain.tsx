@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import {
   useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useUpdateState,
 } from '../bridge/shell';
-import { useSystemWiring } from '../bridge/system';
 import { failure } from '../design/ui';
 import { sentence } from '../locales/format';
 import { DriverCards } from './DriverCards';
@@ -35,10 +34,6 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   // The catalogue the Plugins place reads, for its folder and its plugins' settings. An older shell names none, and the row is absent.
   const plugins = usePlugins();
   const pluginsFolder = typeof plugins.data?.folder === 'string' ? plugins.data.folder : null;
-  // Whether this shell answers This Daoris's read (WIRING1c): by its schema, so an older shell's refusal and a stranger's
-  // answer both leave the row as it was. The open asks no measure, so it walks no folder.
-  const wiring = useSystemWiring();
-  const placeAnswers = typeof wiring.query.data?.schema === 'number';
   const setNotify = useSetNotify();
   const setCoolOff = useSetCoolOff();
   const setCap = useSetCap();
@@ -54,10 +49,6 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
     <DriverCards
       facts={{
         home: driver.data?.home,
-        homeAccount: driver.data?.homeAccount,
-        homeNotice: driver.data?.homeNotice,
-        hostNotice: driver.data?.hostNotice,
-        placeAnswers,
         pluginsFolder,
         plugins: plugins.data?.plugins ?? null,
         notify: driver.data?.notify ?? true,

@@ -1,6 +1,5 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { refusedNoRoute } from '../../bridge/shell';
 import { useRoleStructureChain } from '../../bridge/driver';
 import type { RolePolicyRow, RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
 import { Button, Icon, type Notify, SettingList, SettingRow } from '../../design/ui';
@@ -62,7 +61,7 @@ function ChoiceLine({ work, policy, role }: { work: StructureWork; policy?: Role
 export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceAsk; notify: Notify; onSource?: SourceDoor }) {
   const editor = useRoleEditing(notify);
   const chain = useRoleStructureChain(place);
-  const read = chain.data ? 'ok' : chain.isError ? (refusedNoRoute(chain.error) ? 'notOffered' : 'failed') : 'loading';
+  const read = chain.data ? 'ok' : chain.isError ? 'failed' : 'loading';
   // A workspace's supervisor is a line among its roles (SETUPUX1v, moved from the Setup tab): its door is the Appointed row beneath it.
   const supervisor = kindOf(place) === 'workspace'
     ? <PlaceSupervisor workspace={place.workspace!} onOpenAppointed={bringAppointed} />
@@ -94,8 +93,8 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
   supervisor?: ReactNode;
   /** Told where a role placed above the place is pressed: its source mark is a door to the place that sets it. */
   onSource?: SourceDoor;
-  /** The chain's read: its rows, not read yet, not offered by this shell, or failed. */
-  read: 'ok' | 'loading' | 'notOffered' | 'failed';
+  /** The chain's read: its rows, not read yet, or failed. */
+  read: 'ok' | 'loading' | 'failed';
   answer: RoleStructure | null;
   editor: PlaceRoleEditor;
   /** The place's appointed roles, drawn under the works. */
@@ -256,7 +255,6 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
   return (
     <div className="grid gap-3">
       {read === 'loading' && <p className="m-0 text-small text-ink-soft">{t('agents.roles.reading')}</p>}
-      {read === 'notOffered' && <p className="m-0 text-small text-ink-soft">{t('agents.roles.notOffered')}</p>}
       {read === 'failed' && <p role="alert" className="m-0 text-small text-ink-soft">{t('agents.roles.readFailed')}</p>}
       {answer?.catalogue && <p role="alert" className="m-0 text-small text-ink-soft">{t('agents.roles.catalogueFailed', { why: answer.catalogue.why })}</p>}
       {catalogue && !kept && <p className="m-0 text-small text-ink-soft">{t('settings.ai.roles.unkept')}</p>}

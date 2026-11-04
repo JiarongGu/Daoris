@@ -15,14 +15,3 @@ export function WiringHead({ kind }: { kind: string | null | undefined }) {
     </p>
   );
 }
-
-/**
- * A shell older than the page (§7): it answers the route `NO_ROUTE`, so there is nothing to draw but this line. Driver's
- * home row is what the shell can show, and the page says where it is.
- */
-export function WiringOlder() {
-  const { t } = useTranslation();
-  return (
-    <p className="m-0 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">{t('settings.daoris.older')}</p>
-  );
-}

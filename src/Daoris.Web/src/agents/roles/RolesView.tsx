@@ -1,7 +1,7 @@
 import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useDriver, useHarnesses, useLines, usePlugins, useRoles,
+  helpModeOf, standingOf, useAccounts, useActors, useDriver, useHarnesses, useLines, usePlugins, useRoles,
   useSetRole, useSetRoles, useStarts, useWorkflowCurrents, type RoleChangePress,
 } from '../../bridge/shell';
 import { useRegistry } from '../../data/queries';
@@ -56,8 +56,8 @@ export function useRoleEditing(notify: Notify) {
 
   // The role catalogue, each change the person's press over SET_ROLE, judged by the driver's role door.
   const roles = useRoles();
-  // Why there is no catalogue: a shell older than the route says so by NO_ROUTE or by answering nothing; any other refusal is a failed read.
-  const read = roles.data ? 'ok' : roles.isError ? (refusedNoRoute(roles.error) ? 'notOffered' : 'failed') : roles.isSuccess ? 'notOffered' : 'loading';
+  // Why there is no catalogue: a refusal, or an answer that does not read, is a failed read.
+  const read = roles.data ? 'ok' : roles.isError || roles.isSuccess ? 'failed' : 'loading';
   const setRole = useSetRole();
   const pressRole = (press: RoleChangePress, answered: Answered) => {
     const row = roles.data?.roles.find((each) => each.id === press.id);
@@ -91,7 +91,7 @@ export function useRoleEditing(notify: Notify) {
     });
   };
   return {
-    harnesses, agents, offers, staffing, catalogue: roles.data ?? null, read: read as 'ok' | 'loading' | 'notOffered' | 'failed',
+    harnesses, agents, offers, staffing, catalogue: roles.data ?? null, read: read as 'ok' | 'loading' | 'failed',
     busy: setRole.isPending || setRoles.isPending, onSet: pressRole, onSetAll: pressRoles,
   };
 }
