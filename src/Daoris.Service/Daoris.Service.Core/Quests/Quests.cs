@@ -1983,80 +1983,13 @@ public sealed class QuestStore
             return chain;
         }, ct);
 
-    /// <summary>
-    /// Daoris read a done's evidence (EVID1a, D144 §3): an <see cref="QuestOperationKind.Evidenced"/> operation, judged
-    /// against the replayed history inside the write as every move is, so it applies only to a done still waiting on
-    /// exactly what it reads. Found, and nothing else holding the done, the chain's next step is published in the same
-    /// transaction, as the yes publishes one; missing, the done stays held, now for that. A commit read alone keeps the commit of a
-    /// submission that waits on no evidence, once, and publishes nothing (FABRIC-CLOSE1c6, <see cref="QuestEvidenceVerdict.KeepsCommitOf"/>).
-    /// </summary>
-    /// <returns>
-    /// The quest as it now stands, whether this call kept the verdict — false for a quest not waiting on what it reads —
-    /// and the step it published; a null quest means no such id.
-    /// </returns>
+    /// <inheritdoc cref="QuestEvidenceOperation.EvidenceAsync"/>
     public Task<QuestMove> EvidenceAsync(string id, QuestEvidenceVerdict verdict, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } quest)
-            {
-                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
-            }
+        WriteAsync(tx => Operations.Of<QuestEvidenceOperation>().EvidenceAsync(tx, id, verdict, now), ct);
 
-            var read = verdict with { At = null, Machine = null };
-            if (!QuestLog.Applies(quest, new QuestOperation(id, QuestOperationKind.Evidenced, Machine, 0, now, Evidence: read)))
-            {
-                return new QuestMove(quest, Moved: false);
-            }
-
-            var operation = await AppendAsync(
-                id, QuestOperationKind.Evidenced, now, note: null, published: null, transaction, inside, evidence: read)
-                .ConfigureAwait(false);
-            var evidenced = QuestLog.Step(quest, operation)!;
-            await WriteCacheAsync(evidenced, transaction, inside).ConfigureAwait(false);
-            // FABRIC-CLOSE1c6: a commit read alone kept the commit of a submission nothing held for it, so it lets nothing go.
-            return new QuestMove(
-                evidenced, Moved: true,
-                evidenced.Held || read.Items.Count == 0 ? null : await PublishNextAsync(evidenced, now, transaction, inside).ConfigureAwait(false));
-        }, ct);
-
-    /// <summary>
-    /// Its taker waits on a question it asked another repository (D79): a <see cref="QuestOperationKind.Waited"/>
-    /// operation naming the question, judged against the replayed history inside the write, as every
-    /// move is. It moves no status.
-    /// </summary>
-    /// <returns>
-    /// The quest as it now stands and whether this call marked it; a null quest means no such id. Refused with
-    /// <see cref="QuestMove.ClaimLost"/> where this machine's take on the quest lost (WAITCLAIM2).
-    /// </returns>
+    /// <inheritdoc cref="QuestWaitOperation.WaitAsync"/>
     public Task<QuestMove> WaitAsync(string id, string on, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } quest)
-            {
-                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
-            }
-
-            // Judged before anything is written: only a taken quest waits (QuestLog.Applies), and a wait
-            // the log held but the quest did not show would be a move nobody could see.
-            if (quest.Status != QuestStatus.Taken || string.IsNullOrWhiteSpace(on))
-            {
-                return new QuestMove(quest, Moved: false);
-            }
-
-            // A wait on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
-            if (QuestLog.OnALostTake(quest, history, new QuestOperation(id, QuestOperationKind.Waited, Machine, 0, now, on)))
-            {
-                return new QuestMove(quest, Moved: false) { ClaimLost = true };
-            }
-
-            var operation = await AppendAsync(
-                id, QuestOperationKind.Waited, now, on, null, transaction, inside).ConfigureAwait(false);
-            var waiting = QuestLog.Step(quest, operation)!;
-            await WriteCacheAsync(waiting, transaction, inside).ConfigureAwait(false);
-            return new QuestMove(waiting, Moved: true);
-        }, ct);
+        WriteAsync(tx => Operations.Of<QuestWaitOperation>().WaitAsync(tx, id, on, now), ct);
 
     /// <inheritdoc cref="QuestDismissOperation.DismissAsync"/>
     public Task<QuestDismissal> DismissAsync(
@@ -3448,10 +3381,6 @@ public sealed class QuestStore
             // FABRIC-CLOSE1c15, and the person's go-on: a plain one.
             WhileOpen = JudgedOpen(kind)
                         && payload.TryGetProperty("whileOpen", out var open) && open.ValueKind == System.Text.Json.JsonValueKind.True,
-            // An evidenced operation's verdict (EVID1a), which this store wrote only after the exchange judged it.
-            Evidence = kind == QuestOperationKind.Evidenced && payload.TryGetProperty("evidence", out var found)
-                ? QuestEvidenceVerdict.Judged(found)
-                : null,
             // A rebind's submission (FABRIC-CLOSE1c), which this store wrote whole. A take's, absent from every take before
             // FABRIC-CLOSE1c18 and from one of a quest with no source: a take judged as before.
             Submission = Carries(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
@@ -3574,13 +3503,6 @@ public sealed class QuestStore
         {
             writer.WritePropertyName("answers");
             WriteAnswers(writer, answers);
-        }
-
-        // Only on an evidenced operation (EVID1a): its when and machine are the operation's own columns.
-        if (kind == QuestOperationKind.Evidenced && operation.Evidence is { } evidence)
-        {
-            writer.WritePropertyName("evidence");
-            evidence.Write(writer);
         }
 
         // Only on a rebind or a take (FABRIC-CLOSE1c, FABRIC-CLOSE1c18), for the lanes' reason: every other operation reads as it did.

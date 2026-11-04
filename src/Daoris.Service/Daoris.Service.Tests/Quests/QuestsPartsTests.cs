@@ -19,7 +19,8 @@ public sealed class QuestsPartsTests
         var operations = QuestOperations.Registered;
 
         Assert.Equal(
-            ["accepted", "chosen", "conflict", "dismissed", "done", "reopened", "setup", "verdict"], operations.Order.Select(part => part.Name));
+            ["accepted", "chosen", "conflict", "dismissed", "done", "evidenced", "reopened", "setup", "verdict", "waited"],
+            operations.Order.Select(part => part.Name));
         Assert.All(operations.Order, part => Assert.Equal(QuestOperationPhase.Log, (QuestOperationPhase)part.Phase));
         Assert.All(operations.Order, part => Assert.Equal(part.Name, QuestStore.KindText(Enum.Parse<QuestOperationKind>(part.Name, ignoreCase: true))));
         Assert.IsType<QuestAcceptOperation>(operations.For(QuestOperationKind.Accepted));
@@ -100,6 +101,12 @@ public sealed class QuestsPartsTests
     public void A_yes_writes_nothing_but_an_empty_payload_as_before_and_reads_back_as_itself()
     {
         AssertKept("""{}""", new QuestOperation("q1", QuestOperationKind.Accepted, "m1", 7, At));
+    }
+
+    [Fact]
+    public void A_wait_writes_the_question_it_waits_on_as_its_note_as_before_and_reads_it_back()
+    {
+        AssertKept("""{"note":"ab12cd34ef56"}""", new QuestOperation("q1", QuestOperationKind.Waited, "m1", 8, At, "ab12cd34ef56"));
     }
 
     /// <summary>The payload the store writes for <paramref name="operation"/>, and the operation a row of it reads back as.</summary>
