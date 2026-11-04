@@ -31,12 +31,6 @@ export function readAgentsMode(): AgentsMode {
   return isAgentsMode(kept) ? kept : 'agents';
 }
 
-/**
- * Whether Setup shows its tree of places. Dark until the places' pages carry the Roles, Workflow and Sessions sections (AGENTSPLACE1g):
- * until then the mode shows the Roles sections, so nothing usable is lost. Lit by `daoris.agents.setup` set to `on`.
- */
-export const setupLit = (): boolean => stored('daoris.agents.setup') === 'on';
-
 /** The ids of Setup's places, as its list chooses them and a door names them (AGENTSPLACE1e, 1f): this machine, a workspace, a repository. */
 export const MACHINE = 'machine';
 export const workspaceId = (workspace: string) => `workspace:${workspace}`;

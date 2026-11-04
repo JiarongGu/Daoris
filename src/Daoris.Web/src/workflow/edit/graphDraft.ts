@@ -15,7 +15,7 @@ export type StepChoice = {
   kind: string; version: number; reach: string; plugin: string | null; outcomes: string[]; outputsOn: Record<string, string[]>;
   inputs: Record<string, string>; outputs: Record<string, string>; evidence: string | null; rejectable: boolean; skippable: boolean; leaves: string[];
   options: OptionField[]; roleTakes: string[]; mayEnd: boolean;
-  /** How the picker offers it, as the palette says: `alone`, `tail:<method>` or `retired`. */
+  /** How the picker offers it, as the palette says: `alone` or `tail:<method>`. */
   offered: string;
 };
 

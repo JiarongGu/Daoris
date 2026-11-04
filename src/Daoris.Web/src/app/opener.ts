@@ -218,15 +218,15 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
  *
  * `workspaceOfRepository` answers the workspace a repository sits in, as the registry holds it.
  */
-export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository: (repository: string) => string): Opening {
+export function placeOpening(plan: Opening, workspaceOfRepository: (repository: string) => string): Opening {
   // SETUPUX1m: the Roles mode's doors name This machine's page. Appointed roles is its Roles section's row; the lists of Working roles, Work,
   // Accounts and By repository are All roles; a door naming the mode alone opens the page at Roles.
-  if (lit && plan.view === 'agents' && plan.agentsMode === 'setup' && !plan.place) {
+  if (plan.view === 'agents' && plan.agentsMode === 'setup' && !plan.place) {
     const { roleSection: _section, ...rest } = plan;
     const at: PlaceAt = plan.roleSection === 'appointed' ? { section: 'roles', row: 'appointed' } : plan.roleSection ? { section: 'allRoles' } : { section: 'roles' };
     return { ...rest, place: MACHINE, placeAt: at };
   }
-  if (!lit || plan.view !== 'projects') return plan;
+  if (plan.view !== 'projects') return plan;
   // AGENTSPLACE1k: Ask Daoris's set-up card opens the place's page with its ask, a repository's or the workspace's the repositories are in.
   if (plan.setUp && plan.chosen?.view === 'projects') {
     const named = projectsItem(plan.chosen.item);

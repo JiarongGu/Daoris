@@ -38,7 +38,7 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import { useListPanes } from '../work/frame/listPanes';
 import { ViewFrame } from '../work/frame/ViewFrame';
 import { useDoor } from '../test/door';
-import { DECLARED } from '../test/publishing';
+import { PUBLISHES } from '../bridge/generated/routes';
 import { usePluginsView } from './PluginsView';
 
 const GATE = {
@@ -80,7 +80,7 @@ function wire() {
       const answered = route(args?.payload ?? {});
       // What the plugin presses declare they change (`PluginsRoutes`), published once the route has answered, as `StatePublisher`
       // does, so the view reads its catalogue again through the state hub, not the hook.
-      const declared = module === 'DAORIS.DRIVER' ? DECLARED[type] : undefined;
+      const declared = module === 'DAORIS.DRIVER' ? PUBLISHES[module]?.[type] : undefined;
       if (declared) setTimeout(() => hub.heard?.({ scopes: declared.scopes }), 0);
       return answered;
     }

@@ -60,7 +60,6 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(variant.Contains("look"), kinds.Contains("look"));
         // LANDNODE1h: the preset holds a `land`, and the tail its method brings.
         var land = Assert.Single(version.Graph.Nodes, node => node.Kind == NodeKinds.Land);
-        Assert.DoesNotContain(NodeKinds.Handed, kinds);
         Assert.Equal(preset == "pull-request" ? "\"pull-request\"" : "\"integrate\"", land.Options["method"]);
         Assert.Equal(preset == "pull-request", kinds.Contains(NodeKinds.PullRequest) && kinds.Contains(NodeKinds.Pushed));
         Assert.Equal(preset != "pull-request", kinds.Contains(NodeKinds.Integrate));

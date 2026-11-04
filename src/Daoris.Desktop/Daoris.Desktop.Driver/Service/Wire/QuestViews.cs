@@ -143,7 +143,7 @@ public static class QuestViews
         Links = [.. (quest.Links ?? []).OfType<string>()],
         // The service answers a path only to this machine, and only where the bytes are here.
         Attachments = [.. (quest.Attachments ?? []).OfType<QuestAttachmentResponse>().Select(file => new QuestFileView(file.Name ?? "", file.Sha256 ?? "", file.Bytes, file.Path))],
-        Then = [.. (quest.Then ?? []).OfType<QuestStepWire>().Select(step => new QuestStepView(step.To ?? "", step.Title ?? "", step.Body ?? "") { SetUpIn = step.SetUpIn })],
+        Then = [.. (quest.Then ?? []).OfType<QuestStepResponse>().Select(step => new QuestStepView(step.To ?? "", step.Title ?? "", step.Body ?? "") { SetUpIn = step.SetUpIn })],
         Parent = quest.Parent,
         Holder = Named(quest.Holder),
         Here = Named(quest.Here),
@@ -164,7 +164,7 @@ public static class QuestViews
         Hold = Named(quest.Hold),
         AwaitsEvidence = quest.AwaitsEvidence,
         Evidence = VerdictOf(quest.Evidence),
-        Answers = [.. (quest.Answers ?? []).OfType<QuestAnswerWire>().Select(a => new QuestAnswerView(a.Requirement ?? 0, a.Met, a.Departed, a.Quote))],
+        Answers = [.. (quest.Answers ?? []).OfType<QuestAnswerResponse>().Select(a => new QuestAnswerView(a.Requirement, a.Met, a.Departed, a.Quote))],
         Updated = Moment(quest.Updated),
         Review = quest.Review is { Choice: { Length: > 0 } choice } review ? new QuestReviewChoiceView(choice, review.Words) : null,
         SetUpIn = quest.SetUpIn,
@@ -207,9 +207,9 @@ public static class QuestViews
     };
 
     /// <summary>A requirement's evidence, each item exactly one of a path or a gate; an item naming both or neither is half of a fact, none.</summary>
-    internal static IReadOnlyList<QuestEvidenceItem> EvidenceOf(QuestRequirementWire? requirement)
+    internal static IReadOnlyList<QuestEvidenceItem> EvidenceOf(QuestRequirementResponse? requirement)
     {
-        var read = (requirement?.Evidence ?? []).OfType<QuestEvidenceWire>()
+        var read = (requirement?.Evidence ?? []).OfType<QuestEvidenceResponse>()
             .Select(item => new QuestEvidenceItem(item.Path, item.Gate))
             .Where(item => (item.Path is null) != (item.Gate is null))
             .ToList();
@@ -217,7 +217,7 @@ public static class QuestViews
     }
 
     /// <summary>What was last read of a done's evidence, or null: none, or one whose commit, how or any item does not read.</summary>
-    internal static EvidenceVerdict? VerdictOf(QuestEvidenceVerdictWire? verdict)
+    internal static EvidenceVerdict? VerdictOf(QuestEvidenceVerdictResponse? verdict)
     {
         if (verdict is not { Commit: { } commit, How: { } how, Items: { } items } || !EvidenceCodes.IsObjectId(commit) || !EvidenceCodes.How.Contains(how))
         {
@@ -241,7 +241,7 @@ public static class QuestViews
     }
 
     // A person's or the driver's move on one quest: its sentence, a refusal's included, and a host older than the door said to be.
-    private static async Task<(bool Ok, string Message)> MovedAsync(
+    internal static async Task<(bool Ok, string Message)> MovedAsync(
         this ServiceClient service, IRoute<QuestActionResponse> route, string door, CancellationToken ct, string? named = null)
     {
         var sent = await service.SendAsync(route, ct).ConfigureAwait(false);
@@ -252,7 +252,7 @@ public static class QuestViews
     }
 
     // A refusal's sentence, else its text; null where the host answered no JSON at all, an older host's bare 404 or 405.
-    private static string? Error<T>(Sent<T> sent) where T : class
+    internal static string? Error<T>(Sent<T> sent) where T : class
     {
         try
         {
@@ -276,6 +276,6 @@ public static class QuestViews
 
     private static DateTimeOffset? Moment(DateTimeOffset? at) => at == default(DateTimeOffset) ? null : at;
 
-    private static QuestSubmissionRef? RefOf(QuestSubmissionRefWire? named) =>
+    private static QuestSubmissionRef? RefOf(QuestSubmissionRefResponse? named) =>
         named is { Machine: { Length: > 0 } machine, Sequence: > 0 and var sequence } ? new QuestSubmissionRef(machine, sequence) : null;
 }

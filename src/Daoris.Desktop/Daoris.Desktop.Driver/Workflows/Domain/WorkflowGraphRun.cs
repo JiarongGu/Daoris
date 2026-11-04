@@ -375,7 +375,7 @@ public static class WorkflowGraphRuns
             NodeKinds.Claimed => (WorkflowKinds.Work, WorkflowParticipation.Agent, WorkflowExecutor.Agent, (string?)null),
             NodeKinds.Opinion => (WorkflowKinds.Opinion, WorkflowParticipation.Agent, WorkflowExecutor.Agent, null),
             NodeKinds.Look => (WorkflowKinds.Look, WorkflowParticipation.AgentAndYou, WorkflowExecutor.Agent, WorkflowPress.Reviewed),
-            NodeKinds.Handed or NodeKinds.Land => (WorkflowKinds.Landing, automatic ? WorkflowParticipation.Automatic : WorkflowParticipation.You, WorkflowExecutor.Daoris,
+            NodeKinds.Land => (WorkflowKinds.Landing, automatic ? WorkflowParticipation.Automatic : WorkflowParticipation.You, WorkflowExecutor.Daoris,
                 automatic ? null : WorkflowPress.Accept),
             NodeKinds.PullRequest => (WorkflowKinds.PullRequest, WorkflowParticipation.You, WorkflowExecutor.Plugin, WorkflowPress.Merge),
             NodeKinds.GoAhead => (WorkflowKinds.GoAhead, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),

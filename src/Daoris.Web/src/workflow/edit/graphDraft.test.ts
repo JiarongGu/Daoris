@@ -627,8 +627,7 @@ describe('an input is proposed from the step it is routed from, and asked where 
 
 // WORKFLOWCLEAN1 1b: the palette says how each kind is offered, and the page keeps no list of its own.
 describe('how the palette offers each kind', () => {
-  it('reads `offered` from the palette: handed retired, a landing\'s tail with its method, every other step alone', () => {
-    expect(choice('handed').offered).toBe('retired');
+  it('reads `offered` from the palette: a landing\'s tail with its method, every other step alone', () => {
     expect([choice('pushed').offered, choice('pull-request').offered, choice('integrate').offered]).toEqual(['tail:push', 'tail:pull-request', 'tail:integrate']);
     expect(['claimed', 'review', 'land', 'line', 'check'].map((kind) => choice(kind).offered)).toEqual(Array(5).fill('alone'));
     expect(choice('local-release/find').offered).toBe('alone');
@@ -637,9 +636,5 @@ describe('how the palette offers each kind', () => {
   it('reads a palette without the field as offering everything alone', () => {
     const older = { ...PALETTE, kinds: PALETTE.kinds.map(({ offered: _offered, ...rest }) => rest) };
     expect(stepChoices(older).every((each) => each.offered === 'alone')).toBe(true);
-  });
-
-  it('keeps a retired kind a node already holds drawn: the palette still answers for it', () => {
-    expect(choiceOf(PALETTE, 'handed')).not.toBeNull();
   });
 });

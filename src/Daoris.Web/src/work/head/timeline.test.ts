@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { readEvidence, sessionTimeline } from './timeline';
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -13,7 +14,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

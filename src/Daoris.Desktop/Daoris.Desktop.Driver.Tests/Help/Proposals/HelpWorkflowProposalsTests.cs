@@ -249,7 +249,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
             $$$"""
             {"schemaVersion":2,"entries":["claim"],"end":"merge-in",
              "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
-                      {"id":"land","kind":"handed","version":1,"reach":"observed","options":{{{landing}}}},
+                      {"id":"land","kind":"land","version":1,"reach":"performed","options":{{{landing}}}},
                       {"id":"merge-in","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}}],
              "wires":[{"id":"a","kind":"after","from":"claim","to":"land"},{"id":"b","kind":"after","from":"land","to":"merge-in"}]}
             """)!);

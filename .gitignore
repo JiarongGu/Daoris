@@ -60,6 +60,7 @@ tools/contracts/obj/
 # shell host exactly the same bytes. The source is `src/Daoris.Web`; this is what vite made of it.
 src/Daoris.Service/Daoris.Service.Http/wwwroot/
 
-# The page's types for the service's routes, written from src/Daoris.Contracts by `tools/contracts.mjs` in each checkout
-# (the web's pre-scripts write it when stale), so a contract changes in one place.
+# The page's types for the service's routes and the window's, written from src/Daoris.Contracts and the desktop modules' marks
+# by `tools/contracts.mjs` in each checkout (the web's pre-scripts write them when stale), so a contract changes in one place.
 src/Daoris.Web/src/data/generated/
+src/Daoris.Web/src/bridge/generated/

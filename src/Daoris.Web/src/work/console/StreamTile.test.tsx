@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 import { StreamTile } from './StreamTile';
 
 // A molecule, so every state is reached by PASSING it (components plan §2) — including the one
@@ -19,7 +20,7 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
-const quest = (over: Partial<Quest> = {}): Quest => ({
+const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   id: '7a82cc',
   from: 'platform',
   to: 'engine',

@@ -1,10 +1,12 @@
 import type { Quest, QuestSetUp } from '../../data/api';
+import { aQuest } from '../../quests/aQuest';
 
 // A review's records as the host answers them (REVIEWENV1g): a chain's work quest and its set-up step in each state the gate
 // reads, for the stories and the tests. Neutral names only.
 
 /** The chain's work: done, in a repository whose rule asks for a review in `local`. */
 export const WORK: Quest = {
+  ...aQuest(),
   id: 'q1', from: 'ask:a1', to: 'reports', title: 'Add the compare setting to the report', body: 'Add the compare setting.',
   status: 'Done', filed: '2026-10-09T08:00:00Z', updated: '2026-10-09T09:00:00Z', workspace: 'aurora',
 };
@@ -34,6 +36,7 @@ export const SET_UP_AGAIN: QuestSetUp = {
 
 /** The set-up step, shown and waiting for the person's look. */
 export const STEP_SHOWN: Quest = {
+  ...aQuest(),
   id: 'q2', from: 'ask:a1', to: 'reports', title: 'Show #q1 in `local` for review',
   body: 'Set the work of #q1 up in `local` for the person\'s review.',
   status: 'Done', filed: '2026-10-09T09:05:00Z', updated: '2026-10-09T09:41:00Z', workspace: 'aurora', parent: 'q1',

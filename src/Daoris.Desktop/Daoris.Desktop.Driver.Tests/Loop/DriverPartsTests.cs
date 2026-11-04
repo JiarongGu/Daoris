@@ -28,15 +28,67 @@ public sealed class DriverPartsTests : IDisposable
         var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
 
         var order = driver.LookPasses.Order;
-        Assert.Equal(["sync", "claims", "landing"], order.Select(part => part.Name));
-        Assert.Equal([LookPhase.Before, LookPhase.Before, LookPhase.After], order.Select(part => (LookPhase)part.Phase));
+        Assert.Equal(
+            ["sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor", "landing"],
+            order.Select(part => part.Name));
+        Assert.Equal(
+            [LookPhase.Before, LookPhase.Before, .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 3), LookPhase.After],
+            order.Select(part => (LookPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
         Assert.Collection(
             driver.LookPasses.In(LookPhase.Before),
             pass => Assert.IsType<LookSync>(pass),
             pass => Assert.IsType<LostClaimStop>(pass));
+        Assert.Collection(
+            driver.LookPasses.In(LookPhase.Local),
+            pass => Assert.IsType<PluginReload>(pass),
+            pass => Assert.IsType<RuleSettling>(pass),
+            pass => Assert.IsType<WatchLook>(pass),
+            pass => Assert.IsType<MovedLines>(pass),
+            pass => Assert.IsType<TogetherSteps>(pass),
+            pass => Assert.IsType<WorkspacePlansLook>(pass));
+        Assert.Collection(
+            driver.LookPasses.In(LookPhase.Read),
+            pass => Assert.IsType<SnapshotLook>(pass),
+            pass => Assert.IsType<PausedLook>(pass),
+            pass => Assert.IsType<SupervisorLook>(pass));
         Assert.IsType<UnresolvedDeliveries>(Assert.Single(driver.LookPasses.In(LookPhase.After)));
+    }
+
+    [Fact]
+    public void The_state_refuses_a_read_before_the_pass_that_writes_it_and_carries_what_ended_as_the_look_handed_it()
+    {
+        List<SessionEnded> concluded = [];
+        var state = new LookState(concluded);
+
+        Assert.Equal(
+            "the look's Snapshot is written by the snapshot pass, which has not run before the pass reading it: that pass runs after snapshot",
+            Assert.Throws<InvalidOperationException>(() => state.Snapshot).Message);
+        Assert.Contains("written by the snapshot pass", Assert.Throws<InvalidOperationException>(() => state.Mark).Message);
+        Assert.Contains("written by the snapshot pass", Assert.Throws<InvalidOperationException>(() => state.ReservedBefore).Message);
+        Assert.Contains("written by the supervisor pass", Assert.Throws<InvalidOperationException>(() => state.Alone).Message);
+        Assert.Same(concluded, state.Concluded);
+
+        state.Mark = 0;
+        Assert.Equal(0, state.Mark);
+    }
+
+    [Fact]
+    public async Task The_read_phase_takes_the_starts_opening_and_the_mark_then_the_snapshot_and_leaves_the_supervisor_s_bound_for_the_look()
+    {
+        var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
+        var opening = new StartReservation("7", null, "engine", null);
+        Assert.True(driver.Context.Runs.TryReserve(opening));
+        var round = new LookRound(LookPart.Look, [], new LookState([]));
+
+        foreach (var pass in driver.LookPasses.In(LookPhase.Read)) await pass.RunAsync(round, CancellationToken.None);
+
+        Assert.Equal([opening], round.State.ReservedBefore);
+        Assert.Equal(driver.Context.Harnesses.Mark(), round.State.Mark);
+        Assert.Empty(round.State.Snapshot.Quests);
+        Assert.NotNull(round.State.Alone);
+        Assert.Empty(round.Events);
     }
 
     [Fact]

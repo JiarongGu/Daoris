@@ -24,6 +24,12 @@ internal interface ILookWiring
 
     SessionProcesses Processes { get; }
 
+    /// <summary>The sessions' event records.</summary>
+    SessionEvents Events { get; }
+
+    /// <summary>The watcher's look at the running sessions: its steps this look, each said as a line classed by <paramref name="said"/>.</summary>
+    IReadOnlyList<string> LookIn(LookSaid said);
+
     /// <summary>Each line the look says, classed where it is made.</summary>
     LookSaid Lines { get; }
 
@@ -38,4 +44,16 @@ internal interface ILookWiring
 
     /// <summary>A test's stand-in for stopping a session whose take lost; null stops its process.</summary>
     Func<string, Noted, bool>? Stops { get; }
+
+    /// <summary>The harnesses, whose roster marks the starts chosen while a look reads its records.</summary>
+    HarnessRoster Harnesses { get; }
+
+    /// <summary>The supervisor's decisions on this machine's records.</summary>
+    QuestionSupervisorDecisions Supervisor { get; }
+
+    /// <summary>What a session's waiting words are left waiting by.</summary>
+    GoOnMarks Marks { get; }
+
+    /// <summary>The machine log, or null where nothing keeps one.</summary>
+    MachineLog? Log { get; }
 }

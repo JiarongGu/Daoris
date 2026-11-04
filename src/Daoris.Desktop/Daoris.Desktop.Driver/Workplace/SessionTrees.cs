@@ -715,13 +715,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivery? delivery = null) =>
         new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beforePush, beside, delivery);
 
-    /// <inheritdoc cref="EntryLands.LandAsync"/>
-    public Task<EntryLanding> LandEntryAsync(
-        IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>
-        Entries.LandAsync(parts, subject, leaveOut, ct, inUse, together, beside);
-
     /// <inheritdoc cref="TreeReturns.EnsureAsync"/>
     public Task<TreeStanding> EnsureAsync(string root, string tree, CancellationToken ct = default) => Returns.EnsureAsync(root, tree, ct);
 

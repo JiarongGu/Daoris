@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
-import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, type UseMutationResult, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
 import type {
-  KeepSet, PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleChangePress, RoleStructure, StructurePlaceAsk,
+  PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleChangePress, RoleStructure, StructurePlaceAsk,
 } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
@@ -11,7 +11,6 @@ import type { AccessLevel } from '../settings/repository/Access';
 import type { GitAccessLevel } from '../settings/repository/GitAccess';
 import type { CommitRule } from '../settings/repository/Commits';
 import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
-import type { SessionChecksValue } from '../settings/repository/SessionChecks';
 import type { HelperRule } from '../settings/repository/Helpers';
 import type { HandOverRule } from '../settings/repository/HandOver';
 import type { LandingRule } from '../settings/repository/Landings';
@@ -21,7 +20,8 @@ import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
 import type { ReviewShown } from '../work/gates/ReviewChip';
 import { type HeavySlot, readHeavySlot } from '../work/heavySlot';
-import { call, refusedNotReady } from './call';
+import { type ByHandRoute, call, type Payload, refusedNotReady, type TypedRoute } from './call';
+import type { DriverRoute } from './generated/routes';
 import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
 import { askHeld } from './state/held';
 
@@ -398,43 +398,42 @@ export const useTrustFolder = () => useMutation({
 });
 
 /**
- * One mutation shape for the standing choices, these and the rules' (`bridge/repositories/lines.ts`): edit the file, and the loop looks now,
- * not at the poll. The window that pressed writes the state it was answered; the route publishes the change, and every window's
- * state hub asks the driver's state and what is read under its key again (STATEHUB1h, D169).
+ * One mutation shape for the standing choices, these and the rules' (`bridge/repositories/lines.ts`): edit the file, and the loop
+ * looks now. The window that pressed writes the state it was answered; every window's state hub asks again on the route's change.
  */
-export function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {
+export function useDriverChange<R extends TypedRoute>(type: R): UseMutationResult<DriverState, Error, Payload<R>>;
+export function useDriverChange<TVariables extends Record<string, unknown>>(type: ByHandRoute): UseMutationResult<DriverState, Error, TVariables>;
+export function useDriverChange(type: DriverRoute): UseMutationResult<DriverState, Error, Record<string, unknown>> {
   const client = useQueryClient();
+  // The overloads type each caller's payload, and the bridge sends either form alike; a standing choice answers the driver's state.
+  const route = type as ByHandRoute;
   return useMutation({
-    mutationFn: (variables: TVariables) => call<DriverState>(type, variables),
+    mutationFn: (variables: Record<string, unknown>) => call<DriverState>(route, variables),
     onSuccess: (state) => writeAnswered(client, state),
   });
 }
 
 /**
- * Whether this machine says so when a session parks or ends unasked (SURF5b).
- *
- * @remarks
- * The same `driver.json` field `daoris settings notify on|off` edits — D50's two doors onto one
- * truth, like every other control here. It governs the JUDGEMENT rather than the toast, which is
- * why a headless machine honours it too.
+ * Whether this machine says so when a session parks or ends unasked: the field `daoris settings notify on|off` edits. It governs
+ * the judgement rather than the toast, which is why a headless machine honours it too.
  */
-export const useSetNotify = () => useDriverChange<{ notify: boolean }>('SET_NOTIFY');
+export const useSetNotify = () => useDriverChange('SET_NOTIFY');
 
 /**
  * How long an account cools when its agent names no time (TOOL4g, D125 §2.2): whole minutes, at least one, the same
  * `cooloff` `daoris settings cooloff <minutes>` edits; less than one is the driver's refusal.
  */
-export const useSetCoolOff = () => useDriverChange<{ minutes: number }>('SET_COOLOFF');
+export const useSetCoolOff = () => useDriverChange('SET_COOLOFF');
 
 /** How many sessions Daoris starts at once (CAPSET1): the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
-export const useSetCap = () => useDriverChange<{ cap: number }>('SET_CAP');
+export const useSetCap = () => useDriverChange('SET_CAP');
 
 /**
  * One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2): the same `keep` `daoris settings keep` edits. A value out of its
  * kind's bounds is the driver's `KEEP_OUT_OF_RANGE`, said under the row's editor. It declares the wiring with the state, so the card
  * reads its rules again.
  */
-export const useSetKeep = () => useDriverChange<KeepSet>('SET_KEEP');
+export const useSetKeep = () => useDriverChange('SET_KEEP');
 
 /**
  * *Try again* (RETRY1; SESSUX1b, D126 §3.4): let a parked quest run again, counting from where it stands, or release one
@@ -469,14 +468,14 @@ export const retryNotice = (quest: string, state: DriverState): [string, Record<
  * ends at its turn's end, and its next words resume it under this one (ACCESSSWAP1). No proposal names it, so it is no door of Ask
  * Daoris's.
  */
-export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full' }>('SET_HELP_MODE');
+export const useSetHelpMode = () => useDriverChange('SET_HELP_MODE');
 
 /**
  * One operation of restricted mode's configured access chosen or taken back (HELPMODE1c2b, D183's note): housekeeping's, the
  * person's press alone. A revoke refuses Ask Daoris's next call of that tool; either takes each conversation's next turn
  * (ACCESSSWAP1). No proposal names it.
  */
-export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
+export const useSetHelpGrant = () => useDriverChange('SET_HELP_GRANT');
 
 // The actors' wire types live in `data/wiring` so the presentational Actors card reads them without reaching the bridge.
 export type { ActorEntry, ActorRow } from '../data/wiring';
@@ -661,17 +660,17 @@ export const useSyncNow = () => {
   });
 };
 
-export const useSetDrivable = () => useDriverChange<{ repository: string; drivable: boolean }>('SET_DRIVABLE');
-export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
+export const useSetDrivable = () => useDriverChange('SET_DRIVABLE');
+export const useSetHold = () => useDriverChange('SET_HOLD');
 /** Session trees (D51): the same file `daoris place trees <repo> on|off` edits — two editors, one truth. */
-export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: boolean }>('SET_TREES');
+export const useSetTrees = () => useDriverChange('SET_TREES');
 /** The switch *Daoris may change this checkout's files* (GITAPP2b): off by default, writes nothing to the repository itself. */
-export const useSetCheckoutWrites = () => useDriverChange<{ repository: string; allow: boolean }>('SET_CHECKOUT_WRITES');
+export const useSetCheckoutWrites = () => useDriverChange('SET_CHECKOUT_WRITES');
 /**
  * A repository's standing answer (KNOWUSE1b): the person's words, or none to clear it — the same `standing` `daoris driver
  * standing <repo> "…"|--clear` edits. Blank words or words past the bound are the driver's refusal, its sentence verbatim.
  */
-export const useSetStanding = () => useDriverChange<{ repository: string; says?: string }>('SET_STANDING');
+export const useSetStanding = () => useDriverChange('SET_STANDING');
 /**
  * This machine's heavy gates for a repository (HEAVYRUN1b2b): the whole list in the order its gates run, or null to clear it — the
  * same `heavyGates` `daoris place heavy <repo> <name>=<command>…|--clear` edits. A list the mapping would not read (a gate with no
@@ -685,7 +684,7 @@ export const useSetHeavyGates = () =>
  * sentence verbatim, nothing written. The person's choice alone: no proposal names it.
  */
 export const useSetSessionChecks = () =>
-  useDriverChange<{ repository: string; checks: SessionChecksValue | null }>('SET_SESSION_CHECKS');
+  useDriverChange('SET_SESSION_CHECKS');
 
 /**
  * Whether a repository's own `daoris.gates.json` marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c, D180's note): the

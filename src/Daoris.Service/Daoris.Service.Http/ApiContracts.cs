@@ -7,25 +7,6 @@ namespace Daoris.Knowledge.Http;
 // The wire shapes not yet declared in Daoris.Contracts beside their routes, and their source-generated serializer
 // context. A domain's shapes move there with its routes.
 
-// The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2): either, both, or neither to clear them.
-public sealed record QuestWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
-// The graph's close (FABRIC-CLOSE1a, §E5 step 2): its key, which a second send of the same close repeats, its close token, and
-// every quest of the chain it closes, each with the submission it judged. Nullable on the way in and judged by the exchange.
-public sealed record CloseQuestRequest(string? Key, string? Token, IReadOnlyList<QuestCloseItemWire?>? Quests);
-public sealed record QuestCloseItemWire(string? Id, string? Machine, long? Sequence);
-// What a close did: every quest it named as it now stands, and the sentence.
-public sealed record QuestCloseResponse(IReadOnlyList<QuestResponse> Quests, string Message);
-// A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
-// or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
-public sealed record QuestSetUpRequest(
-    string? Commit, string? Kind, string? Session = null, string? Look = null, string? Shows = null, string? Again = null);
-// The person's verdict (REVIEWENV1b, design §3.3–§3.6): `reviewed`, `not-yet` or `skipped`, their words (a `not-yet`'s always),
-// and the set-up it answers, as their view showed it: a `reviewed`'s and a `not-yet`'s always, whole (REVIEWENV1b3); a skip's never.
-public sealed record QuestReviewRequest(string? Verdict, string? Words = null, QuestSetUpRefWire? SetUp = null);
-// The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): the environment the set-up step shows the work in.
-public sealed record SetUpStepRequest(string? Environment);
-// A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
-public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
 // and `To` is the asker naming the receiver, which publishes at once.
 // `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
@@ -144,9 +125,6 @@ public sealed record AskActionResponse(AskResponse Ask, string Message, QuestRes
 public sealed record AddedRequest(string? Text);
 // `Kept` false is no error: the session is on no ask, and the message says so. `Ask` is the ask it was kept on.
 public sealed record AddedResponse(bool Kept, string Message, AskResponse? Ask);
-// What a delete did (D95): the record it removed, and the service's sentence, verbatim — which says
-// whether the delete travels, and whether the remote has taken it yet.
-public sealed record DeletedResponse(string Id, string Message);
 // `Embedded` is what the semantic half made of the entries (D123): how many, the vectors they became, how
 // many were longer than the window and split. Absent when it did not run, and `semanticError` says why.
 public sealed record RefreshResponse(
@@ -682,13 +660,6 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 
 [JsonSerializable(typeof(ChangesResponse))]
 [JsonSerializable(typeof(JournalPage))]
-[JsonSerializable(typeof(DismissConflictRequest))]
-[JsonSerializable(typeof(QuestSetUpRequest))]
-[JsonSerializable(typeof(CloseQuestRequest))]
-[JsonSerializable(typeof(QuestCloseResponse))]
-[JsonSerializable(typeof(QuestReviewRequest))]
-[JsonSerializable(typeof(SetUpStepRequest))]
-[JsonSerializable(typeof(QuestWorkflowRequest))]
 [JsonSerializable(typeof(AskReviewRequest))]
 [JsonSerializable(typeof(AskWorkflowRequest))]
 [JsonSerializable(typeof(AskRequestBody))]
@@ -706,7 +677,6 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 [JsonSerializable(typeof(ChannelAckResponse))]
 [JsonSerializable(typeof(AddedRequest))]
 [JsonSerializable(typeof(AddedResponse))]
-[JsonSerializable(typeof(DeletedResponse))]
 [JsonSerializable(typeof(RefreshResponse))]
 [JsonSerializable(typeof(RegisterRequest))]
 [JsonSerializable(typeof(RegisteredResponse))]

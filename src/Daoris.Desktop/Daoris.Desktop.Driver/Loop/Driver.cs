@@ -43,7 +43,7 @@ public sealed class Driver(
     // The sessions still running (DEV3), shared by the watch across the driver it builds for each look,
     // since a session outlives the look that started it. Null keeps this driver's own, which is what a
     // one-look run and a gate's run-until-idle want.
-    RunningSessions? running = null) : ILandingWiring
+    RunningSessions? running = null) : ILandingWiring, IPluginWiring, ISetupWiring
 {
     /// <summary>
     /// How one quest's start is run, from its holds to its record's conclusion: <see cref="RunAsync"/>, unless a
@@ -283,9 +283,37 @@ public sealed class Driver(
 
     Func<string, Noted, bool>? ILookWiring.Stops => Stops;
 
+    HarnessRoster ILookWiring.Harnesses => Context.Harnesses;
+
+    QuestionSupervisorDecisions ILookWiring.Supervisor => Context.Supervisor;
+
+    GoOnMarks ILookWiring.Marks => Context.Marks;
+
     SessionOutput? ILandingWiring.Output => output;
 
     HookSet? ILandingWiring.Hooks => Context.Hooks;
+
+    SessionEvents ILookWiring.Events => Context.Events;
+
+    IReadOnlyList<string> ILookWiring.LookIn(LookSaid said) => LookIn(said);
+
+    AdapterSet IPluginWiring.Built => _built;
+
+    HookSet? IPluginWiring.Hooks => Context.Hooks;
+
+    void IPluginWiring.Adopt(PluginCatalog catalog)
+    {
+        Context.Adapters = _built.WithPlugins(catalog);
+        Context.Servers = catalog.Servers;
+        Context.Catalog = catalog;
+        Context.Harnesses.Use(Context.Adapters);
+        // One set of Daoris's accounts (POOL1a, D197): the wiring folded at the come-up, and again at a next look a held lock refused.
+        Context.Harnesses.Pool(Log);
+    }
+
+    Func<IWorkspaceSetupWorld>? ISetupWiring.SetupPlans => SetupPlans;
+
+    SessionWire ISetupWiring.Door() => Door();
 
     /// <summary>
     /// Told a run a start found bound already, to a named workflow (FABRIC-CUTOVER1c; the cutover design §3): where it is a graph run whose record
@@ -512,20 +540,6 @@ public sealed class Driver(
     internal Task<int> MeetingsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Meetings.MeetingsAsync(snapshot, taken, events, ct);
 
-    /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
-    /// <summary>
-    /// The supervisor's release through the service's say (SUPERVISOR1a-i, D208; the supervisor design §3.4): no text, its decision,
-    /// question and choice, the receipt as the say's key. Kept answers the word's id; a refusal its word; a lost response throws, which
-    /// the release keeps held to repeat.
-    /// </summary>
-    internal async Task<SupervisorSaid> SupervisorSayAsync(
-        string session, string decision, string question, string choice, string key, CancellationToken ct)
-    {
-        var said = await service.SayAsync(
-            session, "", ct: ct, from: SupervisorHanded.From, key: key, supervised: (decision, question, choice)).ConfigureAwait(false);
-        return said.Kept && said.Word?.Id is { } word ? new SupervisorSaid(word, null) : new SupervisorSaid(null, said.Refusal ?? "unsaid");
-    }
-
     /// <summary>
     /// A park whose own conversation cannot resume and that nothing carries on (<see cref="DriverContinuations.CannotGoOn"/>); a
     /// supervisor's decision on it goes <c>stale</c> first, its word taken back, so the park is a wait on the owner again (SUPERVISOR1a-i,
@@ -543,6 +557,7 @@ public sealed class Driver(
         return GoOns.CannotGoOn(quest, park, why);
     }
 
+    /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
     internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
         HandOvers.HandOversAsync(snapshot, events, ct);
 
@@ -1037,87 +1052,22 @@ public sealed class Driver(
 
         // The look's registered passes run at their phase's anchor, in their order; the code that has not moved into a pass runs
         // between the anchors.
-        var round = new LookRound(Part, events);
+        var round = new LookRound(Part, events, new LookState(concluded));
         foreach (var pass in LookPasses.In(LookPhase.Before)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
-        // The plugins, read fresh each tick like the config (D64): a harness declared since the
-        // last look is spawnable now, a server declared since is handed now, a hook process
-        // disabled since is stopped now. The catalogue refuses a name this build carries before
-        // anything of that plugin is taken.
-        await Stages.TimeAsync("plugins", async () =>
-        {
-            var catalog = PluginCatalog.Load(home, _built.Names);
-            Context.Adapters = _built.WithPlugins(catalog);
-            Context.Servers = catalog.Servers;
-            Context.Catalog = catalog;
-            Context.Harnesses.Use(Context.Adapters);
-            // One set of Daoris's accounts (POOL1a, D197): the wiring folded at the come-up, and again at a next look a held lock refused.
-            Context.Harnesses.Pool(Log);
-            if (Context.Hooks is { } hooks)
-            {
-                events.AddRange(await hooks.ReconcileAsync(catalog, ct, Lines).ConfigureAwait(false));
-            }
-        }).ConfigureAwait(false);
+        foreach (var pass in LookPasses.In(LookPhase.Local)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
-        // What sessions proposed about the rules (PERM2, D74), settled BEFORE this tick spawns anything:
-        // a narrowing is applied at once, so this tick's sessions are already handed it, and a widening
-        // is held for the person — who alone may let an agent do more.
-        try
-        {
-            // Each line classed where the proposals settle it (NOTIFY2h2).
-            using (Stages.Begin("rules")) events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow, Lines));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            events.Add(Lines.Retry("rules", $"rules  the proposals could not be settled this tick: {error.Message}"));
-        }
+        foreach (var pass in LookPasses.In(LookPhase.Read)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
-        // SESSWATCH1a (D200, the session-watch design §2): the watcher looks in on every running driven session, from memory, reading a
-        // job only for one unheard for half its bound; each step it takes is said, and nothing quiet is ended but under --quiet-end.
-        using (Stages.Begin("watch")) events.AddRange(LookIn(Lines));
-
-        // The lines Daoris moved since each was last followed (WSSETUP5, D124 §3.1), registered from the line before this
-        // look reads the registry, so a set-up that just landed is planned by what it now declares. Nothing is read with
-        // git, or asked of the service, unless a line moved.
-        await Stages.TimeAsync("lines", () => FollowMovedLinesAsync(events, ct)).ConfigureAwait(false);
-
-        // LINESTOGETHER1d: the operations bringing sessions together, stepped before this look's starts take a head's word.
-        await Stages.TimeAsync("together", () => TogetherAsync(events, ct)).ConfigureAwait(false);
-
-        // The workspace plans (WSSETUP6, D124 §4.1), worked before this look reads the quests, so a set-up a plan publishes now
-        // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
-        await Stages.TimeAsync("setup", () => WorkSetupPlansAsync(events, ct)).ConfigureAwait(false);
-
-        // The goal's walk counts Daoris's sessions from this look's records (TOOL6b, D130 §4.2), and every start chosen
-        // while they were read: marked first, so a conversation chosen meanwhile is not lost.
-        var mark = Context.Harnesses.Mark();
-        // PARALLEL1b: the starts still opening, read before the snapshot as well as at the plan, so one whose record opened while the
-        // snapshot was read is held by one of the two, whichever the ledger's answer missed.
-        var reservedBefore = Context.Runs.Reserved;
-        var snapshot = await Stages.TimeAsync("snapshot", () => service.SnapshotAsync(ct)).ConfigureAwait(false);
-        // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
-        snapshot = await Stages.TimeAsync("paused", () => PausedWork.LookAsync(service, config, snapshot, ct)).ConfigureAwait(false);
-        // SUPERVISOR1a-i (D208; the supervisor design §3.4, §6.1, §6.3): each decision not yet final compared, settled and released
-        // first, so the release's own word is recorded before anything judges it; then a word claiming the supervisor that Daoris did
-        // not attribute is taken back before anything plans, and never planned from.
-        SupervisorTakeBack takeBack = async (session, word, token) =>
-            (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
-        var undecided = snapshot;
-        // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
-        var alone = AnswersAloneHold.For(Context.Events, Context.Marks, home);
-        IReadOnlyDictionary<string, PriorSession>? lines = null;
-        SupervisorBound bound = async (session, token) =>
-            alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
-        snapshot = await Stages.TimeAsync("supervisor", async () => await SupervisorQuarantine.LookAsync(
-            await SupervisorQuarantine.DecideAsync(undecided, Context.Supervisor, SupervisorSayAsync, takeBack, DateTimeOffset.UtcNow, ct, bound)
-                .ConfigureAwait(false),
-            Context.Supervisor, takeBack, Log, ct).ConfigureAwait(false)).ConfigureAwait(false);
+        // What the passes left in the state, which the stages not yet passes read and the snapshot they go on shaping.
+        var state = round.State;
+        var snapshot = state.Snapshot;
         // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers that would take their line on alone a third time in a row
         // with nobody between are marked for the person first, so the planner leaves them waiting. A record needs its line read only where
         // answers alone wait on it.
         var lookedAt = snapshot;
         // A record a supervisor's held decision holds is not picked (SUPERVISOR1a-i, §6.3): nothing goes on from it inside the window.
-        await Stages.TimeAsync("alone", () => alone
+        await Stages.TimeAsync("alone", () => state.Alone
             .LookAsync(
                 service,
                 lookedAt.LastRun.Values.Concat(lookedAt.NamedByReopen.Values).Where(record => !lookedAt.SupervisorHolds(record)),
@@ -1149,7 +1099,7 @@ public sealed class Driver(
         var overlapLook = snapshot;
         await Stages.TimeAsync("overlaps-told", () => WorkOverlaps.TellAsync(home, overlapLook, async (session, text, key, token) =>
             await service.SayAsync(session, text, ct: token, from: DaorisWords.From, key: key, running: true).ConfigureAwait(false), ct)).ConfigureAwait(false);
-        Context.Harnesses.Look(snapshot.Started, mark);
+        Context.Harnesses.Look(snapshot.Started, state.Mark);
 
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
         // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
@@ -1223,7 +1173,7 @@ public sealed class Driver(
         IReadOnlyList<Consideration> plan;
         using (Stages.Begin("plan"))
         {
-            snapshot = snapshot with { Starting = [.. reservedBefore.Union(Context.Runs.Reserved)] };
+            snapshot = snapshot with { Starting = [.. state.ReservedBefore.Union(Context.Runs.Reserved)] };
             plan = Planner.Plan(
                 snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null,
                 roles: Context.Roles);
@@ -1640,73 +1590,6 @@ public sealed class Driver(
             ? await WorkflowProcesses.ConcludedAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
             : null;
         OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree, process: process);
-    }
-
-    /// <summary>
-    /// Each repository whose line Daoris moved since it was last followed, registered from its line (WSSETUP5), with what
-    /// changed or must be fixed added to <paramref name="events"/>. A pass the service did not answer is said, and the
-    /// lines stay due for the next look: following is never a dead look.
-    /// </summary>
-    private async Task FollowMovedLinesAsync(List<string> events, CancellationToken ct)
-    {
-        var due = RegistryFollowing.Due(home);
-        if (due.Count == 0) return;
-        try
-        {
-            var report = await RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), due, ct).ConfigureAwait(false);
-            events.AddRange(report.Followed.Select(followed => RegistrationFollow.EventLine(followed, Lines)).OfType<string>());
-            if (report.Refresh is { } refresh) events.Add(Lines.Retry("registry", $"registry  the index was not read again after registering: {refresh}"));
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            events.Add(Lines.Retry(
-                "registry", $"registry  the lines Daoris moved could not be followed this look, and are tried again at the next: {error.Message}"));
-        }
-    }
-
-    /// <summary>
-    /// The operations bringing sessions together (LINESTOGETHER1d), looked at by the process holding the home's lease: each stepped by
-    /// the records, a landing settled, one whose sessions were deleted dropped. Nothing is asked of the service while none is kept.
-    /// </summary>
-    private async Task TogetherAsync(List<string> events, CancellationToken ct)
-    {
-        if (!HomeLease.HeldHere(home)) return;
-        try
-        {
-            if (new TogetherOperations(home).All().Count == 0) return;
-            var records = await service.SessionRecordsAsync(ct).ConfigureAwait(false);
-            var trees = new SessionTrees(home);
-            await new TogetherWatch(home, () => DateTimeOffset.UtcNow, () => DriverConfig.Load(DriverConfig.ResolvePath(home)),
-                    (session, note) => Context.Events.Keep(session, note, say: null))
-                .LookAsync(records, (root, repository, token) => trees.LineOfAsync(root, repository, null, token), ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
-                                          or UnauthorizedAccessException)
-        {
-            events.Add(Lines.Retry(
-                "together", $"together  the sessions being brought together could not be looked at this look, and are tried again at the next: {error.Message}"));
-        }
-    }
-
-    /// <summary>
-    /// Every workspace plan under the home worked once (WSSETUP6): the next set-up published while fewer than its
-    /// <c>atOnce</c> are open, a refusal skipped, the pilot's pause taken, each said in <paramref name="events"/>. A plan the
-    /// service could not answer for is said, and tried again at the next look: a plan is never a dead look.
-    /// </summary>
-    private async Task WorkSetupPlansAsync(List<string> events, CancellationToken ct)
-    {
-        try
-        {
-            var world = SetupPlans?.Invoke() ?? new WorkspaceSetupWorld(service, home);
-            events.AddRange(await WorkspaceSetup.TickAsync(
-                world, config, Door(), home, DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow, ct, Lines).ConfigureAwait(false));
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
-                                          or IOException or UnauthorizedAccessException)
-        {
-            events.Add(Lines.Retry(
-                "setup", $"setup  the workspace plans could not be worked this look, and are tried again at the next: {error.Message}"));
-        }
     }
 
     /// <summary>

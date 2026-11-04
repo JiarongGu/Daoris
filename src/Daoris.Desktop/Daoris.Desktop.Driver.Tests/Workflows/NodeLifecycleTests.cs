@@ -245,7 +245,7 @@ public sealed class NodeLifecycleTests
     {
         var failed = new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Git, Code = "not-yet", Attempt = 1 };
         Assert.Equal(NodeRefusal.NoFailureAuthority, NodeLifecycle.Apply(Declared(NodeKinds.Line), At(NodeStates.Active), failed).Refused);
-        Assert.Equal(NodeRefusal.NoFailureAuthority, NodeLifecycle.Apply(Declared(NodeKinds.Handed), At(NodeStates.Active), failed).Refused);
+        Assert.Equal(NodeRefusal.NoFailureAuthority, NodeLifecycle.Apply(Declared(NodeKinds.Land), At(NodeStates.Active), failed).Refused);
 
         var plugin = Declared("acme.deploy/deploy");
         var uncoded = new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = 1 };
@@ -321,7 +321,7 @@ public sealed class NodeLifecycleTests
 
         Assert.Equal(NodeRefusal.NoWords, NodeLifecycle.Apply(Declared(NodeKinds.Look), At(NodeStates.Ready), skip with { Words = " " }).Refused);
         Assert.Equal(NodeStates.Skipped, NodeLifecycle.Apply(Declared(NodeKinds.Look), At(NodeStates.Ready), skip).Status.State);
-        foreach (var kind in new[] { NodeKinds.Line, NodeKinds.Handed, NodeKinds.Claimed, NodeKinds.QuestClose, NodeKinds.All })
+        foreach (var kind in new[] { NodeKinds.Line, NodeKinds.Land, NodeKinds.Claimed, NodeKinds.QuestClose, NodeKinds.All })
         {
             Assert.Equal((kind, NodeRefusal.NotSkippable), (kind, NodeLifecycle.Apply(Declared(kind), At(NodeStates.Ready), skip).Refused));
         }
@@ -677,7 +677,6 @@ public sealed class NodeLifecycleTests
     [InlineData(NodeKinds.Claimed, "requests", "true", "requests")]
     [InlineData(NodeKinds.Claimed, "requests", "null", "requests")]
     [InlineData(NodeKinds.Claimed, "later", "\"anything\"", null)]
-    [InlineData(NodeKinds.Handed, "requests", "\"wait\"", null)]
     [InlineData(NodeKinds.WorkRequests, "requests", "\"wait\"", null)]
     public void A_requests_option_on_claimed_is_refused_by_name(string kind, string name, string json, string? problem)
     {

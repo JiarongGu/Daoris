@@ -130,7 +130,7 @@ public sealed class WorkRequestsNodeTests
     [Fact]
     public void The_evaluation_reaches_the_node_when_each_is_done_and_leaves_it_active_otherwise()
     {
-        NodeDeclaration[] nodes = [Node, new("land", NodeKinds.Handed, 1, NodeReach.Observed)];
+        NodeDeclaration[] nodes = [Node, new("land", NodeKinds.Land, 1, NodeReach.Observed)];
         Wire[] wires = [new("a", WireKinds.After, new WireEnd("requests"), new WireEnd("land"))];
 
         WireEvaluated Evaluate(params QuestView[] published)

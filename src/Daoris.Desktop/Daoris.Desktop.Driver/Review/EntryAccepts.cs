@@ -1,28 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an entry's one Accept and an ask's do around the landing itself (ACCEPTALL1, D167's 2026-10-15 amendment), in the library so
-/// the page's <c>LAND_ENTRY</c> and <c>LAND_ASK</c> and the terminal's <c>trees land --entry|--ask</c> are one code (ACCEPTALL1e,
-/// D50's twin rule): the entries asked about, the parts of each that have work to land, each part's gate counted as its own press
-/// counts it, the landing, then what each landed part's conversation keeps of it and what a held gate writes to the machine log.
+/// What an entry's one Accept and an ask's do (ACCEPTALL1, D167's 2026-10-15 amendment), in the library so the page's
+/// <c>LAND_ENTRY</c> and <c>LAND_ASK</c> and the terminal's <c>trees land --entry|--ask</c> are one code (ACCEPTALL1e, D50's twin
+/// rule): the entries asked about, the parts of each that have work to land, each part's gate counted as its own press counts it,
+/// and the word each part's review keeps. A part lands through its run's <c>land</c> node at the runtime's pass; a part no
+/// <c>land</c> node performs is held.
 /// </summary>
-/// <remarks>
-/// Nothing of a surface is here: where a plugin's lines and a part's kept words are said, which sessions are in use, and which
-/// door a held gate is logged at are each the surface's to hand in.
-/// </remarks>
 /// <param name="service">The service, for the sessions' records, their quests and the registry.</param>
 /// <param name="home">The home the trees, the landings and the opinions are kept under.</param>
-/// <param name="trees">The session trees the parts land through, over the surface's landing plugins.</param>
-/// <param name="events">The conversations' records, where each landed part's note is kept.</param>
-/// <param name="say">Where a kept note's line is said, for a session: the page's conversation, or the terminal's standard error.</param>
-/// <param name="inUse">The trees a session still running or waiting holds, which the rule's tidy leaves.</param>
-/// <param name="log">The machine log a held gate writes to; none where the surface keeps none.</param>
-/// <param name="door">The door a held gate is logged at (<see cref="ReviewDoors"/>).</param>
-/// <param name="beside">The ledger's sessions and their trees (GITLOCK2), which a merge rule's move reads inside the checkout's hold.</param>
-public sealed class EntryAccepts(
-    ServiceClient service, string home, SessionTrees trees, IWorkplaceEventHistory events, Action<string, string> say,
-    Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, MachineLog? log, string door,
-    Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
+/// <param name="trees">The session trees the parts are read through, over the surface's landing plugins.</param>
+/// <param name="events">The conversations' records, which name a part's work.</param>
+public sealed class EntryAccepts(ServiceClient service, string home, SessionTrees trees, IWorkplaceEventHistory events)
 {
     /// <summary>The parts of <paramref name="entry"/> whose tree offers work to land, in the entry's order: what its Accept lands.</summary>
     public static IReadOnlyList<EntryPart> PartsOf(SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows)
@@ -59,14 +48,13 @@ public sealed class EntryAccepts(
     }
 
     /// <summary>
-    /// The press on one entry: each part's gate counted as its own press counts it, the landing, then what each landed part's
-    /// conversation keeps of it, and each left-out part's (ACCEPTALL1c), and what a held gate writes to the machine log, as
-    /// <c>LAND_SESSION_TREE</c> does for one.
+    /// The press on one entry: each part's gate counted as its own press counts it, then the review's word kept for each part whose
+    /// run's <c>land</c> the runtime performs. A part no <c>land</c> node performs is held, said.
     /// </summary>
     public async Task<EntryLanding> LandAsync(
         SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken)
     {
-        var (subject, parts) = await PartsAsync(entry, rows, cancellationToken).ConfigureAwait(false);
+        var (_, parts) = await PartsAsync(entry, rows, cancellationToken).ConfigureAwait(false);
         if (parts.Count == 0) return new EntryLanding(false, "Nothing was landed: no part of this entry has work to land on this machine.", null, []);
         var presses = new OpinionPresses(home, service);
         var pressed = new List<EntryLandingPart>(parts.Count);
@@ -76,61 +64,32 @@ public sealed class EntryAccepts(
             pressed.Add(part with { Gate = await presses.PressedAsync(part.Session, (LandingGate)part.Gate!, null, part.Tree, quest, cancellationToken).ConfigureAwait(false) });
         }
 
-        // WORKFLOWCLEAN1 1c (the cleanup design §2.2, §13 point 3): a part whose run's `land` the runtime performs is accepted by its review's
-        // word and landed by that node at its pass; only the others land in place here, as the transitional path (§4.7).
-        var performing = pressed.Where(each => each.Gate?.Process is { LandsByRuntime: true }).ToList();
-        foreach (var part in performing) pressed.Remove(part);
-        var accepted = await AcceptPerformedAsync(performing, pressed, cancellationToken).ConfigureAwait(false);
-        if (pressed.Count == 0)
+        var steps = EntryLandings.Sequence(pressed, leaveOut);
+        var performing = pressed.Where((each, at) => steps[at].Lands && each.Gate?.Process is { LandsByRuntime: true }).ToList();
+        var accepted = await AcceptPerformedAsync(performing, pressed.Except(performing).ToList(), cancellationToken).ConfigureAwait(false);
+        var outcomes = new List<EntryPartLanding>(pressed.Count);
+        for (var at = 0; at < pressed.Count; at++)
         {
-            return new EntryLanding(
-                accepted.Count > 0 && accepted.All(part => part.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.BroughtInto),
-                accepted.Any(part => part.Outcome == EntryPartOutcome.Accepted) ? "Accepted; Daoris lands each part at its next pass."
-                    : accepted.Any(part => part.Outcome == EntryPartOutcome.Refused) ? "Accepted; its landing was refused: see each part."
-                    : "Landed.", null, accepted);
-        }
-
-        var together = await TogetherAsync(pressed, presses, cancellationToken).ConfigureAwait(false);
-        var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse, together, beside).ConfigureAwait(false);
-        if (accepted.Count > 0)
-        {
-            // A mixed entry (the cleanup design §13 point 7): some parts follow a saved workflow whose `land` the runtime performs, the rest land here.
-            landed = landed with
+            var part = pressed[at];
+            if (performing.Contains(part)) outcomes.Add(accepted.First(each => each.Session == part.Session));
+            else if (steps[at].LeftOut) outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.LeftOut));
+            else if (steps[at].SameTreeAs is not null) outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.SameTree));
+            else
             {
-                Message = $"{landed.Message} {accepted.Count} part{(accepted.Count == 1 ? "" : "s")} of this entry follow{(accepted.Count == 1 ? "s" : "")} "
-                    + "a saved workflow whose `land` Daoris performs, so they are accepted by their review and land at its pass, not here.",
-                Parts = [.. landed.Parts, .. accepted],
-            };
-        }
-        // ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, on its conversation, so its
-        // review says so and leads with Discard; only where the entry's work landed somewhere.
-        var landedAny = landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed);
-        foreach (var part in landed.Parts.Where(part => part.Outcome == EntryPartOutcome.LeftOut && landedAny && landed.Branch is not null))
-        {
-            events.Keep(part.Session, LandingRules.LeftOutNote(landed.Branch!), line => say(part.Session, line));
-        }
-
-        // LINESTOGETHER1d2: each member the operation brought into the head's landing keeps a note of where its work went.
-        if (together is not null && landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed))
-        {
-            foreach (var brought in TogetherInclusion.All(home).Values.Where(each => each.Operation == together.Operation))
-            {
-                events.Keep(brought.Session, LandingRules.BroughtIntoNote(brought), line => say(brought.Session, line));
+                var why = part.Gate?.Refusal?.Message ?? "no saved workflow's `land` node performs its landing, so it is held.";
+                outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Refused, new TreeLanding(false, $"Nothing was landed: {why}")
+                {
+                    Refusal = AutoLandingCode.Refused,
+                }));
             }
         }
 
-        foreach (var part in landed.Parts)
-        {
-            if (part.Landing is not { } its || pressed.All(each => each.Session != part.Session)) continue;
-            if (its.Landed) events.Keep(part.Session, LandingRules.Note(its), line => say(part.Session, line));
-            var gate = pressed.First(each => each.Session == part.Session);
-            if (log is not null && gate.Gate!.Held(part.Session, trees.Owner(gate.Tree), its, door) is { } held)
-            {
-                SessionLog.WriteLanding(log, held);
-            }
-        }
-
-        return landed;
+        return new EntryLanding(
+            accepted.Count > 0 && outcomes.All(each => each.Outcome is not EntryPartOutcome.Refused)
+                && accepted.All(part => part.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.BroughtInto),
+            accepted.Any(part => part.Outcome == EntryPartOutcome.Accepted) ? "Accepted; Daoris lands each part at its next pass."
+                : outcomes.Any(each => each.Outcome == EntryPartOutcome.Refused) ? "Nothing more was landed: see each part."
+                : "Landed.", null, outcomes);
     }
 
     /// <summary>
@@ -183,35 +142,6 @@ public sealed class EntryAccepts(
         }
 
         return accepted;
-    }
-
-    /// <summary>
-    /// The operation bringing sessions together bound to the entry's head (LINESTOGETHER1d), with each member's gate read as its own
-    /// Accept reads it; null where none binds it. A store that does not read binds nothing here: the landing's own guard refuses then.
-    /// </summary>
-    private async Task<EntryTogether?> TogetherAsync(IReadOnlyList<EntryLandingPart> parts, OpinionPresses presses, CancellationToken ct)
-    {
-        TogetherOperation? operation;
-        try
-        {
-            operation = new TogetherOperations(home).All().FirstOrDefault(each => each.IsOpen
-                && parts.Any(part => TogetherOperation.SameTree(each.Head.Tree, part.Tree)));
-        }
-        catch (IOException)
-        {
-            return null;
-        }
-
-        if (operation is null) return null;
-        var head = parts.First(part => TogetherOperation.SameTree(operation.Head.Tree, part.Tree)).Session;
-        var gates = new Dictionary<string, IWorkplaceGate?>(StringComparer.Ordinal);
-        foreach (var member in operation.Members)
-        {
-            var gate = await trees.GateAsync(member.Tree, member.Quest, new ServiceReviewWorld(service), member.Session, ct).ConfigureAwait(false);
-            gates[member.Session] = await presses.PressedAsync(member.Session, (LandingGate)gate, null, member.Tree, member.Quest, ct).ConfigureAwait(false);
-        }
-
-        return new EntryTogether(operation.Id, head, gates, operation.Members.Select(each => each.Session).ToHashSet(StringComparer.Ordinal));
     }
 
     /// <summary>

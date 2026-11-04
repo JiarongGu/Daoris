@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// What a line of work (an entry, D167) and its ask do as one, the page's `bridge/entries.ts`: an entry's one Accept and an ask's
 /// (ACCEPTALL1, D167's 2026-10-15 amendment points 1 and 4), the plan before the press and the press, over the driver's
-/// <see cref="SessionTrees.PlanEntryAsync"/> and <see cref="SessionTrees.LandEntryAsync"/>. Each part lands by its own landing, its
+/// <see cref="SessionTrees.PlanEntryAsync"/>. Each part lands by its own landing, its
 /// gate read as its review's Accept reads it.
 /// </summary>
 /// <remarks>
@@ -53,7 +53,7 @@ public sealed class EntriesRoutes(DriverContext context)
 
         // RPC1b4: what `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
         var (plugins, notes) = (new List<string>(), new List<string>());
-        var landed = await LandingAsync(Accepts(service, plugins, notes), entry, rows, LeaveOut(request), cancellationToken).ConfigureAwait(false);
+        var landed = await LandingAsync(Accepts(service, plugins), entry, rows, LeaveOut(request), cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
         // RPC1b5: the lines it moved are registered at once where the verb asks (`follow`), said after its words; none where nothing landed.
         var followed = entries.Count > 0 ? await FollowAsync(request, service, cancellationToken).ConfigureAwait(false) : null;
@@ -100,7 +100,7 @@ public sealed class EntriesRoutes(DriverContext context)
         var answers = new List<object>();
         var landings = new List<(string Repository, EntryLanding Landed)>();
         var (plugins, notes) = (new List<string>(), new List<string>());
-        var accepts = Accepts(service, plugins, notes);
+        var accepts = Accepts(service, plugins);
         var done = true;
         foreach (var entry in own.Where(entry => PartsOf(entry, rows).Count > 0))
         {
@@ -219,17 +219,13 @@ public sealed class EntriesRoutes(DriverContext context)
 
     /// <summary>
     /// The library's entry Accept over this loop's surface (ACCEPTALL1e), which the terminal's <c>trees land --entry</c> builds over its
-    /// own: a rule's plugin says its lines on the console under its name, as a landing's do (D64 §4, D100); a landed part's note is
-    /// kept where its conversation is; a held gate is logged at the screen's door.
+    /// own: a plugin says its lines on the console under its name, as a landing's do (D64 §4, D100).
     /// </summary>
     /// <param name="plugins">Where a plugin's lines are also kept, for the answer's words (RPC1b4); null keeps none.</param>
-    /// <param name="notes">Where a landed part's note is also kept, for the answer's words; null keeps none.</param>
-    private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null, List<string>? notes = null) => new(
+    private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null) => new(
         service, _loop.Home,
         new SessionTrees(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(plugins), log: _loop.Log, health: _loop.Health)),
-        _loop.Events, KeptTo(notes),
-        async token => await LinesRoutes.InUseAsync(service, token), _loop.Log, ReviewDoors.Screen,
-        token => BranchTidying.BesideAsync(service, token))
+        _loop.Events)
     {
         Performs = (session, unit, tip, token) => PerformedWaits.AwaitAsync(_loop, session, unit, tip, token),
     };
@@ -239,13 +235,6 @@ public sealed class EntriesRoutes(DriverContext context)
     {
         lines?.Add(TreesWords.PluginLine(plugin, line));
         _loop.Output.Append($"plugin:{plugin}", line);
-    };
-
-    /// <summary>A landed part's note, kept where its conversation is and in <paramref name="lines"/> as the terminal says it.</summary>
-    private Action<string, string> KeptTo(List<string>? lines) => (session, line) =>
-    {
-        lines?.Add($"trees: {line}");
-        _loop.Output.Append(session, line);
     };
 
     private async Task<object> PlanAsync(ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)

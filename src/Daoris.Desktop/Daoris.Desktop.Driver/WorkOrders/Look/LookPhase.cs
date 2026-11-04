@@ -6,8 +6,17 @@ namespace Daoris.Driver;
 /// </summary>
 internal enum LookPhase
 {
-    /// <summary>The look's head, before it reads the plugins and anything local: the remote sync, then the lost-claim stop.</summary>
+    /// <summary>The look's head, before it reads anything local:the remote sync, then the lost-claim stop.</summary>
     Before,
+
+    /// <summary>After the head: what the look reads and works locally before it reads the quests: the plugins, the rule proposals, the session watch, the moved lines, the operations bringing sessions together and the workspace plans.</summary>
+    Local,
+
+    /// <summary>
+    /// The quests read: the snapshot taken into the round's <see cref="LookState"/>, then each pass that shapes what the plan reads of
+    /// it, in order: the paused work held, the supervisor's decisions moved and its unattributed words taken back.
+    /// </summary>
+    Read,
 
     /// <summary>After the starts are begun, their runs bound and what ended reported: the landing's settling of what a stopped run left.</summary>
     After,

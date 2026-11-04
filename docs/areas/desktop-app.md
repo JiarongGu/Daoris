@@ -208,8 +208,9 @@ web paths are under `src/Daoris.Web/src/`.
   `work/frame/`, the strip in `work/strip/`, atoms in `design/ui.tsx`, flows in `design/` and graphs in `design/canvas/`.
   A folder past twenty sources splits into named scopes (`test/structure.test.ts` with `structure.json`).
 - **A new driver route** follows `.claude/knowledge/bridge-presses.md`. It needs the handler and its `[Publishes]`, the
-  page's copy in `test/publishing.ts`, the desktop README's row, the hook in `bridge/<domain>.ts`, its class, drain and owner
-  in its marks (and its wording and grounds if `Person`), and its words in both catalogues.
+  desktop README's row, the hook in `bridge/<domain>.ts`, its class, drain and owner in its marks (and its wording and grounds
+  if `Person`), and its words in both catalogues. The page's route names, `PUBLISHES` and the person's presses' keys are
+  generated from the marks into `bridge/generated/routes.ts`.
 - **A new pushed slice** follows `.claude/knowledge/pushed-slices.md`: the `StateSlice` owner, its wakes, the
   `DriverLoop.Slices` entry, the page's `SliceSpec` and `ShellSignals`' `PUSHED`.
 - **A wait on the person** follows `.claude/knowledge/person-waits.md`; **new words** `translation-parity.md`, plus a

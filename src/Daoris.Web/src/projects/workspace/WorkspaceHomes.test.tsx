@@ -41,11 +41,10 @@ const RULES = {
 const STANDING = { workspace: 'aurora', wired: true, ahead: 0, behind: [], conflicts: [], undeclared: ['m-gone'] };
 
 const where = () => 'aurora';
-const plan = (workspace: string, section: WorkspaceSection) => placeOpening(opening('projects', workspaceItem(workspace), { workspaceSection: section }), true, where);
+const plan = (workspace: string, section: WorkspaceSection) => placeOpening(opening('projects', workspaceItem(workspace), { workspaceSection: section }), where);
 
 beforeEach(() => {
   window.localStorage.clear();
-  window.localStorage.setItem('daoris.agents.setup', 'on');
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
@@ -83,7 +82,7 @@ describe("the doors that opened a workspace's Setup sections", () => {
       opening('projects', null, { workspaceSection: 'remote' }, 'aurora'),
       doorOpening({ view: 'projects', workspaceTab: 'setup', workspaceSection: 'remote' }, 'aurora'),
     ]) {
-      expect(placeOpening(door, true, where)).toMatchObject({ view: 'projects', workspaceTab: 'details', workspaceSection: 'remote' });
+      expect(placeOpening(door, where)).toMatchObject({ view: 'projects', workspaceTab: 'details', workspaceSection: 'remote' });
     }
     expect(plan('aurora', 'reach')).toMatchObject({ place: 'workspace:aurora', placeAt: { section: 'sessions', row: 'reach' } });
     expect(plan('aurora', 'defaults')).toMatchObject({ place: 'workspace:aurora', placeAt: { section: 'workflow', row: 'defaults' } });
@@ -119,12 +118,6 @@ describe("a workspace's Details, Remote", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'SET', { payload: { workspace: 'forge', url: 'https://forge.example.com', key: 'dk_forgekey0000' } });
   });
 
-  it('is not drawn while the Setup mode is dark, where the tab keeps it', async () => {
-    window.localStorage.removeItem('daoris.agents.setup');
-    show(<ProjectsView notify={() => {}} />);
-    await chooseWorkspace('aurora');
-    expect(screen.queryByRole('region', { name: 'Remote' })).toBeNull();
-  });
 });
 
 const workspacePlace = (asked: string | null): PlaceHold => ({
