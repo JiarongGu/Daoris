@@ -173,11 +173,6 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         var none = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "login" });
         Assert.Contains("name the `claude-code` account to sign in to", none);
         Assert.False(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "default")));
-
-        // POOL1a2: the window reads the set, which holds no default, so an older build's default is no account to sign in to either.
-        Wiring("""{ "defaults": { "claude-code": "account-1" } }""");
-        var defaulted = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "login" });
-        Assert.Contains("name the `claude-code` account to sign in to", defaulted);
         Assert.Equal(["account-1"], HarnessSettings.Profiles(Home, "claude-code"));
     }
 

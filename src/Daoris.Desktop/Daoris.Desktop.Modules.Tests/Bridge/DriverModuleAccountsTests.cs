@@ -236,9 +236,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Accounts("claude-code", "account-1", "account-2", "account-3");
         Wiring("""
             {
-              "rotation": { "claude-code": ["account-1"] },
-              "workspaceRotation": { "own": { "claude-code": ["account-2"] } },
-              "workspaceRotationUse": { "own": { "claude-code": { "switch": "curve", "curve": { "session": [[0, 80]] } } } }
+              "rotation": { "claude-code": ["account-1", "account-2", "account-3"] },
+              "rotationUse": { "claude-code": { "switch": "curve", "curve": { "session": [[0, 80]] } } }
             }
             """);
         var week = Now.AddDays(4);
@@ -287,8 +286,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Wiring("""
             {
               "rotation": { "claude-code": ["account-1", "account-2"] },
-              "workspaceRotation": { "own": { "claude-code": ["account-1"] } },
-              "workspaceRotationUse": { "own": { "claude-code": { "switch": "curve", "curve": { "session": [[0, 50]] } } } }
+              "rotationUse": { "claude-code": { "switch": "curve", "curve": { "session": [[0, 50]] } } }
             }
             """);
         AccountWindows.Said(
@@ -332,8 +330,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Wiring("""
             {
               "rotation": { "claude-code": ["account-1", "account-2", "account-3", "account-4", "account-5"] },
-              "workspaceRotation": { "off": { "claude-code": ["account-3", "account-2"] } },
-              "workspaceRotationUse": { "off": { "claude-code": { "switch": "off" } } }
+              "rotationUse": { "claude-code": { "switch": "off" } }
             }
             """);
         // Four days to its reset, the smart week stands at 63%; the smart session at 90%.
@@ -441,11 +438,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Accounts("claude-code", "account-1", "account-2", "account-3");
         Wiring("""
             {
-              "defaults": { "claude-code": "account-2" },
-              "workspaces": { "solo": { "claude-code": "account-3" } },
-              "rotation": { "claude-code": ["account-1", "account-2", "account-3"] },
-              "rotationUse": { "claude-code": { "use": "order", "keep": "account-3", "near": 80 } },
-              "workspaceRotation": { "work": { "claude-code": ["account-2", "account-1"] } }
+              "rotation": { "claude-code": ["account-2", "account-1", "account-3"] },
+              "rotationUse": { "claude-code": { "use": "order", "keep": "account-3", "switch": "curve", "curve": { "session": [[0, 80]] } } }
             }
             """);
         AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("session", 0.85, Now.AddHours(2))], Now, "s1");
@@ -639,7 +633,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.False(bare.TryGetProperty("inherited", out _));
 
         Accounts("claude-code", "account-1", "account-2");
-        Wiring("""{ "workspaces": { "work": { "claude-code": "account-2" } } }""");
+        Wiring("""{ "rotation": { "claude-code": ["account-2", "account-1"] } }""");
         var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
 
         var set = Assert.Single(claude.GetProperty("scopes").EnumerateArray().ToList());
@@ -674,26 +668,6 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A file edited by hand that breaks the rule is read with the list winning. Rewritten by POOL1a2 (the account-pool design §6.1
-    /// rule 2): the scope named the conflict, a default outside its list. The set holds no default, so the default is read as an
-    /// account its list left out, placed after it, and there is no conflict left to name.
-    /// </summary>
-    [Fact]
-    public async Task A_default_outside_its_list_is_read_into_the_set_after_it_with_no_conflict_left()
-    {
-        Accounts("claude-code", "account-1", "account-2");
-        Wiring("""
-            { "defaults": { "claude-code": "account-2" }, "rotation": { "claude-code": ["account-1"] } }
-            """);
-
-        var machine = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null);
-
-        Assert.Equal("account-1", machine.GetProperty("begins").GetString());
-        Assert.Equal(["account-1", "account-2"], Strings(machine.GetProperty("list")));
-        Assert.Equal(JsonValueKind.Null, machine.GetProperty("problem").ValueKind);
-    }
-
-    /// <summary>
     /// D130 §6: switching before the limit reads the agent's own word, which only some agents' sessions carry; the screen
     /// offers the switch where they do, and says why not where they do not. Codex's door carries none, and its own server is
     /// asked instead (CODEXUSE1), so it says too; dsh says nothing either way.
@@ -721,10 +695,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Wiring("""
             {
               "rotation": { "claude-code": ["account-1", "account-2"] },
-              "workspaceRotation": { "own": { "claude-code": ["account-2"] } },
-              "workspaceRotationUse": {
-                "own": { "claude-code": { "switch": "curve", "curve": { "weekly": [[0, 30], [50, 70], [100, 100]] } } }
-              }
+              "rotationUse": { "claude-code": { "switch": "curve", "curve": { "weekly": [[0, 30], [50, 70], [100, 100]] } } }
             }
             """);
         AccountWindows.Said(
@@ -862,6 +833,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     public async Task How_the_set_is_used_is_written_as_chosen_and_cleared_back_to_todays_defaults()
     {
         Accounts("claude-code", "account-1", "account-2");
+        Wiring("""{ "rotation": { "claude-code": ["account-1", "account-2"] } }""");
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new
         {
@@ -1067,9 +1039,13 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     public async Task The_fold_s_receipts_are_answered_unsaid_by_id_and_got_it_marks_only_those_named()
     {
         Accounts("claude-code", "account-1", "account-2");
-        Wiring("""{ "workspaceRotation": { "work": { "claude-code": ["account-2"] } } }""");
-        HarnessSettings.Change(HarnessSettingsPath, read => read);
-        var id = HarnessSettings.Load(HarnessSettingsPath).Pooled["claude-code"].Single().Id;
+        // The migration writes a receipt as it folds an older file; here one is left as it leaves it.
+        const string id = "0123456789ab";
+        Wiring("""
+            { "rotation": { "claude-code": ["account-2", "account-1"] },
+              "pooled": { "claude-code": [ { "id": "0123456789ab", "at": "2026-10-01T00:00:00+00:00",
+                "scopes": [ { "workspace": "work", "list": ["account-2"] } ], "order": ["account-2", "account-1"] } ] } }
+            """);
 
         var answer = Agent(await AnswerAsync(Module(), "ACCOUNTS", new { }), "claude-code");
         var receipt = Assert.Single(answer.GetProperty("pooled").EnumerateArray());

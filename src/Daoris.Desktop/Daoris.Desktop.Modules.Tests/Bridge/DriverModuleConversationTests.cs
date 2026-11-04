@@ -161,7 +161,6 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     /// </summary>
     [Theory]
     [InlineData("""{"run":"r1","marks":{"settled":1,"presses":1}}""", true)]
-    [InlineData("""{"run":"r1","marks":{"settled":1}}""", false)]
     public async Task A_press_names_its_question_to_a_host_that_checks_it(string protocol, bool named)
     {
         AskedQuestion("s1", "a1b2c3d4");

@@ -460,7 +460,10 @@ public sealed class PipeStandingTests : Bridge
 
         // A home's own judge over the seed's catalogue: your rules alone hold the supervisor, so nothing is covered whatever is sent.
         using var darkLog = new MachineLog(Home, "dark");
-        var dark = new InstancePipe(dispatcher, Bus, Path.Combine(Home, "dark-home"), darkLog, version: "9.9.9-test");
+        // The judge's caller is placed outside, so what refuses is that no role is staffed, not the test host's own look at the system.
+        var darkStanding = new StandingConfirmation(
+            Path.Combine(Home, "dark-home"), darkLog, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, walk: new StandingConfirmationTests.Walked());
+        var dark = new InstancePipe(dispatcher, Bus, Path.Combine(Home, "dark-home"), darkLog, version: "9.9.9-test", standing: darkStanding);
         Directory.CreateDirectory(Path.Combine(Home, "dark-home"));
         if (dark.Serve() is { } name)
         {

@@ -395,8 +395,8 @@ public sealed class EventJournalTests : IAsyncLifetime
             """);
         await ExecuteAsync("UPDATE sessions SET state = 'Working', note = 'n', evidence = NULL, transcript = NULL, updated = 'u2' WHERE id = 'older001'");
         await ExecuteAsync(
-            "UPDATE sessions SET said = '[{\"id\":\"w1\",\"text\":\"t\",\"at\":\"a\",\"files\":[]}]', answer = NULL WHERE id = 'older001' AND origin IS NULL");
-        await ExecuteAsync("UPDATE sessions SET said = $said, answer = NULL WHERE id = 'older001' AND origin IS NULL", ("$said", DBNull.Value));
+            "UPDATE sessions SET said = '[{\"id\":\"w1\",\"text\":\"t\",\"at\":\"a\",\"files\":[]}]' WHERE id = 'older001' AND origin IS NULL");
+        await ExecuteAsync("UPDATE sessions SET said = $said WHERE id = 'older001' AND origin IS NULL", ("$said", DBNull.Value));
 
         Assert.Equal(
             [("opened", null), ("state", null), ("word-added", "w1"), ("word-removed", "w1")],

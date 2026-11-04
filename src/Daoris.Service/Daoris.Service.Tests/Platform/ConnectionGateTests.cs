@@ -99,7 +99,8 @@ public sealed class ConnectionGateTests : IAsyncLifetime
                 while (member > 0 && !Regex.IsMatch(lines[member], @"^    (public|private|internal|protected)\b")) member--;
                 var before = string.Join('\n', lines[member..at]);
                 if (!before.Contains("InTransactionAsync", StringComparison.Ordinal)
-                    && !before.Contains("SqliteTransaction transaction", StringComparison.Ordinal))
+                    && !before.Contains("SqliteTransaction transaction", StringComparison.Ordinal)
+                    && !before.Contains("QuestTx tx", StringComparison.Ordinal))
                 {
                     alone.Add($"{Path.GetRelativePath(core, file)}:{at + 1}");
                 }

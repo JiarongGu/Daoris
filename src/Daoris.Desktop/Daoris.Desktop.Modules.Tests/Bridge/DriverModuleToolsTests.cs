@@ -403,7 +403,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         var listed = (await AnswerAsync(module, "TOOLS_LIST", new { })).GetProperty("identities");
         var work = listed.GetProperty("identities")[0];
         Assert.Equal(["github.com"], listed.GetProperty("own").EnumerateArray().Select(each => each.GetString()).ToArray());
-        Assert.False(listed.GetProperty("moved").GetBoolean());
+        Assert.False(listed.TryGetProperty("moved", out _));
         Assert.Equal(("Work", "ssh", true), (work.GetProperty("label").GetString(), work.GetProperty("way").GetString(), work.GetProperty("default").GetBoolean()));
         Assert.Equal(1, work.GetProperty("workspaces").GetInt32());
         Assert.False(work.TryGetProperty("privateKey", out _));

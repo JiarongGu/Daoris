@@ -140,18 +140,18 @@ public sealed class OwnerSetTests : IDisposable
         Assert.True(Act(judge, key, RoleKit.Probe.Named, """{"repository":"engine"}""").Covered);
     }
 
-    /// <summary>A workspace-scoped <c>SET_LANDING</c> and a workspace's Ask Daoris Apply each mark every repository of the workspace.</summary>
+    /// <summary>A workspace-scoped <c>SET_LINE</c> and a workspace's Ask Daoris Apply each mark every repository of the workspace.</summary>
     [Fact]
-    public async Task A_workspace_s_landing_and_its_apply_each_mark_every_repository_of_it()
+    public async Task A_workspace_s_line_and_its_apply_each_mark_every_repository_of_it()
     {
         var judge = Judge();
-        await MarkAsync(judge, "SET_LANDING", new { workspace = "games", form = "merge" });
+        await MarkAsync(judge, "SET_LINE", new { workspace = "games", branch = "develop" });
         Assert.True(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "engine")));
         Assert.True(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "atlas")));
         Assert.False(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "ledger")));
 
         var applied = Judge();
-        var plan = HelpProposals.Owned(new HelpProposal("p2", "setting", "landing", null, "games", "merge", null, "", "h1", "proposed"));
+        var plan = HelpProposals.Owned(new HelpProposal("p2", "setting", "line", null, "games", "develop", null, "", "h1", "proposed"));
         await using (await OwnerMarks.EnterAsync(applied, new Scopes(), HelpRoutes.Owned(plan), standing: false, CancellationToken.None))
         {
         }
@@ -220,37 +220,6 @@ public sealed class OwnerSetTests : IDisposable
     }
 
     // ——— The gates.
-
-    /// <summary>
-    /// The landing race (§5.4, finding 6): an owner's pushing landing rule, set by repository or by workspace alone, lands between the
-    /// steward's admission of a stop of a parked <c>Done</c> session and its gates; the act is refused <c>landing-pushes</c> under the
-    /// gates of its quest, its repository and the workspace, which it judges again there, and nothing runs.
-    /// </summary>
-    [Theory]
-    [InlineData("repository")]
-    [InlineData("workspace")]
-    public async Task The_owner_s_pushing_landing_between_admission_and_the_gates_refuses_the_act_landing_pushes(string scope)
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var pushes = false;
-        var probe = new QuestProbe { Under = () => pushes ? "landing-pushes" : null };
-        await using var served = await ServedAsync(probe);
-        served.Module.Before = async () =>
-        {
-            object landing = scope == "repository" ? new { repository = "engine", form = "push" } : new { workspace = "games", form = "push" };
-            await using (await OwnerMarks.EnterAsync(served.Judge, served.Scopes, DriverModule.OwnerDoor("SET_LANDING", Payload(landing))!, false, CancellationToken.None))
-            {
-                pushes = true;
-            }
-        };
-
-        var answer = await served.ActAsync(QuestProbe.Named, """{"quest":"q1"}""");
-
-        Assert.Equal((false, "landing-pushes"), (answer.GetProperty("done").GetBoolean(), answer.GetProperty("why").GetString()));
-        Assert.Equal(0, probe.Ran);
-        Assert.False(served.Judge.IsOwnerSet(new RoleScope(OwnerKinds.Quest, "q1")));
-        Assert.True(served.Judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "engine")));
-    }
 
     /// <summary>
     /// The gate's two orders: a steward act admitted then an owner's press on its scope waits for the act to end, then marks it; an

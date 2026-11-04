@@ -202,26 +202,6 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Contains("a kind is declared with a `label`, or dropped", await RefusalAsync(module, "WORKFLOW_KIND", new { workspace = "aurora", kind = "docs" }));
     }
 
-    [Fact]
-    public async Task A_choice_says_where_a_repository_integrates_with_no_gates_and_refuses_one_that_cannot_start()
-    {
-        File.WriteAllText(DriverConfigPath, """{"landings":{"engine":{"form":"branch","pattern":"w/{quest}"},"game":{"form":"branch","pattern":"g/{quest}","plugin":"acme.pr"}}}""");
-        var (module, _) = await UpAsync();
-        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "line", from = "integrated" });
-
-        var noGates = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "line" });
-        Assert.True(noGates.GetProperty("done").GetBoolean());
-        var row = Assert.Single(noGates.GetProperty("reach").EnumerateArray());
-        Assert.Equal(("engine", true, 0), (row.GetProperty("repository").GetString(), row.GetProperty("noGates").GetBoolean(), row.GetProperty("cannots").GetArrayLength()));
-        Assert.Contains("`engine` integrates with no gates", row.GetProperty("said").GetString());
-
-        var cannot = await AnswerAsync(module, "WORKFLOW_USE", new { workspace = "aurora", workflow = "line" });
-        Assert.Equal((false, "reach"), (cannot.GetProperty("done").GetBoolean(), cannot.GetProperty("refused").GetString()));
-        var refused = cannot.GetProperty("reach").EnumerateArray().Single(each => each.GetProperty("cannots").GetArrayLength() > 0);
-        Assert.Equal("game", refused.GetProperty("repository").GetString());
-        Assert.Contains("cannot start", refused.GetProperty("said").GetString());
-        Assert.False(DriverConfig.Load(DriverConfigPath).WorkspaceWorkflows.ContainsKey("aurora"));
-    }
 
     [Fact]
     public async Task An_append_whose_graph_cannot_start_where_it_is_chosen_is_refused_with_the_reach_named()
@@ -308,9 +288,10 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Equal((false, true, true, JsonValueKind.Null), (plan.GetProperty("done").GetBoolean(), plan.GetProperty("plan").GetBoolean(),
             plan.GetProperty("changed").GetBoolean(), plan.GetProperty("refused").ValueKind));
         var place = Assert.Single(plan.GetProperty("places").EnumerateArray());
-        Assert.Equal(("engine", "Current", "`auto` v1"), (place.GetProperty("repository").GetString(), place.GetProperty("was").GetString(), place.GetProperty("now").GetString()));
-        Assert.Equal(["it lands with no press of yours"], Strings(plan.GetProperty("lowers")));
-        Assert.Equal(["it lands with no press of yours"], Strings(place.GetProperty("lowers")));
+        Assert.Equal(("engine", "no workflow", "`auto` v1"), (place.GetProperty("repository").GetString(), place.GetProperty("was").GetString(), place.GetProperty("now").GetString()));
+        // With no workflow to compare, what the choice lowers cannot be read, and the plan says so.
+        Assert.Contains("what no workflow asks of you could not be read here", Assert.Single(Strings(plan.GetProperty("lowers"))));
+        Assert.Contains("what no workflow asks of you could not be read here", Assert.Single(Strings(place.GetProperty("lowers"))));
         Assert.False(string.IsNullOrWhiteSpace(plan.GetProperty("expected").GetString()));
         Assert.Contains("now chooses `auto` as its default", plan.GetProperty("message").GetString());
         Assert.Equal(before, File.Exists(DriverConfigPath) ? File.ReadAllBytes(DriverConfigPath) : null);
@@ -372,7 +353,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         var keeps = plan.GetProperty("keeps");
         var kind = Assert.Single(keeps.GetProperty("kinds").EnumerateArray());
         Assert.Equal(("docs", "docs"), (kind.GetProperty("kind").GetString(), kind.GetProperty("workflow").GetString()));
-        Assert.Contains("follows Current, not the workspace's", keeps.GetProperty("said").GetString());
+        Assert.Contains("`engine` still maps kind `docs` to `docs`", keeps.GetProperty("said").GetString());
         Assert.Equal(before, File.ReadAllBytes(DriverConfigPath));
 
         var clearsAKind = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "docs", plan = true });
