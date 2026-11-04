@@ -177,3 +177,28 @@ Each chunk is about an hour, compiles on its own and runs no tests. The KB are c
 7. **Failures appear late.** No chunk runs tests (D180's note), so drift appears only at SCOPEVERIFY1. Keep the A and B chunks
    mechanical: the same names, paths and answers.
 8. **Start-time failures.** A missing constructor dependency for a part fails at start. The parts test of each root builds them.
+
+## 4. Verification: what to run first
+
+No chunk ran its tests. Each hand-back named the tests most likely to show its drift; SCOPEVERIFY1 runs these before the full set.
+
+- **Concurrency, with locks moved whole:** `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpBackgroundTests` (closed quest,
+  still being marked). `Answered` in the open-prompt state now reads the retry once before the gate, where it read it twice inside:
+  check that no race opens. `ChatTurnsTests`, `DrivenInboxTests` (`Only_a_stop_press…`), `DriverWatchLookTests`, `LookStagesTests`.
+- **The pipe and the standing confirmation:** in `Modules.Tests/Platform`, `InstancePipe`, `PipeConfirm`, `PipeConfirmations`,
+  `PipeStanding`, `PipeWording`, `StandingConfirmation`, `StandingForm`, `RoleAct`, `RoleTerminal`, `Holder*`, `SupervisorScope`,
+  `StewardDesk`.
+- **The driver loop:** `DriverLoopAddressTests`, `DriverLoopSendsBackTests`, `SessionWordsTerminalTests`, `PluginRecordWiringTests`,
+  `DriverModuleSessionsTests`, `DriverLoopLockTests`, `TickScopesTests`.
+- **Censuses and source readers repointed by hand:** `MoveStoreCensusTests`, `RoleStaffingTests`, `ContinuedReadersCensusTests`,
+  `SettledReadersCensusTests` (their `Driver.cs` rows were already stale), `CheckoutWritersCensusTests`, `StructureTests`,
+  `PullRequestOccasionTests`, `CourseVocabularyTests`, `provider-census.json` (rows rewritten by a script; their order too),
+  `PipeGroundsCensusTests` (it reads quoted field names in handlers, which typed handlers no longer have).
+- **The parts tests:** each root's `<Root>PartsTests` (look, run, executors, turn stages, quest operations).
+- **Rebound and never run:** `NodeRuntimeTests`' 18 tests on `NodeRunFixture`; the fixture rows in `driver-config-keeps.json` and
+  `driver-workflows-text.json` still naming work cycles.
+- **Wire changes:** typed parsing is stricter, so a test's hand-written JSON may throw; wire-text routes re-encode a `JsonObject`;
+  `sessions handback --json` is re-serialised; the finished-tree body omits nulls; `RECOVERY_DROP` and the downloads list skip
+  non-object items; an empty ref, name or version reads as absent.
+- **The web:** `WorkFrame.test.tsx` and its `.words`, `.landed`, `.conversation`, `.line`, `.reviewchat`, `.workflow` and `.preview`
+  siblings; `check:web-rules` (its four `agents/roles/` failures predate the scope).
