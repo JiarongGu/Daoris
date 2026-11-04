@@ -7,6 +7,13 @@ namespace Daoris.Contracts;
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class OptionalBodyAttribute : Attribute;
 
+/// <summary>
+/// A route whose handler reads its own body, as the record's body values are documentation of it and the binder reads none: a body
+/// read no further than its limit, or taken as the text a wire reader judges whole.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+public sealed class OwnBodyAttribute : Attribute;
+
 /// <summary>A value of a route that takes a body which travels in the query instead, as a handler's simple parameter did.</summary>
 [AttributeUsage(AttributeTargets.Property, Inherited = false)]
 public sealed class FromQueryAttribute : Attribute;

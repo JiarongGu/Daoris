@@ -50,7 +50,7 @@ internal static class RouteBinder
         // JSON is 415 unread; a body that is absent, or JSON's null, binds as naming nothing where the body is optional and does not
         // bind where it is required. Its values are never required one by one: the serializer leaves one out as its default.
         var values = new JsonObject();
-        if (type.Properties.Any(property => route.Travels(property.Name) == RouteTravel.Body))
+        if (!route.OwnBody && type.Properties.Any(property => route.Travels(property.Name) == RouteTravel.Body))
         {
             var (body, refused) = await BodyAsync(http);
             if (refused != 0) return (null, refused);

@@ -536,10 +536,10 @@ public sealed class PersonGate(PersonKey? key, MachineLog log)
     /// A refusal a route gives on the gate's behalf, in its shape and with its one log line: an ask for the person's confirmation
     /// with its asker's places taken (PERSONDOOR1b, PERSONDOOR1j), by what the call presented, with the route's own sentence.
     /// </summary>
-    public IResult Refusal(HttpContext http, string code, string sentence)
+    public Routes.Refusal Refusal(HttpContext http, string code, string sentence)
     {
         Write(http, http.Items[PresentedItem] as Presented? ?? Presented.None, code);
-        return Results.Json(new ErrorResponse(sentence, code), statusCode: StatusCodes.Status403Forbidden);
+        return new Routes.Refusal(StatusCodes.Status403Forbidden, new ErrorResponse(sentence, code));
     }
 
     /// <summary>
