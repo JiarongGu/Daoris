@@ -122,7 +122,7 @@ public sealed partial class ContinuedReadersCensusTests
     /// </summary>
     private static readonly Dictionary<string, string> Dispatchers = new()
     {
-        ["DrivenInbox.cs"] = "a keep answered `continued` holds, sends, steers, attempts and takes nothing and answers InboxKeep.Continued with the head; KeepOrHoldAsync never holds it here instead; a reword so answered changes nothing here",
+        ["InboxKeeps.cs"] = "a keep answered `continued` holds, sends, steers, attempts and takes nothing and answers InboxKeep.Continued with the head; KeepOrHoldAsync never holds it here instead; a reword so answered changes nothing here",
         ["TurnKeeps.cs"] = "a keep answered `continued` queues, steers, attempts and writes nothing on its door and answers TurnKept.Head; a reword so answered changes nothing here",
         ["ChatWords.cs"] = "the turns' head answered as ChatSaid.Head, with no reach and no word",
         ["SessionSay.cs"] = "the headless door: the inbox's head is where the request is said again",
