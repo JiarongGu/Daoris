@@ -229,10 +229,10 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     {
         var proposal = new HelpProposal("p1", kind, kind, view, workspace, null, null, "why", "h1", "proposed") { Item = item };
 
-        Assert.Equal(records, HelpRoutes.JudgedAgainstRecords([proposal]));
-        Assert.Equal(sessions, HelpRoutes.JudgedAgainstSessions([proposal]));
-        Assert.False(HelpRoutes.JudgedAgainstRecords([]));
-        Assert.False(HelpRoutes.JudgedAgainstSessions([]));
+        Assert.Equal(records, HelpProposalFacts.JudgedAgainstRecords([proposal]));
+        Assert.Equal(sessions, HelpProposalFacts.JudgedAgainstSessions([proposal]));
+        Assert.False(HelpProposalFacts.JudgedAgainstRecords([]));
+        Assert.False(HelpProposalFacts.JudgedAgainstSessions([]));
     }
 
     /// <summary>
