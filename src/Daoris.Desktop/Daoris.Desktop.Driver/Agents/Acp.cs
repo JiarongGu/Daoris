@@ -6,241 +6,6 @@ using Daoris.Contracts.Parts;
 
 namespace Daoris.Driver;
 
-/// <param name="StopReason">What the agent said ended the turn, verbatim from the wire.</param>
-/// <param name="SessionId">The id the agent gave the session, for the cancel verb and the record.</param>
-/// <param name="Updates">How many `session/update` notifications arrived — the timeline's raw count.</param>
-/// <remarks>
-/// <b>None of this moves a session record.</b> The record moves on the exit code and the quest's own
-/// state (D46 §4), because those are the two signals outside work also produces — and because the ACP
-/// wire flattens an aborted, blocked or errored turn to `end_turn`, so its stop reason is a
-/// self-report that cannot be told apart from an ordinary ending. What this carries ENRICHES the
-/// console and the transcript; it never replaces an observation. The one exception is <see cref="AcpOutcome.Refusal"/>
-/// (APIREFUSAL1): the adapter's word that its model's provider refused a call, which is the door saying the work was cut
-/// off, as a failed call is (ACPEND1), and not the session describing its work.
-/// </remarks>
-/// <summary>
-/// What a session consumed, as its harness reported it (TOOL3/D57 §4).
-/// </summary>
-/// <param name="Used">Context the session was holding, in the harness's own units.</param>
-/// <param name="Size">The window it was holding it against.</param>
-/// <remarks>
-/// <para><b>Reported, never computed.</b> Daoris makes no model calls and knows nothing about
-/// tokenization — this is a number somebody else's tool volunteered, carried as it was given. No
-/// price is attached to it either: what a token costs is the deployment's business (D24), and a
-/// price table per model per provider maintained here would be wrong within a month.</para>
-///
-/// <para><b>The high-water mark, not the last reading.</b> Context drops when a session compacts, so
-/// the final number would say a session that nearly filled its window used very little.</para>
-/// </remarks>
-public sealed record AcpUsage(long Used, long Size);
-
-/// <summary>One value a config option offers, in the agent's own words.</summary>
-public sealed record AcpConfigChoice(string Value, string Name, string? Description = null);
-
-/// <summary>
-/// One of a session's config options as the agent offers it (AGT6b, D98): what it is called, what kind
-/// it is, what it is set to, and what it may be set to. Only a choice among values is kept.
-/// </summary>
-/// <param name="Id">What <c>session/set_config_option</c> names it by.</param>
-/// <param name="Name">What the agent calls it — content, never translated.</param>
-/// <param name="Category">
-/// The protocol's word for what it is — <c>mode</c>, <c>model</c>, <c>thought_level</c>, or another —
-/// or null where the agent said none.
-/// </param>
-/// <param name="Current">What it is set to now.</param>
-/// <param name="Choices">What it may be set to, a grouped list flattened: a group is a heading, not a value.</param>
-public sealed record AcpConfigOption(
-    string Id, string Name, string? Category, string Current, IReadOnlyList<AcpConfigChoice> Choices,
-    string? Description = null)
-{
-    /// <summary>
-    /// Whether this is one the person may set from Daoris (D98): the model, and the effort the protocol
-    /// calls a thought level. 🔴 Never the mode — that is the posture Daoris runs a session under
-    /// (D37, D81), and a person widening it from a menu is what D52 refuses. An option with no category
-    /// is not offered: nothing says what it is.
-    /// </summary>
-    public bool ThePersons => Category is "model" or "thought_level";
-
-    /// <summary>
-    /// The options a <c>configOptions</c> list holds, read without trusting its shape: an entry that is not
-    /// a choice among values — a boolean, a malformed one — is left out, never a throw.
-    /// </summary>
-    public static IReadOnlyList<AcpConfigOption> Read(JsonElement list)
-    {
-        if (list.ValueKind != JsonValueKind.Array) return [];
-
-        var read = new List<AcpConfigOption>();
-        foreach (var option in list.EnumerateArray())
-        {
-            if (option.ValueKind != JsonValueKind.Object
-                || Json.Text(option, "type") != "select"
-                || Json.Text(option, "id") is not { Length: > 0 } id
-                || Json.Text(option, "currentValue") is not { } current
-                || !option.TryGetProperty("options", out var values) || values.ValueKind != JsonValueKind.Array)
-            {
-                continue;
-            }
-
-            var choices = new List<AcpConfigChoice>();
-            foreach (var entry in values.EnumerateArray())
-            {
-                if (entry.ValueKind != JsonValueKind.Object) continue;
-                if (entry.TryGetProperty("options", out var grouped) && grouped.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var inner in grouped.EnumerateArray()) Choice(inner, choices);
-                }
-                else
-                {
-                    Choice(entry, choices);
-                }
-            }
-
-            read.Add(new AcpConfigOption(
-                id, Json.Text(option, "name") ?? id, Json.Text(option, "category"), current, choices,
-                Json.Text(option, "description")));
-        }
-
-        return read;
-    }
-
-    private static void Choice(JsonElement entry, List<AcpConfigChoice> into)
-    {
-        if (entry.ValueKind == JsonValueKind.Object && Json.Text(entry, "value") is { Length: > 0 } value)
-        {
-            into.Add(new AcpConfigChoice(value, Json.Text(entry, "name") ?? value, Json.Text(entry, "description")));
-        }
-    }
-}
-
-/// <param name="Usage">
-/// The context pressure the agent reported, or <b>null when it reported none</b> — absent, never
-/// zero. "Nothing was measured" and "it used nothing" are different claims (TOOL3).
-/// </param>
-public sealed record AcpOutcome(
-    string StopReason, string SessionId, int Updates, AcpUsage? Usage = null)
-{
-    /// <summary>
-    /// The stop reason a turn ends with when its model's provider refused it (APIREFUSAL1): seen on the install (2026-10-23) after
-    /// the adapter said the provider's <c>API Error</c>, with its request id, as the agent's message.
-    /// </summary>
-    public const string Refusal = "refusal";
-
-    /// <summary>Whether its last turn ended on its provider's refusal (<see cref="Refusal"/>).</summary>
-    public bool ProviderRefused => StopReason == Refusal;
-
-    /// <summary>The stop of a session its agent's refusal of the choice ended at the open, before any prompt (D205 §3.3).</summary>
-    public const string ChoiceNotOffered = "choice-not-offered";
-
-    /// <summary>The refusal that ended its open before any prompt (D205 §3.3, MODELROLE1c2), or null for every run that prompted.</summary>
-    public ModelRefusal? NotOffered { get; init; }
-
-    /// <summary>How its last turn was cut (CODEXPERM1), or null where it was not: see <see cref="TurnCut"/>.</summary>
-    public TurnCut? Cut { get; init; }
-
-    /// <summary>What the console says of the turn's end: a cut says what cut it, any other end the agent's stop reason.</summary>
-    public string TurnEnd => Cut is { } cut
-        ? $"the turn was cut: its agent ended it `{StopReason}` "
-          + (cut.Call is { } call ? $"after the permission it asked for, {call}, was refused" : "though nobody stopped it")
-          + $", after {Updates} update(s)"
-        : $"the turn ended: {StopReason}, after {Updates} update(s)";
-}
-
-/// <summary>A choice refused at the open with nothing else to set on the same session (D205 §3.3): the open ends before its prompt.</summary>
-public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
-    : DriverException($"the agent did not offer the {refusal.Category} `{refusal.Value}` asked ({refusal.Code}): nothing was prompted.")
-{
-    /// <summary>What it refused.</summary>
-    public ModelRefusal Refusal { get; } = refusal;
-}
-
-/// <summary>
-/// A word a run was to write whose attempt its record did not acknowledge (FOUNDATION1 row p, the design §3.4 rule 5): it is not written, and
-/// waits on its record for the session's next go-on, which sends it once. Thrown before the wire, never after a write.
-/// </summary>
-public sealed class AcpWordsUnmarked(string message) : DriverException(message)
-{
-    /// <summary>The sentence a word left waiting by an unacknowledged mark is said with, and a resumed run's failure carries.</summary>
-    public const string Sentence = "the session's record did not mark the words attempted, so none was written: they wait on it for the session's next go-on";
-}
-
-/// <summary>
-/// A word turned away at a run's door (RUNENDS1 after review, finding 2): the run had ended, or left a silent turn of a closed quest, before
-/// it was written, so it never reached the wire and went back to the driver with the run's other words (<see cref="AcpSession.HandedBack"/>).
-/// Thrown before the wire, never after a write, and never the door's failure: nothing more is said of it.
-/// </summary>
-public sealed class AcpTurnedAway() : DriverException(Sentence)
-{
-    /// <summary>What the words' delivery is told.</summary>
-    public const string Sentence = "the session's run had ended before these words were written: they went back to wait for its next run";
-}
-
-/// <summary>
-/// The agent's refusal of a call: a JSON-RPC error, said as a sentence, with what its <c>data</c> carried kept beside
-/// it (ACPDATA1, D125 §1.2).
-/// </summary>
-/// <remarks>
-/// 🔴 <b>An adapter may put the words that matter in <c>data</c>, not in the message.</b> <c>codex-acp</c> answers a usage
-/// limit with the message <c>Internal error</c> and nothing after it, and the limit's sentence in <c>data.message</c>; Claude
-/// Code's adapter puts its sentence in the message and the SDK's category in <c>data.errorKind</c>
-/// (docs/2026-10-02-limit-signals-evidence.md §3, §4). So the sentence the data carries is said after the message, where
-/// the conclusion and the limit reader read the door's failure, and the kind is kept for a reader that reads a field.
-/// </remarks>
-/// <param name="message">The refusal as a sentence: the error's message, then the data's, where it adds one.</param>
-/// <param name="said">The data's <c>message</c>, or null where it carried none.</param>
-/// <param name="errorKind">The data's <c>errorKind</c>, or null where it carried none.</param>
-/// <param name="code">The error's JSON-RPC <c>code</c>, or null where it gave none (ANSWER1a).</param>
-/// <param name="words">The agent's own sentence, without this client's preface (ANSWER1a); the message where unsaid.</param>
-/// <param name="reason">The data's <c>reason</c>, or null where it carried none (MSG1b).</param>
-public sealed class AcpRefusal(
-    string message, string? said = null, string? errorKind = null, int? code = null, string? words = null, string? reason = null)
-    : DriverException(message)
-{
-    /// <summary>What the error's <c>data.message</c>, or else its <c>data.details</c>, said; null where it said nothing.</summary>
-    public string? Said => said;
-
-    /// <summary>
-    /// The error's <c>data.reason</c> (MSG1b, D137 §1.1): <c>codex-acp</c> says <c>thread_active_writer</c> there when another
-    /// Codex client holds the conversation. A field a reader acts on, where the sentence beside it is only for a person.
-    /// </summary>
-    public string? Reason => reason;
-
-    /// <summary>The error's <c>data.errorKind</c>, or null where it carried none.</summary>
-    public string? ErrorKind => errorKind;
-
-    /// <summary>
-    /// The error's <c>code</c> (ANSWER1a): a resume refused <c>resource_not_found</c> is a conversation the agent no longer
-    /// has, any other a refusal. Null where the error gave none.
-    /// </summary>
-    public int? Code => code;
-
-    /// <summary>The agent's own sentence, as the error and its data said it, without this client's preface.</summary>
-    public string Words => words ?? message;
-
-    /// <summary>
-    /// The refusal a JSON-RPC <c>error</c> member says, read without trusting its shape (REV3): a message that is not
-    /// text is the error as written, and a <c>data</c> that is not an object, or fields in it that are not text, add
-    /// nothing. The data's message is said after the error's only where it adds words the error's did not already say.
-    /// <c>claude-agent-acp</c> puts its sentence in <c>data.details</c> instead (<c>Invalid value for config option model: …</c>,
-    /// MODELROLE1a's evidence), read where the data has no message.
-    /// </summary>
-    internal static AcpRefusal Of(JsonElement error)
-    {
-        var message = Json.Text(error, "message") ?? error.GetRawText();
-        var data = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("data", out var d) ? d : default;
-        var said = (Json.Text(data, "message") ?? Json.Text(data, "details")) is { } words && !string.IsNullOrWhiteSpace(words)
-            ? words.Trim()
-            : null;
-        var sentence = said is null || message.Contains(said, StringComparison.Ordinal) ? message : $"{message}: {said}";
-        var code = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var c)
-                   && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var number)
-            ? number
-            : (int?)null;
-        return new AcpRefusal(
-            $"the ACP agent refused the call: {sentence}", said, Json.Text(data, "errorKind"), code, sentence,
-            Json.Text(data, "reason"));
-    }
-}
-
 /// <summary>
 /// One session held over the Agent Client Protocol (D53): JSON-RPC 2.0 in newline-delimited frames,
 /// over a spawned process's stdio.
@@ -608,217 +373,59 @@ public sealed class AcpSession(
     /// </summary>
     public event Action<JsonElement>? LimitsSaid;
 
-    /// <summary>The config options as the agent last said them (AGT6b), and the lock that guards them.</summary>
-    private readonly object _optionsGate = new();
-    private IReadOnlyList<AcpConfigOption> _options = [];
+    private AcpOptions Options => LazyInitializer.EnsureInitialized(ref _optionsKept, () => new AcpOptions(
+        onLine, onOptions, (method, args, ct) => RequestAsync(method, args, ct), () => _sessionId));
+    private AcpOptions? _optionsKept;
 
-    /// <summary>
-    /// The session's config options, as the agent last said them (AGT6b, D98) — empty before it opens, or
-    /// where the agent offers none. Every one of them, the mode included: which of them a person may set
-    /// is the caller's to judge (<see cref="AcpConfigOption.ThePersons"/>).
-    /// </summary>
-    public IReadOnlyList<AcpConfigOption> ConfigOptions
+    /// <summary>The session's config options as the agent last said them (AGT6b, D98), the mode included; which a person may set is the caller's to judge (<see cref="AcpConfigOption.ThePersons"/>).</summary>
+    public IReadOnlyList<AcpConfigOption> ConfigOptions => Options.Current;
+
+    private void KeepOptions(IReadOnlyList<AcpConfigOption> options) => Options.Keep(options);
+
+    /// <summary>Change one of the session's config options, mid-conversation (AGT6b, D98): the agent's whole list after it is kept and returned.</summary>
+    public Task<IReadOnlyList<AcpConfigOption>> SetConfigOptionAsync(string configId, string value, CancellationToken ct) =>
+        Options.SetAsync(configId, value, ct);
+
+    /// <summary>The list the last setter returned; null when it returned none (D205).</summary>
+    public IReadOnlyList<AcpConfigOption>? LastAcknowledgedOptions => Options.LastAcknowledged;
+
+    /// <summary>What this start's actor asked, set on the open session by category before the posture and the first prompt (D205 §3.2).</summary>
+    public ActorAsked? Carry
     {
-        get { lock (_optionsGate) return _options; }
+        get => Options.Carry;
+        set => Options.Carry = value;
     }
 
-    /// <summary>Keep what the agent said its options are now, and tell whoever asked.</summary>
-    private void KeepOptions(IReadOnlyList<AcpConfigOption> options)
+    /// <summary>Told what was carried where it differs from <see cref="Carry"/> (D205 §3.3, §5).</summary>
+    public Action<ActorAsked>? Carried
     {
-        lock (_optionsGate) _options = options;
-        try
-        {
-            onOptions?.Invoke(options);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            // A listener's failure is its own: the options are kept, and the turn goes on.
-            onLine($"[the session's options could not be told: {error.Message}]");
-        }
+        get => Options.Carried;
+        set => Options.Carried = value;
     }
 
-    /// <summary>
-    /// Change one of the session's config options (AGT6b, D98): <c>session/set_config_option</c> with the
-    /// session, the option and the value — a model, or an effort, mid-conversation, as the tool's own
-    /// console would. The agent's answer is its whole list after the change (an effort's levels follow the
-    /// model), and that is what is kept and returned.
-    /// </summary>
-    /// <remarks>
-    /// This sends what it is asked to; which options a person may set is the caller's judgement, made
-    /// before it gets here. An answer that carries no list leaves the others as they were and the one set
-    /// at the value asked for, since the agent accepted it.
-    /// </remarks>
-    /// <exception cref="DriverException">The session is not open, or the agent refused the change — in its words.</exception>
-    public async Task<IReadOnlyList<AcpConfigOption>> SetConfigOptionAsync(string configId, string value, CancellationToken ct)
+    /// <summary>Asked where the agent refuses <see cref="Carry"/>'s model at the open: a later choice for this session, or null to end it (<see cref="AcpChoiceNotOffered"/>).</summary>
+    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused
     {
-        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be set on it.");
-
-        var answer = await RequestAsync("session/set_config_option", new { sessionId = _sessionId, configId, value }, ct)
-            .ConfigureAwait(false);
-        var returned = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("configOptions", out var list)
-                    && list.ValueKind == JsonValueKind.Array
-            ? AcpConfigOption.Read(list)
-            : null;
-        LastAcknowledgedOptions = returned;
-        // Preserve the composer's existing reading; provenance below never mistakes this local projection for an acknowledgement.
-        var after = returned ?? [.. ConfigOptions.Select(option => option.Id == configId ? option with { Current = value } : option)];
-        KeepOptions(after);
-        return after;
+        get => Options.ModelRefused;
+        set => Options.ModelRefused = value;
     }
 
-    /// <summary>D205: only the list the last setter actually returned; null when it returned none.</summary>
-    public IReadOnlyList<AcpConfigOption>? LastAcknowledgedOptions { get; private set; }
+    /// <summary>Told the options the open listed, before the posture or any set (D205 §9.2).</summary>
+    public Action<IReadOnlyList<AcpConfigOption>>? OffersRead
+    {
+        get => Options.OffersRead;
+        set => Options.OffersRead = value;
+    }
 
-    /// <summary>
-    /// What this start's actor asked (D205 §3.2, MODELROLE1c): each value an entry names and carries is set on the open session by its
-    /// category, <c>model</c> and then <c>thought_level</c>, before the posture and the first prompt, on a new session and a resumed one
-    /// alike. Null, or account default, sets nothing: today's cascade decides.
-    /// </summary>
-    public ActorAsked? Carry { get; set; }
-
-    /// <summary>
-    /// Told what was carried where it differs from <see cref="Carry"/>: a value the agent offers no option for, refuses, or answers with
-    /// another value it offers, kept as asked and not carried (D205 §3.3, §5), so the record never says a choice was taken that was not.
-    /// </summary>
-    public Action<ActorAsked>? Carried { get; set; }
-
-    /// <summary>
-    /// Asked where the agent does not offer, or refuses, <see cref="Carry"/>'s model at the open, before any prompt (D205 §3.3,
-    /// MODELROLE1c2): the start's re-ask, which keeps the reading and answers what the walk now would. A later choice to set on this same
-    /// session (the same agent on the same account), or null, where the record ends <c>choice-not-offered</c> before any prompt
-    /// (<see cref="AcpChoiceNotOffered"/>). Null keeps MODELROLE1c's reading: the model runs at account default, said as not carried.
-    /// </summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; set; }
-
-    /// <summary>
-    /// Told the options its open listed, as <c>session/new</c> (or the resume) answered them before the posture or any set: the reading
-    /// <c>data/agent-offers.json</c> keeps for its agent, version and account (D205 §9.2).
-    /// </summary>
-    public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; set; }
-
-    /// <summary>
-    /// The options as the open listed them, before the posture or any set, never overwritten (D205 §3.3, round 4, Opus N6): what a refused
-    /// attempt's categories are set back to where the same-account move leaves them at account default. <see cref="ConfigOptions"/> keeps
-    /// only the latest list, which every set and every <c>config_option_update</c> replace.
-    /// </summary>
-    public IReadOnlyList<AcpConfigOption> OpeningOptions { get; private set; } = [];
+    /// <summary>The options as the open listed them, never overwritten (D205 §3.3).</summary>
+    public IReadOnlyList<AcpConfigOption> OpeningOptions => Options.OpeningOptions;
 
     /// <summary>The refusal that ended this session's open before any prompt (D205 §3.3), or null.</summary>
-    public ModelRefusal? NotOffered { get; private set; }
+    public ModelRefusal? NotOffered => Options.NotOffered;
 
-    /// <summary>The opening's snapshot, kept once, and told as the agent's offer reading (D205 §9.2).</summary>
-    private void KeepOpening()
-    {
-        OpeningOptions = ConfigOptions;
-        try
-        {
-            OffersRead?.Invoke(OpeningOptions);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            onLine($"[the session's offers could not be kept: {error.Message}]");
-        }
-    }
+    private void KeepOpening() => Options.KeepOpening();
 
-    /// <summary>
-    /// <see cref="Carry"/> set on the session (D205 §3.2): the model first, then the effort, whose levels follow the model, each found by
-    /// its category (MODELROLE1a: Codex's effort id is <c>reasoning_effort</c>, Claude's <c>effort</c>). Whether anything was set, so the
-    /// posture is set again after it: a model change can move the mode (MODELROLE1a's <c>haiku</c> moved <c>auto</c> to
-    /// <c>acceptEdits</c>).
-    /// </summary>
-    /// <remarks>
-    /// Where <see cref="ModelRefused"/> is given, a model the open's list does not offer, a set the agent refuses, or one answered with another
-    /// value it offers is a refusal of that choice on this account (§3.3): the re-ask answers a later choice to set on this session, each
-    /// category the refused attempt touched and the later choice leaves at account default first set back to its opening value; or the
-    /// open ends before its prompt. An effort not offered runs at account default effort, said as not carried, never a refusal.
-    /// </remarks>
-    /// <exception cref="AcpChoiceNotOffered">The choice was refused and nothing else may run on this session: no prompt was sent.</exception>
-    private async Task<bool> CarryAsync(CancellationToken ct)
-    {
-        var asked = Carry;
-        var set = false;
-        var touched = new HashSet<string>(StringComparer.Ordinal);
-        while (asked is not null)
-        {
-            ModelRefusal? refusal = null;
-            var model = await OneAsync("model", asked.Model, judged: ModelRefused is not null).ConfigureAwait(false);
-            if (refusal is { } refused)
-            {
-                NotOffered = refused;
-                var later = await ModelRefused!(refused).ConfigureAwait(false);
-                if (later is null) throw new AcpChoiceNotOffered(refused);
-
-                // The same agent on the same account (§3.3's first path): what the refused attempt moved is set back where the later
-                // choice leaves it at account default, then the later choice is carried on this same session, no respawn.
-                foreach (var category in touched)
-                {
-                    var leaves = category == "model" ? later.Model : later.Effort;
-                    if (leaves.Source is "entry" or "override") continue;
-                    if (OpeningOptions.FirstOrDefault(option => option.Category == category) is not { Current: { } opening } option) continue;
-                    try
-                    {
-                        await SetConfigOptionAsync(option.Id, opening, ct).ConfigureAwait(false);
-                    }
-                    catch (DriverException back)
-                    {
-                        onLine($"[{category} could not be set back to `{opening}`: {back.Message}]");
-                        throw new AcpChoiceNotOffered(refused);
-                    }
-
-                    if (LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category) is { } now && now.Current != opening)
-                    {
-                        throw new AcpChoiceNotOffered(refused);
-                    }
-                }
-
-                NotOffered = null;
-                touched.Clear();
-                asked = later;
-                continue;
-            }
-
-            var effort = await OneAsync("thought_level", asked.Effort, judged: false).ConfigureAwait(false);
-            if (model != asked.Model || effort != asked.Effort) Carried?.Invoke(asked with { Model = model, Effort = effort });
-            return set;
-
-            async Task<ActorValue> OneAsync(string category, ActorValue value, bool judged)
-            {
-                if (value is not { Source: "entry" or "override", Value: { } wanted, Carried: true }) return value;
-                if (ConfigOptions.FirstOrDefault(option => option.Category == category) is not { } option) return value with { Carried = false };
-                if (option.Current == wanted) return value;
-                // Always asked, never judged by the list alone (MODELROLE1a): Claude's door lists aliases and takes a full id it does not list,
-                // and refuses a model it does not offer at the set, before any prompt. A refusal of a value the list named is `refused`; of
-                // one it did not, `not-offered` (D205 §3.3).
-                var listed = option.Choices.Any(choice => choice.Value == wanted);
-                try
-                {
-                    await SetConfigOptionAsync(option.Id, wanted, ct).ConfigureAwait(false);
-                    // What the attempt moved, which a same-account move sets back where it leaves the category at account default.
-                    touched.Add(category);
-                    set = true;
-                }
-                catch (DriverException refused)
-                {
-                    onLine($"[{category} `{wanted}` was not set: {refused.Message}]");
-                    if (judged) refusal = new ModelRefusal(category, wanted, listed ? AgentOffers.RefusedCode : AgentOffers.NotOffered);
-                    return value with { Carried = false };
-                }
-
-                // A returned value other than the one asked is a refusal only where it is another value the list offers: an asked id the agent
-                // answers with its own alias is taken (round 3, Opus N5; MODELROLE1a: `claude-sonnet-5-5` asked, `sonnet` returned).
-                var now = LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category);
-                if (now is not null && now.Current != wanted && now.Choices.Any(choice => choice.Value == wanted))
-                {
-                    if (judged) refusal = new ModelRefusal(category, wanted, AgentOffers.RefusedCode);
-                    return value with { Carried = false };
-                }
-
-                return value;
-            }
-        }
-
-        return set;
-    }
+    private Task<bool> CarryAsync(CancellationToken ct) => Options.CarryAsync(ct);
 
     /// <summary>
     /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
