@@ -88,7 +88,7 @@ public sealed class AskWordsHandedTests
             AccountChanged = prior.Limit && AccountIdentity.OnAnotherAccount(prior, "account-2"),
         };
 
-        var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(carryOn, "s6", service, CancellationToken.None));
+        var handed = TargetPrompt.Compose(await Daoris.Driver.StartTargets.WithAskWordsAsync(carryOn, "s6", service, CancellationToken.None));
 
         // One hop, as it was: the answer is nowhere in what the carry-on was handed.
         Assert.DoesNotContain(Answer, TargetPrompt.Compose(carryOn));

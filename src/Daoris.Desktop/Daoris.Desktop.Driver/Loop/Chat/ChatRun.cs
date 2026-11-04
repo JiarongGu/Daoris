@@ -102,7 +102,7 @@ internal sealed class ChatRun(
                 },
                 config.Commands.GetValueOrDefault(resolved.Name));
             // Its toolchain's environment and its tools at the start, as every driven session's.
-            Driver.Equip(resolved, info, selection);
+            SessionEquipment.Equip(resolved, info, selection);
 
             // Its standing block, on its harness, told with a new conversation's first message and never at a go-on, which resumes the same
             // conversation; a hand-over's adds the memory its brief hands on.

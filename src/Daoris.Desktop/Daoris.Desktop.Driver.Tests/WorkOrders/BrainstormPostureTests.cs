@@ -132,7 +132,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(Strings(expected["allow"]), Strings(handed["permissions"]!["allow"]).Select(rule => rule == room ? "Read(<room>)" : rule));
         Assert.Equal(expected["hardDeny"]!.GetValue<string>(), Strings(handed["autoMode"]!["hard_deny"]).Last());
         Assert.Null(BrainstormPermissions.Posture(adapter));
-        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(turn), adapter));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(turn), adapter));
         Assert.Equal("auto|acceptEdits", adapter.AcpPosture);
     }
 
@@ -153,7 +153,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Null(file);
         Assert.Null(meta);
         Assert.Equal(HandedNones.Agent, handed.None);
-        var posture = Daoris.Driver.Driver.PassPosture(Pass(), adapter);
+        var posture = Daoris.Driver.SessionRules.PassPosture(Pass(), adapter);
         Assert.Equal($"{AgentPostures.Required}read-only", posture);
         Assert.NotEqual(adapter.AcpPosture, posture!.TrimStart(AgentPostures.Required));
         Assert.NotEqual(adapter.FullPosture, posture.TrimStart(AgentPostures.Required));
@@ -167,10 +167,10 @@ public sealed class BrainstormPostureTests : IDisposable
         var adapters = AdapterSet.Built();
         var quest = new SessionTarget("q1", "Quest", "", "Daoris", "", "tree", "");
 
-        Assert.Null(Daoris.Driver.Driver.PassPosture(quest, adapters.Resolve("codex-acp")));
-        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(), adapters.Resolve("dsh")));
-        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(), adapters.Resolve("acp-stub")));
-        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(), adapters.Resolve("claude-code")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(quest, adapters.Resolve("codex-acp")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Resolve("dsh")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Resolve("acp-stub")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Resolve("claude-code")));
     }
 
     [Theory]

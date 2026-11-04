@@ -93,10 +93,10 @@ public sealed class SessionLanguageHandedTests
         var quest = new QuestView("q1", "ask #a1", "reports", "Build it", "The report.", "Open");
         SessionTarget Target(string to) => SessionTarget.ForQuest(quest with { To = to }, "C:/work/" + to, "http://stand-in");
 
-        Assert.Equal("zh", Daoris.Driver.Driver.WithLanguage(Target("reports"), config, "work").Language?.Code);
-        Assert.Equal(LanguageSource.Workspace, Daoris.Driver.Driver.WithLanguage(Target("checker"), config, "work").Language?.Source);
-        Assert.Null(Daoris.Driver.Driver.WithLanguage(Target("checker"), config, "home").Language);
-        Assert.Null(Daoris.Driver.Driver.WithLanguage(Target("checker"), DriverConfig.Empty, "work").Language);
+        Assert.Equal("zh", Daoris.Driver.StartTargets.WithLanguage(Target("reports"), config, "work").Language?.Code);
+        Assert.Equal(LanguageSource.Workspace, Daoris.Driver.StartTargets.WithLanguage(Target("checker"), config, "work").Language?.Source);
+        Assert.Null(Daoris.Driver.StartTargets.WithLanguage(Target("checker"), config, "home").Language);
+        Assert.Null(Daoris.Driver.StartTargets.WithLanguage(Target("checker"), DriverConfig.Empty, "work").Language);
     }
 
     private static SessionTarget Of(string which)

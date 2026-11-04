@@ -14,8 +14,8 @@ public sealed class ConversationRunCensusTests
     /// <summary>What a start does that the run does for every executor: each a second way where the conversation's runner writes it.</summary>
     private static readonly (string Pattern, string Is)[] RunsOwn =
     [
-        (@"\bDriver\.Bracketed\s*\(", "a lineage bracket"),
-        (@"\bDriver\.Spawned\s*\(", "a spawn under a token"),
+        (@"\bLineageBrackets\.Bracketed\s*\(", "a lineage bracket"),
+        (@"\bLineageBrackets\.Spawned\s*\(", "a spawn under a token"),
         (@"\bAgentStarts\.StartAsync\s*\(", "an agent's start"),
         (@"\bKeepHandedAsync\s*\(", "a start's downloads kept"),
         (@"\bHarnessCapture\.Capture\w*Async\s*\(", "a capture of the harness's streams"),
@@ -58,8 +58,8 @@ public sealed class ConversationRunCensusTests
 
     /// <summary>The scan itself, red on each planted start beside the run.</summary>
     [Theory]
-    [InlineData("var proc = Driver.Bracketed(_home, id, info, null);")]
-    [InlineData("var process = await Driver.Spawned(proc, () => AgentStarts.StartAsync(info, ContainedKind.Agent, whose, home, null, ct));")]
+    [InlineData("var proc = LineageBrackets.Bracketed(_home, id, info, null);")]
+    [InlineData("var process = await LineageBrackets.Spawned(proc, () => AgentStarts.StartAsync(info, ContainedKind.Agent, whose, home, null, ct));")]
     [InlineData("await DownloadKeeping.KeepHandedAsync(_service, _home, id, info, ct);")]
     [InlineData("var session = new AcpSession(stdout, stdin, Line);")]
     [InlineData("using var tracked = _processes.Track(id, process);")]

@@ -289,8 +289,7 @@ public sealed class ProcessStartsCensusTests
         Assert.Equal(
             [
                 "Daoris.Desktop.Driver/Agents/TransportRun.cs", "Daoris.Desktop.Driver/Agents/TransportStart.cs",
-                "Daoris.Desktop.Driver/Loop/Chat/ChatTransportHost.cs", "Daoris.Desktop.Driver/Loop/Driver.cs",
-                "Daoris.Desktop.Driver/Loop/DriverTransportHost.cs", "Daoris.Desktop.Driver/Workplace/DownloadKeeping.cs",
+                "Daoris.Desktop.Driver/Loop/Chat/ChatTransportHost.cs", "Daoris.Desktop.Driver/Loop/DriverTransportHost.cs", "Daoris.Desktop.Driver/Workplace/DownloadKeeping.cs",
             ],
             keeping);
     }

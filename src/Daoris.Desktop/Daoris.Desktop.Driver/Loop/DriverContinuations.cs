@@ -235,7 +235,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var workTree = park.Tree!;
         var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
         var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
-        var target = Driver.WithLanguage(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), config, start.Workspace) with
+        var target = StartTargets.WithLanguage(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), config, start.Workspace) with
         {
             Asked = park.Asked ?? ActorAsked.Before(adapter.Name),
             ReadsAcross = across.Reads,

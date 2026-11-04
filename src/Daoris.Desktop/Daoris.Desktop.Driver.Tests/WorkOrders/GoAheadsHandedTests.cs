@@ -73,7 +73,7 @@ public sealed class GoAheadsHandedTests
             AccountChanged = true,
         };
 
-        var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(carryOn, "s1", service, CancellationToken.None));
+        var handed = TargetPrompt.Compose(await Daoris.Driver.StartTargets.WithAskWordsAsync(carryOn, "s1", service, CancellationToken.None));
 
         Assert.DoesNotContain("Go-ahead 1", TargetPrompt.Compose(carryOn));
         Assert.Contains("- Go-ahead 1, write on production: \"dashboard configuration\" — approved 2026-10-03 09:06 UTC, saying:\n\n  > run the put", handed);
@@ -116,7 +116,7 @@ public sealed class GoAheadsHandedTests
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
         var step = new QuestView("q3", "ask #a1", "checker", "Check the figure", "Open it.", "Open") { Parent = "q2" };
 
-        var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(
+        var handed = TargetPrompt.Compose(await Daoris.Driver.StartTargets.WithAskWordsAsync(
             SessionTarget.ForQuest(step, "C:/somewhere/checker", service.BaseUrl), "s1", service, CancellationToken.None));
 
         Assert.Contains("- Go-ahead 1, write on production", handed);

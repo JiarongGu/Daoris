@@ -104,6 +104,10 @@ internal static class SessionRules
             [.. PermissionRules.HardDeny(rules), PartnerPermissions.HardDeny], true);
     }
 
+    /// <summary>The protocol-door posture a brainstorm's pass asks; null for every other session, and for a pass whose harness a rule narrows.</summary>
+    public static string? PassPosture(SessionTarget target, ISessionAdapter adapter) =>
+        target.Brainstorm is not null ? BrainstormPermissions.Posture(adapter) : null;
+
     /// <summary>
     /// The permission rules a session was handed, kept in its instruction's account: how many in each list, the scopes they were composed
     /// for, the hard denials and the tree guard. The rules file goes when the run does, and the account keeps what it held by count.
