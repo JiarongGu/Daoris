@@ -127,7 +127,7 @@ export function readDiff(client: QueryClient, session: string, signal: AbortSign
   if (!held || client.getQueryState(key)?.isInvalidated) {
     const read = readId();
     const entry: Reading = {
-      answer: call<SessionDiff>('SESSION_DIFF', { id: session, read }, { timeoutMs: reviewBound }),
+      answer: call('SESSION_DIFF', { id: session, read }, { timeoutMs: reviewBound }) as Promise<SessionDiff>,
       since: Date.now(),
       read,
       waiting: 0,
@@ -278,7 +278,7 @@ export const useTreeFiles = (session: string | null, wanted: boolean) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.treeFiles(session ?? ''),
-    queryFn: () => call<TreeFiles>('SESSION_FILES', { id: session }),
+    queryFn: () => call('SESSION_FILES', { id: session ?? '' }) as Promise<TreeFiles>,
     enabled: isAvailable && Boolean(session) && wanted,
     staleTime: 15_000,
     refetchOnWindowFocus: false,
@@ -301,7 +301,7 @@ export const useTreeFile = (session: string | null, path: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.treeFile(session ?? '', path ?? ''),
-    queryFn: () => call<TreeFile>('SESSION_FILE', { id: session, path }),
+    queryFn: () => call('SESSION_FILE', { id: session ?? '', path: path ?? '' }) as Promise<TreeFile>,
     enabled: isAvailable && Boolean(session) && Boolean(path),
     refetchOnWindowFocus: false,
     retry: false,
@@ -419,7 +419,7 @@ export const useSessionProcess = (session: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.sessionProcess(session ?? ''),
-    queryFn: () => call<SessionProcessAnswer>('SESSION_PROCESS', { id: session }),
+    queryFn: () => call('SESSION_PROCESS', { id: session ?? '' }) as Promise<SessionProcessAnswer>,
     enabled: isAvailable && session !== null,
   });
 };

@@ -36,9 +36,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     [DriverRoute("SESSION_DIFF", PipeClass.Open)]
     [OneFlight("SESSION_DIFF", By = "id")]
-    private async Task<object?> DiffAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DiffAsync(SessionDiff press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -65,8 +65,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     [DriverRoute("READ_LEAVE", PipeClass.Window)]
     [Owner("READ_LEAVE", None = OwnerNone.NamesNothing)]
-    private object? LeaveRead(IpcRequest request) =>
-        new { Left = _reads.Leave(PayloadHelper.GetRequiredValue<string>(request.Payload, "read")) };
+    private object? LeaveRead(ReadLeave press) => new { Left = _reads.Leave(press.Read) };
 
     /// <summary>Whether <paramref name="tree"/> is one this home opened for a session, which ran in it alone; a person's checkout is not.</summary>
     private static bool OwnTree(SessionTrees trees, string? tree) => SessionReviews.OwnTree(trees, tree);
@@ -82,9 +81,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// press of Accept reads; a rule changed since the session's start was not told to it.
     /// </remarks>
     [DriverRoute("SESSION_PROCESS", PipeClass.Open)]
-    private async Task<object?> ProcessAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ProcessAsync(SessionProcess press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
@@ -257,9 +256,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// doors expand as typed (`docs/2026-09-25-message-content-evidence.md`).
     /// </remarks>
     [DriverRoute("SESSION_FILES", PipeClass.Open)]
-    private async Task<object?> FilesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> FilesAsync(SessionFiles press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var id = press.Id;
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -298,10 +297,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// left for a session with neither its tree nor the landing's branch here.</para>
     /// </remarks>
     [DriverRoute("SESSION_FILE", PipeClass.Open)]
-    private async Task<object?> FileAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> FileAsync(SessionFile press, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var path = PayloadHelper.GetRequiredValue<string>(request.Payload, "path");
+        var (id, path) = press;
 
         var service = _loop.Service ?? throw NotReady();
 

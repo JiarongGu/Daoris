@@ -25,10 +25,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     // follow something else, or none where the registry is not up yet. An optional `route` (`default`, `kind:<name>` or `landed`) adds
     // `effective`: the graph that route follows, read and never written.
     [DriverRoute("WORKFLOW_CURRENT", PipeClass.Open)]
-    private async Task<object?> WorkflowCurrentAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowCurrentAsync(WorkflowCurrent press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var (repository, workspace, route) = press;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a workflow is drawn for a `repository` or a `workspace` — name one of them.");
@@ -37,7 +36,6 @@ public sealed class WorkflowRoutes(DriverContext context)
         var config = DriverConfig.Load(_loop.ConfigPath);
         // The plugins beside the file, switched on and sound, as the landing's and the terminal's doors read them.
         var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
-        var route = Optional(request, "route");
         var drawn = new CurrentWorkflow(WorkflowSteps.StartHolds(plugins), [], "");
 
         if (repository is not null)
@@ -167,12 +165,12 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("WORKFLOW_VERIFY", "repository:repository")]
     [NotAlready("WORKFLOW_VERIFY", "starts a run of the accepted gates beside the route, and sets no value")]
     [Publishes("WORKFLOW_VERIFY", StateScopes.Driver)]
-    private async Task<object?> WorkflowVerifyAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkflowVerifyAsync(WorkflowVerify press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository")?.Trim();
+        var repository = press.Repository?.Trim();
         if (string.IsNullOrEmpty(repository)) throw new DriverException("a verification is asked for a `repository` — name it.");
-        var branch = Optional(request, "branch")?.Trim();
-        var commit = Optional(request, "commit")?.Trim();
+        var branch = press.Branch?.Trim();
+        var commit = press.Commit?.Trim();
         if (!string.IsNullOrEmpty(branch) && !string.IsNullOrEmpty(commit)) throw new DriverException("`verify` verifies a branch or a commit, not both.");
 
         var service = _loop.Service ?? throw NotReady();
@@ -281,16 +279,16 @@ public sealed class WorkflowRoutes(DriverContext context)
     [Says("INTEGRATION_GATES", "repository:repository")]
     [NotAlready("INTEGRATION_GATES", "reads the declaration at the line's tip and accepts it by its blob")]
     [Publishes("INTEGRATION_GATES", StateScopes.Driver)]
-    private async Task<object?> IntegrationGatesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> IntegrationGatesAsync(IntegrationGates press, CancellationToken cancellationToken)
     {
-        var repository = Optional(request, "repository")?.Trim();
+        var repository = press.Repository?.Trim();
         if (string.IsNullOrEmpty(repository))
         {
             throw new DriverException("an integration's declaration is accepted for a `repository` — name it.");
         }
 
-        var named = Optional(request, "gates");
-        var clear = Flag(request, "clear");
+        var named = press.Gates;
+        var clear = press.Clear;
         if (clear && named is not null) throw new DriverException("an integration's acceptance takes the blob read or withdraws it — name `gates` or `clear`, not both.");
         if (named is not null && !IntegrationGatesKey.IsAcceptance(named)) throw new DriverException(IntegrationGatesKey.Problem);
 

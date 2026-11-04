@@ -81,11 +81,9 @@ public sealed class LinesRoutes(DriverContext context)
     [GroundScoped("SET_LANGUAGE", "languages", "workspaceLanguages", Sets = "language")]
     [Says("SET_LANGUAGE", "repository:repository")]
     [Publishes("SET_LANGUAGE", Chosen)]
-    private object? SetLanguage(IpcRequest request)
+    private object? SetLanguage(SetLanguage press)
     {
-        var language = Optional(request, "language");
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
+        var (language, repository, workspace) = press;
         if ((repository is null) == (workspace is null))
         {
             throw new DriverException("a session language is set for a `repository` or a `workspace` — name one of them.");
