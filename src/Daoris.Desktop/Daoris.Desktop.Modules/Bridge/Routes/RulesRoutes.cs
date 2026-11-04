@@ -16,7 +16,7 @@ public sealed class RulesRoutes(DriverLoop loop)
     // every scope the machine's file holds — the file `daoris agent rules` edits. A path
     // under the home rides this bridge like every path here.
     [DriverRoute("RULES", PipeClass.Open)]
-    private async Task<object?> RulesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> RulesAsync(NoPayload _, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return Rules(PermissionRules.Load(_loop.Home));

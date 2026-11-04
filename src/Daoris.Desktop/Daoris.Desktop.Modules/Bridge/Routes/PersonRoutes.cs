@@ -19,21 +19,21 @@ public sealed class PersonRoutes(DriverLoop loop)
     // it did.
     [DriverRoute("PERSON_KEY", PipeClass.Window)]
     [Owner("PERSON_KEY", None = OwnerNone.NamesNothing)]
-    private Task<object?> PersonKeyAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> PersonKeyAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new PersonKey(null));
 
     // RPC1c: what waits for the window, read whole as the `CONFIRMATIONS` event tells it, for a window that opens or reloads while one
     // waits. None where this shell serves no pipe.
     [DriverRoute("PERSON_CONFIRMATIONS", PipeClass.Window)]
     [Owner("PERSON_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
-    private Task<object?> PersonConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> PersonConfirmationsAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.Pipe?.Confirmations.Now() ?? new PipeConfirmationsNow(0, []));
 
     // NOTIFY2j (D196 point 4): what waits at the service's own door, read whole as the `SERVICE_CONFIRMATIONS` event tells it, for a
     // window that opens or reloads while one waits; the person answers each at the service's door with the key, as before.
     [DriverRoute("SERVICE_CONFIRMATIONS", PipeClass.Window)]
     [Owner("SERVICE_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
-    private Task<object?> ServiceConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> ServiceConfirmationsAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.ServiceConfirmations.Now());
 
     // RPC1c: the person's Confirm or Refuse on a terminal's press, each once. One no longer waiting (answered in another window, taken

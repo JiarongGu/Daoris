@@ -23,7 +23,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // asking, the first time after a start included, asks no account (ROSTER1, D150 §5.3). It is a read and
     // declares nothing, so a window's read is never published, which every window would read again without end.
     [DriverRoute("HARNESSES", PipeClass.Open)]
-    private Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> HarnessesAsync(NoPayload _, CancellationToken cancellationToken) =>
         ReadHarnessesAsync(null, null, refresh: false, cancellationToken);
 
     // The person pressing *Read again* (HARNESSREFRESH1, D169): every agent's accounts, with `agent` one agent's accounts, or
@@ -527,7 +527,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // that boundary rather than arguing for its own. There is no HTTP route onto it. Its builder is the pushed slice's
     // (`UsageStateSlice`, PUSH1e), so the pull an older page makes and the push cannot drift.
     [DriverRoute("USAGE", PipeClass.Open)]
-    private Task<object?> UsageAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> UsageAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(UsageStateSlice.Answer(_loop.Usage));
 
     /// <summary>

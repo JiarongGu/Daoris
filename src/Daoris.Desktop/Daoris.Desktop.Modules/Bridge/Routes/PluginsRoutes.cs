@@ -37,7 +37,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // Each plugin and offer carries its icon (PLUGUI2b, D140 §5): the bytes PluginIcon.Read judged, as a data URI, and
     // never the icon's path, so the page draws what it was handed and reaches for nothing; 32 KiB a plugin bounds it.
     [DriverRoute("PLUGINS", PipeClass.Open)]
-    private async Task<object?> PluginsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PluginsAsync(NoPayload _, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         var reserved = AdapterSet.Built().Names;

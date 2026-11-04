@@ -27,7 +27,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     private readonly DriverLoop _loop = loop;
 
     [DriverRoute("ACCOUNTS", PipeClass.Open)]
-    private async Task<object?> AccountsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> AccountsAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var running = await RunningAsync(cancellationToken).ConfigureAwait(false);
         return AccountsAnswer(_loop.Harnesses, running, _loop.Harnesses.Clock());

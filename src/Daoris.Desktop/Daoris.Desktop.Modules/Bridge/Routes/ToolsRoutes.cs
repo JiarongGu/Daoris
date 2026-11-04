@@ -207,7 +207,7 @@ public sealed class ToolsRoutes(DriverContext context)
     // what the list offers, so it declares the tools.
     [DriverRoute("TOOLS_LOOK", PipeClass.Open)]
     [Publishes("TOOLS_LOOK", StateScopes.Tools)]
-    private async Task<object?> ToolsLookAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ToolsLookAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var looks = await ToolInstall.LookAsync(_loop.Home, ToolResources.Current, cancellationToken, log: _loop.Log);
         return new

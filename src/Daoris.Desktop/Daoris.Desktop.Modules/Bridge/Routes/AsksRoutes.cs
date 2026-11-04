@@ -111,7 +111,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// Each is read at <c>CHANNEL_READ</c> by its id; the service holds no record of it, so it has no title.
     /// </summary>
     [DriverRoute("ASKS_ELSEWHERE", PipeClass.Open)]
-    private async Task<object?> AsksElsewhereAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> AsksElsewhereAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         return new ElsewhereAnswer(await service.ElsewhereAsksAsync(cancellationToken).ConfigureAwait(false));

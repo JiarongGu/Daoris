@@ -18,7 +18,7 @@ public sealed class AcrossRoutes(DriverContext context)
     // sessions were declared to write into. The workspaces are the registry's, so this waits for the driver
     // as the lines do.
     [DriverRoute("ACROSS", PipeClass.Open)]
-    private async Task<object?> AcrossAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> AcrossAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
