@@ -51,7 +51,7 @@ public sealed class MoveStoreCensusTests
     private const string QuestTake = "Loop/DriverHandOvers.cs";
 
     /// <summary>The terminal's hand-over verb (FOUNDATION1f-v part c), which builds the driven holder for a quest session's ask and names its scope alone.</summary>
-    private const string Terminal = "WorkOrders/SessionsCommand.cs";
+    private const string Terminal = "WorkOrders/Sessions/SessionsGoingOn.cs";
 
     /// <summary>The window's hand-over press of a quest session (FOUNDATION1f-v part c), which builds the driven holder as the terminal does.</summary>
     private const string Window = "../Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs";
