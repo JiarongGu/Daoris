@@ -1,5 +1,4 @@
 {
-  "src/Daoris.Cli/src/doctrine/materialize.ts": 51961,
   "src/Daoris.Cli/test/desktop-tool.test.ts": 48926,
   "src/Daoris.Cli/test/dogfood.test.ts": 44888,
   "src/Daoris.Cli/test/usage-report.test.ts": 89392,
@@ -146,15 +145,9 @@
   "src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx": 49546,
   "src/Daoris.Web/src/workflow/edit/graphDraft.ts": 44398,
   "tools/deployment-rehearsal.mjs": 110110,
-  "tools/desktop-publish.mjs": 85524,
-  "tools/desktop.mjs": 55293,
   "tools/family-rehearsal.mjs": 384147,
-  "tools/knowledge-bench.mjs": 47258,
   "tools/merge-branch.mjs": 523255,
   "tools/merge-queue.mjs": 67204,
-  "tools/orient-index.mjs": 71675,
-  "tools/process-reach.mjs": 44521,
   "tools/rehearsal-kit.mjs": 57037,
-  "tools/rehearsal-kit.test.mjs": 46171,
-  "tools/usage-report.mjs": 71025
+  "tools/rehearsal-kit.test.mjs": 46171
 }
