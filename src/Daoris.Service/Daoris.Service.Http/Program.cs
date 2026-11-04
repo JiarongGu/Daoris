@@ -466,275 +466,13 @@ if (mode == ServiceMode.Shared)
 // Each domain's routes, declared in Daoris.Contracts and mapped by its module (Routes/), found by reflection. The routes
 // mapped below are the ones not declared yet.
 // transitional: routes-by-hand
-RouteModules.MapAll(app, new HostWiring(composed, mode, hostRun, homeId, personKey));
+var wiring = new HostWiring(composed, mode, hostRun, homeId, personKey, personGate);
+var questAnswers = new QuestAnswers(wiring);
+RouteModules.MapAll(app, wiring);
 
-// What each repository OWES, as opposed to what it knows. Held by the service rather than written
-// into anyone's files: repositories here are not developed across, so a quest is published and pulled,
-// never pushed into a sibling's tree.
-app.MapGet("/api/quests", async (
-    ComposedService s, HttpContext http, string? repository, bool? includeClosed, string? workspace,
-    CancellationToken ct) =>
-{
-    var quests = await s.Quests.ListAsync(repository, includeClosed ?? false, workspace, ct);
-    var deletable = await DeletableAsync(s, quests, ct);
-    // SYNCMERGE1b0: who holds each step and how each lost take stands or ended, read from the logs of those with any.
-    var takes = await s.Quests.ReadTakesAsync(quests, ct);
-    return quests.Select(q => ToQuest(
-        q, s.Files, MachineLocal(http), deletable.Contains(q.Id), takes.GetValueOrDefault(q.Id), HereFor(s, http)));
-});
-
-// One quest's moves, read from its history in the order it replays (FLOWCHART1a2; D186, the flowchart design §2.1): on both hosts,
-// since quests are service-visible (D47 §4), each move by allow-list, so no payload, note or path leaves. An id with no history has
-// no moves, so a client tells this door's answer from an older host's 404.
-app.MapGet("/api/quests/{id}/moves", async (ComposedService s, string id, CancellationToken ct) =>
-    Results.Ok(QuestMovesResponse.Of(id.TrimStart('#'), QuestMoves.Read(await s.Quests.HistoryAsync(id.TrimStart('#'), ct)))));
-
-// Publish and respond go through the same exchange the MCP host uses, so the two doors cannot drift
-// on who may be addressed or what declining requires. This pair is what makes a REMOTE deployment a
-// transfer of work rather than a read-only mirror — and it needs no model at all (D24).
-app.MapPost("/api/quests", async (
-    ComposedService s, HttpContext http, PublishQuestRequest body, CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(body.From) || string.IsNullOrWhiteSpace(body.To)
-        || string.IsNullOrWhiteSpace(body.Title) || string.IsNullOrWhiteSpace(body.Body))
-    {
-        return Results.BadRequest(new ErrorResponse("from, to, title and body are all required"));
-    }
-
-    // Which shape a file may arrive in is this deployment's mode (D65 §2). A LOCAL host is on the
-    // machine that has the file, so a file comes with its content and is kept here. A SHARED host is
-    // where machines' quests meet and keeps names only — a content field reaching it is bytes leaving
-    // a machine, which is refused rather than quietly dropped, because dropped looks kept.
-    var uploads = new List<QuestUpload>();
-    var named = new List<QuestAttachment>();
-    foreach (var file in body.Attachments ?? [])
-    {
-        if (string.IsNullOrWhiteSpace(file.Name))
-        {
-            return Results.BadRequest(new ErrorResponse("every attachment needs a name"));
-        }
-
-        if (mode == ServiceMode.Shared)
-        {
-            if (file.Content is not null)
-            {
-                return Results.BadRequest(new ErrorResponse(
-                    $"`{file.Name}` arrived with its content, and a shared deployment keeps names, never bytes "
-                    + "(D65 §2) — the file stays on the machine that has it, which sends its name and hash."));
-            }
-
-            if (file.Sha256 is null || file.Bytes is null)
-            {
-                return Results.BadRequest(new ErrorResponse(
-                    $"`{file.Name}` needs its sha256 and its size — by name is the only way a file reaches a shared deployment."));
-            }
-
-            named.Add(new QuestAttachment(file.Name, file.Sha256, file.Bytes.Value));
-        }
-        else
-        {
-            if (file.Content is null)
-            {
-                return Results.BadRequest(new ErrorResponse(
-                    $"`{file.Name}` arrived without its content — this host is on the machine that keeps a quest's "
-                    + "files, so it takes them whole."));
-            }
-
-            uploads.Add(new QuestUpload(file.Name, file.Content));
-        }
-    }
-
-    var outcome = await s.Exchange.PublishAsync(
-        new QuestAsk(body.From, body.To, body.Title, body.Body)
-        {
-            Links = body.Links ?? [],
-            Uploads = uploads,
-            Named = named,
-            // The chain (D65 §4). A step missing its words arrives blank and is refused by the
-            // exchange naming which step — the same sentence every door gives.
-            Then = StepsOf(body.Then),
-            Requirements = RequirementsOf(body.Requirements),
-            // The person's short title from the composer (SESSUX1j), judged by the exchange with every other door's.
-            Short = body.Short,
-            // The mark on the work (FOUNDATION1x), judged by the exchange with every other door's.
-            Weight = body.Weight,
-            // The paths the work declares (INTEGRATE1l), judged by the exchange with every other door's.
-            Paths = body.Paths ?? [],
-            // A workflow request's key (INTEGRATE1p), judged by the exchange.
-            Request = body.Request,
-            // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
-            Review = ReviewOf(body.Review),
-            // An agent's publish where the host holds a person key and the call carried none (PERSONDOOR1a, design §3.2):
-            // its review choice is judged as a connector's is (REVIEWENV1b3). With the key, the person's.
-            ByAgent = personGate.IsAgent(http),
-        },
-        DateTimeOffset.UtcNow, ct);
-
-    return outcome.Refusal switch
-    {
-        QuestPublishRefusal.None => Results.Ok(
-            new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-        // Two circles that were never joined is a state conflict, not a malformed ask — the same 409
-        // shape the quest lock teaches. The sentence names both sides (D48 §4).
-        QuestPublishRefusal.CrossWorkspace => Results.Conflict(new ErrorResponse(outcome.Message)),
-        // The words of a quest this machine forgot (HIST1b): the remote holds it closed, a state conflict as a closed quest's move is.
-        QuestPublishRefusal.Cleared => Results.Conflict(new ErrorResponse(outcome.Message)),
-        _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
-    };
-});
-
-app.MapPost("/api/quests/{id}/respond", async (
-    ComposedService s, HttpContext http, string id, RespondQuestRequest body, CancellationToken ct) =>
-{
-    // `whileOpen` (PAUSE1c) is an abandon's decline, which the driver sends on the person's press: the person's form of an
-    // agent's door, so it wants the key where the host holds one (PERSONDOOR1a, design §3.2).
-    if (personGate.Refused(http, PersonDoors.Respond, form: body.WhileOpen == true) is { } refusedForm) return refusedForm;
-
-    // A done's answers (DRIFT1d): a number left out arrives as 0, a half left out blank, and the exchange refuses
-    // each naming which — the same sentence every door gives.
-    var answers = (body.Answers ?? [])
-        .Select(a => new QuestAnswer(a?.Requirement ?? 0, a?.Met, a?.Departed, a?.Quote))
-        .ToList();
-    // `whileOpen` (PAUSE1c) is an abandon's decline, sent by the driver; the exchange judges it like any respond.
-    var outcome = await s.Exchange.RespondAsync(
-        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On, answers: answers,
-        whileOpen: body.WhileOpen == true);
-
-    return outcome.Refusal switch
-    {
-        QuestRespondRefusal.None => Results.Ok(
-            new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-        QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-        // The refused transition is a state conflict, not a bad request: the losing side of the
-        // cross-machine race reads 409 as "someone got there first" and stands down (D47 §5).
-        // FABRIC-CLOSE1c: a step whose source the person reopened is a stand-down too: withdrawn, or held for their choice.
-        QuestRespondRefusal.AlreadyTaken or QuestRespondRefusal.Closed or QuestRespondRefusal.SourceReopened =>
-            Results.Conflict(new ErrorResponse(outcome.Message)),
-        _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
-    };
-});
-
-// The person's yes to a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on — the
-// chain's next step is published, and a quest waiting on it resumes. LOCAL mode only, as a delete is: the person
-// says yes on their own machine, and the operation travels from there like any verb (D68). No connector tool reaches
-// it, since the yes is the person's, never an agent's.
+// A graph's close, under the unit's record lock, which the driver holds: a local host's alone, as its bind is.
 if (mode == ServiceMode.Local)
 {
-    app.MapPost("/api/quests/{id}/accept", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
-    {
-        var outcome = await s.Exchange.AcceptAsync(id, DateTimeOffset.UtcNow, ct);
-        return outcome.Refusal switch
-        {
-            QuestRespondRefusal.None => Results.Ok(
-                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            // Nothing waits for a yes: a state, the lock's own shape.
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-        };
-    });
-
-    // The person marks a quest done (QUESTCLOSE1, D126's note): their done, which answers none of their requirements and
-    // says it was theirs, with their words. LOCAL mode only, as the yes is: said on their own machine, travelling from there
-    // as a done (D68). No connector tool reaches it, since an agent's done answers each requirement through respond.
-    app.MapPost("/api/quests/{id}/done", async (
-        ComposedService s, HttpContext http, string id, PersonDoneRequest? body, CancellationToken ct) =>
-    {
-        var outcome = await s.Exchange.PersonDoneAsync(id, body?.Note, DateTimeOffset.UtcNow, ct);
-        return outcome.Refusal switch
-        {
-            QuestRespondRefusal.None => Results.Ok(
-                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            // A closed quest, or a take this machine lost: a state, the lock's own shape.
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-        };
-    });
-
-    // The person's reopen of a sealed submission, and their word to go on with the step it held (FABRIC-CLOSE1c, §E5). LOCAL mode
-    // only, as the yes is: the seal is judged on the machine holding the take, and the reopen travels from there as operations (D68).
-    // No connector tool reaches either: only the person reopens, and only they choose whether the step goes on.
-    app.MapPost("/api/quests/{id}/reopen", async (
-        ComposedService s, HttpContext http, string id, ReopenQuestRequest body, CancellationToken ct) =>
-    {
-        if (body.Submission is not { Machine: { Length: > 0 } machine, Sequence: > 0 and var sequence })
-        {
-            return Results.BadRequest(new ErrorResponse(
-                "A reopen names the submission it reopens: `submission` with its `machine` and `sequence`, as the quest answers it."));
-        }
-
-        var outcome = await s.Exchange.ReopenAsync(id, new QuestOperationRef(machine, sequence), body.Note, DateTimeOffset.UtcNow, ct);
-        return await PersonMoveAnswerAsync(s, http, outcome, ct);
-    });
-
-    app.MapPost("/api/quests/{id}/continue", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
-        await PersonMoveAnswerAsync(s, http, await s.Exchange.ContinueAsync(id, DateTimeOffset.UtcNow, ct), ct));
-
-    // The person's bring-forward of their machine's lost take (SYNCMERGE1a, D178 point 3): a fresh take of the step and the conflict's
-    // dismissal marked with it, pushed and awaited as a take is (D69). LOCAL mode only: the take is this machine's, and travels from
-    // here as operations (D68). No connector tool reaches it: only the person chooses how a conflict ends.
-    app.MapPost("/api/quests/{id}/conflicts/forward", async (
-        ComposedService s, HttpContext http, string id, ForwardConflictRequest body, CancellationToken ct) =>
-    {
-        if (body is not { Machine: { Length: > 0 } machine, Sequence: > 0 and var sequence })
-        {
-            return Results.BadRequest(new ErrorResponse(
-                "A bring-forward names the conflict it resolves: its `machine` and `sequence`, as the quest answers it."));
-        }
-
-        var outcome = await s.Exchange.BringForwardAsync(id, new QuestOperationRef(machine, sequence), DateTimeOffset.UtcNow, ct);
-        return await PersonMoveAnswerAsync(s, http, outcome, ct);
-    });
-
-    // What the driver read of a done's evidence (EVID1a, D144 §3): its verdict at the end of the session that made the
-    // done, the sweep's, or the person's check at the terminal. LOCAL mode only, as the yes is: the commit is read on the
-    // machine whose tree holds it, and the verdict travels from there as an operation (D68). No connector tool reaches it,
-    // since the session a requirement judges never writes its verdict.
-    app.MapPost("/api/quests/{id}/evidence", async (
-        ComposedService s, HttpContext http, string id, QuestEvidenceVerdictWire body, CancellationToken ct) =>
-    {
-        // A field left out arrives blank and is refused by the exchange naming which; when and where are the operation's.
-        var verdict = new QuestEvidenceVerdict(
-            body.Commit ?? "", body.How ?? "",
-            (body.Items ?? []).Select(i => new QuestEvidenceRead(i?.Requirement ?? 0, i?.Path, i?.Gate, i?.Result ?? "")
-            {
-                Object = i?.Object, Changed = i?.Changed, Spelled = i?.Spelled,
-            }).ToList())
-        {
-            Session = body.Session,
-            // Half named, it arrives blank and is refused by the exchange naming the field (FABRIC-CLOSE1e).
-            Submission = body.Submission is { } asked ? new QuestOperationRef(asked.Machine ?? "", asked.Sequence ?? 0) : null,
-        };
-        var outcome = await s.Exchange.EvidenceAsync(id, verdict, DateTimeOffset.UtcNow, ct);
-        return outcome.Refusal switch
-        {
-            QuestRespondRefusal.None => Results.Ok(
-                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            // Nothing waits on evidence: a state, the lock's own shape.
-            QuestRespondRefusal.NotAwaitingEvidence => Results.Conflict(new ErrorResponse(outcome.Message)),
-            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
-        };
-    });
-
-    // A closure graph's bind and its close (FABRIC-CLOSE1a, the fabric events design §E5): the driver binds a taken quest to the
-    // graph that closes it at its run's first start, and closes every quest of the chain at the graph's end, in one transaction
-    // under the unit's record lock, which the driver holds. LOCAL mode only, as the evidence door is: the graph and its lock are
-    // the machine's, and the Done travels from there as an operation (D68). No connector tool reaches either: an agent's result
-    // is its `ready`, through respond.
-    app.MapPost("/api/quests/{id}/bind", async (
-        ComposedService s, HttpContext http, string id, BindQuestRequest body, CancellationToken ct) =>
-    {
-        var outcome = await s.Exchange.BindAsync(id, body.Graph, DateTimeOffset.UtcNow, ct, atTake: body.AtTake == true, session: body.Session);
-        return outcome.Refusal switch
-        {
-            QuestRespondRefusal.None => Results.Ok(
-                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            // Not taken, already submitted, another graph's, or a take this machine lost: a state, the lock's own shape.
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-        };
-    });
-
     app.MapPost("/api/quests/{id}/close", async (
         ComposedService s, HttpContext http, string id, CloseQuestRequest body, CancellationToken ct) =>
         await CloseAnswerAsync(s, http, await s.Exchange.CloseAsync(id, body.Key, body.Token, CloseNamed(body), DateTimeOffset.UtcNow, ct), ct));
@@ -748,16 +486,6 @@ if (mode == ServiceMode.Local)
     // A half-named submission arrives blank and is refused by the exchange, which says what a close names.
     static List<(string, QuestOperationRef)> CloseNamed(CloseQuestRequest body) =>
         [.. (body.Quests ?? []).Select(q => (q?.Id ?? "", new QuestOperationRef(q?.Machine ?? "", q?.Sequence ?? 0)))];
-
-    // A person's reopen or word to go on (FABRIC-CLOSE1c): the quest as it now stands, or why nothing moved, a state in the lock's shape.
-    async Task<IResult> PersonMoveAnswerAsync(ComposedService s, HttpContext http, QuestRespondOutcome outcome, CancellationToken ct) =>
-        outcome.Refusal switch
-        {
-            QuestRespondRefusal.None => Results.Ok(
-                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-        };
 
     async Task<IResult> CloseAnswerAsync(ComposedService s, HttpContext http, QuestCloseOutcome outcome, CancellationToken ct)
     {
@@ -789,7 +517,7 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/quests/{id}/set-up", async (
         ComposedService s, HttpContext http, string id, QuestSetUpRequest body, CancellationToken ct) =>
     {
-        if (personGate.Refused(http, PersonDoors.SetUp, form: body.Session is null) is { } refusedForm) return refusedForm;
+        if (personGate.Refused(http, PersonDoors.SetUp, form: body.Session is null) is { } refusedForm) return refusedForm.Result();
 
         return await ReviewAnswer(await s.Exchange.PostSetUpAsync(
             id, new QuestSetUpPost(body.Commit, body.Kind, body.Session, body.Look, body.Shows, body.Again), DateTimeOffset.UtcNow, ct),
@@ -1155,12 +883,12 @@ if (mode == ServiceMode.Local)
             {
                 Links = body.Links ?? [],
                 Uploads = uploads,
-                Then = StepsOf(body.Then),
-                Requirements = RequirementsOf(body.Requirements),
+                Then = QuestAnswers.StepsOf(body.Then),
+                Requirements = QuestAnswers.RequirementsOf(body.Requirements),
                 // The intake's short title (SESSUX1j), judged by the exchange with every other door's.
                 Short = body.Short,
                 // The chain's review choice and an intake's proposal (REVIEWENV1b), judged by the exchange and the desk.
-                Review = ReviewOf(body.Review),
+                Review = QuestAnswers.ReviewOf(body.Review),
                 ReviewProposal = body.ReviewProposal is { } proposal ? new ReviewProposed(proposal.Choice, proposal.Reason) : null,
                 // An intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes the ask; the desk keeps it.
                 WorkflowProposal = body.WorkflowProposal is { } kind ? new WorkflowProposed(kind.Kind, kind.Reason) : null,
@@ -2655,7 +2383,7 @@ else
             await s.Quests.LostToTheReopenAsync(id.TrimStart('#'), ct) ? "source-reopened" : null,
             // SYNCMERGE1b0: the take it holds the quest by, where the person's bring-forward made it, which the driver carries a
             // stood-down session on over (SYNCMERGE1b).
-            takes.BroughtForwardBy(s.Quests.Machine) is { } forward ? ToForward(forward) : null,
+            takes.BroughtForwardBy(s.Quests.Machine) is { } forward ? QuestAnswers.ToForward(forward) : null,
             // CARRY3: when the take it stands taken by was made, which a submission, a reopen or a go-on never moves as they move
             // `updated`: what the driver judges a take made here after a session ended by.
             takes.Take?.At));
@@ -2711,7 +2439,7 @@ return 0;
 // A machine path is visible only to a loopback caller of a LOCAL host (D47 §4). In shared mode the
 // answer is no for everyone — structural absence, not a policed permission: the deployment whose
 // callers are the network has no branch that serves a path.
-bool MachineLocal(HttpContext http) => mode == ServiceMode.Local && IsLoopback(http);
+bool MachineLocal(HttpContext http) => wiring.MachineLocal(http);
 
 // The commit a feed speaks for (D48 §6). Whole or nothing, like every pair in this system: half a
 // provenance cannot be compared with what is held, and the door must not assemble a plausible one out
@@ -2736,125 +2464,7 @@ static IResult FeedAnswer(FeedOutcome outcome) =>
             ? Results.BadRequest(new FeedRefusalResponse(outcome.Message, outcome.Information))
             : Results.Conflict(new FeedRefusalResponse(outcome.Message, outcome.Information));
 
-// Which quests this host would delete (D95) — the exchange's judgement, so the page offers the verb only
-// where the door would take it. None at a shared deployment, which has no delete door.
-async Task<IReadOnlySet<string>> DeletableAsync(ComposedService s, IEnumerable<Quest> quests, CancellationToken ct) =>
-    mode == ServiceMode.Local ? await s.Exchange.DeletableAsync(quests, ct) : new HashSet<string>();
-
-// One quest as a door answers it, with whether it may be deleted (D95), and who holds it and how its lost takes stand (SYNCMERGE1b0).
-async Task<QuestResponse> QuestAnswerAsync(ComposedService s, HttpContext http, Quest quest, CancellationToken ct) =>
-    ToQuest(
-        quest, s.Files, MachineLocal(http), (await DeletableAsync(s, [quest], ct)).Contains(quest.Id),
-        await s.Quests.ReadTakesAsync(quest.Id, ct), HereFor(s, http));
-
-// This machine's id (SYNCMERGE1b0), answered to a caller on a local host's own machine, as a path is (D47 §4): the page tells its own
-// conflict and take from another machine's by it. An id, never a name a person gave; a shared host answers none.
-string? HereFor(ComposedService s, HttpContext http) => MachineLocal(http) ? s.Quests.Machine : null;
-
-// A conflict as the quest answers it, with what its log says of it (SYNCMERGE1b0): each fact absent where unset.
-static QuestConflictResponse ToConflict(QuestConflict c, QuestConflictReading? read) => new(
-    c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence,
-    read is { LostToTheReopen: true } ? true : null,
-    read?.Ended switch
-    {
-        QuestConflictEnd.Dropped => "dropped",
-        QuestConflictEnd.BroughtForward => "brought-forward",
-        _ => null,
-    },
-    read?.Forward is { } forward ? ToForward(forward) : null);
-
-// A bring-forward's take, its standing in the claim's words (SYNCMERGE1b0).
-static QuestForwardResponse ToForward(QuestForwardTake forward) =>
-    new(forward.Take.Machine, forward.Take.Sequence, forward.At, forward.Standing.ToString().ToLowerInvariant());
-
-// Links and attachment names travel with every read; a kept file's PATH answers only to a caller on
-// this machine, and only when the bytes are here (D47 §4, D65 §2) — so null says "named, not held".
-// SYNCMERGE1b0: `taken` is the quest's log read for its holder and its conflicts, null where nothing was read, which answers none of them.
-static QuestResponse ToQuest(
-    Quest q, QuestFiles? files, bool machineLocal, bool deletable = false, QuestTakeReading? taken = null, string? here = null) => new(
-    q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated, q.Workspace,
-    q.Links,
-    q.Attachments.Select(a => new QuestAttachmentResponse(
-        a.Name, a.Sha256, a.Bytes,
-        Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
-    q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body, s.SetUpIn)).ToList(),
-    q.Parent,
-    q.Conflicts.Select(c => ToConflict(c, taken?.Conflicts.FirstOrDefault(read => read.Conflict.Machine == c.Machine && read.Conflict.Sequence == c.Sequence)))
-        .ToList(),
-    q.Awaits,
-    q.PublishedBy,
-    deletable,
-    q.Lanes,
-    q.Requirements.Select(r => new QuestRequirementWire(
-        r.Quote, r.Check, r.Evidence.Select(e => (QuestEvidenceWire?)new QuestEvidenceWire(e.Path, e.Gate)).ToList())).ToList(),
-    q.Answers.Select(a => new QuestAnswerWire(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
-    q.Held,
-    q.Accepted,
-    // What a list calls it (SESSUX1j): the publisher's short title, else the name read from its words, from this host.
-    q.Name,
-    // Why it waits, and what was read of its evidence (EVID1a): codes and names, which every door may answer.
-    q.Hold is { } hold ? QuestEvidenceCodes.Spell(hold) : null,
-    q.AwaitsEvidence,
-    q.Evidence is { } read
-        ? new QuestEvidenceVerdictWire(
-            read.Commit, read.How, read.Session,
-            read.Items.Select(i => (QuestEvidenceReadWire?)new QuestEvidenceReadWire(i.Requirement, i.Path, i.Gate, i.Result, i.Object, i.Changed, i.Spelled)).ToList(),
-            read.At, read.Machine,
-            read.Submission is { } asked ? new QuestSubmissionRefWire(asked.Machine, asked.Sequence) : null)
-        : null,
-    // The review on the record (REVIEWENV1b): names, words and codes, which every door may answer; a local set-up's address is
-    // absent where it came from another machine, as the wire left it.
-    q.Review is { } chosen ? new QuestReviewWire(chosen.Choice, chosen.Words) : null,
-    q.SetUpIn,
-    q.SetUps.Count == 0
-        ? null
-        : q.SetUps.Select(s => new QuestSetUpWire(s.Commit, s.Look, s.Shows, s.Again, s.Served, s.Run, s.Session, s.Local, s.At, s.Machine, s.Sequence)).ToList(),
-    q.Verdicts.Count == 0
-        ? null
-        : q.Verdicts.Select(v => new QuestReviewVerdictWire(
-            v.Said, v.SetUp is { } named ? new QuestSetUpRefWire(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList(),
-    // The note's parts (QUESTCLOSE1b1): a code and someone's words, as the note already travels to every door, uncleaned.
-    NoteParts.Element(q.NoteParts),
-    // A closure graph's digest and its taker's submission (FABRIC-CLOSE1a): names and words, which every door may answer.
-    q.Closure,
-    // FABRIC-CLOSE1c5: and the commit its evidence was read at, where that was read for it; left out otherwise.
-    // FABRIC-CLOSE1c4: and the session its ready came from, a name as `publishedBy` is, which every door may answer.
-    q.Submission is { } submitted
-        ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note, q.SubmissionCommit, submitted.Session)
-        : null,
-    // The submission a step grew from, and the one reopened under it (FABRIC-CLOSE1c): names, which every door may answer.
-    q.GrewFrom is { } grew ? new QuestSubmissionRefWire(grew.Machine, grew.Sequence) : null,
-    q.SourceReopened is { } reopened ? new QuestSubmissionRefWire(reopened.Machine, reopened.Sequence) : null,
-    // The quest's own reopen no later submission answered (FABRIC-CLOSE1c4): names and the person's words, as its note travels; and
-    // the session that said the reopened ready (FABRIC-CLOSE1c8), a name as the submission's is.
-    q.Reopened is { } reopen
-        ? new QuestReopenWire(
-            reopen.Machine, reopen.Sequence, new QuestSubmissionRefWire(reopen.Of.Machine, reopen.Of.Sequence), reopen.Note, reopen.At,
-            reopen.Session)
-        : null,
-    // SYNCMERGE1b0 (D178 point 7): the conflicts settled on it, the machine holding its step, and this machine, each only where set.
-    taken is { Settled.Count: > 0 } ? taken.Settled.Select(read => ToConflict(read.Conflict, read)).ToList() : null,
-    taken?.Holder,
-    here,
-    // The person's workflow choices before it started (WORKFLOW1e2): ids and their words, as its note travels; only where there are some.
-    q.WorkflowChoices.Count == 0
-        ? null
-        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList(),
-    // The mark on the work (FOUNDATION1x): a word, which every door may answer.
-    q.Weight,
-    // The declared paths (INTEGRATE1l): repository-relative globs, which travel with the quest, so every door may answer them.
-    q.Paths,
-    // The workflow request's key (INTEGRATE1p): ids, which travel with the quest.
-    q.Request);
-
-// Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
-// blank and is refused there naming which — the same sentence every door gives. So does an evidence item
-// naming both or neither (EVID1a).
-static IReadOnlyList<QuestRequirement> RequirementsOf(IReadOnlyList<QuestRequirementWire?>? given) =>
-    (given ?? []).Select(r => new QuestRequirement(r?.Quote ?? "", r?.Check ?? "")
-    {
-        Evidence = [.. (r?.Evidence ?? []).Select(e => new QuestEvidence(e?.Path, e?.Gate))],
-    }).ToList();
+Task<QuestResponse> QuestAnswerAsync(ComposedService s, HttpContext http, Quest quest, CancellationToken ct) => questAnswers.AnswerAsync(http, quest, ct);
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.
@@ -2862,7 +2472,7 @@ IResult AskAnswer(AskOutcome outcome, ComposedService s, HttpContext http) => ou
 {
     AskRefusal.None => Results.Ok(new AskActionResponse(
         ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message,
-        outcome.Quest is null ? null : ToQuest(outcome.Quest, s.Files, MachineLocal(http), here: HereFor(s, http)))),
+        outcome.Quest is null ? null : QuestAnswers.ToQuest(outcome.Quest, s.Files, MachineLocal(http), here: questAnswers.HereFor(http)))),
     AskRefusal.UnknownWorkspace or AskRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
     AskRefusal.Closed or AskRefusal.QuestRefused => Results.Conflict(new ErrorResponse(outcome.Message)),
     _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
@@ -2913,14 +2523,6 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
         Short: a.Short,
         Paths: a.Paths);
 }
-
-// A chain's steps as a door hands them to the exchange (D65 §4, REVIEWENV1b): a set-up step's environment rides with its words.
-// A step sent as null arrives blank, refused by the exchange naming its number as a step missing its words is (REVIEWENV1b3).
-static IReadOnlyList<QuestStep> StepsOf(IReadOnlyList<QuestStepWire?>? given) =>
-    (given ?? []).Select(step => new QuestStep(step?.To ?? "", step?.Title ?? "", step?.Body ?? "") { SetUpIn = step?.SetUpIn }).ToList();
-
-// A chain's review choice as a door hands it to the exchange (REVIEWENV1b): a choice left out arrives blank, refused there.
-static QuestReview? ReviewOf(QuestReviewWire? given) => given is null ? null : new QuestReview(given.Choice ?? "", given.Words);
 
 // The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
 // answered only to a caller on this machine. The evidence stays — commits are the reviewable record
@@ -3044,11 +2646,6 @@ static HistoryRefusalResponse ToHistoryRefusal(HistoryKept kept) => new(
     kept.Waits is { } waits ? HistoryKept.Spell(waits) : null,
     kept.Stands is { } stands ? HistoryKept.Spell(stands) : null,
     kept.By is { } by ? HistoryKept.Spell(by) : null);
-
-// A caller on this machine — which is what "the root never leaves the machine" means in practice. A
-// null remote address is the in-process test server, which is this process and therefore local.
-static bool IsLoopback(HttpContext http) =>
-    http.Connection.RemoteIpAddress is null || System.Net.IPAddress.IsLoopback(http.Connection.RemoteIpAddress);
 
 // Walk up from the BINARY to this workspace's manifest — the shared walk-up (HostComposition) — with
 // THIS host's last resort: the parent-of-CWD heuristic. Never from the working directory first:

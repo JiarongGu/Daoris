@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Daoris.Contracts.Knowledge;
+using Daoris.Contracts.Quests;
 
 namespace Daoris.Contracts;
 
@@ -13,7 +14,7 @@ namespace Daoris.Contracts;
 public static class ContractJson
 {
     /// <summary>Each domain's context, combined; a new domain's context is added here.</summary>
-    public static IJsonTypeInfoResolver Resolver { get; } = JsonTypeInfoResolver.Combine(RefusalJson.Default, KnowledgeJson.Default);
+    public static IJsonTypeInfoResolver Resolver { get; } = JsonTypeInfoResolver.Combine(RefusalJson.Default, KnowledgeJson.Default, QuestJson.Default);
 
     /// <summary>The options a client reads and writes the wire with.</summary>
     public static JsonSerializerOptions Options { get; } = new(JsonSerializerDefaults.Web)
