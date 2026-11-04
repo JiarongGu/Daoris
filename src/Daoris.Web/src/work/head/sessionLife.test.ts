@@ -10,7 +10,7 @@ import { said } from '../../test/said';
 
 // FLOWCHART1b (the flowchart design §2.2, §7 traps 8, 10, 11, 18 and 19): a session's states and the moves between them,
 // drawn at the head of its Timeline view. The moves are a page constant, so this holds them to the code's own table,
-// `SessionLedger.Allowed`, read from the service's source (`.claude/knowledge/twins.md`): a second copy no test holds drifts.
+// `SessionAdvances.Allowed`, read from the service's source (`.claude/knowledge/twins.md`): a second copy no test holds drifts.
 
 const root = join(process.cwd(), '..', '..');
 const core = 'src/Daoris.Service/Daoris.Service.Core';
@@ -20,13 +20,13 @@ const only = (name: string) => {
   if (found.length !== 1) throw new Error(`${name} is expected once under ${core}, found ${found.length}`);
   return readFileSync(join(root, ...core.split('/'), found[0]!), 'utf8');
 };
-const ledger = only('SessionLedger.cs');
+const ledger = only('SessionAdvances.cs');
 
 /** `AwaitingPerson` as the wire spells it, `awaiting-person`. */
 const spelled = (member: string) => member.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 
 /**
- * The pairs `SessionLedger.Allowed` allows, read from its switch: each arm names a state and lists what it may become between
+ * The pairs `SessionAdvances.Allowed` allows, read from its switch: each arm names a state and lists what it may become between
  * brackets (`SessionState.Queued => [SessionState.Starting, ...]`); the arm for every ended state is the empty `_ => []`.
  */
 function allowed(text: string): [string, string][] {
@@ -38,7 +38,7 @@ function allowed(text: string): [string, string][] {
 afterEach(async () => { await i18n.changeLanguage('en'); });
 
 describe('a session\'s moves, held to the code (trap 11)', () => {
-  it('reads the arms of SessionLedger.Allowed: a scan that matched nothing would pass on a moved table', () => {
+  it('reads the arms of SessionAdvances.Allowed: a scan that matched nothing would pass on a moved table', () => {
     expect(allowed(ledger).length).toBeGreaterThan(10);
   });
 

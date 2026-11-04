@@ -324,7 +324,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
         var word = new SaidWord("w", SupervisorWord.Handed("The monthly one"), Now, [], From: SaidFrom.Supervisor, Decision: Decision);
         var session = new Session("s", "q", "dashboards", "stub", SessionState.Completed, null, null, null, Now, Now) { Said = [word] };
 
-        var (note, parts) = SessionLedger.WentOnNote(session, null, null, Now);
+        var (note, parts) = SessionAdvances.WentOnNote(session, null, null, Now);
 
         Assert.Contains("Went on with the supervisor's answer", note);
         Assert.DoesNotContain("your words", note);

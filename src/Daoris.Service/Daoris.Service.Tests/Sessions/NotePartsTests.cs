@@ -246,7 +246,7 @@ public sealed class NotePartsTests : IAsyncLifetime
     {
         var session = new Session("s1", "q1", "Owner", "stub", SessionState.Completed, "an older note.", null, null, Now, Now);
 
-        var (note, parts) = SessionLedger.WentOnNote(session, "an older driver's line.", null, Now);
+        var (note, parts) = SessionAdvances.WentOnNote(session, "an older driver's line.", null, Now);
 
         Assert.Equal("an older note.\n\nWent on with your words at 2026-10-03 10:00 UTC.\n\nan older driver's line.", note);
         Assert.Equal(
