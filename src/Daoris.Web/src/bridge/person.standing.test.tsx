@@ -27,7 +27,7 @@ vi.mock('@shenora/react', async () => {
 });
 
 import { keys } from '../data/queries';
-import { standingOf, useSetAppointment, useSetStandingConfirmation, useStandingUsed } from './person';
+import { standingOf, useSetStandingConfirmation, useStandingUsed, useStartRoleTerminal } from './person';
 import { useStateHub } from './state/stateHub';
 
 const wrapped = () => {
@@ -49,50 +49,22 @@ describe('the standing confirmation over the bridge', () => {
       unread: null, unwritten: false, used: 2, held: ['engine'],
     })).toEqual({
       offered: true, on: true, presses: ['stop', 'hold'], built: ['stop', 'finish', 'hold', 'resume'], since: '2026-10-23T09:30:00Z',
-      unread: null, unwritten: false, used: 2, held: ['engine'], appointmentsOffered: false, appointments: [],
-      supervisorOffered: false, stewardOffered: false, holders: [], stewardActsOffered: [], stewardActs: [], stewardDesk: [],
+      unread: null, unwritten: false, used: 2, held: ['engine'], holds: [], holders: [], stewardActs: [], stewardDesk: [],
     });
-    // SUPERVISOR1a-ii: the owner's appointments, each read field by field; one with no role or repository left out.
+    // D233 point 2: the roles a terminal holds this run, each read field by field; one with no role, kind or holder left out.
     expect(standingOf({
-      appointmentsOffered: true,
-      appointments: [
-        { role: 'supervisor', repository: 'engine', holder: 'terminal', since: '2026-10-24T14:02:00Z', dormant: true, answers: 0 },
-        { role: 'supervisor' }, 'engine',
-      ],
-    })).toMatchObject({
-      appointmentsOffered: true,
-      appointments: [{
-        role: 'supervisor', repository: 'engine', holder: 'terminal', since: '2026-10-24T14:02:00Z', dormant: true, answers: 0,
-        scope: 'repository:engine', holderId: null,
-      }],
-    });
-    // STEWARDROLE1a-i (D209 §2.2 to §2.4): each role's own flag, the living holders, and an appointment's scope, the steward's
-    // `machine` naming no repository.
-    expect(standingOf({
-      supervisorOffered: false, stewardOffered: true,
       holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }, { roles: ['steward'] }],
-      appointments: [{ role: 'steward', scope: 'machine', holder: 'terminal', since: '2026-10-24T14:02:00Z', dormant: false, answers: 2, holderId: 'h1' }],
-    })).toMatchObject({
-      supervisorOffered: false,
-      stewardOffered: true,
-      holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }],
-      appointments: [{ role: 'steward', repository: '', scope: 'machine', holderId: 'h1', answers: 2 }],
-    });
-    // SUPERVISOR1e: a workspace's appointment names its workspace and no repository; each its overrule window, five where an older
-    // shell says none or one outside 1 to 60.
-    expect(standingOf({
-      appointments: [
-        { role: 'supervisor', scope: 'workspace:games', workspace: 'games', holder: 'terminal', window: 30 },
-        { role: 'supervisor', scope: 'workspace:other', holder: 'terminal' },
-        { role: 'supervisor', repository: 'engine', holder: 'terminal', window: 0 },
-        { role: 'supervisor', repository: 'atlas', holder: 'terminal', window: 61 },
+      holds: [
+        { role: 'steward', kind: 'steward', holder: 'h1', since: '2026-10-24T14:02:00Z', answers: 2 },
+        { role: 'supervisor-engine', kind: 'supervisor', holder: 'h1' }, { role: 'supervisor' }, 'engine',
       ],
-    })?.appointments.map(({ repository, workspace, window }) => ({ repository, workspace, window }))).toEqual([
-      { repository: '', workspace: 'games', window: 30 },
-      { repository: '', workspace: 'other', window: 5 },
-      { repository: 'engine', workspace: '', window: 5 },
-      { repository: 'atlas', workspace: '', window: 5 },
-    ]);
+    })).toMatchObject({
+      holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }],
+      holds: [
+        { role: 'steward', kind: 'steward', holder: 'h1', since: '2026-10-24T14:02:00Z', answers: 2 },
+        { role: 'supervisor-engine', kind: 'supervisor', holder: 'h1', since: null, answers: 0 },
+      ],
+    });
     // The bridge leaves its nulls out: no since, no unread.
     expect(standingOf({ offered: false, on: false, presses: [], built: ['stop'], unwritten: true, used: 0, held: [] }))
       .toMatchObject({ offered: false, on: false, since: null, unread: null, unwritten: true });
@@ -106,29 +78,21 @@ describe('the standing confirmation over the bridge', () => {
     expect(standingOf([])).toBeNull();
   });
 
-  // STEWARDROLE1b (D209 §2.3, §5.1, §5.3): the acts the build offers a steward's appointment, this run's steward acts newest first,
-  // and an appointment's granted acts and set-up tick, each read field by field; an older shell's missing fields read as none.
-  it("reads the steward's offered acts, this run's acts and an appointment's grant, each field by field", () => {
+  // STEWARDROLE1b (D209 §5.1, §5.3): this run's steward acts newest first, each read field by field; a missing list reads as none.
+  it("reads this run's steward acts field by field", () => {
     expect(standingOf({
-      stewardOffered: true,
-      stewardActsOffered: ['drive', 'undrive', 7, 'hold'],
       stewardActs: [
         { id: 'a2', act: 'stop', repository: null, quest: 'q1', session: 's1', at: '2026-10-25T10:02:00Z', standing: true, waiting: true },
         { id: 'a1', act: 'drive', repository: 'engine', at: '2026-10-25T10:01:00Z', standing: 'yes' },
         { act: 'hold', at: '2026-10-25T10:00:00Z' }, { id: 'a0', at: '2026-10-25T10:00:00Z' }, 'drive',
       ],
-      appointments: [{ role: 'steward', scope: 'machine', since: '2026-10-25T09:00:00Z', acts: ['drive', 3, 'stop'], setup: true }],
     })).toMatchObject({
-      stewardActsOffered: ['drive', 'undrive', 'hold'],
       stewardActs: [
         { id: 'a2', act: 'stop', repository: null, quest: 'q1', session: 's1', at: '2026-10-25T10:02:00Z', standing: true, waiting: true },
         { id: 'a1', act: 'drive', repository: 'engine', quest: null, session: null, at: '2026-10-25T10:01:00Z', standing: false, waiting: false },
       ],
-      appointments: [{ role: 'steward', scope: 'machine', acts: ['drive', 'stop'], setup: true }],
     });
-    expect(standingOf({ appointments: [{ role: 'supervisor', repository: 'engine' }] })).toMatchObject({
-      stewardActsOffered: [], stewardActs: [], appointments: [{ acts: [], setup: false }],
-    });
+    expect(standingOf({})).toMatchObject({ stewardActs: [], holds: [] });
   });
 
   // STEWARDROLE1c (D209 §6.2): the steward's desk, each request read field by field, its words as the caller wrote them; one with a
@@ -149,20 +113,16 @@ describe('the standing confirmation over the bridge', () => {
     expect(standingOf({ stewardOffered: true })?.stewardDesk).toEqual([]);
   });
 
-  it("sends the steward's appointment for the machine with its set-up tick, and the supervisor's without one", async () => {
+  it("starts a role's terminal by its catalogue id, a living holder's id or its own where named", async () => {
     invoke.mockResolvedValue({ done: true });
     const { wrapper } = wrapped();
-    const { result } = renderHook(() => useSetAppointment(), { wrapper });
+    const { result } = renderHook(() => useStartRoleTerminal(), { wrapper });
 
-    await result.current.mutateAsync({ role: 'steward', on: true, setup: false });
-    await result.current.mutateAsync({ role: 'steward', on: true, setup: true, share: 'h1' });
-    await result.current.mutateAsync({ role: 'steward', on: false });
-    await result.current.mutateAsync({ role: 'supervisor', repository: 'engine', on: true });
+    await result.current.mutateAsync({ role: 'steward' });
+    await result.current.mutateAsync({ role: 'supervisor-engine', share: 'h1' });
     expect(invoke.mock.calls.map(([, type, request]) => [type, request])).toEqual([
-      ['SET_APPOINTMENT', { payload: { role: 'steward', scope: 'machine', holder: 'terminal', on: true, setup: false } }],
-      ['SET_APPOINTMENT', { payload: { role: 'steward', scope: 'machine', holder: 'terminal', on: true, share: 'h1', setup: true } }],
-      ['SET_APPOINTMENT', { payload: { role: 'steward', scope: 'machine', holder: 'terminal', on: false } }],
-      ['SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'repository:engine', holder: 'terminal', on: true } }],
+      ['START_ROLE_TERMINAL', { payload: { role: 'steward' } }],
+      ['START_ROLE_TERMINAL', { payload: { role: 'supervisor-engine', share: 'h1' } }],
     ]);
   });
 

@@ -1431,16 +1431,15 @@ public sealed class InstancePipe : IDisposable
     /// <summary>A role's act refused at the door (SUPERVISOR1a-ii), in the terminal's words, by its code. Nothing was kept.</summary>
     private static string RoleRefusal(string? why) => why switch
     {
-        SupervisorWhy.NotOffered => "This Daoris does not offer this role's appointment yet. Nothing was kept.",
-        SupervisorWhy.NotAppointed => "No appointment of this role is in force: the owner appoints it in the window. Nothing was done.",
-        RoleWhy.NotRole => "That is the owner's to do; the role's appointment does not cover it. Nothing was done.",
-        RoleWhy.NotGranted => "The owner's appointment of this role does not name that act. Nothing was done.",
+        SupervisorWhy.NotStaffed => "No terminal holds this role: the owner staffs it with the terminal among the roles. Nothing was done.",
+        RoleWhy.NotRole => "That is the owner's to do; the role does not hold it. Nothing was done.",
+        RoleWhy.NotGranted => "The role's acts as the owner set them do not name that act. Nothing was done.",
         RoleWhy.OwnerSet => "The owner acted on this themselves since Daoris started, so it is theirs until Daoris restarts. Nothing was done.",
         RoleWhy.HolderConfig =>
             "This act did not come from the role's terminal as Daoris started it, on Daoris's own configuration; its terminal is ended. Nothing was done.",
         SupervisorWhy.NotHolder => "This terminal did not prove the supervisor's key for this connection and this answer. Nothing was kept.",
-        SupervisorWhy.Dormant => "The supervisor was appointed before Daoris restarted: the owner presses Appoint again. Nothing was kept.",
-        SupervisorWhy.AppointmentChanged => "The appointment this answer names is not the one in force: read the question again. Nothing was kept.",
+        SupervisorWhy.NotStarted => "The role's terminal is not started since Daoris started: the owner starts it in the window. Nothing was kept.",
+        SupervisorWhy.RoleChanged => "The role this answer names is not the one holding now: read the question again. Nothing was kept.",
         SupervisorWhy.Form => "The answer is not the supervisor's form: an id, the question, the generation, the proof, one choice and 1 to 5 reasons, each with its source. Nothing was kept.",
         StandingWhy.InAgentJob => "An agent Daoris runs does not answer as the supervisor. Nothing was kept.",
         StandingWhy.Untold => "Daoris could not tell this terminal is outside every agent it runs. Nothing was kept.",

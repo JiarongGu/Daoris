@@ -125,7 +125,7 @@ public sealed class OwnerSetTests : IDisposable
     [Theory]
     [InlineData("SESSION_OPEN_FOLDER", """{"id":"s1"}""")]
     [InlineData("NOTICES_READ", """{"workspace":"games"}""")]
-    [InlineData("SET_APPOINTMENT", """{"role":"supervisor","repository":"engine","holder":"terminal","on":true}""")]
+    [InlineData("START_ROLE_TERMINAL", """{"role":"supervisor-engine"}""")]
     [InlineData("START_CHAT", """{"repository":"engine"}""")]
     [InlineData("END_CHAT", """{"id":"c1"}""")]
     public async Task What_acts_on_nothing_a_role_acts_on_marks_nothing(string route, string payload)
@@ -173,9 +173,9 @@ public sealed class OwnerSetTests : IDisposable
         Assert.True(Act(judge, key, RoleKit.Probe.Named, """{"repository":"engine"}""").Covered);
     }
 
-    /// <summary>A build that offers no steward marks nothing and takes no gate: the owner's doors are as before.</summary>
+    /// <summary>A steward no holder holds marks nothing and takes no gate: the owner's doors are as before.</summary>
     [Fact]
-    public async Task A_build_offering_no_steward_marks_nothing()
+    public async Task An_unstaffed_steward_marks_nothing()
     {
         var judge = Judge(steward: false);
 
@@ -411,17 +411,14 @@ public sealed class OwnerSetTests : IDisposable
     }
 
     private StandingConfirmation Judge(bool steward = true, bool offered = false) =>
-        new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: offered, steward: steward,
-            walk: new StandingConfirmationTests.Walked())
-        {
-            Drives = _ => true,
-        }.Acting(new RoleKit.Probe(), new QuestProbe());
+        new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: offered,
+            walk: new StandingConfirmationTests.Walked()).Acting(steward, new RoleKit.Probe(), new QuestProbe());
 
-    /// <summary>The steward appointed on <paramref name="judge"/>, the key its stand-in tab was handed.</summary>
-    private static (AppointmentChange Change, string Key) Appointed(StandingConfirmation judge)
+    /// <summary>The steward's terminal started on <paramref name="judge"/>, the key its stand-in tab was handed.</summary>
+    private static (HoldChange Change, string Key) Appointed(StandingConfirmation judge)
     {
         judge.Load();
-        var (change, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         return (change, key!);
     }
@@ -430,7 +427,7 @@ public sealed class OwnerSetTests : IDisposable
     private static RoleJudgement Act(StandingConfirmation judge, string key, string act, string form)
     {
         var nonce = SupervisorProof.Nonce();
-        return RoleKit.JudgeAct(judge, RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, Roles.Steward), act: act, form: form), nonce);
+        return RoleKit.JudgeAct(judge, RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward), act: act, form: form), nonce);
     }
 
     /// <summary>An owner's press of <paramref name="route"/> marked as the router marks it.</summary>
@@ -483,7 +480,7 @@ public sealed class OwnerSetTests : IDisposable
             await using var client = await PipeClient.ConnectAsync(pipe.Name!);
             var hello = await client.HelloAsync(HomeIdentity.Read(home)!);
             var nonce = hello.GetProperty("data").GetProperty("nonce").GetString();
-            var payload = RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, Roles.Steward), act: act, form: form);
+            var payload = RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward), act: act, form: form);
             return await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act, payload));
         }
 
@@ -504,8 +501,8 @@ public sealed class OwnerSetTests : IDisposable
         services.AddSingleton<IIpcModule>(module);
         services.UseMessageDispatcher((_, _) => { });
         var provider = services.BuildServiceProvider();
-        var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: true,
-            walk: new StandingConfirmationTests.Walked()) { Drives = _ => true }.Acting(new RoleKit.Probe(), probe);
+        var judge = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
+            walk: new StandingConfirmationTests.Walked()).Acting(true, new RoleKit.Probe(), probe);
         var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), _bus, _home, version: "9.9.9-test", standing: judge)
         {
             Grounds = new StubGrounds(),
@@ -518,15 +515,14 @@ public sealed class OwnerSetTests : IDisposable
     }
 }
 
-/// <summary>The judge's steward table and offered acts holding the stand-ins (STEWARDROLE1a-ii's tests).</summary>
+/// <summary>The judge's steward table holding the stand-ins, and the steward staffed by the terminal with them its acts (STEWARDROLE1a-ii's tests).</summary>
 internal static class OwnerSetKit
 {
-    public static StandingConfirmation Acting(this StandingConfirmation standing, params IRoleAct[] acts)
+    public static StandingConfirmation Acting(this StandingConfirmation standing, bool staffed, params IRoleAct[] acts)
     {
-        standing.TableOf = role => role == Roles.Steward
+        standing.TableOf = role => role == AppointedRoles.Steward
             ? acts.ToDictionary(each => each.Name, StringComparer.Ordinal)
             : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
-        standing.OffersActs = role => role == Roles.Steward ? [.. acts.Select(each => each.Name)] : [];
-        return standing;
+        return standing.Staff(RoleKit.Steward([.. acts.Select(each => each.Name)], staffed ? RoleHolders.Terminal : null));
     }
 }

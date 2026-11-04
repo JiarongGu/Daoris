@@ -24,21 +24,10 @@ export type StandingConfirmationNow = {
   unwritten: boolean;
   used: number;
   held: string[];
-  /** Whether this build offers any role (STEWARDROLE1a-i, D209 §2.4): derived from the two role flags below, gating nothing by itself. */
-  appointmentsOffered: boolean;
-  /** Whether this build offers the supervisor, by its own flag: false until SUPERVISOR1a-iii, whatever D201's grant is. */
-  supervisorOffered: boolean;
-  /** Whether this build offers the steward, by its own flag: false until STEWARDROLE1d. */
-  stewardOffered: boolean;
-  /** The owner's appointments the record holds, dormant where found as Daoris started. */
-  appointments: AppointmentNow[];
-  /** The holders living this run, each a terminal Daoris started, which a later *Appoint…* may add a role to (D209 §2.2). */
+  /** The roles a terminal holds this run (D233 point 2): a role the catalogue staffs with the terminal and not here is not started. */
+  holds: RoleHoldNow[];
+  /** The holders living this run, each a terminal Daoris started, which a later start may add a role to (D209 §2.2). */
   holders: HolderNow[];
-  /**
-   * The acts this build offers a steward's appointment, in its order (STEWARDROLE1b, D209 §2.3): what *Appoint…* and *Appoint again*
-   * name, never an appointment's own `acts`.
-   */
-  stewardActsOffered: string[];
   /** This run's steward acts, newest first, from Daoris's memory (D209 §5.1): what *Notifications*' line lists. */
   stewardActs: StewardActNow[];
   /** The steward's desk this run, newest first, from Daoris's memory (STEWARDROLE1c, D209 §6.2): what the line shows under its acts. */
@@ -146,54 +135,16 @@ export const standingSaid = (t: TFunction, why: string | null, message: string) 
   (why && REFUSALS.has(why) ? t(`settings.daoris.standing.refused.${why}`) : message || why || '');
 
 /**
- * One of the owner's appointments as `STATE`'s `standingConfirmation.appointments` says it (SUPERVISOR1a-ii, D208; the modules'
- * `AppointmentNow`): the role, the repository, the holder's kind, since when, whether it was found as Daoris started and so admits no
- * holder until *Appoint again* (`dormant`), and how many acts its holder made under it in this run. Never its generation nor any key.
+ * A role a terminal holds this run, as `STATE`'s `standingConfirmation.holds` says it (D233 point 2; the modules' `RoleHoldNow`): the
+ * role's catalogue id, its kind (`supervisor` or `steward`), the living holder, since when, and how many acts it made. Never a key.
  */
-export type AppointmentNow = {
-  role: string;
-  /** The repository its scope names; empty for the steward's `machine`. */
-  repository: string;
-  holder: string;
-  since: string | null;
-  dormant: boolean;
-  answers: number;
-  /** Its scope (STEWARDROLE1a-i, D209 §2.3): `machine`, `repository:<name>`, or the supervisor's `workspace:<name>` (SUPERVISOR1e). */
-  scope: string;
-  /** The living holder that holds it this run; null where it is dormant. */
-  holderId: string | null;
-  /** The acts it grants (STEWARDROLE1b, D209 §2.3), as the ask named them; empty for the supervisor's. Never read into an ask. */
-  acts: string[];
-  /** The owner's set-up tick at the appointment (§2.3, §3.1 row 12); never read into an ask, which shows it off. */
-  setup: boolean;
-  /** The workspace its scope names (SUPERVISOR1e); empty for any other scope. */
-  workspace: string;
-  /** How many minutes the supervisor's answers are held for the owner's overrule, 1 to 60 (SUPERVISOR1e); five where none was set. */
-  window: number;
-};
+export type RoleHoldNow = { role: string; kind: string; holder: string; since: string | null; answers: number };
 
-/** The overrule window an appointment may set, in minutes (SUPERVISOR1e, the supervisor design §6.3): 1 to 60, five where none is set. */
+/** The supervisor's overrule window, in minutes (the supervisor design §6.3): 1 to 60, five where its role keeps none. */
 export const WINDOW = { shortest: 1, longest: 60, standing: 5 } as const;
 
-/** Whether `minutes` is a window an appointment may set: a whole number from 1 to 60. */
+/** Whether `minutes` is a window the supervisor's role may keep: a whole number from 1 to 60. */
 export const inWindow = (minutes: number) => Number.isInteger(minutes) && minutes >= WINDOW.shortest && minutes <= WINDOW.longest;
 
-/** An appointment's or a dismissal's answer (`SET_APPOINTMENT`): done, or refused as data with a code the page words. Never a key. */
-export type AppointmentAnswer = { done: boolean; why: string | null; message: string };
-
-/** The codes an appointment is refused by (the modules' `PersonRoutes`, `StandingConfirmation`), each said in the catalogue's words. */
-const APPOINT_REFUSALS = new Set([
-  'window-only', 'not-offered', 'unknown-role', 'unknown-repository', 'newer', 'unwritten', 'unstarted', 'no-pipe',
-  'scope', 'choose-terminal', 'no-holder', 'revoked-holder', 'holder-harness', 'unknown-workspace', 'window',
-]);
-
-/** A refusal of an appointment in words, by its code, else the driver's own sentence. */
-export const appointmentSaid = (t: TFunction, why: string | null, message: string) =>
-  (why && APPOINT_REFUSALS.has(why) ? t(`projects.supervisor.refused.${why}`) : message || why || '');
-
-/** The refusals whose supervisor's sentence names the supervisor, said for the steward in its own words. */
-const STEWARD_REFUSALS = new Set(['not-offered', 'unstarted']);
-
-/** A refusal of the steward's appointment in words: its own where the supervisor's names the supervisor, else the shared one. */
-export const stewardAppointmentSaid = (t: TFunction, why: string | null, message: string) =>
-  (why && STEWARD_REFUSALS.has(why) ? t(`settings.daoris.steward.refused.${why}`) : appointmentSaid(t, why, message));
+/** A start of a role's terminal (`START_ROLE_TERMINAL`): done, or refused as data with its code. Never a key. */
+export type RoleTerminalAnswer = { done: boolean; why: string | null; message: string };

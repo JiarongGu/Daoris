@@ -491,9 +491,9 @@ public sealed class DriverRoutes(DriverContext context)
         _ => null,
     };
 
-    // A working role added, changed, removed or given back its seed: the person's press, the same change `daoris driver
-    // role` makes and Ask Daoris's `role_propose` asks for: one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A
-    // removed role's work holds its starts, said; a running session goes on.
+    // A role added, changed, removed or given back its seed, the supervisor and the steward among them: the person's press, as `daoris
+    // driver role` and `role_propose` make it, through one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A removed
+    // role's work holds its starts, said; a running session goes on; a role's terminal it no longer staffs ends.
     [DriverRoute("SET_ROLE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_ROLE", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_ROLE", nameof(PipeReads.RoleRow))]
@@ -501,17 +501,13 @@ public sealed class DriverRoutes(DriverContext context)
     [Publishes("SET_ROLE", StateScopes.Driver | StateScopes.Harnesses)]
     private object? SetRole(IpcRequest request)
     {
-        var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
         var press = RoleDoor.ReadPress(request.Payload);
-        RoleDoor.Apply(staffing, press.Change, press.Choices, press.Read, press.Policy);
-        _loop.Nudge();
-        return State(_loop);
+        RoleDoor.Apply(Staffing(), press.Change, press.Choices, press.Read, press.Policy);
+        return RolesChanged();
     }
 
-    // Several role changes made as one: the Roles mode's suggested choices, or a role's policy with a place's rules. Each change is
-    // a `SET_ROLE` press in `changes`, judged in order by `RoleDoor.ApplyAll` before anything is written; the first refusal refuses
-    // the batch with nothing written.
+    // Several role changes made as one: the suggested choices, or a role's policy with a place's rules. Each is a `SET_ROLE` press in
+    // `changes`, judged in order by `RoleDoor.ApplyAll` before anything is written; the first refusal refuses the batch, nothing written.
     [DriverRoute("SET_ROLES", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_ROLES", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_ROLES", nameof(PipeReads.RoleRows))]
@@ -519,9 +515,16 @@ public sealed class DriverRoutes(DriverContext context)
     [Publishes("SET_ROLES", StateScopes.Driver | StateScopes.Harnesses)]
     private object? SetRoles(IpcRequest request)
     {
-        var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
-        RoleDoor.ApplyAll(staffing, RoleDoor.ReadPresses(request.Payload));
+        RoleDoor.ApplyAll(Staffing(), RoleDoor.ReadPresses(request.Payload));
+        return RolesChanged();
+    }
+
+    private RoleStaffing Staffing() => RoleStaffing.Of(_loop.ConfigPath)
+        ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
+
+    private object? RolesChanged()
+    {
+        _ = SupervisorDoor.RolesChangedAsync(_loop, CancellationToken.None);
         _loop.Nudge();
         return State(_loop);
     }

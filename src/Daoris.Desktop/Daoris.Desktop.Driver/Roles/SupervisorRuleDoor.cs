@@ -8,37 +8,38 @@ namespace Daoris.Driver;
 public sealed record SupervisorRulesPress(string Place, long Read, IReadOnlyList<SupervisorRule> Rules);
 
 /// <summary>
-/// The supervisor's rules through the role door (CONTEXTDRIVE1d; the context counters design §4.3, §4.4, §7.6): for the reserved id
+/// The supervisor's rules through the role door (CONTEXTDRIVE1d; the context counters design §4.3, §4.4, §7.6): for the seeded
 /// <c>supervisor</c>, <c>SET_ROLE</c>, <c>SET_ROLES</c>, <c>daoris role rules</c> and Ask Daoris's <c>role_propose</c> carry a place's
-/// <c>rules</c> and <c>rulesRevision</c> alone, written to their own family and never a <c>roles</c> row. A rule grants nothing, so it is set
-/// as a role's policy is, by the person's press; the appointed half of the catalogue stays refused.
+/// <c>rules</c> and <c>rulesRevision</c>, written to their own family and never a <c>roles</c> row. A rule grants nothing, so it is set
+/// as a role's policy is, by the person's press; the supervisor's own record is set by a role's press like any role's.
 /// </summary>
 public static class SupervisorRuleDoor
 {
-    /// <summary>The reserved id whose press carries rules (<see cref="RoleCatalog.Reserved"/>).</summary>
-    public const string Id = "supervisor";
+    /// <summary>The seeded supervisor's id, whose press carries rules (<see cref="AppointedRoles.Supervisor"/>).</summary>
+    public const string Id = AppointedRoles.Supervisor;
 
-    /// <summary>The fields a supervisor's press may carry; any other is the appointed shape.</summary>
+    /// <summary>The fields a press of the rules may carry; any other is a role's press.</summary>
     private static readonly string[] Fields = ["id", "change", "place", "rules", "rulesRevision"];
 
-    /// <summary>Whether <paramref name="press"/> names the supervisor.</summary>
+    /// <summary>Whether <paramref name="press"/> names the supervisor's rules: the supervisor's id with its <c>rules</c>, a <c>place</c> or a <c>rulesRevision</c>.</summary>
     public static bool Names(JsonElement press) =>
-        press.ValueKind == JsonValueKind.Object && press.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String && id.GetString()?.Trim() == Id;
+        press.ValueKind == JsonValueKind.Object && press.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String && id.GetString()?.Trim() == Id
+        && (press.TryGetProperty("rules", out _) || press.TryGetProperty("place", out _) || press.TryGetProperty("rulesRevision", out _));
 
     /// <summary>
     /// A supervisor's press read: <c>{ id: "supervisor", place, rules: [{ id?, count, window?, at, do, upTo?, roles? }], rulesRevision }</c>, a
     /// rule's window its count's where it names none and its id given where it has none.
     /// </summary>
-    /// <exception cref="RoleRefusedException"><c>appointed-not-configurable</c>: the press carries a field of the appointed shape.</exception>
+    /// <exception cref="RoleRefusedException"><c>mixed-shape</c>: the press carries a field of a role's press beside the rules.</exception>
     /// <exception cref="RuleRefusedException">The rules do not read as rules; the judge's code.</exception>
     public static SupervisorRulesPress Read(JsonElement press)
     {
         foreach (var property in press.EnumerateObject())
         {
-            if (!Fields.Contains(property.Name, StringComparer.Ordinal)) throw Appointed($"`{property.Name}`");
+            if (!Fields.Contains(property.Name, StringComparer.Ordinal)) throw Mixed($"`{property.Name}`");
         }
 
-        if (Text(press, "change") is { } change && change != "set") throw Appointed($"`change: {change}`");
+        if (Text(press, "change") is { } change && change != "set") throw Mixed($"`change: {change}`");
         var place = Text(press, "place") ?? throw Refused("place", "the supervisor's rules name their place: `machine`, `workspace:<id>`, `repository:<id>` or `line:<key>`.");
         if (!press.TryGetProperty("rulesRevision", out var revision) || !revision.TryGetInt64(out var read))
         {
@@ -95,7 +96,7 @@ public static class SupervisorRuleDoor
         }
         catch (DriverException)
         {
-            return [.. RoleCatalog.Of([]).Slots.Select(slot => slot.Id)];
+            return [.. RoleCatalog.Of([]).Slots.Where(slot => slot.Role is { Takes.Count: > 0 }).Select(slot => slot.Id)];
         }
     }
 
@@ -120,9 +121,9 @@ public static class SupervisorRuleDoor
         return new SupervisorRule(Text(each, "id") ?? $"r-{index + 1}", count, window, threshold, does, upTo, place, roles);
     }
 
-    private static RoleRefusedException Appointed(string field) => new(new RoleRefusal(
-        "appointed-not-configurable",
-        $"the supervisor is an appointed role: its press carries a place's `rules` and `rulesRevision` alone, and {field} is the appointed shape this build does not configure."));
+    private static RoleRefusedException Mixed(string field) => new(new RoleRefusal(
+        "mixed-shape",
+        $"a press of the supervisor's rules carries a place's `rules` and `rulesRevision` alone, and {field} is a role's press: set the supervisor's record by a press of its own."));
 
     private static RuleRefusedException Refused(string code, string said) => new(new RuleRefusal(code, said));
 

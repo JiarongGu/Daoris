@@ -23,7 +23,6 @@ import {
 } from '../../bridge/shell';
 import { resolveGitAccess } from '../../settings/repository/GitAccess';
 import type { GitHostShown } from '../../settings/git/GitRemotes';
-import { supervisorOf } from '../../agents/setup/PlaceSupervisor';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';
 import type { KeptDoors } from '../../work/history/ClearAsk';
@@ -68,7 +67,7 @@ const mine = <R extends { workspace: string }>(rows: readonly R[], workspace: st
  */
 export function WorkspaceView({
   workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenBranch,
-  onOpenRepositoryHistory, onOpenAgent, onOpenAppointed, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
+  onOpenRepositoryHistory, onOpenAgent, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
   onOpenSetupSection,
 }: {
   workspace: string;
@@ -90,8 +89,6 @@ export function WorkspaceView({
   onOpenRepositoryHistory?: (repository: string) => void;
   /** Open an agent's page, where a workspace's accounts are set (D130 §3.2, UX6e). */
   onOpenAgent?: (agent: string) => void;
-  /** Open Agents → Roles → Appointed roles, where the workspace's supervisor is appointed (COMPANYVIEW1e). */
-  onOpenAppointed?: () => void;
   /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -160,7 +157,6 @@ export function WorkspaceView({
             wiring={wiring}
             // Lit, the session rows are the workspace place's (AGENTSPLACE1f); this tab keeps the rest.
             rows={setupLit() ? 'rest' : 'all'}
-            onOpenAppointed={onOpenAppointed}
           />
         )
         : (
@@ -444,9 +440,8 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
  * machines its remote counts undeclared, SETUPUX1v) and `rows="defaults"` under its Workflow; this tab, once the Setup mode is lit, keeps the
  * rest until row y takes it away.
  */
-export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenAppointed, onOpenGit }: {
+export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenGit }: {
   workspace: string;
-  onOpenAppointed?: () => void;
   /** Open Settings → Git, where a host nothing serves is given an identity (GITAUTH1e). */
   onOpenGit?: (host: string) => void;
   notify: Notify;
@@ -504,13 +499,11 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const answered = rules.data && Array.isArray(rules.data.defaults) && Array.isArray(rules.data.scopes) ? rules.data : null;
   const scope = answered?.scopes.find((row) => row.scope === 'workspace' && row.name !== undefined && same(row.name, workspace));
   const where = t('settings.rules.where.workspace', { name: workspace });
-  const supervisor = supervisorOf(state?.standingConfirmation, workspace);
 
   const setup: WorkspaceSetupProps = {
     workspace,
     open,
     wiring,
-    onOpenAppointed,
     git: (gitIdentities && gitRemotes.data) || state?.workspaceGitAccess
       ? {
           hosts: gitIdentities && gitRemotes.data ? gitHosts : [],
@@ -537,7 +530,6 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wiringBusy
       || setGitAccess.isPending
       || retire.isPending,
-    supervisor,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
     // the levels as set, since the driver resolves only a repository's; a shell older than it answers none, and nothing is drawn.
     access: state && Array.isArray(state.workspaceAccess)

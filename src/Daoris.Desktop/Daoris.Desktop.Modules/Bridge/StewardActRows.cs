@@ -108,19 +108,6 @@ public sealed class DriverStewardWorld(DriverContext context) : IStewardWorld
     }
 }
 
-/// <summary>The steward's acts by the names <c>ROLE_ACT</c>'s <c>act</c> carries (D209 §3.1).</summary>
-public static class StewardActNames
-{
-    public const string Drive = "drive";
-    public const string Undrive = "undrive";
-    public const string Trees = "trees";
-    public const string Hold = "hold";
-    public const string Resume = "resume";
-    public const string Stop = "stop";
-    public const string Finish = "finish";
-    public const string Retry = "retry";
-}
-
 /// <summary>The stages of the steward's pending operations (D209 §5.1a): a Try again's release, which the planner's start takes.</summary>
 public static class StewardStages
 {
@@ -380,7 +367,7 @@ public static class StewardActRows
             var quest = Target(run.Form);
             var session = run.Judge.StewardStopOf(quest)!;
             run.Judge.Pend(run.Id, Name, [StewardStages.Released], binds: false, new { Quest = quest, Session = session });
-            WorldOf(run).Change(config => config.WithRoleReleased(quest, new RoleRelease(RoleReleaseKinds.Stop, session, Roles.Steward, run.Id)));
+            WorldOf(run).Change(config => config.WithRoleReleased(quest, new RoleRelease(RoleReleaseKinds.Stop, session, AppointedRoles.Steward, run.Id)));
             run.Judge.StewardDid(run.Id, Name, quest: quest, session: session);
             await Task.CompletedTask.ConfigureAwait(false);
             return new { Act = Name, Quest = quest, Session = session };
@@ -397,11 +384,11 @@ public sealed class RoleStarts(StandingConfirmation judge, string configPath) : 
     public bool Caused(string repository, string quest) => judge.StewardCaused(repository, quest);
 
     public bool Released(string quest, RoleRelease release) =>
-        release.By == Roles.Steward && judge.StewardReleased(quest, release.Act);
+        release.By == AppointedRoles.Steward && judge.StewardReleased(quest, release.Act);
 
     public bool Take(string quest, RoleRelease release)
     {
-        var taken = release.By == Roles.Steward && judge.TakeRelease(quest, release.Act) is not null;
+        var taken = release.By == AppointedRoles.Steward && judge.TakeRelease(quest, release.Act) is not null;
         Withdraw(quest);
         return taken;
     }
@@ -425,7 +412,7 @@ public sealed class RoleStarts(StandingConfirmation judge, string configPath) : 
     public static int Sweep(StandingConfirmation judge, string configPath)
     {
         var config = DriverConfig.Load(configPath);
-        var gone = config.RoleReleases.Where(pair => !(pair.Value.By == Roles.Steward && judge.StewardReleased(pair.Key, pair.Value.Act)))
+        var gone = config.RoleReleases.Where(pair => !(pair.Value.By == AppointedRoles.Steward && judge.StewardReleased(pair.Key, pair.Value.Act)))
             .Select(pair => pair.Key).ToList();
         if (gone.Count == 0) return 0;
         foreach (var quest in gone) config = config.WithoutRoleRelease(quest);

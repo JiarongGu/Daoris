@@ -145,38 +145,10 @@ describe("a workspace's Setup", () => {
     expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
   });
 
-  // SUPERVISOR1e (D208 §5, §6.3): the workspace's supervisor, its own section, folded while none is appointed, open once one is.
-  // COMPANYVIEW1e: the supervisor's section keeps one line and a door to Agents → Roles → Appointed roles, where it is appointed.
-  it("keeps the workspace's supervisor to one line and a door to Appointed roles, never an Appoint", async () => {
-    const onOpenAppointed = vi.fn();
-    at({ supervisor: { offered: true, appointment: null }, onOpenAppointed });
-    expect(section('Supervisor')).toHaveAttribute('aria-expanded', 'false');
-    expect(section('Supervisor')).toHaveAccessibleDescription('Not appointed: every question here waits for you.');
-    await userEvent.click(section('Supervisor'));
-    expect(screen.queryByRole('button', { name: /^Appoint/ })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'Open Appointed roles' }));
-    expect(onOpenAppointed).toHaveBeenCalledTimes(1);
-  });
-
-  it("opens the supervisor's section where the workspace has one, saying it and where it is turned off", () => {
-    at({
-      supervisor: {
-        offered: true,
-        appointment: {
-          role: 'supervisor', repository: '', holder: 'terminal', since: '2026-10-25T09:00:00Z', dormant: false, answers: 1,
-          scope: 'workspace:aurora', holderId: 'h1', acts: [], setup: false, workspace: 'aurora', window: 15,
-        },
-      },
-      onOpenAppointed: vi.fn(),
-    });
-    expect(section('Supervisor')).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText(/^Appointed since .* 1 answer this run$/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Turn off' })).toBeNull();
-  });
-
-  it('says a supervisor this build does not offer, with its door', () => {
-    at({ supervisor: { offered: false, appointment: null }, onOpenAppointed: vi.fn() });
-    expect(section('Supervisor')).toHaveAccessibleDescription(/^Not offered yet/);
+  // D233 point 2: the supervisor is a role of the place's Roles, so the workspace's Setup draws no section of it.
+  it("draws no supervisor's section: the supervisor is a role among the place's roles", () => {
+    at({});
+    expect(screen.queryByRole('button', { name: 'Supervisor' })).toBeNull();
   });
 
   it('opens a section that holds a value the workspace sets, with its Clear', async () => {

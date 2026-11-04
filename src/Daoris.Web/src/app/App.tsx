@@ -454,7 +454,6 @@ export function App() {
           place={place}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
-          onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(place.row), { section: 'roles', row: 'appointed' })}
           onOpenGit={() => open('settings', 'git')}
         />
       ),
@@ -1024,8 +1023,6 @@ export function App() {
     onOpenCode: (repository) => open('map', null, { code: repository }),
     // A workspace's Details names each agent's accounts there, set on the agent's page (UX6e).
     onOpenAgent: (agent) => open('agents', agent),
-    // Setup's supervisor line opens Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e).
-    onOpenAppointed: () => open('agents', null, { roleSection: 'appointed' }),
     // A remote nothing serves opens Settings → Git, where an identity is set up for it (GITAUTH1e).
     onOpenGit: () => open('settings', 'git'),
     // A landing rule's plugin opens its page (PLUGUI1c2c).

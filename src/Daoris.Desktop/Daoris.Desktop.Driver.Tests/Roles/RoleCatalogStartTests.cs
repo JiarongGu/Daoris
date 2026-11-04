@@ -49,7 +49,7 @@ public sealed class RoleCatalogStartTests : IDisposable
 
         var catalog = RoleCatalog.Of([RoleCatalogTests.Stored(designer)]);
 
-        Assert.Equal(["build", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "designer"], catalog.Slots.Select(slot => slot.Id));
+        Assert.Equal(["build", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "supervisor", "steward", "designer"], catalog.Slots.Select(slot => slot.Id));
         SameAsToday(catalog, Machine, config);
         SameAsToday(catalog, new RolePlace(Workspace: "w2"), config);
         SameAsToday(RoleCatalog.Of([]), new RolePlace(Workspace: "w1"), config);

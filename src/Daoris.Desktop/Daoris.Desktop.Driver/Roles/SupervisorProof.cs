@@ -133,9 +133,6 @@ public static class SupervisorRoutes
 
     /// <summary>What waits for the holder: <c>Open</c>.</summary>
     public const string Waiting = "SUPERVISOR_WAITING";
-
-    /// <summary>The owner's appointment, made and turned off in the window alone: <c>Window</c>.</summary>
-    public const string Appoint = "SET_APPOINTMENT";
 }
 
 /// <summary>

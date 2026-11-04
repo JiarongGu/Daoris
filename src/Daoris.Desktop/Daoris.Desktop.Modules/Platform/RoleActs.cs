@@ -5,7 +5,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// One act of a role's table (STEWARDROLE1a-i, D209 §3.1, §3.3): its name, its exact form, and its handler, run inside the role's door
-/// once the act is admitted and past its gate. A later row adds its act behind its own look (§10's <see cref="StewardActs.Offered"/>).
+/// once the act is admitted and past its gate. A later row adds its act behind its own look (§10's <see cref="StewardActs.Table"/>).
 /// </summary>
 public interface IRoleAct
 {
@@ -39,23 +39,17 @@ public sealed record RoleActRun(string Id, string Role, string Act, JsonElement 
 }
 
 /// <summary>
-/// The steward's acts (D209 §3.1, §10): its table, each row adding its act behind its own look, and the set this build offers, which an
-/// appointment's <c>acts</c> keeps as its ask named it (§2.3). STEWARDROLE1b adds rows 1 to 8.
+/// The steward's acts (D209 §3.1, §10): its table, each row adding its act behind its own look; the steward's role's <c>authority</c>
+/// says which of them its holder may make (<see cref="RoleHold"/>). STEWARDROLE1b adds rows 1 to 8.
 /// </summary>
 public static class StewardActs
 {
-    /// <summary>The acts this build offers a new appointment, in §3.1's order: rows 1 to 8 (STEWARDROLE1b).</summary>
-    public static IReadOnlyList<string> Offered { get; } = [.. StewardActRows.All.Select(each => each.Name)];
-
-    /// <summary>The set-up act (§3.1 row 12), refused without the appointment's own tick.</summary>
-    public const string Setup = "setup";
-
     /// <summary>The steward's table: §3.1 rows 1 to 8, what a desk request may ask for.</summary>
     public static IReadOnlyDictionary<string, IRoleAct> Table { get; } = StewardActRows.All.ToDictionary(each => each.Name, StringComparer.Ordinal);
 
     /// <summary>
     /// The desk's own act (STEWARDROLE1c, D209 §6.2): the holder's decline of a request, beside §3.1's table and outside every
-    /// appointment's <c>acts</c>, since it changes nothing of Daoris's controls.
+    /// role's <c>authority</c>, since it changes nothing of Daoris's controls.
     /// </summary>
     public static IReadOnlyList<string> Desk { get; } = [DeskDecline.Named];
 
@@ -64,7 +58,7 @@ public static class StewardActs
 
     /// <summary>Each role's table for <c>ROLE_ACT</c>: the steward's with the desk's decline; the supervisor's acts are its own routes, so its table here is empty.</summary>
     public static IReadOnlyDictionary<string, IRoleAct> TableOf(string role) =>
-        role == Roles.Steward ? Steward : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
+        role == AppointedRoles.Steward ? Steward : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
 }
 
 /// <summary>Where an admitted act stands in the run's memory (§3.4 steps 7 and 8).</summary>

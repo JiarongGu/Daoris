@@ -16,8 +16,8 @@ public static class DeskWhy
     /// <summary>The act named is not one the steward's table makes: the owner's to do, so nobody asks the steward for it.</summary>
     public const string NotRole = "not-role";
 
-    /// <summary>This build does not offer the steward: the desk keeps nothing.</summary>
-    public const string NotOffered = "not-offered";
+    /// <summary>No holder holds the steward: the desk keeps nothing.</summary>
+    public const string NotStaffed = "not-staffed";
 
     /// <summary>The decline names no request open on the desk: answered, declined, or never filed.</summary>
     public const string NotOpen = "not-open";

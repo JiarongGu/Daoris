@@ -56,11 +56,11 @@ public readonly record struct RolePlace(string? Workspace = null, string? Reposi
 
 /// <summary>
 /// A role of the catalogue (the foundation design §2.7): <c>filled</c> is <c>always</c> for a working role, which <c>takes</c> work and
-/// holds no authority, or <c>appointed</c>, which this build does not configure. A record holding both <c>Takes</c> and
-/// <c>Authority</c> is a mixed shape, which no door writes and no read accepts.
+/// holds no acts, or <c>appointed</c> for the supervisor and the steward, which hold acts and take no work (<see cref="RoleHold"/>). A
+/// record holding both is a mixed shape, which no door writes and no read accepts.
 /// </summary>
 public sealed record RoleRecord(
-    string Id, AuthoredText Name, string Filled, IReadOnlyList<string> Takes, RoleScope Scope, IReadOnlyList<string>? Authority = null)
+    string Id, AuthoredText Name, string Filled, IReadOnlyList<string> Takes, RoleScope Scope, RoleHold? Hold = null)
 {
     public const string Always = "always";
     public const string Appointed = "appointed";
@@ -85,13 +85,7 @@ public sealed record RoleRecord(
                 writer.WriteEndArray();
             }
 
-            if (Authority is not null)
-            {
-                writer.WriteStartArray("authority");
-                foreach (var act in Authority) writer.WriteStringValue(act);
-                writer.WriteEndArray();
-            }
-
+            Hold?.Write(writer);
             writer.WriteStartObject("scope");
             writer.WriteString("kind", Scope.Kind);
             if (Scope.Id is { } id) writer.WriteString("id", id);
@@ -103,8 +97,8 @@ public sealed record RoleRecord(
     }
 
     /// <summary>
-    /// The record <paramref name="json"/> holds for <paramref name="id"/>, or why it does not read: a mixed record, an appointed one and an
-    /// unknown work each read as unreadable, never as either shape (O3-16).
+    /// The record <paramref name="json"/> holds for <paramref name="id"/>, or why it does not read: a mixed record, an appointed one whose
+    /// acts or holder do not read, and an unknown work each read as unreadable, never as either shape (O3-16).
     /// </summary>
     public static (RoleRecord? Record, string? Why) Parse(string id, string json)
     {
@@ -126,7 +120,13 @@ public sealed record RoleRecord(
                 return (null, "mixes the working and the appointed shape");
             }
 
-            if (filled == Appointed) return (null, "is an appointed role, which this build does not configure");
+            const string NoScope = "has no scope of `machine`, a `workspace` or a `repository` with its id";
+            if (filled == Appointed)
+            {
+                var (hold, why) = RoleHold.Read(root);
+                if (hold is null) return (null, why);
+                return ReadScope(root) is { } placed ? (new RoleRecord(id, name, filled, [], placed, hold), null) : (null, NoScope);
+            }
 
             var takes = Strings(hasTakes ? takesElement : default);
             if (takes is null || takes.Count == 0) return (null, "`takes` is not a list of work");
@@ -135,7 +135,7 @@ public sealed record RoleRecord(
                 return (null, $"takes `{unknown}`, a work this build does not know");
             }
 
-            if (ReadScope(root) is not { } scope) return (null, "has no scope of `machine`, a `workspace` or a `repository` with its id");
+            if (ReadScope(root) is not { } scope) return (null, NoScope);
             return (new RoleRecord(id, name, filled, takes, scope), null);
         }
         catch (JsonException error)

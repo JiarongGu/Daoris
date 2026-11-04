@@ -221,8 +221,8 @@ public sealed class PipeStandingTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, "PLACE_APPLY"));
-        Assert.DoesNotContain("PLACE_APPLY", StewardActs.Offered);
-        Assert.DoesNotContain("PLACE_APPLY", StewardActs.TableOf(Roles.Steward).Keys);
+        Assert.DoesNotContain("PLACE_APPLY", AppointedRoles.StewardActs);
+        Assert.DoesNotContain("PLACE_APPLY", StewardActs.TableOf(AppointedRoles.Steward).Keys);
 
         using var log = new MachineLog(Home, "desktop");
         var driver = new HeldModule(DriverModule.Name);
@@ -338,23 +338,19 @@ public sealed class PipeStandingTests : Bridge
         }
     }
 
+    /// <summary>The repository's own supervisor, which the catalogue staffs with the terminal.</summary>
+    private const string Engine = "supervisor-engine";
+
     private (InstancePipe Pipe, StandingConfirmation Judge, string Key, string Generation) Appointed(
-        IMessageDispatcher dispatcher, MachineLog log, IHolderWalk? walk = null, bool steward = false)
+        IMessageDispatcher dispatcher, MachineLog log, IHolderWalk? walk = null)
     {
         var standing = new StandingConfirmation(
-            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, supervisor: true, steward: steward,
-            walk: walk ?? new StandingConfirmationTests.Walked())
-        {
-            Drives = _ => true,
-        };
+            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, walk: walk ?? new StandingConfirmationTests.Walked())
+            .Staff(RoleKit.Supervisor(Engine, RoleKit.Repository("engine")));
         var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
-        string? handed = null;
-        Assert.True(standing.Appoint(StandingConfirmationTests.Supervising("engine"), open =>
-        {
-            handed = open.Key;
-            return StandingConfirmationTests.Opened(open);
-        }).Answer.Done);
+        var (change, handed) = RoleKit.Start(standing, new HoldRequest(Engine, "own"));
+        Assert.True(change.Answer.Done, change.Answer.Message);
         return (pipe, standing, handed!, standing.Admit("engine").Generation!);
     }
 
@@ -444,7 +440,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Contains(Lines("supervisor.refused"), line => line.GetProperty("data").GetProperty("why").GetString() == SupervisorWhy.NotHolder);
     }
 
-    /// <summary>A caller in an agent's job is refused before its proof is read, and a role act in a build that does not offer it is refused.</summary>
+    /// <summary>A caller in an agent's job is refused before its proof is read, and a role act no terminal holds is refused.</summary>
     [Fact]
     public async Task A_contained_caller_and_a_dark_build_are_refused_before_any_proof()
     {
@@ -462,7 +458,7 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(StandingWhy.InAgentJob, CodeOf(refused));
         Assert.Empty(driver.Seen);
 
-        // This build's own judge: appointments are not offered, so nothing is covered whatever is sent.
+        // A home's own judge over the seed's catalogue: your rules alone hold the supervisor, so nothing is covered whatever is sent.
         using var darkLog = new MachineLog(Home, "dark");
         var dark = new InstancePipe(dispatcher, Bus, Path.Combine(Home, "dark-home"), darkLog, version: "9.9.9-test");
         Directory.CreateDirectory(Path.Combine(Home, "dark-home"));
@@ -472,7 +468,7 @@ public sealed class PipeStandingTests : Bridge
             await using var darkClient = await PipeClient.ConnectAsync(name);
             var darkNonce = NonceOf(await darkClient.HelloAsync(HomeIdentity.Read(Path.Combine(Home, "dark-home"))!))!;
             var answer = await darkClient.AnswerAsync(await darkClient.SendAsync(DriverModule.Name, SupervisorRoutes.Answer, Proved(key, darkNonce, generation)));
-            Assert.Equal(SupervisorWhy.NotOffered, CodeOf(answer));
+            Assert.Equal(SupervisorWhy.NotStaffed, CodeOf(answer));
             Assert.Empty(driver.Seen);
         }
     }
@@ -498,18 +494,18 @@ public sealed class PipeStandingTests : Bridge
         }
     }
 
-    /// <summary>The steward appointed over a served pipe, its table holding the probe.</summary>
+    /// <summary>The steward's terminal started over a served pipe, its table holding the probe; the repository's supervisor staffed beside it.</summary>
     private (InstancePipe Pipe, StandingConfirmation Judge, string Key, string Generation) Stewarded(
         IMessageDispatcher dispatcher, MachineLog log, RoleKit.Probe probe, IHolderWalk? walk = null)
     {
         var standing = new StandingConfirmation(
-            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: false, supervisor: true, steward: true,
-            walk: walk ?? new StandingConfirmationTests.Walked()) { Drives = _ => true }.Probing(probe);
+            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: false, walk: walk ?? new StandingConfirmationTests.Walked())
+            .Probing(probe).Staff(RoleKit.Supervisor(Engine, RoleKit.Repository("engine")));
         var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
-        var (change, key) = RoleKit.Appoint(standing, RoleKit.Stewarding(share: null));
+        var (change, key) = RoleKit.Start(standing, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
-        return (pipe, standing, key!, RoleKit.GenerationOf(standing, Roles.Steward));
+        return (pipe, standing, key!, RoleKit.GenerationOf(standing, AppointedRoles.Steward));
     }
 
     public static TheoryData<string> WrongActs => ["none", "key", "other-role", "replayed"];
@@ -531,11 +527,11 @@ public sealed class PipeStandingTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Name!);
         var nonce = NonceOf(await client.HelloAsync(HomeId))!;
 
-        // A holder that holds the supervisor alone: its key proves nothing for the steward's appointment.
+        // A holder that holds the supervisor alone: its key proves nothing for the steward's hold.
         string? supervisorKey = null;
         if (wrong == "other-role")
         {
-            Assert.True(judge.Appoint(StandingConfirmationTests.Supervising("engine"), open =>
+            Assert.True(judge.Start(new HoldRequest(Engine, "own"), open =>
             {
                 supervisorKey = open.Key;
                 return StandingConfirmationTests.Opened(open);
@@ -554,7 +550,7 @@ public sealed class PipeStandingTests : Bridge
             var first = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act, payload));
             Assert.True(first.GetProperty("success").GetBoolean(), first.GetRawText());
             Assert.True(first.GetProperty("data").GetProperty("done").GetBoolean(), first.GetRawText());
-            Assert.Equal([Roles.Steward], first.GetProperty("data").GetProperty("roles").EnumerateArray().Select(each => each.GetString()));
+            Assert.Equal([AppointedRoles.Steward], first.GetProperty("data").GetProperty("roles").EnumerateArray().Select(each => each.GetString()));
             Assert.Equal(RolesBrief.Revision, first.GetProperty("data").GetProperty("brief").GetString());
         }
 
@@ -566,9 +562,9 @@ public sealed class PipeStandingTests : Bridge
         Assert.Contains(Lines("role.refused"), line => line.GetProperty("data").GetProperty("why").GetString() == SupervisorWhy.NotHolder);
     }
 
-    /// <summary>§3.4: an act outside the appointment's <c>acts</c> is refused <c>not-granted</c>; the steward's table is empty in this build.</summary>
+    /// <summary>§3.4: an act outside the role's <c>authority</c> is refused <c>not-granted</c>.</summary>
     [Fact]
-    public async Task An_act_outside_the_appointment_s_acts_is_refused_not_granted_over_the_pipe()
+    public async Task An_act_outside_the_role_s_authority_is_refused_not_granted_over_the_pipe()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
@@ -589,9 +585,9 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(0, probe.Ran);
     }
 
-    /// <summary>§3.4 step 8: a revoke between an act's admission and its gate: refused <c>appointment-changed</c> under the gate, nothing run.</summary>
+    /// <summary>§3.4 step 8: the role changed between an act's admission and its gate: refused <c>role-changed</c> under the gate, nothing run.</summary>
     [Fact]
-    public async Task A_revoke_between_admission_and_the_gate_refuses_the_act_under_the_gate_and_runs_nothing()
+    public async Task A_role_change_between_admission_and_the_gate_refuses_the_act_under_the_gate_and_runs_nothing()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
@@ -602,7 +598,7 @@ public sealed class PipeStandingTests : Bridge
         var (pipe, judge, key, generation) = Stewarded(dispatcher, log, probe);
         using var served = pipe;
         driver.Pipe = pipe;
-        driver.Before = () => Assert.True(judge.Appoint(RoleKit.Stewarding(on: false), StandingConfirmationTests.Opened).Answer.Done);
+        driver.Before = () => Assert.Single(judge.Unstaffed());
         await using var client = await PipeClient.ConnectAsync(pipe.Name!);
         var nonce = NonceOf(await client.HelloAsync(HomeId))!;
 
@@ -610,13 +606,13 @@ public sealed class PipeStandingTests : Bridge
 
         Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
         var data = answer.GetProperty("data");
-        Assert.Equal((false, SupervisorWhy.AppointmentChanged), (data.GetProperty("done").GetBoolean(), data.GetProperty("why").GetString()));
+        Assert.Equal((false, SupervisorWhy.RoleChanged), (data.GetProperty("done").GetBoolean(), data.GetProperty("why").GetString()));
         Assert.Equal(0, probe.Ran);
     }
 
-    /// <summary>§3.4: a revoke after the act moved to running does not recall it: it completes, and the pending operation it left is cancelled.</summary>
+    /// <summary>§3.4: a role's change after the act moved to running does not recall it: it completes, and the pending operation it left is cancelled.</summary>
     [Fact]
-    public async Task A_revoke_after_running_lets_the_act_complete_and_cancels_its_pending_operation()
+    public async Task A_role_change_after_running_lets_the_act_complete_and_cancels_its_pending_operation()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
@@ -631,7 +627,7 @@ public sealed class PipeStandingTests : Bridge
         probe.Inside = run =>
         {
             operation = judge.Pend(run.Id, "hand-over", ["boxed", "handed"], binds: true, new { quest = "q1" })!.Id;
-            Assert.True(judge.Appoint(RoleKit.Stewarding(on: false), StandingConfirmationTests.Opened).Answer.Done);
+            Assert.Single(judge.Unstaffed());
             return Task.CompletedTask;
         };
         await using var client = await PipeClient.ConnectAsync(pipe.Name!);
@@ -649,23 +645,22 @@ public sealed class PipeStandingTests : Bridge
     /// <summary>An act admitted and run on the judge alone, its pending operation registered with <paramref name="stages"/>.</summary>
     private static (StandingConfirmation Judge, RoleOperation Operation) Pending(string home, IReadOnlyList<string> stages, bool binds)
     {
-        var judge = new StandingConfirmation(home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: true,
+        var judge = new StandingConfirmation(home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
             walk: new StandingConfirmationTests.Walked()).Probing(new RoleKit.Probe());
         judge.Load();
-        var (_, key) = RoleKit.Appoint(judge, RoleKit.Stewarding(share: null));
+        var (_, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         var nonce = SupervisorProof.Nonce();
-        var admitted = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, RoleKit.GenerationOf(judge, Roles.Steward)), nonce);
+        var admitted = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward)), nonce);
         Assert.True(admitted.Covered, admitted.Why);
         Assert.Null(judge.RunAct(admitted.ActId!));
         // Step 8 is taken once: a second run of the same act is refused.
-        Assert.Equal(SupervisorWhy.AppointmentChanged, judge.RunAct(admitted.ActId!));
+        Assert.Equal(SupervisorWhy.RoleChanged, judge.RunAct(admitted.ActId!));
         var operation = judge.Pend(admitted.ActId!, "parked yes", stages, binds, new { quest = "q1", agent = "codex" })!;
         judge.ActDone(admitted.ActId!);
         return (judge, operation);
     }
 
-    private static void Revoke(StandingConfirmation judge) =>
-        Assert.True(judge.Appoint(RoleKit.Stewarding(on: false), StandingConfirmationTests.Opened).Answer.Done);
+    private static void Revoke(StandingConfirmation judge) => Assert.Single(judge.Unstaffed());
 
     /// <summary>§5.1a, finding 4: three stages taken by three stand-in consumers in turn, each once; a second take of a stage refused.</summary>
     [Fact]
@@ -875,8 +870,8 @@ public sealed class PipeStandingTests : Bridge
     /// <summary>A judge offering both roles, the real walk over <paramref name="tree"/>, its holders' harness the one the tree's process 20 is.</summary>
     private StandingConfirmation Walking(Tree tree, string image, string config, List<IReadOnlyList<string>> ended, List<string> closed)
     {
-        var judge = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), supervisor: true, steward: true,
-            walk: new HolderWalk(tree)) { Drives = _ => true }.Probing(new RoleKit.Probe());
+        var judge = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
+            walk: new HolderWalk(tree)).Probing(new RoleKit.Probe()).Staff(RoleKit.Supervisor(Engine, RoleKit.Repository("engine")));
         judge.Load();
         judge.Ended = ended.Add;
         judge.Close = closed.Add;
@@ -896,12 +891,12 @@ public sealed class PipeStandingTests : Bridge
 
         if (known is null)
         {
-            var request = route == RoleRoutes.Act ? RoleKit.Stewarding(share: null) : StandingConfirmationTests.Supervising("engine", share: null);
-            Assert.True(judge.Appoint(request, Open).Answer.Done);
+            var request = route == RoleRoutes.Act ? RoleKit.Stewarding(share: null) : new HoldRequest(Engine, null);
+            Assert.True(judge.Start(request, Open).Answer.Done);
         }
 
-        var role = route == RoleRoutes.Act ? Roles.Steward : Roles.Supervisor;
-        var generation = judge.Now().Appointments!.Any(each => each.Role == role && !each.Dormant) ? RoleKit.GenerationOf(judge, role) : "gone";
+        var role = route == RoleRoutes.Act ? AppointedRoles.Steward : AppointedRoles.Supervisor;
+        var generation = judge.LiveGeneration(role) ?? "gone";
         SupervisorReason[] reasons = [new("Because.", "the quest's line 2")];
         return (key!, holder => route switch
         {

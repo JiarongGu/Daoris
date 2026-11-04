@@ -105,8 +105,8 @@ public sealed class SupervisorDecisionTests : IDisposable
     {
         var kept = await Decisions(NoDecisionAdmission.Instance).KeepAsync(Answer(), Park(), Kept);
 
-        Assert.Equal((false, SupervisorWhy.AppointmentChanged), (kept.Kept, kept.Why));
-        Assert.Equal(SupervisorWhy.NotOffered, NoDecisionAdmission.Instance.Admit(Repository).Why);
+        Assert.Equal((false, SupervisorWhy.RoleChanged), (kept.Kept, kept.Why));
+        Assert.Equal(SupervisorWhy.NotStaffed, NoDecisionAdmission.Instance.Admit(Repository).Why);
         Assert.False(Directory.Exists(Folder));
     }
 
@@ -126,7 +126,7 @@ public sealed class SupervisorDecisionTests : IDisposable
             (Answer(), Park(unread: true), SupervisorWhy.GoAheadUnread),
             (Answer(), Park(open: true), SupervisorWhy.GoAheadOpen),
             (Answer(), Park(owner: true), SupervisorWhy.OwnerAnswered),
-            (Answer(generation: "g-0"), Park(), SupervisorWhy.AppointmentChanged),
+            (Answer(generation: "g-0"), Park(), SupervisorWhy.RoleChanged),
         };
 
         foreach (var (answer, park, why) in cases)
@@ -206,9 +206,9 @@ public sealed class SupervisorDecisionTests : IDisposable
     public async Task A_revoke_before_the_keeping_keeps_nothing_under_a_dead_generation()
     {
         _appointed.Generation = null;
-        Assert.Equal(SupervisorWhy.AppointmentChanged, (await Decisions().KeepAsync(Answer(), Park(), Kept)).Why);
+        Assert.Equal(SupervisorWhy.RoleChanged, (await Decisions().KeepAsync(Answer(), Park(), Kept)).Why);
         _appointed.Generation = "g-2";
-        Assert.Equal(SupervisorWhy.AppointmentChanged, (await Decisions().KeepAsync(Answer(), Park(), Kept)).Why);
+        Assert.Equal(SupervisorWhy.RoleChanged, (await Decisions().KeepAsync(Answer(), Park(), Kept)).Why);
     }
 
     /// <summary>
@@ -619,7 +619,7 @@ public sealed class SupervisorDecisionTests : IDisposable
             (Defer(), Park(parked: false), SupervisorWhy.NotParked),
             (Defer(), Park(quest: false), SupervisorWhy.NoQuest),
             (Defer(question: "q-0"), Park(), SupervisorWhy.QuestionChanged),
-            (Defer(generation: "g-0"), Park(), SupervisorWhy.AppointmentChanged),
+            (Defer(generation: "g-0"), Park(), SupervisorWhy.RoleChanged),
         };
         foreach (var (defer, park, why) in cases)
         {
