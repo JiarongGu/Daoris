@@ -113,7 +113,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         if (!saves && UseProblem(id, proposal, found) is { } unsaved) return Refused(unsaved);
 
         // FABRIC-PIPELINE1i (the pipeline design §2.1): the workflow's mark says which version it takes. A new workflow proposed as a graph
-        // that lands its work (a `land` or a `handed`) is a development pipeline, as the person's part in its graph is read since CUTOVER1e;
+        // that lands its work (a `land`) is a development pipeline, as the person's part in its graph is read since CUTOVER1e;
         // one that lands nothing is a verification pipeline.
         var verifies = found?.Read.Verifies ?? (proposal.Graph is { } proposed && !HoldsLanding(proposed));
 
@@ -542,7 +542,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
     private static bool HoldsLanding(JsonElement graph) =>
         graph.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array
         && nodes.EnumerateArray().Any(node => node.ValueKind == JsonValueKind.Object && node.TryGetProperty("kind", out var kind)
-            && kind.ValueKind == JsonValueKind.String && kind.GetString() is NodeKinds.Land or NodeKinds.Handed);
+            && kind.ValueKind == JsonValueKind.String && kind.GetString() is NodeKinds.Land);
 
     private static JsonElement GraphVersion(JsonElement graph, int version)
     {

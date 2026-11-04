@@ -180,7 +180,7 @@ public static class WorkflowNamed
 
     /// <summary>The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it (the pipeline design §2.1).</summary>
     private static readonly string[] NotVerified =
-        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
+        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Land, NodeKinds.Review, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
     public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
@@ -319,18 +319,16 @@ public static class WorkflowNamed
 
     /// <summary>
     /// Why a named version's graph is not one landing, or null (FABRIC-CUTOVER1b; D190 point 4, the cutover design §4): it holds one
-    /// <c>handed</c>, and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
+    /// <c>land</c>, and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
     /// the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. Held to
     /// <c>workflow-graph-versions.json</c>.
     /// </summary>
     private static string? OneLandingProblem(NodeGraph graph, int number)
     {
         string Named(string kind) => string.Join(" and ", graph.Nodes.Where(node => node.Kind == kind).Select(node => $"`{node.Id}`"));
-        // LANDNODE1h: a `land` is the landing as a `handed` is; a graph holding both is the graph rules' to refuse (land-once).
         var landings = graph.Nodes.Count(node => NodeKinds.IsLanding(node.Kind));
-        var land = graph.Nodes.Any(node => node.Kind == NodeKinds.Land) ? NodeKinds.Land : NodeKinds.Handed;
-        if (landings == 0) return $"v{number}: its graph holds no landing (`{NodeKinds.Handed}`), and a named workflow's graph lands its work once.";
-        if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(land)}, and a named workflow's graph lands its work once.";
+        if (landings == 0) return $"v{number}: its graph holds no landing (`{NodeKinds.Land}`), and a named workflow's graph lands its work once.";
+        if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(NodeKinds.Land)}, and a named workflow's graph lands its work once.";
         foreach (var (kind, what) in new[] { (NodeKinds.Opinion, "opinions"), (NodeKinds.Look, "looks") })
         {
             var count = graph.Nodes.Count(node => node.Kind == kind);
@@ -342,7 +340,7 @@ public static class WorkflowNamed
 
     /// <summary>
     /// Why a verification pipeline's graph is not one, or null (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): it holds none
-    /// of <c>claimed</c>, <c>opinion</c>, <c>look</c>, <c>go-ahead</c>, <c>handed</c>, <c>integrate</c> (INTEGRATE1n: its subject is a chain's
+    /// of <c>claimed</c>, <c>opinion</c>, <c>look</c>, <c>go-ahead</c>, <c>land</c>, <c>integrate</c> (INTEGRATE1n: its subject is a chain's
     /// landing), <c>work.requests</c> (INTEGRATE1o: it holds a chain's work on the quests its sessions published) or <c>quest.close</c>, whose subjects (a chain's
     /// quests, its branch, its ask) a landed run has none of, the first in node order named; then at least one <c>check</c>. Held to
     /// <c>workflow-graph-versions.json</c>.
@@ -352,7 +350,7 @@ public static class WorkflowNamed
         if (graph.Nodes.FirstOrDefault(node => NotVerified.Contains(node.Kind, StringComparer.Ordinal)) is { } held)
         {
             return $"v{number}: its graph holds `{held.Id}`, a `{held.Kind}`, and a verification pipeline's graph lands nothing and observes no "
-                + "chain's work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `handed`, `land`, `integrate`, `work.requests` or `quest.close`.";
+                + "chain's work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `land`, `integrate`, `work.requests` or `quest.close`.";
         }
 
         return graph.Nodes.Any(node => node.Kind == NodeKinds.Check)
@@ -518,7 +516,6 @@ public static class WorkflowNamed
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
                 // WORKFLOWCLEAN1 1c: a `land` is no step here; the process carries its bound intent (LandNodes.RuleOf), not a rule read back.
-                NodeKinds.Handed => WorkflowKinds.Landing,
                 _ => null,
             };
             if (kind is null) continue;

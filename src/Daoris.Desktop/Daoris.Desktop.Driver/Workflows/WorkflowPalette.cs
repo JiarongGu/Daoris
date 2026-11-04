@@ -5,19 +5,17 @@ namespace Daoris.Driver;
 /// <param name="RoleTakes">The works a role takes a node of this kind by, the step's own first; none where no agent session takes it.</param>
 /// <param name="Offered">
 /// How the editor offers the kind (WORKFLOWCLEAN1 1b): <c>alone</c>, a step to add; <c>tail:&lt;method&gt;</c>, a step a <c>land</c> of that method brings
-/// with it; <c>retired</c>, a step no longer saved. The page reads it and keeps no list of its own.
+/// with it. The page reads it and keeps no list of its own.
 /// </param>
 public sealed record PaletteKind(
     string Kind, string Reach, string ReachBy, string? FailureBy, bool PersonJudges, bool PersonSkips, bool MayEnd, bool Evidenced,
     string? SkipBy, IReadOnlyList<NodeOptionField> Options, IReadOnlyList<string> Leaves, IReadOnlyList<string> RoleTakes, string Offered = PaletteKind.Alone)
 {
     public const string Alone = "alone";
-    public const string Retired = "retired";
 
-    /// <summary>How the editor offers <paramref name="kind"/>: a <c>handed</c> is retired, and the steps a landing's method brings are its tail.</summary>
+    /// <summary>How the editor offers <paramref name="kind"/>: the steps a landing's method brings are its tail.</summary>
     public static string OfferedOf(string kind) => kind switch
     {
-        NodeKinds.Handed => Retired,
         NodeKinds.Pushed => $"tail:{LandNodes.Push}",
         NodeKinds.PullRequest => $"tail:{LandNodes.PullRequest}",
         NodeKinds.Integrate => $"tail:{LandNodes.Integrate}",

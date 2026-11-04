@@ -356,7 +356,7 @@ public static class Involvement
                 NodeKinds.Claimed => WorkflowKinds.Work,
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
-                NodeKinds.Handed or NodeKinds.Land => WorkflowKinds.Landing,
+                NodeKinds.Land => WorkflowKinds.Landing,
                 NodeKinds.PullRequest => WorkflowKinds.PullRequest,
                 NodeKinds.GoAhead => WorkflowKinds.GoAhead,
                 // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
