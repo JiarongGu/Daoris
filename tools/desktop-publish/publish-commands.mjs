@@ -3,7 +3,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { builtInto } from '../service-publish.mjs';
 import { INSTALL_RID } from './names.mjs';
 import { refusal } from './staging.mjs';
-import { CLI_BIN } from './launchers.mjs';
+import { CLI_BIN, DRIVER_PROJECT } from './launchers.mjs';
 
 /**
  * The publish of the Host into `folder`: a runtime-dependent folder, the shape the application and the launcher have. Its
