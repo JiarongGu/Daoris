@@ -100,7 +100,9 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
             """{ "adapter": "acp-stub", "actors": { "build": [ { "agent": "acp-stub", "model": "sonnet", "effort": "low" }, { "agent": "acp-other", "model": "codex-mini", "effort": "high" } ] } }""");
         var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
-        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(StaffPolicy.Parse(policy).Policy!));
+        var parsed = StaffPolicy.Parse(policy).Policy!;
+        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(parsed));
+        SeededRules.In(_home, strikes: 3, parsed);
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone });

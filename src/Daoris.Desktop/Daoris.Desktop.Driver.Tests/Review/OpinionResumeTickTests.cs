@@ -40,6 +40,8 @@ public sealed class OpinionResumeTickTests : IDisposable
     public OpinionResumeTickTests()
     {
         Directory.CreateDirectory(_home);
+        // The answers-alone rule the count's sentence names.
+        SeededRules.In(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
         Git(_repository, "init", "-q", "-b", "main");

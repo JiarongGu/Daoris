@@ -92,10 +92,9 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
             """{ "adapter": "acp-stub", "actors": { "build": [ { "agent": "acp-stub", "model": "sonnet", "effort": "low" }, { "agent": "acp-other", "model": "codex-mini", "effort": "high" } ] } }""");
         var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
-        if (policy is not null)
-        {
-            RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(StaffPolicy.Parse(policy).Policy!));
-        }
+        var parsed = policy is null ? null : StaffPolicy.Parse(policy).Policy!;
+        if (parsed is not null) RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(parsed));
+        SeededRules.In(_home, policy: parsed);
 
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
