@@ -172,8 +172,8 @@ describe('at scale', () => {
     const { modules, dependencies } = repository();
     const tree = buildTree(modules, dependencies);
     const scene = layoutCode(tree, defaultOpen(tree));
-    expect(scene.world.boxes.size).toBe(20);
-    expect(scene.lines).toHaveLength(20);
+    expect(scene.world.boxes.size).toBe(modules.length);
+    expect(scene.lines).toHaveLength(dependencies.length);
     expect(noneOverlap(scene.world.boxes.values())).toBe(true);
   });
 });

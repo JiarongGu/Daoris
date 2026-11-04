@@ -218,7 +218,7 @@ describe('noteLines', () => {
       const ended = [coded('ended.choice-not-offered', 'Not started: …', { agent: 'claude-code-acp', model: 'opus' })];
       expect(noteLines(t, { parts: ended }, 'en')[0]).toEqual({
         kind: 'said',
-        text: "Not started: `claude-code-acp` did not offer `opus` on its account, so nothing ran; the next look chooses again by its actor's order.",
+        text: "Not started: `claude-code-acp` did not offer `opus` on its account, so nothing ran; the next look chooses again by its role's order.",
       });
       expect(noteLines(zh, { parts: ended }, 'zh')[0]?.text).toBe('未启动：`claude-code-acp` 在其账户上不提供 `opus`，因此什么也没有运行；下一次查看会按其角色的顺序重新选择。');
     });
