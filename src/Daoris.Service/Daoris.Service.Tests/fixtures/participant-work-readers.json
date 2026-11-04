@@ -9,7 +9,7 @@
     "1r": "the connector by work, failing closed: `SessionRole` becomes the work (§2.3)"
   },
   "driver": {
-    "Agents/HarnessRoster.cs": {
+    "Agents/RosterWalk.cs": {
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
