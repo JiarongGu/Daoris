@@ -1,6 +1,5 @@
 import { hashKey, type QueryClient, type QueryKey } from '@tanstack/react-query';
-import { call } from '../call';
-import type { DriverRoute } from '../generated/routes';
+import { type ByHandRoute, call } from '../call';
 
 // The page's half of the reads the shell answers from what it holds (NOBLOCK1, D56's NOBLOCK1 note): the route answers at once,
 // its work runs on a .NET task of its own, and what the work answers comes back as `DAORIS.ANSWERED`, naming the query it is for.
@@ -23,7 +22,8 @@ const readers = new Map<string, (answer: unknown) => unknown>();
  * reads as empty.
  */
 export async function askHeld<T>(
-  route: DriverRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>,
+  // transitional: route-payload-by-hand
+  route: ByHandRoute, client: QueryClient, queryKey: QueryKey, payload: Record<string, unknown>,
   read: (answer: unknown) => T = (answer) => answer as T,
 ): Promise<T> {
   const held = hashKey(queryKey);

@@ -54,7 +54,11 @@ finishes first and the whole set runs once.
    route as `send(name, request)`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). A window
    route is its handler's marks in the desktop modules (`[DriverRoute]` and those beside it); the same tool writes from them the
    ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
-   publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. (from D231, D228)
+   publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. A handler takes its
+   payload record, named for its route (`SetCap(SetCap press)`), which `RoutePayload` reads off the request by its parameters'
+   types as the hand-written reads did; the record and the handler's answer record are written into `DriverPayloads`, so the
+   page's `call` and `useDriverChange` take that route with no payload type of their own. A handler that still takes the
+   `IpcRequest` is the `route-payload-by-hand` register entry. (from D231, D228)
 8. Drift is the disk against the lock; the canon is reconciled, not imposed. (from D19, D230)
 9. Only what must never reach history blocks a commit. The rest is verified as a local CI beside the work, and its reds are fixed
    forward. An install is staged only from a green run. (from D180)

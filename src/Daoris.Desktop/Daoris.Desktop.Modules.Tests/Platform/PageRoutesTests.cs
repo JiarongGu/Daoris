@@ -21,6 +21,24 @@ public sealed class PageRoutesTests
     }
 
     [Fact]
+    public void A_handler_that_takes_its_payload_record_is_typed_by_it_field_by_field_as_the_record_is_read()
+    {
+        var payloads = Section("export type DriverPayloads = {", "\n};\n");
+
+        Assert.Contains("  'SET_DRIVABLE': { payload: SetDrivable; answer: unknown };", payloads);
+        Assert.Contains("export type SetDrivable = {\n  repository: string;\n  drivable: boolean;\n};", Written);
+        Assert.Contains(
+            "export type SetKeep = {\n  kind: string;\n  days?: number | null;\n  never?: boolean;\n  whole?: boolean | null;\n  default?: boolean;\n"
+            + "  gb?: number | null;\n  percent?: number | null;\n  off?: boolean;\n};",
+            Written);
+        Assert.Contains("export type SetStanding = {\n  repository: string;\n  says?: string | null;\n};", Written);
+        Assert.Equal(
+            DriverModule.Shapes.Where(shape => shape.Payload is not null).Select(shape => shape.Route).Order(StringComparer.Ordinal),
+            payloads.Split('\n').Select(line => line.Split('\'')[1]));
+        Assert.DoesNotContain("'STATE':", payloads);
+    }
+
+    [Fact]
     public void Each_press_declares_its_scopes_in_the_wire_s_order_with_its_session_or_subject_field_and_a_read_declares_nothing()
     {
         var published = Section("export const PUBLISHES", "\n};\n");

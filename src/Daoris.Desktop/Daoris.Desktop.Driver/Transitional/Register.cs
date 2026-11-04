@@ -57,5 +57,16 @@ public static class TransitionalRegister
             Ends = "No app.Map* call is left in the host's Program.cs and no method that writes a route's path is left in ServiceClient.",
             Row = "CODESHAPE1",
         },
+        new()
+        {
+            Id = "route-payload-by-hand",
+            Kept = "../Daoris.Desktop.Modules/Bridge/RouteHandlers.cs:61, ../Daoris.Desktop.Modules/Bridge/RouteHandlers.cs:73, "
+                + "../../Daoris.Web/src/bridge/call.ts:28, ../../Daoris.Web/src/bridge/driver.ts:422, ../../Daoris.Web/src/bridge/state/held.ts:25",
+            Reaches = "Every window route whose handler still takes the IpcRequest and reads its payload by hand: called with the request "
+                + "as it came, and sent by the page's by-hand overloads of call and useDriverChange, and by askHeld, with a payload type "
+                + "written beside the hook.",
+            Ends = "No driver route's handler takes an IpcRequest, so every route's payload is a record the page's generated routes carry.",
+            Row = "CODESHAPE1",
+        },
     ];
 }
