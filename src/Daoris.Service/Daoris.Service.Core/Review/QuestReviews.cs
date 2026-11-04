@@ -1,4 +1,4 @@
-using static Daoris.Knowledge.QuestExchange;
+using static Daoris.Knowledge.QuestWords;
 
 namespace Daoris.Knowledge;
 
