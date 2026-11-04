@@ -75,9 +75,10 @@ public sealed class CodecPlaybackProcessTests : Bridge
     /// <summary>The application the browser is, built beside this project: the test starts it and builds nothing.</summary>
     private static string ApplicationExecutable()
     {
-        var bin = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App", "bin");
-        var built = Directory.Exists(bin)
-            ? Directory.EnumerateFiles(bin, "Daoris.Desktop.exe", SearchOption.AllDirectories).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
+        var app = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App");
+        var built = Directory.Exists(app)
+            ? Directory.EnumerateFiles(app, "Daoris.Desktop.exe", SearchOption.AllDirectories)
+                .Where(file => file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
             : null;
         return built ?? throw new FileNotFoundException("Daoris.Desktop.App is not built: build it first, the test starts its executable as the browser");
     }

@@ -322,8 +322,6 @@
       ["src/Daoris.Web/src/agents/roles/Roles.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/agents/roles/Roles.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/agents/roles/Roles.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
-      ["src/Daoris.Web/src/agents/roles/RolesPlace.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
-      ["src/Daoris.Web/src/agents/roles/RolesPlace.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/agents/roles/StructureCanvas.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/agents/roles/StructureCanvas.stories.tsx", "\"codex\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/agents/roles/StructureCanvas.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],

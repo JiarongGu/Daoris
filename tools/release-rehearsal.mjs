@@ -527,7 +527,7 @@ const declaredSync = withV2('sync');
 check('`sync` renders Where things are into the region', declaredSync.code === 0
   && /## Where things are/.test(read('AGENTS.md')), declaredSync.out);
 check('...one row per declared path, in the roles\' order, with each role\'s job',
-  /\| decisions \| `docs\/DECISIONS\.md` \| numbered decisions[^\n]*\n\| backlog \| `TASKS\.md` \|[^\n]*\n\| changelog \| `CHANGELOG\.md` \|/
+  /\| decisions \| `docs\/DECISIONS\.md` \| history: why each rule was chosen[^\n]*\n\| backlog \| `TASKS\.md` \|[^\n]*\n\| changelog \| `CHANGELOG\.md` \|/
     .test(read('AGENTS.md')));
 check('...and no row for the brief, which is the file the region sits in', !/\| brief \|/.test(read('AGENTS.md')));
 const declaredCheck = withV2('check');

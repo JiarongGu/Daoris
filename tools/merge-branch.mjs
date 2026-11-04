@@ -581,6 +581,15 @@ export const LIGHT_WIDTH = 3;
 const scriptNamed = (command) => /^npm\s+run\s+(?:-\S+\s+)*([^\s-]\S*)/.exec(command.trim())?.[1] ?? null;
 
 /**
+ * The project two components both reference, by the component that builds it as well: the contracts the service serves and the
+ * desktop's driver consumes. A gate of either holds it, so no two gates build it at once.
+ */
+export const SHARED_PROJECTS = new Map([
+  ['src/Daoris.Desktop', ['src/Daoris.Contracts', 'tools/contracts']],
+  ['src/Daoris.Service', ['src/Daoris.Contracts']],
+]);
+
+/**
  * The .NET components a gate builds (GATELANES2): its command's (`dotnetComponent`), and each one a root script it names
  * builds, read through the scripts those name in turn. The CLI's `npm run verify` ends in the devkit's universal gates
  * and `npm run test:web` builds the HTTP host, so each shares a component with a .NET gate, and no two gates that build
@@ -591,6 +600,7 @@ export function gateComponents(gate, scripts = {}) {
   const read = (command, seen) => {
     const own = dotnetComponent(command);
     if (own) found.add(own);
+    for (const shared of SHARED_PROJECTS.get(own) ?? []) found.add(shared);
     const script = scriptNamed(command);
     if (!script || seen.has(script) || typeof scripts[script] !== 'string') return;
     for (const part of scripts[script].split(/&&|\|\||;/)) read(part, new Set([...seen, script]));
@@ -1138,7 +1148,7 @@ export const REACH = Object.freeze([
     why: "release tooling, and the hosts' one build recipe (CONNECTOR1), which desktop-publish imports: the deployment rehearsal drives it, the family rehearsal runs usage-report, which imports it, and the publish's tool-tests call it (GATESLIM1)",
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
-  { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs', 'tools/usage-report/**'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
   // AGENTPROVIDER1b part 3 (placed by INTEGRATE1d part 4): the stand-ins' reader, which its own tool test and the family rehearsal import.
   { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
   // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
@@ -1154,7 +1164,7 @@ export const REACH = Object.freeze([
   },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
-    paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
+    paths: ['tools/desktop-publish.mjs', 'tools/desktop-publish/**', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family'],
     why: 'the publish the deployment rehearsal drives, and what it imports (the background run\'s records, CISCOPE1d, and the failure reader they import, CISCOPE1c, both of which the merge tool imports too); the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
   },
@@ -1163,7 +1173,7 @@ export const REACH = Object.freeze([
     gates: ['tool-tests', 'deployment', 'rehearse-family', 'rehearse'],
     why: "what the publish imports (the rule above), and what the rehearsals' kit ends a timed-out command's leftovers with, so all three rehearsals (FAMILYFAIL1)",
   },
-  { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
+  { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs', 'tools/desktop/**'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver', 'driver-process', 'modules-process'], why: "the Process halves' settings (MOD8), which the driver's CategoryTests read (PROCPAR1)" },
   { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
@@ -1315,7 +1325,7 @@ export const REACH = Object.freeze([
   // driver's folder, since the driver's files move into module folders one module per branch.
   {
     paths: [
-      'NoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs',
+      'NoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs',
       // MSG1g3: the page's say twin holds its refusal tables to these codes.
       'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ContinueReason.cs', 'ContinueCodes.cs', 'ChatRunner.StartFrom.cs',
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
@@ -1407,6 +1417,25 @@ export const REACH = Object.freeze([
     paths: ['src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs'],
     gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
     why: "the service lane's own, and the modules' OwnerSetCensusTests holds each person's door to the record kind it declares (STEWARDROLE1a-ii)",
+  },
+  // The modules' state-slice tests hold the page's types to the contract records they read, so a change there reaches the modules; a path
+  // rule replaces the service lane's, so its readers stay.
+  {
+    paths: ['src/Daoris.Contracts/**'],
+    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
+    why: "the service lane's own, and the modules' state-slice tests read the records the page's types are held to",
+  },
+  // CONTEXTONE1: the modules' ReconcileStatusProcessTests runs this checkout's CLI over a copy of the example engine; a path rule
+  // replaces the cli lane's and the examples' (examples/engine/ is read by those two).
+  {
+    paths: ['examples/engine/**'],
+    gates: ['service', 'rehearse-family', 'web', 'modules', 'modules-process'],
+    why: "the example family the family rehearsal and the end-to-end suite run on, and the copy the modules' ReconcileStatusProcessTests runs the CLI over (CONTEXTONE1)",
+  },
+  {
+    paths: ['src/Daoris.Cli/bin/**'],
+    gates: [...CLI_READERS, 'modules', 'modules-process'],
+    why: "the CLI's own readers (the lane's), and the modules' ReconcileStatusProcessTests runs it over a copy of the example engine (CONTEXTONE1)",
   },
   {
     lane: 'service',

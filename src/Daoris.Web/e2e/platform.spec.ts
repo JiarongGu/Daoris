@@ -458,7 +458,7 @@ test('a browser’s What needs you is the app’s, and an ask’s record names i
   await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'stopped', note: 'the person closed it.' } });
 });
 
-test('a project created mid-run joins, and the platform shows it (D44)', async ({ page }) => {
+test('a project created mid-run joins, and the platform shows it (D44)', async ({ page, request }) => {
   // The lifecycle the next real family needs proven: a project that did not exist when the host
   // started is born, joins through the REAL CLI — init, declare, sync, check, connect — and becomes a
   // member in the UI, quest-addressable at once. The host roots at a scratch family, so nothing
@@ -482,11 +482,12 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   execSync(`node "${cli}" sync`, { cwd: newcomer, windowsHide: true });
   execSync(`node "${cli}" check`, { cwd: newcomer, windowsHide: true });
-  execSync(`node "${cli}" connect`, {
-    cwd: newcomer,
-    windowsHide: true,
-    env: { ...process.env, DAORIS_SERVICE_URL: 'http://localhost:5196' },
+  // The registration `connect` sends, which is the desktop program's word and no doctrine command: the same declaration, to the
+  // registry door the host serves.
+  const joined = await request.post('/api/registry', {
+    data: { repository: 'newcomer', packs: [], domain: manifest.domain, root: newcomer, workspace: null, adopted: true },
   });
+  expect(joined.ok(), await joined.text()).toBe(true);
 
   await page.goto('/');
   await nav(page, 'Repositories').click();
