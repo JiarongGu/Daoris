@@ -383,7 +383,7 @@ public sealed class StartPlanTests : IDisposable
         var before = new PriorSession("s0", null, "failed");
         Assert.Equal("cool", StartPlan.ContinuedOn(before, config with { Adapter = "piped" }));
         Assert.Equal("fine", StartPlan.ContinuedOn(before, ActorChoices.With(config, "chat", [new ActorChoice("fine")]), work: "chat"));
-        Assert.Equal("piped", StartPlan.ContinuedOn(before with { Actor = "garden" }, DriverConfig.Empty with { Adapter = "piped" }));
+        Assert.Contains("is off on this machine", Assert.Throws<DriverException>(() => StartPlan.ContinuedOn(before with { Actor = "garden" }, DriverConfig.Empty)).Message);
     }
 
     /// <summary>

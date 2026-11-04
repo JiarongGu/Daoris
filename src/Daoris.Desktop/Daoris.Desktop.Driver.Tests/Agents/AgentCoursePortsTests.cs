@@ -355,7 +355,7 @@ public sealed class AgentCoursePortsTests
         public bool Refused;
         public Exception? Failure;
         public void Dispose() { }
-        public Task<string> GetAsync(string path, CancellationToken ct) { Calls.Add((path, null)); return Task.FromResult("""[{"id":"s1","said":[{"id":"retry-left","text":"go on","key":"transient-retry/s1/old","at":"2026-10-27T00:00:00Z"},{"id":"person-left","text":"person","at":"2026-10-27T00:00:00Z"}]}]"""); }
+        public Task<string> GetAsync(string path, CancellationToken ct) { Calls.Add((path, null)); return Task.FromResult("""[{"id":"s1","said":[{"id":"retry-left","text":"go on","key":"transient-retry/s1/old","at":"2026-10-27T00:00:00Z","files":[],"reopens":false},{"id":"person-left","text":"person","at":"2026-10-27T00:00:00Z","files":[],"reopens":false}]}]"""); }
         public Task<string> PostAsync(string path, string json, CancellationToken ct) => throw new NotSupportedException();
         public Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct)
         {

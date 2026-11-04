@@ -245,7 +245,8 @@ public sealed class NodeLifecycleTests
     {
         var failed = new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Git, Code = "not-yet", Attempt = 1 };
         Assert.Equal(NodeRefusal.NoFailureAuthority, NodeLifecycle.Apply(Declared(NodeKinds.Line), At(NodeStates.Active), failed).Refused);
-        Assert.Equal(NodeRefusal.NoFailureAuthority, NodeLifecycle.Apply(Declared(NodeKinds.Land), At(NodeStates.Active), failed).Refused);
+        // A landing may fail, by the landing's own report alone: a git proof is not that source.
+        Assert.Equal(NodeRefusal.NotAuthority, NodeLifecycle.Apply(Declared(NodeKinds.Land), At(NodeStates.Active), failed).Refused);
 
         var plugin = Declared("acme.deploy/deploy");
         var uncoded = new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = 1 };

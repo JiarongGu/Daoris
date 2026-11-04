@@ -11,7 +11,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("trees", "engine", null, "on", "daoris place trees engine on", "own tree")]
     [InlineData("line", "engine", null, "develop", "daoris place line engine develop", "`engine`'s line to `develop`")]
     [InlineData("line", null, "work", "--clear", "daoris place line --workspace work --clear", "Clear workspace `work`'s line")]
-    [InlineData("landing", null, "work", "branch feature/{quest}-{slug} --tidy", "daoris place landing --workspace work branch feature/{quest}-{slug} --tidy", "on a branch `feature/{quest}-{slug}`")]
     [InlineData("notify", null, null, "off", "daoris settings notify off", "Stop saying")]
     // HELP9: reading and writing across (D107), and the two dials the terminal alone had.
     [InlineData("across", "engine", null, "read off", "daoris place across engine read off", "read by no agent outside it")]

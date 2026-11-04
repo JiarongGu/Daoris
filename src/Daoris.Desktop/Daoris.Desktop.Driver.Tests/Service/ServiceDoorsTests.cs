@@ -12,7 +12,7 @@ public sealed class ServiceDoorsTests
     [Fact]
     public async Task A_read_asks_its_door_by_its_path_under_the_host_and_reads_the_answer()
     {
-        var doors = new Doors { Read = path => path == "/api/registry" ? """[{ "repository": "engine", "adopted": true }]""" : "[]" };
+        var doors = new Doors { Reply = (_, path, _) => new ServiceReply(200, path == "/api/registry" ? """[{ "repository": "engine", "adopted": true, "workspace": "work" }]""" : "[]") };
         using var service = new ServiceClient(doors);
 
         var registry = await service.RegistryAsync();

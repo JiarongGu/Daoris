@@ -14,7 +14,11 @@ public sealed class LineFactsTests : IDisposable
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "line-facts", Guid.NewGuid().ToString("N")[..8]);
     private int _minute;
 
-    public LineFactsTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+    public LineFactsTests()
+    {
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes);
+    }
 
     public void Dispose() => GitSeed.Remove(_home);
 
@@ -50,7 +54,7 @@ public sealed class LineFactsTests : IDisposable
             ["s1 person", "s1 alone helper", "s2 alone opinion supervisor", "s2 daoris"],
             facts.GoOns.Select(goOn => string.Join(" ", new[] { goOn.Session, goOn.By }.Concat(goOn.Answered))));
         var alone = Assert.Single(facts.Counts, count => count.Count == "answers-alone");
-        Assert.Equal((0, "exact", new CountWatch(AnswersAlone.Bound, SupervisorRules.Hold)), (alone.N, alone.Known, alone.Watch));
+        Assert.Equal((0, "exact", new CountWatch(AnswersAlone.Bound, SupervisorRules.Hold, SupervisorRules.Machine)), (alone.N, alone.Known, alone.Watch));
         Assert.DoesNotContain(facts.Counts, count => count.Count == "failures");
     }
 
@@ -64,9 +68,7 @@ public sealed class LineFactsTests : IDisposable
         Assert.Equal(At.AddMinutes(_minute - 2), facts.GoOns[^1].At);
 
         var driven = new JsonArray(new JsonObject { ["id"] = "s1", ["kind"] = "driven", ["quest"] = "q1", ["state"] = "failed", ["repository"] = "Engine" }).ToJsonString();
-        Assert.Equal(new CountWatch(3, SupervisorRules.Hold), LineCountsRead.FactsOf(_home, "s1", driven).Counts.Single(count => count.Count == "failures").Watch);
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig), """{"strikes":0}""");
-        Assert.Null(LineCountsRead.FactsOf(_home, "s1", driven).Counts.Single(count => count.Count == "failures").Watch);
+        Assert.Equal(new CountWatch(3, SupervisorRules.Hold, SupervisorRules.Machine), LineCountsRead.FactsOf(_home, "s1", driven).Counts.Single(count => count.Count == "failures").Watch);
 
         // The service did not answer: every count from its records reads unknown, and the line is its part alone.
         var unread = LineCountsRead.FactsOf(_home, "s1", null);

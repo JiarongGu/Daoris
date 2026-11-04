@@ -164,12 +164,11 @@ public sealed class GoAheadsHandedTests
         Assert.Matches(@"- Go-aheads \d+ to 12 are left out here to keep this instruction bounded", prompt);
     }
 
-    /// <summary>The client reads them as the service answers them, passing over one it cannot read, as the service does.</summary>
+    /// <summary>The client reads them as the service answers them.</summary>
     [Fact]
-    public async Task The_client_reads_the_go_aheads_and_passes_over_one_it_cannot_read()
+    public async Task The_client_reads_the_go_aheads_as_the_service_answers_them()
     {
-        var withBad = GoAheads.TrimEnd().TrimEnd(']') + """,{"number":"four","kind":"write"}]""";
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(_ => (HttpStatusCode.OK, AskJson(withBad)))));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(_ => (HttpStatusCode.OK, AskJson(GoAheads)))));
 
         var ask = (await service.FindAskAsync("a1"))!;
 

@@ -12,7 +12,7 @@ internal static class QuestCheckConsole
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
         if (QuestCheckCommand.Read(args, out var problem) is not { } ask)
         {
-            Console.Error.WriteLine($"daoris-driver: {problem}");
+            Console.Error.WriteLine($"daoris: {problem}");
             Console.Error.WriteLine(QuestCheckCommand.Usage);
             return 2;
         }

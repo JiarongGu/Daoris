@@ -38,13 +38,13 @@ internal static class BrainstormDoor
             var reply = doors.SendAsync(verb, path, json, CancellationToken.None).GetAwaiter().GetResult();
             output.WriteLine(reply.Ok ? Said(reply.Payload, "message")
                 : string.IsNullOrWhiteSpace(reply.Payload)
-                    ? $"daoris-driver: the service at {doors.BaseUrl} answered {reply.Status} with no sentence; is it older than this driver?"
-                    : $"daoris-driver: {Said(reply.Payload, "error")}");
+                    ? $"daoris: the service at {doors.BaseUrl} answered {reply.Status} with no sentence; is it older than this driver?"
+                    : $"daoris: {Said(reply.Payload, "error")}");
             return reply.Ok ? 0 : 1;
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or TaskCanceledException)
         {
-            output.WriteLine($"daoris-driver: Daoris is not running, or did not answer: {error.Message} "
+            output.WriteLine($"daoris: Daoris is not running, or did not answer: {error.Message} "
                 + "Start Daoris (its desktop, or the local service) and ask again; nothing was written.");
             return 1;
         }
