@@ -80,7 +80,27 @@ public sealed class QuestStore
         _time = time;
         _cache = new QuestCache(this);
         _sync = new QuestLogSync(this);
+        _chain = new QuestChain(this);
+        _integrator = new QuestIntegrator(this);
+        _followUps = new QuestFollowUps(this);
     }
+
+    private readonly QuestChain _chain;
+    private readonly QuestIntegrator _integrator;
+    private readonly QuestFollowUps _followUps;
+
+    /// <summary>Every quest of the <c>follows</c> chain <paramref name="id"/> is on; empty for an unknown id (see <see cref="QuestChain"/>).</summary>
+    public Task<IReadOnlyList<Quest>> ChainAsync(string id, CancellationToken ct = default) => _chain.ChainAsync(id, ct);
+
+    /// <summary>Keeps what a remote accepted and replays the quests it touched; the cursor moves to <paramref name="through"/> (see <see cref="QuestIntegrator"/>).</summary>
+    public Task<QuestIntegration> IntegrateAsync(
+        string workspace, IReadOnlyList<QuestOperation> fetched, long through, CancellationToken ct = default) =>
+        _integrator.IntegrateAsync(workspace, fetched, through, ct);
+
+    /// <summary>The takes a lost parent move rewrites into conflicts (see <see cref="QuestFollowUps"/>).</summary>
+    internal Task<IReadOnlyList<QuestOperation>> ForgetFollowUpsAsync(
+        string parent, bool takeLost, string published, bool reopened, SqliteTransaction transaction, CancellationToken ct) =>
+        _followUps.ForgetFollowUpsAsync(parent, takeLost, published, reopened, transaction, ct);
 
     internal ConnectionGate Db => _db;
 
@@ -506,52 +526,6 @@ public sealed class QuestStore
     public Task<QuestMove> ChooseAsync(string id, QuestWorkflowChoice choice, DateTimeOffset now, CancellationToken ct = default) =>
         WriteAsync(tx => Operations.Of<QuestChoiceOperation>().ChooseAsync(tx, id, choice, now), ct);
 
-    /// <summary>
-    /// Every quest of the <c>follows</c> chain <paramref name="id"/> is on (D149 point 1; REVIEWENV1b3): its first quest, found by
-    /// walking <c>parent</c> up, and every quest that follows it at any depth, a chain step its close published or a set-up step
-    /// a door published after it. Empty for an unknown id. The late set-up door judges a repository's part of the chain on it.
-    /// </summary>
-    public Task<IReadOnlyList<Quest>> ChainAsync(string id, CancellationToken ct = default) =>
-        _db.RunAsync<IReadOnlyList<Quest>>(async () =>
-        {
-            async Task<Quest?> One(string named)
-            {
-                await using var command = _db.Command();
-                command.CommandText = "SELECT * FROM quests WHERE id = $id";
-                command.Parameters.AddWithValue("$id", named);
-                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-                return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-            }
-
-            async Task<List<Quest>> Following(string parent)
-            {
-                await using var command = _db.Command();
-                command.CommandText = "SELECT * FROM quests WHERE parent = $parent ORDER BY filed";
-                command.Parameters.AddWithValue("$parent", parent);
-                var steps = new List<Quest>();
-                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-                while (await reader.ReadAsync(ct).ConfigureAwait(false)) steps.Add(Read(reader));
-                return steps;
-            }
-
-            // Up to the first quest; a parent seen twice, which no chain makes, ends the walk rather than looping.
-            if (await One(id).ConfigureAwait(false) is not { } first) return [];
-            var seen = new HashSet<string>(StringComparer.Ordinal) { first.Id };
-            while (first.Parent is { } parent && seen.Add(parent) && await One(parent).ConfigureAwait(false) is { } above) first = above;
-
-            var chain = new List<Quest> { first };
-            var visited = new HashSet<string>(StringComparer.Ordinal) { first.Id };
-            for (var next = 0; next < chain.Count; next++)
-            {
-                foreach (var step in await Following(chain[next].Id).ConfigureAwait(false))
-                {
-                    if (visited.Add(step.Id)) chain.Add(step);
-                }
-            }
-
-            return chain;
-        }, ct);
-
     /// <inheritdoc cref="QuestEvidenceOperation.EvidenceAsync"/>
     public Task<QuestMove> EvidenceAsync(string id, QuestEvidenceVerdict verdict, DateTimeOffset now, CancellationToken ct = default) =>
         WriteAsync(tx => Operations.Of<QuestEvidenceOperation>().EvidenceAsync(tx, id, verdict, now), ct);
@@ -688,7 +662,7 @@ public sealed class QuestStore
     public Task<IReadOnlySet<string>> ForgottenAsync(CancellationToken ct = default) =>
         InGateAsync(() => ForgottenAsync(transaction: null, ct), ct);
 
-    private async Task<IReadOnlySet<string>> ForgottenAsync(SqliteTransaction? transaction, CancellationToken ct)
+    internal async Task<IReadOnlySet<string>> ForgottenAsync(SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
         if (transaction is not null) command.Transaction = transaction;
@@ -741,7 +715,7 @@ public sealed class QuestStore
     public Task<long> CursorAsync(string workspace, CancellationToken ct = default) =>
         InGateAsync(() => CursorAsync(workspace, transaction: null, ct), ct);
 
-    private async Task<long> CursorAsync(string workspace, SqliteTransaction? transaction, CancellationToken ct)
+    internal async Task<long> CursorAsync(string workspace, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
         // None handed in keeps the one the command was made in, as HistoryAsync's does.
@@ -751,193 +725,6 @@ public sealed class QuestStore
         return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is { } number and not DBNull
             ? Convert.ToInt64(number)
             : 0;
-    }
-
-    /// <summary>
-    /// Take what a workspace's remote accepted, in its order, and rebase what this machine has not
-    /// pushed on top — through the one table. Answers the cursor it now stands at and every move that
-    /// became a conflict on the way.
-    /// </summary>
-    /// <param name="workspace">The circle whose remote these came from: what a publish among them is filed under here (SYNC0a).</param>
-    /// <param name="fetched">The remote's operations, each carrying its number.</param>
-    /// <param name="through">The last number the fetch covered; the cursor moves there.</param>
-    /// <remarks>
-    /// An operation this machine already holds — its own, pushed and fetched back — takes the number it
-    /// was given; any other is kept under the machine that made it. Then every quest the fetch touched
-    /// is replayed: accepted operations by number, then pending ones. A pending move that no longer
-    /// applies becomes a <see cref="QuestOperationKind.Conflict"/> and is never dropped (design §5).
-    /// <para>An operation on a quest this machine forgot (<see cref="ForgetAsync"/>) is passed over, and the cursor still
-    /// moves past it (HIST1b): a closed quest still takes a conflict or a dismissal from another machine, and kept, either
-    /// would make half a quest here; a cursor back at zero would bring the whole of it.</para>
-    /// </remarks>
-    public Task<QuestIntegration> IntegrateAsync(
-        string workspace, IReadOnlyList<QuestOperation> fetched, long through, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var circle = Workspaces.Normalize(workspace);
-            var forgotten = await ForgottenAsync(transaction, inside).ConfigureAwait(false);
-            var touched = new List<string>();
-            foreach (var operation in fetched
-                         .Where(o => o.Number is not null && !forgotten.Contains(o.Quest))
-                         .OrderBy(o => o.Number))
-            {
-                if (await _sync.PositionOfAsync(operation.Machine, operation.Sequence, transaction, inside).ConfigureAwait(false)
-                    is { } held)
-                {
-                    await _sync.NumberAsync(held, operation.Number!.Value, transaction, inside).ConfigureAwait(false);
-                }
-                else
-                {
-                    var filed = operation.Published is null
-                        ? operation
-                        : operation with { Published = operation.Published with { Workspace = circle } };
-                    await _sync.KeepAsync(filed, operation.Number, transaction, inside).ConfigureAwait(false);
-                }
-
-                if (!touched.Contains(operation.Quest, StringComparer.Ordinal)) touched.Add(operation.Quest);
-            }
-
-            // A stray an older build left pending on a lost take (WAITCLAIM4) sits on a quest no fetch touches once the
-            // take's conflict has come back, so it is rebased whether or not anything arrived for it.
-            foreach (var quest in await _sync.StrayQuestsAsync(circle, transaction, inside).ConfigureAwait(false))
-            {
-                if (!forgotten.Contains(quest) && !touched.Contains(quest, StringComparer.Ordinal)) touched.Add(quest);
-            }
-
-            var conflicts = new List<QuestOperation>();
-            foreach (var quest in touched)
-            {
-                conflicts.AddRange(await _sync.RebaseAsync(quest, transaction, inside).ConfigureAwait(false));
-            }
-
-            var cursor = Math.Max(await CursorAsync(circle, transaction, inside).ConfigureAwait(false), through);
-            await using (var command = _db.Command())
-            {
-                command.Transaction = transaction;
-                command.CommandText = """
-                    INSERT INTO quest_cursor (workspace, number) VALUES ($workspace, $number)
-                    ON CONFLICT (workspace) DO UPDATE SET number = excluded.number
-                    """;
-                command.Parameters.AddWithValue("$workspace", circle);
-                command.Parameters.AddWithValue("$number", cursor);
-                await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
-            }
-
-            return new QuestIntegration(cursor, conflicts);
-        }, ct);
-
-    /// <summary>
-    /// A follow-up published only by a close that has now lost (D65 §4): it was the chain moving on,
-    /// and the chain did not move. Forgotten only while every operation of it is this machine's and none was
-    /// pushed; one another machine holds, or published itself on its own close, stays.
-    /// </summary>
-    /// <remarks>
-    /// FABRIC-CLOSE1e2: what this machine did on it goes with it, as a lost submission's step's does (<see cref="ForgetStepsAsync"/>): a
-    /// take of it becomes a conflict naming the close that went, so its claim reads lost and its session is stopped, where it once stood
-    /// and synced on its own, numbered on a done that lost, until a person declined it. A remote holds no such follow-up while its parent
-    /// is not done there (<see cref="AwaitsItsSourceAsync"/>), so the raced order reaches this too.
-    /// </remarks>
-    /// <param name="published">What published it, as its take's conflict names it: the parent's close, or the yes or verdict that let it go.</param>
-    /// <returns>The takes rewritten, as the rebase reports its conflicts.</returns>
-    internal Task<IReadOnlyList<QuestOperation>> ForgetFollowUpsAsync(
-        string parent, bool takeLost, string published, bool reopened, SqliteTransaction transaction, CancellationToken ct) =>
-        ForgetStepsAsync(parent, takeLost, reopened, transaction, ct, published);
-
-    /// <summary>
-    /// The steps a lost submission published (FABRIC-CLOSE1e, §E5), with what this machine did on them since, and the steps they
-    /// published in turn: each grew from a submission that no longer stands, so none was asked. A step is forgotten only while
-    /// every operation of it is this machine's and none was pushed; one a remote holds is every machine's, and stays. A lost close's
-    /// follow-ups go the same way (<see cref="ForgetFollowUpsAsync"/>, FABRIC-CLOSE1e2).
-    /// </summary>
-    /// <remarks>
-    /// Where this machine took a step, its take is not forgotten but rewritten as a conflict, which the claim reads as lost
-    /// (<see cref="QuestLog.Claim"/>), so the driver stops the step's session as it stops any session whose take lost (D69). Its
-    /// publication gone, the conflict is on a quest no list shows and no push carries, as one on a quest deleted first is (D95),
-    /// and its note says why: the parent's submission went. Should the winner's chain publish the same step later (its id comes
-    /// from the parent and the step), the conflict stands on it and goes up, as any take that lost is shown on the winner's quest.
-    /// <para>Where the parent's take lost to the person's reopen (<paramref name="reopened"/>, FABRIC-CLOSE1c22), the conflict says so in
-    /// its words and in <see cref="QuestOperation.LostToTheReopen"/>: the step's history holds only the conflict, so the claim's answer
-    /// (<see cref="LostToTheReopenAsync"/>) could not read the reopen from it, and the driver would stop the session in another
-    /// machine's words.</para>
-    /// </remarks>
-    /// <param name="published">What of the parent published it, as its take's conflict names it: its submission, or its close.</param>
-    /// <returns>The takes rewritten, as the rebase reports its conflicts.</returns>
-    private async Task<IReadOnlyList<QuestOperation>> ForgetStepsAsync(
-        string parent, bool takeLost, bool reopened, SqliteTransaction transaction, CancellationToken ct, string published = "submission")
-    {
-        var children = new List<string>();
-        await using (var command = _db.Command())
-        {
-            command.Transaction = transaction;
-            command.CommandText = "SELECT id FROM quests WHERE parent = $parent";
-            command.Parameters.AddWithValue("$parent", parent);
-            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-            while (await reader.ReadAsync(ct).ConfigureAwait(false)) children.Add(reader.GetString(0));
-        }
-
-        var told = new List<QuestOperation>();
-        foreach (var child in children)
-        {
-            var history = await HistoryAsync(child, transaction, ct).ConfigureAwait(false);
-            if (history is not [{ Kind: QuestOperationKind.Published }, ..]
-                || history.Any(operation => operation.Number is not null || operation.Machine != Machine))
-            {
-                continue;
-            }
-
-            told.AddRange(await ForgetStepsAsync(child, takeLost, reopened, transaction, ct, published).ConfigureAwait(false));
-            foreach (var operation in history)
-            {
-                var position = (await _sync.PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false))!.Value;
-                if (operation.Kind != QuestOperationKind.Taken)
-                {
-                    await _sync.ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
-                    continue;
-                }
-
-                var lost = operation with
-                {
-                    Kind = QuestOperationKind.Conflict, Attempted = QuestStatus.Taken,
-                    Note = StepWentWith(parent, takeLost, operation.Note, reopened, published),
-                    NoteParts = null, WhileOpen = false, Close = null, Submission = null, LostToTheReopen = reopened,
-                };
-                await _sync.RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
-                told.Add(lost);
-            }
-
-            await _sync.DropCacheAsync(child, transaction, ct).ConfigureAwait(false);
-        }
-
-        return told;
-    }
-
-    /// <summary>
-    /// A lost step's take's note as it was given, then why the step went (FABRIC-CLOSE1e): the parent's submission that published
-    /// it no longer stands, with the parent's take or to another machine's move on the parent. A parent's take lost to the person's
-    /// reopen (<paramref name="reopened"/>, FABRIC-CLOSE1c22) has no winner, so it says the reopen, as the take's refusals do
-    /// (<see cref="QuestExchange.LostTake"/>). A step a close published names that close instead (<paramref name="published"/>,
-    /// FABRIC-CLOSE1e2).
-    /// </summary>
-    internal static string StepWentWith(string parent, bool takeLost, string? note, bool reopened = false, string published = "submission")
-    {
-        var said = $"This quest was the next step of #{parent}'s {published}, which "
-                   + (!takeLost ? $"lost to another machine's move on #{parent}"
-                      : reopened ? $"went with this machine's take of #{parent}: the person's reopen of the work it grew from reached the "
-                                   + "remote first"
-                      : $"went with this machine's take of #{parent}: another machine's take reached the remote first")
-                   + ". The step went with it, so its work is not wanted.";
-        return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
-    }
-
-    /// <summary>
-    /// A lost step's take's note as it was given, then why it lost (FABRIC-CLOSE1c25): the step was published anew on other work,
-    /// from the submission another machine made of <paramref name="parent"/>, so a take made on the work that went is not wanted.
-    /// </summary>
-    internal static string StepPublishedAnew(string parent, string? note)
-    {
-        var said = $"This quest was the next step of #{parent}'s submission, and was published anew on other work, from the submission "
-                   + $"another machine made of #{parent}. This machine's take of it, made on the work that went, is not wanted.";
-        return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
     }
 
     /// <summary>

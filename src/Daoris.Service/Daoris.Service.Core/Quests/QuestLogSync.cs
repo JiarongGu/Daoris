@@ -144,7 +144,7 @@ internal sealed class QuestLogSync(QuestStore store)
                 && quest is { Status: QuestStatus.Open, SourceReopened: null, Parent: { Length: > 0 } source } && stamped != quest.GrewFrom
                 && !QuestLog.LostToTheReopen(replayed.Append(lost), store.Machine))
             {
-                lost = lost with { Note = QuestStore.StepPublishedAnew(source, operation.Note), NoteParts = null };
+                lost = lost with { Note = QuestFollowUps.StepPublishedAnew(source, operation.Note), NoteParts = null };
             }
 
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
