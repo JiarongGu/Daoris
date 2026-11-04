@@ -33,7 +33,7 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     private static HelpPlan Plan(HelpProposal proposal) => HelpProposals.Plan(proposal, DriverConfig.Empty, Spelled);
 
     private static HelpProposal Agent(string door, string? account, string? workspace, UseChange? use = null) =>
-        new("p7", "agent", door, "claude-code", workspace, account, null, "the person asked", "h1", "proposed") { AccountUse = use, ForSet = true };
+        new("p7", "agent", door, "claude-code", workspace, account, null, "the person asked", "h1", "proposed") { AccountUse = use };
 
     /// <summary>A stored <c>default</c>'s refusal names the account <c>order</c> would put first, spelled for any shell (POOL1b, §5.3).</summary>
     [Theory]
