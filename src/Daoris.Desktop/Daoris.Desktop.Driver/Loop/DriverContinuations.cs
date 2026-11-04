@@ -464,10 +464,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 goesOnAs: selection,
                 // BGWAIT1b: a resumed run waits on its own background work as a start does, by the same judgement; where its
                 // quest was closed as the look planned it, never (D83, D105 §3, D137 §2.3).
-                waitsOnBackground: Driver.WaitsOnBackground(service, quest, sessionId, resumed: true),
+                waitsOnBackground: SessionWaits.OnBackground(service, quest, sessionId, resumed: true),
                 // LANDBACK1 part 3: a closed quest's resume is carried on once; where it is the person's Accept's own carry-on (the session's
                 // yes is kept), the Accept's count bounds it and the run carries nothing on.
-                carriesOn: Driver.CarriesOn(
+                carriesOn: SessionWaits.CarriesOn(
                     service, quest, workTree, resumed: true, () => _context.Processes.StopMade(sessionId) is not null,
                     accepted: new CarriedAccepts(home).Of(sessionId) is not null),
                 stopMade: stop => stoppedFirst = stop,
@@ -1299,7 +1299,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// concludes, its next look going on under the setup standing then. Null never asks.
     /// </param>
     /// <param name="carriesOn">
-    /// The look at the quest and its tree a run's end takes (LANDBACK1 part 3, <see cref="Driver.CarriesOn"/>): where nothing is held, a
+    /// The look at the quest and its tree a run's end takes (LANDBACK1 part 3, <see cref="SessionWaits.CarriesOn"/>): where nothing is held, a
     /// closed quest with an uncommitted tree resumes the conversation once more in Daoris's own words. Null never carries on.
     /// </param>
     internal async Task<AgentRunEnd> GoOnAsync(

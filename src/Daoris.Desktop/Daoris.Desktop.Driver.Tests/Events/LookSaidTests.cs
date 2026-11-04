@@ -176,16 +176,16 @@ public sealed class LookSaidTests : IDisposable
         StartBegun Begun(Consideration start) => new("q1", null, "engine", "games", "claude-code", start);
         var carryOn = new Consideration(quest, StartVerdict.Start, "carries on") { Resumes = limited };
 
-        var waits = Daoris.Driver.Driver.LimitedLine(Begun(carryOn));
+        var waits = LimitedStart.LineOf(Begun(carryOn));
         Assert.Equal(new LookNews(LookSaid.LimitWaits, "s3", "s3", "q1", "games"), waits);
-        Assert.Null(Daoris.Driver.Driver.LimitedLine(Begun(carryOn with { Resumes = limited with { Limit = false } })));
-        Assert.Null(Daoris.Driver.Driver.LimitedLine(Begun(carryOn with { GoesOn = true })));
-        Assert.Null(Daoris.Driver.Driver.LimitedLine(new StartBegun(null, "a1", "ask #a1", "games", "claude-code")));
+        Assert.Null(LimitedStart.LineOf(Begun(carryOn with { Resumes = limited with { Limit = false } })));
+        Assert.Null(LimitedStart.LineOf(Begun(carryOn with { GoesOn = true })));
+        Assert.Null(LimitedStart.LineOf(new StartBegun(null, "a1", "ask #a1", "games", "claude-code")));
 
         var said = Said();
         said.News("start", waits!, "held  #q1 → engine: every account cools");
         said.News("start", waits!, "held  #q1 → engine: every account cools");
-        said.News("start", waits! with { Code = LookSaid.LimitWentOn }, $"start  #q1: {Daoris.Driver.Driver.LimitWentOnLine}");
+        said.News("start", waits! with { Code = LookSaid.LimitWentOn }, $"start  #q1: {LimitedStart.WentOnLine}");
 
         Assert.Equal(
             ["look-limit-waits-s3", "look-limit-went-on-s3"],

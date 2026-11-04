@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// pass runs at a time, and one asked for while a pass works follows it once. A wake's plan does not sync: the claims it would ask
 /// after move only when the sync runs, so a wake costs the remote nothing.
 /// </remarks>
-[LookPass("sync", LookPhase.Before)]
+[LookPass("sync", LookPhase.Before, "kept")]
 internal sealed class LookSync(ILookWiring wiring) : ILookPass
 {
     public Task RunAsync(LookRound round, CancellationToken ct) =>

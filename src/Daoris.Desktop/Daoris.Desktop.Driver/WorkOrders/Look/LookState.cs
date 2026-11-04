@@ -18,6 +18,8 @@ internal sealed class LookState(List<SessionEnded> concluded)
     private AnswersAloneHold? _alone;
     private Snapshot? _looked;
     private int? _passes;
+    private IReadOnlyList<Consideration>? _plan;
+    private StartsOutcome? _outcome;
     private IReadOnlyList<Consideration>? _starts;
     private IReadOnlyList<AskView>? _intakes;
     private IReadOnlyList<Consideration>? _openedStarts;
@@ -81,7 +83,21 @@ internal sealed class LookState(List<SessionEnded> concluded)
         set => _judgedOpinions = value;
     }
 
-    /// <summary>The starts the plan chose, each with its line of work on an ask: written by the look's plan, before the Planned phase.</summary>
+    /// <summary>Every consideration the plan made, the starts among them: written by the plan pass.</summary>
+    public IReadOnlyList<Consideration> Plan
+    {
+        get => _plan ?? throw Unwritten(nameof(Plan), "plan");
+        set => _plan = value;
+    }
+
+    /// <summary>What the starts came to, for the look's report: written by the start pass.</summary>
+    public StartsOutcome Outcome
+    {
+        get => _outcome ?? throw Unwritten(nameof(Outcome), "start");
+        set => _outcome = value;
+    }
+
+    /// <summary>The starts the plan chose, each with its line of work on an ask: written by the plan pass, before the Planned phase.</summary>
     public IReadOnlyList<Consideration> Starts
     {
         get => _starts ?? throw Unwritten(nameof(Starts), "plan");

@@ -53,7 +53,7 @@ internal sealed class ChatTransportHost(
         ChildLineage.End(home, sessionId, clean: exit == 0 && !processes.WasStopRequested(sessionId), DateTimeOffset.UtcNow, proc);
 
     public Task AbandonedAsync(string sessionId, string proc, Process process, Task capture) =>
-        Driver.AbandonedAsync(process, capture, sessionId, log: null, output, exitRead: () => ChildLineage.Exited(home, sessionId, proc, clean: false));
+        SessionWaits.AbandonedAsync(process, capture, sessionId, log: null, output, exitRead: () => ChildLineage.Exited(home, sessionId, proc, clean: false));
 
     public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) =>
         DownloadKeeping.KeepHandedAsync(service, home, sessionId, info, ct);
@@ -66,7 +66,7 @@ internal sealed class ChatTransportHost(
     public ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
         throw new NotSupportedException("a conversation goes on through a start of its own, never through its run's go-on.");
 
-    public TimeSpan LingerBound => Driver.LingerBound;
+    public TimeSpan LingerBound => SessionWaits.LingerBound;
 
-    public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => Driver.EndedLingeringAsync(process, Driver.LingerBound, ending);
+    public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => SessionWaits.EndedLingeringAsync(process, SessionWaits.LingerBound, ending);
 }
