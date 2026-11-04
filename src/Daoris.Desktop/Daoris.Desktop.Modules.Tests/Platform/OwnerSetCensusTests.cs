@@ -26,6 +26,7 @@ public sealed class OwnerSetCensusTests
     {
         ["SESSION_OPEN_FOLDER"] = OwnerNone.ActsOnNothing, // opens the session's folder in the file manager; changes nothing
         ["NOTICE_DISMISS"] = OwnerNone.ActsOnNothing, // the owner's news dismissed, by its id or a workspace's
+        ["NOTICES_READ"] = OwnerNone.ActsOnNothing, // the owner's news marked read by their ids
         ["HELP_DISMISS"] = OwnerNone.ActsOnNothing, // a proposal set aside by its id; the Apply is what acts
         ["CHANNEL_MARK"] = OwnerNone.ActsOnNothing, // a read mark on an ask's channel, which never moves back
         ["PERSON_CONFIRM"] = OwnerNone.ActsOnNothing, // a card answered by its id; the press it confirms runs through this dispatcher and is marked
@@ -241,6 +242,7 @@ public sealed class OwnerSetCensusTests
         {
             var file = sources.FirstOrDefault(source => Body(source, route) is not null) ?? "";
             var body = Body(file, route) ?? "";
+            body += "\n" + PipeGroundsCensusTests.PayloadFields(body, sources);
             var declared = DriverModule.Declared(new IpcRequest { Module = DriverModule.Name, Type = route });
             var fields = TargetFields.Where(field => body.Contains($"\"{field}\"", StringComparison.Ordinal)).ToList();
             facts[route] = new HandlerFacts(declared?.Scopes ?? StateScopes.None, declared?.Session, fields, body, file);

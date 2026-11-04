@@ -206,7 +206,7 @@ public sealed class CourseCensusTests
         {
             var source = WithoutComments(File.ReadAllText(Path.Combine(Root, record.GetProperty("file").GetString()!)));
             var member = record.GetProperty("member").GetString()!;
-            var at = Regex.Match(source, @"\bTask(<[^>]+>)?\??\s+" + member + @"\(");
+            var at = Regex.Match(source, @"\b(Value)?Task(<[^>]+>)?\??\s+" + member + @"\(");
             Assert.True(at.Success, $"{member} is not in {record.GetProperty("file").GetString()}");
             var next = Regex.Match(source[(at.Index + at.Length)..], @"\n    (public|internal|private|protected)\s");
             var body = source.Substring(at.Index, next.Success ? next.Index + at.Length : source.Length - at.Index);

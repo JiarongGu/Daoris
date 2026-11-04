@@ -210,7 +210,7 @@ public sealed class GitLaunchTests
     private static readonly string[] StartingFiles =
     [
         "ActSteps.cs", "AgentStarts.cs", "ChildProcess.cs", "CodexUsage.cs", "DoctrineStatusRead.cs",
-        "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessSelection.cs",
+        "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessProbe.cs",
         "HeavyStep.cs", "HookProcess.cs", "PieceLauncher.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
         "GitRuns.cs", "ProcessStarts.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
     ];

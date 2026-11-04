@@ -54,7 +54,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["OnlyHereProof.cs"] = (Refs, "a branch deleted, which git refuses while a tree has it out, after git's record of gone trees is pruned", ["branch@root", "worktree@root"]),
         ["TreeOpenings.cs"] = (Refs, "an opening undone: its own tree removed and its new branch deleted", ["branch@root", "worktree@root"]),
         ["TreeRemovals.cs"] = (Refs, "a session's tree removed, and its branch deleted, which git refuses while a tree has it out", ["branch@root", "worktree@?"]),
-        ["TreeTidies.cs"] = (Refs, "a landed tree tidied, and its branch deleted, which git refuses while a tree has it out", ["branch@root", "worktree@root"]),
+        ["TreeTidies.cs"] = (Refs, "a session branch deleted at the person's door, its tree removed through TreeRemovals first, since git refuses while a tree has it out", ["branch@root"]),
         ["TreeReturns.cs"] = (Refs, "a session's tree made again on its branch, through git's record of the trees", ["worktree@root"]),
         ["TreeSetAside.cs"] = (Refs, "a tree set aside, through git's record of the trees", ["worktree@root"]),
         ["TreeSweeps.cs"] = (Refs, "a pressed tree removed, through git's record of the trees", ["worktree@root"]),
@@ -103,13 +103,18 @@ public sealed partial class CheckoutWritersCensusTests
     {
         ["TreesConsole.cs"] = "`daoris tree sync --yes`'s pull, and the terminal's Accept and Accept all",
         ["TreesLandDesk.cs"] = "the window's Accept, a merge rule's move",
-        ["EntriesRoutes.cs"] = "the window's Accept on an entry, a merge rule's move",
         ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",
         ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
         ["TreesTidyDesk.cs"] = "the window's Bring up to date",
         ["HelpScreenDoors.cs"] = "Ask Daoris's Bring up to date",
         ["WatchNodes.cs"] = "the integration transport's promotions",
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
+    };
+
+    /// <summary>The doors that land through the landing desk's accepts, which hand the writer the ledger for them: door, then the file that does.</summary>
+    private static readonly Dictionary<string, (string Desk, string What)> BesideThrough = new(StringComparer.Ordinal)
+    {
+        ["EntriesRoutes.cs"] = ("TreesLandDesk.cs", "the window's Accept on an entry, a merge rule's move"),
     };
 
     /// <summary>
@@ -227,6 +232,12 @@ public sealed partial class CheckoutWritersCensusTests
         foreach (var (door, what) in Beside)
         {
             Assert.True(sources[door].Contains("BranchTidying.BesideAsync(", StringComparison.Ordinal), $"{door} ({what}) hands the writer no ledger");
+        }
+
+        foreach (var (door, (desk, what)) in BesideThrough)
+        {
+            Assert.True(sources[door].Contains("Accepts(", StringComparison.Ordinal), $"{door} ({what}) takes no accepts of the landing desk");
+            Assert.True(sources[desk].Contains("BranchTidying.BesideAsync(", StringComparison.Ordinal), $"{desk} hands the accepts of {door} no ledger");
         }
 
         var pressing = sources.Where(each => Regex.IsMatch(each.Value, @"\.SyncAsync\([^;]*inUseNow:")).Select(each => each.Key);

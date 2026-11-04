@@ -44,7 +44,7 @@ public sealed class IntegrateNodeTests : IDisposable
 
     private static DriverConfig Config(string request = LandingIntegrate.Owner) =>
         DriverConfig.Empty.WithLine("engine", "main")
-            .WithLinePolicy("engine", new LandingIntegrate(Request: request, Gates: request == LandingIntegrate.Done ? LandingIntegrate.Declared : null));
+            .WithLinePolicy("engine", new LandingIntegrate(Gates: request == LandingIntegrate.Done ? LandingIntegrate.Declared : null));
 
     private static LandedBranch Landed(string tip = T1, string by = AcceptedBy.Person, string? request = LandingIntegrate.Owner) =>
         new("engine", "default", Branch, "main", tip, "s1", "q1", null, Then)

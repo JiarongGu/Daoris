@@ -89,9 +89,12 @@ public sealed partial class HelpProposalKindsTests
         // The kinds' folder is the one the first kind's file is in, found by name wherever the module keeps it (STRUCT1, D166).
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpProposalKinds.All[0].GetType().Name}.cs"))!;
 
+        // A kind's plans may sit in parts beside it (`HelpAcrossSetting`, `HelpWorkflowCard`…); what declares a kind is one file per kind.
         Assert.Equal(
             HelpProposalKinds.All.Select(kind => $"{kind.GetType().Name}.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories)
+                .Where(file => File.ReadAllText(file).Contains(": IHelpProposalKind", StringComparison.Ordinal))
+                .Select(Path.GetFileName).Order(StringComparer.Ordinal));
         foreach (var kind in HelpProposalKinds.All)
         {
             var name = kind.GetType().Name;

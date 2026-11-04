@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2b, D194 point 6, the alone-path design §3): each case of <c>daoris driver</c>'s workflows,
-/// <c>work-cycle</c>, <c>brainstorms</c> and a landing's <c>--cycle|--no-cycle</c>, as the CLI's TypeScript verb said it before it
+/// The port keeps today's text (PUSH1f2b, D194 point 6, the alone-path design §3): each case of <c>daoris driver</c>'s workflows and
+/// <c>brainstorms</c>, as the CLI's TypeScript verb said it before it
 /// retired (<c>fixtures/driver-workflows-text.json</c>), said again by <see cref="DriverChoicesCommand"/> acting alone on a home of its
 /// own, the terminal in it: the same lines on each stream, the same exit, <c>driver.json</c> after it the same choices, and every other
 /// file it wrote the same. A row the port changes on purpose says why under <c>changed</c>.
@@ -51,9 +51,7 @@ public sealed partial class DriverWorkflowsTextTests
         var rows = Read.Value.GetProperty("rows").EnumerateArray().ToList();
         Assert.True(rows.Count >= 150, $"only {rows.Count} rows, so this proves little");
         var argvs = rows.Select(row => row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()!).ToList()).ToList();
-        Assert.All(["work-cycle", "brainstorms", "workflow"], verb => Assert.Contains(argvs, argv => argv.FirstOrDefault() == verb));
-        Assert.Contains(argvs, argv => argv.FirstOrDefault() == "landing" && argv.Contains("--cycle"));
-        Assert.Contains(argvs, argv => argv.FirstOrDefault() == "landing" && argv.Contains("--no-cycle"));
+        Assert.All(["brainstorms", "workflow"], verb => Assert.Contains(argvs, argv => argv.FirstOrDefault() == verb));
         Assert.All(DriverWorkflowsCommand.Verbs, verb => Assert.Contains(argvs, argv => argv is ["workflow", var each, ..] && each == verb));
     }
 

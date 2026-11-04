@@ -175,7 +175,8 @@ public static class WorkflowRunBindings
             if (found.Held is { } held) problem ??= $"{where} names the role `{role}`, which cannot take it: {held}";
         }
 
-        return (named, problem);
+        // None named is the empty list a binding's file reads back as, so a plan equals its own binding read again.
+        return (named.Count == 0 ? Array.Empty<WorkflowStepRole>() : named, problem);
     }
 
     /// <summary>

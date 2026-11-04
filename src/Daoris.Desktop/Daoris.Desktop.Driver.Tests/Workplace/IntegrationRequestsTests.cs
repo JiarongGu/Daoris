@@ -45,9 +45,9 @@ public sealed class IntegrationRequestsTests : IDisposable
     private static DriverConfig Config(LandingIntegrate? integrate) =>
         DriverConfig.Empty.WithLine("engine", "main").WithLinePolicy("engine", integrate);
 
-    private static readonly DriverConfig Owner = Config(new LandingIntegrate(Request: LandingIntegrate.Owner));
-    private static readonly DriverConfig Done = Config(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
-    private static readonly DriverConfig Steward = Config(new LandingIntegrate(Request: LandingIntegrate.Steward, Gates: LandingIntegrate.Declared));
+    // A line's policy names no requester: who requests is the workflow's `integrate` step's, so outside a run the policy reads `request: owner`.
+    private static readonly DriverConfig Owner = Config(new LandingIntegrate());
+    private static readonly DriverConfig Gated = Config(new LandingIntegrate(Gates: LandingIntegrate.Declared));
 
     /// <summary>A landing the person accepted, its review skipped in the person's words, its unit and the quest it served.</summary>
     private static LandedBranch Landed(string branch = Branch, string tip = Tip, string session = "s1") =>
@@ -116,33 +116,31 @@ public sealed class IntegrationRequestsTests : IDisposable
     }
 
     /// <summary>
-    /// The owner's card opens under every <c>request</c>; the steward's act only under <c>steward</c>, naming its act and generation; the
-    /// come-up sweep only under <c>done</c>, and never for a records branch. Each closed door says what the rule says, and asks git nothing.
+    /// Outside a run the line's policy reads <c>request: owner</c>, so the owner's card opens the door under any policy, and the steward's act
+    /// and the come-up sweep find it closed, the sweep never for a records branch. Each closed door says what it reads, and asks git nothing.
     /// </summary>
     [Fact]
-    public async Task Each_requester_comes_through_only_the_door_its_rule_opens()
+    public async Task Outside_a_run_only_the_owners_card_comes_through_the_door()
     {
         var records = new Records([Landed()]);
 
-        Refused(await AdmitAsync(Owner, records, Card() with { Requester = IntegrationRequester.StewardAct("act-7", 3) }), IntegrationRefusals.Door,
-            "the steward requests `engine`'s work only where its rule says `request: steward`, and it says `request: owner`");
-        Refused(await AdmitAsync(Owner, records, Card() with { Requester = IntegrationRequester.Sweep }), IntegrationRefusals.Door,
-            "the come-up sweep requests `engine`'s landings only where its rule says `request: done`, and it says `request: owner`");
-        Refused(await AdmitAsync(Done, records, Card("notes/records", IntegrationRoutes.Records) with { Requester = IntegrationRequester.Sweep }),
+        foreach (var config in new[] { Owner, Gated })
+        {
+            Refused(await AdmitAsync(config, records, Card() with { Requester = IntegrationRequester.StewardAct("act-7", 3) }), IntegrationRefusals.Door,
+                "the steward requests `engine`'s work only where its rule says `request: steward`, and it says `request: owner`");
+            Refused(await AdmitAsync(config, records, Card() with { Requester = IntegrationRequester.Sweep }), IntegrationRefusals.Door,
+                "the come-up sweep requests `engine`'s landings only where its rule says `request: done`, and it says `request: owner`");
+        }
+
+        Refused(await AdmitAsync(Gated, records, Card("notes/records", IntegrationRoutes.Records) with { Requester = IntegrationRequester.Sweep }),
             IntegrationRefusals.Door, "Daoris requests no records branch");
-        Refused(await AdmitAsync(Steward, records, Card() with { Requester = new IntegrationRequester(IntegrationRequester.Steward, IntegrationDoors.Act) }),
-            IntegrationRefusals.Door, "a steward's request names its act and its appointment's generation");
         Assert.Empty(_asked);
 
-        foreach (var (config, requester) in new[]
-                 {
-                     (Owner, IntegrationRequester.Card), (Done, IntegrationRequester.Card), (Steward, IntegrationRequester.Card),
-                     (Steward, IntegrationRequester.StewardAct("act-7", 3)), (Done, IntegrationRequester.Sweep),
-                 })
+        foreach (var config in new[] { Owner, Gated })
         {
-            var admitted = await AdmitAsync(config, records, Card() with { Requester = requester });
+            var admitted = await AdmitAsync(config, records, Card());
             Assert.True(admitted.Admitted, admitted.Message);
-            Assert.Equal(requester, admitted.Request!.Requester);
+            Assert.Equal(IntegrationRequester.Card, admitted.Request!.Requester);
         }
     }
 
@@ -166,7 +164,7 @@ public sealed class IntegrationRequestsTests : IDisposable
             (request.Repository, request.Workspace, request.Branch, request.Tip, request.Route, request.Line));
         Assert.Equal(("unit-a", "s1", "q1", (DateTimeOffset?)At), (request.Unit, request.Session, request.Quest, request.LandedAt));
         Assert.Equal(new LandingIntegrate(Request: LandingIntegrate.Owner).Resolved(), request.Policy);
-        Assert.Equal(LandingSource.Repository, request.RuleSource);
+        Assert.Equal(LandingSource.Default, request.RuleSource);
         Assert.Equal(new IntegrationProof(AcceptedBy.Person) { Review = entry.Review, Opinion = entry.Opinion }, request.Proof);
         // Read back from the store's file, so the opinion's counts are maps of their own: equivalent, field by field, to what the door made.
         Assert.Equivalent(request, Assert.Single(store.Open()), strict: true);
@@ -183,7 +181,7 @@ public sealed class IntegrationRequestsTests : IDisposable
         };
         var entry = Landed() with { Tip = Next, Advances = [advance], Units = ["unit-a", "unit-b"] };
 
-        var admitted = await AdmitAsync(Done, new Records([entry]), Card());
+        var admitted = await AdmitAsync(Gated, new Records([entry]), Card());
 
         Assert.True(admitted.Admitted, admitted.Message);
         var request = admitted.Request!;
@@ -311,35 +309,29 @@ public sealed class IntegrationRequestsTests : IDisposable
         _refs["refs/heads/notes/records"] = Other;
         Refused(await AdmitAsync(Owner, records, Card("notes/records", IntegrationRoutes.Records) with { Tip = Next }), IntegrationRefusals.Moved,
             "`notes/records` stands at 33333333, not 22222222");
-        var admitted = await AdmitAsync(Steward, records,
-            Card("notes/records", IntegrationRoutes.Records) with { Requester = IntegrationRequester.StewardAct("act-7", 3) });
+        var admitted = await AdmitAsync(Gated, records, Card("notes/records", IntegrationRoutes.Records));
         Assert.True(admitted.Admitted, admitted.Message);
-        Assert.Equal("`notes/records` at 33333333 is requested for `main` as a records branch, by the steward's act `act-7`: it carries no workflow gate.",
+        Assert.Equal("`notes/records` at 33333333 is requested for `main` as a records branch, by the person's card: it carries no workflow gate.",
             admitted.Message);
         Assert.True(admitted.Request is { Tip: Other, Route: IntegrationRoutes.Records, Proof: null, Unit: null, Session: null, LandedAt: null });
     }
 
     /// <summary>
-    /// The come-up sweep, under <c>request: done</c>: every standing landing of the repository is requested once, a trace and another
-    /// repository's never, and a second sweep requests nothing more; under <c>owner</c> it requests nothing and asks git nothing.
+    /// The come-up sweep requests only under <c>request: done</c>, which a line's policy never says: over standing landings it requests
+    /// nothing and asks git nothing, under any policy.
     /// </summary>
     [Fact]
-    public async Task The_sweep_requests_each_standing_landing_once_under_done_alone()
+    public async Task The_sweep_requests_nothing_under_a_lines_policy()
     {
-        _refs["refs/heads/feature/q2-more"] = Next;
-        var records = new Records(
-        [
-            Landed(), Landed("feature/q2-more", Next, "s2"), Landed("feature/q0-gone", Other, "s0") with { GoneAt = At },
-            Landed("feature/q3-elsewhere", Other, "s3") with { Repository = "portal" },
-        ]);
+        var records = new Records([Landed(), Landed("feature/q2-more", Next, "s2")]);
         var store = Fresh();
 
-        async Task<IReadOnlyList<IntegrationAdmission>> SweepAsync(DriverConfig config)
+        foreach (var config in new[] { Owner, Gated })
         {
             WorkingTree.Answered.Value = Git;
             try
             {
-                return await new IntegrationRequests(records, store, () => config).SweepAsync("engine", "aurora", Root);
+                Assert.Empty(await new IntegrationRequests(records, store, () => config).SweepAsync("engine", "aurora", Root));
             }
             finally
             {
@@ -347,17 +339,8 @@ public sealed class IntegrationRequestsTests : IDisposable
             }
         }
 
-        Assert.Empty(await SweepAsync(Owner));
+        Assert.Empty(store.Open());
         Assert.Empty(_asked);
-
-        var swept = await SweepAsync(Done);
-        Assert.Equal([Branch, "feature/q2-more"], swept.Select(each => each.Request!.Branch));
-        Assert.All(swept, each => Assert.Equal(IntegrationRequester.Sweep, each.Request!.Requester));
-        Assert.Equal(2, store.Open().Count);
-
-        var again = await SweepAsync(Done);
-        Assert.All(again, each => Assert.Equal(IntegrationRefusals.Open, each.Refusal));
-        Assert.Equal(2, store.Open().Count);
     }
 
     /// <summary>
@@ -412,7 +395,7 @@ public sealed class IntegrationRequestsTests : IDisposable
 
         foreach (var (config, by, asked) in new[]
                  {
-                     (Done, AcceptedBy.Person, LandingIntegrate.Done), (Done, AcceptedBy.Auto, LandingIntegrate.Done),
+                     (Gated, AcceptedBy.Person, LandingIntegrate.Done), (Gated, AcceptedBy.Auto, LandingIntegrate.Done),
                  })
         {
             var each = await AdmitAsync(config, new Records([Written(by, asked)]), Node());
@@ -428,13 +411,13 @@ public sealed class IntegrationRequestsTests : IDisposable
     [Fact]
     public async Task An_automatic_landing_under_owner_waits_for_the_card_and_steward_waits_for_its_act()
     {
-        var ownerAuto = Config(new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates));
+        var ownerAuto = Config(new LandingIntegrate(Gates: LandingIntegrate.NoGates));
         Refused(await AdmitAsync(ownerAuto, new Records([Written(AcceptedBy.Auto, LandingIntegrate.Owner)]), Node()), IntegrationRefusals.AwaitsOwner,
             $"`{Branch}` was landed automatically under `request: owner`, so its landing is no request: it waits for the owner's card");
 
         foreach (var by in new[] { AcceptedBy.Person, AcceptedBy.Auto })
         {
-            Refused(await AdmitAsync(Steward, new Records([Written(by, LandingIntegrate.Steward)]), Node()), IntegrationRefusals.AwaitsSteward,
+            Refused(await AdmitAsync(Gated, new Records([Written(by, LandingIntegrate.Steward)]), Node()), IntegrationRefusals.AwaitsSteward,
                 "under `request: steward` no landing is the request: it waits for the steward's `request` act, or the owner's card");
         }
 
@@ -450,11 +433,11 @@ public sealed class IntegrationRequestsTests : IDisposable
     {
         var store = Fresh();
 
-        Refused(await AdmitAsync(Done, new Records([Written(AcceptedBy.Person, null)]), Node(), store), IntegrationRefusals.NoRequest,
+        Refused(await AdmitAsync(Gated, new Records([Written(AcceptedBy.Person, null)]), Node(), store), IntegrationRefusals.NoRequest,
             "landing record does not say it was accepted where `integrate` stood");
-        Refused(await AdmitAsync(Done, new Records([Landed() with { AcceptedBy = null, Integrate = new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Rule) }]), Node(), store),
+        Refused(await AdmitAsync(Gated, new Records([Landed() with { AcceptedBy = null, Integrate = new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Rule) }]), Node(), store),
             IntegrationRefusals.NoRequest, "landing record does not say it was accepted where `integrate` stood");
-        Refused(await AdmitAsync(Done, new Records([Written(AcceptedBy.Person, "whenever")]), Node(), store), IntegrationRefusals.NoRequest,
+        Refused(await AdmitAsync(Gated, new Records([Written(AcceptedBy.Person, "whenever")]), Node(), store), IntegrationRefusals.NoRequest,
             "landing record does not say it was accepted where `integrate` stood");
         Assert.Empty(store.Open());
         Assert.Empty(_asked);
