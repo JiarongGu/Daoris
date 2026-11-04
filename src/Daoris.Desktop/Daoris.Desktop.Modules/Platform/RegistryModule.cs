@@ -27,6 +27,7 @@ namespace Daoris.Desktop;
 [ModuleRoute("WRITE_DECLARATION", PipeClass.Person, Drain = PipeDrain.Passes)]
 [Owner("PICK_FOLDER", None = OwnerNone.NamesNothing)]
 [Owner("WRITE_DECLARATION", None = OwnerNone.NamesNothing)]
+[GroundFiles("WRITE_DECLARATION", "declaration", "path", Quick = true)]
 public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.REGISTRY";

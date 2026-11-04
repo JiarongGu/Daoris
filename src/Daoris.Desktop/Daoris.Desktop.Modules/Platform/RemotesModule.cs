@@ -30,6 +30,8 @@ namespace Daoris.Desktop;
 [Owner("REMOVE", None = OwnerNone.MachineSetting)]
 [NotAlready("SET", "carries a key the read redacts")]
 [NotAlready("REMOVE", "removes a workspace's wiring and its key")]
+[GroundRead("SET", nameof(PipeReads.RemoteWiring))]
+[GroundRead("REMOVE", nameof(PipeReads.RemoteWiring))]
 public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.REMOTES";

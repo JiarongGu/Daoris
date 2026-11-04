@@ -36,6 +36,8 @@ public sealed class LinesRoutes(DriverContext context)
     // file `daoris place line` edits: one truth, two doors (D50).
     [DriverRoute("SET_LINE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_LINE", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_LINE", "lines", "workspaceLines", Sets = "branch")]
+    [Says("SET_LINE", "repository:repository")]
     [Publishes("SET_LINE", Chosen)]
     private object? SetLine(IpcRequest request)
     {
@@ -76,6 +78,8 @@ public sealed class LinesRoutes(DriverContext context)
     // refusal.
     [DriverRoute("SET_LANGUAGE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_LANGUAGE", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_LANGUAGE", "languages", "workspaceLanguages", Sets = "language")]
+    [Says("SET_LANGUAGE", "repository:repository")]
     [Publishes("SET_LANGUAGE", Chosen)]
     private object? SetLanguage(IpcRequest request)
     {
@@ -221,6 +225,8 @@ public sealed class LinesRoutes(DriverContext context)
     // `daoris place landing` edits: one truth, two doors (D50).
     [DriverRoute("SET_LANDING", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_LANDING", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_LANDING", "landings", "workspaceLandings")]
+    [Says("SET_LANDING", "repository:repository")]
     [NotAlready("SET_LANDING", "merges into the repository's landing rule")]
     [Publishes("SET_LANDING", StateScopes.Landing | StateScopes.Lines)]
     private object? SetLanding(IpcRequest request)
@@ -338,6 +344,7 @@ public sealed class LinesRoutes(DriverContext context)
     [DriverRoute("SWEEP_PLAN", PipeClass.Open)]
     [DriverRoute("SWEEP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SWEEP", Workspace = "workspace")]
+    [GroundRead("SWEEP", nameof(PipeReads.SweepPlan))]
     [Publishes("SWEEP", Moves)]
     [OneFlight("SWEEP_PLAN")]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -409,6 +416,9 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("DISCARD_SESSION_BRANCH", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("DISCARD_SESSION_BRANCH", Repository = "repository")]
+    [GroundRepository("DISCARD_SESSION_BRANCH", "repository")]
+    [GroundBranch("DISCARD_SESSION_BRANCH", "repository", "branch", "named")]
+    [Says("DISCARD_SESSION_BRANCH", "repository:repository")]
     [Publishes("DISCARD_SESSION_BRANCH", Moves)]
     private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -445,6 +455,9 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WITHDRAW_LANDING_BRANCH", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WITHDRAW_LANDING_BRANCH", Repository = "repository")]
+    [GroundRepository("WITHDRAW_LANDING_BRANCH", "repository")]
+    [GroundBranch("WITHDRAW_LANDING_BRANCH", "repository", "branch")]
+    [Says("WITHDRAW_LANDING_BRANCH", "repository:repository", "why:words")]
     [Publishes("WITHDRAW_LANDING_BRANCH", Moves)]
     private async Task<object?> WithdrawLandingBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -470,6 +483,9 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("RECOVERY_DROP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("RECOVERY_DROP", Repository = "repository")]
+    [GroundRepository("RECOVERY_DROP", "repository")]
+    [GroundRead("RECOVERY_DROP", nameof(PipeReads.RecoveryRefs))]
+    [Says("RECOVERY_DROP", "repository:repository")]
     [Publishes("RECOVERY_DROP", Moves)]
     private async Task<object?> DropRecoveriesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -525,6 +541,8 @@ public sealed class LinesRoutes(DriverContext context)
     [DriverRoute("TREES_SYNC_PLAN", PipeClass.Open)]
     [DriverRoute("TREES_SYNC", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TREES_SYNC", Repository = "repository", Workspace = "workspace")]
+    [GroundRead("TREES_SYNC", nameof(PipeReads.SyncPlan))]
+    [Says("TREES_SYNC", "repository:repository")]
     [Publishes("TREES_SYNC", Moves)]
     private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -780,6 +798,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("WORK_HELD", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORK_HELD", Unit = "unit")]
+    [GroundRead("WORK_HELD", nameof(PipeReads.HeldAttempt))]
     [Publishes("WORK_HELD", StateScopes.Sessions)]
     private Task<object?> WorkHeldAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -927,6 +946,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("SET_REVIEW", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_REVIEW", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_REVIEW", "reviews", "workspaceReviews")]
     [NotAlready("SET_REVIEW", "merges into the repository's review rule")]
     [Publishes("SET_REVIEW", Chosen)]
     private async Task<object?> SetReviewAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -977,6 +997,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SET_OPINION", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_OPINION", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_OPINION", "opinions", "workspaceOpinions")]
     [NotAlready("SET_OPINION", "merges into the repository's opinion rule")]
     [Publishes("SET_OPINION", Chosen)]
     private object? SetOpinion(IpcRequest request)
@@ -1020,6 +1041,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SET_HELPERS", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_HELPERS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_HELPERS", "helpers", "workspaceHelpers")]
     [NotAlready("SET_HELPERS", "merges into the repository's helpers rule")]
     [Publishes("SET_HELPERS", Chosen)]
     private object? SetHelpers(IpcRequest request)
@@ -1038,6 +1060,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SET_HAND_OVER", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_HAND_OVER", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_HAND_OVER", "handOver", "workspaceHandOver")]
     [NotAlready("SET_HAND_OVER", "merges into the repository's hand-over rule")]
     [Publishes("SET_HAND_OVER", Chosen)]
     private object? SetHandOver(IpcRequest request)
@@ -1056,6 +1079,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SET_COMMITS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_COMMITS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_COMMITS", "commits", "workspaceCommits")]
     [NotAlready("SET_COMMITS", "merges into the repository's commits rule")]
     [Publishes("SET_COMMITS", Chosen)]
     private object? SetCommits(IpcRequest request)
@@ -1075,6 +1099,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SET_ACCESS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_ACCESS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_ACCESS", "access", "workspaceAccess")]
     [NotAlready("SET_ACCESS", "merges into the repository's access rule")]
     [Publishes("SET_ACCESS", Chosen)]
     private object? SetAccess(IpcRequest request)
@@ -1100,6 +1125,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SET_GIT_ACCESS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_GIT_ACCESS", Repository = "repository", Workspace = "workspace")]
+    [GroundScoped("SET_GIT_ACCESS", "gitAccess", "workspaceGitAccess")]
     [NotAlready("SET_GIT_ACCESS", "merges into the repository's git access")]
     [Publishes("SET_GIT_ACCESS", Chosen)]
     private object? SetGitAccess(IpcRequest request)

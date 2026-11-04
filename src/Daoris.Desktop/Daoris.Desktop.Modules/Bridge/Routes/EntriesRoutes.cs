@@ -34,6 +34,7 @@ public sealed class EntriesRoutes(DriverContext context)
     [DriverRoute("ENTRY_LANDING", PipeClass.Open)]
     [DriverRoute("LAND_ENTRY", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("LAND_ENTRY", Entry = "entry")]
+    [GroundRead("LAND_ENTRY", nameof(PipeReads.EntryLanding))]
     [Publishes("LAND_ENTRY", Lands, Subject = "entry")]
     private async Task<object?> EntryAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -68,6 +69,9 @@ public sealed class EntriesRoutes(DriverContext context)
     [DriverRoute("ASK_LANDING", PipeClass.Open)]
     [DriverRoute("LAND_ASK", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("LAND_ASK", Ask = "ask")]
+    [GroundAsk("LAND_ASK", "ask")]
+    [GroundRead("LAND_ASK", nameof(PipeReads.AskLanding))]
+    [Says("LAND_ASK", "ask:ask")]
     [Publishes("LAND_ASK", Lands, Subject = "ask")]
     private async Task<object?> AskAsync(IpcRequest request, CancellationToken cancellationToken)
     {

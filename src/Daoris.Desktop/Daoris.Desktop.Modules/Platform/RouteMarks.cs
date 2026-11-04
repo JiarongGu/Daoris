@@ -6,10 +6,12 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// What a route's marks tell the pipe, read once at start: its class (<see cref="Rule"/>, a whole class or a look and a press
-/// told apart by a field), what an update's drain does with it, what it marks <c>owner-set</c>, and why its setting is never
-/// <c>already</c>.
+/// told apart by a field), what an update's drain does with it, what it marks <c>owner-set</c>, why its setting is never
+/// <c>already</c>, and for a person's press what it rests on and the values its card's sentence names.
 /// </summary>
-public sealed record RouteMark(string Module, string Route, PipeRule Rule, PipeDrain? Drain, OwnerTarget? Owner, string? NotAlready)
+public sealed record RouteMark(
+    string Module, string Route, PipeRule Rule, PipeDrain? Drain, OwnerTarget? Owner, string? NotAlready, PipeGroundRow? Grounds,
+    IReadOnlyList<PipeWord>? Words)
 {
     /// <summary>Whether a form of it is <paramref name="class"/>.</summary>
     public bool Takes(params PipeClass[] @class) => @class.Contains(Rule.Class) || @class.Contains(Rule.Otherwise);
@@ -19,7 +21,8 @@ public sealed record RouteMark(string Module, string Route, PipeRule Rule, PipeD
 /// Reads a module's routes as their marks class them: the driver's off each handler's <see cref="DriverRouteAttribute"/> and the
 /// marks beside it, another module's off its class (<see cref="ModuleRouteAttribute"/>, <see cref="WindowModuleAttribute"/>). A
 /// route whose marks are incomplete or name a route the member does not answer fails the first use, as a route marked twice does:
-/// a person's or a role's press with no drain, a person's or a window's with no owner mark, or a mark for a route nobody answers.
+/// a person's or a role's press with no drain, a person's or a window's with no owner mark, a person's press resting on nothing
+/// and not timeless, a setting naming no value it sets with no reason it is never already, or a mark for a route nobody answers.
 /// </summary>
 /// <remarks>It holds no state: the driver's module calls it while its own table is built, before anything here could read that table.</remarks>
 public static class RouteMarks
@@ -34,8 +37,12 @@ public static class RouteMarks
         var classedBy = member.GetCustomAttributes<ClassedByAttribute>().ToList();
         var owners = member.GetCustomAttributes<OwnerAttribute>().ToList();
         var notAlready = member.GetCustomAttributes<NotAlreadyAttribute>().ToList();
+        var grounds = member.GetCustomAttributes<RouteGroundAttribute>().ToList();
+        var timeless = member.GetCustomAttributes<TimelessAttribute>().ToList();
+        var says = member.GetCustomAttributes<SaysAttribute>().ToList();
         var answered = routes.Select(each => each.Route).ToHashSet(StringComparer.Ordinal);
         if (classedBy.Select(each => each.Route).Concat(owners.Select(each => each.Route)).Concat(notAlready.Select(each => each.Route))
+                .Concat(grounds.Select(each => each.Route)).Concat(timeless.Select(each => each.Route)).Concat(says.Select(each => each.Route))
                 .FirstOrDefault(route => !answered.Contains(route)) is { } stray)
         {
             throw new InvalidOperationException($"{where} marks `{stray}` for the pipe, and answers no such route.");
@@ -48,7 +55,25 @@ public static class RouteMarks
             if (by.Count > 1) throw new InvalidOperationException($"{where} classes `{route}` by its payload twice.");
             var rule = by is [var form] ? PipeRule.Of(form.Field, form.Class, @class, form.Values) with { Unless = form.Unless } : PipeRule.Whole(@class);
             var mark = new RouteMark(module, route, rule, drain, Owner(owners.Where(each => each.Route == route).ToList(), where, route),
-                notAlready.SingleOrDefault(each => each.Route == route)?.Why);
+                notAlready.SingleOrDefault(each => each.Route == route)?.Why,
+                Row([.. grounds.Where(each => each.Route == route).SelectMany(each => each.Grounds())], timeless.SingleOrDefault(each => each.Route == route), where, route),
+                says.SingleOrDefault(each => each.Route == route)?.Words().ToList());
+            if (mark.Takes(PipeClass.Person) != (mark.Grounds is not null))
+            {
+                throw new InvalidOperationException(mark.Grounds is not null
+                    ? $"{where} says what `{route}` rests on, and no form of it is a person's press."
+                    : $"{where} says nothing `{route}`, a person's press, rests on: its grounds, or why it is timeless.");
+            }
+
+            if (mark.Words is not null && !mark.Takes(PipeClass.Person))
+            {
+                throw new InvalidOperationException($"{where} says the values `{route}`'s card names, and it is no person's press.");
+            }
+
+            if (mark.NotAlready is null && mark.Grounds?.Grounds.OfType<ReadGround>().Any(each => each.Kind == PipeGroundKind.Setting && each.Sets is null) == true)
+            {
+                throw new InvalidOperationException($"{where}: `{route}`'s setting names no value it sets, and no mark says why it is never already.");
+            }
             if (mark.Takes(PipeClass.Person, PipeClass.Role) != drain.HasValue)
             {
                 throw new InvalidOperationException(drain.HasValue
@@ -72,6 +97,13 @@ public static class RouteMarks
         }
 
         return marks;
+    }
+
+    /// <summary>A route's grounds in the order its marks say them, or timeless with why, never both; null where it says neither.</summary>
+    private static PipeGroundRow? Row(IReadOnlyList<PipeGround> grounds, TimelessAttribute? timeless, string where, string route)
+    {
+        if (grounds.Count > 0 && timeless is not null) throw new InvalidOperationException($"{where} says `{route}` rests on grounds and is timeless.");
+        return grounds.Count > 0 || timeless is not null ? new PipeGroundRow(grounds, timeless?.Why) : null;
     }
 
     /// <summary>A route's owner marks merged, or null where it says none: fields, a closed reason or by its plan, one of the three.</summary>

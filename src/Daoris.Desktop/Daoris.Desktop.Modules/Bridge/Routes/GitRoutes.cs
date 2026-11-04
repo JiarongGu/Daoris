@@ -376,6 +376,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // the same route asked for its words (`said`). A refusal is data; `act` names the record `GIT_REF_UNDO` deletes the ref at.
     [DriverRoute("GIT_REF_CREATE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_REF_CREATE", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_CREATE", "repository", "workspace")]
+    [Says("GIT_REF_CREATE", "repository:repository", "name:words")]
     [Publishes("GIT_REF_CREATE", StateScopes.Driver)]
     private async Task<object?> GitRefCreateAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -404,6 +406,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // the held branches, an annotated tag and an occupied branch.
     [DriverRoute("GIT_REF_DELETE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_REF_DELETE", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_DELETE", "repository", "workspace")]
+    [Says("GIT_REF_DELETE", "repository:repository", "name:words")]
     [Publishes("GIT_REF_DELETE", StateScopes.Driver)]
     private async Task<object?> GitRefDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -435,6 +439,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // the page offers GIT_REF_FINISH and GIT_REF_UNDO.
     [DriverRoute("GIT_REF_RENAME", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_REF_RENAME", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_RENAME", "repository", "workspace")]
+    [Says("GIT_REF_RENAME", "repository:repository", "name:words", "to:words")]
     [Publishes("GIT_REF_RENAME", StateScopes.Driver)]
     private async Task<object?> GitRefRenameAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -472,6 +478,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // *Fetch* of origin's branches, one `fetch` step that moves refs/remotes/origin/* alone; a terminal's verb asks it for its words.
     [DriverRoute("GIT_FETCH", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_FETCH", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_FETCH", "repository", "workspace")]
+    [Says("GIT_FETCH", "repository:repository")]
     [Publishes("GIT_FETCH", StateScopes.Driver)]
     private async Task<object?> GitFetchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -500,6 +508,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // GITAPP2e: the Finish beside a stopped rename's answer, the section moved alone where the ref and the section stand as the act journaled them.
     [DriverRoute("GIT_REF_FINISH", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_REF_FINISH", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_FINISH", "repository", "workspace")]
+    [Says("GIT_REF_FINISH", "repository:repository")]
     [Publishes("GIT_REF_FINISH", StateScopes.Driver)]
     private async Task<object?> GitRefFinishAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -515,6 +525,8 @@ public sealed class GitRoutes(DriverLoop loop)
     // GITAPP2d: and beside a delete's, the ref made again where the name is free and its section put back.
     [DriverRoute("GIT_REF_UNDO", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_REF_UNDO", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_UNDO", "repository", "workspace")]
+    [Says("GIT_REF_UNDO", "repository:repository")]
     [Publishes("GIT_REF_UNDO", StateScopes.Driver)]
     private async Task<object?> GitRefUndoAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -531,6 +543,8 @@ public sealed class GitRoutes(DriverLoop loop)
     [DriverRoute("GIT_HISTORY_EDIT", PipeClass.Person, Drain = PipeDrain.Waits)]
     [ClassedBy("GIT_HISTORY_EDIT", "plan", PipeClass.Open, "true", Unless = new[] { "said" })]
     [Owner("GIT_HISTORY_EDIT", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_HISTORY_EDIT", "repository", "workspace")]
+    [Says("GIT_HISTORY_EDIT", "repository:repository", "branch:words")]
     [Publishes("GIT_HISTORY_EDIT", StateScopes.Driver)]
     private async Task<object?> GitHistoryEditAsync(IpcRequest request, CancellationToken cancellationToken)
     {

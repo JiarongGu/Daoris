@@ -43,6 +43,8 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// </summary>
     [DriverRoute("CHANNEL_POST", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("CHANNEL_POST", Ask = "ask")]
+    [GroundAsk("CHANNEL_POST", "ask")]
+    [Says("CHANNEL_POST", "text:words")]
     [Publishes("CHANNEL_POST", StateScopes.Asks)]
     private async Task<object?> ChannelPostAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -67,6 +69,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// </summary>
     [DriverRoute("CHANNEL_MARK", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("CHANNEL_MARK", None = OwnerNone.ActsOnNothing)]
+    [Timeless("CHANNEL_MARK", "a read mark, which never moves back")]
     [Publishes("CHANNEL_MARK", StateScopes.Asks)]
     private async Task<object?> ChannelMarkAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -86,6 +89,9 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// </summary>
     [DriverRoute("CHANNEL_FORWARD", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("CHANNEL_FORWARD", Ask = "ask")]
+    [GroundAsk("CHANNEL_FORWARD", "ask")]
+    [GroundRepository("CHANNEL_FORWARD", "repository")]
+    [Says("CHANNEL_FORWARD", "repository:repository")]
     [Publishes("CHANNEL_FORWARD", StateScopes.Asks)]
     private async Task<object?> ChannelForwardAsync(IpcRequest request, CancellationToken cancellationToken)
     {

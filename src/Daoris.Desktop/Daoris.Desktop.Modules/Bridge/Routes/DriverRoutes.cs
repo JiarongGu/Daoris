@@ -6,15 +6,9 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The driver's own state and standing choices, the page's `bridge/driver.ts` (MOD5): the state every
-/// control answers with; the drivable set, holds and session trees; notifications; the strike limit and
-/// a retry; the intake's and Ask Daoris's agents; a folder's trust; a nudge; and *Sync now*. Each standing
-/// choice is an edit to `driver.json` and a nudge, the file the terminal's `daoris driver` edits (D50).
+/// The driver's own state and standing choices, the page's `bridge/driver.ts`. Each standing choice is an edit to `driver.json`
+/// and a nudge, the file the terminal's `daoris driver` edits, and declares the driver's state; a nudge declares nothing.
 /// </summary>
-/// <remarks>
-/// Each standing choice changes the driver's state every window shows, and declares it (STATEHUB1h, D169): the pressing window
-/// writes the state it was answered, and every window reads it again. A nudge declares nothing: the tick says what it moved.
-/// </remarks>
 public sealed class DriverRoutes(DriverContext context)
 {
     private readonly DriverContext _context = context;
@@ -23,19 +17,12 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("STATE", PipeClass.Open)]
     private object? GetState(IpcRequest request) => State(_loop);
 
-    /// <summary>
-    /// What is under way (STATEHUB1c2, D169's STATEHUB1c2 note): the presses the publisher holds, whole and numbered as its last
-    /// <c>UNDER_WAY</c> telling, for a window opened or reloaded mid-press, which heard none of them; the window keeps whichever
-    /// is newer. A read: it declares nothing, is never under way, and tells nothing.
-    /// </summary>
+    /// <summary>What is under way, numbered as the last <c>UNDER_WAY</c> telling, for a window opened mid-press.</summary>
     [DriverRoute("UNDER_WAY", PipeClass.Open)]
     private object? GetUnderWay(IpcRequest request) => _loop.UnderWay.Now();
 
     /// <summary>
-    /// A slice's snapshot (PUSH1a, D182 point 3), which a window asks once it hears the slice's pushes: every partition as last
-    /// judged, read from memory, or not judged yet, never a judgement made for the asking, so a second window judges nothing. A slice
-    /// this Daoris does not push answers nothing, and the page keeps that slice's pulls (capability per slice). A read: it declares
-    /// nothing and tells nothing.
+    /// A slice's snapshot, read from memory as last judged, never judged for the asking, so a second window judges nothing.
     /// </summary>
     [DriverRoute("STATE_SLICE", PipeClass.Open)]
     private object? GetStateSlice(IpcRequest request) =>
@@ -43,6 +30,9 @@ public sealed class DriverRoutes(DriverContext context)
 
     [DriverRoute("SET_DRIVABLE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_DRIVABLE", Repository = "repository")]
+    [GroundRepository("SET_DRIVABLE", "repository")]
+    [GroundListed("SET_DRIVABLE", "drivable", "drivable")]
+    [Says("SET_DRIVABLE", "repository:repository")]
     [Publishes("SET_DRIVABLE", StateScopes.Driver)]
     private object? SetDrivable(IpcRequest request)
     {
@@ -54,22 +44,25 @@ public sealed class DriverRoutes(DriverContext context)
 
     [DriverRoute("SET_HOLD", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HOLD", Repository = "repository")]
+    [GroundRepository("SET_HOLD", "repository")]
+    [GroundListed("SET_HOLD", "holds", "held")]
+    [Says("SET_HOLD", "repository:repository")]
     [Publishes("SET_HOLD", StateScopes.Driver)]
     private object? SetHold(IpcRequest request)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var held = PayloadHelper.GetRequiredValue<bool>(request.Payload, "held");
-        // TERMTRUST1a (the terminal-trust design §4.2): a hold changed by anything but the standing confirmation (the window's press, a
-        // confirmed press) is no longer one a covered resume may release; the confirmation remembers its own as it admits them.
+        // A hold changed by anything but the standing confirmation is no longer one a covered resume may release.
         if (!PipeDoor.Standing) _loop.Pipe?.StandingConfirmation.Forget(repository);
         _context.Change(config => config.WithHold(repository, held));
         return State(_loop);
     }
 
-    // Session trees (D51): the desktop's half of the standing opt-in, over the same file
-    // `daoris place trees <repo> on|off` edits — two editors, one truth (D50).
     [DriverRoute("SET_TREES", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_TREES", Repository = "repository")]
+    [GroundRepository("SET_TREES", "repository")]
+    [GroundListed("SET_TREES", "trees", "ownTree")]
+    [Says("SET_TREES", "repository:repository")]
     [Publishes("SET_TREES", StateScopes.Driver)]
     private object? SetTrees(IpcRequest request)
     {
@@ -79,10 +72,12 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // GITAPP2b (D204, the git-writes design §2): the switch *Daoris may change this checkout's files*, off by default, in
-    // `driver.json` by repository. It writes nothing to a repository: it lets the acts of later rows be offered.
+    // *Daoris may change this checkout's files*, off by default: it writes nothing to a repository, it lets the Changes tab's acts be offered.
     [DriverRoute("SET_CHECKOUT_WRITES", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_CHECKOUT_WRITES", Repository = "repository")]
+    [GroundRepository("SET_CHECKOUT_WRITES", "repository")]
+    [GroundListed("SET_CHECKOUT_WRITES", "checkoutWrites", "allow")]
+    [Says("SET_CHECKOUT_WRITES", "repository:repository")]
     [Publishes("SET_CHECKOUT_WRITES", StateScopes.Driver)]
     private object? SetCheckoutWrites(IpcRequest request)
     {
@@ -92,11 +87,12 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // A repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, over the same
-    // file `daoris place standing <repo> "…"|--clear` edits — one truth, two doors (D50). No words clears it; blank words or
-    // words past the bound are the driver's refusal.
+    // A repository's standing answer, the person's words handed to every session there; no words clears it.
     [DriverRoute("SET_STANDING", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_STANDING", Repository = "repository")]
+    [GroundRepository("SET_STANDING", "repository")]
+    [GroundRead("SET_STANDING", nameof(PipeReads.StandingAnswer))]
+    [Says("SET_STANDING", "repository:repository")]
     [Publishes("SET_STANDING", StateScopes.Driver)]
     private object? SetStanding(IpcRequest request)
     {
@@ -107,14 +103,14 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none (HEAVYRUN1b2b, D180's HEAVYRUN1b2a
-    /// note), the setup page's half of <c>daoris place heavy</c> over the same key (D50): <c>repository</c>, and <c>gates</c>, the whole
-    /// list in the order its gates run, each <c>{name, run, cwd?}</c>, or none or null to clear it. Judged by
-    /// <see cref="HeavyMapping.Apply"/> against the file before anything is written, so a list the mapping would not read is refused
-    /// whole in its words. Never an edit to the repository; one gate at a time is not offered, since the list's order is the point.
+    /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none: the whole list in run order, judged
+    /// by <see cref="HeavyMapping.Apply"/> before anything is written. One gate at a time is not offered, since the order is the point.
     /// </summary>
     [DriverRoute("SET_HEAVY_GATES", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HEAVY_GATES", Repository = "repository")]
+    [GroundRepository("SET_HEAVY_GATES", "repository")]
+    [GroundRead("SET_HEAVY_GATES", nameof(PipeReads.HeavyGates))]
+    [Says("SET_HEAVY_GATES", "repository:repository")]
     [Publishes("SET_HEAVY_GATES", StateScopes.Driver)]
     private object? SetHeavyGates(IpcRequest request)
     {
@@ -127,13 +123,14 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Which checks a repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4), Setup's half of <c>daoris-driver
-    /// checks</c> over the same key (D50): <c>repository</c>, and <c>checks</c>, <c>light</c> or <c>heavy-at-end</c> in any case, or none
-    /// or null to clear it, which is today's. Judged by <see cref="SessionChecks.Apply"/> against the file before anything is written, so a
-    /// value that is no choice is refused in its words. The person's standing choice: light lowers their part, so no proposal names it.
+    /// Which checks a repository's sessions run, <c>light</c> or <c>heavy-at-end</c>, judged by <see cref="SessionChecks.Apply"/> before
+    /// anything is written. The person's alone: light lowers their part, so no proposal names it.
     /// </summary>
     [DriverRoute("SET_SESSION_CHECKS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_SESSION_CHECKS", Repository = "repository")]
+    [GroundRepository("SET_SESSION_CHECKS", "repository")]
+    [GroundRead("SET_SESSION_CHECKS", nameof(PipeReads.SessionChecks))]
+    [Says("SET_SESSION_CHECKS", "repository:repository")]
     [Publishes("SET_SESSION_CHECKS", StateScopes.Driver)]
     private object? SetSessionChecks(IpcRequest request)
     {
@@ -146,11 +143,8 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Whether a repository's own <c>daoris.gates.json</c> wins over this machine's heavy gates (HEAVYRUN1b2c, D180's HEAVYRUN1b2c note):
-    /// <c>{ repository, marks, names, refusal? }</c>, <c>marks</c> true where the file marks some (their names), false where it marks none or
-    /// there is no file, null with <c>refusal</c> where it cannot be told (a file that does not read, or no checkout here). A read of one
-    /// file in the checkout the registry holds, the first of the name that is on this disk as <c>RECOVERY_DROP</c> picks, with no git; it
-    /// never resolves a run, which throws where there is no file and no mapping. The page judges nothing itself.
+    /// Whether a repository's own <c>daoris.gates.json</c> wins over this machine's heavy gates: a read of one file in its checkout,
+    /// with no git, null with <c>refusal</c> where it cannot be told.
     /// </summary>
     [DriverRoute("HEAVY_MARKS", PipeClass.Open)]
     private async Task<object?> HeavyMarksAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -262,6 +256,7 @@ public sealed class DriverRoutes(DriverContext context)
     // `daoris settings notify on|off` edits — one truth, two doors (D50).
     [DriverRoute("SET_NOTIFY", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_NOTIFY", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_NOTIFY", nameof(PipeReads.Notify))]
     [Publishes("SET_NOTIFY", StateScopes.Driver)]
     private object? SetNotify(IpcRequest request)
     {
@@ -274,6 +269,7 @@ public sealed class DriverRoutes(DriverContext context)
     // `cooloff` `daoris settings cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_COOLOFF", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_COOLOFF", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_COOLOFF", nameof(PipeReads.CoolOff))]
     [Publishes("SET_COOLOFF", StateScopes.Driver)]
     private object? SetCoolOff(IpcRequest request)
     {
@@ -289,6 +285,7 @@ public sealed class DriverRoutes(DriverContext context)
     // Disk space card shows moves with it, so it declares the wiring with the state.
     [DriverRoute("SET_KEEP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_KEEP", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_KEEP", nameof(PipeReads.KeepRule))]
     [NotAlready("SET_KEEP", "merges into a kind's keeping rule")]
     [Publishes("SET_KEEP", StateScopes.Driver | StateScopes.Wiring)]
     private object? SetKeep(IpcRequest request)
@@ -315,6 +312,7 @@ public sealed class DriverRoutes(DriverContext context)
     // `cap` `daoris settings cap <n>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_CAP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_CAP", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_CAP", nameof(PipeReads.Cap))]
     [Publishes("SET_CAP", StateScopes.Driver)]
     private object? SetCap(IpcRequest request)
     {
@@ -498,6 +496,7 @@ public sealed class DriverRoutes(DriverContext context)
     // removed role's work holds its starts, said; a running session goes on.
     [DriverRoute("SET_ROLE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_ROLE", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_ROLE", nameof(PipeReads.RoleRow))]
     [NotAlready("SET_ROLE", "edits a role's row of the catalogue in place, its revision moving")]
     [Publishes("SET_ROLE", StateScopes.Driver | StateScopes.Harnesses)]
     private object? SetRole(IpcRequest request)
@@ -515,6 +514,7 @@ public sealed class DriverRoutes(DriverContext context)
     // the batch with nothing written.
     [DriverRoute("SET_ROLES", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_ROLES", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_ROLES", nameof(PipeReads.RoleRows))]
     [NotAlready("SET_ROLES", "edits several roles' rows of the catalogue in place, each revision moving, in one transaction")]
     [Publishes("SET_ROLES", StateScopes.Driver | StateScopes.Harnesses)]
     private object? SetRoles(IpcRequest request)
@@ -532,6 +532,7 @@ public sealed class DriverRoutes(DriverContext context)
     // A mode it does not know, or none, is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_MODE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HELP_MODE", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_HELP_MODE", nameof(PipeReads.HelpMode))]
     [Publishes("SET_HELP_MODE", StateScopes.Driver)]
     private object? SetHelpMode(IpcRequest request)
     {
@@ -550,6 +551,7 @@ public sealed class DriverRoutes(DriverContext context)
     // operation this build does not act on is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_GRANT", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HELP_GRANT", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_HELP_GRANT", nameof(PipeReads.HelpGrant))]
     [Publishes("SET_HELP_GRANT", StateScopes.Driver)]
     private object? SetHelpGrant(IpcRequest request)
     {
@@ -568,6 +570,7 @@ public sealed class DriverRoutes(DriverContext context)
     // to tell again, as it looks at once.
     [DriverRoute("TRUST_FOLDER", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TRUST_FOLDER", None = OwnerNone.MachineSetting)]
+    [GroundWait("TRUST_FOLDER", "trust", "folder", "trustFile")]
     [Publishes("TRUST_FOLDER", StateScopes.Driver)]
     private object? TrustFolder(IpcRequest request)
     {
@@ -621,6 +624,8 @@ public sealed class DriverRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("RETRY_QUEST", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RETRY_QUEST", Quest = "quest")]
+    [GroundQuest("RETRY_QUEST", "quest")]
+    [Says("RETRY_QUEST", "quest:quest")]
     [Publishes("RETRY_QUEST", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> RetryQuestAsync(IpcRequest request, CancellationToken cancellationToken)
     {

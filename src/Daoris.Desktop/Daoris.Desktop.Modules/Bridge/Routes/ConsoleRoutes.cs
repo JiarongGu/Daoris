@@ -60,6 +60,9 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
     // session's tasks is refused in the driver's words, because the page never sends one.
     [DriverRoute("STOP_TASK", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("STOP_TASK", Session = "id")]
+    [GroundSession("STOP_TASK", "id")]
+    [GroundRead("STOP_TASK", nameof(PipeReads.LiveTask))]
+    [Says("STOP_TASK", "id:session")]
     private async Task<object?> StopTaskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

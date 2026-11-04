@@ -415,6 +415,10 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </remarks>
     [DriverRoute("DISCARD_SESSION_TREE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("DISCARD_SESSION_TREE", Session = "id")]
+    [GroundSession("DISCARD_SESSION_TREE", "id")]
+    [GroundHead("DISCARD_SESSION_TREE", "id")]
+    [GroundFiles("DISCARD_SESSION_TREE", "tree", "id", "path", "force")]
+    [Says("DISCARD_SESSION_TREE", "id:session")]
     [Publishes("DISCARD_SESSION_TREE", Discards, Session = "id")]
     private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -473,6 +477,10 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [DriverRoute("LANDING", PipeClass.Open)]
     [DriverRoute("LAND_SESSION_TREE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("LAND_SESSION_TREE", Session = "id")]
+    [GroundSession("LAND_SESSION_TREE", "id")]
+    [GroundHead("LAND_SESSION_TREE", "id")]
+    [GroundRead("LAND_SESSION_TREE", nameof(PipeReads.TreeLanding))]
+    [Says("LAND_SESSION_TREE", "id:session")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
     private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -921,6 +929,14 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [Owner("OPINION_ANYWAY", Session = "id")]
     [Owner("OPINION_MYSELF", Session = "id")]
     [Owner("STOP_OPINION", Session = "id")]
+    [GroundSession("ASK_OPINION", "id")]
+    [GroundHead("ASK_OPINION", "id")]
+    [GroundSession("OPINION_ANYWAY", "id")]
+    [GroundRead("OPINION_ANYWAY", nameof(PipeReads.OpinionGate))]
+    [GroundSession("OPINION_MYSELF", "id")]
+    [GroundRead("OPINION_MYSELF", nameof(PipeReads.OpinionGate))]
+    [GroundWait("STOP_OPINION", "opinion", "opinion")]
+    [Says("STOP_OPINION", "id:session", "words:words")]
     [Publishes("ASK_OPINION", Gates, Session = "id")]
     [Publishes("OPINION_ANYWAY", Gates, Session = "id")]
     [Publishes("OPINION_MYSELF", Gates, Session = "id")]
@@ -1117,6 +1133,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [DriverRoute("HANDOFF_PLAN", PipeClass.Open)]
     [DriverRoute("HANDOFF", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HANDOFF", Session = "id")]
+    [GroundSession("HANDOFF", "id")]
+    [GroundRepository("HANDOFF", "repository")]
+    [GroundBranch("HANDOFF", "repository", "branch")]
+    [GroundRead("HANDOFF", nameof(PipeReads.HandoffPlan))]
+    [Says("HANDOFF", "repository:repository")]
     [Publishes("HANDOFF", StateScopes.HandOff | StateScopes.Sweep, Session = "id")]
     private async Task<object?> HandOffAsync(IpcRequest request, CancellationToken cancellationToken)
     {

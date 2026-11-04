@@ -57,6 +57,7 @@ public sealed class HistoryRoutes(DriverLoop loop)
     /// </remarks>
     [DriverRoute("HISTORY_CLEAR", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("HISTORY_CLEAR", Workspace = "workspace", Quest = "quest", Ask = "ask")]
+    [GroundRead("HISTORY_CLEAR", nameof(PipeReads.HistoryPlan))]
     [Publishes("HISTORY_CLEAR", StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver | StateScopes.History)]
     private async Task<object?> HistoryClearAsync(IpcRequest request, CancellationToken cancellationToken)
     {

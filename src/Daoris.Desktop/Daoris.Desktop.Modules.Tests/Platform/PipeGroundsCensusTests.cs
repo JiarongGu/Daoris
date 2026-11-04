@@ -15,20 +15,6 @@ public sealed class PipeGroundsCensusTests
     private static readonly string[] Timeless = ["CHANNEL_MARK", "NOTICES_READ", "HELP_RENAME", "HELP_PIN"];
 
     [Fact]
-    public void Every_person_route_names_its_grounds_and_every_row_is_a_person_route()
-    {
-        var person = PipeCensus.Daoris.Routes
-            .Where(each => each.Route is not null && (each.Class == PipeClass.Person || each.When?.Class == PipeClass.Person))
-            .Select(each => PipeTargets.Key(each.Module, each.Route!))
-            .ToHashSet(StringComparer.Ordinal);
-
-        Assert.Empty(person.Where(each => !PipeTargets.Daoris.Rows.ContainsKey(each)).Order(StringComparer.Ordinal));
-        Assert.Empty(PipeTargets.Daoris.Rows.Keys.Where(each => !person.Contains(each)).Order(StringComparer.Ordinal));
-        // A route a route-by-route module leaves to the person by default has no row, and is refused `ungrounded` (PipeConfirmTests).
-        Assert.Null(PipeTargets.Daoris.Row(DriverModule.Name, "A_ROUTE_NOBODY_CLASSED"));
-    }
-
-    [Fact]
     public void Only_what_deletes_moves_and_starts_nothing_is_timeless_and_each_says_why()
     {
         var timeless = PipeTargets.Daoris.Rows.Where(each => each.Value.Grounds.Count == 0).ToList();
@@ -129,7 +115,7 @@ public sealed class PipeGroundsCensusTests
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IEnumerable<string>, Dictionary<string, List<string>>> Indexed = [];
 
     private static readonly System.Text.RegularExpressions.Regex PipeMark =
-        new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy)\(.*\r?\n", System.Text.RegularExpressions.RegexOptions.Multiline);
+        new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy|Ground\w+|Timeless|Says)\(.*\r?\n", System.Text.RegularExpressions.RegexOptions.Multiline);
 
     /// <summary>Every method of <paramref name="files"/> that takes a request or a payload, by its name: its bodies, indexed once.</summary>
     private static Dictionary<string, List<string>> Methods(IEnumerable<string> files) => Indexed.GetValue(files, each =>

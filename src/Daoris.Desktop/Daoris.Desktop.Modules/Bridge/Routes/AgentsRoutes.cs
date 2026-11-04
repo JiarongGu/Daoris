@@ -32,6 +32,8 @@ public sealed class AgentsRoutes(DriverContext context)
     // roster again.
     [DriverRoute("HARNESSES_REFRESH", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HARNESSES_REFRESH", None = OwnerNone.MachineSetting)]
+    [GroundRead("HARNESSES_REFRESH", nameof(PipeReads.HarnessToRefresh))]
+    [Says("HARNESSES_REFRESH", "agent:agent")]
     [Publishes("HARNESSES_REFRESH", StateScopes.Harnesses)]
     private Task<object?> RefreshHarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         ReadHarnessesAsync(request, refresh: true, cancellationToken);
@@ -345,6 +347,8 @@ public sealed class AgentsRoutes(DriverContext context)
     // join, a default) is the roster's, which it declares; an action that runs on says its end as `HARNESS_ENDED` (STATEHUB1h).
     [DriverRoute("HARNESS_ACTION", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HARNESS_ACTION", None = OwnerNone.MachineSetting)]
+    [GroundRead("HARNESS_ACTION", nameof(PipeReads.HarnessToAct))]
+    [Says("HARNESS_ACTION", "harness:agent")]
     [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
     private async Task<object?> HarnessActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -516,6 +520,8 @@ public sealed class AgentsRoutes(DriverContext context)
     // roster says Daoris never touches, and never an account a setting would bring into being.
     [DriverRoute("SET_AGENT_SETTINGS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_AGENT_SETTINGS", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_AGENT_SETTINGS", nameof(PipeReads.ProfileSettings))]
+    [Says("SET_AGENT_SETTINGS", "harness:agent")]
     [NotAlready("SET_AGENT_SETTINGS", "merges into a profile's settings")]
     [Publishes("SET_AGENT_SETTINGS", StateScopes.Harnesses)]
     private object? SetAgentSettings(IpcRequest request)

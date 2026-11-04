@@ -14,7 +14,8 @@ public sealed class PipeCensusTests
 {
     /// <summary>
     /// Every route is marked: the census is read off the marks at its first use, and refuses a person's or a role's press with no
-    /// drain, a person's or a window's route with no owner mark, and a mark naming a route its member does not answer.
+    /// drain, a person's or a window's route with no owner mark, a person's press resting on nothing and not timeless, a setting
+    /// naming no value it sets with no reason it is never already, and a mark naming a route its member does not answer.
     /// </summary>
     [Fact]
     public void Every_route_is_marked()
@@ -28,6 +29,10 @@ public sealed class PipeCensusTests
             each => Assert.NotNull(census.DrainOf(each.Module, each.Route)));
         Assert.All(census.Routes.Where(each => each.Class is PipeClass.Person or PipeClass.Window || each.When?.Class is PipeClass.Person or PipeClass.Window),
             each => Assert.NotNull(census.Targets.Mark(each.Module, each.Route)));
+        Assert.All(census.Routes.Where(each => each.Route is not null && (each.Class == PipeClass.Person || each.When?.Class == PipeClass.Person)),
+            each => Assert.NotNull(census.Targets.Row(each.Module, each.Route!)));
+        // A route a route-by-route module leaves to the person by default has no row, and is refused `ungrounded` (PipeConfirmTests).
+        Assert.Null(census.Targets.Row(DriverModule.Name, "A_ROUTE_NOBODY_CLASSED"));
     }
 
     /// <summary>

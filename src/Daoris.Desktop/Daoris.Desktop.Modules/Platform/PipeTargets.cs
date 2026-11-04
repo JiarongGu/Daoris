@@ -10,7 +10,8 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>One table, not two</b>: what a steward's act names (a repository, a quest or a session) is this table's other column,
-/// <see cref="Mark"/>, read off each person's and window's route's <see cref="OwnerAttribute"/>; this column is the grounds.</para>
+/// <see cref="Mark"/>, read off each person's and window's route's <see cref="OwnerAttribute"/>; this column is the grounds, read off
+/// its <see cref="RouteGroundAttribute"/>s in their order.</para>
 /// <para><b>Timeless only for a press that deletes nothing, moves no line or branch and starts no work</b>: a read mark, news marked
 /// read, a conversation's name or pin.</para>
 /// </remarks>
@@ -19,11 +20,14 @@ public sealed class PipeTargets
     private readonly FrozenDictionary<string, PipeGroundRow> _rows;
     private readonly FrozenDictionary<string, OwnerTarget> _marks;
 
-    private PipeTargets(IDictionary<string, PipeGroundRow> rows, IDictionary<string, OwnerTarget> marks, IDictionary<string, string> notAlready)
+    private PipeTargets(
+        IDictionary<string, PipeGroundRow> rows, IDictionary<string, OwnerTarget> marks, IDictionary<string, string> notAlready,
+        IDictionary<string, IReadOnlyList<PipeWord>> words)
     {
         _rows = rows.ToFrozenDictionary(StringComparer.Ordinal);
         _marks = marks.ToFrozenDictionary(StringComparer.Ordinal);
         NotAlready = notAlready.ToFrozenDictionary(StringComparer.Ordinal);
+        Words = words.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
     /// <summary>The desktop's table, the census's.</summary>
@@ -35,9 +39,14 @@ public sealed class PipeTargets
         var owners = marks.Where(each => each.Owner is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.Owner!, StringComparer.Ordinal);
         foreach (var window in windows) owners.Add(window.ToUpperInvariant(), OwnerTarget.Nothing(OwnerNone.NamesNothing));
         return new PipeTargets(
-            PipeTargetRows.All(), owners,
-            marks.Where(each => each.NotAlready is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.NotAlready!, StringComparer.Ordinal));
+            marks.Where(each => each.Grounds is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.Grounds!, StringComparer.Ordinal),
+            owners,
+            marks.Where(each => each.NotAlready is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.NotAlready!, StringComparer.Ordinal),
+            marks.Where(each => each.Words is not null).ToDictionary(each => Key(each.Module, each.Route), each => each.Words!, StringComparer.Ordinal));
     }
+
+    /// <summary>The values each person's press's card names by role, by its module and route; a press naming none says its act alone.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<PipeWord>> Words { get; }
 
     /// <summary>The row of <paramref name="module"/>'s <paramref name="route"/>, or null where it has none.</summary>
     public PipeGroundRow? Row(string module, string route, JsonElement? payload = null) =>

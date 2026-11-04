@@ -47,6 +47,8 @@ public sealed class SetupRoutes(DriverContext context)
     // message, digest, operations }`, each operation `{ id, kind, repository, said, outcome, note, quest }`; a refusal is an answer, nothing written.
     [DriverRoute("PLACE_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLACE_APPLY", Repositories = "repositories")]
+    [GroundRead("PLACE_APPLY", nameof(PipeReads.PlacePlan))]
+    [Says("PLACE_APPLY", "repositories:repository", "preset:form", "builds:form")]
     [Publishes("PLACE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
     private async Task<object?> PlaceApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -114,6 +116,8 @@ public sealed class SetupRoutes(DriverContext context)
     // answers {done, refused, message, quest, ask}; a plan that is refused is an answer by its first refusal's code, nothing published or allowed.
     [DriverRoute("RECONCILE_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("RECONCILE_APPLY", Repository = "repository")]
+    [GroundRead("RECONCILE_APPLY", nameof(PipeReads.ReconcilePlan))]
+    [Says("RECONCILE_APPLY", "repository:repository")]
     [Publishes("RECONCILE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
     private async Task<object?> ReconcileApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {

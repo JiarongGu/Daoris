@@ -127,6 +127,9 @@ public sealed class WorkRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORK_ABANDON", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORK_ABANDON", Ask = "ask", Quest = "quest")]
+    [GroundAsk("WORK_ABANDON", "ask")]
+    [GroundQuest("WORK_ABANDON", "quest")]
+    [GroundRead("WORK_ABANDON", nameof(PipeReads.WorkToAbandon))]
     [Publishes("WORK_ABANDON", Moves)]
     private async Task<object?> WorkAbandonAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -217,6 +220,9 @@ public sealed class WorkRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORK_PAUSE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("WORK_PAUSE", Ask = "ask", Quest = "quest")]
+    [GroundAsk("WORK_PAUSE", "ask")]
+    [GroundQuest("WORK_PAUSE", "quest")]
+    [GroundRead("WORK_PAUSE", nameof(PipeReads.WorkToPause))]
     [Publishes("WORK_PAUSE", Moves)]
     private async Task<object?> WorkPauseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -242,6 +248,10 @@ public sealed class WorkRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORK_RESUME", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORK_RESUME", Ask = "ask", Quest = "quest")]
+    [GroundAsk("WORK_RESUME", "ask")]
+    [GroundQuest("WORK_RESUME", "quest")]
+    [GroundRead("WORK_RESUME", nameof(PipeReads.PauseToResume))]
+    [Says("WORK_RESUME", "quest:quest", "ask:ask")]
     [Publishes("WORK_RESUME", Moves)]
     private async Task<object?> WorkResumeAsync(IpcRequest request, CancellationToken cancellationToken)
     {

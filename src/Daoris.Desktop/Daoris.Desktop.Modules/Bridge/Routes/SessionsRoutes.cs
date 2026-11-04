@@ -21,6 +21,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // nudged, reads again; a resolve moves its quest too.
     [DriverRoute("STOP_SESSION", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("STOP_SESSION", Session = "id")]
+    [GroundSession("STOP_SESSION", "id")]
+    [Says("STOP_SESSION", "id:session")]
     [Publishes("STOP_SESSION", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> StopSessionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -59,6 +61,8 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("RESOLVE_SESSION", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RESOLVE_SESSION", Session = "id")]
+    [GroundSession("RESOLVE_SESSION", "id")]
+    [Says("RESOLVE_SESSION", "id:session", "note:words")]
     [Publishes("RESOLVE_SESSION", StateScopes.Sessions | StateScopes.Quests | StateScopes.Driver, Session = "id")]
     private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -105,6 +109,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // page's press is a later row.
     [DriverRoute("SESSION_GO_ON_NEW", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_GO_ON_NEW", Session = "id")]
+    [GroundSession("SESSION_GO_ON_NEW", "id")]
+    [Says("SESSION_GO_ON_NEW", "id:session")]
     [Publishes("SESSION_GO_ON_NEW", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionGoOnNewAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -127,6 +133,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // `asked: null` with its code for the page to word, and the verb's sentence beside it; the page never reads a path.
     [DriverRoute("SESSION_HELPER_ASK", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HELPER_ASK", Session = "id")]
+    [GroundSession("SESSION_HELPER_ASK", "id")]
+    [Says("SESSION_HELPER_ASK", "id:session", "agent:agent", "question:words")]
     [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionHelperAskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -207,6 +215,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // nudge brings sooner. What cannot is `asked: null` with its code for the page to word, and the verb's sentence beside it.
     [DriverRoute("SESSION_PARTNER_ASK", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_PARTNER_ASK", Session = "id")]
+    [GroundSession("SESSION_PARTNER_ASK", "id")]
+    [Says("SESSION_PARTNER_ASK", "id:session", "agent:agent", "piece:words")]
     [Publishes("SESSION_PARTNER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionPartnerAskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -293,6 +303,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // agent waits on no yes, and one this session does not hold is gone: each `approved: false` with its code, its state untouched.
     [DriverRoute("SESSION_HELPER_APPROVE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HELPER_APPROVE", Session = "session")]
+    [GroundRead("SESSION_HELPER_APPROVE", nameof(PipeReads.HelperWait))]
+    [Says("SESSION_HELPER_APPROVE", "session:session")]
     [Publishes("SESSION_HELPER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHelperApproveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -316,6 +328,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // gone: each `declined: false` with its code, its state untouched.
     [DriverRoute("SESSION_HELPER_DECLINE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_HELPER_DECLINE", Session = "session")]
+    [GroundRead("SESSION_HELPER_DECLINE", nameof(PipeReads.HelperWait))]
+    [Says("SESSION_HELPER_DECLINE", "session:session")]
     [Publishes("SESSION_HELPER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHelperDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -395,6 +409,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // nothing is `approved: false` with its code, its state untouched.
     [DriverRoute("SESSION_HAND_OVER_APPROVE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HAND_OVER_APPROVE", Session = "session")]
+    [GroundRead("SESSION_HAND_OVER_APPROVE", nameof(PipeReads.HandOverAsk))]
+    [Says("SESSION_HAND_OVER_APPROVE", "session:session")]
     [Publishes("SESSION_HAND_OVER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHandOverApproveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -435,6 +451,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // One not read yet, one with their yes, one past it and one gone are `declined: false` with its code, its state untouched.
     [DriverRoute("SESSION_HAND_OVER_DECLINE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_HAND_OVER_DECLINE", Session = "session")]
+    [GroundRead("SESSION_HAND_OVER_DECLINE", nameof(PipeReads.HandOverAsk))]
+    [Says("SESSION_HAND_OVER_DECLINE", "session:session")]
     [Publishes("SESSION_HAND_OVER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private async Task<object?> SessionHandOverDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -453,6 +471,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // that brings no row is `left: false`, `why: not-quiet`. A move of the watcher's memory alone, which wakes the attention slice.
     [DriverRoute("SESSION_QUIET_LEAVE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_QUIET_LEAVE", Session = "id")]
+    [GroundSession("SESSION_QUIET_LEAVE", "id")]
+    [Says("SESSION_QUIET_LEAVE", "id:session")]
     [Publishes("SESSION_QUIET_LEAVE", StateScopes.Sessions, Session = "id")]
     private Task<object?> SessionQuietLeaveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -471,6 +491,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // intake, `gone` where its run ended first, each with nothing changed.
     [DriverRoute("SESSION_QUIET_CARRY_ON", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_QUIET_CARRY_ON", Session = "id")]
+    [GroundSession("SESSION_QUIET_CARRY_ON", "id")]
+    [Says("SESSION_QUIET_CARRY_ON", "id:session")]
     [Publishes("SESSION_QUIET_CARRY_ON", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SessionQuietCarryOnAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -510,6 +532,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // at once, off its own reader, and the hold's end is told through the registry's `Changed`; the route publishes nothing.
     [DriverRoute("SESSION_PERMISSION_ANSWER", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_PERMISSION_ANSWER", Session = "session")]
+    [GroundRead("SESSION_PERMISSION_ANSWER", nameof(PipeReads.PermissionWait))]
+    [Says("SESSION_PERMISSION_ANSWER", "session:session")]
     private Task<object?> SessionPermissionAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -532,6 +556,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // for them, `answered: false` with its code (`unheld`), and nothing is written.
     [DriverRoute("SESSION_ANSWER_ALONE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_ANSWER_ALONE", Session = "session")]
+    [GroundRead("SESSION_ANSWER_ALONE", nameof(PipeReads.AnswerAloneWait))]
+    [Says("SESSION_ANSWER_ALONE", "session:session")]
     [Publishes("SESSION_ANSWER_ALONE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
     private Task<object?> SessionAnswerAloneAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -584,6 +610,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // `done` false with `state` null where no decision of the session is live by that id.
     [DriverRoute("SUPERVISOR_OVERRULE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SUPERVISOR_OVERRULE", Session = "id")]
+    [GroundRead("SUPERVISOR_OVERRULE", nameof(PipeReads.SupervisorDecision))]
+    [Says("SUPERVISOR_OVERRULE", "id:session")]
     [Publishes("SUPERVISOR_OVERRULE", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SupervisorOverruleAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -768,6 +796,8 @@ public sealed class SessionsRoutes(DriverContext context)
     // `refused` with its words.
     [DriverRoute("SESSION_MEMORY_DECIDE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_MEMORY_DECIDE", Session = "session")]
+    [GroundSession("SESSION_MEMORY_DECIDE", "session")]
+    [Says("SESSION_MEMORY_DECIDE", "session:session")]
     [Publishes("SESSION_MEMORY_DECIDE", StateScopes.Sessions, Session = "session")]
     private async Task<object?> SessionMemoryDecideAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -914,6 +944,8 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("SESSION_ARCHIVE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_ARCHIVE", Sessions = "ids")]
+    [GroundSession("SESSION_ARCHIVE", "ids", Many = true)]
+    [Says("SESSION_ARCHIVE", "ids:sessions")]
     [Publishes("SESSION_ARCHIVE", StateScopes.Sessions)]
     private async Task<object?> SessionArchiveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -980,6 +1012,8 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("SESSION_DELETE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_DELETE", Session = "id")]
+    [GroundSession("SESSION_DELETE", "id")]
+    [Says("SESSION_DELETE", "id:session", "ids:sessions")]
     [Publishes("SESSION_DELETE", StateScopes.Sessions | StateScopes.Help, Session = "id")]
     private async Task<object?> SessionDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {

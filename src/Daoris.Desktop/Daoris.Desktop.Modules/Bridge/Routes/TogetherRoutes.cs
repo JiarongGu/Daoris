@@ -36,6 +36,8 @@ public sealed class TogetherRoutes(DriverContext context)
     // door's locks and says the fixed words to the head. A refusal is answered as data, with its sentence.
     [DriverRoute("TOGETHER_PRESS", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TOGETHER_PRESS", Session = "session")]
+    [GroundSession("TOGETHER_PRESS", "session")]
+    [Says("TOGETHER_PRESS", "session:session")]
     [Publishes("TOGETHER_PRESS", StateScopes.Sessions, Session = "session")]
     private async Task<object?> TogetherPressAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -64,6 +66,8 @@ public sealed class TogetherRoutes(DriverContext context)
     // LINESTOGETHER1d: Ask again after a failed check, the words said once more under a key of their own.
     [DriverRoute("TOGETHER_ASK_AGAIN", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TOGETHER_ASK_AGAIN", Session = "session")]
+    [GroundSession("TOGETHER_ASK_AGAIN", "session")]
+    [Says("TOGETHER_ASK_AGAIN", "session:session")]
     [Publishes("TOGETHER_ASK_AGAIN", StateScopes.Sessions, Session = "session")]
     private async Task<object?> TogetherAskAgainAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -77,6 +81,8 @@ public sealed class TogetherRoutes(DriverContext context)
     // LINESTOGETHER1d: Let them go before the landing; what the head made stays.
     [DriverRoute("TOGETHER_LET_GO", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("TOGETHER_LET_GO", Session = "session")]
+    [GroundSession("TOGETHER_LET_GO", "session")]
+    [Says("TOGETHER_LET_GO", "session:session")]
     [Publishes("TOGETHER_LET_GO", StateScopes.Sessions, Session = "session")]
     private async Task<object?> TogetherLetGoAsync(IpcRequest request, CancellationToken cancellationToken)
     {

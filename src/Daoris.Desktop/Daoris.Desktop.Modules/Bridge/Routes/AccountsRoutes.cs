@@ -394,6 +394,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// </remarks>
     [DriverRoute("ACCOUNT_USE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("ACCOUNT_USE", None = OwnerNone.MachineSetting)]
+    [GroundRead("ACCOUNT_USE", nameof(PipeReads.AgentAccounts))]
+    [Says("ACCOUNT_USE", "harness:agent")]
     [NotAlready("ACCOUNT_USE", "signs in or out of an account")]
     [Publishes("ACCOUNT_USE", StateScopes.Harnesses)]
     private object? AccountUse(IpcRequest request)

@@ -27,6 +27,7 @@ public sealed class NoticesRoutes(DriverLoop loop)
     /// <summary>The notices of <c>ids</c> read, as the view shows them or its <i>Mark all read</i> names them.</summary>
     [DriverRoute("NOTICES_READ", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("NOTICES_READ", None = OwnerNone.ActsOnNothing)]
+    [Timeless("NOTICES_READ", "marks news read")]
     [Publishes("NOTICES_READ", StateScopes.Notices)]
     private Task<object?> NoticesReadAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new NoticesWritten(_loop.Notices.MarkRead(Ids(request)) is null));
@@ -37,6 +38,7 @@ public sealed class NoticesRoutes(DriverLoop loop)
     /// </summary>
     [DriverRoute("NOTICE_DISMISS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("NOTICE_DISMISS", None = OwnerNone.ActsOnNothing)]
+    [GroundFiles("NOTICE_DISMISS", "notices", "id", "all", "workspace", Quick = true)]
     [Publishes("NOTICE_DISMISS", StateScopes.Notices)]
     private Task<object?> NoticeDismissAsync(IpcRequest request, CancellationToken cancellationToken)
     {

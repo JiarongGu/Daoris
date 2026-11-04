@@ -36,6 +36,7 @@ public sealed class HelpRoutes(DriverContext context)
     // the record, so a window that changes workspace while it starts moves nothing; a name this machine does not hold is refused.
     [DriverRoute("START_HELP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("START_HELP", None = OwnerNone.OwnConversation)]
+    [GroundRepository("START_HELP", "workspace")]
     [Publishes("START_HELP", StateScopes.Sessions)]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -501,6 +502,7 @@ public sealed class HelpRoutes(DriverContext context)
     // a repository moved, finished history cleared, and the proposal itself.
     [DriverRoute("HELP_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HELP_APPLY", ByPlan = true)]
+    [GroundWait("HELP_APPLY", "help", "id", "revision")]
     [Publishes("HELP_APPLY", Applies)]
     private async Task<object?> HelpApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -590,6 +592,7 @@ public sealed class HelpRoutes(DriverContext context)
     // away and is told to nobody: a go changes nothing, so its dismiss is no word on the quest or ask it names.
     [DriverRoute("HELP_DISMISS", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HELP_DISMISS", None = OwnerNone.ActsOnNothing)]
+    [GroundWait("HELP_DISMISS", "help", "id")]
     [Publishes("HELP_DISMISS", StateScopes.Help)]
     private async Task<object?> HelpDismissAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1270,6 +1273,7 @@ public sealed class HelpRoutes(DriverContext context)
     // declares the history and the conversations the panel shows (STATEHUB1h, D169), as pinning and starting from one do.
     [DriverRoute("HELP_RENAME", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("HELP_RENAME", Session = "id")]
+    [Timeless("HELP_RENAME", "a conversation's name")]
     [Publishes("HELP_RENAME", Kept, Session = "id")]
     private async Task<object?> HelpRenameAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1291,6 +1295,7 @@ public sealed class HelpRoutes(DriverContext context)
     // Pin an Ask Daoris conversation to the top of its history, or unpin it.
     [DriverRoute("HELP_PIN", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("HELP_PIN", Session = "id")]
+    [Timeless("HELP_PIN", "a conversation's pin")]
     [Publishes("HELP_PIN", Kept, Session = "id")]
     private async Task<object?> HelpPinAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1316,6 +1321,7 @@ public sealed class HelpRoutes(DriverContext context)
     // words (D233). Its end reaches the page as a start's does.
     [DriverRoute("HELP_START_FROM", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HELP_START_FROM", Session = "id")]
+    [GroundSession("HELP_START_FROM", "id")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
     private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
     {

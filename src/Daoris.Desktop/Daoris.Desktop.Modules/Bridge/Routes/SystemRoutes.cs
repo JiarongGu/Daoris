@@ -81,6 +81,7 @@ public sealed class SystemRoutes(DriverContext context)
     [DriverRoute("SYSTEM_SPACE_FREE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [ClassedBy("SYSTEM_SPACE_FREE", "plan", PipeClass.Open, "true")]
     [Owner("SYSTEM_SPACE_FREE", None = OwnerNone.MachineSetting)]
+    [GroundRead("SYSTEM_SPACE_FREE", nameof(PipeReads.SpacePlan))]
     [Publishes("SYSTEM_SPACE_FREE", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
     private Task<object?> FreeSpaceAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -159,6 +160,7 @@ public sealed class SystemRoutes(DriverContext context)
     // running session was handed it.
     [DriverRoute("SYSTEM_DOWNLOADS_CLEAR", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SYSTEM_DOWNLOADS_CLEAR", None = OwnerNone.MachineSetting)]
+    [GroundRead("SYSTEM_DOWNLOADS_CLEAR", nameof(PipeReads.Downloads))]
     [Publishes("SYSTEM_DOWNLOADS_CLEAR", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
     private Task<object?> ClearDownloadsAsync(IpcRequest request, CancellationToken cancellationToken)
     {

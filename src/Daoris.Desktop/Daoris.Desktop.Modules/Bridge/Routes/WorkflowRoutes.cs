@@ -164,6 +164,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORKFLOW_VERIFY", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORKFLOW_VERIFY", Repository = "repository")]
+    [GroundRepository("WORKFLOW_VERIFY", "repository")]
+    [GroundRead("WORKFLOW_VERIFY", nameof(PipeReads.VerifiedRoute))]
+    [Says("WORKFLOW_VERIFY", "repository:repository")]
     [NotAlready("WORKFLOW_VERIFY", "starts a run of the accepted gates beside the route, and sets no value")]
     [Publishes("WORKFLOW_VERIFY", StateScopes.Driver)]
     private async Task<object?> WorkflowVerifyAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -199,6 +202,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORKFLOW_LANDED", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORKFLOW_LANDED", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("WORKFLOW_LANDED", "repository", "workspace")]
+    [GroundRead("WORKFLOW_LANDED", nameof(PipeReads.LandedRoute))]
+    [Says("WORKFLOW_LANDED", "repository:repository")]
     [NotAlready("WORKFLOW_LANDED", "reads the gates at the line's tip and accepts them by their blob")]
     private async Task<object?> WorkflowLandedAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -272,6 +278,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("INTEGRATION_GATES", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("INTEGRATION_GATES", Repository = "repository")]
+    [GroundRepository("INTEGRATION_GATES", "repository")]
+    [GroundRead("INTEGRATION_GATES", nameof(PipeReads.IntegrationDeclaration))]
+    [Says("INTEGRATION_GATES", "repository:repository")]
     [NotAlready("INTEGRATION_GATES", "reads the declaration at the line's tip and accepts it by its blob")]
     [Publishes("INTEGRATION_GATES", StateScopes.Driver)]
     private async Task<object?> IntegrationGatesAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -358,6 +367,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORKFLOW_SAVE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORKFLOW_SAVE", None = OwnerNone.MachineSetting)]
+    [GroundFiles("WORKFLOW_SAVE", "workflow-file", "id")]
+    [Says("WORKFLOW_SAVE", "id:form", "from:form", "name:words")]
     [NotAlready("WORKFLOW_SAVE", "adds a version beside the ones kept, or makes a workflow")]
     [Publishes("WORKFLOW_SAVE", StateScopes.Driver)]
     private async Task<object?> WorkflowSaveAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -399,6 +410,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORKFLOW_USE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORKFLOW_USE", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("WORKFLOW_USE", "repository", "workspace")]
+    [GroundRead("WORKFLOW_USE", nameof(PipeReads.PlaceRoutes))]
+    [Says("WORKFLOW_USE", "repository:repository", "workflow:form", "kind:form")]
     [NotAlready("WORKFLOW_USE", "merges into the place's choice, which keeps its other kinds and its landed route")]
     [Publishes("WORKFLOW_USE", StateScopes.Driver)]
     private async Task<object?> WorkflowUseAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -485,6 +499,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORKFLOW_KIND", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORKFLOW_KIND", Workspace = "workspace")]
+    [GroundRepository("WORKFLOW_KIND", "workspace")]
+    [GroundRead("WORKFLOW_KIND", nameof(PipeReads.WorkspaceKinds))]
+    [Says("WORKFLOW_KIND", "kind:form", "label:words")]
     [NotAlready("WORKFLOW_KIND", "merges into the workspace's kinds, keeping the others")]
     [Publishes("WORKFLOW_KIND", StateScopes.Driver)]
     private async Task<object?> WorkflowKindAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -630,6 +647,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("WORKFLOW_NODE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORKFLOW_NODE", None = OwnerNone.NamesNothing)]
+    [GroundWait("WORKFLOW_NODE", "workflow-node", "run", "node")]
+    [Says("WORKFLOW_NODE", "run:quest", "act:form", "words:words")]
     [Publishes("WORKFLOW_NODE", StateScopes.Driver)]
     private async Task<object?> WorkflowNodeAsync(IpcRequest request, CancellationToken cancellationToken)
     {

@@ -275,7 +275,7 @@ public sealed class OwnerSetCensusTests
         return PipeMark.Replace(source[at..], "");
     }
 
-    private static readonly Regex PipeMark = new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy)\(.*\r?\n", RegexOptions.Multiline);
+    private static readonly Regex PipeMark = new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy|Ground\w+|Timeless|Says)\(.*\r?\n", RegexOptions.Multiline);
 
     private static string RepositoryRoot()
     {

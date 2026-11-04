@@ -40,6 +40,7 @@ public sealed class IntegrateRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("INTEGRATE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("INTEGRATE", Repository = "repository")]
+    [GroundRepository("INTEGRATE", "repository")]
     [Publishes("INTEGRATE", Moves)]
     private async Task<object?> IntegrateAsync(IpcRequest request, CancellationToken cancellationToken)
     {

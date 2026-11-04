@@ -26,6 +26,7 @@ public sealed class RulesRoutes(DriverLoop loop)
     // the same file, answered with the state after it. A refusal is the driver's own sentence.
     [DriverRoute("RULE_ACTION", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RULE_ACTION", None = OwnerNone.ActsOnNothing)]
+    [GroundRead("RULE_ACTION", nameof(PipeReads.RuleLists))]
     [NotAlready("RULE_ACTION", "edits a rule list in place")]
     [Publishes("RULE_ACTION", StateScopes.Rules)]
     private async Task<object?> RuleActionAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -61,6 +62,7 @@ public sealed class RulesRoutes(DriverLoop loop)
     // to an agent's proposal. 🔴 The only way a widening an agent proposed ever applies.
     [DriverRoute("RULE_PROPOSAL", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RULE_PROPOSAL", None = OwnerNone.ActsOnNothing)]
+    [GroundRead("RULE_PROPOSAL", nameof(PipeReads.RuleProposal))]
     [Publishes("RULE_PROPOSAL", StateScopes.Rules)]
     private async Task<object?> RuleProposalAsync(IpcRequest request, CancellationToken cancellationToken)
     {

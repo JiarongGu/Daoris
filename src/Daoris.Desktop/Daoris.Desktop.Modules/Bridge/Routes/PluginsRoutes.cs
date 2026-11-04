@@ -191,6 +191,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // 🔴 Nothing starts at the press; the loop starts what it runs at its next look.
     [DriverRoute("PLUGIN_ADD", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_ADD", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_ADD", "plugin-folder", "folder")]
     [Publishes("PLUGIN_ADD", Installs)]
     private object? PluginAdd(IpcRequest request)
     {
@@ -262,6 +263,7 @@ public sealed class PluginsRoutes(DriverContext context)
     [DriverRoute("PLUGIN_UPDATE", PipeClass.Open, Drain = PipeDrain.Waits)]
     [ClassedBy("PLUGIN_UPDATE", "apply", PipeClass.Person, "true")]
     [Owner("PLUGIN_UPDATE", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_UPDATE", "plugin-update", "id", "shipped")]
     [Publishes("PLUGIN_UPDATE", Installs)]
     private async Task<object?> PluginUpdateAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -291,6 +293,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // copy, the offer recorded. 🔴 Nothing starts at the press; the loop starts it at its next look.
     [DriverRoute("PLUGIN_INSTALL", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_INSTALL", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_INSTALL", "plugin-offer", "offer")]
     [Publishes("PLUGIN_INSTALL", Installs)]
     private async Task<object?> PluginInstallAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -305,6 +308,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // `plugins.json`, or the install folder gone with the data folder named and kept.
     [DriverRoute("PLUGIN_ACTION", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_ACTION", None = OwnerNone.MachineSetting)]
+    [GroundRead("PLUGIN_ACTION", nameof(PipeReads.PluginState))]
     [Publishes("PLUGIN_ACTION", Installs)]
     private async Task<object?> PluginActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -380,6 +384,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // installs nothing: making a plugin is work, reviewed before `daoris plugin add`.
     [DriverRoute("PLUGIN_NEW", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("PLUGIN_NEW", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_NEW", "plugin-new", "folder", "id")]
     private async Task<object?> PluginNewAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
@@ -399,6 +404,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // It may take as long as the driver waits at the points tried — two minutes for a landing.
     [DriverRoute("PLUGIN_TRY", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_TRY", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_TRY", "plugin-try", "id", "folder")]
     private async Task<object?> PluginTryAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var options = new TrialOptions(Point: Optional(request, "point"));
@@ -435,6 +441,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // It changes nothing Daoris keeps; it declares the plugins scope so the page's own read of the plugin is asked again with it.
     [DriverRoute("PLUGIN_TOOLS", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_TOOLS", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_TOOLS", "plugin-try", "id")]
     [Publishes("PLUGIN_TOOLS", StateScopes.Plugins)]
     private async Task<object?> PluginToolsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -451,6 +458,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // The answer comes when the console ends, which is as long as the person takes.
     [DriverRoute("PLUGIN_TOOL_FIX", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_TOOL_FIX", None = OwnerNone.MachineSetting)]
+    [GroundFiles("PLUGIN_TOOL_FIX", "plugin-try", "id")]
     [Publishes("PLUGIN_TOOL_FIX", StateScopes.Plugins)]
     private async Task<object?> PluginToolFixAsync(IpcRequest request, CancellationToken cancellationToken)
     {
