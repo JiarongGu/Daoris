@@ -85,7 +85,7 @@ public sealed class AcpSession(
     ISessionStreams? streams = null,
     Action<IReadOnlyList<AcpConfigOption>>? onOptions = null,
     Action<string>? onConversation = null,
-    TimeSpan? wakeQuiet = null) : ITurnRetryWiring
+    TimeSpan? wakeQuiet = null) : ITurnRunWiring
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -198,15 +198,6 @@ public sealed class AcpSession(
     private bool _steersNow;
 
     private readonly StepCalls _calls = new();
-
-    /// <summary>
-    /// The status the record closes a call with that a steer cut and that never heard again (STEER2a, D136's 2026-10-16 note;
-    /// evidence §6, turn B): written when the turn's prompt is answered, so the page shows it cut, never still running.
-    /// </summary>
-    public const string CutStatus = "cut";
-
-    /// <summary>Told each of the person's words as the session takes them (SESS3, STEER1); a run's.</summary>
-    private Action<IAgentWord>? _asked;
 
     /// <summary>
     /// A driven run's inbox (COWORK1d, the message-urgency design §2.3): told on the reader's thread the moment the answer to the last
@@ -393,197 +384,27 @@ public sealed class AcpSession(
     /// </param>
     /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     /// <exception cref="DriverException">The agent's stream ended while the session waited for its background work.</exception>
-    public async Task<AcpOutcome> RunAsync(
+    public Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         IAgentInbox? inbox = null, Action<IAgentWord>? asked = null, string? resume = null,
         IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null,
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null,
-        Func<Task<(IReadOnlyList<string> Blocks, IReadOnlyList<KeptFile>? Files)?>>? attempting = null, TransientRetry? retry = null)
-    {
-        _stops = ct;
-        _inRun = true;
-        _asked = asked;
-        _inbox = inbox;
-        _retry = retry;
-        _prompted = prompted;
-        try
-        {
-            try
-            {
-                if (resume is null) await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
-                else await ResumeAsync(cwd, resume, ct, servers).ConfigureAwait(false);
-            }
-            catch (AcpChoiceNotOffered refused)
-            {
-                // D205 §3.3 (MODELROLE1c2): the choice refused at the open, no prompt sent, so nothing of the person's was taken; the
-                // session closes here and its record ends as the start's re-ask said.
-                onLine($"[{refused.Message}]");
-                await CloseAsync(ct).ConfigureAwait(false);
-                return new AcpOutcome(AcpOutcome.ChoiceNotOffered, _sessionId ?? "", _updates, Usage) { NotOffered = refused.Refusal };
-            }
+        Func<Task<(IReadOnlyList<string> Blocks, IReadOnlyList<KeptFile>? Files)?>>? attempting = null, TransientRetry? retry = null) =>
+        Run.RunAsync(cwd, prompt, ct, servers, inbox, asked, resume, blocks, prompted, files, waitsOnBackground, attempting, retry);
 
-            // Where the agent says it takes a prompt during its turn, each word goes the moment it is said and reaches it
-            // at its next step (STEER1, D136); anywhere else it waits for the turn's end. Words flow only once the target
-            // is on the wire, so none overtakes the prompt it follows.
-            // The person's *Send now* steers into the running turn where the agent offers that too (STEER2a).
-            inbox?.Attach(
-                CancelTurnAsync,
-                _takesWordsMidTurn ? words => MidTurnAsync(words, ct) : null,
-                _steersNow ? words => SteeredAsync(words, ct, handBack: inbox is null ? null : inbox.HandBack) : null);
-            Action? sent = inbox is null && prompted is null
-                ? null
-                : () =>
-                {
-                    inbox?.Flow();
-                    prompted?.Invoke();
-                };
-            // COWORK1c (the message-urgency design §6): the words a resumed run carries are marked attempted on its record once the agent
-            // took the conversation back and before the prompt carrying them is written.
-            // FOUNDATION1 row p (the design §3.4 rule 5): acknowledged, and the blocks and files read again from the words it names, so an
-            // answer naming fewer than asked sends only those; none named, nothing is prompted and the words wait on their record.
-            if (attempting is not null)
-            {
-                if (await attempting().ConfigureAwait(false) is not { } named) throw new AcpWordsUnmarked(AcpWordsUnmarked.Sentence);
-                blocks = named.Blocks;
-                files = named.Files;
-            }
+    private AcpRun Run => LazyInitializer.EnsureInitialized(ref _run, () => new AcpRun(this, Prompting, Steering, Ends));
+    private AcpRun? _run;
 
-            // AGENTERRORS1a (§5.1): each prompt site of a run handed a retry reads its failure, and a transient one opens the episode here.
-            var stopReason = await PromptingAsync(
-                    () => blocks is { Count: > 0 }
-                        ? SendPromptAsync(blocks, files, ct, sent, words: null)
-                        : PromptAsync(prompt, ct, sent),
-                    ct)
-                .ConfigureAwait(false);
+    private AcpPrompting Prompting => LazyInitializer.EnsureInitialized(ref _prompting, () => new AcpPrompting(this));
+    private AcpPrompting? _prompting;
 
-            // LANDBACK1 part 2: what the loop asks of the quest is its own wait on background work, or a carry-on owed for a done quest's tree.
-            var turnWaits = Ends.Of(waitsOnBackground);
+    private AcpSteering Steering => LazyInitializer.EnsureInitialized(ref _steering, () => new AcpSteering(this, Prompting));
+    private AcpSteering? _steering;
 
-            // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
-            // the turn is waited for until it is answered; one held is prompted now, and a turn stopped to send it ends
-            // `cancelled` before it goes.
-            while (true)
-            {
-                // A turn that ended while the session's own background work runs, where its quest would park it on the
-                // person, waits for that work and goes on with a turn that says it ended (BGWAIT1). Words held for the
-                // turn's end go first; words that go at once still go while it waits.
-                if (!Holds(inbox) && await Ends.AfterBackgroundAsync(turnWaits, ct).ConfigureAwait(false) is { } wentOn)
-                {
-                    stopReason = wentOn;
-                    continue;
-                }
+    private AcpTry Try => LazyInitializer.EnsureInitialized(ref _try, () => new AcpTry(this, Prompting));
+    private AcpTry? _try;
 
-                // RUNENDS1: a silent turn of a closed quest was left and the run's door shut: every word still held goes back unprompted.
-                if (DoorShut)
-                {
-                    var waiting = inbox?.Close() ?? [];
-                    _open.HandBack(waiting);
-                    break;
-                }
-
-                // LANDBACK1 part 2: the turn ended with its quest done and its tree uncommitted, and nothing of its own runs: not its end.
-                if (!Holds(inbox) && await Ends.CarryOnAsync(ct).ConfigureAwait(false) is { } carriedOn)
-                {
-                    stopReason = carriedOn;
-                    continue;
-                }
-
-                if (inbox?.NextOrClose() is not { } next) break;
-
-                // A steer, or a stop still on its way, is no turn of its own: the run waits for it, then asks again (STEER2a).
-                if (next.Waits is { } waits)
-                {
-                    await waits.ConfigureAwait(false);
-                    continue;
-                }
-
-                if (next.Held is { } held)
-                {
-                    // ACCESSSWAP1b (D183's note): the setup changed while the turn ran, so the run ends at this turn's end and every word
-                    // held goes back unprompted, to go on in the same conversation under the new setup. Daoris's words go back unjudged:
-                    // the look judges them on the record before its go-on (COWORK1b).
-                    if (SetupChanged?.Invoke() == true)
-                    {
-                        var rest = inbox!.Close();
-                        _open.HandBack([held, .. rest]);
-                        break;
-                    }
-
-                    // COWORK1b (the message-urgency design §4.3): Daoris's word held for the turn's end is judged again by its key;
-                    // one whose fact a later submission answered is dropped, said so, and never prompted late.
-                    if (!await held.GoesAsync(ct).ConfigureAwait(false))
-                    {
-                        Emit(held.Dropped());
-                        // COWORK1c: settled without the wire, so off its record too.
-                        held.Went?.Invoke();
-                        continue;
-                    }
-
-                    try
-                    {
-                        stopReason = await PromptingAsync(() => SendPromptAsync(held.Prompt, held.Files, ct, sent: null, held), ct)
-                            .ConfigureAwait(false);
-                    }
-                    catch (AcpWordsUnmarked)
-                    {
-                        // Row p: the record did not name it marked, so it was not written: it waits on its record, said, never the session's work.
-                        Note(WordsNotes.Unreached(1, "were not sent", UnreachedWhy.Unmarked));
-                    }
-
-                    continue;
-                }
-
-                try
-                {
-                    stopReason = await next.Answer!.ConfigureAwait(false);
-                }
-                catch (AcpWordTurnFailed failed)
-                {
-                    // 🔴 AGENTERRORS1a2, shape 2 (the design §0, §4.2): the word was taken, so the turn that failed is the one it opened,
-                    // and its refusal is that turn's prompt failing: read as any prompt site's, a transient one opening the episode.
-                    stopReason = await PromptingAsync(() => Task.FromException<string>(failed.Refusal), ct).ConfigureAwait(false);
-                }
-                catch (AcpRefusal refused)
-                {
-                    // A word the agent would not take costs that word, said in its own words, never the session's work.
-                    Note(WordsNotes.Refused(refused.Words));
-                }
-                catch (AcpWordsUnmarked)
-                {
-                    // Row p: a word the record did not name marked was not written: it waits on its record, said, never the session's work.
-                    Note(WordsNotes.Unreached(1, "were not sent", UnreachedWhy.Unmarked));
-                }
-            }
-
-            await CloseAsync(ct).ConfigureAwait(false);
-            return new AcpOutcome(stopReason, _sessionId!, _updates, Usage) { Cut = _turnCut };
-        }
-        finally
-        {
-            // 🔴 RUNENDS1 after review (finding 2): the run's door shuts before its words are counted. A word on its way to the wire, its
-            // mark still awaited, was in no list the end reads, and was written to the closed session once the mark landed; it now goes
-            // back with the rest (HandedBack), and nothing is written after.
-            await ShutAsync().ConfigureAwait(false);
-
-            // Words sent while it worked that it never took (STEER1): said, never shown for ever as on their way.
-            if (Untaken() is > 0 and var untaken)
-            {
-                Note(WordsNotes.Unreached(untaken, "while it worked never reached it", UnreachedWhy.EndedFirst));
-            }
-
-            // A driven session's end is its last turn's (CONSOLE2, BGWAIT1): what it left running ends with it, and
-            // is said while the caller's transcript is still open, before the reader is let go. DONEEND1: named for the driver,
-            // which ends the agent's tree where it does not exit with that work still running.
-            LeftRunning = _background.Running;
-            await EndStreamsAsync().ConfigureAwait(false);
-            Release();
-        }
-    }
-
-    /// <summary>The driver's own sentence, on the console and in the record.</summary>
-    private void Note(string text) => Note(new Noted(text, []));
-
-    /// <summary>The driver's own sentence by its code (CONVNOTE2d1): the console and the record keep the English as written.</summary>
+    /// <summary>The driver's own sentence by its code: the console and the record keep the English as written.</summary>
     private void Note(Noted noted)
     {
         _console.End();
@@ -594,44 +415,7 @@ public sealed class AcpSession(
         });
     }
 
-    /// <summary>Whether the person's words are held for the turn's end: those go before anything else.</summary>
-    private static bool Holds(IAgentInbox? inbox) => inbox?.Holds == true;
-
-    /// <summary>
-    /// The run's door shuts (RUNENDS1 after review, finding 2): from here no word of the run's reaches the wire. The inbox holds every word
-    /// said from now, as an episode's settling does, so none is dispatched to the session, and each goes back with the inbox's close; a
-    /// word dispatched and not yet written is turned away at its write, and goes back to the driver (<see cref="HandedBack"/>); one
-    /// already written is the session's, answered or said unreached at the run's end (<see cref="Untaken"/>). Called under the write lock.
-    /// </summary>
-    private void Shut()
-    {
-        _inbox?.Settling();
-        _open.Shut();
-    }
-
-    /// <summary>The run's door shut at its end (<see cref="Shut"/>), between two writes, never inside one.</summary>
-    private async Task ShutAsync()
-    {
-        await Wire.WriteLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            Shut();
-        }
-        finally
-        {
-            Wire.WriteLock.Release();
-        }
-    }
-
-    /// <summary>Whether the run's door has shut, a silent turn left (RUNENDS1): the run ends at once.</summary>
-    private bool DoorShut => _open.DoorShut;
-
-    /// <summary>
-    /// Whether the run's own token was cancelled, the person's stop or the driver's shutdown (RUNENDS1, second read, finding 3): the one
-    /// cancellation a run puts on the wire. A conversation, which has no run, keeps its stop as it was.
-    /// </summary>
-    private bool Stopped => !_inRun || _stops.IsCancellationRequested;
-
+    // The run's own token and whether a run holds the session: only a run's stop puts a cancel on the wire.
     private CancellationToken _stops;
     private bool _inRun;
 
@@ -664,126 +448,13 @@ public sealed class AcpSession(
 
     void ITurnRetryWiring.ForgetUnacknowledged() => _open.ForgetUnacknowledged();
 
-    Task<string> ITurnRetryWiring.TryAsync(TransientEpisode episode, CancellationToken ct) => TryAsync(episode, ct);
-
-    /// <summary>
-    /// One try (§5.1): one prompt of the person's held words, verbatim and in the order said, then Daoris's go-on, kept through the run's
-    /// dispatcher before the episode's first try and carried as a plain block on every later one, neither kept nor shown again.
-    /// </summary>
-    private async Task<string> TryAsync(TransientEpisode episode, CancellationToken ct)
-    {
-        var retry = _retry!;
-        var held = EpisodeWords?.TakeHeld() ?? [];
-        // RUNENDS1: the held words go through the run's door from here, so a run that ends before the try is written hands them back.
-        var passage = _open.Enter(held);
-        var text = TransientRetry.GoOnText(episode.Words);
-        IAgentWord? goOn = null;
-        if (episode.Tries == 1 && retry.KeepGoOn is { } keep)
-        {
-            try
-            {
-                goOn = await keep(episode, text, ct).WaitAsync(ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is not OperationCanceledException cancelled || cancelled.CancellationToken != ct)
-            {
-                // A keep that failed, or cancelled on its own, costs the go-on its record, never the try (RUNENDS1, second read).
-                ct.ThrowIfCancellationRequested();
-                onLine($"[the go-on could not be kept: {error.Message}]");
-            }
-        }
-
-        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
-
-        // 🔴 A kept word goes to the wire only once its record acknowledged its attempt (Codex's owed read of D210, finding 4): the
-        // dispatcher's mark fails open, and a word written unmarked whose take-off then failed would read as never sent at a restart. One
-        // of the person's that the record would not mark is not written: it waits on its record for the next run, which sends it once. The
-        // go-on unmarked is settled without the wire, its kept copy off the record, and goes as the try's plain block. RUNENDS1: each mark
-        // is waited for only until the try is cut; the held words then go back with the run's (the door).
-        List<IAgentWord> going = [];
-        foreach (var word in held)
-        {
-            if (await MarkedAsync(word).WaitAsync(ct).ConfigureAwait(false)) going.Add(word);
-            else onLine($"[the record did not mark `{word.Id}` attempted, so no try sends it: it waits on its record for the next run]");
-        }
-
-        if (goOn is not null && !await MarkedAsync(goOn).WaitAsync(ct).ConfigureAwait(false))
-        {
-            goOn.Went?.Invoke();
-            goOn = null;
-        }
-
-        List<IAgentWord> words = [.. going, .. goOn is null ? [] : new[] { goOn }];
-        List<string> texts = [.. going.Select(word => word.Prompt), text];
-        var prompt = Blocks(texts, [.. going.SelectMany(word => word.Files)]);
-
-        var open = new OpenPrompt(words.FirstOrDefault(), [.. words.Skip(1)]);
-        _open.Going(passage, going);
-
-        var wrote = words.Select(each => Wrote(null, each)).OfType<Action>().ToList();
-        try
-        {
-            // RUNENDS1, second read (findings 1 and 3): a try the cut reached before its write is never written, and goes back with the
-            // run's words; the cut alone cancels nothing on the wire.
-            var result = await RequestAsync(
-                    "session/prompt", new { sessionId = _sessionId, prompt }, ct,
-                    OnWire(open, () =>
-                    {
-                        // On the wire: a word said from now goes as it did, and the go-on leaves the record by its id (R3-O5). Where the try
-                        // fails, the episode holds them again before it settles (finding 2).
-                        EpisodeWords?.Waited();
-                        _prompted?.Invoke();
-                        foreach (var each in wrote) each();
-                        if (goOn?.Id is { } id) episode.GoOnId = id;
-                    }),
-                    answered: frame => Answered(open, frame), admit: () => _open.Admit(passage, open, () => !ct.IsCancellationRequested))
-                .ConfigureAwait(false);
-            return result.TryGetProperty("stopReason", out var reason) ? reason.GetString() ?? "unknown" : "unknown";
-        }
-        catch (AcpTurnedAway) when (ct.IsCancellationRequested)
-        {
-            throw new OperationCanceledException(ct);
-        }
-        catch (OperationCanceledException)
-        {
-            if (Stopped) await CancelTurnAsync().ConfigureAwait(false);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// A try's word marked attempted on its record before the wire (finding 4): a kept word's mark as its record answered it, and every
-    /// other word, kept nowhere, marked as any is, after the attempts asked before it.
-    /// </summary>
-    private async Task<bool> MarkedAsync(IAgentWord word)
-    {
-        return await Attempted(word).ConfigureAwait(false);
-    }
+    Task<string> ITurnRetryWiring.TryAsync(TransientEpisode episode, CancellationToken ct) => Try.TryAsync(episode, ct);
 
     /// <summary>
     /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a
     /// turn that ended first, a failed one included. The driver keeps them waiting where the door failed; empty until then.
     /// </summary>
     public IReadOnlyList<IAgentWord> Unreached => _open.Unreached;
-
-    /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted and kept as <see cref="Unreached"/>.</summary>
-    /// <remarks>
-    /// 🔴 <b>After an episode opened, a written prompt with no answer is uncertain, never unreached</b> (Codex's owed read of D210, finding
-    /// 3): a transport lost behind a written word faults its request with no answer to read its disposition from, and kept as unreached
-    /// the driver would keep it to go again (<see cref="WordsLeft"/>). It is said by the <c>lost</c> note and never sent again. A run with
-    /// no episode keeps TURNFAIL1's reading.
-    /// </remarks>
-    private int Untaken()
-    {
-        var uncertain = _open.Untaken(_retry);
-        if (uncertain.Count > 0)
-        {
-            _retry!.Unacknowledged(uncertain);
-            List<string> ids = [.. uncertain.Select(word => word.Id).OfType<string>()];
-            if (ids.Count > 0) Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = SessionNotes.LostLine, Words = ids, Code = SessionEventCodes.Lost });
-        }
-
-        return Unreached.Count;
-    }
 
     /// <summary>End what the session runs beside itself, saying so. Idempotent, and never throws.</summary>
     private Task EndStreamsAsync() => _beside?.EndAllAsync() ?? Task.CompletedTask;
@@ -847,7 +518,7 @@ public sealed class AcpSession(
     /// </param>
     public Task<string> PromptAsync(
         string text, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null) =>
-        SendPromptAsync(text, files, ct, sent, words: null);
+        Prompting.SendPromptAsync(text, files, ct, sent, words: null);
 
     /// <summary>
     /// One turn of one or more text blocks, each its own (MSG1c, D137 §2.2): a conversation that goes on is resumed with the
@@ -860,7 +531,7 @@ public sealed class AcpSession(
     /// </param>
     public Task<string> PromptAsync(
         IReadOnlyList<string> blocks, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null) =>
-        SendPromptAsync(blocks, files, ct, sent, words: null);
+        Prompting.SendPromptAsync(blocks, files, ct, sent, words: null);
 
     /// <summary>
     /// Whether this session's agent said it takes a prompt during a turn (STEER1, D136), read from its <c>initialize</c>
@@ -872,7 +543,7 @@ public sealed class AcpSession(
     /// Told each of the person's words as the session takes them (MSG1c): a conversation's, whose words said during a turn
     /// are taken when the turn before them is handed off, so the record keeps them there as the person's ask.
     /// </summary>
-    public void OnTaken(Action<IAgentWord> taken) => _asked = taken;
+    public void OnTaken(Action<IAgentWord> taken) => Prompting.OnAsked = taken;
 
     /// <summary>
     /// The person's words to a conversation whose turn is running, sent at once as a prompt of the same session (MSG1c,
@@ -885,7 +556,7 @@ public sealed class AcpSession(
     /// </exception>
     public Task<string> SayAsync(IAgentWord words, CancellationToken ct) =>
         _takesWordsMidTurn
-            ? MidTurnAsync(words, ct)
+            ? Prompting.MidTurnAsync(words, ct)
             : throw new DriverException("this agent did not say it takes words during a turn — they wait for the turn to end.");
 
     /// <summary>
@@ -914,48 +585,11 @@ public sealed class AcpSession(
     /// <summary>Whether the person's *Send now* steers into this session's running turn (<see cref="SteersNow"/>, STEER2a).</summary>
     public bool Steers => _steersNow;
 
-    /// <summary>
-    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note): the words steered into the running turn by the adapter's
-    /// <c>_session/steering</c>, which delivers them at priority <c>now</c>, cutting the step in flight (evidence §2, §6 turn B).
-    /// The request asks the adapter never to start a turn of its own (<c>idleBehavior: promptRequired</c>), since a turn it
-    /// started would answer nobody here. Answered <c>injected</c>, the words are taken there, told through the run's listener on
-    /// the reader's thread before anything after the answer is read, and the calls still open are marked as cut.
-    /// </summary>
+    /// <summary>The person's *Send now*, steered into the running turn (<see cref="AcpSteering.SteerAsync"/>).</summary>
     /// <returns>The adapter's outcome: <c>injected</c>, or <c>promptRequired</c> where no turn was running after all.</returns>
     /// <exception cref="AcpRefusal">The agent refused the steer, in its words.</exception>
     /// <exception cref="DriverException">The agent never said it steers, or the session is not open: nothing is sent.</exception>
-    public async Task<string> SteerAsync(IAgentWord words, CancellationToken ct)
-    {
-        if (!_steersNow)
-        {
-            throw new DriverException(
-                "this agent did not say it steers words into a running turn — they reach it at its next step or its turn's end.");
-        }
-
-        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be steered into it.");
-
-        // COWORK1c: a kept word is marked attempted on its record before the wire, in the order asked for, and written only once the record
-        // named it marked (FOUNDATION1 row p): its steer says it never reached, and it waits on its record. RUNENDS1: through the run's door.
-        var passage = _open.Enter([words]);
-        var marked = await Attempted(words).ConfigureAwait(false);
-        _open.Marked(passage, marked);
-
-        // The adapter's own parameters (claude-agent-acp 0.84.0, `parseSteerRequest`, acp-agent.js:215-238): the session, the
-        // prompt's content blocks as `session/prompt` carries them, and the steering `_meta`. The priority is the adapter's.
-        var answer = await RequestAsync(
-            "_session/steering",
-            new { sessionId = _sessionId, prompt = Blocks([words.Prompt], words.Files), _meta = new { steering = new { idleBehavior = "promptRequired" } } },
-            ct,
-            Wrote(null, words),
-            answered: frame =>
-            {
-                if (Outcome(frame) != "injected") return;
-                _calls.CutOpen();
-                Asked(words);
-            },
-            admit: () => _open.Admit(passage)).ConfigureAwait(false);
-        return Outcome(answer) ?? "unknown";
-    }
+    public Task<string> SteerAsync(IAgentWord words, CancellationToken ct) => Steering.SteerAsync(words, ct);
 
     /// <summary>
     /// A driven session's steer, answered (STEER2a): where the agent refused it, answered anything but <c>injected</c>, or never
@@ -968,294 +602,9 @@ public sealed class AcpSession(
     /// left the words to the client: this takes them back to be prompted next, and says whether it did. Said once, taken once
     /// where they are finally taken, so nothing is noted when it did.
     /// </param>
-    internal async Task<string> SteeredAsync(
-        IAgentWord words, CancellationToken ct, string who = "session", Func<IAgentWord, bool>? handBack = null)
-    {
-        try
-        {
-            var outcome = await SteerAsync(words, ct).ConfigureAwait(false);
-            if (outcome == "promptRequired" && handBack?.Invoke(words) == true) return outcome;
-            if (outcome != "injected") NoteWords(WordsNotes.NeverReached(NotSteered(outcome)), words);
-            return outcome;
-        }
-        catch (AcpTurnedAway)
-        {
-            // RUNENDS1: the run ended before the steer was written, and its words went back with the run's: nothing more is said here.
-            return "unreached";
-        }
-        catch (AcpRefusal refused)
-        {
-            NoteWords(WordsNotes.Refused(refused.Words, who), words);
-            return "refused";
-        }
-        catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException or InvalidOperationException)
-        {
-            NoteWords(WordsNotes.NeverReached(error.Message), words);
-            return "unreached";
-        }
-    }
-
-    /// <summary>The program's sentence for a steer the agent answered with anything but <c>injected</c> (STEER2a).</summary>
-    public static string NotSteered(string outcome) =>
-        $"the agent answered the steer `{outcome}`, so no running turn took them.";
-
-    /// <summary>The driver's sentence about the person's words, by its code and with their id, so the page settles the words (MSG1f).</summary>
-    private void NoteWords(Noted noted, IAgentWord words)
-    {
-        _console.End();
-        onLine(noted.Note);
-        Emit(new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null,
-            Words = words.Id is { } id ? [id] : null,
-        });
-    }
-
-    /// <summary>A steer's <c>outcome</c>, from its answer frame or its result; null where it said none.</summary>
-    private static string? Outcome(JsonElement answer)
-    {
-        var result = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("result", out var inner) ? inner : answer;
-        return result.ValueKind == JsonValueKind.Object && result.TryGetProperty("outcome", out var outcome)
-            && outcome.ValueKind == JsonValueKind.String
-            ? outcome.GetString()
-            : null;
-    }
-
-    /// <summary>The calls a steer cut that never heard again, closed in the record as cut when the turn's prompt is answered (STEER2a).</summary>
-    private void CloseCut()
-    {
-        foreach (var id in _calls.TakeCut()) Emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Status = CutStatus });
-    }
-
-    private void Track(JsonElement update, SessionEvent? mapped) => _calls.Track(update, mapped);
-
-    /// <summary>
-    /// One prompt on the open session, answered by the agent's stop reason: the driver's own, or the person's words
-    /// (<paramref name="words"/>), which the session takes as they go when no prompt is open, and when the one before
-    /// them is answered otherwise (STEER1) — the moment <c>claude-agent-acp</c> hands the running turn off to them.
-    /// </summary>
-    private Task<string> SendPromptAsync(
-        string text, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, IAgentWord? words, Func<bool>? when = null) =>
-        SendPromptAsync([text], files, ct, sent, words, when);
-
-    /// <summary>One prompt of one or more text blocks, each its own (MSG1b), then the files as links.</summary>
-    /// <param name="when">
-    /// Read under the write lock as the prompt is written (RUNENDS1, second read, finding 2): false where what the prompt was decided on
-    /// no longer holds, and it is not written at all (<see cref="AcpTurnedAway"/>). Null always holds.
-    /// </param>
-    private async Task<string> SendPromptAsync(
-        IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, IAgentWord? words,
-        Func<bool>? when = null)
-    {
-        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
-
-        var prompt = Blocks(texts, files);
-        // RUNENDS1 after review (finding 2): through the run's door from before the mark to the write, so a run that ends between the two
-        // hands the words back and writes nothing after.
-        var passage = _open.Enter([words]);
-        // COWORK1c (the message-urgency design §6): a kept word is marked attempted on its record before the wire, in the order the
-        // prompts were asked for, so a shell that comes up again never sends it twice. Acknowledged (FOUNDATION1 row p): written only once the
-        // record named it marked, else it waits on its record and is said.
-        var marked = await Attempted(words).ConfigureAwait(false);
-
-        // Open from its admission, under the write lock (Admit): the prompts open are those on the wire, in the order written.
-        var open = _open.Opened(passage, marked, words);
-
-        JsonElement result;
-        try
-        {
-            result = await RequestAsync(
-                "session/prompt",
-                new { sessionId = _sessionId, prompt },
-                ct, OnWire(open, Wrote(sent, words)), answered: frame => Answered(open, frame), admit: () => _open.Admit(passage, open, when))
-                .ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // The person's stop is a VERB on this wire (D49's two endings): cancel the turn in
-            // flight rather than killing the process, so the agent winds up its own work. Sent
-            // here rather than from a cancellation callback, because a callback fires on whatever
-            // thread cancelled — including, in the worst case, one already inside the write lock.
-            // 🔴 RUNENDS1, second read (finding 3): only the person's stop, or the driver's shutdown, puts a cancel on the wire. The
-            // session's own cut, as it leaves a closed quest's silent turn, stops its wait for the answer and nothing more: a cancel sent
-            // then lands on whatever turn runs, a turn that spoke since the quiet was read among them.
-            if (Stopped) await CancelTurnAsync().ConfigureAwait(false);
-            throw;
-        }
-
-        return result.TryGetProperty("stopReason", out var reason)
-            ? reason.GetString() ?? "unknown"
-            : "unknown";
-    }
-
-    /// <summary>The attempts marked so far, in the order the words were asked to go (COWORK1c), and the lock that guards the chain.</summary>
-    private Task _attempts = Task.CompletedTask;
-    private readonly object _attemptsGate = new();
-
-    /// <summary>
-    /// A kept word's attempt, marked on its record before the wire (COWORK1c, the message-urgency design §6), after every attempt asked
-    /// for before it, so two words said at once are written in the order their dispatcher handed them. Completed at once for words kept
-    /// nowhere, and for the driver's own prompts. True where the word may be written: nothing marks it, or the record named it marked (FOUNDATION1
-    /// row p, the design §3.4 rule 5). Never faults.
-    /// </summary>
-    private Task<bool> Attempted(IAgentWord? words)
-    {
-        if (words?.Attempting is not { } attempting) return Task.FromResult(true);
-        lock (_attemptsGate)
-        {
-            var acknowledged = AfterAsync(_attempts, words, attempting);
-            _attempts = acknowledged;
-            return acknowledged;
-        }
-
-        static async Task<bool> AfterAsync(Task before, IAgentWord words, Func<Task<IReadOnlyList<string>>> attempting)
-        {
-            await before.ConfigureAwait(false);
-            var marked = await attempting().ConfigureAwait(false);
-            return words.Id is not { } id || marked.Contains(id, StringComparer.Ordinal);
-        }
-    }
-
-    /// <summary>A prompt's write returned: marked on the wire (Codex's finding 3), then what the write's return tells.</summary>
-    private Action OnWire(OpenPrompt open, Action? wrote) => () =>
-    {
-        _open.Written(open);
-        wrote?.Invoke();
-    };
-
-    /// <summary>
-    /// What the write's return tells (COWORK1c, the design §7): the caller's own, then, for words under an id, their receipt
-    /// <c>sent</c>, and their dispatcher, which takes a kept word off its record. <i>Sent</i> is the write's return, never the
-    /// prompt's answer, which comes with the turn's end.
-    /// </summary>
-    private Action? Wrote(Action? sent, IAgentWord? words)
-    {
-        if (words?.Id is not { } id) return sent;
-        return () =>
-        {
-            sent?.Invoke();
-            Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = id, Receipt = Receipts.Sent });
-            try
-            {
-                words.Went?.Invoke();
-            }
-            catch (Exception error) when (error is not OperationCanceledException)
-            {
-                // The word went: what keeps the record is its dispatcher's, which says nothing more here.
-            }
-        };
-    }
-
-    /// <summary>A prompt's content: each text its own block (MSG1b), then each file a <c>resource_link</c> to where it is kept (CONV4c).</summary>
-    private static object[] Blocks(IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files) =>
-    [
-        .. texts.Select(text => (object)new { type = "text", text }),
-        .. (files ?? []).Select(file => (object)new { type = "resource_link", uri = new Uri(file.Path).AbsoluteUri, name = file.Name }),
-    ];
-
-    /// <summary>
-    /// A prompt answered, on the reader's thread before the next frame is read: its turn event, as the wire's word and
-    /// nothing more, and the person's words behind it taken (STEER1) — so the record reads in the order the wire said it,
-    /// and what the agent does next is the words' turn.
-    /// </summary>
-    private void Answered(OpenPrompt open, JsonElement frame)
-    {
-        var answered = frame.TryGetProperty("result", out var result);
-        if (answered)
-        {
-            // A word an error handed nothing to, answered before the agent did anything else for it: it was taken after all.
-            if (open.Words is not null && _open.TakeLate(open) is { } own) AskedAll(own);
-
-            // A call a steer cut that never heard again ends with the turn it was cut in, as cut (STEER2a).
-            CloseCut();
-            // The turn's own counts, where the agent reported them (CONV5): the response's `usage`.
-            var tokens = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("usage", out var usage)
-                ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
-                : null;
-            var stopReason = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("stopReason", out var reason)
-                ? reason.GetString() ?? "unknown"
-                : "unknown";
-            Emit(new SessionEvent
-            {
-                Kind = SessionEventKind.Turn,
-                StopReason = stopReason,
-                Tokens = tokens,
-                Models = TurnStages.Of<AcpMeasure>().ModelsOf(result, tokens),
-            });
-
-            // CODEXPERM1: a turn that ends cancelled when this client never asked it to stop was cut by the agent, after a refusal if one came.
-            _turnCut = stopReason == "cancelled" && !_cancelAsked ? new TurnCut(_refused.Last) : null;
-            _refused.Last = null;
-            _cancelAsked = false;
-
-            // COWORK1c (the design §7), COMMS1h: the turn that took the words ended, their receipt `ended`: what Daoris saw, never an
-            // answer; and only where the words were taken here.
-            if (_open.Took(open) && stopReason == "end_turn" && open.Words?.Id is { } word)
-            {
-                Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = word, Receipt = Receipts.Ended });
-            }
-        }
-        else
-        {
-            // An error answered the prompt, and the turn its updates named ends without a response: its names are not the next's.
-            TurnStages.Of<AcpMeasure>().Forget();
-        }
-
-        // A word's disposition is read before its prompt leaves, from its turn; the words behind it are taken where it was answered.
-        var taken = _open.Leaves(open, answered, _retry, out var last);
-        if (taken is not null) AskedAll(taken);
-
-        // 🔴 COWORK1d (trap 3, the design §2.3): the last open prompt is answered, so the turn is over; a claim written from here on would
-        // start a turn of its own, so the inbox refuses claims before the run judges its next step.
-        if (last) _inbox?.LastAnswered();
-
-        // A prompt fewer is open: the wait for a woken turn reads again whether its quiet may run (BGWAIT2), and a closed quest's quiet
-        // counts from this answer (RUNENDS1).
-        _wake.Answered();
-    }
-
-    /// <summary>Whether a prompt is on the wire and not yet answered (STEER1): what the agent says meanwhile is its turn's.</summary>
-    private bool Prompted() => _open.Prompted;
-
-    /// <summary>Every word a prompt carries told taken, in the order said (AGENTERRORS1a: a try carries the held words in one prompt).</summary>
-    private void AskedAll(OpenPrompt open)
-    {
-        foreach (var words in open.All) Asked(words);
-    }
-
-    /// <summary>
-    /// A word sent during a running turn (STEER1), as <see cref="SendPromptAsync(string, IReadOnlyList{KeptFile}?, CancellationToken, Action?, IAgentWord?)"/>
-    /// sends it. 🔴 AGENTERRORS1a2, shape 2 (the design §0, §4.2): where the run was handed a retry and the word's prompt was refused after
-    /// the word was taken (the turn before it answered, handing the turn to it), the refusal is thrown as <see cref="AcpWordTurnFailed"/>:
-    /// the turn that failed is the one the word opened, never that word's own refusal. Refused before it was taken, it is the word's, as today.
-    /// </summary>
-    private async Task<string> MidTurnAsync(IAgentWord words, CancellationToken ct)
-    {
-        try
-        {
-            return await SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words).ConfigureAwait(false);
-        }
-        catch (AcpRefusal refused) when (RefusedTaken(words))
-        {
-            throw new AcpWordTurnFailed(refused);
-        }
-    }
-
-    /// <summary>Whether this word's prompt was refused after it was taken (shape 2), read once.</summary>
-    private bool RefusedTaken(IAgentWord words) => _open.RefusedTaken(words);
-
-    /// <summary>Tell the run's listener the session took the person's words; its failure costs a line, never the turn.</summary>
-    private void Asked(IAgentWord words)
-    {
-        try
-        {
-            _asked?.Invoke(words);
-        }
-        catch (Exception error) when (error is not OperationCanceledException)
-        {
-            onLine($"[the person's words could not be recorded: {error.Message}]");
-        }
-    }
+    internal Task<string> SteeredAsync(
+        IAgentWord words, CancellationToken ct, string who = "session", Func<IAgentWord, bool>? handBack = null) =>
+        Steering.SteeredAsync(words, ct, who, handBack);
 
     /// <summary>
     /// Stop the turn in flight and keep the session (D49's interrupt; CONV4's "stop the turn"): the agent
@@ -1269,7 +618,7 @@ public sealed class AcpSession(
     public async Task CancelTurnAsync()
     {
         if (_sessionId is null) return;
-        _cancelAsked = true;
+        Prompting.StopAsked();
         try
         {
             await NotifyAsync("session/cancel", new { sessionId = _sessionId }).ConfigureAwait(false);
@@ -1483,14 +832,9 @@ public sealed class AcpSession(
 
     AcpStreams? ITurnWiring.Beside => _beside;
 
-    void ITurnWiring.Heard()
-    {
-        // AGENTERRORS1a (§5.1): an update of the oldest open prompt's turn shows its words taken, whatever answers it.
-        _open.Heard();
-        if (_open.TakeLate() is { } late) AskedAll(late);
-    }
+    void ITurnWiring.Heard() => Prompting.Heard();
 
-    bool ITurnWiring.Prompted() => Prompted();
+    bool ITurnWiring.Prompted() => _open.Prompted;
 
     bool ITurnWiring.PersonAnswers => _personAnswers;
 
@@ -1501,7 +845,7 @@ public sealed class AcpSession(
 
     RefusedCalls ITurnWiring.Refused => _refused;
 
-    void ITurnWiring.Track(JsonElement update, SessionEvent? mapped) => Track(update, mapped);
+    void ITurnWiring.Track(JsonElement update, SessionEvent? mapped) => _calls.Track(update, mapped);
 
     void ITurnWiring.SayLimits(JsonElement limits) => LimitsSaid?.Invoke(limits);
 
@@ -1514,30 +858,59 @@ public sealed class AcpSession(
     Task<string> ITurnEndWiring.PromptingAsync(Func<Task<string>> prompt, CancellationToken ct) => PromptingAsync(prompt, ct);
 
     Task<string> ITurnEndWiring.SendOwnAsync(string text, CancellationToken ct, Action? sent, Func<bool>? when) =>
-        SendPromptAsync(text, files: null, ct, sent, words: null, when);
+        Prompting.SendPromptAsync(text, files: null, ct, sent, words: null, when);
 
     TimeSpan ITurnEndWiring.WakeQuiet => _wakeQuiet;
 
-    bool ITurnEndWiring.DoorShut => DoorShut;
+    bool ITurnEndWiring.DoorShut => _open.DoorShut;
 
     SemaphoreSlim ITurnEndWiring.WriteLock => Wire.WriteLock;
 
-    void ITurnEndWiring.Shut() => Shut();
-
-    /// <summary>The turn its harness woke ended, by the adapter's word: closed as an answered turn is, with no counts, since no answer carried any.</summary>
-    private void EndWokenTurn()
+    /// <remarks>
+    /// The inbox holds every word said from now, so none is dispatched to the session, before the door turns away what has not been
+    /// written: called under the write lock.
+    /// </remarks>
+    void ITurnEndWiring.Shut()
     {
-        CloseCut();
-        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = AcpWaits.WokenStop, Models = TurnStages.Of<AcpMeasure>().ModelsOf(default, null) });
+        _inbox?.Settling();
+        _open.Shut();
     }
 
-    void ITurnEndWiring.EndWokenTurn() => EndWokenTurn();
+    void ITurnEndWiring.EndWokenTurn() => Prompting.EndWokenTurn();
+
+    OpenPrompts ITurnPromptWiring.Open => _open;
+
+    Task<JsonElement> ITurnPromptWiring.RequestAsync(
+        string method, object parameters, CancellationToken ct, Action? sent, Action<JsonElement>? answered, Func<bool>? admit) =>
+        RequestAsync(method, parameters, ct, sent, answered, admit);
+
+    bool ITurnPromptWiring.Stopped => !_inRun || _stops.IsCancellationRequested;
+
+    IAgentInbox? ITurnPromptWiring.Inbox => _inbox;
+
+    Action? ITurnPromptWiring.OnPrompted => _prompted;
+
+    AcpMeasure ITurnPromptWiring.Measure => TurnStages.Of<AcpMeasure>();
+
+    StepCalls ITurnPromptWiring.Calls => _calls;
+
+    void ITurnRunWiring.Begin(CancellationToken stops, Action<IAgentWord>? asked, IAgentInbox? inbox, TransientRetry? retry, Action? prompted)
+    {
+        _stops = stops;
+        _inRun = true;
+        Prompting.OnAsked = asked;
+        _inbox = inbox;
+        _retry = retry;
+        _prompted = prompted;
+    }
+
+    Task ITurnRunWiring.EndStreamsAsync() => EndStreamsAsync();
+
+    int ITurnRunWiring.Updates => _updates;
+
+    void ITurnRunWiring.Left(IReadOnlyList<string> running) => LeftRunning = running;
 
     private readonly RefusedCalls _refused = new();
-
-    // Whether this client asked the turn to stop, and how the last turn was cut.
-    private volatile bool _cancelAsked;
-    private volatile TurnCut? _turnCut;
 
     /// <summary>
     /// An event to whoever keeps the record — and a record that fails costs a line on the console,
