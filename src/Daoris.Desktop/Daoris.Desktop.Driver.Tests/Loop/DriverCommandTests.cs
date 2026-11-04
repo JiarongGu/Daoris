@@ -298,7 +298,6 @@ public sealed class DriverCommandTests
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
         var accepts = File.ReadAllText(SourceFiles.Driver("EntryAccepts.cs"));
-        var lands = File.ReadAllText(SourceFiles.Driver("EntryLands.cs"));
 
         foreach (var door in new[] { console, route })
         {
@@ -310,7 +309,6 @@ public sealed class DriverCommandTests
 
         Assert.Contains("quests.FindAsync", accepts);
         Assert.Contains("Pressed = await quests.PressedAsync(part.Session, part.Quest, late: true", accepts);
-        Assert.Contains("judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush", lands);
     }
 
     /// <summary>

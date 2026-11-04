@@ -1,15 +1,10 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon, type IconName, Segmented, StripMark } from '../design/ui';
-import { AGENTS_MODES, type AgentsMode, ROLE_SECTIONS, type RoleSection } from './modes';
+import { AGENTS_MODES, type AgentsMode } from './modes';
 
 /** Each mode's glyph on the strip. */
 const MODE_GLYPH: Record<AgentsMode, IconName> = { agents: 'terminal', setup: 'workflow' };
-
-/** Each section's glyph on the strip, one no neighbour wears. */
-const SECTION_GLYPH: Record<RoleSection, IconName> = {
-  working: 'tool', appointed: 'shield', work: 'stepWork', accounts: 'account', repository: 'folder',
-};
 
 /**
  * **The Agents place's list head** (COMPANYVIEW1b, the company-view design §1): a two-way choice, *Agents · Setup*, over the mode's own
@@ -55,24 +50,5 @@ export function AgentsStrip({ mode, onMode, children }: { mode: AgentsMode; onMo
       </ul>
       {children}
     </>
-  );
-}
-
-/** The Roles mode's strip: the five sections, each by its glyph and named, the one in front marked. */
-export function RoleSectionStrip({ section, onSection }: { section: RoleSection; onSection: (section: RoleSection) => void }) {
-  const { t } = useTranslation();
-  return (
-    <ul className="m-0 grid list-none justify-items-center gap-1 border-t border-line px-0 py-1.5">
-      {ROLE_SECTIONS.map((each) => (
-        <StripMark
-          key={each}
-          label={t(`nav.roles.${each}`)}
-          initialOf={t(`nav.roles.${each}`)}
-          face={<Icon name={SECTION_GLYPH[each]} size={15} />}
-          current={section === each}
-          onPress={() => onSection(each)}
-        />
-      ))}
-    </ul>
   );
 }

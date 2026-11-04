@@ -29,7 +29,7 @@ public sealed class WorkflowGraphRunTests
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"opinion","kind":"opinion","version":1,"reach":"observed"},
                   {"id":"look","kind":"look","version":1,"reach":"observed","options":{"environment":"local"}},
                   {"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"you"}}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"branch"}}],
          "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"opinion"},{"id":"c>l","kind":"after","from":"claimed","to":"look"},
                   {"id":"c>d","kind":"after","from":"claimed","to":"deploy"},{"id":"o>h","kind":"after","from":"opinion","to":"handed"},
                   {"id":"l>h","kind":"after","from":"look","to":"handed"},{"id":"d>h","kind":"after","from":"deploy","to":"handed"}]}
@@ -40,7 +40,7 @@ public sealed class WorkflowGraphRunTests
         {"schemaVersion":2,"entries":["claimed"],"end":"deployed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                   {"id":"go","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"deploy the release"}},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}},
                   {"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"}],
          "wires":[{"id":"c>g","kind":"after","from":"claimed","to":"go"},{"id":"g>h","kind":"after","from":"go","to":"handed"},
                   {"id":"h>d","kind":"after","from":"handed","to":"deployed"}]}
@@ -48,7 +48,7 @@ public sealed class WorkflowGraphRunTests
 
     private const string ClaimedThenHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
         """;
 
@@ -78,7 +78,7 @@ public sealed class WorkflowGraphRunTests
     private const string ClaimedRequestsHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
          "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
         """;
 
@@ -174,7 +174,7 @@ public sealed class WorkflowGraphRunTests
 
         Assert.Equal(
             [("claimed", WorkflowKinds.Work, NodeKinds.Claimed), ("opinion", WorkflowKinds.Opinion, NodeKinds.Opinion), ("look", WorkflowKinds.Look, NodeKinds.Look),
-             ("deploy", "acme.deploy/deploy", "acme.deploy/deploy"), ("handed", WorkflowKinds.Landing, NodeKinds.Handed)],
+             ("deploy", "acme.deploy/deploy", "acme.deploy/deploy"), ("handed", WorkflowKinds.Landing, NodeKinds.Land)],
             run.Steps.Select(step => (step.Step.Id, step.Step.Kind, step.Node)));
         Assert.All(run.Steps, step => Assert.Equal((WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked), (step.State, step.Detail)));
         Assert.Equal("claimed", run.At);

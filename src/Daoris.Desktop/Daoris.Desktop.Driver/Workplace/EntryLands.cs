@@ -108,11 +108,8 @@ public sealed record EntryLanding(bool Landed, string Message, string? Branch, I
 /// <param name="LeftOut">The person chose to leave it out.</param>
 public sealed record EntryStep(string Session, string? SameTreeAs, bool LeftOut)
 {
-    /// <summary>A member of the operation bringing sessions together into the entry's head (LINESTOGETHER1d): it lands with the head.</summary>
-    public bool BroughtInto { get; init; }
-
-    /// <summary>Whether the press lands it: a tree of its own the person kept.</summary>
-    public bool Lands => SameTreeAs is null && !LeftOut && !BroughtInto;
+    /// <summary>Whether it is a tree of its own the person kept.</summary>
+    public bool Lands => SameTreeAs is null && !LeftOut;
 }
 
 /// <summary>
@@ -128,8 +125,7 @@ public static class EntryLandings
     /// Each part's step, in the order handed (the ledger's): a part whose tree an earlier part already has lands with it, once; a
     /// part the person chose to leave out does not land. Nothing else leaves a part out: a superseded part the person kept lands.
     /// </summary>
-    /// <param name="brought">The members an operation brings into the entry's head (LINESTOGETHER1d): each marked brought into, landing nothing.</param>
-    public static IReadOnlyList<EntryStep> Sequence(IReadOnlyList<EntryLandingPart> parts, IReadOnlySet<string> leaveOut, IReadOnlySet<string>? brought = null)
+    public static IReadOnlyList<EntryStep> Sequence(IReadOnlyList<EntryLandingPart> parts, IReadOnlySet<string> leaveOut)
     {
         var trees = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var steps = new List<EntryStep>(parts.Count);
@@ -140,7 +136,7 @@ public static class EntryLandings
             if (same is null) trees[tree] = part.Session;
             // A tree is left out whole (REVIEWFLOW1d): its later parts are left out with its first, not said to share it.
             var gone = leaveOut.Contains(same ?? part.Session);
-            steps.Add(new EntryStep(part.Session, gone ? null : same, gone) { BroughtInto = !gone && brought?.Contains(part.Session) == true });
+            steps.Add(new EntryStep(part.Session, gone ? null : same, gone));
         }
 
         return steps;
@@ -215,10 +211,9 @@ public static class EntryLandings
 }
 
 /// <summary>
-/// An entry's Accept (ACCEPTALL1, D167's 2026-10-15 amendment points 1 to 3): its parts' work lands on one branch, in ledger order,
-/// each part by its own landing (<see cref="TreeLands.LandAsync"/>: its gate, the line's judgement, its record and its plugin), the
-/// parts after the first joining the branch the first made or moved on. A part the person chose to leave out is not landed; one a
-/// later part redid is named in the plan and still lands unless they chose. Over the trees' context, the landing and its judgement.
+/// What an entry's Accept would do (ACCEPTALL1, D167's 2026-10-15 amendment points 1 to 3): the branch its parts would land on, in
+/// ledger order, each part's plan, and a part a later part redid. The landing itself is the run's <c>land</c> node's. Over the trees'
+/// context and the landing's judgement.
 /// </summary>
 internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandSyncs syncs)
 {
@@ -277,100 +272,6 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         }
 
         return new EntryPlan(form, target, planned);
-    }
-
-    /// <summary>
-    /// The press (points 1 to 3): each part the person kept, in order, landed on the entry's one branch, or merged into the line
-    /// where the rule merges. 🔴 A gate that holds any part holds the whole entry, in that gate's words, before anything lands
-    /// (point 4). A refusal stops the parts after it, since the order is the ledger's and a later part may build on an earlier
-    /// one; what landed before it stands. A part with nothing left to land after the others does not stop them.
-    /// </summary>
-    /// <param name="leaveOut">The parts the person chose to leave out (point 3); a superseded part not in it lands.</param>
-    /// <param name="inUse">The trees sessions still running or waiting hold, asked by each part's follow and tidy.</param>
-    /// <param name="together">The operation bound to the entry's head (LINESTOGETHER1d): the head lands by its combined Accept.</param>
-    internal async Task<EntryLanding> LandAsync(
-        IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
-    {
-        var steps = EntryLandings.Sequence(parts, leaveOut, together?.Members);
-        for (var at = 0; at < parts.Count; at++)
-        {
-            if (!steps[at].Lands || parts[at].Gate?.Refusal is not { } held) continue;
-            return new EntryLanding(false, EntryLandWords.Held(parts[at].Session, held.Message), null,
-                [.. parts.Select((part, each) => each == at ? new EntryPartLanding(part.Session, EntryPartOutcome.Refused, held)
-                    : new EntryPartLanding(part.Session, steps[each].Lands ? EntryPartOutcome.NotTried : Outcome(steps[each])))]);
-        }
-
-        // The preflight reads the members too: one held by its review, opinion or workflow lands nothing.
-        if (together?.Gates.FirstOrDefault(each => each.Value?.Refusal is not null) is { Key: { } member, Value.Refusal: { } memberHeld })
-        {
-            return new EntryLanding(false, EntryLandWords.Held(member, memberHeld.Message), null,
-                [.. parts.Select((part, each) => new EntryPartLanding(part.Session, steps[each].Lands ? EntryPartOutcome.NotTried : Outcome(steps[each])))]);
-        }
-
-        var (form, target) = await TargetAsync(parts, subject, ct).ConfigureAwait(false);
-        // ACCEPTALL1d (D87's 2026-10-15 amendment point 6): the press fetches the entry's line once, its parts all in one repository,
-        // and each part is judged against that fetch; a failed one is said once, in the entry's answer.
-        var notFetched = await FetchOnceAsync(parts, steps, ct).ConfigureAwait(false);
-        var outcomes = new List<EntryPartLanding>(parts.Count);
-        var landedOn = new List<string>();
-        string? stopped = null;
-        for (var at = 0; at < parts.Count; at++)
-        {
-            var (part, step) = (parts[at], steps[at]);
-            if (!step.Lands)
-            {
-                outcomes.Add(new EntryPartLanding(part.Session, Outcome(step)));
-                continue;
-            }
-
-            if (stopped is not null)
-            {
-                outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.NotTried));
-                continue;
-            }
-
-            // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: its record keeps the quest the part served and its submission, not its entry's first part's.
-            var named = Joining(await NamedAsync(part, subject, form, ct).ConfigureAwait(false), part.Session, form, target)
-                with { Served = part.Own?.Served, Submission = part.Own?.Submission };
-            // FABRIC-CLOSE1h3: each part held to its own quest's result, judged again under its own tree's hold and before its push, so
-            // a part whose result moved while an earlier one landed or waited makes nothing (D173's note).
-            var landed = together is not null && string.Equals(part.Session, together.Head, StringComparison.Ordinal)
-                ? await new TogetherAccepts(context, lands).LandAsync(together.Operation, named, together.Gates, ct, inUse, part.Gate,
-                    part.Pressed?.Judged, part.Pressed?.BeforePush, beside, together.Delivery).ConfigureAwait(false)
-                : await lands.LandAsync(part.Tree, named,
-                    ct, inUse, AcceptedBy.Person, part.Gate,
-                    joins: form == LandingForm.Branch, fetched: true,
-                    judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush, beside: beside).ConfigureAwait(false);
-            if (landed.Landed)
-            {
-                landedOn.Add(part.Session);
-                outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Landed, landed));
-                // Its branch made and its push held back: a later part's push would carry its work on the entry's one branch, so it stops
-                // the parts after it, as a refusal does; what landed before it stands.
-                if (landed.Withheld is not null) stopped = part.Session;
-                continue;
-            }
-
-            // Kept, a conflict with the entry's earlier work names both parts (point 3), and its rebase words go to this, the later one.
-            if (landed.Conflict is not null && landedOn.Count > 0) landed = landed with { Message = EntryLandWords.After(part.Session, landedOn) + landed.Message };
-            outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Refused, landed));
-            if (landed.Refusal != AutoLandingCode.Nothing) stopped = part.Session;
-        }
-
-        var branch = outcomes.Select(outcome => outcome.Landing?.Branch).FirstOrDefault(each => each is not null) ?? target;
-        return new EntryLanding(EntryLandWords.AllLanded(outcomes), EntryLandWords.Said(form, branch, outcomes) + notFetched, branch, outcomes);
-    }
-
-    /// <summary>The press's one fetch (point 6), from the first part it lands whose tree is here; its words where it failed, else null.</summary>
-    private async Task<string?> FetchOnceAsync(IReadOnlyList<EntryLandingPart> parts, IReadOnlyList<EntryStep> steps, CancellationToken ct)
-    {
-        var first = parts.Where((part, at) => steps[at].Lands && Directory.Exists(part.Tree)).FirstOrDefault();
-        if (first is null) return null;
-        var full = Path.GetFullPath(first.Tree);
-        var (workspace, repository) = context.OwnerOf(full);
-        return await syncs.FetchLineAsync(full, repository, workspace, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -456,9 +357,6 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     /// <summary>The subject one part lands as: the entry's, for its own session, on the entry's branch.</summary>
     private static LandingSubject Joining(LandingSubject subject, string session, string form, string target) =>
         subject with { Session = session, EntryBranch = form == LandingForm.Branch ? target : null, Entered = null };
-
-    private static string Outcome(EntryStep step) =>
-        step.BroughtInto ? EntryPartOutcome.BroughtInto : step.SameTreeAs is not null ? EntryPartOutcome.SameTree : EntryPartOutcome.LeftOut;
 }
 
 /// <summary>An entry's Accept in words (ACCEPTALL1): a part joining the entry's branch, a conflict with its earlier work, and the answer.</summary>
@@ -487,56 +385,7 @@ public static class EntryLandWords
         + $"Replay only your own commits onto `{branch}`, keep what that earlier work does not already do, resolve any conflict, and check "
         + "that the work still holds. It is accepted again once your tree has changed.";
 
-    /// <summary>The two parts a conflict is between, said before the refusal: this part's, after the ones that landed before it.</summary>
-    public static string After(string part, IReadOnlyList<string> earlier) =>
-        $"`{part}`'s work conflicts with what {string.Join(", ", earlier.Select(each => $"`{each}`"))} landed before it. ";
-
     /// <summary>A gate that holds one part holds its entry's landing (point 4), in that gate's words.</summary>
     public static string Held(string part, string says) =>
         $"Nothing was landed: a gate holds `{part}`, and what holds one part of an entry holds its landing. {says}";
-
-    /// <summary>
-    /// Whether the press landed every part it tried, and pushed each it was to: a part whose push was held back (FABRIC-CLOSE1h3) did not
-    /// do what the press asked, and stopped the parts after it.
-    /// </summary>
-    public static bool AllLanded(IReadOnlyList<EntryPartLanding> outcomes)
-    {
-        var tried = outcomes.Where(outcome => outcome.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.Refused).ToList();
-        return tried.Count > 0 && tried.All(outcome => outcome.Outcome == EntryPartOutcome.Landed && outcome.Landing?.Withheld is null);
-    }
-
-    /// <summary>The answer's sentence: what landed where, what the person left out, what was refused and what was not tried.</summary>
-    public static string Said(string form, string? branch, IReadOnlyList<EntryPartLanding> outcomes)
-    {
-        string Count(string outcome) => outcomes.Count(each => each.Outcome == outcome).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var landed = outcomes.Count(each => each.Outcome == EntryPartOutcome.Landed);
-        var said = new List<string>
-        {
-            landed == 0 ? "Nothing was landed."
-                : form == LandingForm.Merge ? $"Merged {landed} part(s) into `{branch}`, in the order they ran."
-                : $"Landed {landed} part(s) on `{branch}`, in the order they ran.",
-        };
-        if (outcomes.Any(each => each.Outcome == EntryPartOutcome.LeftOut)) said.Add($"Left out {Count(EntryPartOutcome.LeftOut)}, as you chose.");
-        if (landed > 0 && outcomes.Any(each => each.Outcome == EntryPartOutcome.BroughtInto))
-        {
-            said.Add($"Brought {Count(EntryPartOutcome.BroughtInto)} part(s) in with the head, which landed none of them again.");
-        }
-        if (outcomes.FirstOrDefault(each => each.Outcome == EntryPartOutcome.Refused) is { Landing: { } refused } at)
-        {
-            said.Add($"`{at.Session}` was refused: {refused.Message}");
-        }
-
-        // FABRIC-CLOSE1h3: its branch was made and its push held back; its own sentence says why and how it goes on.
-        if (outcomes.FirstOrDefault(each => each is { Outcome: EntryPartOutcome.Landed, Landing.Withheld: not null }) is { } held)
-        {
-            said.Add($"`{held.Session}`'s push was held back: its quest moved before its plugin was told.");
-        }
-
-        if (outcomes.Any(each => each.Outcome == EntryPartOutcome.NotTried))
-        {
-            said.Add($"{Count(EntryPartOutcome.NotTried)} after it not tried, since a later part may build on it.");
-        }
-
-        return string.Join(" ", said);
-    }
 }

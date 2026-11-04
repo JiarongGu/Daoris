@@ -37,7 +37,6 @@ import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
-import { setupLit } from '../../agents/modes';
 
 /** Matched without case, as the driver matches a workspace's name. */
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -100,15 +99,10 @@ export function WorkspaceView({
   onOpenSetupSection?: (workspace: string, section: WorkspaceSection) => void;
 }) {
   const remotes = useRemotes();
-  const lit = setupLit();
   // Where it syncs, for a browser, from this machine's own host: wired or not, never where (D48 §5).
   const standing = useSyncStanding(attached ? null : workspace);
-  // The header's *Wire to a remote…*: Setup at its remote, the form open. Lit, the Remote row of Details with its form open: a count, so
-  // each press opens it afresh.
-  const [wiring, setWiring] = useState(false);
+  // The header's *Wire to a remote…*: the Remote row of Details with its form open: a count, so each press opens it afresh.
   const [wireAsk, setWireAsk] = useState(0);
-  // A Workflow step's door: Setup at its defaults, where the workspace's rules are set (WORKFLOW1b).
-  const [askedHere, setAskedHere] = useState<WorkspaceSection | null>(null);
   const map = remotes.data && Array.isArray(remotes.data.remotes) ? remotes.data : null;
   const wired = map?.remotes.find((row) => same(row.workspace, workspace)) ?? null;
   const remote = attached
@@ -116,9 +110,7 @@ export function WorkspaceView({
     : standing.data ? standing.data.wired ? {} : null : undefined;
 
   const chooseTab = (next: WorkspaceTab) => {
-    setWiring(false);
     setWireAsk(0);
-    setAskedHere(null);
     onTab(next);
   };
   const onSync = attached && wired && onSyncNow ? () => onSyncNow(workspace) : undefined;
@@ -140,11 +132,8 @@ export function WorkspaceView({
         ? (
           <WorkflowPart
             workspace={workspace}
-            // Lit, the defaults are the workspace place's Workflow (SETUPUX1v): the application opens it.
-            onSetup={() => {
-              if (lit && onOpenSetupSection) { onOpenSetupSection(workspace, 'defaults'); return; }
-              setWiring(false); setAskedHere('defaults'); onTab('setup');
-            }}
+            // The defaults are the workspace place's Workflow (SETUPUX1v): the application opens it.
+            onSetup={() => onOpenSetupSection?.(workspace, 'defaults')}
             onOpenRepository={onOpenRepositoryWorkflow}
           />
         )
@@ -153,10 +142,10 @@ export function WorkspaceView({
           <WorkspaceSetupPart
             workspace={workspace}
             notify={notify}
-            open={wiring ? 'remote' : askedHere ?? asked ?? undefined}
-            wiring={wiring}
-            // Lit, the session rows are the workspace place's (AGENTSPLACE1f); this tab keeps the rest.
-            rows={setupLit() ? 'rest' : 'all'}
+            open={asked ?? undefined}
+            wiring={false}
+            // The session rows are the workspace place's (AGENTSPLACE1f); this tab keeps the rest.
+            rows="rest"
           />
         )
         : (
@@ -166,8 +155,8 @@ export function WorkspaceView({
             notify={notify}
             onOpenRepository={onOpenRepository}
             onOpenAgent={onOpenAgent}
-            // Lit, the remote's wiring is a row of Details (SETUPUX1v).
-            remote={lit ? { startOpen: wireAsk > 0, focus: wireAsk > 0 || asked === 'remote', ask: wireAsk } : undefined}
+            // The remote's wiring is a row of Details (SETUPUX1v).
+            remote={{ startOpen: wireAsk > 0, focus: wireAsk > 0 || asked === 'remote', ask: wireAsk }}
             doors={{ branches: () => chooseTab('branches'), sync: onSync, quest: onOpenQuest, ask: onOpenAsk, session: onAttend }}
           />
         );
@@ -182,9 +171,7 @@ export function WorkspaceView({
       syncing={syncing}
       onSync={onSync}
       onWire={attached && map && !wired
-        ? () => {
-            if (lit) { setWireAsk((was) => was + 1); onTab('details'); } else { setWiring(true); onTab('setup'); }
-          }
+        ? () => { setWireAsk((was) => was + 1); onTab('details'); }
         : undefined}
     >
       {body}

@@ -305,10 +305,7 @@ internal static class TreesConsole
                 var accepts = new EntryAccepts(
                     service, home,
                     new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log)),
-                    new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), (_, line) => Console.Error.WriteLine($"trees: {line}"),
-                    async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
-                        .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase),
-                    log, ReviewDoors.Terminal, token => BranchTidying.BesideAsync(service, token));
+                    new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
                 var (found, rows) = await SessionEntries.LookAsync(
                     service, config, SessionsConsole.Wire(config), lastLook: null, waits: null, home,
                     ask.IsAsk ? entry => entry.Origin == $"ask:{ask.Id}" : entry => entry.Key == ask.Id, default).ConfigureAwait(false);

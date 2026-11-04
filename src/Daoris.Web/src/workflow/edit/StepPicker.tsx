@@ -36,7 +36,7 @@ export function StepPicker({ open, palette, place, onPick, onClose }: {
   const [active, setActive] = useState(0);
 
   const offered = useMemo((): Offered[] => {
-    // The palette says how each kind is offered: a landing's tail comes with its method and a retired kind is no longer added.
+    // The palette says how each kind is offered: a landing's tail comes with its method.
     const all = stepChoices(palette).filter((choice) => choice.offered === 'alone').map((choice) => {
       const known = GROUPS.find((group) => group.kinds.includes(choice.kind));
       const group = choice.plugin ? t('workflow.edit.add.plugin', { plugin: choice.plugin })

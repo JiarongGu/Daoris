@@ -47,7 +47,7 @@ public static class WorkflowPresets
         var nodes = next["nodes"]!.AsArray();
         var wires = next["wires"]!.AsArray();
         bool Has(string kind) => nodes.Any(node => (string?)node!["kind"] == kind);
-        var landing = (string)nodes.First(node => (string?)node!["kind"] == WorkflowKinds.Landing || NodeKinds.IsLanding((string)node!["kind"]!))!["id"]!;
+        var landing = (string)nodes.First(node => NodeKinds.IsLanding((string)node!["kind"]!))!["id"]!;
         // LANDNODE1c2: the gates come before the person's Accept where a `review` stands before the landing, and each is wired into the landing too.
         var review = (string?)nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Review)?["id"];
         var into = review ?? landing;
@@ -78,8 +78,8 @@ public static class WorkflowPresets
         var said = new List<string>();
         if (Of(WorkflowKinds.Opinion) is not null) said.Add("Another agent reads the work first.");
         if (Of(WorkflowKinds.Look) is not null) said.Add("You look at it running before it lands.");
-        // LANDNODE1c2: a `land` waits on the person where a `review` comes before it; a `handed` by its own `accept`.
-        var you = Of(NodeKinds.Land) is not null ? Of(NodeKinds.Review) is not null : Option(Of(NodeKinds.Handed), "accept") == "you";
+        // LANDNODE1c2: a `land` waits on the person where a `review` comes before it.
+        var you = Of(NodeKinds.Review) is not null;
         if (Of("pull-request") is not null)
         {
             said.Add(you ? "You accept; the plugin pushes and opens a pull request; you merge it."

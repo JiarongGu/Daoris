@@ -216,7 +216,6 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
         }
     }
 
-
     // ——— Doubles
 
     private static AccessSetting Pause(string pause, string value) =>
@@ -269,48 +268,6 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
         {
             Calls.Add("holding:" + string.Join(',', sessions));
             return HoldingFails is null ? Holds : throw HoldingFails;
-        }
-    }
-
-    private sealed class Setup : IWorkplaceAccessSetup
-    {
-        public List<string> Calls { get; } = [];
-        public string Landing { get; init; } = "person";
-
-        public IWorkplaceResolvedAccess Resolve(DriverConfig config, string repository, string? workspace)
-        {
-            Calls.Add($"resolve:{repository}/{workspace}");
-            return new Resolved(this);
-        }
-
-        public string Whose(string source)
-        {
-            Calls.Add("whose:" + source);
-            return "whose-" + source;
-        }
-
-        public string DefaultSource
-        {
-            get
-            {
-                Calls.Add("default-source");
-                return "the-default";
-            }
-        }
-    }
-
-    private sealed class Resolved(Setup owner) : IWorkplaceResolvedAccess
-    {
-        public string Value(string pause)
-        {
-            owner.Calls.Add("value:" + pause);
-            return owner.Landing;
-        }
-
-        public string Source(string pause)
-        {
-            owner.Calls.Add("source:" + pause);
-            return "its-source";
         }
     }
 }
