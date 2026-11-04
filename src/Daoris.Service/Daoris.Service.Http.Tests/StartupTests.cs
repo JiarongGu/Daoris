@@ -92,7 +92,7 @@ public sealed class StartupTests
 
         var status = await host.GetAsync("/api/status");
 
-        var stamped = typeof(Daoris.Knowledge.Http.StatusResponse).Assembly
+        var stamped = typeof(Daoris.Knowledge.Http.HostVersion).Assembly
             .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion;
         Assert.Equal(stamped, status.Json.GetProperty("version").GetString());
