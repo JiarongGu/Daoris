@@ -35,7 +35,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["BacklogMerge.cs"] = (OwnTree, "a backlog's union, staged in the replay's own tree", ["checkout@tree", "update-index@tree"]),
         ["GeneratedWriters.cs"] = (OwnTree, "generated folders written again and committed in the replay's own tree", ["add@tree", "commit@tree"]),
         ["UnionJoins.cs"] = (OwnTree, "what a union joined, set apart and committed in the replay's own tree", ["add@tree", "commit@tree"]),
-        ["HeavyExecutor.cs"] = (OwnTree, "a heavy run's own detached tree, made, locked and checked out at the commit sent; git's record of it in the checkout", ["checkout@tree", "worktree@send.Checkout"]),
+        ["VerifyExecution.cs"] =(OwnTree, "a heavy run's own detached tree, made, locked and checked out at the commit sent; git's record of it in the checkout", ["checkout@tree", "worktree@send.Checkout"]),
         ["IntegrationJudging.cs"] = (OwnTree, "the line's integration tree, put at the commit judged", ["checkout@ask.Tree"]),
         ["IntegrationReplays.cs"] = (OwnTree, "the line's integration tree: made and removed through git's record of it, merged and committed in, put back at a commit by reset, clean and checkout", ["checkout@?", "clean@?", "commit@tree", "merge@tree", "reset@?", "worktree@ask.Root"]),
         ["IntegrationResolves.cs"] = (OwnTree, "a conflict resolved in the line's integration tree", ["add@tree", "checkout@tree", "rm@tree"]),
