@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Contracts.Parts;
@@ -8,70 +6,43 @@ using static Daoris.Driver.AcpProtocol;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One session held over the Agent Client Protocol (D53): JSON-RPC 2.0 in newline-delimited frames,
-/// over a spawned process's stdio.
+/// One session held over the Agent Client Protocol: JSON-RPC 2.0 in newline-delimited frames, over a spawned process's stdio. This
+/// class is the root that wires the door's units: the reader and its turn's stages, the open, the run, the prompts and their state,
+/// the waits and the episodes each live in a unit of their own, reached through the wiring interfaces it implements.
 /// </summary>
 /// <remarks>
-/// <para><b>Why a protocol door at all.</b> The pipe door gives the driver a wall of text and an exit
-/// code. This one gives tool boundaries with ids, inputs and outcomes, turn boundaries, thoughts and
-/// context pressure — by contract, with nothing parsed out of another program's stdout, which is the
-/// coupling D23/D24 exist to prevent and which D52 rejected by name. One wire reaches dsh natively
-/// and claude-code and codex through the ACP project's adapters.</para>
+/// <para><b>Why a protocol door at all.</b> The pipe door gives the driver a wall of text and an exit code. This one gives tool
+/// boundaries with ids, inputs and outcomes, turn boundaries, thoughts and context pressure, by contract, with nothing parsed out of
+/// another program's stdout.</para>
 ///
-/// <para><b>It takes streams, not a process.</b> Spawning stays the driver's (D46 §5: the driver owns
-/// process lifetime, because observing it is its half of the contract), and a class that owned a
-/// process could not be tested without one. Every rule below is provable against two in-memory
+/// <para><b>It takes streams, not a process.</b> Spawning stays the driver's, because observing a process's lifetime is its half of
+/// the contract, and a class that owned a process could not be tested without one: every rule here is provable against two in-memory
 /// streams and a fake agent.</para>
 ///
-/// <para><b>Permission requests are refused</b> — see <see cref="AnswerPermission"/> — except under a repository's asking
-/// permission prompts, where each is held for the person to answer (AUTONOMY1b3a, <see cref="Permissions"/>).</para>
+/// <para><b>Permission requests are refused</b> (<see cref="AcpPermission"/>), except where the posture says the person answers them,
+/// and each is then held for the person (<see cref="Permissions"/>).</para>
 /// </remarks>
 /// <param name="closeTimeout">
-/// How long to wait for the agent to acknowledge `session/close`. The turn is already over by then,
-/// so this is courtesy with a bound: an agent that wedges after answering the prompt must not be able
-/// to hang a run that has finished. Found by a test that never returned.
+/// How long to wait for the agent to acknowledge <c>session/close</c>: the turn is over by then, so an agent that wedges after
+/// answering must not hang a run that has finished.
 /// </param>
 /// <param name="posture">
-/// The mode id that expresses D37 on THIS agent's wire, or null when the agent carries no posture
-/// there (ACP3).
+/// The mode id that expresses the posture on this agent's wire, or null where the agent carries none there. 🔴 It belongs to the
+/// adapter, never to this class: the harnesses name the same boundary differently or not at all, and a constant would drive the others
+/// at whatever mode they started in, silently. Null asks for nothing, which leaves the agent at its own default, the safe direction.
 /// </param>
-/// <remarks>
-/// 🔴 <b>The posture belongs to the adapter, not to this class.</b> It was a constant here while one
-/// harness rode the door, and that was wrong the moment a second arrived: Claude Code names the same
-/// boundary <c>acceptEdits</c>, Codex names it <c>agent</c>, and dsh does not express it on the wire
-/// at all. A constant would have driven two of the three at whatever mode they happened to start in,
-/// silently. Null asks for nothing, which leaves the agent at its own default — the safe direction,
-/// since every default observed is equal to or stricter than what Daoris would set.
-/// </remarks>
-/// <param name="meta">
-/// What <c>session/new</c> carries in <c>_meta</c> — the adapter's own vocabulary for the rules Daoris
-/// composed (PERM1, D72) — or null, and then no <c>_meta</c> is sent at all.
-/// </param>
-/// <param name="onEvent">
-/// Where the wire's STRUCTURE goes (D76 §1, CONV1): every update as a <see cref="SessionEvent"/>, beside
-/// the line the console gets. Null where nobody keeps the record.
-/// </param>
-/// <param name="quiet">
-/// How long the agent's words may go quiet before the console shows the line they left open
-/// (<see cref="AcpConsole"/>); <see cref="AcpConsole.Quiet"/> when not given.
-/// </param>
+/// <param name="meta">What <c>session/new</c> carries in <c>_meta</c>, the adapter's own vocabulary for the rules composed; null sends none.</param>
+/// <param name="onEvent">Where the wire's structure goes: every update as a <see cref="SessionEvent"/>, beside the console's line.</param>
+/// <param name="quiet">How long the agent's words may go quiet before the console shows the line they left open (<see cref="AcpConsole"/>).</param>
 /// <param name="streams">
-/// Where what the session runs beside itself is kept (CONSOLE2): each subagent and each background
-/// task as a console stream of its own (<see cref="AcpStreams"/>). Null asks the agent for none, and
-/// every update is the session's, as before.
+/// Where what the session runs beside itself is kept, each subagent and background task a stream of its own (<see cref="AcpStreams"/>);
+/// null asks the agent for none, and every update is the session's.
 /// </param>
-/// <param name="onOptions">
-/// Told the session's config options each time they change (AGT6b, D98): as <c>session/new</c> offered
-/// them, as an answer to a change, and as the agent's own <c>config_option_update</c>. Null where nobody
-/// asks.
-/// </param>
-/// <param name="onConversation">
-/// Told the id <c>session/new</c>'s answer names, the moment it arrives (ANSWER1a, D131 §1): what an answer
-/// to a park resumes, kept before the first turn can fail or park. Null where nobody keeps it.
-/// </param>
+/// <param name="onOptions">Told the session's config options each time they change: as offered, as a change's answer, as the agent's own update.</param>
+/// <param name="onConversation">Told the id the open's answer names the moment it arrives, before the first turn can fail or park.</param>
 /// <param name="wakeQuiet">
-/// How long a session whose turn waited on its own background work waits, once the work ended, for its harness to wake its
-/// agent before Daoris's own go-on goes (BGWAIT2, <see cref="AcpWake"/>); <see cref="AcpWake.Quiet"/> when not given.
+/// How long a session whose own background work ended waits for its harness to wake its agent before Daoris's own go-on goes
+/// (<see cref="AcpWake"/>).
 /// </param>
 public sealed class AcpSession(
     TextReader incoming,
@@ -91,50 +62,42 @@ public sealed class AcpSession(
     private const int ProtocolVersion = 1;
 
     /// <summary>
-    /// What the open says where the agent does not offer a required posture, given the mode asked and what the agent offers, said: a
-    /// driven start's repository's permission prompts (AUTONOMY1b, <see cref="DrivenAccess.Unoffered"/>). Null says Ask Daoris's full
-    /// access, whose required posture came first (HELPMODE1a1).
+    /// What the open says where the agent does not offer a required posture, given the mode asked and what the agent offers
+    /// (<see cref="DrivenAccess.Unoffered"/>). Null says the full access's sentence.
     /// </summary>
     public Func<string, string, string>? Unoffered { get; set; }
 
-    /// <summary>The part's lineage, told each child the streams beside it announce and end (COWORKVIEW1a); null tells none.</summary>
+    /// <summary>The part's lineage, told each child the streams beside it announce and end; null tells none.</summary>
     public ILineageWriter? Lineage { get; init; }
 
     /// <summary>
-    /// The mark a posture carries after <see cref="AgentPostures.Required"/> where the person answers its permission requests (AUTONOMY1b3a,
-    /// D184 point 3): a driven start's asking permission prompts on the protocol door (<see cref="DrivenAccess"/>). Never set on the wire.
+    /// The mark a posture carries after <see cref="AgentPostures.Required"/> where the person answers its permission requests
+    /// (<see cref="DrivenAccess"/>). Never set on the wire.
     /// </summary>
     public const char PersonAnswers = '?';
 
     /// <summary>
-    /// Where this session's permission requests are held for the person (AUTONOMY1b3a, <see cref="HeldPermissions"/>): only where its
-    /// posture carries <see cref="PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes, as every other
-    /// posture always has (D52).
+    /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture carries
+    /// <see cref="PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes.
     /// </summary>
     public PermissionHolds? Permissions { get; set; }
 
     /// <summary>
-    /// Asked at a turn's end before a word held for it is prompted (ACCESSSWAP1b, D183's note): whether the setup this session opened
-    /// under changed since, a driven session's repository's permission prompts. Yes ends the run there, never mid-turn: every held word is
-    /// handed back unprompted (<see cref="HandedBack"/>), none prompted into a process opened under the old posture. Null never asks.
+    /// Asked at a turn's end before a held word opens a turn of Daoris's: whether the setup the session opened under changed since. Yes
+    /// ends the run there, never mid-turn: every held word is handed back unprompted (<see cref="HandedBack"/>), none prompted into a
+    /// process opened under the old posture. A word already sent is the agent's and is waited for. Null never asks.
     /// </summary>
-    /// <remarks>
-    /// Asked only where a held word would open a turn of Daoris's: a word already sent is the agent's and is waited for, and the turn a
-    /// session's own background work wakes is its own (BGWAIT1), so neither is cut.
-    /// </remarks>
     public Func<bool>? SetupChanged { get; set; }
 
     /// <summary>
-    /// Whether this client asks the agent for AIR's typed session failures (CODEXSTATUS1, the agent-errors design §4.3): set for an
-    /// agent whose toolchain declares it marks a terminal failure for such a client alone (<see cref="ErrorWords.TypedFailures"/>).
+    /// Whether this client asks the agent for typed session failures: set for an agent whose toolchain declares it marks a terminal
+    /// failure for such a client alone (<see cref="ErrorWords.TypedFailures"/>).
     /// </summary>
     public bool TypedFailures { get; init; }
 
     /// <summary>
-    /// Asked at a turn's end (LANDBACK1 part 2, D87's note): what the quest and its tree say, so a turn that ended with the quest done and
-    /// the tree uncommitted is carried on rather than the session's end (<see cref="AcpWaits.CarryOnAsync"/>). Dirty, with carry-ons left, the run
-    /// also waits for the session's own background work as a park would have it wait (<see cref="AcpWaits.Of"/>), never cutting that wait on
-    /// the closed quest. Null never carries on, and the end is as before.
+    /// Asked at a turn's end what the quest and its tree say, so a turn that ended with the quest done and the tree uncommitted is carried
+    /// on rather than the session's end (<see cref="AcpWaits.CarryOnAsync"/>). Null never carries on.
     /// </summary>
     public Func<CancellationToken, Task<TurnCarry>>? CarriesOn
     {
@@ -146,30 +109,27 @@ public sealed class AcpSession(
     private AcpWaits? _ends;
 
     /// <summary>
-    /// The words held for the turn's end that the run handed back unprompted because its setup changed (ACCESSSWAP1b), in the order
-    /// said: the driver keeps them on the record for the run that goes on under the new setup. So too those held when the run left a
-    /// silent turn of a closed quest (RUNENDS1), and, after them, every word the run was asked to send and never wrote, turned away at its
-    /// door as the run ended (<see cref="AcpTurnedAway"/>). Empty otherwise.
+    /// The words the run handed back unprompted, in the order said, for the driver to keep on their record: those held as its setup
+    /// changed or as it left a silent turn of a closed quest, then every word it was asked to send and never wrote, turned away at its
+    /// door as it ended (<see cref="AcpTurnedAway"/>).
     /// </summary>
     public IReadOnlyList<IAgentWord> HandedBack => _open.HandedBack;
 
     /// <summary>
-    /// How often a session that waits on its own background work reads its quest again (DONEEND1, D83's note): once it no longer
-    /// waits on that work, the session ends. The driver sets every fourth of its own ticks; this default is that at its default tick.
+    /// How often a session that waits on its own background work reads its quest again: once it no longer waits on that work, the session
+    /// ends. The driver sets every fourth of its own ticks; this default is that at its default tick.
     /// </summary>
     public TimeSpan BackgroundLook { get; set; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
-    /// How long a session whose quest no longer waits (RUNENDS1, D83's note) lets a turn run silent before it ends anyway: a turn its
-    /// harness started, or a prompt still open, that read no update for this long. A turn that speaks is never cut. Its end is not
-    /// always said: a wakeup the agent scheduled for itself starts a turn whose result carries no origin the adapter calls autonomous.
+    /// How long a session whose quest no longer waits lets a turn run silent before it ends anyway; a turn that speaks is never cut. Its
+    /// end is not always said: a wakeup the agent scheduled for itself starts a turn whose result carries no origin.
     /// </summary>
     public TimeSpan QuestDoneQuiet { get; init; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// The clock the session's own waits are read off (RUNENDS1, <c>.claude/knowledge/held-clocks.md</c>): its look at its quest every
-    /// <see cref="BackgroundLook"/>, the wake's quiet before Daoris's go-on, and <see cref="QuestDoneQuiet"/>. The machine's in
-    /// production; a test hands one it moves. A transient episode's waits are its retry's (<see cref="TransientRetry.Clock"/>).
+    /// The clock the session's own waits are read off: the machine's in production, one a test moves. A transient episode's waits are its
+    /// retry's (<see cref="TransientRetry.Clock"/>).
     /// </summary>
     public TimeProvider Clock
     {
@@ -178,40 +138,29 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// The session's own background work still running, by name, when its run ended (DONEEND1): what ends with the session. The
-    /// driver gives an agent that leaves such work a bound to exit before it ends the agent's tree. Empty until the run ends.
+    /// The session's own background work still running, by name, when its run ended: the driver gives an agent that leaves such work a
+    /// bound to exit before it ends the agent's tree. Empty until the run ends.
     /// </summary>
     public IReadOnlyList<string> LeftRunning { get; private set; } = [];
 
-    /// <summary>Whether the posture says the person answers this session's permission requests.</summary>
     private readonly bool _personAnswers = AcpPosture.Marks(posture).PersonAnswers;
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
-    /// <summary>The prompts on the wire and not yet answered, and the run's door they pass: every lock of that state is its own.</summary>
+    /// <summary>The prompts on the wire and the run's door they pass: every lock of that state is its own.</summary>
     private readonly OpenPrompts _open = new();
 
-    /// <summary>Whether the agent said it takes a prompt during a turn (<see cref="TakesWordsMidTurn"/>).</summary>
     private bool _takesWordsMidTurn;
 
-    /// <summary>Whether *Send now* steers into the running turn (<see cref="SteersNow"/>, STEER2a).</summary>
     private bool _steersNow;
 
     private readonly StepCalls _calls = new();
 
-    /// <summary>
-    /// A driven run's inbox (COWORK1d, the message-urgency design §2.3): told on the reader's thread the moment the answer to the last
-    /// prompt open is read, so it refuses another agent's claim from then on, before the run judges its next step.
-    /// </summary>
     private IAgentInbox? _inbox;
 
-    /// <summary>
-    /// A conversation's words (AGENTERRORS1b, the design §7), read by the transient episode where a run has no inbox: its turns' queue.
-    /// Set once the conversation's session is open, never at the open.
-    /// </summary>
+    /// <summary>A conversation's words, which a transient episode holds where no run hands an inbox; set once its session is open.</summary>
     private IEpisodeWords? _episodeWords;
 
-    /// <summary>Whose words an episode holds, waits on and carries: a run's inbox, or a conversation's turns.</summary>
     private IEpisodeWords? EpisodeWords => _episodeWords ?? _inbox;
 
     private int _updates;
@@ -221,39 +170,34 @@ public sealed class AcpSession(
     private readonly CancellationTokenSource _pumpStop = new();
     private Task? _pump;
 
-    /// <summary>The console's lines, joined from the agent's streamed words (UX5 U3).</summary>
     private readonly AcpConsole _console = new(onLine, quiet ?? AcpConsole.Quiet);
 
-    /// <summary>What the session runs beside itself (CONSOLE2), once it is open and when it is kept.</summary>
     private AcpStreams? _beside;
 
-    /// <summary>The background work its harness says it runs (BGWAIT1), read whether or not its streams are kept.</summary>
+    /// <summary>The background work its harness says it runs, read whether or not its streams are kept.</summary>
     private readonly AcpBackground _background = new();
 
-    /// <summary>The background work its harness says still runs, with when each began (FABRIC-PIPELINE1c, <see cref="LongCalls"/>).</summary>
+    /// <summary>The background work its harness says still runs, with when each began (<see cref="LongCalls"/>).</summary>
     public IReadOnlyList<RunningTask> BackgroundRunning => _background.RunningSince;
 
-    /// <summary>Whether no turn runs and the session waits on its own background work (BGWAIT1, SESSWATCH1a): the watcher's state C.</summary>
+    /// <summary>Whether no turn runs and the session waits on its own background work.</summary>
     public bool WaitsOnOwnWork => Ends.WaitsOnOwnWork;
 
-    /// <summary>The turns its harness starts by itself when that work ends (BGWAIT2), read from the session's opening.</summary>
     private readonly AcpWake _wake = new();
 
     private readonly TimeSpan _wakeQuiet = wakeQuiet ?? AcpWake.Quiet;
 
     /// <summary>
-    /// Why the process is being ended from outside (BGWAIT2, <see cref="Ending"/>), and whether the stream is over, after which
-    /// nothing said changes how it ended. Under the lock.
+    /// Why the process is being ended from outside (<see cref="Ending"/>), and whether the stream is over, after which nothing said
+    /// changes how it ended. Under the lock.
     /// </summary>
     private readonly object _endGate = new();
     private Noted? _ending;
     private bool _streamOver;
 
     /// <summary>
-    /// Told why the agent's process is about to be ended from outside the session (BGWAIT2): the timeout, said before its kill.
-    /// The stream's end that follows is then that cause's, said by its own line (<see cref="AcpEnded"/>), and never the agent
-    /// having exited, as the install's record said of a session the timeout killed. Said once; a stream already over keeps its
-    /// own diagnosis, since the agent ended it first.
+    /// Told why the agent's process is about to be ended from outside the session, before its kill: the stream's end that follows is then
+    /// that cause's (<see cref="AcpEnded"/>), never the agent having exited. Said once; a stream already over keeps its own diagnosis.
     /// </summary>
     public void Ending(Noted why)
     {
@@ -272,15 +216,14 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// The largest context reading this session has reported (TOOL3), or null when it reported none —
-    /// what a conversation, which never runs <see cref="RunAsync"/>, counts toward its account (USAGE1).
+    /// The largest context reading this session has reported, or null: what a conversation, which never runs <see cref="RunAsync"/>,
+    /// counts toward its account.
     /// </summary>
     public AcpUsage? Usage => TurnStages.Of<AcpMeasure>().Usage;
 
     /// <summary>
-    /// Told what a <c>usage_update</c> says about the account's windows (TOOL6c, D130 §5.2): its
-    /// <c>_meta["_claude/rateLimit"]</c>, which Claude Code's adapter fills with the frame's <c>rate_limit_info</c> unchanged
-    /// (limit-signals evidence §3), for the agent's table to read. Raised on the reader's thread; a listener's failure is its own.
+    /// Told what a <c>usage_update</c> says about the account's windows, as the adapter's meta carries them, for the agent's table to
+    /// read. Raised on the reader's thread; a listener's failure is its own.
     /// </summary>
     public event Action<JsonElement>? LimitsSaid;
 
@@ -288,26 +231,26 @@ public sealed class AcpSession(
         onLine, onOptions, (method, args, ct) => RequestAsync(method, args, ct), () => _sessionId));
     private AcpOptions? _optionsKept;
 
-    /// <summary>The session's config options as the agent last said them (AGT6b, D98), the mode included; which a person may set is the caller's to judge (<see cref="AcpConfigOption.ThePersons"/>).</summary>
+    /// <summary>The session's config options as the agent last said them, the mode included; which a person may set is the caller's to judge (<see cref="AcpConfigOption.ThePersons"/>).</summary>
     public IReadOnlyList<AcpConfigOption> ConfigOptions => Options.Current;
 
     private void KeepOptions(IReadOnlyList<AcpConfigOption> options) => Options.Keep(options);
 
-    /// <summary>Change one of the session's config options, mid-conversation (AGT6b, D98): the agent's whole list after it is kept and returned.</summary>
+    /// <summary>Change one of the session's config options mid-conversation: the agent's whole list after it is kept and returned.</summary>
     public Task<IReadOnlyList<AcpConfigOption>> SetConfigOptionAsync(string configId, string value, CancellationToken ct) =>
         Options.SetAsync(configId, value, ct);
 
-    /// <summary>The list the last setter returned; null when it returned none (D205).</summary>
+    /// <summary>The list the last setter returned; null when it returned none.</summary>
     public IReadOnlyList<AcpConfigOption>? LastAcknowledgedOptions => Options.LastAcknowledged;
 
-    /// <summary>What this start's actor asked, set on the open session by category before the posture and the first prompt (D205 §3.2).</summary>
+    /// <summary>What this start's actor asked, set on the open session by category before the posture and the first prompt.</summary>
     public ActorAsked? Carry
     {
         get => Options.Carry;
         set => Options.Carry = value;
     }
 
-    /// <summary>Told what was carried where it differs from <see cref="Carry"/> (D205 §3.3, §5).</summary>
+    /// <summary>Told what was carried where it differs from <see cref="Carry"/>.</summary>
     public Action<ActorAsked>? Carried
     {
         get => Options.Carried;
@@ -321,66 +264,39 @@ public sealed class AcpSession(
         set => Options.ModelRefused = value;
     }
 
-    /// <summary>Told the options the open listed, before the posture or any set (D205 §9.2).</summary>
+    /// <summary>Told the options the open listed, before the posture or any set.</summary>
     public Action<IReadOnlyList<AcpConfigOption>>? OffersRead
     {
         get => Options.OffersRead;
         set => Options.OffersRead = value;
     }
 
-    /// <summary>The options as the open listed them, never overwritten (D205 §3.3).</summary>
+    /// <summary>The options as the open listed them, never overwritten.</summary>
     public IReadOnlyList<AcpConfigOption> OpeningOptions => Options.OpeningOptions;
 
-    /// <summary>The refusal that ended this session's open before any prompt (D205 §3.3), or null.</summary>
+    /// <summary>The refusal that ended this session's open before any prompt, or null.</summary>
     public ModelRefusal? NotOffered => Options.NotOffered;
 
     private void KeepOpening() => Options.KeepOpening();
 
     private Task<bool> CarryAsync(CancellationToken ct) => Options.CarryAsync(ct);
 
-    /// <summary>
-    /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
-    /// update rendered as it arrives — a driven session's whole life on this wire.
-    /// </summary>
-    /// <param name="cwd">The working tree this session runs in — the registered root, or a session tree (D51).</param>
+    /// <summary>A driven session's whole life on this wire (<see cref="AcpRun"/>): the open, the target as a prompt, and the person's words after it.</summary>
+    /// <param name="cwd">The working tree this session runs in.</param>
     /// <param name="prompt">The composed target, exactly as the pipe door delivers it.</param>
-    /// <param name="servers">
-    /// The MCP servers this session is handed (ACP4) — in practice the machine's own knowledge host,
-    /// which is what makes the composed target's "respond to `#id` with `take`" a thing the session
-    /// can actually do.
-    /// </param>
+    /// <param name="servers">The MCP servers this session is handed: what lets the composed target's tools be called at all.</param>
     /// <param name="inbox">
-    /// What the person tells the session while it works (SESS3). Where the agent says it takes a prompt during a turn,
-    /// each word is sent the moment it is said and reaches it at its next step (STEER1, D136); anywhere else each word
-    /// held when a turn ends is the next prompt of this same session, and a stop of the turn in hand lets one go at once.
-    /// The run ends only when nothing is held and no word is on its way. Null for a session nobody may tell anything —
-    /// an intake (INT4h).
+    /// What the person tells the session while it works: each word sent at once where the agent takes a prompt during a turn, else the
+    /// next prompt at the turn's end. Null for a session nobody may tell anything.
     /// </param>
-    /// <param name="asked">
-    /// Told each of the person's words as the session takes them, so the record keeps it as the person's ask there: as it
-    /// is sent when no turn runs, or when the prompt before it is answered (STEER1).
-    /// </param>
-    /// <param name="resume">
-    /// The harness conversation an answer continues (ANSWER1a, D131 §1), resumed rather than a new session opened, with
-    /// <paramref name="prompt"/> — the answer — as its next turn. Null opens a new session, as every start does.
-    /// </param>
-    /// <param name="blocks">
-    /// The first prompt as text blocks, one each, in place of <paramref name="prompt"/>'s one (MSG1b, D137 §2.2): the person's
-    /// words a record goes on with, each its own block in the order said. Null or empty sends <paramref name="prompt"/>.
-    /// </param>
-    /// <param name="prompted">
-    /// Told once the first prompt is on the wire (MSG1b): the words it carries were taken by the session, where a refusal
-    /// before it, or a failure of the handshake, took nothing.
-    /// </param>
-    /// <param name="files">
-    /// The files said with <paramref name="blocks"/>' words (MSG1d3, D137 §2.4), each a <c>resource_link</c> to where it is
-    /// kept after the blocks, as a conversation's message carries what was attached (CONV4c). Null or empty for none.
-    /// </param>
+    /// <param name="asked">Told each of the person's words as the session takes them, so the record keeps it as the person's ask there.</param>
+    /// <param name="resume">The harness conversation an answer continues, resumed with <paramref name="prompt"/> as its next turn; null opens a new session.</param>
+    /// <param name="blocks">The first prompt as text blocks, one each, in place of <paramref name="prompt"/>; null or empty sends <paramref name="prompt"/>.</param>
+    /// <param name="prompted">Told once the first prompt is on the wire: the words it carries were taken, where a refusal before it took nothing.</param>
+    /// <param name="files">The files said with <paramref name="blocks"/>' words, each a <c>resource_link</c> after the blocks.</param>
     /// <param name="waitsOnBackground">
-    /// Asked when a turn ends while background work the harness says the session started still runs (BGWAIT1): whether the
-    /// session's quest stands as a park would leave it, so the turn's end would otherwise read as asking the person. Yes
-    /// keeps the session open until that work ends, by the wire's word, then goes on with a turn that says so. Null never
-    /// waits, and what it left running ends with the session (D105 §3).
+    /// Asked when a turn ends while the session's own background work runs: whether its quest stands as a park would leave it. Yes keeps
+    /// the session open until that work ends, then goes on with a turn that says so; null never waits.
     /// </param>
     /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     /// <exception cref="DriverException">The agent's stream ended while the session waited for its background work.</exception>
@@ -404,38 +320,25 @@ public sealed class AcpSession(
     private AcpTry Try => LazyInitializer.EnsureInitialized(ref _try, () => new AcpTry(this, Prompting));
     private AcpTry? _try;
 
-    /// <summary>The driver's own sentence by its code: the console and the record keep the English as written.</summary>
-    private void Note(Noted noted)
-    {
-        _console.End();
-        onLine(noted.Note);
-        Emit(new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null,
-        });
-    }
-
     // The run's own token and whether a run holds the session: only a run's stop puts a cancel on the wire.
     private CancellationToken _stops;
     private bool _inRun;
 
-    /// <summary>The run's transient retry (AGENTERRORS1a), or null where it was handed none and keeps today's end.</summary>
+    /// <summary>The transient retry a run or a conversation was handed, or null, and a failure then ends as it came.</summary>
     private TransientRetry? _retry;
 
     /// <summary>
-    /// What the run's first prompt's write return tells (<see cref="RunAsync"/>'s <c>prompted</c>), told again as each try of a transient
-    /// episode's write returns (FOUNDATION1f-iv part b): a driven carry-on's moved words' <c>sent</c> is the first write that returns, whichever
-    /// prompt it was, and the caller tells it once.
+    /// What the run's first prompt's write return tells, told again as each try's write returns: a carry-on's moved words are sent at the
+    /// first write that returns, whichever prompt it was, and the caller tells it once.
     /// </summary>
     private Action? _prompted;
 
     private AcpEpisodes Episodes => LazyInitializer.EnsureInitialized(ref _episodes, () => new AcpEpisodes(this));
     private AcpEpisodes? _episodes;
 
-    /// <summary>Whether the run waits between a transient episode's tries, on Daoris's own timer and never on its agent (AGENTERRORS1a, the design §5.1).</summary>
+    /// <summary>Whether the run waits between a transient episode's tries, on Daoris's own timer and never on its agent.</summary>
     public bool WaitsOnTransient => Episodes.WaitsOnTransient;
 
-    /// <summary>One of the run's prompts, read for a transient failure where the run was handed a retry (AGENTERRORS1a, the design §5.1).</summary>
     private Task<string> PromptingAsync(Func<Task<string>> prompt, CancellationToken ct) => Episodes.PromptingAsync(prompt, ct);
 
     private Task<JsonElement> OpeningAsync(Func<Task<JsonElement>> open, CancellationToken ct) => Episodes.OpeningAsync(open, ct);
@@ -451,22 +354,18 @@ public sealed class AcpSession(
     Task<string> ITurnRetryWiring.TryAsync(TransientEpisode episode, CancellationToken ct) => Try.TryAsync(episode, ct);
 
     /// <summary>
-    /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a
-    /// turn that ended first, a failed one included. The driver keeps them waiting where the door failed; empty until then.
+    /// The person's words this run sent and the session never took, once the run has ended: on the wire behind a turn that ended first,
+    /// a failed one included. The driver keeps them waiting; empty until then.
     /// </summary>
     public IReadOnlyList<IAgentWord> Unreached => _open.Unreached;
 
     /// <summary>End what the session runs beside itself, saying so. Idempotent, and never throws.</summary>
     private Task EndStreamsAsync() => _beside?.EndAllAsync() ?? Task.CompletedTask;
 
-    /// <summary>
-    /// Open the session a conversation lives in (CONV3b): the reader started, the handshake, a session
-    /// on the tree, and the posture — everything before the first prompt, done once.
-    /// </summary>
+    /// <summary>Open the session a conversation lives in: everything before the first prompt, done once (<see cref="AcpOpening"/>).</summary>
     /// <remarks>
-    /// The reader runs until the agent's stream ends or <see cref="Release"/> — NOT until
-    /// <paramref name="ct"/>, which bounds only the opening: a conversation outlives the request that
-    /// started it, and the updates of every later turn arrive on this same reader.
+    /// The reader runs until the agent's stream ends or <see cref="Release"/>, never until <paramref name="ct"/>, which bounds only the
+    /// opening: a conversation outlives the request that started it, and every later turn's updates arrive on this same reader.
     /// </remarks>
     public Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
         Opening.OpenAsync(cwd, ct, servers);
@@ -481,7 +380,7 @@ public sealed class AcpSession(
     {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
         if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, lineage: Lineage);
-        _pump = PumpAsync(_pumpStop.Token);
+        _pump = Reader.PumpAsync(incoming, _pumpStop.Token);
 
         var initialized = await RequestAsync(
             "initialize",
@@ -498,61 +397,42 @@ public sealed class AcpSession(
         return initialized;
     }
 
-    /// <summary>
-    /// One turn: the text as a prompt on the open session, answered by the agent's stop reason — which
-    /// is also what the record's turn event carries, as the wire's word and nothing more.
-    /// </summary>
+    /// <summary>One turn: the text as a prompt on the open session, answered by the agent's stop reason, the record's turn event's word.</summary>
     /// <remarks>
-    /// One at a time, for a conversation: its caller queues a person's messages rather than sending one into a turn still
-    /// running (CONV4a). A driven session sends one during a turn only where the agent says it takes one (STEER1,
-    /// <see cref="RunAsync"/>), and the turn event is kept as the wire answers each, in the order it does.
+    /// One at a time for a conversation, whose caller queues the person's messages rather than send one into a running turn; a driven
+    /// session sends one during a turn only where the agent says it takes one.
     /// </remarks>
     /// <param name="sent">
-    /// Told once the prompt is on the wire (CONV4a): a stop asked before that moment must wait for it,
-    /// or its <c>session/cancel</c> overtakes the prompt it meant to stop and stops nothing.
+    /// Told once the prompt is on the wire: a stop asked before that moment must wait for it, or its <c>session/cancel</c> overtakes the
+    /// prompt it meant to stop and stops nothing.
     /// </param>
-    /// <param name="files">
-    /// What the person attached (CONV4c), each a <c>resource_link</c> to where it is kept — the
-    /// protocol's baseline block, which every agent takes and <c>claude-code-acp</c> reads without a tool
-    /// call (docs/2026-09-25-message-content-evidence.md).
-    /// </param>
+    /// <param name="files">What the person attached, each a <c>resource_link</c>: the protocol's baseline block, which every agent takes.</param>
     public Task<string> PromptAsync(
         string text, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null) =>
         Prompting.SendPromptAsync(text, files, ct, sent, words: null);
 
-    /// <summary>
-    /// One turn of one or more text blocks, each its own (MSG1c, D137 §2.2): a conversation that goes on is resumed with the
-    /// person's words waiting on its record, each its own block in the order said, as a driven record's are (MSG1b).
-    /// </summary>
+    /// <summary>One turn of one or more text blocks, each its own: a conversation resumed with the person's words waiting on its record.</summary>
     /// <param name="sent">Told once the prompt is on the wire: the words it carries went to the session.</param>
-    /// <param name="files">
-    /// The files said with the words (MSG1d3, D137 §2.4), each a <c>resource_link</c> after the blocks, as a conversation's
-    /// message carries them (CONV4c).
-    /// </param>
+    /// <param name="files">The files said with the words, each a <c>resource_link</c> after the blocks.</param>
     public Task<string> PromptAsync(
         IReadOnlyList<string> blocks, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null) =>
         Prompting.SendPromptAsync(blocks, files, ct, sent, words: null);
 
-    /// <summary>
-    /// Whether this session's agent said it takes a prompt during a turn (STEER1, D136), read from its <c>initialize</c>
-    /// answer once the session is open: a conversation's words then go at once, at its next step (MSG1c, D137 §2.1).
-    /// </summary>
+    /// <summary>Whether the agent said, as the session opened, that it takes a prompt during a turn: a conversation's words then go at once.</summary>
     public bool NextStep => _takesWordsMidTurn;
 
     /// <summary>
-    /// Told each of the person's words as the session takes them (MSG1c): a conversation's, whose words said during a turn
-    /// are taken when the turn before them is handed off, so the record keeps them there as the person's ask.
+    /// Told each of the person's words as the session takes them: a conversation's, whose words said during a turn are taken when the
+    /// turn before them is handed off, so the record keeps them there as the person's ask.
     /// </summary>
     public void OnTaken(Action<IAgentWord> taken) => Prompting.OnAsked = taken;
 
     /// <summary>
-    /// The person's words to a conversation whose turn is running, sent at once as a prompt of the same session (MSG1c,
-    /// D137 §2.1): taken at the agent's next step, told through <see cref="OnTaken"/> where the wire says so, and answered
-    /// by their own stop reason at the turn's real end.
+    /// The person's words to a conversation whose turn is running, sent at once as a prompt of the same session: taken at the agent's
+    /// next step, told through <see cref="OnTaken"/>, and answered by their own stop reason at the turn's real end.
     /// </summary>
     /// <exception cref="DriverException">
-    /// The agent did not say it takes a prompt during a turn: a second prompt would reset <c>codex-acp</c>'s running turn
-    /// (STEER1 §5), so nothing is sent.
+    /// The agent did not say it takes a prompt during a turn: a second prompt could reset its running turn, so nothing is sent.
     /// </exception>
     public Task<string> SayAsync(IAgentWord words, CancellationToken ct) =>
         _takesWordsMidTurn
@@ -560,8 +440,8 @@ public sealed class AcpSession(
             : throw new DriverException("this agent did not say it takes words during a turn — they wait for the turn to end.");
 
     /// <summary>
-    /// A conversation's session is handed its transient retry (AGENTERRORS1b, D210, the agent-errors design §5.1, §7), once it is open: a
-    /// failure at the open keeps today's end, and the conversation's turns are the words an episode holds, waits on and carries.
+    /// A conversation's session is handed its transient retry once it is open: a failure at the open ends as it came, and the
+    /// conversation's turns are the words an episode holds, waits on and carries.
     /// </summary>
     internal void Retries(TransientRetry retry, IEpisodeWords words)
     {
@@ -570,19 +450,19 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// One turn's prompt of a conversation, read for a transient failure (AGENTERRORS1b): its stop reason, or that of the try that answered.
-    /// Any other failure is thrown as it came, and so is one past the bound (<see cref="AcpTransientExhausted"/>).
+    /// One turn's prompt of a conversation, read for a transient failure: its stop reason, or that of the try that answered. Any other
+    /// failure is thrown as it came, and so is one past the bound (<see cref="AcpTransientExhausted"/>).
     /// </summary>
     internal Task<string> RetriedAsync(Func<Task<string>> prompt, CancellationToken ct) => PromptingAsync(prompt, ct);
 
     /// <summary>
-    /// A word handed to a running turn whose own prompt was refused after the word was taken (<see cref="AcpWordTurnFailed"/>, shape 2): the
-    /// turn that failed is the one it opened, so its refusal is read as any prompt's, a transient one opening the episode.
+    /// A word handed to a running turn whose own prompt was refused after the word was taken (<see cref="AcpWordTurnFailed"/>): the turn
+    /// that failed is the one it opened, so its refusal is read as any prompt's, a transient one opening the episode.
     /// </summary>
     internal Task<string> RecoveredAsync(AcpRefusal refusal, CancellationToken ct) =>
         PromptingAsync(() => Task.FromException<string>(refusal), ct);
 
-    /// <summary>Whether the person's *Send now* steers into this session's running turn (<see cref="SteersNow"/>, STEER2a).</summary>
+    /// <summary>Whether the person's *Send now* steers into this session's running turn (<see cref="SteersNow"/>).</summary>
     public bool Steers => _steersNow;
 
     /// <summary>The person's *Send now*, steered into the running turn (<see cref="AcpSteering.SteerAsync"/>).</summary>
@@ -591,29 +471,18 @@ public sealed class AcpSession(
     /// <exception cref="DriverException">The agent never said it steers, or the session is not open: nothing is sent.</exception>
     public Task<string> SteerAsync(IAgentWord words, CancellationToken ct) => Steering.SteerAsync(words, ct);
 
-    /// <summary>
-    /// A driven session's steer, answered (STEER2a): where the agent refused it, answered anything but <c>injected</c>, or never
-    /// had it, it costs those words, said by its code with their id so the page settles them (D136 point 6), never the run.
-    /// </summary>
-    /// <param name="who">What the English calls the one that refused: a conversation's runner says "conversation".</param>
-    /// <returns>The adapter's outcome, or <c>refused</c> or <c>unreached</c>: never a stop reason, and never thrown.</returns>
-    /// <param name="handBack">
-    /// Where the steer was answered <c>promptRequired</c> (the turn ended between the press and the steer, STEER2d) the adapter
-    /// left the words to the client: this takes them back to be prompted next, and says whether it did. Said once, taken once
-    /// where they are finally taken, so nothing is noted when it did.
-    /// </param>
+    /// <summary>A steer answered, costing only its words where it did not land (<see cref="AcpSteering.SteeredAsync"/>): never thrown.</summary>
     internal Task<string> SteeredAsync(
         IAgentWord words, CancellationToken ct, string who = "session", Func<IAgentWord, bool>? handBack = null) =>
         Steering.SteeredAsync(words, ct, who, handBack);
 
     /// <summary>
-    /// Stop the turn in flight and keep the session (D49's interrupt; CONV4's "stop the turn"): the agent
-    /// winds its work up and answers the prompt with its own stop reason. A notification, so there is
-    /// nothing to wait for here.
+    /// Stop the turn in flight and keep the session: the agent winds its work up and answers the prompt with its own stop reason. A
+    /// notification, so there is nothing to wait for here.
     /// </summary>
     /// <remarks>
-    /// A permission request held for the person (AUTONOMY1b3a) is answered <c>cancelled</c> after the cancel goes, as the protocol asks
-    /// of a client that cancels: the turn it was asked in is stopping, and nothing the person says now could land in it.
+    /// A permission request held for the person is answered <c>cancelled</c> after the cancel goes, as the protocol asks of a client that
+    /// cancels: the turn it was asked in is stopping, and nothing the person says now could land in it.
     /// </remarks>
     public async Task CancelTurnAsync()
     {
@@ -630,10 +499,8 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// Stop one piece of background work the session started (CONSOLE3a): the adapter's own request,
-    /// <c>_session/async_task/stop</c> with the session and the task, answered <c>{ stopped }</c>. Its
-    /// stream ends when the wire says how, as every task's does. False when the session is not open,
-    /// or the adapter answered that it stopped nothing; a refusal it sends back is its own words.
+    /// Stop one piece of background work the session started, by the adapter's own request: its stream ends when the wire says how, as
+    /// every task's does. False where the session is not open, or the adapter stopped nothing; a refusal is its own words.
     /// </summary>
     public async Task<bool> StopTaskAsync(string asyncTaskId, CancellationToken ct)
     {
@@ -646,18 +513,14 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// Close the session politely so the agent can flush and persist; its exit is still what the driver
-    /// observes, and a close that fails changes nothing about what already happened.
+    /// Close the session politely so the agent can flush and persist; its exit is still what the driver observes. Bounded, because an
+    /// agent that stops answering after its last turn would otherwise hang a run that is already finished.
     /// </summary>
-    /// <remarks>
-    /// BOUNDED, because "best effort" without a bound is an unbounded wait: an agent that stops
-    /// answering after its last turn would otherwise hang a run that is already finished.
-    /// </remarks>
     public async Task CloseAsync(CancellationToken ct)
     {
         if (_sessionId is null) return;
 
-        // Nothing held for the person outlives the session it was asked in (AUTONOMY1b3a): answered before the close goes.
+        // Nothing held for the person outlives the session it was asked in: answered before the close goes.
         await TurnStages.Of<AcpPermission>().ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
 
         using var closing = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -673,122 +536,18 @@ public sealed class AcpSession(
         }
     }
 
-    /// <summary>
-    /// Stop reading. Observed rather than awaited: an agent may never send another byte, and waiting on
-    /// its reader would turn a stop into a hang.
-    /// </summary>
+    /// <summary>Stop reading. Observed rather than awaited: an agent may never send another byte, and waiting would turn a stop into a hang.</summary>
     public void Release()
     {
         _pumpStop.Cancel();
         _ = _pump?.ContinueWith(static t => t.Exception, TaskScheduler.Default);
     }
 
-    /// <summary>
-    /// Completes when the agent's stream has ended and every line it sent has been handled — what a
-    /// conversation's transcript waits on before it closes.
-    /// </summary>
+    /// <summary>Completes when the agent's stream has ended and every line it sent has been handled.</summary>
     public Task Ended => _pump ?? Task.CompletedTask;
 
-    /// <summary>
-    /// Read frames until the stream ends, dispatching each: a response completes its request, a
-    /// notification is rendered, and a request from the agent is answered.
-    /// </summary>
-    private async Task PumpAsync(CancellationToken ct)
-    {
-        try
-        {
-            await Wire.ReadAsync(
-                incoming,
-                DispatchAsync,
-                raw: line =>
-                {
-                    _console.End();
-                    onLine(line);
-                    Emit(new SessionEvent { Kind = SessionEventKind.Raw, Raw = line });
-                },
-                unreadable: (error, frame) =>
-                {
-                    _console.End();
-                    onLine($"[unreadable frame: {error.Message}] {AcpRender.Compact(frame)}");
-                    Emit(new SessionEvent
-                    {
-                        Kind = SessionEventKind.Raw, Title = "unreadable frame", Text = error.Message, Raw = AcpRender.Compact(frame),
-                    });
-                },
-                ct).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // The run ended; the reader is nobody's business now.
-        }
-        finally
-        {
-            // What it ran beside itself ends with it (CONSOLE2), said before the console closes.
-            await EndStreamsAsync().ConfigureAwait(false);
-
-            // An agent's last words before its stream ended are the ones a person reads the console for.
-            _console.Dispose();
-
-            // Whatever was still awaited will never be answered. Faulting it here is what turns an
-            // agent that died mid-handshake into a sentence rather than a hang. 🔴 BGWAIT2: where the timeout said it was
-            // ending the process before the stream ended, the sentence is the timeout's; whatever is said after is not.
-            lock (_endGate) _streamOver = true;
-
-            // What it held for the person ends with the stream, said before the stream's end is (AUTONOMY1b3a): there is no wire to
-            // answer on now, and an answer the person gives after would land nowhere.
-            await TurnStages.Of<AcpPermission>().ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
-            Fail(StreamEnded(
-                "the ACP agent's stream ended before it answered — the agent exited, or it is not "
-                + "speaking ACP on stdout."));
-        }
-    }
-
-    private async Task DispatchAsync(JsonElement frame)
-    {
-        var hasMethod = frame.TryGetProperty("method", out var method);
-        var hasId = frame.TryGetProperty("id", out var id);
-        var name = hasMethod && method.ValueKind == JsonValueKind.String ? method.GetString() : null;
-
-        // Anything but an update ends the line the agent's words left open: a turn's answer, a
-        // refusal, a request. An update decides for itself (UX5 U3).
-        if (name != "session/update") _console.End();
-
-        if (!hasMethod && hasId)
-        {
-            Complete(id, frame);
-            return;
-        }
-
-        if (!hasMethod) return; // neither a call nor an answer; nothing to do with it
-
-        if (hasId)
-        {
-            try
-            {
-                await AnswerRequestAsync(name, id, frame).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is not OperationCanceledException)
-            {
-                // 🔴 A request is ANSWERED, whatever went wrong reading it (REV3): an unanswered one is
-                // a turn hung for ever, which is worse than any error the agent can be told.
-                await SendAsync(new JsonObject
-                {
-                    ["jsonrpc"] = "2.0",
-                    ["id"] = JsonNode.Parse(id.GetRawText()),
-                    ["error"] = new JsonObject { ["code"] = -32603, ["message"] = $"daoris-driver could not read {name}: {error.Message}" },
-                }).ConfigureAwait(false);
-                throw;
-            }
-
-            return;
-        }
-
-        if (name == "session/update" && frame.TryGetProperty("params", out var p)
-            && p.TryGetProperty("update", out var update))
-        {
-            await StagesAsync(TurnPhase.Update, new TurnFrame(name, frame, default, update)).ConfigureAwait(false);
-        }
-    }
+    private AcpReader Reader => LazyInitializer.EnsureInitialized(ref _reader, () => new AcpReader(this, Wire));
+    private AcpReader? _reader;
 
     /// <summary>
     /// The turn's stages, registered by their modules (<see cref="TurnStageAttribute"/>), ordered once per process and built once per
@@ -801,15 +560,11 @@ public sealed class AcpSession(
 
     private static readonly Lazy<IReadOnlyList<PartDeclaration>> TurnOrder = new(() => Parts.Declared<TurnStageAttribute>(typeof(AcpSession).Assembly));
 
-    /// <summary>The stages of <paramref name="phase"/>, in order, until one takes the frame: whether one did.</summary>
-    private async Task<bool> StagesAsync(TurnPhase phase, TurnFrame frame)
-    {
-        foreach (var stage in TurnStages.In(phase))
-        {
-            if (await stage.RunAsync(frame).ConfigureAwait(false)) return true;
-        }
+    PartSet<ITurnStage> ITurnReadWiring.Stages => TurnStages;
 
-        return false;
+    void ITurnReadWiring.StreamIsOver()
+    {
+        lock (_endGate) _streamOver = true;
     }
 
     void ITurnWiring.Say(string line) => onLine(line);
@@ -851,7 +606,15 @@ public sealed class AcpSession(
 
     void ITurnWiring.KeepOptions(IReadOnlyList<AcpConfigOption> options) => KeepOptions(options);
 
-    void ITurnEndWiring.Note(Noted noted) => Note(noted);
+    void ITurnEndWiring.Note(Noted noted)
+    {
+        _console.End();
+        onLine(noted.Note);
+        Emit(new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null,
+        });
+    }
 
     DriverException ITurnEndWiring.StreamEnded(string sentence) => StreamEnded(sentence);
 
@@ -904,7 +667,7 @@ public sealed class AcpSession(
         _prompted = prompted;
     }
 
-    Task ITurnRunWiring.EndStreamsAsync() => EndStreamsAsync();
+    Task ITurnReadWiring.EndStreamsAsync() => EndStreamsAsync();
 
     int ITurnRunWiring.Updates => _updates;
 
@@ -912,10 +675,7 @@ public sealed class AcpSession(
 
     private readonly RefusedCalls _refused = new();
 
-    /// <summary>
-    /// An event to whoever keeps the record — and a record that fails costs a line on the console,
-    /// never the turn: the conversation enriches the session, it does not run it.
-    /// </summary>
+    /// <summary>An event to whoever keeps the record: one that fails costs a console line, never the turn, which the record does not run.</summary>
     private void Emit(SessionEvent e)
     {
         if (onEvent is null) return;
@@ -927,27 +687,6 @@ public sealed class AcpSession(
         {
             onLine($"[the conversation record could not keep an event: {error.Message}]");
         }
-    }
-
-    private void Complete(JsonElement id, JsonElement frame) => Wire.Complete(id, frame);
-
-    private async Task AnswerRequestAsync(string? method, JsonElement id, JsonElement frame)
-    {
-        if (await StagesAsync(TurnPhase.Request, new TurnFrame(method, frame, id, default)).ConfigureAwait(false)) return;
-
-        // Anything else the agent asks of the client, this client does not implement — and says so in
-        // the protocol's own vocabulary rather than leaving the agent waiting. An unanswered request
-        // is a hung turn, which is the worst available outcome.
-        await SendAsync(new JsonObject
-        {
-            ["jsonrpc"] = "2.0",
-            ["id"] = JsonNode.Parse(id.GetRawText()),
-            ["error"] = new JsonObject
-            {
-                ["code"] = -32601,
-                ["message"] = $"daoris-driver does not implement {method}",
-            },
-        }).ConfigureAwait(false);
     }
 
     private AcpPosture Posture => LazyInitializer.EnsureInitialized(ref _posture, () => new AcpPosture(
@@ -968,14 +707,10 @@ public sealed class AcpSession(
 
     private Task SendAsync(JsonNode frame, Func<bool>? admit = null) => Wire.SendAsync(frame, admit);
 
-    private void Fail(Exception error) => Wire.Fail(error);
-
-    // ---- Resuming a conversation (ANSWER1a, D131) ----
-
     /// <summary>The conversation whose replay is arriving while a <c>session/load</c> is answered, or null.</summary>
     private volatile string? _replaying;
 
-    /// <summary>Resume a conversation instead of opening one (ANSWER1a, D131 §1): <c>session/resume</c> where the agent advertises it, else <c>session/load</c>.</summary>
+    /// <summary>Resume a conversation instead of opening one: <c>session/resume</c> where the agent advertises it, else <c>session/load</c>.</summary>
     /// <exception cref="AcpResumeRefused">The agent offers neither, or refused this one.</exception>
     public Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
         Opening.ResumeAsync(cwd, conversation, ct, servers);
@@ -986,7 +721,7 @@ public sealed class AcpSession(
         && parameters.TryGetProperty("sessionId", out var id) && id.ValueKind == JsonValueKind.String
         && string.Equals(id.GetString(), replaying, StringComparison.Ordinal);
 
-    /// <summary>Tell whoever keeps it the id the agent named (ANSWER1a); a listener's failure costs a console line, never the session.</summary>
+    /// <summary>Tell whoever keeps it the id the agent named; a listener's failure costs a console line, never the session.</summary>
     private void Told(string conversation)
     {
         try

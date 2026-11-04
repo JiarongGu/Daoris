@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// What a protocol session hands its run (<see cref="AcpRun"/>): the open, the resume and the close, the run's state to set as it
 /// begins, and what the run's end reads and leaves.
 /// </summary>
-internal interface ITurnRunWiring : ITurnPromptWiring
+internal interface ITurnRunWiring : ITurnPromptWiring, ITurnReadWiring
 {
     /// <summary>The run begins: its token, its listener, its inbox, its retry and its first write's word, set before anything is sent.</summary>
     void Begin(CancellationToken stops, Action<IAgentWord>? asked, IAgentInbox? inbox, TransientRetry? retry, Action? prompted);
@@ -20,9 +20,6 @@ internal interface ITurnRunWiring : ITurnPromptWiring
 
     /// <summary>The reader let go.</summary>
     void Release();
-
-    /// <summary>What the session runs beside itself ended, saying so.</summary>
-    Task EndStreamsAsync();
 
     /// <summary>The updates counted into the session's outcome.</summary>
     int Updates { get; }
