@@ -213,11 +213,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **SETUPUX1i:** the place page's tree.
 - **SETUPUX1x:** the installed sitting of the place page, and its fixes.
 - **SETUPUX1y:** Setup is the Agents place's default and its tree of places is always drawn. The repository page's Workflow and Setup tab
-  props, `RoleSection` and `ROLE_SECTIONS` (and the opener's `roleSection`) are still to remove.
+  props (`ProjectPage`'s `setup` and `workflow`, which `ProjectsView` passes `null`, with their stories and tests) are still to remove;
+  the opener's `roleSection` names Appointed roles or All roles only.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **WORKFLOWCLEAN1z (NOCOMPAT1b3):** the runtime's reading of work cycles from `driver.json`; the runtime suites still driven by it
-  (`NodeRuntime*Tests`, `ObservedEvent*`, `IntegrateNodeTests`, `LookParallel`, `NodeWakes`) rebound onto saved graphs; test fixtures
-  that still write a `handed` node; the dead `AutoLandingCode` constants.
+- **WORKFLOWCLEAN1z (NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`NodeRuntime*Tests`,
+  `ObservedEvent*`, `IntegrateNodeTests`, `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs;
+  the `handed` node in about 22 test files and in `workflow-graph-versions.json` and `workflow-graphs.json`, whose digests are
+  regenerated with the kind.
 - **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
 - **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.
