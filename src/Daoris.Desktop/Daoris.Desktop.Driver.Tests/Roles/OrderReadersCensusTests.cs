@@ -21,7 +21,7 @@ public sealed partial class OrderReadersCensusTests
         ("Daoris.Desktop.Driver/Participants/RoleStructure.cs", "the structure the screen reads, which shows the stored choices"),
         ("Daoris.Desktop.Driver/Participants/Helpers/HelperChoice.cs", "the fence a helper's rule decides; the reviewer walk arranges its alternatives within one agent"),
         ("Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs", "Brainstorm's voices are read once and frozen; the judge refuses a policy on it"),
-        ("Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "tells whether a caller's order is the seeded Chat order, which an added role's own replaces"),
+        ("Daoris.Desktop.Driver/Loop/Chat/ChatStarts.cs", "tells whether a caller's order is the seeded Chat order, which an added role's own replaces"),
         ("Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs", "Ask Daoris's own order, handed to the placing walk, which arranges it"),
     ];
 

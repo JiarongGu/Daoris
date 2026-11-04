@@ -173,7 +173,7 @@ public sealed class ActorRunTests : IDisposable
         };
         Assert.Equal(13, rows.Select(row => row.Start).Distinct().Count());
         foreach (var row in rows) Assert.Contains('"' + row.Actor + '"', File.ReadAllText(SourceFiles.Driver(row.File)));
-        foreach (var (type, name, visibility) in new[] { (typeof(SessionHold), "HoldAsync", BindingFlags.Public), (typeof(ChatRunner), "RunAsync", BindingFlags.NonPublic) })
+        foreach (var (type, name, visibility) in new[] { (typeof(SessionHold), "HoldAsync", BindingFlags.Public), (typeof(ChatRun), "RunAsync", BindingFlags.Public) })
         {
             var method = type.GetMethods(BindingFlags.Instance | visibility).Single(method => method.Name == name);
             Assert.Equal("actor", method.GetParameters()[0].Name);
