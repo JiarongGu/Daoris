@@ -39,7 +39,7 @@ public sealed partial class SettledReadersCensusTests
     {
         ["ChatGoOn.cs"] = "Daoris's limit word before a go-on: kept, the go-on goes on",
         ["LimitWaits.cs"] = "the live wake's limit word: kept without a word, it goes in this process alone as a word a host before the door would not keep",
-        ["DriverContinuations.cs"] = "the limit word of a cool-off: kept with no word, so no word id is handed on and the line goes on as the carry-on it was planned",
+        ["ContinuationLimits.cs"] = "the limit word of a cool-off: kept with no word, so no word id is handed on and the line goes on as the carry-on it was planned",
         ["AgentCourseWiring.cs"] = "the episode's go-on: no word to keep, so the try's go-on is the plain block",
         ["WordsLeft.cs"] = "a word kept again on the record: kept, with no view to show",
         ["ChatReplacement.cs"] = "a refused start's moved word kept at the head of the record it waits on: kept, nothing read from the answer",
