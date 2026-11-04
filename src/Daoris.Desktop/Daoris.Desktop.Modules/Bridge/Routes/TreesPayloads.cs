@@ -12,3 +12,6 @@ public sealed record SessionProcess(string Id);
 public sealed record SessionFiles(string Id);
 
 public sealed record SessionFile(string Id, string Path);
+
+/// <summary>A session by its <c>Id</c>, or a tree by its <c>Path</c> as the terminal's <c>trees remove</c> names it; <c>Force</c> says out loud that unlanded work may go.</summary>
+public sealed record DiscardSessionTree(string? Id, string? Path, bool Force = false);

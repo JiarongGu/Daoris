@@ -44,3 +44,31 @@ public sealed record SessionMemoryDecide(string Session, string? Op, bool Approv
 public sealed record SessionDelete(string Id, bool Said = false, bool Help = false);
 
 public sealed record SessionOpenFolder(string Id);
+
+/// <summary>The terminal's verb sends the <c>Ask</c> alone with <c>Said</c>; the page sends the <c>Session</c> too, which the press refuses without.</summary>
+public sealed record SessionHelperApprove(string Ask, string? Session, bool Said = false);
+
+/// <summary>As <see cref="SessionHelperApprove"/>.</summary>
+public sealed record SessionHelperDecline(string Ask, string? Session, bool Said = false);
+
+// The reads, named for their route with a Read where another type holds the name. A read told by event also carries the page's
+// `held`, which the module reads off any request.
+
+public sealed record SessionOpeningsRead(IReadOnlyList<string>? Ids);
+
+public sealed record SessionRelatedRead(string Session);
+
+public sealed record SessionSpentRead(IReadOnlyList<string>? Ids);
+
+public sealed record SessionRecordRead(string Id);
+
+public sealed record SessionMemoryRead(string Session);
+
+/// <summary>No ids is every session; the terminal's <c>session list</c> sends its <c>Group</c>, <c>Repository</c> and <c>Json</c> with <c>Said</c>.</summary>
+public sealed record SessionGroupsRead(IReadOnlyList<string>? Ids, string? Group, string? Repository, bool Said = false, bool Json = false);
+
+/// <summary>Archive these sessions, or bring them back by <c>Archived</c> false.</summary>
+public sealed record SessionArchiveMark(bool Archived, IReadOnlyList<string>? Ids, bool Said = false);
+
+/// <summary>A <c>Session</c> searches its own words; none, a page of sessions by <c>Offset</c> and <c>Limit</c>.</summary>
+public sealed record SessionSearchRead(string Q, string? Session, long? Offset, long? Limit);
