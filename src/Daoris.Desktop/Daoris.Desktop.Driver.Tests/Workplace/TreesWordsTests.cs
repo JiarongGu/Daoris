@@ -214,7 +214,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
     public void An_entrys_landing_says_each_repository_and_each_part_under_it_with_the_plugins_lines_first()
     {
         var said = TreesWords.EntryLand(
-            [("engine", Entered(true)), ("game", Entered(false))], [TreesWords.PluginLine("example.lands", "pushing")], ["trees: kept the note"]);
+            [("engine", Entered(true)), ("game", Entered(false))], [TreesWords.PluginLine("example.lands", "pushing")]);
 
         Assert.Equal(
             [
@@ -226,16 +226,16 @@ public sealed class TreesWordsTests : IAsyncLifetime
                 "  landed     s1a2b3c4  Landed `s1a2b3c4`.",
                 "  left out   s5d6e7f8",
             ], said.Out);
-        Assert.Equal(["trees: kept the note"], said.Error);
+        Assert.Empty(said.Error);
         Assert.Equal(1, said.Code);
-        Assert.Equal(0, TreesWords.EntryLand([("engine", Entered(true))], [], []).Code);
+        Assert.Equal(0, TreesWords.EntryLand([("engine", Entered(true))], []).Code);
     }
 
     [Fact]
     public async Task An_entrys_landing_and_the_refusal_of_one_naming_nothing_are_said_as_the_terminal_says_them()
     {
-        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(true))], [TreesWords.PluginLine("example.lands", "pushing")], []));
-        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(false))], [], ["trees: a note"]));
+        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(true))], [TreesWords.PluginLine("example.lands", "pushing")]));
+        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(false))], []));
         var none = TreesWords.EntryNone(isAsk: false, "e-1");
         Assert.Equal(["trees: no entry `e-1` has work to land on this machine."], none.Error);
         Assert.Equal(["trees: no ask `a1b2c3` has work to land on this machine."], TreesWords.EntryNone(isAsk: true, "a1b2c3").Error);
@@ -302,8 +302,8 @@ public sealed class TreesWordsTests : IAsyncLifetime
         Assert.StartsWith("  registry  engine: ", followed.Out[0]);
 
         await AssertSameAsync(TreesWords.Land(new TreeLanding(true, "Landed `main`."), []).Followed(followed));
-        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(true))], [], []).Followed(followed));
-        var alone = Alone(TreesWords.EntryLand([("engine", Entered(true))], [], []).Followed(followed));
+        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(true))], []).Followed(followed));
+        var alone = Alone(TreesWords.EntryLand([("engine", Entered(true))], []).Followed(followed));
         Assert.EndsWith(followed.Out[0] + Environment.NewLine, alone.Out);
     }
 

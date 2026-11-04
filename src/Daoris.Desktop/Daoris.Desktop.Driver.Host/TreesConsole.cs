@@ -347,7 +347,7 @@ internal static class TreesConsole
 
                 Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);
                 // The plugins' lines and the notes were said as they came; the sentences and the exit are the routes' words too (RPC1b4).
-                var said = TreesWords.EntryLand(landings, [], []);
+                var said = TreesWords.EntryLand(landings, []);
                 said.Print(Console.Out, Console.Error);
                 await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
                 return said.Code;
