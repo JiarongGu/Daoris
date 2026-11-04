@@ -183,6 +183,14 @@ describe('This machine\'s page, lit', () => {
   });
 
   it('opens at the Appointed row of Roles, or at All roles, for the doors that opened the Roles mode', async () => {
+    // The Appointed row stands where a role with a hold is placed: the steward, placed on this machine.
+    roles = {
+      ...CATALOGUE,
+      roles: [...CATALOGUE.roles, {
+        id: 'steward', state: 'seed', seeded: true, name: { en: 'Steward', zh: '管家' }, takes: [], scopeKind: 'machine', revision: 0,
+        hold: { kind: 'steward', acts: ['drive'], holder: null },
+      }],
+    };
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: 'Door to Appointed' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'This machine' })).toBeTruthy();

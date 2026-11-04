@@ -41,7 +41,7 @@ const FAMILIES = [
 /** The stores the chain says did not answer, each a `TraceUnread` the driver makes. */
 function unreadStores(): string[] {
   const stores = declared('TraceStores');
-  return [...source.matchAll(/new TraceUnread\(TraceStores\.(\w+)\)/g)].map((match) => stores.get(match[1]!) ?? `unknown ${match[1]}`).sort();
+  return [...driverSource('TraceChains.cs').matchAll(/new TraceUnread\(TraceStores\.(\w+)\)/g)].map((match) => stores.get(match[1]!) ?? `unknown ${match[1]}`).sort();
 }
 
 const codesOf = (catalogue: Record<string, string>, prefix: string) =>

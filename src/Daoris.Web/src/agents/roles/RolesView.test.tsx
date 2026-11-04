@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -27,6 +27,7 @@ import { DRIVER_STATE, respond, show, WIRING } from '../../test/shellHarness';
 import { useListPanes } from '../../work/frame/listPanes';
 import { ViewFrame } from '../../work/frame/ViewFrame';
 import { useAgentsMode, useAgentsView } from '../AgentsView';
+import { PLACES } from '../setup/setupFixtures';
 
 /** The place as the application holds it on a desktop: both modes, the list's memory its own. */
 function Place({ notify = () => {} }: { notify?: (message: string, tone?: 'ok' | 'error') => void }) {
@@ -34,6 +35,11 @@ function Place({ notify = () => {} }: { notify?: (message: string, tone?: 'ok' |
   const modes = useAgentsMode(lists);
   const [chosen, setChosen] = useState<string | null>(null);
   const [over, setOver] = useState(false);
+  // The roles are This machine's All roles section; Setup in front goes to it, as a door to it does.
+  const { mode, onPlaceAt } = modes;
+  useEffect(() => {
+    if (mode === 'setup') onPlaceAt('machine', { section: 'allRoles' });
+  }, [mode, onPlaceAt]);
   const layout = useAgentsView({ active: true, modes, chosen, onChoose: setChosen, notify });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
@@ -95,8 +101,9 @@ describe('The Agents place, Roles mode', () => {
     window.localStorage.clear();
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string) => {
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Parameters<typeof PLACES>[0] }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'PLACES') return PLACES(request?.payload ?? {});
       if (type === 'SET_ROLE' && refuseRole) throw new Error('`build` may not be off: a role must take it on the machine.');
       if (type === 'STATE' || type === 'SET_ROLE') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
@@ -121,7 +128,7 @@ describe('The Agents place, Roles mode', () => {
 
     await openRoles();
     expect(screen.getByRole('radio', { name: 'Setup' })).toBeChecked();
-    expect(await screen.findByRole('list', { name: 'Roles' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'All roles' })).toBeTruthy();
     expect(window.localStorage.getItem('daoris.list.agents.mode')).toBe('setup');
 
     await user.click(screen.getByRole('radio', { name: 'Agents' }));
@@ -135,32 +142,15 @@ describe('The Agents place, Roles mode', () => {
     expect(await screen.findByRole('radio', { name: 'Setup' })).toBeChecked();
   });
 
-  it('lists the five sections, every one built', async () => {
-    show(<Place />);
-    await openRoles();
-    const list = await screen.findByRole('list', { name: 'Roles' });
-    const names = within(list).getAllByRole('button').map((button) => button.querySelector('span')?.textContent);
-    expect(names).toEqual(['Working roles', 'Appointed roles', 'Work', 'Accounts', 'By repository']);
-    expect(within(list).queryAllByText('Comes later.')).toHaveLength(0);
-    // It opens on Working roles: the card of its roles stands in the main area.
-    expect(await screen.findByRole('heading', { name: 'Working roles' })).toBeTruthy();
-    expect(await screen.findByRole('button', { name: 'Edit Build' })).toBeTruthy();
-  });
-
-  it('opens another section in place of Working roles, and remembers the section last left', async () => {
+  it("opens This machine's All roles with the catalogue's card, and folds it back", async () => {
     show(<Place />);
     const user = userEvent.setup();
     await openRoles();
-    await user.click(await screen.findByRole('button', { name: /^Appointed roles/ }));
-    expect(await screen.findByRole('heading', { name: 'Appointed roles' })).toBeTruthy();
+    const all = await screen.findByRole('button', { name: 'All roles' });
+    await waitFor(() => expect(all).toHaveAttribute('aria-expanded', 'true'));
+    expect(await screen.findByRole('button', { name: 'Edit Build' })).toBeTruthy();
+    await user.click(all);
     expect(screen.queryByRole('button', { name: 'Edit Build' })).toBeNull();
-    expect(window.localStorage.getItem('daoris.list.roles.chosen')).toBe('appointed');
-
-    cleanup();
-    show(<Place />);
-    // A new window opens on the section left.
-    expect(await screen.findByRole('heading', { name: 'Appointed roles' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Appointed roles/ })).toHaveAttribute('aria-current', 'true');
   });
 
   it("reads each order from the role read alone, its row's staffing", async () => {
@@ -168,7 +158,7 @@ describe('The Agents place, Roles mode', () => {
     catalogue = 'seeded';
     show(<Place />);
 
-    expect((await screen.findAllByText('claude-code · account default · account default · as before')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('building · on this machine · claude-code · account default · account default · as before')).length).toBeGreaterThan(0);
     expect(invoke.mock.calls.map((call) => call[1])).not.toContain('ACTORS');
   });
 
@@ -380,6 +370,7 @@ describe('Intake in the Roles mode', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { id?: string; choices?: { agent: string }[] | null } }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'PLACES') return PLACES((request?.payload ?? {}) as Parameters<typeof PLACES>[0]);
       if (type === 'SET_ROLE' && request?.payload?.id === 'intake') intake = request.payload.choices ?? [];
       if (type === 'STATE' || type === 'SET_ROLE') return { ...DRIVER_STATE, intakeAdapter: intake[0]?.agent ?? '' };
       if (type === 'ROLES') return staffed(SEEDED, actors().actors);
@@ -443,8 +434,9 @@ describe('Intake in the Roles mode', () => {
 
   /** A shell that answers no actors has never heard of them: no row, not a disabled one. */
   it('offers no Intake row on a shell older than the actors', async () => {
-    invoke.mockImplementation(async (module: string, type: string) => {
+    invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'PLACES') return PLACES(((request as { payload?: object })?.payload ?? {}) as Parameters<typeof PLACES>[0]);
       if (type === 'STATE') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'STARTS') return { adapter: 'claude-code', starts: [start('work', 'claude-code')] };
@@ -452,7 +444,6 @@ describe('Intake in the Roles mode', () => {
     });
     show(<Place />);
 
-    await screen.findByRole('heading', { name: 'Working roles' });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ROLES', expect.anything()));
     expect(screen.queryByText('Intake')).toBeNull();
   });

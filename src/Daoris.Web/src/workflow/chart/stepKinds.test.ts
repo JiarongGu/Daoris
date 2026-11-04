@@ -10,7 +10,7 @@ describe('the variant of a kind', () => {
     ['review', 'you'], ['look', 'you'], ['go-ahead', 'you'], ['human', 'you'],
     ['check', 'check'], ['opinion', 'check'],
     ['work.requests', 'holds'], ['quest.holds', 'holds'], ['content.holds', 'holds'],
-    ['land', 'landing'], ['landing', 'landing'], ['handed', 'landing'],
+    ['land', 'landing'], ['landing', 'landing'], ['handed', 'unknown'],
     ['line', 'line'], ['pushed', 'line'], ['pull-request', 'line'],
     ['request', 'other'], ['wait.unit', 'other'], ['integrate', 'other'], ['quest.close', 'other'], ['all', 'other'], ['stop', 'other'],
     ['local-release/record', 'plugin'],

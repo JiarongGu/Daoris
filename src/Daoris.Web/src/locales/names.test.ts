@@ -660,6 +660,8 @@ describe('the real glossary and catalogues', () => {
       .map(({ key, language }) => `${key}:${language}`).sort();
     expect(stray).toEqual([
       'errors.HARNESS_ACTION_IDLE:zh', 'errors.INVALID_PAYLOAD_VALUE:zh',
+      // 远程 here is the act's own: a git act on a git remote, which is no Daoris remote.
+      'person.route.GIT_ANSWER:zh',
       // 远端 is the glossary's own word for a Daoris remote, which this sentence means; git remote's entry avoids it (FABRIC-CLOSE1i2).
       'projects.workspace.machines.none:zh',
       'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',

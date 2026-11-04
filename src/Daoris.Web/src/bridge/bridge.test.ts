@@ -13,11 +13,16 @@ import * as shell from './shell';
 
 // The barrel sits beside its domains since STRUCT5c (D166), and is none of them; since STRUCT5c-ii a domain may sit in a
 // scope folder below it, and is named by its path from here (`sessions/conversation`).
-const sources = import.meta.glob(['./**/*.ts', '!./shell.ts'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
-const modules = import.meta.glob(['./**/*.ts', '!./**/*.test.ts', '!./shell.ts'], { eager: true }) as Record<string, Record<string, unknown>>;
+// The contracts tool writes `generated/` (routes and their words): the domains import it by path, and it is no domain.
+const sources = import.meta.glob(['./**/*.ts', '!./shell.ts', '!./generated/**'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+const modules = import.meta.glob(['./**/*.ts', '!./**/*.test.ts', '!./shell.ts', '!./generated/**'], { eager: true }) as Record<string, Record<string, unknown>>;
 
-/** The domains' own helper — a call onto a route by name — shared by the domains and re-exported by none. */
-const INTERNAL = new Set(['call']);
+/**
+ * The domains' own: the helper — a call onto a route by name — shared by the domains, and each piece a domain split into a file of its own
+ * and re-exports by name from itself (`driver` has `driverConsiderations`). None is re-exported by the barrel, whose `export *` of a piece
+ * would bring its helpers' names into the page.
+ */
+const INTERNAL = new Set(['call', 'driverConsiderations', 'repositories/gitLog', 'sessions/sessionGroups', 'sessions/sessionHelpers']);
 
 const nameOf = (path: string) => path.replace(/^\.\/(.+)\.ts$/, '$1');
 const domains = Object.keys(sources).filter((path) => !/\.test\.ts$/.test(path)).map(nameOf).sort();

@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoleCatalogue, RoleChangePress, RoleRow } from '../../data/wiring';
 import i18n from '../../locales/i18n';
@@ -31,14 +32,17 @@ describe('The appointed roles of a place', () => {
     await i18n.changeLanguage('en');
   });
 
-  it('shows each role with its holder and acts, and sets them over SET_ROLE', () => {
+  it('shows each role with its holder and acts, and sets them over SET_ROLE', async () => {
     const onSet = draw();
 
-    expect(screen.getByText('Held by your rules · answer a question and leave a question to you · an answer is held 5 minutes for your overrule · on this machine')).toBeTruthy();
-    expect(screen.getByText(/^Held by no one · drive and stop · /)).toBeTruthy();
+    expect(screen.getByText('Held by your rules · answer a question and leave a question to you · an answer is held 5 minutes for your overrule')).toBeTruthy();
+    expect(screen.getByText(/^Held by no one · drive and stop$/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Steward/ }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Held by' }), { target: { value: 'terminal' } });
+    // The holder is the platform's select: opened from the keyboard, its option pressed.
+    screen.getByRole('combobox', { name: 'Held by' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'a terminal' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'resume' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 

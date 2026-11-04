@@ -231,7 +231,7 @@ describe('the way a quest went, drawn from its moves (FLOWCHART1a2; §2.1, traps
   });
 
   it('words every kind of quest operation the service has, in both languages (trap 12)', () => {
-    const block = /public enum QuestOperationKind\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
+    const block = /public enum QuestOperationKind\s*\{([\s\S]*?)\n\}/.exec(sourceOf('QuestOperationKind.cs'))?.[1] ?? '';
     const kinds = block.split('\n').flatMap((line) => /^\s{4}(\w+),?\s*$/.exec(line)?.[1] ?? []).map((kind) => kind.toLowerCase());
     expect(kinds.length).toBeGreaterThan(10);
     for (const kind of kinds) {

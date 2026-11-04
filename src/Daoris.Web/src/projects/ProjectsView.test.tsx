@@ -34,6 +34,8 @@ vi.mock('@shenora/react', async () => {
 import { sweepSlice } from '../bridge/repositories/lines';
 import { useStateSlices } from '../bridge/state/slices';
 import { useStateHub } from '../bridge/state/stateHub';
+import { PlaceSessions } from '../agents/setup/PlaceSessions';
+import { PLACES } from '../agents/setup/setupFixtures';
 import { code } from '../test/code';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import {
@@ -41,6 +43,9 @@ import {
 } from '../test/projectsView';
 
 const CHOSEN = 'daoris.list.projects.chosen';
+
+/** The workspace aurora as the places' read draws it, which the workspace place's Sessions take. */
+const AURORA_PLACE = PLACES({}).workspaces[0]!.place;
 
 /** The window's state hub, as `ShellSignals` mounts it: what a press moved is asked again here, never by the press's hook. */
 function Hub() {
@@ -84,7 +89,7 @@ describe('the shell-attached platform', () => {
     show(<ProjectsView notify={() => {}} />);
 
     expect(await within(repositoryList()).findByText('No repository is registered yet')).toBeInTheDocument();
-    expect(within(repositoryList()).getByText(code(/daoris import/))).toBeInTheDocument();
+    expect(within(repositoryList()).getByText(code(/daoris repository import/))).toBeInTheDocument();
     // The list's ＋ and its empty state's: the second is where the eye already is.
     expect(within(repositoryList()).getAllByRole('button', { name: 'Add repository' })).toHaveLength(2);
   });
@@ -206,11 +211,14 @@ describe("a repository's page", () => {
   });
 
   it('shows its line on Details read-only', async () => {
-    show(<ProjectsView notify={() => {}} />);
+    const onOpenSetup = vi.fn();
+    show(<ProjectsView notify={() => {}} onOpenSetup={onOpenSetup} />);
     const page = await chooseRepository('engine');
 
     expect(within(page).queryByRole('textbox')).toBeNull();
-    expect(await within(page).findByRole('button', { name: 'Change in Setup' })).toBeInTheDocument();
+    // Where the line is set is the repository's place in Agents → Setup, which the door opens.
+    await userEvent.click(await within(page).findByRole('button', { name: 'Change in Setup' }));
+    expect(onOpenSetup).toHaveBeenCalledWith('engine');
   });
 
 });
@@ -353,12 +361,21 @@ describe("a workspace's page (UX6g)", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LINE', { payload: { workspace: 'aurora', branch: 'develop' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('In aurora, work grows from `develop`')));
 
-    // The bridge answers no line set, so the field stays open; *Never mind* closes it, and the rows keep their order.
+    // The bridge answers no line set, so the field stays open; *Never mind* closes it.
     await userEvent.click(within(defaults).getByRole('button', { name: 'Never mind' }));
+  });
+
+  /** The session language and the reach are the workspace place's Sessions rows now (AGENTSPLACE1f), the same part the Setup tab keeps the rest of. */
+  it("sets its sessions' language and reach on the place's Sessions, each on DAORIS.DRIVER, and says what changed", async () => {
+    machine();
+    const notify = vi.fn();
+    show(<PlaceSessions place={{ kind: 'workspace', row: AURORA_PLACE, asked: null }} notify={notify} />);
     const user = userEvent.setup();
-    // The Landing row is the workflow's now (WORKFLOWCLEAN1 1h-c), so the language is the second row after the line.
-    await vi.waitFor(() => expect(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[1]).toBeEnabled());
-    await user.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[1]!);
+    await user.click(await screen.findByRole('button', { name: 'Defaults' }));
+    const defaults = screen.getByRole('region', { name: 'Defaults' });
+
+    await vi.waitFor(() => expect(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[0]).toBeEnabled());
+    await user.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[0]!);
     within(defaults).getByRole('combobox', { name: 'The session language for aurora' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('option', { name: 'Simplified Chinese (简体中文)' }));
@@ -378,7 +395,7 @@ describe("a workspace's page (UX6g)", () => {
    * AUTONOMY1d (D184 point 1): the access its repositories' sessions start under, resolved on the page from the driver's state, the
    * workspace's over this machine's, and set as `daoris place access --workspace` sets it.
    */
-  it("sets its sessions' access on Setup, each pause from the workspace or this machine, and says what changed", async () => {
+  it("sets its sessions' access on the place's Sessions, each pause from the workspace or this machine, and says what changed", async () => {
     machine({
       STATE: {
         ...STATE,
@@ -388,11 +405,9 @@ describe("a workspace's page (UX6g)", () => {
       },
     });
     const notify = vi.fn();
-    show(<ProjectsView notify={notify} />);
-    await chooseWorkspace('aurora');
-    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Setup' }));
-    // A pause of its own opens the section.
-    const access = await within(repositoryMain()).findByRole('region', { name: "Sessions' access" });
+    // The access rows are the workspace place's Sessions now, opened on a pause of its own.
+    show(<PlaceSessions place={{ kind: 'workspace', row: AURORA_PLACE, asked: 'access' }} notify={notify} />);
+    const access = await screen.findByRole('region', { name: "Sessions' access" });
     const row = (label: string) => within(access).getByText(label, { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
 
     expect(row('Permission prompts')).toHaveTextContent('From this machine.');
@@ -433,8 +448,10 @@ describe("a workspace's page (UX6g)", () => {
     show(<ProjectsView notify={notify} />);
     const page = await chooseWorkspace('forge');
 
-    await userEvent.click(await within(page).findByRole('button', { name: 'Wire to a remote…' }));
-    const remote = within(repositoryMain()).getByRole('region', { name: 'Remote and reach' });
+    // The header's act is the first; Details' Remote row offers the same press beside the remote it would wire.
+    await userEvent.click((await within(page).findAllByRole('button', { name: 'Wire to a remote…' }))[0]!);
+    // The press opens the wiring in Details' Remote row.
+    const remote = within(repositoryMain()).getByRole('region', { name: 'Remote' });
     await userEvent.type(within(remote).getByLabelText('Deployment'), 'https://forge.example.com');
     await userEvent.type(within(remote).getByLabelText('Key'), 'dk_forgekey0000');
     await userEvent.click(within(remote).getByRole('button', { name: 'Wire' }));
@@ -1046,7 +1063,7 @@ describe('the shell-attached registry management', () => {
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await userEvent.click(confirm);
 
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/registry/engine', { method: 'DELETE' });
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/registry/engine', expect.objectContaining({ method: 'DELETE' }));
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing was deleted'));
     // Retired by the person's own press, so the page goes back to choosing, not to *gone*.
     expect(await within(repositoryMain()).findByText('Choose a repository')).toBeInTheDocument();

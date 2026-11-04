@@ -445,7 +445,8 @@ describe('toTurns', () => {
     ]).turns[0]!.ask?.receipts;
 
     expect(said('ended')).toEqual({ taken: e(1, {}).at, ended: '2026-09-25T00:09:00Z' });
-    expect(said('answered')).toEqual({ taken: e(1, {}).at });
+    // A receipt that is no ended folds nothing: only an observed receipt gives the ask any.
+    expect(said('answered')).toBeUndefined();
   });
 
   /** COMMS1h: a helper's or a partner's answer names the session it is from, which its exchange card is joined on. */

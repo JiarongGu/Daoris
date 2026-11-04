@@ -14,8 +14,8 @@ import { rooted } from '../test/sources';
 /** An import of a Radix primitive: `from '@radix-ui/…'`, or a bare or dynamic `import('@radix-ui/…')`. */
 const PRIMITIVE = /(?:\bfrom\s+|\bimport\s*\(?\s*)['"](@radix-ui\/[^'"]+)['"]/g;
 
-/** The atoms, which may import any primitive: they are where the pixels are. */
-const ATOMS = new Set<string>(['./design/ui.tsx']);
+/** The atoms, which may import any primitive: they are where the pixels are, `ui.tsx` and the files of `design/atoms/` it assembles. */
+const isAtom = (path: string) => path === './design/ui.tsx' || path.startsWith('./design/atoms/');
 
 /**
  * What else may import one, and which. The application's root mounts the one tooltip provider every `Tip`
@@ -31,7 +31,7 @@ const HARNESS = /\.(test|stories)\.tsx?$|^\.\/test\//;
 
 export function reachers(files: [path: string, source: string][]): string[] {
   return files
-    .filter(([path]) => !ATOMS.has(path))
+    .filter(([path]) => !isAtom(path))
     .flatMap(([path, source]) => [...source.matchAll(PRIMITIVE)]
       .map((match) => match[1]!)
       .filter((primitive) => !(ROOTS[path] ?? []).includes(primitive))
@@ -63,6 +63,7 @@ describe('the atoms own the primitives', () => {
       .toEqual(['./main.tsx imports @radix-ui/react-tooltip']);
     // The atoms may import any.
     expect(reachers([['./design/ui.tsx', "import * as Menu from '@radix-ui/react-dropdown-menu';\n"]])).toEqual([]);
+    expect(reachers([['./design/atoms/Menu.tsx', "import * as Menu from '@radix-ui/react-dropdown-menu';\n"]])).toEqual([]);
     // And the atoms' own import is no primitive.
     expect(reachers([['./work/AppMenu.tsx', "import { Menu } from '../ui';\n"]])).toEqual([]);
     // The harness is told apart by its name.
