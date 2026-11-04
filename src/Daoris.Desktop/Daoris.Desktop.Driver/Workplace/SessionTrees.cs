@@ -214,13 +214,13 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     private OnlyHereProof OnlyHere => _onlyHere ??= new(_context, Removals);
 
     /// <summary>A landing's tidy of the other session branches its work holds, and the person's door for one (LAND3).</summary>
-    private TreeTidies Tidies => _tidies ??= new(_context, Asks, Content, Replays, Squashes, Removals);
+    private TreeTidies Tidies => _tidies ??= new(_context, Content, Squashes, Removals);
 
     /// <summary>A landing in sync with its line: the fetch, the replay of what the line lacks, the tree's follow (LANDSYNC1).</summary>
     private TreeLandSyncs Syncs => _syncs ??= new(_context, Replays);
 
     /// <summary>The landing: its plan, the merge, the branch form and its advance, and the rule's tidy (WSR1, D87, D100).</summary>
-    private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Removals, Tidies, Syncs, Ends);
+    private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Syncs);
 
     /// <summary>An entry's Accept: its parts' work on one branch, in ledger order (ACCEPTALL1, D167).</summary>
     private EntryLands Entries => _entries ??= new(_context, Lands, Syncs);

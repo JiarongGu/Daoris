@@ -38,7 +38,7 @@ public sealed class HandOffTests : LandedFixture
         }));
         var entry = Assert.Single(trees.Recorded.Find("s2a3b4c5"));
 
-        var handed = await trees.HandAsync(root, entry);
+        var handed = await trees.HandAsync(root, entry, plugin: Id);
 
         Assert.True(handed.Handed, handed.Message);
         Assert.Contains("pushed it and opened the pull request", handed.Message);
@@ -74,7 +74,7 @@ public sealed class HandOffTests : LandedFixture
         Assert.False(failing.Recorded.Of("engine", b.Branch!)!.Pushed);
 
         var trees = new SessionTrees(Home, Plugins(_ => new PluginLanding(Id, true, null, "pushed it.")));
-        var handed = await trees.HandAsync(root, trees.Recorded.Of("engine", b.Branch!)!);
+        var handed = await trees.HandAsync(root, trees.Recorded.Of("engine", b.Branch!)!, plugin: Id);
 
         Assert.True(handed.Handed, handed.Message);
         Assert.True(trees.Recorded.Of("engine", b.Branch!)!.Pushed);
@@ -114,25 +114,25 @@ public sealed class HandOffTests : LandedFixture
         LandedBranch Entry() => trees.Recorded.Of("engine", b.Branch!)!;
 
         NamePlugin(install: false);
-        Assert.Contains("not installed", (await trees.HandAsync(root, Entry())).Message);
+        Assert.Contains("not installed", (await trees.HandAsync(root, Entry(), plugin: Id)).Message);
         InstallManifest();
         PluginState.Disable(Home, Id);
-        Assert.Contains($"daoris plugin enable {Id}", (await trees.HandAsync(root, Entry())).Message);
+        Assert.Contains($"daoris plugin enable {Id}", (await trees.HandAsync(root, Entry(), plugin: Id)).Message);
         PluginState.Enable(Home, Id);
         InstallManifest(points: "session/ended");
-        Assert.Contains("`work/land`", (await trees.HandAsync(root, Entry())).Message);
+        Assert.Contains("`work/land`", (await trees.HandAsync(root, Entry(), plugin: Id)).Message);
         InstallManifest();
 
         await SquashAsync(root, b.Branch!);
-        var onLine = await trees.HandAsync(root, Entry());
+        var onLine = await trees.HandAsync(root, Entry(), plugin: Id);
         Assert.False(onLine.Handed);
         Assert.Contains("already reads on the line", onLine.Message);
 
         await GitAsync(root, "branch", "-D", b.Branch!);
-        Assert.Contains("is gone", (await trees.HandAsync(root, Entry())).Message);
+        Assert.Contains("is gone", (await trees.HandAsync(root, Entry(), plugin: Id)).Message);
         await GitAsync(root, "branch", b.Branch!, "main~1");
         await CommitOnAsync(root, b.Branch!, "mine.txt", "mine\n", "the person's own");
-        Assert.Contains("not the branch the landing made", (await trees.HandAsync(root, Entry())).Message);
+        Assert.Contains("not the branch the landing made", (await trees.HandAsync(root, Entry(), plugin: Id)).Message);
 
         Assert.Equal(0, asked);
         Assert.Contains("no branch a landing made", TreeHand.NotLanded("feature/mine"));
@@ -147,18 +147,19 @@ public sealed class HandOffTests : LandedFixture
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         NamePlugin();
+        Lands = GraphLand.Gate(Home, GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var pushing = new SessionTrees(Home, Plugins(_ => new PluginLanding(Id, true, "https://example.test/example-org/engine/pull/9", "pushed it.")));
         var b = await LandAsync(pushing, root, "shared.txt", "one\ntwo\n", new LandingSubject("s2", "q2", "Second"));
         // What the plugin's own push left: the branch on origin at the commit it pushed.
         await GitAsync(root, "push", "--quiet", "-u", "origin", b.Branch!);
 
-        var already = await pushing.HandPlanAsync(root, pushing.Recorded.Of("engine", b.Branch!)!);
+        var already = await pushing.HandPlanAsync(root, pushing.Recorded.Of("engine", b.Branch!)!, plugin: Id);
         Assert.Contains("already on its remote at this commit", already.Problem);
         Assert.Contains("https://example.test/example-org/engine/pull/9", already.Problem);
-        Assert.False((await pushing.HandAsync(root, pushing.Recorded.Of("engine", b.Branch!)!)).Handed);
+        Assert.False((await pushing.HandAsync(root, pushing.Recorded.Of("engine", b.Branch!)!, plugin: Id)).Handed);
 
         await CommitOnAsync(root, b.Branch!, "review.txt", "a review's fix\n", "after the review");
-        Assert.Null((await pushing.HandPlanAsync(root, pushing.Recorded.Of("engine", b.Branch!)!)).Problem);
+        Assert.Null((await pushing.HandPlanAsync(root, pushing.Recorded.Of("engine", b.Branch!)!, plugin: Id)).Problem);
     }
 
     /// <summary>A hand-off the plugin did not complete changes nothing: the branch, the record, the remote as they were.</summary>
@@ -176,7 +177,7 @@ public sealed class HandOffTests : LandedFixture
         var tip = (await GitAsync(root, "rev-parse", b.Branch!)).Trim();
         var record = await File.ReadAllTextAsync(DaorisHome.Entry(Home, HomeEntry.Landings));
 
-        var handed = await trees.HandAsync(root, trees.Recorded.Of("engine", b.Branch!)!);
+        var handed = await trees.HandAsync(root, trees.Recorded.Of("engine", b.Branch!)!, plugin: Id);
 
         Assert.False(handed.Handed);
         Assert.NotNull(handed.Plugin);
@@ -234,12 +235,10 @@ public sealed class HandOffTests : LandedFixture
     private LandingPlugins Plugins(Func<object, PluginLanding> land) =>
         new(Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new FakeLander(land)));
 
-    /// <summary>The rule names the plugin now — and the plugin is installed, unless the test says otherwise.</summary>
+    /// <summary>The plugin each hand-off here names is installed, unless the test says otherwise.</summary>
     private void NamePlugin(bool install = true)
     {
         if (install) InstallManifest();
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
     }
 
     private void InstallManifest(string points = "work/land")

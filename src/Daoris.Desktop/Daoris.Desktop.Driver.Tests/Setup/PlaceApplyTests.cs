@@ -75,7 +75,6 @@ public sealed class PlaceApplyTests : IDisposable
         var saved = WorkflowPorts.Store(_home).Load("merge-after-accept")!.Read.Versions[^1];
         Assert.Equal("merge-after-accept", saved.From!.Default);
         Assert.Equal("merge-after-accept", WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", null).Workflow);
-        Assert.Empty(stand.Config.Landings);
 
         var again = await Apply(stand, ask, digest);
         Assert.True(again.Done);
@@ -151,7 +150,6 @@ public sealed class PlaceApplyTests : IDisposable
     {
         PlacePlanTests.SaveWorkflow(_home, "kept");
         var stand = Make(each => each.Config = WorkflowSelection.Apply(each.Config, new WorkflowUse("kept", "atlas", null, null)));
-        var landing = LandingRules.Choose(stand.Config, "atlas", "aurora").Rule;
         var ask = new PlaceAsk(["atlas"], SetupPresets.Keep) { Drive = true, Adoption = true, Builds = SetupBuilds.Library };
         var digest = await DigestOf(stand, ask);
 
@@ -161,7 +159,6 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.True(stand.Config.Drivable.Contains("atlas"));
         Assert.True(stand.Config.OpensOwnTree("atlas"));
         Assert.Equal("kept", WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", task: null).Workflow);
-        Assert.Equal(landing, LandingRules.Choose(stand.Config, "atlas", "aurora").Rule);
         Assert.Single(stand.Setup.Published);
     }
 

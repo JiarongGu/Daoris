@@ -16,6 +16,7 @@ namespace Daoris.Driver;
 /// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes keep the family contract:
 /// 0 said or written · 1 refused, nothing staged · 2 a word it does not answer, or a status with no install to read.</para>
 /// </remarks>
+[CommandGroup("update", Whole = true)]
 public static class UpdateCommand
 {
     public const string Usage =

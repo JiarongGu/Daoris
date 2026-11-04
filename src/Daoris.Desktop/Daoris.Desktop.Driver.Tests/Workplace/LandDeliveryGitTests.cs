@@ -223,12 +223,11 @@ public sealed class LandDeliveryGitTests : IDisposable
         Assert.Equal(DeliverySettlements.Delivered, Reopened().Delivery(later.Key)?.Settled);
     }
 
-    /// <summary>The live rule makes a branch; the delivery merges, into the intent's line, through the promotion, and records it so.</summary>
+    /// <summary>A merge delivery merges, into the intent's line, through the promotion, and records it so.</summary>
     [Fact]
-    public async Task A_merge_delivery_merges_into_its_line_whatever_the_live_rule_says()
+    public async Task A_merge_delivery_merges_into_its_line()
     {
         var (root, trees, tree, tip) = await TreeAsync();
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
         var (store, claim) = Start(tip, DeliveryMethods.Merge);
 
         var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim), beside: NoSessions);
@@ -354,9 +353,6 @@ public sealed class LandDeliveryGitTests : IDisposable
         await CommitAsync(tree.Path, "work.txt", "the session's work", "the work");
         return (root, trees, tree, await RevAsync(tree.Path, "HEAD"));
     }
-
-    private void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     private static async Task<string?> RevAsync(string cwd, string what)
     {

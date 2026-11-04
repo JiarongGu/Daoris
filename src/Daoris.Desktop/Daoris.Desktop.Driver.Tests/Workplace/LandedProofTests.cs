@@ -39,7 +39,7 @@ public sealed class LandedProofTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await GitAsync(tree.Path, "rm", "--quiet", "shared.txt");
         await GitAsync(tree.Path, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", "drop it");
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s3", "q3", "Drop"));
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s3", "q3", "Drop"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);
 
         var kept = Landed(await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>()), landed.Branch!);
@@ -60,7 +60,7 @@ public sealed class LandedProofTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await GitAsync(tree.Path, "mv", "shared.txt", "renamed.txt");
         await GitAsync(tree.Path, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", "rename it");
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s4", "q4", "Rename"));
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s4", "q4", "Rename"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);
 
         // The line holds the new name and still the old one.

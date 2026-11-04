@@ -77,18 +77,18 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     {
         await CommitAsync(root, LandedGates.File, Declaration, "the declaration");
         var blob = (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
-        DriverConfig.Empty.WithLine("engine", "main").WithLanding("engine", new LandingRule(LandingForm.Branch, Pattern, AutoAccept: true))
-            .WithLandingIntegrate("engine", new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared))
+        DriverConfig.Empty.WithLine("engine", "main")
+            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared))
             .WithIntegrationGates("engine", blob)
             .Save(ConfigPath);
     }
 
     /// <summary>One session's tree with one commit, landed at the quest's done (the automatic landing) or by the person's Accept.</summary>
-    private static async Task<(string Branch, string Tip, TreeOpened Tree)> LandedAsync(SessionTrees trees, string root, string quest, string acceptedBy)
+    private async Task<(string Branch, string Tip, TreeOpened Tree)> LandedAsync(SessionTrees trees, string root, string quest, string acceptedBy)
     {
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, $"{quest}.txt", $"the work of {quest}\n", $"the work of {quest}");
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), acceptedBy: acceptedBy);
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), acceptedBy: acceptedBy, gate: Lands);
         Assert.True(landed.Landed, landed.Message);
         return (landed.Branch!, (await GitAsync(root, "rev-parse", landed.Branch!)).Trim(), opened);
     }
@@ -259,8 +259,8 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     public async Task A_stopped_handed_refuses_its_request()
     {
         var root = await RepositoryAsync("engine");
-        DriverConfig.Empty.WithLine("engine", "main").WithLanding("engine", new LandingRule(LandingForm.Branch, Pattern))
-            .WithLandingIntegrate("engine", new LandingIntegrate(Request: LandingIntegrate.Owner)).Save(ConfigPath);
+        DriverConfig.Empty.WithLine("engine", "main")
+            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Owner)).Save(ConfigPath);
         var process = Preset(PresetGraph.Replace("\"automatic\"", "\"you\"", StringComparison.Ordinal).Replace("\"done\"", "\"owner\"", StringComparison.Ordinal));
         var run = RunUnits.IdOf(process.Run!);
         var stopped = new NodeRecord(run)
@@ -298,8 +298,8 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     public async Task A_revision_after_the_request_is_offered_not_queued_under_owner()
     {
         var root = await RepositoryAsync("engine");
-        DriverConfig.Empty.WithLine("engine", "main").WithLanding("engine", new LandingRule(LandingForm.Branch, Pattern))
-            .WithLandingIntegrate("engine", new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates)).Save(ConfigPath);
+        DriverConfig.Empty.WithLine("engine", "main")
+            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates)).Save(ConfigPath);
         var trees = new SessionTrees(Home);
         var (branch, tip, tree) = await LandedAsync(trees, root, "q1", AcceptedBy.Person);
         var runtime = Runtime(root);
@@ -321,7 +321,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         var subject = new LandingSubject("s-q1", "q1", "Fix the gap");
         Assert.Null((await trees.PlanAsync(tree.Path, subject)).Problem);
         Assert.Empty(Store().Open());
-        var next = await trees.LandAsync(tree.Path, subject);
+        var next = await trees.LandAsync(tree.Path, subject, gate: Lands);
         Assert.True(next.Landed, next.Message);
         Assert.Equal("a later revision", (await GitAsync(root, "log", "--format=%s", $"main..{next.Branch}")).Trim());
     }

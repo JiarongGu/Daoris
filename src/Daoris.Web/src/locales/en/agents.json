@@ -147,7 +147,6 @@
   "agents.roles.filter.needsLook": "Needs attention",
   "agents.roles.filter.clear": "Clear the filters",
   "agents.roles.reading": "Reading the roles…",
-  "agents.roles.notOffered": "Not offered by this shell: it does not answer what the roles stand on, so there is nothing to show here.",
   "agents.roles.readFailed": "What the roles stand on could not be read; try again in a moment.",
   "agents.roles.catalogueFailed": "The roles do not read, so every work holds its starts: {{why}}",
   "agents.roles.nothing": "Nothing matches these filters.",

@@ -81,6 +81,7 @@ public sealed class ToolWords(string message, int exit = 2) : Exception(message)
 /// location did not answer, a plan or a download's check, the person's refusal in the window, or a session's terminal · 2 the usage,
 /// a refusal of the words, the operation or the route, and the person's Ctrl+C.
 /// </remarks>
+[CommandGroup("tool", "list", "path", "use", "download", "update", "delete", "locations", "look", "git", Whole = true)]
 public static class ToolsCommand
 {
     /// <summary>The verbs this program has: every one the CLI's <c>daoris tool</c> had, which it hands on whole.</summary>

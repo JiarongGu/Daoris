@@ -43,7 +43,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
         Assert.Null(plan.Conflict);
         Assert.Equal(["the work"], plan.Lands!.Select(commit => commit.Subject));
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.StartsWith($"put the work on `{Branch}` — 1 commit(s) replayed onto `main`, which moved since the work began.", landed.Message);
@@ -76,7 +76,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Contains("TASKS.md", plan.Conflict!.Says);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
@@ -105,7 +105,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Contains("shared.txt", plan.Conflict!.Says);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("Merge conflict in shared.txt", refused.Conflict!.Says);
@@ -134,7 +134,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Contains("TASKS.md", plan.Conflict!.Says);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("Merge conflict in TASKS.md", refused.Conflict!.Says);
@@ -167,7 +167,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Null(plan.Conflict);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains(
@@ -194,7 +194,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
         await CommitAsync(root, Path.Combine("docs", "development.md"), CensusWith("| a test waits | `node tools/short-waits.mjs` |"), "the line's row");
         var before = await StateAsync(root, tree);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("Merge conflict in docs/development.md", refused.Conflict!.Says);
@@ -220,7 +220,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
         await CommitAsync(root, Path.Combine("docs", "task-archive.md"), Archive + "\n## A - a (2026-10-27)\nOutcome A.\n", "the line's entry");
         var line = await HeadAsync(root);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains(" Set apart in a commit on top, where union had joined it to the line above: `docs/task-archive.md:", landed.Message);

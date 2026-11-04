@@ -6,16 +6,16 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Ask Daoris, the page's `bridge/help.ts` (MOD5; HELP1, D89): its conversation in its room, its proposals
-/// and the person's Apply or Not now, and the doors an Apply goes through, each a screen's own route (HELP6).
+/// Ask Daoris, the page's `bridge/help.ts`: its conversation in its room, its proposals
+/// and the person's Apply or Not now, and the doors an Apply goes through, each a screen's own route.
 /// </summary>
 public sealed class HelpRoutes(DriverContext context)
 {
-    /// <summary>What a history act changes (STATEHUB1h, D169): Ask Daoris's history, and the conversations the panel shows.</summary>
+    /// <summary>What a history act changes: Ask Daoris's history, and the conversations the panel shows.</summary>
     private const StateScopes Kept = StateScopes.Sessions | StateScopes.Help;
 
     /// <summary>
-    /// What an Apply may change (STATEHUB1h, D169), every door it holds: the page's hook asked each of these again by hand before.
+    /// What an Apply may change, every door it holds: the page's hook asked each of these again by hand before.
     /// </summary>
     /// <remarks>LAYOUT8: a set-up's Apply adds a rule to the repository's scope, so the rules are among them.</remarks>
     private const StateScopes Applies = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver
@@ -27,23 +27,16 @@ public sealed class HelpRoutes(DriverContext context)
     private readonly IEventBus _events = context.Events;
 
     // The offers' folder as it stands now: the context's, read at each request since an initializer sets it after the handlers
-    // are built (PART10e).
+    // are built.
     private string OffersFolder => _context.OffersFolder;
 
-    // Ask Daoris's conversation (HELP1a, D89): the one this machine is running in the press's workspace, carried on — one per
-    // workspace (ASKSCOPE1a) — or a new one in its room, written from the machine as the driver holds it now.
-    //
-    // HELPSTART1 (D89's note): answered once the conversation is placed, its record open, with `starting`; the room is read and
-    // its agent spawned after, off the request, its end told as the conversation's events. On a loaded machine the room's
-    // session look alone took 24.9 s, and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to
-    // the next press in its workspace. Its record opens, so it declares the sessions (STATEHUB1h, D169); the history lists it
-    // once it is spoken in.
-    //
-    // ASKSCOPE1a (D158's ASKSCOPE1 note, points 1-3): `workspace`, the one the person's window is on, is read here at the press
-    // and carried to the record, so a window that changes workspace while it starts moves nothing; every answer names it, so a
-    // late one is known for the workspace it was asked in. None is `default`'s, as before. A name this machine does not hold is
-    // refused before anything is opened.
-    [DriverRoute("START_HELP")]
+    // Ask Daoris's conversation, one per workspace: the one running in the press's workspace, carried on, or a new one in its room.
+    // Answered once the conversation is placed, with `starting`, its agent spawned after, off the request, since on a loaded
+    // machine the room's look alone took 24.9 s and the page stops waiting at 30. `workspace` is read at the press and carried to
+    // the record, so a window that changes workspace while it starts moves nothing; a name this machine does not hold is refused.
+    [DriverRoute("START_HELP", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("START_HELP", None = OwnerNone.OwnConversation)]
+    [GroundRepository("START_HELP", "workspace")]
     [Publishes("START_HELP", StateScopes.Sessions)]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -81,7 +74,7 @@ public sealed class HelpRoutes(DriverContext context)
                 return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle };
             }
 
-            // HELPNEWCHAT1: one the person finished is winding up, and the person's words are a new conversation's. It is waited for
+            // one the person finished is winding up, and the person's words are a new conversation's. It is waited for
             // a moment, since the ledger holds one running in a workspace; past that it is answered as still finishing, which the page
             // waits out before it asks again, never handing it the new conversation's words.
             foreach (var ending in runningHere)
@@ -95,7 +88,7 @@ public sealed class HelpRoutes(DriverContext context)
                 }
             }
 
-            // Ask Daoris's order walked (MODELROLE1d, D205 §4.1), each entry judged by its access under the mode standing now.
+            // Ask Daoris's order walked, each entry judged by its access under the mode standing now.
             var place = await chat.PlaceHelpAsync(
                 helper, config, named is null ? null : spelled, cancellationToken, order: ActorChoices.Effective("ask-daoris", config)).ConfigureAwait(false);
             if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false, Workspace = circle };
@@ -112,20 +105,20 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// How long a start waits for a conversation the person finished to end before it opens the next (HELPNEWCHAT1): its agent's
-    /// last turn and its close, well inside the 30 s the page waits on a press (SENDLOST1).
+    /// How long a start waits for a conversation the person finished to end before it opens the next: its agent's
+    /// last turn and its close, well inside the 30 s the page waits on a press.
     /// </summary>
     internal static readonly TimeSpan FinishingBound = TimeSpan.FromSeconds(5);
 
-    /// <summary>The workspace a start's press names (ASKSCOPE1a), trimmed; null where it names none, which is <c>default</c>'s.</summary>
+    /// <summary>The workspace a start's press names, trimmed; null where it names none, which is <c>default</c>'s.</summary>
     private static string? WorkspaceAsked(IpcRequest request) =>
         PayloadHelper.GetOptionalValue<string>(request.Payload, "workspace") is { } named && !string.IsNullOrWhiteSpace(named)
             ? named.Trim()
             : null;
 
     /// <summary>
-    /// The workspace as this machine spells it, or refused where it does not hold it (ASKSCOPE1a), naming those it does:
-    /// <c>default</c> and each registered repository's, as Ask Daoris's proposals judge one (BRSCOPE1b).
+    /// The workspace as this machine spells it, or refused where it does not hold it, naming those it does:
+    /// <c>default</c> and each registered repository's, as Ask Daoris's proposals judge one.
     /// </summary>
     private static string HeldWorkspace(Snapshot snapshot, string circle)
     {
@@ -137,7 +130,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The conversation <c>START_HELP</c> placed, started off the request (HELPSTART1): the room read through the loop's
+    /// The conversation <c>START_HELP</c> placed, started off the request: the room read through the loop's
     /// <c>DescribeHelp</c> as a conversation going on reads it, then the agent spawned. The words said to it meanwhile go to its
     /// door in order once it opens; where it could not start, its record says why and keeps them as the person's, so the page's
     /// conversation shows both rather than losing either.
@@ -194,7 +187,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         var whole = read.Whole;
         // The asks by id too, so a delete of one made by mistake can name it; counted by the rule a workspace's room counts
-        // its own by (ASKSCOPE1b).
+        // its own by.
         var asks = HelpRoom.AsksWaiting(whole.Standing);
         // This machine's sessions as the Sessions list places them, with what holds them as the loop's last look says.
         var sessions = read.Sessions is SessionLook look ? look with { Waits = _loop.Look.Waits } : null;
@@ -203,7 +196,7 @@ public sealed class HelpRoutes(DriverContext context)
         return HelpRoom.Describe(
             config, whole.Snapshot, read.Lines, whole.Roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, whole.Standing,
             plugins, new LandedBranches(_loop.Home).All(),
-            // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
+            // The install's own plugins, which the helper may propose installing by id.
             PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
             // What the last tick parked by its strikes, so a retry names a quest the drawer offers Retry on.
             _loop.Parked.Latest,
@@ -222,7 +215,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The machine's topic's judge (PARALLEL1a): the registry, the quests and active sessions, the asks and the roster, as the service
+    /// The machine's topic's judge: the registry, the quests and active sessions, the asks and the roster, as the service
     /// and the probes answer now; null before the service answers.
     /// </summary>
     private async Task<HelpMachineWhole?> MachineWholeAsync(CancellationToken cancellationToken)
@@ -236,10 +229,10 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The sessions' topic's judge (PARALLEL1a): this machine's sessions as the Sessions list places them (SESSUX1h3), so an archive
+    /// The sessions' topic's judge: this machine's sessions as the Sessions list places them, so an archive
     /// or a delete names one it was shown, without their trees since FACTSPLIT1b, which each repository's part judges
     /// (<see cref="TreesAsync"/>): the records, the quests, the verdicts and the marks, with no git. The look this shell took last is
-    /// read where it is recent (HELPSTART1). Null where the look cannot be taken, and the room says so.
+    /// read where it is recent. Null where the look cannot be taken, and the room says so.
     /// </summary>
     private async Task<IKnowledgeSessionLook?> SessionsAsync(CancellationToken cancellationToken)
     {
@@ -270,7 +263,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The trees' topic's judge (FACTSPLIT1b, D181 points 2-3), one part at a time: what each of its repository's ended sessions' trees
+    /// The trees' topic's judge, one part at a time: what each of its repository's ended sessions' trees
     /// holds, judged with git in those trees alone (<see cref="HelpFacts.ReadTreesAsync"/>). A part that asked any tree says its walk's
     /// time and how many it asked in the room's look line, as the whole look's trees step said them; one with none ran no git.
     /// </summary>
@@ -284,7 +277,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The history's topic's judge (PARALLEL1a): what each workspace keeps of finished work (HIST1f-c), the workspaces
+    /// The history's topic's judge: what each workspace keeps of finished work, the workspaces
     /// `daoris history` reads; null where the service could not be read, and the room says so.
     /// </summary>
     private async Task<IReadOnlyList<HistoryReading>?> HistoryAsync(CancellationToken cancellationToken)
@@ -317,9 +310,9 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The work's topic's judge (PARALLEL1a), one part at a time since FACTSPLIT1a: where each unit's work has got to
+    /// The work's topic's judge, one part at a time since FACTSPLIT1a: where each unit's work has got to
     /// (FABRIC-MILESTONE1b), the inventory's read-only derivation as `work state` and the WORK_STATE route read it, with Daoris's own
-    /// recoveries no unit names (RECOVERYASK1, CLEANUP1), of the part's repositories alone. Its checkout and the trees in use are the
+    /// recoveries no unit names, of the part's repositories alone. Its checkout and the trees in use are the
     /// service's answers the facts hold (<see cref="HelpFacts.PartOf"/>), so a part asks the service nothing but, where a landing the line
     /// does not hold names a quest, which of those are closed (<see cref="ClosedQuestsAsync"/>).
     /// </summary>
@@ -329,7 +322,7 @@ public sealed class HelpRoutes(DriverContext context)
             cancellationToken).ConfigureAwait(false);
 
     /// <summary>
-    /// The quests the service says are closed among those the part's landings name (LANDRETIRE1 part 2): the one service read a part's
+    /// The quests the service says are closed among those the part's landings name: the one service read a part's
     /// judge makes, and only where a landing the line does not hold names a quest (<see cref="LandedStanding.ClosedAsync"/>), so a machine
     /// with none asks the service nothing. A service not ready closes nothing.
     /// </summary>
@@ -342,8 +335,8 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The clean-up's list's topic's judge (PUSH1c4a, D182), one repository at a time: its session branches and its landings' branches
-    /// judged with git by the pull-request answers the landing record keeps, asking no plugin (D148 point 2), as the pushed <c>sweep</c>
+    /// The clean-up's list's topic's judge, one repository at a time: its session branches and its landings' branches
+    /// judged with git by the pull-request answers the landing record keeps, asking no plugin, as the pushed <c>sweep</c>
     /// slice reads them. Its checkout, workspace and trees in use are the service's answers the facts hold (<see cref="HelpFacts.SweepPartOf"/>).
     /// </summary>
     private async Task<IKnowledgeSweep?> SweepPartAsync(HelpSweepPart part, CancellationToken cancellationToken) =>
@@ -357,7 +350,7 @@ public sealed class HelpRoutes(DriverContext context)
             cancellationToken).ConfigureAwait(false);
 
     /// <summary>
-    /// Keep Ask Daoris's facts on the loop's (PARALLEL1a, D181 point 2): this module's judges registered for each of the room's topics,
+    /// Keep Ask Daoris's facts on the loop's: this module's judges registered for each of the room's topics,
     /// and the room written again, off the judge's thread, as the facts it said were not read yet land.
     /// </summary>
     /// <remarks>A static over the context, as <see cref="HelpMachineNowAsync"/> is: the instance holds nothing of its own.</remarks>
@@ -380,12 +373,12 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The room's reading for a start or a conversation going on (ASKHIST1): since PARALLEL1a the facts the judges keep, as last
+    /// The room's reading for a start or a conversation going on: since PARALLEL1a the facts the judges keep, as last
     /// judged, at once, and this machine's file as it is now. Where the service's answers were never judged it waits for their first
-    /// judgement, which the start bounds (HELPSTUCK1) and does not wait for at all where a room was written before.
+    /// judgement, which the start bounds and does not wait for at all where a room was written before.
     /// </summary>
     /// <remarks>
-    /// A static over the context, which the module's constructor hands the loop as <c>DescribeHelp</c> (PART10f). The class
+    /// A static over the context, which the module's constructor hands the loop as <c>DescribeHelp</c>. The class
     /// holds nothing of its own, so the instance it reads through is only the context's view.
     /// </remarks>
     internal static async Task<HelpMachine?> HelpMachineNowAsync(DriverContext context, CancellationToken cancellationToken)
@@ -397,11 +390,11 @@ public sealed class HelpRoutes(DriverContext context)
             : null;
     }
 
-    // Ask Daoris's proposals (HELP1c, D89): what one conversation proposed that waits for the
+    // Ask Daoris's proposals: what one conversation proposed that waits for the
     // person, each judged with the route's own code first. One the route would refuse is never
-    // shown: it is settled refused, and the agent hears why in the route's words. Told by event (NOBLOCK1): its pending list and
+    // shown: it is settled refused, and the agent hears why in the route's words. Told by event: its pending list and
     // the service's facts held the window up to 1.3 s, so an ask is answered from what is held and this runs on a task of its own.
-    [DriverRoute("HELP_PROPOSALS")]
+    [DriverRoute("HELP_PROPOSALS", PipeClass.Open)]
     [ByEvent("HELP_PROPOSALS", Untold = "each proposal judged against the checkouts' git and the service's records, which no scope tells")]
     private async Task<object?> HelpProposalsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -416,13 +409,13 @@ public sealed class HelpRoutes(DriverContext context)
             if (plan.Refusal is { } refused)
             {
                 HelpProposals.Settle(_loop.Home, proposal.Id, "refused", refused);
-                // ASKQUESTS1: Daoris's own word, never the person's.
+                // Daoris's own word, never the person's.
                 _loop.Chat?.Tell(session, InPersonsWords($"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}"),
                     DaorisWordKey("help-refused", proposal.Id));
                 continue;
             }
 
-            // A clear's card holds the units it listed, once, so its Apply sends exactly those (HIST1f-c, design §5).
+            // A clear's card holds the units it listed, once, so its Apply sends exactly those.
             HelpProposals.Drawn(_loop.Home, proposal, plan);
             shown.Add(Card(proposal, plan).Card);
         }
@@ -431,7 +424,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A proposal's card as the page draws it, and the revision of the plan it shows (HELPAPPLY1): a digest of everything the card
+    /// A proposal's card as the page draws it, and the revision of the plan it shows: a digest of everything the card
     /// says, so an Apply carrying it runs only what the person saw, and a machine that moved since asks again. The card's own
     /// <c>revision</c> is that digest.
     /// </summary>
@@ -450,7 +443,7 @@ public sealed class HelpRoutes(DriverContext context)
         new
         {
             proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
-            // What a plugin runs, as its manifest writes it (PLUG9), for the card to show before Apply.
+            // What a plugin runs, as its manifest writes it, for the card to show before Apply.
             Plugin = plan.Plugin is { } plugin
                 ? new
                 {
@@ -458,20 +451,20 @@ public sealed class HelpRoutes(DriverContext context)
                     Harnesses = plugin.Harnesses.Select(part => new { part.Name, part.Command }).ToArray(),
                     Servers = plugin.Servers.Select(part => new { part.Name, part.Command }).ToArray(),
                     plugin.Copied, plugin.Problem,
-                    // An offer's requirement lines (PLUG9 d), and an update's changes (PLUG9 c).
+                    // An offer's requirement lines, and an update's changes.
                     plugin.Needs, plugin.Replaced,
                     Changes = PluginsRoutes.ChangesOf(plugin.Changes),
                 }
                 : null,
-            // An approval of what a plugin's server offers Ask Daoris, or its withdrawal (HELPPLUG1c): every tool, reads and
+            // An approval of what a plugin's server offers Ask Daoris, or its withdrawal: every tool, reads and
             // writes apart, and the writes it accepts.
             Grant = plan.Grant is { } grant
                 ? new { grant.Plugin, grant.Name, grant.Server, grant.Reads, grant.Writes, grant.Accepted, grant.Withdraw }
                 : null,
             Sync = SyncShown(plan.Sync),
-            // A workflow's version, as the card shows it (WORKFLOW1h-c), never the steps or the choice Apply carries.
+            // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
-            // A place's quick set-up (AGENTSPLACE1k): the ask, its workspace, each change once, and the plan's digest, so a plan that moved
+            // A place's quick set-up: the ask, its workspace, each change once, and the plan's digest, so a plan that moved
             // draws the card again. Never the plan whole: the page it opens plans again.
             Place = plan.Place is { } place
                 ? new
@@ -487,8 +480,8 @@ public sealed class HelpRoutes(DriverContext context)
 
 
     /// <summary>
-    /// What a bring-up-to-date card shows (HELP10), the page's <c>HelpSyncShown</c>: whether the person has looked, every
-    /// row the look listed in the terminal's words, and what the rows do not say (LEFT3 b) — each repository not fetched,
+    /// What a bring-up-to-date card shows, the page's <c>HelpSyncShown</c>: whether the person has looked, every
+    /// row the look listed in the terminal's words, and what the rows do not say — each repository not fetched,
     /// with git's reason, when it last heard from origin and how origin is reached, and the repositories left apart.
     /// Null for every other kind.
     /// </summary>
@@ -500,14 +493,16 @@ public sealed class HelpRoutes(DriverContext context)
         Apart = sync.Besides.Apart.ToArray(),
     };
 
-    // The person's Apply: made through the door the screen's own route uses (HELP6), judged again
+    // The person's Apply: made through the door the screen's own route uses, judged again
     // first, since the machine may have moved since the card was drawn. The result goes back into
-    // the conversation as a turn, so the agent knows (D89), told as Daoris's word, never the person's (ASKQUESTS1, D188's COWORK1b
+    // the conversation as a turn, so the agent knows, told as Daoris's word, never the person's (ASKQUESTS1, D188's COWORK1b
     // mark); what it published is kept with the conversation by `HelpProposals.ApplyAsync`. It acts through the doors directly, not through
-    // their routes, so it declares every family a door it holds may move (STATEHUB1h, D169): the driver's file and what reads
+    // their routes, so it declares every family a door it holds may move: the driver's file and what reads
     // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
     // a repository moved, finished history cleared, and the proposal itself.
-    [DriverRoute("HELP_APPLY")]
+    [DriverRoute("HELP_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HELP_APPLY", ByPlan = true)]
+    [GroundWait("HELP_APPLY", "help", "id", "revision")]
     [Publishes("HELP_APPLY", Applies)]
     private async Task<object?> HelpApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -516,30 +511,30 @@ public sealed class HelpRoutes(DriverContext context)
         var proposal = HelpProposals.Find(_loop.Home, id)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
-        // The card's revision (HELPAPPLY1): without one there is no card this Apply stands for.
+        // The card's revision: without one there is no card this Apply stands for.
         var shown = PayloadHelper.GetOptionalValue<string>(request.Payload, "revision");
         if (string.IsNullOrEmpty(shown)) throw new DriverException($"proposal `#{id}` was pressed with no card to stand for; its revision is missing, so it is drawn again.");
 
-        // One Apply at a time (HELPAPPLY1): a second window's press of the same card waits for nothing and runs nothing.
+        // One Apply at a time: a second window's press of the same card waits for nothing and runs nothing.
         using var claim = HelpProposals.Claim(_loop.Home, id)
             ?? throw new DriverException($"proposal `#{id}` is being applied already, from another window.");
         // The winner may have settled it between the read above and the claim.
         proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
-        // FLOWCHART2e (the flowchart design §8.6): the editor's press on a draft card names each change it took into the draft and each it left.
+        // the editor's press on a draft card names each change it took into the draft and each it left.
         proposal = proposal with { Taken = Listed(request, "taken"), Left = Listed(request, "left") };
 
         var (config, facts) = await HelpFactsAsync(service, [proposal], cancellationToken).ConfigureAwait(false);
         var plan = HelpProposals.Plan(proposal, config, facts);
         // The plan is judged again, and a refusal settles as before; but an allowed plan other than the one the card showed is not
-        // applied: the person is told what it is now and asks again from the card drawn anew (D170).
+        // applied: the person is told what it is now and asks again from the card drawn anew.
         if (plan.Refusal is null && Card(proposal, plan).Revision != shown)
         {
             var changed = $"The plan for `#{id}` changed since this card was drawn, so nothing was applied. It now reads: {plan.Describe}. Look at the new card and press Apply on it.";
             return new { Message = changed, Applied = false, Go = (object?)null, HarnessAction = (object?)null, Stands = true, Changed = true };
         }
 
-        // What it did, and an agent action's end once it comes, into the conversation that proposed it, as Daoris's word (ASKQUESTS1).
+        // What it did, and an agent action's end once it comes, into the conversation that proposed it, as Daoris's word.
         var told = 0;
         void Say(string text)
         {
@@ -549,14 +544,14 @@ public sealed class HelpRoutes(DriverContext context)
             }
         }
 
-        // STEWARDROLE1a-ii (D209 §5.4): an Apply marks by the plan it applies, not its route: the target its door declares, its gates
+        // an Apply marks by the plan it applies, not its route: the target its door declares, its gates
         // taken and marked the owner's before the edit, the edit inside them.
         await using var owned = await OwnerMarks.EnterAsync(
             _loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), plan.Refusal is null ? Owned(HelpProposals.Owned(proposal)) : [],
             PipeDoor.Standing, cancellationToken).ConfigureAwait(false);
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, Doors(_context, service), Say, cancellationToken).ConfigureAwait(false);
-        // A delete or an ask moves the work; a set-up publishes an ask its session takes at the next look (LAYOUT8).
+        // A delete or an ask moves the work; a set-up publishes an ask its session takes at the next look.
         if (proposal.Kind is "ask" or "delete" or "session" or "pause" or "clear") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
@@ -571,31 +566,33 @@ public sealed class HelpRoutes(DriverContext context)
     ];
 
     /// <summary>
-    /// What an Apply answers the page (HELP1c, HELP6), the page's <c>HelpSettled</c>: the driver's sentence, whether it was
+    /// What an Apply answers the page, the page's <c>HelpSettled</c>: the driver's sentence, whether it was
     /// applied, where a go takes the person, and the agent action the Agents screen follows. Public so the fast half holds
-    /// the answer without a service (LEFT3 d), as it holds a conversation's options.
+    /// the answer without a service, as it holds a conversation's options.
     /// </summary>
     public static object ApplyAnswer(HelpProposal proposal, HelpApplied applied) => new
     {
         Message = applied.Told,
         applied.Applied,
-        // Where a go takes the person: the page navigates, as its starters' doors do (HELP6), to the one quest or ask a go
-        // names in it, the driver's judged spelling (ENTRY1f1), and opens Add repository or Import a folder with the workspace
-        // the driver judged filled (ENTRY1d2a), or New conversation with the repository and words it judged (NEW1d-a), or an Agents
-        // place's Setup with its set-up open on the ask (AGENTSPLACE1k); each null on any other go.
+        // Where a go takes the person: the page navigates, as its starters' doors do, to the one quest or ask a go
+        // names in it, the driver's judged spelling, and opens Add repository or Import a folder with the workspace
+        // the driver judged filled, or New conversation with the repository and words it judged, or an Agents
+        // place's Setup with its set-up open on the ask; each null on any other go.
         Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence, place.Setup } : null,
         // The action an update or a pin started, so the Agents screen follows its console and its end. A default
-        // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
+        // is a file edit that starts nothing, so there is nothing to follow.
         HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
             ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
             : null,
-        // The card stands for another press (LEFT3 c): a sync card's look settles nothing, so the page logs no settlement.
+        // The card stands for another press: a sync card's look settles nothing, so the page logs no settlement.
         applied.Stands,
     };
 
-    // The person's Not now: nothing changes but the proposal, and the agent is told so. A go's Dismiss (ASKDISMISS1) takes its card
+    // The person's Not now: nothing changes but the proposal, and the agent is told so. A go's Dismiss takes its card
     // away and is told to nobody: a go changes nothing, so its dismiss is no word on the quest or ask it names.
-    [DriverRoute("HELP_DISMISS")]
+    [DriverRoute("HELP_DISMISS", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HELP_DISMISS", None = OwnerNone.ActsOnNothing)]
+    [GroundWait("HELP_DISMISS", "help", "id")]
     [Publishes("HELP_DISMISS", StateScopes.Help)]
     private async Task<object?> HelpDismissAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -611,7 +608,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The doors Ask Daoris's Apply goes through (HELP6): each the code a screen's own route runs, so an
+    /// The doors Ask Daoris's Apply goes through: each the code a screen's own route runs, so an
     /// Apply is what the screen would have done. <paramref name="service"/> is the loop's, or null before
     /// it is up — when an ask or a delete is the cold-start sentence.
     /// </summary>
@@ -624,11 +621,11 @@ public sealed class HelpRoutes(DriverContext context)
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
         public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
 
-        // GIT_USE's own write (GITAUTH1e): the pointer in the identities' file, and the holds it lifts.
+        // GIT_USE's own write: the pointer in the identities' file, and the holds it lifts.
         public Task UseGitAsync(HelpGitUse use, CancellationToken ct) =>
             ToolsRoutes.UseGitAsync(_loop.Home, _loop.Service, use.Scope, use.Repository, use.Workspace, use.Remote, use.Host, use.Identity, ct);
 
-        // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
+        // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words. A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris ask --review` refuses
         // it: the service holds no rule, and the proposal's plan holds no repositories per workspace.
         public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
@@ -652,7 +649,7 @@ public sealed class HelpRoutes(DriverContext context)
         public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct) =>
             (service ?? throw NotReady()).DeleteAskAsync(id, ct);
 
-        // SESSION_ARCHIVE's own marks (SESSUX1h2c): each judged again by where the list places it as it goes, counted in the
+        // SESSION_ARCHIVE's own marks: each judged again by where the list places it as it goes, counted in the
         // machine log as the screen's. The service is the one this Apply was handed, as the other doors use it.
         public async Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
         {
@@ -681,8 +678,8 @@ public sealed class HelpRoutes(DriverContext context)
                 : (true, $"Archived {Count(done.Count)}: {Listed(done)}.{left}");
         }
 
-        // WORK_PAUSE's own pause as the screen's, then the loop asked to look (PAUSE1f-c): only an id this machine does not
-        // have is not applied; a pause that finds nothing to hold is said, as the route says it (D48 §6).
+        // WORK_PAUSE's own pause as the screen's, then the loop asked to look: only an id this machine does not
+        // have is not applied; a pause that finds nothing to hold is said, as the route says it.
         public async Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
         {
             var outcome = await WorkPausing.PauseAsync(WorkRoutes.WorldOf(context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
@@ -702,12 +699,12 @@ public sealed class HelpRoutes(DriverContext context)
             return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
         }
 
-        // HISTORY_CLEAR's own clear of exactly the units the card listed (HIST1f-c): the driver library's one owner, each unit judged
+        // HISTORY_CLEAR's own clear of exactly the units the card listed: the driver library's one owner, each unit judged
         // again as it goes; the outcome comes back whole, and a service that did not answer throws before anything was removed.
         public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
             HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
 
-        // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look (SESSUX1h2c).
+        // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look.
         public async Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
         {
             var outcome = await new SessionDeletion(_loop.Home)
@@ -719,7 +716,7 @@ public sealed class HelpRoutes(DriverContext context)
             return (true, outcome.Message);
         }
 
-        // The Manage drawer's Move to workspace (ENTRY1d1): the local host's `POST /api/registry/{repository}/workspace`, one
+        // The Manage drawer's Move to workspace: the local host's `POST /api/registry/{repository}/workspace`, one
         // field of the row. The loop's registry watch (FG4) tells the page what moved.
         public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct) =>
             (service ?? throw NotReady()).WireRepositoryAsync(repository, workspace, ct);
@@ -735,8 +732,8 @@ public sealed class HelpRoutes(DriverContext context)
                 context.Actions.Relay(harness, action), config, ended);
         }
 
-        // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look. The set's one entry since
-        // POOL1b (D197); the `default` door, HARNESS_ACTION's `profile-default`, left with it.
+        // ACCOUNT_USE's own `use`: the same refusals and the same write, then the loop asked to look. The set's one entry since
+        // POOL1b; the `default` door, HARNESS_ACTION's `profile-default`, left with it.
         public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
         {
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
@@ -754,7 +751,7 @@ public sealed class HelpRoutes(DriverContext context)
             return Task.CompletedTask;
         }
 
-        // ACCOUNT_USE's own `order` (TOOL4l-b; POOL1b, D197): the set's order through the screen's own edit, the accounts named first,
+        // ACCOUNT_USE's own `order`: the set's order through the screen's own edit, the accounts named first,
         // or the ids' order again where cleared, written whole by the change and clearing no setting; then the loop asked to look.
         public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
         {
@@ -775,7 +772,7 @@ public sealed class HelpRoutes(DriverContext context)
             return Task.CompletedTask;
         }
 
-        // ACCOUNT_USE's own `ready` (TOOL4l-b): *Try now*, the loop's own end of a cool-off, then the loop asked to look so an account
+        // ACCOUNT_USE's own `ready`: *Try now*, the loop's own end of a cool-off, then the loop asked to look so an account
         // offered again takes a waiting start now, not at the next poll.
         public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
         {
@@ -784,9 +781,9 @@ public sealed class HelpRoutes(DriverContext context)
             return Task.FromResult(ended);
         }
 
-        // TREES_SYNC_PLAN's own list (HELP10, WSR6): the same checkouts and sessions, and each line fetched as the person,
-        // whose press this is — the look on Ask Daoris's card, never its proposal (D109).
-        // It takes what the screen's look takes (D112): the repositories holding Daoris's branches, and the one a card names.
+        // TREES_SYNC_PLAN's own list: the same checkouts and sessions, and each line fetched as the person,
+        // whose press this is — the look on Ask Daoris's card, never its proposal.
+        // It takes what the screen's look takes: the repositories holding Daoris's branches, and the one a card names.
         public async Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
         {
             var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, repository, ct, workspace).ConfigureAwait(false);
@@ -795,7 +792,7 @@ public sealed class HelpRoutes(DriverContext context)
         }
 
         // TREES_SYNC's own press: only the rows the look listed, fetching nothing, then the loop asked to look. The
-        // sessions in use are asked again inside each repository's hold, as the screen's press asks them (LEFT2, WSR7).
+        // sessions in use are asked again inside each repository's hold, as the screen's press asks them.
         public async Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
         {
             var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, repository, ct, workspace).ConfigureAwait(false);
@@ -807,10 +804,10 @@ public sealed class HelpRoutes(DriverContext context)
             return done;
         }
 
-        /// <summary>A card naming a repository includes it, as `--repository` does (D112); none, and the default.</summary>
+        /// <summary>A card naming a repository includes it, as `--repository` does; none, and the default.</summary>
         private static SyncScope? Named(string? repository) => repository is null ? null : SyncScope.Named([repository]);
 
-        // BrowserModule's own edits (HELP10): the same check, the same refusal for a file it could not read, the
+        // BrowserModule's own edits: the same check, the same refusal for a file it could not read, the
         // same write. A route's refusal is its words as the driver's, so the card settles refused with them.
         public void ChangeBrowser(string setting, string value, string? address, string? title)
         {
@@ -837,7 +834,7 @@ public sealed class HelpRoutes(DriverContext context)
         public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
             AccountSettings.Write(_loop.Harnesses, harness, account, () => (model, effort, null)).Read;
 
-        // `daoris plugin add`'s copy, the driver's twin (PLUG9); the loop is asked to look, and it starts
+        // `daoris plugin add`'s copy, the driver's twin; the loop is asked to look, and it starts
         // what the plugin runs at that look, as it does any plugin. Nothing runs here.
         public void AddPlugin(string folder)
         {
@@ -852,18 +849,18 @@ public sealed class HelpRoutes(DriverContext context)
             _loop.Nudge();
         }
 
-        // PLUGIN_INSTALL's own copy of one of the install's offers (PLUG9 d); nothing runs here.
+        // PLUGIN_INSTALL's own copy of one of the install's offers; nothing runs here.
         public void AddOffer(string id)
         {
             PluginInstall.AddOffer(_loop.Home, context.OffersFolder, id, AdapterSet.Built().Names);
             _loop.Nudge();
         }
 
-        // PLUGIN_UPDATE's own apply (PLUG9 c): the hook stopped, the folder swapped, the loop asked to look.
+        // PLUGIN_UPDATE's own apply: the hook stopped, the folder swapped, the loop asked to look.
         public async Task UpdatePluginAsync(string id, CancellationToken ct) =>
             await PluginsRoutes.UpdatePluginAsync(context, id).ConfigureAwait(false);
 
-        // PLUGIN_ACTION's own help-approve and help-withdraw (HELPPLUG1c): the person's approval, written as the page writes it.
+        // PLUGIN_ACTION's own help-approve and help-withdraw: the person's approval, written as the page writes it.
         public void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes) =>
             HelpGrants.Approve(_loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), plugin, server, writes);
 
@@ -871,7 +868,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Whether a pending proposal is judged against every quest and ask (HELP6): a delete, and since ENTRY1f1 a go naming
+    /// Whether a pending proposal is judged against every quest and ask: a delete, and since ENTRY1f1 a go naming
     /// one on Quests, so the service is asked for the records only then. Public so the fast half holds the gate without a service.
     /// </summary>
     public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) =>
@@ -879,47 +876,47 @@ public sealed class HelpRoutes(DriverContext context)
 
     /// <summary>
     /// Whether a pending proposal is judged against this machine's session records, closed ones included: a go naming a
-    /// session on Sessions (ENTRY1f2), so the service is asked for them only then.
+    /// session on Sessions, so the service is asked for them only then.
     /// </summary>
     public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) =>
         proposals.Any(proposal => ItemOn(proposal, "sessions") || SessionKind(proposal));
 
-    // An archive or unarchive (kind `session`) and a delete naming a session (SESSUX1h2c): judged against where the list places
+    // An archive or unarchive (kind `session`) and a delete naming a session: judged against where the list places
     // each session, which the records alone do not say.
     private static bool SessionKind(HelpProposal proposal) =>
         proposal.Kind == "session" || (proposal.Kind == "delete" && proposal.Door == "session");
 
     /// <summary>
-    /// Whether a pending proposal is a pause or a resume (PAUSE1f-c), judged by the work of the ask and the quest it names, so
+    /// Whether a pending proposal is a pause or a resume, judged by the work of the ask and the quest it names, so
     /// the service is asked for that only then. Public so the fast half holds the gate without a service.
     /// </summary>
     public static bool JudgedAgainstWork(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "pause");
 
     /// <summary>
-    /// Whether a pending proposal is a clear (HIST1f-c), judged by what this machine keeps of the quest, ask or workspace it names,
+    /// Whether a pending proposal is a clear, judged by what this machine keeps of the quest, ask or workspace it names,
     /// so the service is asked for that only then. Public so the fast half holds the gate without a service.
     /// </summary>
     public static bool JudgedAgainstHistory(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "clear");
 
     /// <summary>
-    /// Whether a pending proposal is a workflow (WORKFLOW1h-c), judged by the named workflows saved here and the runs bound to
+    /// Whether a pending proposal is a workflow, judged by the named workflows saved here and the runs bound to
     /// them, so the home is read for those only then. Public so the fast half holds the gate without a service.
     /// </summary>
     public static bool JudgedAgainstWorkflows(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "workflow");
 
     /// <summary>
-    /// Whether a pending proposal is a change to the open workflow draft (FLOWCHART2e), judged against the drafts its conversation's record
+    /// Whether a pending proposal is a change to the open workflow draft, judged against the drafts its conversation's record
     /// says it was told, so the record is read for those only then. Public so the fast half holds the gate without a service.
     /// </summary>
     public static bool JudgedAgainstDrafts(IEnumerable<HelpProposal> proposals) =>
         proposals.Any(proposal => proposal.Kind == "workflow" && proposal.Door == "draft");
 
-    /// <summary>Whether any proposal is a place's set-up (AGENTSPLACE1k), judged by the place's plan.</summary>
+    /// <summary>Whether any proposal is a place's set-up, judged by the place's plan.</summary>
     public static bool JudgedAgainstPlaces(IEnumerable<HelpProposal> proposals) =>
         proposals.Any(proposal => proposal.Kind == "setup" && proposal.Door == "place" && proposal.Place is not null);
 
     /// <summary>
-    /// The runs bound on this machine, each as its file under the bindings folder reads (WORKFLOW1h-c): a card says how many keep the
+    /// The runs bound on this machine, each as its file under the bindings folder reads: a card says how many keep the
     /// version they started on. A file that is not a binding is skipped, as the run's own reading skips it.
     /// </summary>
     public static IReadOnlyList<WorkflowRunBinding> BoundRuns(string home)
@@ -937,7 +934,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// What a workflow card shows (WORKFLOW1h-c, design §8.2), the page's <c>HelpWorkflowShown</c>: the card's own fields only. The
+    /// What a workflow card shows, the page's <c>HelpWorkflowShown</c>: the card's own fields only. The
     /// steps Apply saves and the choice it makes stay with the driver, which sends exactly those when the person presses it.
     /// Null for every other kind.
     /// </summary>
@@ -969,12 +966,12 @@ public sealed class HelpRoutes(DriverContext context)
         && string.Equals(proposal.Target?.Trim(), view, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// What a proposal of Ask Daoris's is judged against (HELP1c): the driver's file, and the names the
+    /// What a proposal of Ask Daoris's is judged against: the driver's file, and the names the
     /// machine holds — its registered repositories and their circles, the agents it has, and the quests the
-    /// last tick parked (HELP10). For the
-    /// kinds that need them (HELP6), each door as the Agents screen's roster reads it, and every quest
+    /// last tick parked. For the
+    /// kinds that need them, each door as the Agents screen's roster reads it, and every quest
     /// and ask with the service's own reading of whether it may be deleted, or this machine's sessions for a go naming one
-    /// (ENTRY1f2) — asked only then.
+    /// — asked only then.
     /// </summary>
     private async Task<(DriverConfig Config, HelpMachineFacts Facts)> HelpFactsAsync(
         ServiceClient service, IReadOnlyCollection<HelpProposal> proposals, CancellationToken ct)
@@ -983,7 +980,7 @@ public sealed class HelpRoutes(DriverContext context)
         var workspaces = snapshot.Repositories.Select(known => known.Workspace)
             .Append(RemoteTarget.DefaultWorkspace).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var config = DriverConfig.Load(_loop.ConfigPath);
-        // ASKSCOPE1c: the workspace the conversation that proposed them is bound to, read from its record, and only where one is
+        // the workspace the conversation that proposed them is bound to, read from its record, and only where one is
         // pending; the records are read once, for a go or a session's proposal too.
         var conversation = proposals.Select(proposal => proposal.Session).FirstOrDefault(session => !string.IsNullOrWhiteSpace(session));
         var records = conversation is null ? null : await service.SessionRecordsAsync(ct).ConfigureAwait(false);
@@ -991,25 +988,25 @@ public sealed class HelpRoutes(DriverContext context)
             [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names)
         {
             Circle = HelpCircle.OfRecord(_loop.Home, records?.FirstOrDefault(record => string.Equals(record.Id, conversation, StringComparison.OrdinalIgnoreCase))),
-            // A landing rule naming a plugin is judged by the catalogue the landing route reads (HELP8, D100).
+            // A landing rule naming a plugin is judged by the catalogue the landing route reads.
             Plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names),
-            // The identities a `git-use` proposal may point at: labels and hosts, never a key or a token (GITAUTH1e).
+            // The identities a `git-use` proposal may point at: labels and hosts, never a key or a token.
             GitIdentities = [.. GitIdentities.Read(_loop.Home).Select(each => new HelpGitIdentity(each.Id, each.Label, each.Host, each.Way))],
             // A plugin is added from a registered checkout, never from the home, and may not shadow a
-            // harness this build carries (PLUG9) — what `daoris plugin add` refuses.
+            // harness this build carries — what `daoris plugin add` refuses.
             Home = _loop.Home,
             Checkouts = snapshot.Repositories
                 .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
             Reserved = AdapterSet.Built().Names,
-            // The install's own plugins (PLUG9 d), which an add may name by id, and where an offer's update reads.
+            // The install's own plugins, which an add may name by id, and where an offer's update reads.
             OffersFolder = OffersFolder,
             Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
-            // A retry names a quest the last tick parked by its strikes (HELP10), the verdict the drawer shows Retry by.
+            // A retry names a quest the last tick parked by its strikes, the verdict the drawer shows Retry by.
             Parked = _loop.Parked.Latest,
-            // Or one its last look held by the person's stop (SESSUX1b), released from the session that look named.
+            // Or one its last look held by the person's stop, released from the session that look named.
             Held = HeldQuest.From(_loop.Look.Latest),
-            // A review's procedure is looked for in the checkouts it reaches (REVIEWENV1a), as `SET_REVIEW` looks.
+            // A review's procedure is looked for in the checkouts it reaches, as `SET_REVIEW` looks.
             Registered = [.. snapshot.Repositories.Select(known => (known.Repository, (string?)known.Workspace, known.Root))],
         };
 
@@ -1038,9 +1035,9 @@ public sealed class HelpRoutes(DriverContext context)
                         SettingsKnown = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile is { Length: > 0 },
                     };
                 })],
-                // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them (TOOL4g).
+                // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them.
                 Wiring = settings,
-                // The cool-offs a ready's judge reads, as the account rows show them (TOOL4l-b).
+                // The cool-offs a ready's judge reads, as the account rows show them.
                 Cooling = AccountCooling.Read(_loop.Home, DateTimeOffset.UtcNow),
             };
         }
@@ -1051,14 +1048,14 @@ public sealed class HelpRoutes(DriverContext context)
             facts = facts with { Quests = quests, Asks = asks };
         }
 
-        // This machine's own sessions as the Sessions list reads them (ENTRY1f2), read only when a go names one.
+        // This machine's own sessions as the Sessions list reads them, read only when a go names one.
         if (JudgedAgainstSessions(proposals))
         {
             facts = facts with { Sessions = records ?? await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
         }
 
         // A session proposal is judged by where the list places each session, and a delete by what this machine keeps and the
-        // ledger's own answer (SESSUX1h2c, D126 §5.2, §5.4): the one look the Sessions screen takes, read only for those.
+        // ledger's own answer: the one look the Sessions screen takes, read only for those.
         if (proposals.Any(SessionKind))
         {
             var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
@@ -1084,7 +1081,7 @@ public sealed class HelpRoutes(DriverContext context)
         }
 
         // A pause proposal is judged by what a pause would do with each piece of the work, read as the pages' plan reads it for
-        // the id as an ask's and as a quest's, and by which workspaces sync with a remote (PAUSE1f-c, D132 §7.4, §5.1).
+        // the id as an ask's and as a quest's, and by which workspaces sync with a remote.
         if (JudgedAgainstWork(proposals))
         {
             var world = WorkRoutes.WorldOf(_context);
@@ -1128,7 +1125,7 @@ public sealed class HelpRoutes(DriverContext context)
             facts = facts with { History = plans };
         }
 
-        // A workflow proposal is judged by the named workflows here and the runs bound to them (WORKFLOW1h-c, design §8.1, §8.2); the
+        // A workflow proposal is judged by the named workflows here and the runs bound to them; the
         // registered repositories and plugins it also reads are in the facts already.
         if (JudgedAgainstWorkflows(proposals))
         {
@@ -1137,19 +1134,19 @@ public sealed class HelpRoutes(DriverContext context)
             {
                 Workflows = workflows,
                 WorkflowRuns = BoundRuns(_loop.Home),
-                // A graph that asks with done or steward is judged by the gates the accepted declaration names (INTEGRATE1r part r2).
+                // A graph that asks with done or steward is judged by the gates the accepted declaration names.
                 AcceptedGates = await IntegrateChoice.ReadForCardsAsync(config, workflows, facts.Registered, ct).ConfigureAwait(false),
             };
         }
 
-        // FLOWCHART2e: a change to the open draft is judged against the drafts its conversation's own record says it was told (FLOWCHART2d),
+        // a change to the open draft is judged against the drafts its conversation's own record says it was told,
         // read from this machine's record only for one.
         if (JudgedAgainstDrafts(proposals) && conversation is not null && SessionEventText.IsLocalId(conversation))
         {
             facts = facts with { Drafts = WorkflowDraftTold.ToldAcross(conversation, id => _loop.Events.After(id, 0).Events) };
         }
 
-        // A place proposal is judged by its quick set-up's plan, as `daoris place … --plan` and PLACE_PLAN read it (AGENTSPLACE1k): the
+        // A place proposal is judged by its quick set-up's plan, as `daoris place … --plan` and PLACE_PLAN read it: the
         // registry, the quests and each line's tip as git objects; written and probed nowhere.
         if (JudgedAgainstPlaces(proposals))
         {
@@ -1164,7 +1161,7 @@ public sealed class HelpRoutes(DriverContext context)
             facts = facts with { Places = places };
         }
 
-        // Daoris's browser's files as the Browser screen reads them (HELP10), read only when a browser change is pending.
+        // Daoris's browser's files as the Browser screen reads them, read only when a browser change is pending.
         if (proposals.Any(proposal => proposal.Kind == "browser"))
         {
             facts = facts with { Browser = BrowserModule.HelpFacts(BrowserModule.Home) };
@@ -1174,22 +1171,22 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A sentence said into Ask Daoris's conversation (HELP1c): plain words, since a turn's words render verbatim and a sentence full
+    /// A sentence said into Ask Daoris's conversation: plain words, since a turn's words render verbatim and a sentence full
     /// of backticks read as noise on the window. The person's Not now, and since ASKQUESTS1 Daoris's word of what an Apply did.
     /// </summary>
     private static string InPersonsWords(string told) => told.Replace("`", "", StringComparison.Ordinal);
 
     /// <summary>
-    /// The key a word of Daoris's to Ask Daoris's conversation carries (ASKQUESTS1, <see cref="DaorisWord"/>): its kind and the proposal
+    /// The key a word of Daoris's to Ask Daoris's conversation carries: its kind and the proposal
     /// it is about. No fact of Daoris's is judged by it (<see cref="DaorisKeys.Read"/> names none), so the word always goes.
     /// </summary>
     private static string DaorisWordKey(string kind, string about) => $"{kind}/{about}";
 
-    // ASKQUESTS1 (the Ask Daoris design §9 item 12): what one conversation's Applies published, the newest first, each by the ids the
+    // what one conversation's Applies published, the newest first, each by the ids the
     // service answered, as `HelpPublished` keeps them beside its other files. The page reads each one's state from the pushed quests,
-    // asks and sessions. A read of this machine's home, off the window's thread (UIFREEZE1): it declares nothing, and its key is under
+    // asks and sessions. A read of this machine's home, off the window's thread: it declares nothing, and its key is under
     // `help`, which an Apply publishes. Desktop-only, as the conversation is.
-    [DriverRoute("HELP_PUBLISHED")]
+    [DriverRoute("HELP_PUBLISHED", PipeClass.Open)]
     private Task<object?> HelpPublishedAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -1197,28 +1194,28 @@ public sealed class HelpRoutes(DriverContext context)
         return Task.Run<object?>(() => PublishedAnswer(session, new HelpPublished(home).Read(session)), cancellationToken);
     }
 
-    /// <summary>What <c>HELP_PUBLISHED</c> answers (ASKQUESTS1): <c>{ session, published }</c>, an id the service's answer did not name left out.</summary>
+    /// <summary>What <c>HELP_PUBLISHED</c> answers: <c>{ session, published }</c>, an id the service's answer did not name left out.</summary>
     public static object PublishedAnswer(string session, IReadOnlyList<HelpPublishedEntry> published) => new
     {
         Session = session,
         Published = published.Select(entry => new { entry.At, entry.Proposal, entry.Kind, entry.Workspace, entry.Ask, entry.Quest }).ToArray(),
     };
 
-    // ——— Ask Daoris's history (ASKHIST1): its conversations listed and searched, named, pinned and started from. Going on in
+    // ——— Ask Daoris's history: its conversations listed and searched, named, pinned and started from. Going on in
     // one is the person's words to it (`SESSION_INPUT`), and deleting one is `SESSION_DELETE`'s, so each has the one owner the
-    // rest of the window uses; `daoris-driver help` is the terminal's door to the same (D50). This machine's and the person's:
-    // the words are this machine's record (D76), what the person keeps of each a file beside them (`HelpConversations`), and
+    // rest of the window uses; `daoris-driver help` is the terminal's door to the same. This machine's and the person's:
+    // the words are this machine's record, what the person keeps of each a file beside them (`HelpConversations`), and
     // nothing here reaches a remote.
 
     // A page of Ask Daoris's conversations, pinned first, then the newest; with `q`, those whose name or words hold it, each with
-    // where. `offset` and `limit` are the terminal's `--offset` and `--limit` (ASKHIST1d): every record is ordered and searched
+    // where. `offset` and `limit` are the terminal's `--offset` and `--limit`: every record is ordered and searched
     // before the page is taken, and the answer says how many there are and where the next page starts. `workspace` is the
-    // terminal's `--workspace` (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6): that workspace's conversations, searched and counted
+    // terminal's `--workspace`: that workspace's conversations, searched and counted
     // before the page; none named is every workspace's, as the list was and as `--all` says, each row naming its own.
-    [DriverRoute("HELP_CONVERSATIONS")]
+    [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
     private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        // RPC1e: `help list` in the verb's words, `--json` its own answer.
+        // `help list` in the verb's words, `--json` its own answer.
         if (Flag(request, "said"))
         {
             var listed = new HelpVerbAsk("list")
@@ -1251,7 +1248,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         Conversations = listing.Conversations.Select(row => new
         {
-            // HELPMODE1a2: the mode it ran under, its record's, after whether it runs; ASKSCOPE1d: the workspace it started in after it.
+            // the mode it ran under, its record's, after whether it runs; ASKSCOPE1d: the workspace it started in after it.
             row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Workspace,
             row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
         }).ToArray(),
@@ -1260,11 +1257,11 @@ public sealed class HelpRoutes(DriverContext context)
         listing.Next,
     };
 
-    // HELPWIRED1 (D183 point 4, the Ask Daoris modes design §6): what each start of one Ask Daoris conversation handed its agent,
+    // what each start of one Ask Daoris conversation handed its agent,
     // newest first, as the start kept it (`HelpWired`): `{ session, recorded, receipts }`, a conversation from before answering
-    // `recorded: false`. Read from the home alone, off the window's thread (UIFREEZE1), answered as the file's own JSON so a null is
+    // `recorded: false`. Read from the home alone, off the window's thread, answered as the file's own JSON so a null is
     // kept. A read: it declares nothing. Desktop-only: its folders are this machine's, and no shared host or feed carries it.
-    [DriverRoute("HELP_WIRED")]
+    [DriverRoute("HELP_WIRED", PipeClass.Open)]
     private Task<object?> HelpWiredAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -1273,12 +1270,14 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again. A history act
-    // declares the history and the conversations the panel shows (STATEHUB1h, D169), as pinning and starting from one do.
-    [DriverRoute("HELP_RENAME")]
+    // declares the history and the conversations the panel shows, as pinning and starting from one do.
+    [DriverRoute("HELP_RENAME", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("HELP_RENAME", Session = "id")]
+    [Timeless("HELP_RENAME", "a conversation's name")]
     [Publishes("HELP_RENAME", Kept, Session = "id")]
     private async Task<object?> HelpRenameAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        // RPC1e: `help rename <id> "…"` or `--clear`, said in the verb's words, a conversation that is not Ask Daoris's among them.
+        // `help rename <id> "…"` or `--clear`, said in the verb's words, a conversation that is not Ask Daoris's among them.
         if (Flag(request, "said"))
         {
             var name = Optional(request, "name");
@@ -1294,11 +1293,13 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     // Pin an Ask Daoris conversation to the top of its history, or unpin it.
-    [DriverRoute("HELP_PIN")]
+    [DriverRoute("HELP_PIN", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("HELP_PIN", Session = "id")]
+    [Timeless("HELP_PIN", "a conversation's pin")]
     [Publishes("HELP_PIN", Kept, Session = "id")]
     private async Task<object?> HelpPinAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        // RPC1e: `help pin <id>` and `unpin`, said in the verb's words.
+        // `help pin <id>` and `unpin`, said in the verb's words.
         if (Flag(request, "said"))
         {
             var pin = new HelpVerbAsk(PayloadHelper.GetRequiredValue<bool>(request.Payload, "pinned") ? "pin" : "unpin")
@@ -1315,10 +1316,12 @@ public sealed class HelpRoutes(DriverContext context)
         return new { Session = id, kept.Read(id).Pinned };
     }
 
-    // A new Ask Daoris conversation from an earlier one (ASKHIST1): opened as START_HELP opens one, on the helper's agent, its
+    // A new Ask Daoris conversation from an earlier one: opened as START_HELP opens one, on the helper's agent, its
     // workspace's running conversation set aside first, and Daoris's brief of the earlier line handed with the person's first
-    // words (D233). Its end reaches the page as a start's does.
-    [DriverRoute("HELP_START_FROM")]
+    // words. Its end reaches the page as a start's does.
+    [DriverRoute("HELP_START_FROM", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("HELP_START_FROM", Session = "id")]
+    [GroundSession("HELP_START_FROM", "id")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
     private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1335,12 +1338,12 @@ public sealed class HelpRoutes(DriverContext context)
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
 
-        // ASKSCOPE1a: in the workspace its press names, as START_HELP's, whatever the earlier one's was; its running one set aside.
+        // in the workspace its press names, as START_HELP's, whatever the earlier one's was; its running one set aside.
         var named = WorkspaceAsked(request);
         var circle = RemoteTarget.Workspace(named);
         var spelled = HeldWorkspace(await service.SnapshotAsync(cancellationToken).ConfigureAwait(false), circle);
 
-        // Placed as START_HELP places one (HELPSTART1b): answered once the record is open and the earlier words kept; the room is
+        // Placed as START_HELP places one: answered once the record is open and the earlier words kept; the room is
         // read through the loop's DescribeHelp and the agent spawned after, off the request, so a slow room cannot pass the page's bound.
         var starting = _loop.HelpStarting;
         var placing = starting.PlacingIn(circle);

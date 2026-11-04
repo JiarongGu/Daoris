@@ -125,7 +125,7 @@ public sealed class OwnerSetTests : IDisposable
     [Theory]
     [InlineData("SESSION_OPEN_FOLDER", """{"id":"s1"}""")]
     [InlineData("NOTICES_READ", """{"workspace":"games"}""")]
-    [InlineData("SET_APPOINTMENT", """{"role":"supervisor","repository":"engine","holder":"terminal","on":true}""")]
+    [InlineData("START_ROLE_TERMINAL", """{"role":"supervisor-engine"}""")]
     [InlineData("START_CHAT", """{"repository":"engine"}""")]
     [InlineData("END_CHAT", """{"id":"c1"}""")]
     public async Task What_acts_on_nothing_a_role_acts_on_marks_nothing(string route, string payload)

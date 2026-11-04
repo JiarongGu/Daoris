@@ -44,7 +44,7 @@ public sealed class ToolsRoutes(DriverContext context)
     // Every tool, as it is run and what could run it: the way and its file, the versions downloaded and offered, the
     // locations and the list built in. Reads files only; `ask` asks each resolved file its version, which starts it. Told by
     // event (NOBLOCK1): its files and the system's path held the window up to 1.4 s, so an ask is answered from what is held.
-    [DriverRoute("TOOLS_LIST")]
+    [DriverRoute("TOOLS_LIST", PipeClass.Open)]
     [ByEvent("TOOLS_LIST", Untold = "the system's path and an action's end, which TOOLS_ENDED tells")]
     private async Task<object?> ToolsListAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -127,7 +127,10 @@ public sealed class ToolsRoutes(DriverContext context)
     // A way chosen on the screen, written to the file the terminal's `daoris tool use` writes. The system's and a named
     // file answer at once; managed starts the driver's use, which downloads a version that is not here first. Each press that
     // writes what the list reads declares the tools (STATEHUB1h, D169); an action's end is `TOOLS_ENDED`, as before.
-    [DriverRoute("TOOLS_USE")]
+    [DriverRoute("TOOLS_USE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("TOOLS_USE", None = OwnerNone.MachineSetting)]
+    [GroundRead("TOOLS_USE", nameof(PipeReads.ToolChoice))]
+    [NotAlready("TOOLS_USE", "checks a file's version or downloads a managed one")]
     [Publishes("TOOLS_USE", StateScopes.Tools)]
     private async Task<object?> ToolsUseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -162,14 +165,18 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     // Fetch and verify one version, nothing switching (§4.1 *Download*): answered once it has started.
-    [DriverRoute("TOOLS_DOWNLOAD")]
+    [DriverRoute("TOOLS_DOWNLOAD", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("TOOLS_DOWNLOAD", None = OwnerNone.MachineSetting)]
+    [GroundRead("TOOLS_DOWNLOAD", nameof(PipeReads.ToolVersions))]
     [Publishes("TOOLS_DOWNLOAD", StateScopes.Tools)]
     private object? ToolsDownload(IpcRequest request) =>
         StartTool(DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool")), "download", Optional(request, "version"));
 
     // The person's stop. `stopped: false` is an answer: nothing ran to stop, and a stop that went nowhere must not look
     // delivered. The action's end is the news either way, so the stop declares nothing.
-    [DriverRoute("TOOLS_STOP")]
+    [DriverRoute("TOOLS_STOP", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("TOOLS_STOP", None = OwnerNone.MachineSetting)]
+    [GroundRead("TOOLS_STOP", nameof(PipeReads.ToolRunning))]
     private object? ToolsStop(IpcRequest request)
     {
         var tool = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool")).Id;
@@ -180,7 +187,9 @@ public sealed class ToolsRoutes(DriverContext context)
     // (missing, in use, held) are the module's one mapping's (ToolCodes, PUSH1f2c), the codes `daoris tool delete` says alone.
     // KEEP1b (D195 point 6): through the downloads' one act, judged under the use files' locks against the running sessions, moved aside
     // first; off the window's thread, since it asks the service and walks the version.
-    [DriverRoute("TOOLS_DELETE")]
+    [DriverRoute("TOOLS_DELETE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("TOOLS_DELETE", None = OwnerNone.MachineSetting)]
+    [GroundRead("TOOLS_DELETE", nameof(PipeReads.ToolVersions))]
     [Publishes("TOOLS_DELETE", StateScopes.Tools)]
     private async Task<object?> ToolsDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -196,7 +205,7 @@ public sealed class ToolsRoutes(DriverContext context)
     // *Look for updates* (§3.7): each location fetched on the person's press, each bounded, its copy kept only when it
     // reads. The page waits by `hostBounds`, as long as the look may take. Unlike a look that only fetches, the copy it keeps is
     // what the list offers, so it declares the tools.
-    [DriverRoute("TOOLS_LOOK")]
+    [DriverRoute("TOOLS_LOOK", PipeClass.Open)]
     [Publishes("TOOLS_LOOK", StateScopes.Tools)]
     private async Task<object?> ToolsLookAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -209,7 +218,10 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // A resource location added at the end of the person's, or removed (§3.3): the file the terminal's
     // `daoris tool locations add|remove` edits. Removing one leaves every version already downloaded.
-    [DriverRoute("TOOLS_LOCATION")]
+    [DriverRoute("TOOLS_LOCATION", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("TOOLS_LOCATION", None = OwnerNone.MachineSetting)]
+    [GroundRead("TOOLS_LOCATION", nameof(PipeReads.ToolLocations))]
+    [NotAlready("TOOLS_LOCATION", "edits the list of locations in place")]
     [Publishes("TOOLS_LOCATION", StateScopes.Tools)]
     private object? ToolsLocation(IpcRequest request)
     {
@@ -231,7 +243,9 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // A setting Daoris's git carries, set or cleared (TOOLS6, D121 §2.5; GITAUTH1e): the key on the allow-list, and a value only on a git
     // that reads it, else `TOOL_GIT_TOO_OLD` naming both versions. No value clears it. The file it travels in is written at the next start.
-    [DriverRoute("TOOLS_GIT_SET")]
+    [DriverRoute("TOOLS_GIT_SET", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("TOOLS_GIT_SET", None = OwnerNone.MachineSetting)]
+    [GroundRead("TOOLS_GIT_SET", nameof(PipeReads.GitSetting))]
     [Publishes("TOOLS_GIT_SET", StateScopes.Tools)]
     private async Task<object?> ToolsGitSetAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -246,7 +260,10 @@ public sealed class ToolsRoutes(DriverContext context)
     // read-only, remove, default — the screen's half of `daoris git identity` and `git default`, over the same typed operations.
     // The page is the person's own press, so a widening is confirmed in place before it is sent. A change lifts every hold, so each
     // remote is tried once with what now serves it (§5.2).
-    [DriverRoute("GIT_IDENTITY")]
+    [DriverRoute("GIT_IDENTITY", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("GIT_IDENTITY", None = OwnerNone.MachineSetting)]
+    [GroundRead("GIT_IDENTITY", nameof(PipeReads.GitIdentity))]
+    [NotAlready("GIT_IDENTITY", "adds, tests, changes or removes one identity of the machine's set, which holds the secret apart")]
     [Publishes("GIT_IDENTITY", StateScopes.Tools)]
     private async Task<object?> GitIdentityAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -318,7 +335,10 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // A repository's remote, a workspace's host or this machine's host pointed at an identity, at the person's own sign-ins, or cleared
     // (`daoris git use`). Two remotes at one address must point at one identity: the operation refuses otherwise.
-    [DriverRoute("GIT_USE")]
+    [DriverRoute("GIT_USE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("GIT_USE", Repository = "repository", Workspace = "workspace")]
+    [GroundRead("GIT_USE", nameof(PipeReads.GitPointers))]
+    [NotAlready("GIT_USE", "writes one pointer into the choices of a repository's remote, a workspace's host or the machine's host")]
     [Publishes("GIT_USE", StateScopes.Tools | StateScopes.Driver)]
     private async Task<object?> GitUseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -372,7 +392,9 @@ public sealed class ToolsRoutes(DriverContext context)
     // A git go-ahead answered (GITAUTH1f, the git-auth design §6.6): its row's Allow or Refuse in What needs you and on its session's head,
     // and `daoris git answer` through the window. A door that waits takes the answer; for one that has gone an Allow is kept as a grant for
     // the identical retry. `{ ask, answer, waiting }`, waiting whether the door was still there. The row goes as the slice hears the file.
-    [DriverRoute("GIT_ANSWER")]
+    [DriverRoute("GIT_ANSWER", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("GIT_ANSWER", None = OwnerNone.ActsOnNothing)]
+    [GroundWait("GIT_ANSWER", "git-ask", "ask")]
     [Publishes("GIT_ANSWER", StateScopes.Tools)]
     private Task<object?> GitAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -397,7 +419,10 @@ public sealed class ToolsRoutes(DriverContext context)
     // What a switch of git changes, said before it applies (§4.1): the checkout keys the git that runs now and the git
     // the switch would run read differently, from each one's own `config --system --list`. Asked of both programs, so
     // a target that cannot run is refused before anything is asked.
-    [DriverRoute("TOOLS_GIT")]
+    [DriverRoute("TOOLS_GIT", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [ClassedBy("TOOLS_GIT", "way", PipeClass.Open, "\"system\"", "\"managed\"")]
+    [Owner("TOOLS_GIT", None = OwnerNone.MachineSetting)]
+    [GroundFiles("TOOLS_GIT", "file", "file", Quick = true)]
     private async Task<object?> ToolsGitAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var way = PayloadHelper.GetRequiredValue<string>(request.Payload, "way");
@@ -463,7 +488,8 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     // *Browse…* (§4.1): the system's file picker, which the application hands in. Null is the person cancelling.
-    [DriverRoute("TOOLS_PICK")]
+    [DriverRoute("TOOLS_PICK", PipeClass.Window)]
+    [Owner("TOOLS_PICK", None = OwnerNone.NamesNothing)]
     private object? ToolsPick(IpcRequest request) =>
         _pickFile is null
             ? new { Can = false, File = (string?)null }

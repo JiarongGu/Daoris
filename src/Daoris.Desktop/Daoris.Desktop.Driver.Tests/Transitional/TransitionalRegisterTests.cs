@@ -44,8 +44,6 @@ public sealed class TransitionalRegisterTests
     [Fact]
     public void The_workflow_waves_kept_reads_are_registered()
     {
-        Assert.Equal(
-            [("current-followed", "WORKFLOWCLEAN1z"), ("auto-lander", "WORKFLOWCLEAN1z"), ("work-cycles", "WORKFLOWCLEAN1j")],
-            new[] { "current-followed", "auto-lander", "work-cycles" }.Select(id => (id, Entry(id).Row)));
+        Assert.Equal("WORKFLOWCLEAN1z", Entry("auto-lander").Row);
     }
 }

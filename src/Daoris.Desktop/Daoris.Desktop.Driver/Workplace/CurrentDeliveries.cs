@@ -25,13 +25,15 @@ internal static class CurrentDeliveries
     /// <param name="branch">The branch a branch method makes or moves, as the landing names it; null for a merge.</param>
     /// <param name="waited">Whether the landing waited for another of its tree, so a delivery its key names delivered meanwhile is said so.</param>
     /// <param name="standing">Whether the standing automatic authority still stands, asked just before the first effect.</param>
-    /// <param name="bound">The bound graph version's <c>land</c> it is written from (LANDNODE1m); null writes Current's, from the rule.</param>
+    /// <param name="bound">The bound graph version's <c>land</c> it is written from (LANDNODE1m); null writes the landing's own form, with no graph.</param>
     public static async Task<(TreeDelivery? Delivery, TreeLanding? Refusal)> StartAsync(
         string home, IWorkplacePluginWire wire, Landing landing, string repository, string workspace, string root, LandingSubject subject, string tip,
         string line, string tree, string? branch, string acceptedBy, bool waited, Func<string?> standing, CancellationToken ct, BoundLand? bound = null)
     {
         var rule = landing.Rule;
-        var (method, graph) = bound is null ? WorkplaceWorkflows.Current.CurrentLand(rule) : (bound.Method, bound.Graph);
+        var (method, graph) = bound is null
+            ? (rule.Form == LandingForm.Merge ? "merge" : rule.Plugin is not null ? "pull-request" : "branch", "none")
+            : (bound.Method, bound.Graph);
         TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = AutoLandingCode.Refused };
         // The landing goes into the tree's line whatever the record would say, and the repository declares one line: a target is that line or
         // nothing lands (REVIEW2), so a saved version that names another is refused here and never lands.

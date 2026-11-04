@@ -216,29 +216,6 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
         }
     }
 
-    [Theory]
-    [InlineData("person", false, 0)]
-    [InlineData("rule", true, 0)]
-    [InlineData("rule", false, 1)]
-    public void The_effective_landing_resolves_once_at_its_point_and_reads_the_source_only_where_it_needs_it(string landing, bool own, int sources)
-    {
-        var actual = WorkplaceAccessSetup.Current;
-        var setup = new Setup { Landing = landing };
-        var rule = new LandingRule(LandingForm.Branch, "feature/{quest}", Tidy: true, AutoAccept: own);
-        var config = DriverConfig.Empty.WithWorkspaceLanding("aurora", rule);
-        try
-        {
-            WorkplaceAccessSetup.Current = setup;
-            var effective = LandingRules.Effective(config, "engine", "aurora");
-
-            Assert.Equal(["resolve:engine/aurora"], setup.Calls.Where(call => call.StartsWith("resolve", StringComparison.Ordinal)));
-            Assert.Equal(sources, setup.Calls.Count(call => call == "source:landing"));
-            Assert.Equal(sources == 1 ? "its-source" : null, effective.Access);
-            Assert.True(effective.Rule.AutoAccept == (landing == "rule" || own));
-        }
-        finally { WorkplaceAccessSetup.Current = actual; }
-    }
-
     [Fact]
     public void The_merges_note_asks_the_setup_for_its_words_only_where_it_names_them_and_the_other_notes_never_do()
     {
@@ -266,22 +243,6 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
             Assert.Contains("Participants installs it", Assert.Throws<InvalidOperationException>(() => AutoLandingNotes.Concluded(AutoConcluded.Merges)).Message);
             Assert.Contains("Participants installs it", Assert.Throws<InvalidOperationException>(() => AutoLandingNotes.Concluded(AutoConcluded.Merges, "machine")).Message);
             Assert.Empty(setup.Calls);
-        }
-        finally { WorkplaceAccessSetup.Current = actual; }
-    }
-
-    [Fact]
-    public void A_missing_setup_is_required_only_where_the_effective_landing_resolves()
-    {
-        var actual = WorkplaceAccessSetup.Current;
-        var config = DriverConfig.Empty.WithWorkspaceLanding("aurora", LandingRule.Merge);
-        try
-        {
-            WorkplaceAccessSetup.Current = null!;
-
-            Assert.Equal(LandingSource.Workspace, LandingRules.Choose(config, "engine", "aurora").Source);
-            var missing = Assert.Throws<InvalidOperationException>(() => LandingRules.Effective(config, "engine", "aurora"));
-            Assert.Contains("Participants installs it", missing.Message);
         }
         finally { WorkplaceAccessSetup.Current = actual; }
     }

@@ -139,42 +139,6 @@ public sealed class RoleActTests : IDisposable
         Assert.True(served.Judge.StewardDrove("engine"));
     }
 
-    /// <summary>Rows 1 and 3: drive and trees on are refused <c>landing-pushes</c> where the effective landing is a plugin that pushes.</summary>
-    [Theory]
-    [InlineData("drive", """{"repository":"engine","drivable":true}""")]
-    [InlineData("trees", """{"repository":"engine","ownTree":true}""")]
-    public async Task Drive_and_trees_on_are_refused_where_the_landing_pushes(string act, string form)
-    {
-        var world = new World();
-        world.Change(config => config.WithTrees("engine", true).WithWorkspaceLanding("games", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}") { Plugin = "github" }));
-        await using var served = await ServedAsync(world);
-
-        Assert.Equal((false, StewardWhy.LandingPushes), Done(await served.ActAsync(act, form)));
-        Assert.Empty(served.Judge.StewardActsNow());
-    }
-
-    /// <summary>
-    /// Rows 6 and 7: a stop of a session whose quest is <c>Done</c>, and a finish of such a park, would make a pushed landing due under an
-    /// auto-accepting branch rule with a pushing plugin: refused <c>landing-pushes</c>; under a rule that does not push, admitted.
-    /// </summary>
-    [Theory]
-    [InlineData("stop", """{"id":"s1","said":true}""", "github", false)]
-    [InlineData("finish", """{"id":"s1","state":"completed","said":true}""", "github", false)]
-    [InlineData("stop", """{"id":"s1","said":true}""", null, true)]
-    [InlineData("finish", """{"id":"s1","state":"completed","said":true}""", null, true)]
-    public async Task A_stop_or_finish_that_would_release_a_push_is_refused(string act, string form, string? plugin, bool admitted)
-    {
-        var world = new World { QuestStatus = "Done", Root = _home };
-        world.Records["s1"] = Parked("s1") with { Tree = world.TreeOf("s1") };
-        world.Change(config => config.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}") { AutoAccept = true, Plugin = plugin }));
-        await using var served = await ServedAsync(world);
-
-        var answer = Done(await served.ActAsync(act, form));
-
-        Assert.Equal(admitted ? (true, null) : (false, StewardWhy.LandingPushes), answer);
-        Assert.Equal(admitted ? 1 : 0, world.Moved.Count);
-    }
-
     /// <summary>Row 7: a helper's session, a partner's, a conversation and a park with a word waiting are never the steward's to finish.</summary>
     [Theory]
     [InlineData("helper", StewardWhy.NotQuestSession)]

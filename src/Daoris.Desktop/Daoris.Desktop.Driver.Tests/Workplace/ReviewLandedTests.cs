@@ -52,7 +52,7 @@ public sealed class ReviewLandedTests : LandedFixture
         await LandOnQuestBranchAsync(root, tree.Branch);
 
         var work = await trees.WorkAsync(tree.Path);
-        var landing = await trees.LandAsync(tree.Path, new LandingSubject("s1a2b3c4", "0fda20", "Work"));
+        var landing = await trees.LandAsync(tree.Path, new LandingSubject("s1a2b3c4", "0fda20", "Work"), gate: Lands);
 
         Assert.NotNull(work);
         Assert.False(work.Holds, "a session whose quest branch the line merged holds nothing to review");

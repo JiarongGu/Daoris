@@ -27,6 +27,7 @@ namespace Daoris.Desktop;
 /// else (another event, another field, a sentence where a name goes, words where a count goes) is dropped
 /// without a word. A message is its length and how many files it carried; never its text, never a name.</para>
 /// </remarks>
+[WindowModule]
 public sealed class LogModule(
     MachineLog log,
     // The file manager, for Open the folder. Null where the host carries none: then nothing opens, and

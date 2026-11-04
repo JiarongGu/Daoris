@@ -16,8 +16,6 @@ const UPDATE: UpdateState = { state: 'none', staged: null, mode: null, driven: 0
 
 const FACTS: DriverFacts = {
   home: 'C:/somewhere/Daoris',
-  homeAccount: 'same',
-  placeAnswers: true,
   pluginsFolder: 'C:/somewhere/Daoris/plugins',
   notify: true,
   coolOff: 60,

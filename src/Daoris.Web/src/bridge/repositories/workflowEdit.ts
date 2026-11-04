@@ -124,7 +124,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     void client.invalidateQueries({ queryKey: [...keys.driver, 'actors'] });
   };
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  const catalogueRead = catalogue.data ? 'ok' : catalogue.isError ? 'failed' : catalogue.isSuccess ? 'notOffered' : 'loading';
+  const catalogueRead = catalogue.data ? 'ok' : catalogue.isError || catalogue.isSuccess ? 'failed' : 'loading';
   const staffing: StepStaffing = {
     catalogue: catalogue.data ?? null,
     read: catalogueRead,

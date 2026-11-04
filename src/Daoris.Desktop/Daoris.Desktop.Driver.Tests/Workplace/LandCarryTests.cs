@@ -35,7 +35,7 @@ public sealed class LandCarryTests : LandedFixture
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "left.txt"), "not committed\n");
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
         Assert.False(refused.Landed, refused.Message);
         Assert.Equal(AutoLandingCode.Uncommitted, refused.Refusal);
 
@@ -60,7 +60,7 @@ public sealed class LandCarryTests : LandedFixture
         // The session goes on with the words in its own tree and commits; nothing was committed for it, and the landing lands.
         Assert.Equal("", (await GitAsync(tree.Path, "log", "--format=%an", "-1", "--", "left.txt")).Trim());
         await CommitAsync(tree.Path, "left.txt", "not committed\n", "the rest of the work");
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Single(_said);
@@ -94,9 +94,8 @@ public sealed class LandCarryTests : LandedFixture
     }
 
     [Fact]
-    public async Task A_dirty_tree_under_a_merge_rule_is_carried_on_as_a_branch_rule_is()
+    public async Task A_dirty_tree_under_a_merge_is_carried_on_as_under_a_branch()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
@@ -122,7 +121,7 @@ public sealed class LandCarryTests : LandedFixture
         await CommitAsync(root, "shared.txt", "one\nfrom the line\n", "the line's own");
         var tip = (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim();
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
         var carried = await LandCarry.CarryAsync(SayAsync, Home, Subject.Session, tree.Path, refused, record: null, Pressed);
 
         Assert.True(carried!.Told, carried.Sentence);
@@ -141,7 +140,7 @@ public sealed class LandCarryTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "left.txt"), "not committed\n");
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         foreach (var state in new[] { "stopped", "declined" })
         {
@@ -162,7 +161,7 @@ public sealed class LandCarryTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "left.txt"), "not committed\n");
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         var refusing = await LandCarry.CarryAsync(
             (_, _, _, _) => Task.FromResult<SayAnswer?>(new SayAnswer(false, "the session is running.")), Home, Subject.Session, tree.Path, refused, null, Pressed);

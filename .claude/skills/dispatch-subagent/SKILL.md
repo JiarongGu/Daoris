@@ -65,7 +65,12 @@ and the `Process` classes it added or changed.
 ## Choosing the model (D160, D174)
 
 Choose by role: [`docs/model-roles.md`](../../../docs/model-roles.md) names each role's model and effort. The Agent
-call's `model` overrides the definition's for one dispatch.
+call's `model` overrides the definition's for one dispatch. Measured 2026-11-04: Sonnet built exact rows on 70-90K
+tokens where Opus builders took 300-900K, so **Sonnet takes every chunk that follows an exemplar already on main**
+(the next routes onto a pattern, a deletion sweep with its list, a rename, a comment cut, tests rewritten onto a
+named helper). Opus takes plans, reviews, a pattern's first exemplar and calls that need judgement. Each builder
+hands back at about 150 tool calls, and a fresh one continues: a start costs about 32K, and a carried context of
+450K costs that much on every turn. Measure each batch with `tools/subagent-usage.mjs` and `tools/subagent-time.mjs`.
 
 | Role in this skill | The reference's role |
 |---|---|

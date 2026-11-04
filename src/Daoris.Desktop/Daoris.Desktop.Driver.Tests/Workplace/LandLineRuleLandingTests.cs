@@ -79,7 +79,7 @@ public sealed class LandLineRuleLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Null(plan.Conflict);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains($" The declared line rule settled `docs/STATUS.md`, written again from the replayed tree by `{Run}`.", landed.Message);
@@ -98,7 +98,7 @@ public sealed class LandLineRuleLandingTests : LandedFixture
         var tree = await ConflictOnTheLineAsync(root, trees);
         var before = await StateAsync(root, tree);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("Merge conflict in docs/STATUS.md", refused.Conflict!.Says);
@@ -117,7 +117,7 @@ public sealed class LandLineRuleLandingTests : LandedFixture
         var tree = await ConflictOnTheLineAsync(root, trees);
         var before = await StateAsync(root, tree);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("Merge conflict in docs/STATUS.md", refused.Conflict!.Says);
@@ -143,7 +143,7 @@ public sealed class LandLineRuleLandingTests : LandedFixture
         await CommitAsync(root, Path.Combine("docs", "STATUS.md"), Status("shared.txt, zline.txt"), "the line's own");
         var before = await StateAsync(root, tree);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("Merge conflict in docs/STATUS.md", refused.Conflict!.Says);
@@ -163,7 +163,7 @@ public sealed class LandLineRuleLandingTests : LandedFixture
         var tree = await ConflictOnTheLineAsync(root, trees);
         var before = await StateAsync(root, tree);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("docs/STATUS.md", refused.Conflict!.Says);

@@ -11,6 +11,12 @@
     <InternalsVisibleTo Include="Daoris.Desktop.Driver.Tests" />
   </ItemGroup>
 
+  <!-- The service's routes as their declarations, the one project this references: never the service's own, whose store it
+       must not reach. -->
+  <ItemGroup>
+    <ProjectReference Include="../../Daoris.Contracts/Daoris.Contracts.csproj" />
+  </ItemGroup>
+
   <!-- The desktop store's package and its native bundle (FOUNDATION1 z-i, D212 §13.2), pinned at the service's versions in
        Directory.Packages.props and taken by `DesktopStore` alone: never Daoris.Service.Core, whose store is the service's. -->
   <ItemGroup>

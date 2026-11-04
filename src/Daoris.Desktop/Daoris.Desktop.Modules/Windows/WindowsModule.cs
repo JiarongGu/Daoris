@@ -28,6 +28,7 @@ namespace Daoris.Desktop;
 /// button is already there and is the one every application has taught people to use. A second door
 /// onto it would be a route that exists to be symmetrical.</para>
 /// </remarks>
+[WindowModule]
 public sealed class WindowsModule(
     IEventBus events, ISecondaryWindows windows, PlatformAddress platform,
     // Daoris's own browser (D78): a window the person opens to sign in and to watch. Null where the

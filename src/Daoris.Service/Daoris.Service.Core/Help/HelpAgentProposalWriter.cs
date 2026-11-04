@@ -5,7 +5,7 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// The <c>agent</c> kind's writer (HELP6): an agent's Update, or a pin to one exact version, and how its accounts are used, ordered and
 /// offered again (TOOL4l-a). Since POOL1b (D197 point 6, the account-pool design §5.3) its accounts are one set: a <c>use</c> or an
-/// <c>order</c> is written with <c>set: true</c>, the mark the driver applies only, and names no workspace; HELP10's <c>default</c> left.
+/// <c>order</c> is written with <c>set: true</c>, the mark the driver applies only, and names no workspace.
 /// </summary>
 internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
 {
@@ -48,11 +48,7 @@ internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var usesAny = way is not null || kept is not null || noKeep || early is not null || near is not null
             || when is not null || windows.Count > 0 || noCurve;
-        // POOL1b (D197 point 6): `default` left; the order says where starts begin, and the set serves every workspace.
-        var refused = door == "default"
-            ? "`default` is retired: every account of Daoris's serves every workspace (D197), and the order says where starts begin — "
-              + "propose `order` with the account first."
-            : !Doors.Contains(door)
+        var refused = !Doors.Contains(door)
             ? "an agent's change is `update`, `pin`, `use`, `order` or `ready`: update moves it to its newest release, "
               + "pin to one exact version, use sets how its accounts are used, order puts accounts first, "
               + "and ready ends an account's cool-off."

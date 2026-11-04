@@ -4,15 +4,12 @@ using System.Text.RegularExpressions;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The service core's map (STRUCT5, D166): each module the core holds, every file still at the core's top by name with the
-/// module it is to move to, and the tests of a moved module by file name. A trimmed copy of the driver's gate: that one is
-/// internal to the driver's tests, and the service's tests may not reference it. Read from <c>fixtures/structure.json</c>.
+/// The service core's map (D166): each module the core holds, and the test folders that hold a door's tests. A file's module,
+/// and a test's, is its first folder, so no file is listed. A trimmed copy of the driver's gate: that one is internal to the
+/// driver's tests, and the service's tests may not reference it. Read from <c>fixtures/structure.json</c>.
 /// </summary>
-internal sealed record StructureMap(IReadOnlyList<string> Modules, IReadOnlyDictionary<string, string> Root)
+internal sealed record StructureMap(IReadOnlyList<string> Modules)
 {
-    /// <summary>The tests of a module that has moved, by file name, with the module (or test-only folder) each sits under.</summary>
-    public IReadOnlyDictionary<string, string> Tests { get; init; } = new Dictionary<string, string>();
-
     /// <summary>Folders of the tests that hold a door's tests and no core module's: the MCP door's.</summary>
     public IReadOnlyList<string> TestFolders { get; init; } = [];
 
@@ -20,17 +17,13 @@ internal sealed record StructureMap(IReadOnlyList<string> Modules, IReadOnlyDict
     {
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
-        return new StructureMap(Names(root.GetProperty("modules")), Strings(root.GetProperty("root")))
+        return new StructureMap(Names(root.GetProperty("modules")))
         {
-            Tests = root.TryGetProperty("tests", out var tests) ? Strings(tests) : new Dictionary<string, string>(),
             TestFolders = root.TryGetProperty("testFolders", out var folders) ? Names(folders) : [],
         };
     }
 
     private static List<string> Names(JsonElement list) => list.EnumerateArray().Select(name => name.GetString()!).ToList();
-
-    private static Dictionary<string, string> Strings(JsonElement table) =>
-        table.EnumerateObject().ToDictionary(entry => entry.Name, entry => entry.Value.GetString()!, StringComparer.Ordinal);
 }
 
 /// <summary>One rule a source breaks: where (<see cref="Line"/> 0 is the file as a whole), which rule, and why.</summary>
@@ -43,11 +36,10 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// The structure gate's rules over the core's sources as (path, text) pairs, each path relative to the core's folder with
 /// <c>/</c> between its parts (the code-structure design §5):
 /// <list type="bullet">
-/// <item><c>top</c>: a file at the core's top is one the map's <c>root</c> list names, and every name on it is still there,
-/// so the list only shrinks.</item>
+/// <item><c>top</c>: no file sits at the core's top.</item>
 /// <item><c>module</c>: a file in a folder is in a module's folder; the core keeps no <c>Application</c> or <c>Infrastructure</c>
 /// folder, and no <c>Domain</c> in this pass.</item>
-/// <item><c>mirror</c>: a test the map lists sits under its module's folder, and a test folder is a module's or support.</item>
+/// <item><c>mirror</c>: a test folder is a module's, a door's, or support.</item>
 /// <item><c>composition</c>: nothing outside <c>Composition</c> names a type declared in it, in code only.</item>
 /// </list>
 /// </summary>
@@ -67,28 +59,12 @@ internal static class StructureCheck
         Mirror(map, tests.ToList(), breaches);
         var files = sources.Select(source => new Source(source.Path, source.Text)).ToList();
 
-        foreach (var (file, module) in map.Root)
-        {
-            if (!map.Modules.Contains(module))
-            {
-                breaches.Add(new("structure.json", 0, "map", $"{file} is mapped to {module}, which is no module of the map"));
-            }
-
-            if (!files.Any(source => source.Path == file))
-            {
-                breaches.Add(new(file, 0, "top", "structure.json lists it at the core's top, where it is not: a move takes its entry off the list"));
-            }
-        }
-
         foreach (var source in files)
         {
             var parts = source.Path.Split('/');
             if (parts.Length == 1)
             {
-                if (!map.Root.ContainsKey(source.Path))
-                {
-                    breaches.Add(new(source.Path, 1, "top", "a new file at the core's top: put it in its module's folder (structure.json's modules), not here"));
-                }
+                breaches.Add(new(source.Path, 1, "top", "a new file at the core's top: put it in its module's folder (structure.json's modules), not here"));
             }
             else if (!map.Modules.Contains(parts[0]))
             {
@@ -130,26 +106,6 @@ internal static class StructureCheck
             if (parts.Length > 1 && !map.Modules.Contains(parts[0]) && !map.TestFolders.Contains(parts[0]) && !TestSupport.Contains(parts[0]))
             {
                 breaches.Add(new(path, 0, "mirror", $"the folder {parts[0]} is no module's: a test folder is a module's, a door's, or fixtures, golden or a build output"));
-            }
-        }
-
-        foreach (var (name, module) in map.Tests)
-        {
-            if (!map.Modules.Contains(module) && !map.TestFolders.Contains(module))
-            {
-                breaches.Add(new("structure.json", 0, "map", $"{name} is a test mapped to {module}, which is no module of the map"));
-            }
-
-            var found = tests.Where(path => path.Split('/')[^1] == name).ToList();
-            if (found.Count == 0)
-            {
-                breaches.Add(new("structure.json", 0, "map", $"{name} is listed under {module}, and no such test is in the tests' tree: a delete takes its entry off the list"));
-            }
-
-            foreach (var path in found.Where(path => path.Split('/')[0] != module || !path.Contains('/')))
-            {
-                var where = path.Contains('/') ? $"under {path.Split('/')[0]}" : "at the top of the tests";
-                breaches.Add(new(path, 0, "mirror", $"sits {where}, and the map lists it under {module}: a test mirrors its module's folder"));
             }
         }
     }

@@ -187,25 +187,17 @@ public sealed class PluginPageTests : IDisposable
     }
 
     [Fact]
-    public void A_landing_plugin_says_the_rules_that_name_it_and_whether_it_can_land_work_here()
+    public void A_landing_plugin_says_whether_it_can_land_work_here()
     {
         Install("acme.lands", """
             { "id": "acme.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }
             """);
-        DriverConfig.Empty
-            .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.lands"))
-            .WithLanding("game", new LandingRule(LandingForm.Branch, "fix/{quest}", Plugin: "acme.other"))
-            .WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "work/{quest}", Plugin: "acme.lands"))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
         var ready = PluginPage.Read(Home, "acme.lands");
         PluginState.Disable(Home, "acme.lands");
         var off = PluginPage.Read(Home, "acme.lands");
 
-        Assert.Equal(
-            [new PageRule("repository", "engine", "feature/{quest}-{slug}"), new PageRule("workspace", "aurora", "work/{quest}")],
-            ready.Landing!.Rules);
-        Assert.Null(ready.Landing.Problem);
+        Assert.Null(ready.Landing!.Problem);
         Assert.Equal(new PagePoint("work/land", "act", 120_000, null), Assert.Single(ready.Points));
         Assert.Contains("daoris plugin enable acme.lands", off.Landing!.Problem);
         Assert.Equal("off", off.Health.State);

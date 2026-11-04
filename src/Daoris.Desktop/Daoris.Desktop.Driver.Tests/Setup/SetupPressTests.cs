@@ -488,13 +488,10 @@ public sealed class SetupPressTests : IDisposable
         Assert.Null((await PlanAsync(new World())).Builds);
     }
 
-    /// <summary>The plan says how its work will land, as a branch for review or merged (D117 §6.3), and where its quest starts alone.</summary>
+    /// <summary>The plan says where its quest starts alone.</summary>
     [Fact]
-    public async Task The_plan_says_how_it_will_land_and_where_its_quest_starts_alone()
+    public async Task The_plan_says_where_its_quest_starts_alone()
     {
-        var branch = Driven.WithLanding("reports", new LandingRule(LandingForm.Branch, "daoris/{quest}-{slug}"));
-
-        Assert.Equal(LandingForm.Branch, (await PlanAsync(new World(), config: branch)).Landing!.Rule.Form);
         Assert.True((await PlanAsync(new World(), config: Driven.WithDrivable("reports", false))).Alone);
         Assert.False((await PlanAsync(new World())).Alone);
     }

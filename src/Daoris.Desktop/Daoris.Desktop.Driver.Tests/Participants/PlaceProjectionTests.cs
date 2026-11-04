@@ -42,23 +42,6 @@ public sealed class PlaceProjectionTests
         Assert.All(places, place => Assert.Equal(new PlaceDefault("merge-after-accept", []), place.Values!.Follows));
     }
 
-    /// <summary>DEFAULTCONFIG1a: a rule edited at a place names the options it differs in from the default it follows; the workspace keeps its own.</summary>
-    [Fact]
-    public void A_rule_edit_names_what_differs_from_the_default_the_place_follows()
-    {
-        var config = DriverConfig.Empty with { Drivable = ["engine"] };
-        var branch = config.WithLanding("engine", new LandingRule(LandingForm.Branch, "f/{quest}", AutoAccept: true));
-        var integrated = config.WithLanding("engine", new LandingRule(LandingForm.Branch, "f/{quest}", AutoAccept: true)
-        {
-            Integrate = new LandingIntegrate(Request: LandingIntegrate.Done, Gates: "declared"),
-        });
-
-        Assert.Equal(new PlaceDefault("branch-to-push", ["accept `automatic`"]), PlaceProjection.ValuesAt(branch, "engine", "aurora", PlaceSource.RepositoryLevel).Follows);
-        Assert.Equal(new PlaceDefault("merge-after-accept", []), PlaceProjection.ValuesAt(branch, "", "aurora", PlaceSource.WorkspaceLevel).Follows);
-        Assert.Equal(new PlaceDefault("integrated", ["accept `automatic`", "request `done`"]),
-            PlaceProjection.ValuesAt(integrated, "engine", "aurora", PlaceSource.RepositoryLevel).Follows);
-    }
-
     /// <summary>DEFAULTCONFIG1a: a place choosing a version copied from a default follows that default, and names what the copy changed.</summary>
     [Fact]
     public void A_place_choosing_a_copy_of_a_default_follows_it_and_names_what_the_copy_changed()
@@ -94,16 +77,6 @@ public sealed class PlaceProjectionTests
 
     private static string Wire(object value) => System.Text.Json.JsonSerializer.Serialize(value);
 
-    /// <summary>SETUPUX1d: <c>lands</c> is the preset the followed workflow's land matches, with the options it says otherwise.</summary>
-    [Fact]
-    public void A_place_lands_as_the_preset_its_delivery_matches_with_its_own_options()
-    {
-        var config = DriverConfig.Empty with { Drivable = ["engine"] };
-        var branch = config.WithLanding("engine", new LandingRule(LandingForm.Branch, "f/{quest}", AutoAccept: true));
-
-        Assert.Equal(new SetupMatch("branch-to-push", ["accept `automatic`"]), PlaceProjection.ValuesAt(branch, "engine", "aurora", PlaceSource.RepositoryLevel).Lands);
-        Assert.Equal(new SetupMatch("merge-after-accept", []), PlaceProjection.ValuesAt(branch, "", "aurora", PlaceSource.WorkspaceLevel).Lands);
-    }
 
     /// <summary>SETUPUX1d: a saved version of each shipped delivery lands as Current does for the same land.</summary>
     [Fact]

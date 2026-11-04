@@ -23,6 +23,15 @@ namespace Daoris.Desktop;
 /// picker does: this is machine-local state, and the service deliberately has no door onto it — a
 /// browser over a keyed remote must never be able to read, or re-point, where a machine syncs.</para>
 /// </remarks>
+[ModuleRoute("STATE", PipeClass.Open)]
+[ModuleRoute("SET", PipeClass.Person, Drain = PipeDrain.Passes)]
+[ModuleRoute("REMOVE", PipeClass.Person, Drain = PipeDrain.Passes)]
+[Owner("SET", None = OwnerNone.MachineSetting)]
+[Owner("REMOVE", None = OwnerNone.MachineSetting)]
+[NotAlready("SET", "carries a key the read redacts")]
+[NotAlready("REMOVE", "removes a workspace's wiring and its key")]
+[GroundRead("SET", nameof(PipeReads.RemoteWiring))]
+[GroundRead("REMOVE", nameof(PipeReads.RemoteWiring))]
 public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.REMOTES";

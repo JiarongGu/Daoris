@@ -32,34 +32,6 @@ public sealed class TreePlacesGitTests : IDisposable
         GitSeed.Discard(_scratch);
     }
 
-    /// <summary>
-    /// LandingTidyTests' chain, both trees at the old place: the later one lands, and the landing's own tidy takes the earlier
-    /// branch with its tree, which it kept as "not a session tree" before.
-    /// </summary>
-    [Fact]
-    public async Task A_tree_at_the_old_place_lands_and_the_landings_tidy_takes_an_old_place_tree_it_holds()
-    {
-        var root = await GitSeed.PlainAsync(Path.Combine(_scratch, "engine"), "engine");
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true))
-            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
-        var trees = new SessionTrees(_home);
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "first.txt", "the first step");
-        var second = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
-        await CommitAsync(second.Path, "second.txt", "the verify step");
-        var firstOld = await ToOldPlaceAsync(root, first.Path);
-        var secondOld = await ToOldPlaceAsync(root, second.Path);
-
-        var landed = await trees.LandAsync(secondOld, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: NoneRunning);
-
-        Assert.True(landed.Landed, landed.Message);
-        Assert.True(await BranchAsync(root, "feature/0fda18-fix-the-gap"), "the landed branch stands");
-        Assert.False(await BranchAsync(root, second.Branch), "the landed session's branch goes");
-        Assert.False(await BranchAsync(root, first.Branch), "the earlier step's branch the landing holds goes too");
-        Assert.False(Directory.Exists(firstOld), "with its tree at the old place");
-        Assert.Equal(new TidiedBranch(first.Branch, Removed: true, Tree: true), Assert.Single(landed.Tidied!));
-    }
-
     [Fact]
     public async Task A_tree_at_the_old_place_merges()
     {

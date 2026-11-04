@@ -14,7 +14,7 @@ public sealed class AtWorkRoutes(DriverContext context)
     /// what its line waits on and its co-workers from the home's helper, piece and hand-over files (COMMS1i). Numbered,
     /// so a failure is answered with its words and an older delivery never replaces a newer one.
     /// </summary>
-    [DriverRoute("SESSION_AT_WORK")]
+    [DriverRoute("SESSION_AT_WORK", PipeClass.Open)]
     [ByEvent("SESSION_AT_WORK", Numbered = true, Untold = "each part's lineage file, this window's lineage tokens and the helper, piece and hand-over files, which the read's own judge watches")]
     private async Task<object?> SessionAtWorkAsync(IpcRequest request, CancellationToken cancellationToken)
     {

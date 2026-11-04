@@ -296,7 +296,7 @@ public sealed class ReviewGraphTodayTests : LandedFixture
         var began = (await GitAsync(root, "rev-parse", "main")).Trim();
         var tree = await trees.OpenAsync(root, "engine", Session);
         await CommitAsync(tree.Path, "own.txt", "mine\n", "its own work");
-        Assert.True((await trees.LandAsync(tree.Path, new LandingSubject(Session, "q1", "Work q1"))).Landed);
+        Assert.True((await trees.LandAsync(tree.Path, new LandingSubject(Session, "q1", "Work q1"), gate: Lands)).Landed);
         // Only into the tree's own repository: a folder that is none would let git walk up into whatever encloses it.
         Assert.True(await WorkingTree.IsTopLevelAsync(tree.Path, CancellationToken.None));
         await CommitAsync(tree.Path, "after.txt", "after the landing\n", "work after its landing");

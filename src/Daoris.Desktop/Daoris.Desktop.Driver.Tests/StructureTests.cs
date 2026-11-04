@@ -3,12 +3,12 @@ using System.Diagnostics;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The structure gate (STRUCT1, D166; FOUNDATION1 mod-0, D212, the design §14.5): every driver source is placed in one of the twenty-one
-/// subdomains, by <c>fixtures/structure.json</c> or by the folder of the subdomain it sits in, and a file names only its own subdomain's
-/// types and those of the subdomains listed before it, read through Roslyn's semantic model: every name that binds to a type a driver
-/// file declares, whatever its spelling. Today's edges against the order are the census's, each an exact edge under its family and the
-/// row after which it is cut; a <c>Domain</c> file does no I/O; and nothing outside Loop's folder names a type declared in it. The rules are
-/// held here on sources made in memory, one case each, and then run over the driver's own tree.
+/// The structure gate (D166, D212; the design §14.5): every driver source sits in the folder of one of the subdomains of
+/// <c>fixtures/structure.json</c>, which is its subdomain, and a file names only its own subdomain's types and those of the subdomains
+/// listed before it, read through Roslyn's semantic model: every name that binds to a type a driver file declares, whatever its spelling.
+/// Today's edges against the order are the census's, each an exact edge under its family and the row after which it is cut; a
+/// <c>Domain</c> file does no I/O; and nothing outside Loop's folder names a type declared in it. The rules are held here on sources made
+/// in memory, one case each, and then run over the driver's own tree.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
@@ -19,8 +19,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             new("Course", "Course", true),
             new("Help", "Help", false),
             new("Loop", "Loop", false),
-        ],
-        new Dictionary<string, string> { ["Landing.cs"] = "Platform" })
+        ])
     {
         Seams = ["ServiceClient"],
     };
@@ -28,7 +27,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     /// <summary>A planted source: the driver's one namespace, then the body, so the body's first line is line 2.</summary>
     private static (string Path, string Text) Src(string path, string body) => (path, "namespace Daoris.Driver;\n" + body);
 
-    private static readonly (string, string) Landing = Src("Landing.cs", "public class Landing { }");
+    private static readonly (string, string) Landing = Src("Platform/Landing.cs", "public class Landing { }");
 
     private static IReadOnlyList<string> Check(StructureMap map, params (string Path, string Text)[] sources) =>
         StructureCheck.Check(map, sources).Select(breach => breach.ToString()).ToList();
@@ -48,49 +47,18 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     ];
 
     [Fact]
-    public void A_file_is_placed_by_the_list_or_by_the_folder_of_its_subdomain_and_nothing_else_is()
+    public void A_file_s_subdomain_is_its_folder_and_a_file_in_none_is_refused()
     {
         Assert.Empty(Check(Src("Platform/Clock.cs", "class Clock { }"), Src("Help/Room.cs", "class Room { }")));
+        Assert.Equal("Help", Map.OwnerOf("Help/Room/Door.cs"));
+        Assert.Null(Map.OwnerOf("Fresh.cs"));
 
         Assert.Equal(
             [
-                "Fresh.cs:1 [place] a file at the driver's top that structure.json does not place: put it in its subdomain's folder",
-                "Gardens/Rose.cs:1 [place] the folder Gardens is no subdomain's, and structure.json does not place the file: put it in its subdomain's folder (structure.json's subdomains)",
+                "Fresh.cs:1 [place] a file at the driver's top: put it in its subdomain's folder",
+                "Gardens/Rose.cs:1 [place] the folder Gardens is no subdomain's: put the file in its subdomain's folder (structure.json's subdomains)",
             ],
             Check(Src("Fresh.cs", "class Fresh { }"), Src("Gardens/Rose.cs", "class Rose { }")));
-
-        // A list's entry is a file that is there, in a subdomain the map declares.
-        Assert.Equal(
-            [
-                "Gone.cs:0 [place] structure.json places it, and it is not there: a move gives its entry its new path, and a delete takes it off the list",
-                "structure.json:0 [map] Gone.cs is placed in Gardens, which is no subdomain of the map",
-            ],
-            StructureCheck.Check(Map with { Files = new Dictionary<string, string> { ["Landing.cs"] = "Platform", ["Gone.cs"] = "Gardens" } }, [Landing])
-                .Select(breach => breach.ToString()));
-    }
-
-    [Fact]
-    public void A_subdomain_that_has_moved_holds_every_file_placed_in_it_in_its_folder()
-    {
-        var moved = Map with
-        {
-            Subdomains = [Map.Subdomains[0] with { Moved = true }, .. Map.Subdomains.Skip(1)],
-            Files = new Dictionary<string, string> { ["Landing.cs"] = "Platform", ["Help/Loose.cs"] = "Platform", ["Platform/Strayed.cs"] = "Help" },
-        };
-
-        // A subdomain whose move has not landed may still sit in a moved one's folder (Platform's is today's, which the rest leave a row
-        // at a time): Strayed is Help's to move, so it is no breach until Help's own move has landed.
-        Assert.Equal(
-            [
-                "Help/Loose.cs:1 [place] Platform has moved, and the map places this file in it: its files sit in Platform",
-                "Landing.cs:1 [place] Platform has moved, and the map places this file in it: its files sit in Platform",
-            ],
-            Check(moved, Landing, Src("Help/Loose.cs", "class Loose { }"), Src("Platform/Strayed.cs", "class Strayed { }")));
-
-        var both = moved with { Subdomains = [.. moved.Subdomains.Select(each => each.Name == "Help" ? each with { Moved = true } : each)] };
-        Assert.Contains(
-            "Platform/Strayed.cs:1 [place] Help has moved, and the map places this file in it: its files sit in Help",
-            Check(both, Landing, Src("Help/Loose.cs", "class Loose { }"), Src("Platform/Strayed.cs", "class Strayed { }")));
     }
 
     [Fact]
@@ -306,17 +274,6 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         Assert.Contains(
             "Course/Naming.cs:2 [loop] names Driver, declared in Loop/Driver.cs: Loop is the composition root, and nothing outside its folder names it",
             Check(excepted, Landing, driver, tick, Src("Course/Naming.cs", "class Naming { Driver Watch; }")));
-
-        // A file the map places in Loop but that sits outside its folder is a census exception, not an absolute edge.
-        var runner = Src("Course/Runner.cs", "public class Runner { }");
-        var placed = Map with { Files = new Dictionary<string, string> { ["Landing.cs"] = "Platform", ["Course/Runner.cs"] = "Loop" } };
-        var using_ = Src("Course/Using.cs", "class Using { Runner Run; }");
-        Assert.Equal(
-            [Up("Course/Using.cs", 2, "Runner", "Course/Runner.cs", "Course", "Loop")],
-            Check(placed, Landing, runner, using_));
-        Assert.Empty(Check(
-            placed with { Families = [new("the runner's port", "Course", new Dictionary<string, IReadOnlyList<string>> { ["Course/Using.cs"] = ["Runner"] })] },
-            Landing, runner, using_));
     }
 
     [Fact]
@@ -362,37 +319,6 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
 
     private static IReadOnlyList<string> Mirror(IEnumerable<string> tests, StructureMap? map = null) =>
         StructureCheck.Check(map ?? Map with { TestFolders = ["Trees"] }, [Landing], tests).Select(breach => breach.ToString()).ToList();
-
-    [Fact]
-    public void A_test_the_map_lists_sits_under_its_subdomain_s_folder_and_one_not_listed_is_not_constrained()
-    {
-        var listed = Map with
-        {
-            TestFolders = ["Trees"],
-            Tests = new Dictionary<string, string> { ["PluginKitTests.cs"] = "Course", ["HookTests.cs"] = "Course" },
-        };
-
-        Assert.Empty(Mirror(["Course/PluginKitTests.cs", "Course/Hooks/HookTests.cs", "LooseTests.cs", "Trees/LandingTests.cs"], listed));
-
-        Assert.Equal(
-            [
-                "HookTests.cs:0 [mirror] sits at the top of the tests, and the map lists it under Course: a test mirrors its subdomain's folder",
-                "Trees/PluginKitTests.cs:0 [mirror] sits under Trees, and the map lists it under Course: a test mirrors its subdomain's folder",
-            ],
-            Mirror(["HookTests.cs", "Trees/PluginKitTests.cs", "Trees/Other.cs"], listed));
-    }
-
-    [Fact]
-    public void A_name_the_tests_list_that_is_found_nowhere_is_a_stale_entry_or_a_subdomain_the_map_does_not_declare()
-    {
-        Assert.Equal(
-            ["structure.json:0 [map] GoneTests.cs is listed under Course, and no such test is in the tests' tree: a delete takes its entry off the list"],
-            Mirror(["Trees/HookTests.cs"], Map with { TestFolders = ["Trees"], Tests = new Dictionary<string, string> { ["GoneTests.cs"] = "Course" } }));
-
-        Assert.Contains(
-            "structure.json:0 [map] HookTests.cs is a test mapped to Gardens, which is no subdomain of the map",
-            Mirror(["Gardens/HookTests.cs"], Map with { Tests = new Dictionary<string, string> { ["HookTests.cs"] = "Gardens" } }));
-    }
 
     [Fact]
     public void A_top_level_folder_of_the_tests_is_a_subdomain_s_or_a_listed_one_not_yet_moved_or_fixtures_golden_or_build_output()
@@ -443,14 +369,11 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(23, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xxi: Platform through Work orders, then Review, Plugins, Workflows, Setup, Help and Loop); no namespace
-        // row: every namespace stays Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants", "Context", "Course", "Work orders", "Review", "Plugins", "Workflows", "Setup", "Conversion", "Transitional", "Help", "Loop"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        // Every namespace stays Daoris.Driver (D166 point 4).
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
         Assert.Equal("Loop", map.Subdomains[^1].Name);
-        Assert.All(map.Files.Values, name => Assert.Contains(map.Subdomains, subdomain => subdomain.Name == name));
         Assert.All(map.Families, family => Assert.Contains(map.Subdomains, subdomain => subdomain.Name == family.After));
     }
 
@@ -527,16 +450,14 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         string[] context = ["SessionEvents", "SessionOutput", "SessionStreams", "SessionStream", "SessionStreamKind", "ConsoleLine",
             "TranscriptFile", "ComposedBrief", "ComposedInstruction", "HandedSections", "InstructionAccounting", "SessionParts", "SessionPartsText"];
         Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
-            && context.Contains(edge.Type) && edge.DeclaredIn.Any(path => Tree.Value.Map.Files.TryGetValue(path, out var owner)
-                ? owner == "Context" : path.StartsWith("Context/", StringComparison.Ordinal))));
+            && context.Contains(edge.Type) && edge.DeclaredIn.Any(path => Tree.Value.Map.OwnerOf(path) == "Context")));
     }
 
     [Fact]
     public void Agents_has_no_remaining_upward_Course_dependency()
     {
         Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => Tree.Value.Map.Files.TryGetValue(path, out var owner)
-                ? owner == "Course" : path.StartsWith("Course/", StringComparison.Ordinal))));
+            && edge.DeclaredIn.Any(path => Tree.Value.Map.OwnerOf(path) == "Course")));
     }
 
     [Fact]
@@ -544,8 +465,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Context" : path.StartsWith("Context/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Context")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Context in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -555,8 +475,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Loop" : path.StartsWith("Loop/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Loop")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Loop in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -566,8 +485,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Roles" : path.StartsWith("Roles/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Roles")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Roles in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -577,8 +495,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Help" : path.StartsWith("Help/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Help")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Help in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -588,8 +505,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Course" : path.StartsWith("Course/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Course")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Course in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -599,8 +515,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Participants" : path.StartsWith("Participants/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Participants")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Participants in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -610,8 +525,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Plugins" : path.StartsWith("Plugins/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Plugins")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Plugins in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -621,8 +535,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Work orders" : path.StartsWith("Quests/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Work orders")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Work orders in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -632,8 +545,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Workflows" : path.StartsWith("Workflows/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Workflows")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Workflows in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -643,8 +555,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owner == "Review" : path.StartsWith("Review/", StringComparison.Ordinal) || path.StartsWith("Sessions/Heavy/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Review")).ToList();
         Assert.True(edges.Count == 0, $"Workplace names Review in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -653,11 +564,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     public void Roles_uses_lower_vocabulary_facets_and_ports_and_no_Context_Review_or_Work_orders_types()
     {
         var (map, _, _, analysis, _) = Tree.Value;
-        string[] owners = ["Context", "Review", "Work orders"];
-        string[] folders = ["Context/", "Review/", "WorkOrders/", "Quests/"];
+        string?[] owners = ["Context", "Review", "Work orders"];
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Roles/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+            && edge.DeclaredIn.Any(path => owners.Contains(map.OwnerOf(path)))).ToList();
         Assert.True(edges.Count == 0, $"Roles names Context, Review or Work orders in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -666,11 +575,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     public void Participants_uses_lower_vocabulary_facets_ports_and_homes_and_no_Context_Course_Help_or_Plugins_types()
     {
         var (map, _, _, analysis, _) = Tree.Value;
-        string[] owners = ["Context", "Course", "Help", "Plugins"];
-        string[] folders = ["Context/", "Course/", "Help/", "Plugins/"];
+        string?[] owners = ["Context", "Course", "Help", "Plugins"];
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Participants/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+            && edge.DeclaredIn.Any(path => owners.Contains(map.OwnerOf(path)))).ToList();
         Assert.True(edges.Count == 0, $"Participants names Context, Course, Help or Plugins in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -679,11 +586,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     public void Participants_uses_lower_homes_facets_and_ports_and_no_Review_Work_orders_or_Workflows_types()
     {
         var (map, _, _, analysis, _) = Tree.Value;
-        string[] owners = ["Review", "Work orders", "Workflows"];
-        string[] folders = ["Review/", "Sessions/Heavy/", "WorkOrders/", "Quests/", "Brainstorms/", "Workflows/"];
+        string?[] owners = ["Review", "Work orders", "Workflows"];
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Participants/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+            && edge.DeclaredIn.Any(path => owners.Contains(map.OwnerOf(path)))).ToList();
         Assert.True(edges.Count == 0, $"Participants names Review, Work orders or Workflows in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -692,11 +597,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     public void Context_uses_lower_vocabulary_homes_and_ports_and_no_Course_Review_or_Work_orders_types()
     {
         var (map, _, _, analysis, _) = Tree.Value;
-        string[] owners = ["Course", "Review", "Work orders"];
-        string[] folders = ["Course/", "Review/", "Sessions/Heavy/", "WorkOrders/", "Quests/"];
+        string?[] owners = ["Course", "Review", "Work orders"];
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Context/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
-                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+            && edge.DeclaredIn.Any(path => owners.Contains(map.OwnerOf(path)))).ToList();
         Assert.True(edges.Count == 0, $"Context names Course, Review or Work orders in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -708,7 +611,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
         var course = order.IndexOf("Course");
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Course/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > course)).ToList();
+            && edge.DeclaredIn.Any(path => order.IndexOf(map.OwnerOf(path) ?? "") > course)).ToList();
         Assert.True(edges.Count == 0, $"Course names a type above it in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -720,7 +623,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
         var workOrders = order.IndexOf("Work orders");
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("WorkOrders/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > workOrders)).ToList();
+            && edge.DeclaredIn.Any(path => order.IndexOf(map.OwnerOf(path) ?? "") > workOrders)).ToList();
         Assert.True(edges.Count == 0, $"Work orders names a type above it in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -732,7 +635,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
         var review = order.IndexOf("Review");
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Review/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > review)).ToList();
+            && edge.DeclaredIn.Any(path => order.IndexOf(map.OwnerOf(path) ?? "") > review)).ToList();
         Assert.True(edges.Count == 0, $"Review names a type above it in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -744,7 +647,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
         var plugins = order.IndexOf("Plugins");
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Plugins/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > plugins)).ToList();
+            && edge.DeclaredIn.Any(path => order.IndexOf(map.OwnerOf(path) ?? "") > plugins)).ToList();
         Assert.True(edges.Count == 0, $"Plugins names a type above it in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -756,29 +659,24 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
         var workflows = order.IndexOf("Workflows");
         var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workflows/", StringComparison.Ordinal)
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > workflows)).ToList();
+            && edge.DeclaredIn.Any(path => order.IndexOf(map.OwnerOf(path) ?? "") > workflows)).ToList();
         Assert.True(edges.Count == 0, $"Workflows names a type above it in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
 
     /// <summary>
-    /// Part A's end state (FOUNDATION1 mod-xxi; the foundation design §14.6, X4-1.26): every subdomain has moved, the census holds no exception,
-    /// no file names a type of a subdomain above its own, no file outside <c>Loop/</c> names a type declared in it, and the ten executors
-    /// built from <c>LoopContext</c> are still in it.
+    /// The foundation design's end state (§14.6): the census holds no exception, no file names a type of a subdomain above its own, no file
+    /// outside <c>Loop/</c> names a type declared in it, and the ten executors built from <c>LoopContext</c> are still in it.
     /// </summary>
     [Fact]
-    public void Part_A_ends_with_every_subdomain_moved_no_upward_tuple_no_edge_into_Loop_and_the_ten_executors_in_Loop()
+    public void Part_A_ends_with_no_upward_tuple_no_edge_into_Loop_and_the_ten_executors_in_Loop()
     {
         var (map, sources, _, analysis, _) = Tree.Value;
         var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
-        string? OwnerOf(string path) => map.Files.TryGetValue(path, out var owner)
-            ? owner
-            : map.Subdomains.FirstOrDefault(subdomain => path.StartsWith(subdomain.Folder + "/", StringComparison.Ordinal))?.Name;
 
-        Assert.Empty(map.Subdomains.Where(subdomain => !subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.Empty(map.Families);
 
-        var upward = analysis.Edges.Where(edge => edge.DeclaredIn.Any(path => order.IndexOf(OwnerOf(path) ?? "") > order.IndexOf(OwnerOf(edge.File) ?? ""))).ToList();
+        var upward = analysis.Edges.Where(edge => edge.DeclaredIn.Any(path => order.IndexOf(map.OwnerOf(path) ?? "") > order.IndexOf(map.OwnerOf(edge.File) ?? ""))).ToList();
         Assert.True(upward.Count == 0, $"the driver names a type above its subdomain in {upward.Count} semantic tuples:\n"
             + string.Join('\n', upward.Select(edge => $"{edge.File}: {edge.Type}")));
 
@@ -787,8 +685,6 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         Assert.True(into.Count == 0, $"{into.Count} semantic tuples outside Loop name a type declared in it:\n"
             + string.Join('\n', into.Select(edge => $"{edge.File}: {edge.Type}")));
 
-        Assert.Empty(map.Files.Where(entry => entry.Value == "Loop" && !entry.Key.StartsWith("Loop/", StringComparison.Ordinal)).Select(entry => entry.Key));
-        Assert.Empty(sources.Where(source => !source.Path.StartsWith("Loop/", StringComparison.Ordinal) && OwnerOf(source.Path) == "Loop").Select(source => source.Path));
 
         // The look's executors, DESIGN §14.1 (O4-1): each is built from LoopContext, and none sits outside Loop's folder.
         string[] executors =
@@ -814,7 +710,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var (map, _, _, analysis, _) = Tree.Value;
         var edges = analysis.Edges.Where(edge => edge.File == "Events/Domain/AttentionEvent.cs"
-            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) ? owner == "Help" : path.StartsWith("Help/", StringComparison.Ordinal))).ToList();
+            && edge.DeclaredIn.Any(path => map.OwnerOf(path) == "Help")).ToList();
         Assert.True(edges.Count == 0, $"AttentionEvent names Help in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
@@ -843,7 +739,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     [Fact]
     public void The_census_reads_what_today_s_identifier_scan_missed_and_none_of_what_it_over_counted()
     {
-        var (map, _, _, analysis, took) = Tree.Value;
+        var (map, sources, _, analysis, took) = Tree.Value;
         var edges = analysis.Edges.Select(edge => (edge.File, edge.Type)).ToHashSet();
 
         // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using` skipped.
@@ -854,8 +750,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         // DaorisHome's HomeEntry members, named like higher subdomains' types, count none: a member's occurrence is told by its symbol, never by its spelling.
         string[] members = ["DriverConfig", "Notices", "HelpProposals", "OpinionGates", "AgentOffers", "GitIdentities", "ConfiguredAccess", "PluginState", "UsageHistory", "RuleProposals", "SessionBranches"];
         Assert.Empty(analysis.Edges.Where(edge => edge.File == "Platform/DaorisHome.cs" && members.Contains(edge.Type)));
-        // And no file the map places in Platform names a type of Store (§14.1), the home's reads of a file beside its writer being Platform's own (FOUNDATION1 mod-ii).
-        Assert.Empty(analysis.Edges.Where(edge => map.Files.GetValueOrDefault(edge.File) == "Platform" && map.Files.TryGetValue("Store/" + edge.Type + ".cs", out _)));
+        // And no file in Platform names a type of Store (§14.1), the home's reads of a file beside its writer being Platform's own.
+        var store = sources.Select(source => source.Path).Where(path => map.OwnerOf(path) == "Store").ToHashSet(StringComparer.Ordinal);
+        Assert.Empty(analysis.Edges.Where(edge => map.OwnerOf(edge.File) == "Platform" && store.Contains("Store/" + edge.Type + ".cs")));
 
         // Each seam a Domain may not name is a type the driver declares: `DesktopStore` too, since row z-i (FOUNDATION1).
         Assert.Empty(map.Seams.Where(seam => !analysis.DeclaredTypes.Contains(seam)));

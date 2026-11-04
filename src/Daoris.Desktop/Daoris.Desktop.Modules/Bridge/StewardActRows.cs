@@ -173,7 +173,7 @@ public static class StewardActRows
 
     /// <summary>Whether the effective landing of <paramref name="repository"/> is a plugin that pushes (§3.1 rows 1 and 3).</summary>
     internal static async Task<bool> PushesAsync(IStewardWorld world, DriverConfig config, string repository, CancellationToken ct) =>
-        LandingRules.Effective(config, repository, await world.WorkspaceOfAsync(repository, ct).ConfigureAwait(false)).Rule
+        LandingRules.Line(config, repository, await world.WorkspaceOfAsync(repository, ct).ConfigureAwait(false)).Rule
             is { Form: LandingForm.Branch, Plugin: not null };
 
     /// <summary>
@@ -185,7 +185,7 @@ public static class StewardActRows
         if (record.Quest is not { } quest || record.Repository is not { } repository) return false;
         var status = await world.QuestStatusAsync(quest, ct).ConfigureAwait(false);
         if (status != "Done") return false;
-        var landing = LandingRules.Effective(world.Config(), repository, await world.WorkspaceOfAsync(repository, ct).ConfigureAwait(false));
+        var landing = LandingRules.Line(world.Config(), repository, await world.WorkspaceOfAsync(repository, ct).ConfigureAwait(false));
         return landing.Rule.Plugin is not null && AutoLandingRules.Concluded(landing, status, world.OwnTree(record.Tree), state) == AutoConcluded.Due;
     }
 

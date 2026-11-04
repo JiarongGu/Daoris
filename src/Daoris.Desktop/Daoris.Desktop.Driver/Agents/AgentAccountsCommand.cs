@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris agent unpin</c> and <c>agent profile list|add|remove|default|order|ready|use|rename|join</c> (PUSH1f2e2, PUSH1f2e3, D194, the
+/// <c>daoris agent unpin</c> and <c>agent profile list|add|remove|order|ready|use|rename</c> (PUSH1f2e2, PUSH1f2e3, D194, the
 /// alone-path design §5): a pin taken back and an agent's accounts from a terminal, the words <c>daoris agent …</c> hands this program.
 /// Each change is the Agents or Accounts place's own press while Daoris runs (<c>HARNESS_ACTION</c>'s <c>unpin</c> and
 /// <c>profile-*</c>, <c>ACCOUNT_USE</c>'s <c>order</c>, <c>ready</c> and <c>use</c>), else the same write on the terminal's word; a workspace's
@@ -12,16 +12,14 @@ namespace Daoris.Driver;
 /// (<c>fixtures/agents-text.json</c>), so a refusal costs nothing on either path.
 /// </summary>
 /// <remarks>
-/// An agent's accounts are one set (POOL1b, D197 point 6, the account-pool design §5.1): <c>order</c> and <c>use</c> act on it and refuse
-/// <c>--workspace</c>, and <c>default</c> and <c>join</c>, kept as verbs so a script is told rather than shown the verb list, refuse in
-/// <see cref="OneSetWords"/>'s words with nothing written.
+/// An agent's accounts are one set (POOL1b, D197 point 6, the account-pool design §5.1): <c>order</c> and <c>use</c> act on it.
 /// </remarks>
 internal static class AgentAccountsCommand
 {
     private const string Prefix = "daoris";
 
-    /// <summary>The profile verbs this program has, every one the CLI's family had (<c>use</c> since PUSH1f2e3).</summary>
-    public static IReadOnlyList<string> ProfileVerbs { get; } = ["list", "add", "remove", "default", "order", "ready", "use", "rename", "join"];
+    /// <summary>The profile verbs this program has.</summary>
+    public static IReadOnlyList<string> ProfileVerbs { get; } = ["list", "add", "remove", "order", "ready", "use", "rename"];
 
     /// <summary>
     /// Whether the words after <c>agent</c> are a profile verb that changes a home, held from the top: all but <c>list</c>, and of
@@ -33,7 +31,7 @@ internal static class AgentAccountsCommand
         if (verb == "use")
         {
             return AgentsCommand.Operands(args, AgentsCommand.Valued).Count > 3
-                || args.Skip(2).Any(word => word.StartsWith("--", StringComparison.Ordinal) && word != "--workspace");
+                || args.Skip(2).Any(word => word.StartsWith("--", StringComparison.Ordinal));
         }
 
         return verb != "list" && ProfileVerbs.Contains(verb, StringComparer.Ordinal);
@@ -78,7 +76,7 @@ internal static class AgentAccountsCommand
 
     // ——— profile
 
-    /// <summary><c>profile [list] | add | remove | default | order | ready | rename | join …</c>, the words after <c>agent</c>.</summary>
+    /// <summary><c>profile [list] | add | remove | order | ready | use | rename …</c>, the words after <c>agent</c>.</summary>
     public static AgentPress? Profile(IReadOnlyList<string> args, AgentsWorld world, out int exit)
     {
         exit = 0;
@@ -103,12 +101,6 @@ internal static class AgentAccountsCommand
                 return Add(context);
             case "remove":
                 return Remove(context);
-            case "default":
-            {
-                // Refused with nothing written (POOL1b, §5.1): the account named, by its id, is the one the order would put first.
-                var owner = context.Owner();
-                throw new AgentWords(OneSetWords.Default(owner, context.Operand(3) is { } named ? context.Account(owner, named) : null));
-            }
             case "order":
                 return Order(context);
             case "ready":
@@ -117,12 +109,8 @@ internal static class AgentAccountsCommand
                 return Use(context, out exit);
             case "rename":
                 return Rename(context);
-            case "join":
-                context.Owner();
-                throw new AgentWords(OneSetWords.Join);
             default:
-                throw new AgentWords(
-                    $"unknown agent profile verb '{action}' — one of: list, add, remove, default, order, ready, use, rename, join");
+                throw new AgentWords($"unknown agent profile verb '{action}' — one of: {string.Join(", ", ProfileVerbs)}");
         }
     }
 
@@ -157,15 +145,6 @@ internal static class AgentAccountsCommand
 
         /// <summary>An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse.</summary>
         public string Account(string owner, string given) => AgentsCommand.AccountNamed(Home, owner, given);
-
-        /// <summary>
-        /// <c>--workspace</c> refused, named or not (POOL1b, D197 point 6, §5.1): the set serves every workspace, so the flag names nothing,
-        /// and a script told so never believes it set a workspace's.
-        /// </summary>
-        public void NoWorkspace()
-        {
-            if (Args.Contains("--workspace")) throw new AgentWords(OneSetWords.Workspace("--workspace"));
-        }
 
         /// <summary>The set's order as written now: every account of the agent's, read again after a write on either path.</summary>
         public IReadOnlyList<string> Order(string owner) => HarnessSettings.LoadSet(Path, [owner]).Rotation.GetValueOrDefault(owner) ?? [];
@@ -255,12 +234,11 @@ internal static class AgentAccountsCommand
     /// <summary>
     /// <c>profile order &lt;agent&gt; &lt;account&gt;…|--clear</c> (TOOL4e, D125 §3.1; POOL1b, D197 point 2, §5.1): the set's order, the
     /// accounts named first, in that order, each here and once, and the rest after in their order (<see cref="HarnessSettings.Change"/>
-    /// writes it whole); <c>--clear</c> returns to the ids' order and clears no setting. <c>--workspace</c> is refused.
+    /// writes it whole); <c>--clear</c> returns to the ids' order and clears no setting.
     /// </summary>
     private static AgentPress Order(Context at)
     {
         var owner = at.Owner();
-        at.NoWorkspace();
         // An account by its id or its name (ACCT2); the order holds ids, so a rename leaves it standing.
         string[] named = [.. AgentsCommand.Operands(at.Args, AgentsCommand.Valued).Skip(3).Select(given => at.Account(owner, given))];
         JsonObject Payload(IEnumerable<string> accounts) => new()
@@ -412,14 +390,13 @@ internal static class AgentAccountsCommand
     /// POOL1b, D197 point 2, §5.1): how the set is used, its one entry of settings, the Accounts place's <c>ACCOUNT_USE</c> <c>use</c>. With
     /// no flag it prints the settings, the step the next start would follow and what each account last said. An agent with no account of
     /// Daoris's has nothing to use and is refused, naming the sign-in; a kept account is one of the set and leaves driven work another
-    /// (§4.6); a curve is refused in the sentence the driver says; <c>--workspace</c> is refused. <c>--early</c> and <c>--near</c> are the old
+    /// (§4.6); a curve is refused in the sentence the driver says. <c>--early</c> and <c>--near</c> are the old
     /// names.
     /// </summary>
     private static AgentPress? Use(Context at, out int exit)
     {
         exit = 0;
         var owner = at.Owner();
-        at.NoWorkspace();
         if (at.Args.Skip(2).FirstOrDefault(word => word.StartsWith("--", StringComparison.Ordinal) && !UseFlags.Contains(word)) is { } stray)
         {
             throw new AgentWords($"`{stray}` is not a flag of `agent account use` — it takes {UseShape}.");

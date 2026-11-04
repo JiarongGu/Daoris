@@ -32,7 +32,7 @@ public sealed class HistoryRoutes(DriverLoop loop)
     /// each with what it takes, what that holds on the disk and why it would stay; and for a workspace, the reading (§2.4).
     /// Changes nothing. One quest or ask this machine does not hold is refused.
     /// </summary>
-    [DriverRoute("HISTORY_PLAN")]
+    [DriverRoute("HISTORY_PLAN", PipeClass.Open)]
     private async Task<object?> HistoryPlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         // RPC1e: `history` and a clear's list without `--yes`, in the verb's words.
@@ -55,7 +55,9 @@ public sealed class HistoryRoutes(DriverLoop loop)
     /// plan is stale (STATEHUB1d, D169). A clear refused in its code publishes nothing (D169 point 5): the page that pressed it
     /// asks its plans again itself.
     /// </remarks>
-    [DriverRoute("HISTORY_CLEAR")]
+    [DriverRoute("HISTORY_CLEAR", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("HISTORY_CLEAR", Workspace = "workspace", Quest = "quest", Ask = "ask")]
+    [GroundRead("HISTORY_CLEAR", nameof(PipeReads.HistoryPlan))]
     [Publishes("HISTORY_CLEAR", StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver | StateScopes.History)]
     private async Task<object?> HistoryClearAsync(IpcRequest request, CancellationToken cancellationToken)
     {

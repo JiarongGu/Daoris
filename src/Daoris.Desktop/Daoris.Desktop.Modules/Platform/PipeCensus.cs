@@ -3,34 +3,35 @@ using System.Text.Json;
 
 namespace Daoris.Desktop;
 
-/// <summary>How the pipe treats a route (RPC1a, D171 point 3, the terminal RPC design §4.2). A wire's words, added to and never renamed.</summary>
+/// <summary>How the pipe treats a route. A wire's words, added to and never renamed.</summary>
 public enum PipeClass
 {
-    /// <summary>A read, or a press D156 §3 leaves to an agent or to the driver: run as asked.</summary>
+    /// <summary>A read, or a press left to an agent or to the driver: run as asked.</summary>
     Open,
 
-    /// <summary>A press D156 §3 makes the person's alone: shown to the window, and run only on the person's Confirm there (RPC1c).</summary>
+    /// <summary>A press that is the person's alone: shown to the window, and run only on the person's Confirm there.</summary>
     Person,
 
     /// <summary>What only a window does (its own commands, the pickers, the file manager, Daoris's browser, its shells): refused.</summary>
     Window,
 
     /// <summary>
-    /// A role's act the owner appointed (SUPERVISOR1a-ii, D208 point 2): judged by the standing confirmation's role method, under its
-    /// caller look and the holder's proof; run with no card where covered, refused where not, never asked.
+    /// A role's act the owner appointed: judged by the standing confirmation's role method, under its caller look and the holder's
+    /// proof; run with no card where covered, refused where not, never asked.
     /// </summary>
     Role,
 }
 
 /// <summary>
-/// What an update's drain does with a person's or a role's press (DRAINHOLD1, D156's DRAINHOLD1 note): the drain waits on running work
-/// for hours, so only a press that would add to that work, or would be cut by the restart, waits for it.
+/// What an update's drain does with a person's or a role's press: the drain waits on running work for hours, so only a press that
+/// would add to that work, or would be cut by the restart, waits for it.
 /// </summary>
 public enum PipeDrain
 {
     /// <summary>
-    /// It starts work the drain waits on, at once or at the next look; starts a process of its own that runs on past its answer; or changes
-    /// a repository through git. Sent during the drain it is refused <see cref="InstancePipe.Stopping"/>, and confirmed it still waits.
+    /// It starts work the drain waits on, at once or at the next look (every setting asks the look at once); starts a process of its
+    /// own that runs on past its answer; or changes a repository through git. Sent during the drain it is refused
+    /// <see cref="InstancePipe.Stopping"/>, and confirmed it still waits.
     /// </summary>
     Waits,
 
@@ -56,6 +57,9 @@ public sealed record PipeRule(string Field, IReadOnlyList<JsonElement> Values, P
     /// <summary>A rule over string or boolean values, written as JSON (<c>"system"</c>, <c>true</c>).</summary>
     public static PipeRule Of(string field, PipeClass @class, PipeClass otherwise, params string[] values) =>
         new(field, [.. values.Select(value => JsonDocument.Parse(value).RootElement.Clone())], @class, otherwise);
+
+    /// <summary>A route of one class whatever its payload: a rule naming no value.</summary>
+    public static PipeRule Whole(PipeClass @class) => new("", [], @class, @class);
 
     /// <summary>The class <paramref name="payload"/>'s form takes.</summary>
     public PipeClass For(JsonElement? payload)
@@ -93,33 +97,34 @@ public sealed record PipeRule(string Field, IReadOnlyList<JsonElement> Values, P
 public sealed record PipeRoute(string Module, string? Route, PipeClass Class, PipeRule? When = null);
 
 /// <summary>
-/// The pipe's census (RPC1a, the terminal RPC design §4.2): every route the running Daoris accepts over its pipe, classed
-/// <see cref="PipeClass.Open"/>, <see cref="PipeClass.Person"/> or <see cref="PipeClass.Window"/>. The same account opens the
-/// pipe as runs <c>daoris-driver</c> (D156 point 4), so the pipe confers no person's authority: only an open route runs as asked,
-/// and a person's runs once the person confirms it in the window (RPC1c, <see cref="PipeConfirmations"/>).
+/// The pipe's census: every route the running Daoris accepts over its pipe, classed <see cref="PipeClass.Open"/>,
+/// <see cref="PipeClass.Person"/>, <see cref="PipeClass.Window"/> or <see cref="PipeClass.Role"/>. The same account opens the pipe
+/// as runs <c>daoris-driver</c>, so the pipe confers no person's authority: only an open route runs as asked, and a person's runs
+/// once the person confirms it in the window (<see cref="PipeConfirmations"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>The driver's routes are classed one by one</b>, against D156 §3's table of the local host's doors, and a test fails on
-/// a route of <see cref="DriverModule"/> this does not name, or a name that is no route (<c>PipeCensusTests</c>): a route added
-/// later is classed in the change that adds it (<c>bridge-presses.md</c>). A route a route-by-route module does not name is a press
-/// and the person's; a module the census does not name (the kit's own among them) is refused.</para>
+/// <para><b>Read off the routes' marks</b> (<see cref="RouteMarks"/>): a route's class and drain sit in its mark, so a route is
+/// classed where it is answered. A route a route-by-route module does not name is a press and the person's; a module the census
+/// does not name (the kit's own among them) is refused.</para>
 ///
-/// <para><b>The calls made here, where D156 §3 names no door.</b> A landing is the person's yes; a discard, a sweep, an archive and
-/// a delete are their deletes and closes; a stop is a close; words said to a session, a conversation or a channel are theirs; a
-/// standing choice (every <c>SET_*</c>, a trust, an account, a tool, a plugin, a rule's answer) is their re-wiring, since one
-/// direction of each widens what an agent may do, and a session that set one for itself would be reporting on itself. The
-/// driver's own are its looks: a nudge, a sync with the service, the registry and the accounts' use read again, the tools'
-/// locations looked at. A press that moves the person's lines or branches, starts work on an account, or lets a refused account
-/// through is theirs, though the driver makes it (a second agent's review of RPC1a).</para>
+/// <para><b>How a route is classed.</b> A landing is the person's yes; a discard, a sweep, an archive and a delete are their deletes
+/// and closes; a stop is a close; words said to a session, a conversation or a channel are theirs; a standing choice (every
+/// <c>SET_*</c>, a trust, an account, a tool, a plugin, a rule's answer) is their re-wiring, since one direction of each widens what an
+/// agent may do, and a session that set one for itself would be reporting on itself. The driver's own are its looks: a nudge, a sync
+/// with the service, the registry and the accounts' use read again, the tools' locations looked at. A press that moves the person's
+/// lines or branches, starts work on an account, or lets a refused account through is theirs, though the driver makes it. Unsure is
+/// the person's.</para>
 ///
 /// <para><b>One route, two forms</b>: where a route answers a look and a press by its payload, it is classed by a
 /// <see cref="PipeRule"/>, and the look alone runs.</para>
 ///
 /// <para>Modules are matched as the kit's dispatcher matches them, ignoring case; a route as its module's table does.</para>
 ///
-/// <para><b>What an update's drain does with each press</b> (DRAINHOLD1, <see cref="PipeDrain"/>): every person's and role's route of
-/// a route-by-route module says whether it waits for the restart or goes on, and <c>PipeCensusTests</c> fails on one that does not. A
-/// read never waits; a press the drain classes not waits, as an unclassed press is the person's.</para>
+/// <para><b>What an update's drain does with each press</b> (<see cref="PipeDrain"/>): the drain waits for the driven sessions and
+/// the conversations with a turn in flight, and its look holds every quest of a drivable repository from starting, resuming or
+/// carrying on, and every answered park from going on (<c>InstallUpdate.Drained</c>). So a press whose work is a quest's start or a
+/// park's resume goes on; one that would add to what the drain waits on, or that the close's few seconds would cut, waits. A read
+/// never waits; a press the drain classes not waits, as an unclassed press is the person's.</para>
 /// </remarks>
 public sealed class PipeCensus
 {
@@ -140,40 +145,30 @@ public sealed class PipeCensus
     }
 
     /// <summary>
-    /// What each person's press rests on (CONFIRMWAIT1a-i, the confirm-wait design §5.1): the grounds of every route this census makes
-    /// <see cref="PipeClass.Person"/>, in every form. D209's targets are the same table's other column (<see cref="PipeTargets.Mark"/>, STEWARDROLE1a-ii): what each person's
-    /// and window's route marks <c>owner-set</c>.
+    /// What each person's press rests on (its grounds, read at its ask and again at its Confirm), and what each person's and window's
+    /// route marks <c>owner-set</c> (<see cref="PipeTargets.Mark"/>).
     /// </summary>
     public PipeTargets Targets { get; }
 
-    /// <summary>The desktop's census.</summary>
-    public static PipeCensus Daoris { get; } = new(
-        new Dictionary<string, PipeClass>
-        {
-            // A window's own: its frame and its windows, the person's shells, the page's report into the log and Settings → Logs,
-            // the update's banner, and Daoris's browser (the design §4.2 names the browser module).
-            ["DAORIS.BROWSER"] = PipeClass.Window,
-            ["DAORIS.LOG"] = PipeClass.Window,
-            ["DAORIS.TERMINAL"] = PipeClass.Window,
-            ["DAORIS.UPDATE"] = PipeClass.Window,
-            ["DAORIS.WINDOWS"] = PipeClass.Window,
-        },
-        new Dictionary<string, IDictionary<string, PipeRule>>
-        {
-            [DriverModule.Name] = Driver(),
-            // The folder picker is a window's; a declaration written into a repository is the person's set-up (D156 §3).
-            ["DAORIS.REGISTRY"] = Classed(("PICK_FOLDER", PipeClass.Window), ("WRITE_DECLARATION", PipeClass.Person)),
-            // The machine's wiring: a read is open, a wiring and an unwiring are the person's (D48 §5, D156 §3's re-wiring).
-            ["DAORIS.REMOTES"] = Classed(("STATE", PipeClass.Open), ("SET", PipeClass.Person), ("REMOVE", PipeClass.Person)),
-        },
-        new Dictionary<string, IDictionary<string, PipeDrain>>
-        {
-            [DriverModule.Name] = DriverDrains(),
-            // A declaration is one file written uncommitted, no git; a wiring is the machine's file: neither starts anything.
-            ["DAORIS.REGISTRY"] = new Dictionary<string, PipeDrain> { ["WRITE_DECLARATION"] = PipeDrain.Passes },
-            ["DAORIS.REMOTES"] = new Dictionary<string, PipeDrain> { ["SET"] = PipeDrain.Passes, ["REMOVE"] = PipeDrain.Passes },
-        },
-        PipeTargets.Daoris);
+    /// <summary>The desktop's census, read off this library's marks at its first use.</summary>
+    public static PipeCensus Daoris { get; } = Read();
+
+    private static PipeCensus Read()
+    {
+        var (others, windows) = RouteMarks.Modules(typeof(PipeCensus).Assembly);
+        IReadOnlyList<RouteMark> marks = [.. DriverModule.Marks, .. others];
+        return new PipeCensus(
+            windows.ToDictionary(each => each, _ => PipeClass.Window, StringComparer.OrdinalIgnoreCase),
+            marks.GroupBy(each => each.Module, StringComparer.OrdinalIgnoreCase).ToDictionary(
+                module => module.Key,
+                module => (IDictionary<string, PipeRule>)module.ToDictionary(each => each.Route, each => each.Rule, StringComparer.Ordinal),
+                StringComparer.OrdinalIgnoreCase),
+            marks.Where(each => each.Drain is not null).GroupBy(each => each.Module, StringComparer.OrdinalIgnoreCase).ToDictionary(
+                module => module.Key,
+                module => (IDictionary<string, PipeDrain>)module.ToDictionary(each => each.Route, each => each.Drain!.Value, StringComparer.Ordinal),
+                StringComparer.OrdinalIgnoreCase),
+            PipeTargets.Of(marks, windows));
+    }
 
     /// <summary>
     /// How the pipe treats <paramref name="module"/>'s <paramref name="route"/> sent with <paramref name="payload"/>: null where the
@@ -189,9 +184,8 @@ public sealed class PipeCensus
     }
 
     /// <summary>
-    /// The person's routes whose payload carries a key, a field D172 point 3 keeps in <c>profiles/</c> alone (CONFIRMWAIT1a-ii, the
-    /// confirm-wait design §7.1): <c>DAORIS.REMOTES</c> <c>SET</c>, its <c>key</c> the workspace's deployment key. A press of one keeps no
-    /// payload in its record and does not wait across a restart.
+    /// The person's routes whose payload carries a key, a field kept in <c>profiles/</c> alone: <c>DAORIS.REMOTES</c> <c>SET</c>, its
+    /// <c>key</c> the workspace's deployment key. A press of one keeps no payload in its record and does not wait across a restart.
     /// </summary>
     public static IReadOnlySet<string> KeyedRoutes { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -224,24 +218,9 @@ public sealed class PipeCensus
                 .Select(route => new PipeRoute(module.Key, route.Key, route.Value.Otherwise, route.Value.Values.Count > 0 ? route.Value : null))),
     ];
 
-    /// <summary>The routes of <paramref name="module"/> the census does not class: what its test fails on.</summary>
-    public IReadOnlyList<string> Unclassed(string module, IEnumerable<string> routes) =>
-        _byRoute.TryGetValue(module, out var classed)
-            ? [.. routes.Where(route => !classed.ContainsKey(route)).Order(StringComparer.Ordinal)]
-            : [.. routes.Order(StringComparer.Ordinal)];
-
-    /// <summary>What the census classes for <paramref name="module"/> that is none of its <paramref name="routes"/>: a name left behind.</summary>
-    public IReadOnlyList<string> Stale(string module, IEnumerable<string> routes)
-    {
-        var known = routes.ToHashSet(StringComparer.Ordinal);
-        return _byRoute.TryGetValue(module, out var classed)
-            ? [.. classed.Keys.Where(route => !known.Contains(route)).Order(StringComparer.Ordinal)]
-            : [];
-    }
-
     /// <summary>
-    /// What an update's drain does with <paramref name="module"/>'s <paramref name="route"/> (DRAINHOLD1): the census's word for a person's or
-    /// a role's route, its module matched ignoring case; null where it names none.
+    /// What an update's drain does with <paramref name="module"/>'s <paramref name="route"/>: the mark's word for a person's or a
+    /// role's route, its module matched ignoring case; null where it says none.
     /// </summary>
     public PipeDrain? DrainOf(string? module, string? route) =>
         module is not null && route is not null && _drains.TryGetValue(module, out var routes) && routes.TryGetValue(route, out var drain)
@@ -250,33 +229,10 @@ public sealed class PipeCensus
 
     /// <summary>
     /// Whether a press of <paramref name="module"/>'s <paramref name="route"/>, classed <paramref name="class"/>, waits while an update
-    /// drains (DRAINHOLD1): a read never; any other unless the census lets it through, so a press the drain classes not waits.
+    /// drains: a read never; any other unless its mark lets it through, so a press the drain classes not waits.
     /// </summary>
     public bool WaitsForDrain(string? module, string? route, PipeClass? @class) =>
         @class != PipeClass.Open && DrainOf(module, route) != PipeDrain.Passes;
-
-    /// <summary>The person's and role's routes, <c>MODULE.ROUTE</c>, that the drain does not class: what its test fails on.</summary>
-    public IReadOnlyList<string> DrainUnclassed() =>
-    [
-        .. Pressed().Where(each => DrainOf(each.Module, each.Route) is null).Select(each => $"{each.Module}.{each.Route}").Order(StringComparer.Ordinal),
-    ];
-
-    /// <summary>What the drain classes that is no person's or role's route, <c>MODULE.ROUTE</c>: a name left behind.</summary>
-    public IReadOnlyList<string> DrainStale()
-    {
-        var pressed = Pressed().Select(each => $"{each.Module}.{each.Route}").ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return
-        [
-            .. _drains.SelectMany(module => module.Value.Keys.Select(route => $"{module.Key}.{route}"))
-                .Where(each => !pressed.Contains(each)).Order(StringComparer.Ordinal),
-        ];
-    }
-
-    /// <summary>Every route a route-by-route module classes the person's or a role's in any form, as its drain is classed.</summary>
-    private IEnumerable<(string Module, string Route)> Pressed() =>
-        _byRoute.SelectMany(module => module.Value
-            .Where(route => route.Value.Class is PipeClass.Person or PipeClass.Role || route.Value.Otherwise is PipeClass.Person or PipeClass.Role)
-            .Select(route => (module.Key, route.Key)));
 
     /// <summary>
     /// This census with <paramref name="module"/>'s <paramref name="route"/> classed <paramref name="class"/> beside the rest: a test's. Its
@@ -288,293 +244,10 @@ public sealed class PipeCensus
             each => each.Key, each => (IDictionary<string, PipeRule>)new Dictionary<string, PipeRule>(each.Value, StringComparer.Ordinal),
             StringComparer.OrdinalIgnoreCase);
         if (!byRoute.TryGetValue(module, out var routes)) byRoute[module] = routes = new Dictionary<string, PipeRule>(StringComparer.Ordinal);
-        routes[route] = Whole(@class);
+        routes[route] = PipeRule.Whole(@class);
         var drains = _drains.ToDictionary(
             each => each.Key, each => (IDictionary<string, PipeDrain>)new Dictionary<string, PipeDrain>(each.Value, StringComparer.Ordinal),
             StringComparer.OrdinalIgnoreCase);
         return new PipeCensus(new Dictionary<string, PipeClass>(_whole, StringComparer.OrdinalIgnoreCase), byRoute, drains, Targets);
-    }
-
-    /// <summary>A route of one class whatever its payload: a rule naming no value.</summary>
-    private static PipeRule Whole(PipeClass @class) => new("", [], @class, @class);
-
-    private static Dictionary<string, PipeRule> Classed(params (string Route, PipeClass Class)[] routes) =>
-        routes.ToDictionary(each => each.Route, each => Whole(each.Class), StringComparer.Ordinal);
-
-    /// <summary>
-    /// The driver's routes (<see cref="DriverModule.Routes"/>), each classed: <c>PipeCensusTests</c> holds this table to the module's,
-    /// both ways.
-    /// </summary>
-    private static Dictionary<string, PipeRule> Driver()
-    {
-        var table = new Dictionary<string, PipeRule>(StringComparer.Ordinal);
-        Add(PipeClass.Open,
-            // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
-            "ACCOUNTS", "ACROSS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
-            "GIT_BLAME", "GIT_BRANCHES", "GIT_CHANGES", "GIT_COMMIT", "GIT_COMMIT_PLAN", "GIT_COMPARE", "GIT_CONFLICT", "GIT_FETCH_PLAN", "GIT_STASH_PLAN", "GIT_SWITCH_PLAN", "GIT_GRAPH", "GIT_HISTORY", "GIT_HUNKS", "HANDOFF_PLAN", "HARNESSES",
-            "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "INTEGRATION", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
-            "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "ROLES", "RULES", "SESSION_DIFF", "SESSION_FILE",
-            "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
-            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_RECORD", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "STARTS",
-            // COWORKVIEW1a: who is at work on a session, from the slices and the lineage files.
-            "SESSION_AT_WORK",
-            // LINESTOGETHER1c: the sessions beside one, a read of git in their trees.
-            "SESSION_RELATED",
-            // LINESTOGETHER1d: the operation bringing sessions together that a session is in, read from this machine's record.
-            "TOGETHER",
-            // KNOWCENTRAL2e: a session's memory rows, read from the service.
-            "SESSION_MEMORY",
-            // COMPANYVIEW1c: the roles' structure, each choice's state from the last readings alone, asking nothing.
-            "ROLE_STRUCTURE",
-            // AGENTSPLACE1a: the places, each one's driving, values and where each was set, from the configuration, the registry and the set-up quests alone.
-            "PLACES",
-            // AGENTSPLACE1a2: a place's quick set-up planned on a copy of the configuration, written nowhere.
-            "PLACE_PLAN",
-            // D230: a repository's reconcile planned from the registry, its line and the doctrine tool's status for its checkout, written nowhere.
-            "RECONCILE_PLAN",
-            // WORKFLOWEDIT1a: the step editor's reads of the saved workflows and what a step graph may hold; they write nothing.
-            "WORKFLOW_LIST", "WORKFLOW_SHOW", "WORKFLOW_PALETTE",
-            "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
-            "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
-            // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
-            "NOTIFICATIONS",
-            // SUPERVISOR1a-ii (D208 §3.1): the parked questions with no decision in appointed repositories, what the holder looks at; it
-            // names no key and shows nothing the session's own page does not.
-            "SUPERVISOR_WAITING",
-            // STEWARDROLE1b (D209 §3.3): the steward's acts this run and its live appointment's generation, which its holder's verb proves
-            // over; it names no key and shows nothing the window's Notifications line does not.
-            "STEWARD_ACTS",
-            // STEWARDROLE1c (D209 §6.2): the steward's desk, read by its holder as claims; and a request any caller files there, which
-            // grants nothing and admits no act, bounded per caller and in all.
-            "STEWARD_DESK", "STEWARD_REQUEST",
-            // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
-            // accounts' use read again, the tools' locations looked at.
-            "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK",
-            // GITAUTH1a: a held git remote tried again at its next act, which the terminal's `git try-again` will also do (design §8):
-            // it widens nothing, and the act it lets through is judged as any other.
-            "GIT_TRY_AGAIN");
-        Add(PipeClass.Person,
-            // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
-            "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
-            // Deletes, clears and closes: a discard, a sweep, an archive, a delete, a stop, an end, an abandon.
-            "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
-            "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "WORK_ABANDON", "WORK_PAUSE", "WORK_RESUME",
-            // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them, which settles what nothing else can.
-            "WORK_HELD",
-            // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, their word on what the run does next.
-            "WORKFLOW_NODE",
-            // FABRIC-PIPELINE1d: a verification of a branch or a commit, the person's press, which runs the repository's accepted gates.
-            "WORKFLOW_VERIFY",
-            // INTEGRATE1h: the owner's acts on a repository's integration (a request, a drop, a recheck, a decide, an order, a superseded
-            // commit's answer), a card in the window.
-            "INTEGRATE",
-            "HELP_DISMISS", "CHANNEL_MARK",
-            // NOTIFY2f: the person's news read or dismissed, which a terminal marking would hide from them.
-            "NOTICES_READ", "NOTICE_DISMISS",
-            // A go-ahead's answer, a parked session's yes or no, a helper's, a quest retried after its strikes, and the answer to a
-            // permission a session holds for the person (AUTONOMY1b3a), whose allow is the person's alone.
-            "SESSION_GO_AHEAD", "RESOLVE_SESSION", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_HELPER_ASK", "SESSION_PERMISSION_ANSWER",
-            // COAGENT1b: the person's ask of a piece, which another agent writes for one of their sessions.
-            "SESSION_PARTNER_ASK",
-            // MIXAGENT1c: the yes and the no to a session's agent's own ask to hand it over.
-            "SESSION_HAND_OVER_APPROVE", "SESSION_HAND_OVER_DECLINE",
-            // SESSWATCH1a: the person's word on a quiet session, its end and carry-on or its stand-down, which only they may give.
-            "SESSION_QUIET_CARRY_ON", "SESSION_QUIET_LEAVE",
-            // COWORK1e: the person's word on a third answer alone held for them, which only they may let go on.
-            "SESSION_ANSWER_ALONE",
-            // SUPERVISOR1a-i: the owner's overrule of a supervisor's decision, which only they may make.
-            "SUPERVISOR_OVERRULE",
-            // KNOWCENTRAL2e: the person's approval of a memory end, or their Keep or Drop of a session's staged memory, theirs alone until MC8.
-            "SESSION_MEMORY_DECIDE",
-            // LINESTOGETHER1d: Bring them together…, Ask again and Let them go, the person's until LINESTOGETHER1e's steward forms.
-            "TOGETHER_PRESS", "TOGETHER_ASK_AGAIN", "TOGETHER_LET_GO",
-            "RETRY_QUEST", "HELP_APPLY",
-            // The person's words, and a conversation begun or carried on with them.
-            "SESSION_INPUT", "SESSION_QUEUE_EDIT", "SESSION_QUEUE_MOVE", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
-            "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_HAND_OVER", "HELP_RENAME", "HELP_PIN",
-            // SESSCTX1c part B: *Go on with Daoris's brief*, the person's words carried into a new part of their session.
-            "SESSION_GO_ON_BRIEF",
-            // LIMITRESUME1d: *Stop waiting*, the person's word that a conversation held by its limit goes on only when they write.
-            "SESSION_STOP_WAITING",
-            // Their set-up and their standing choices: what a review is set to, how work lands, what agents may reach.
-            // FOUNDATION1y-i: a working role of the catalogue added, changed, removed or given back its seed.
-            "SET_ROLE",
-            // AGENTSPLACE1g2: several roles' changes made as one, the Roles mode's suggested choices.
-            "SET_ROLES",
-            "SET_ACCESS", "SET_GIT_ACCESS", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
-            // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
-            "SET_HELP_GRANT",
-            // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
-            "WORKFLOW_LANDED",
-            // AGENTSPLACE1c: a workflow saved, a place's choice of one, and a workspace's kinds, which decide the process every new start binds.
-            "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND",
-            // AGENTSPLACE1b2: a place's plan applied, by its digest: the configuration's changes and acceptances, and each adoption quest.
-            "PLACE_APPLY",
-            // D230: a repository's reconcile asked of its own session, as the person's, its rule added to the repository's scope.
-            "RECONCILE_APPLY",
-            // INTEGRATE1d: a repository's integration declaration, what integration runs and a tidy removes, accepted by its blob (D215 point 10).
-            "INTEGRATION_GATES",
-            // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
-            "SET_HEAVY_GATES", "SET_HOLD", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
-            "SET_REVIEW", "SET_SESSION_OPTION",
-            // FABRIC-PIPELINE1b: which checks a repository's sessions run, the person's standing choice; light lowers their part.
-            "SET_SESSION_CHECKS", "SET_STANDING", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
-            // GITAPP2b: the person lets Daoris change a checkout's files; the switch itself writes nothing to a repository.
-            "SET_CHECKOUT_WRITES",
-            // KEEP1d: how long each kind Daoris keeps is kept, the person's standing choice.
-            "SET_KEEP",
-            "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESS_ACTION",
-            // Code that runs in the driver, and the programs it runs with.
-            "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY",
-            // ADOSIGNIN1: a plugin's tools checked, and a tool's set-up or sign-in in a console the person sees: the person's alone.
-            "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX",
-            "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_GIT_SET", "TOOLS_LOCATION", "TOOLS_STOP", "TOOLS_USE",
-            // GITAUTH1e: a git identity added, tested, changed or removed, and a remote, workspace or host pointed at one: Settings → Git.
-            // GITAUTH1f: a git go-ahead's Allow or Refuse, the person's yes or no to one act on a remote (§6.6).
-            "GIT_IDENTITY", "GIT_USE", "GIT_ANSWER",
-            // Made by the driver, and still the person's (a second agent's review): bringing Daoris's branches up to date
-            // fast-forwards the lines and replays and deletes branches, every repository's at once; a second opinion starts a
-            // review on one of their accounts; Read again lets a refused account through and ends the tool's own cool-off.
-            "TREES_SYNC", "ASK_OPINION", "HARNESSES_REFRESH",
-            // GITAPP2c: a branch or a lightweight tag made in a repository, and the undo that deletes it at the id it was made at.
-            // GITAPP2m's history edit is classed by its payload below. GITAPP2f: origin's branches fetched into its tracking refs.
-            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH", "GIT_FETCH");
-        Add(PipeClass.Window,
-            // The file manager, the file picker and Daoris's browser are the window's; so is what is typed into an action a
-            // window runs, and that action's stop.
-            // GITAPP2h: the Changes tab's hunks are pressed there, hunk by hunk and line by line, which no terminal verb names.
-            "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO",
-            // GITAPP2i: the commit is pressed after staging, in the same tab, with the message typed there.
-            "GIT_MAKE_COMMIT", "GIT_AMEND",
-            // GITAPP2j: a conflict is resolved hunk by hunk in the same tab, each choice made there.
-            "GIT_RESOLVE", "GIT_MARK_RESOLVED",
-            // GITAPP2k: Switch and stash Save are pressed in the Changes tab, which no terminal verb names yet.
-            "GIT_SWITCH", "GIT_STASH",
-            // GITAPP2l: stash Apply is pressed in the same box.
-            "GIT_STASH_APPLY",
-            "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
-            // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
-            // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).
-            "PERSON_CONFIRMATIONS", "PERSON_CONFIRM", "PERSON_KEY",
-            // GITAPP1a-iii: a page's leave of a read it asked; only a window's page asks reads under an id.
-            "READ_LEAVE",
-            // NOTIFY2j: and what waits at the service's door, told to the windows, read beside the pipe's.
-            "SERVICE_CONFIRMATIONS",
-            // CONFIRMSEEN1: that a card is in front of the person is the window's to say; a terminal saying it would start its two minutes.
-            "PERSON_CONFIRM_SHOWN",
-            // TERMTRUST1a (D201 point 5): the standing confirmation is granted and revoked in the window alone; no card offers it, since a
-            // person used to confirming a terminal's presses would confirm that one too.
-            "SET_STANDING_CONFIRMATION",
-            // D233 point 2: a role's terminal is started in the window alone, by the owner's press: its key passes to the tab.
-            "START_ROLE_TERMINAL");
-        // SUPERVISOR1a-ii (D208 §3.1): the supervisor's answer, a role's act, covered only for a terminal outside every agent's job that
-        // proves the holder key; never a card. SUPERVISOR1b (§3.1): its leaving a question to the owner, the role's second act, alike.
-        // STEWARDROLE1a-i (D209 §3.3): every act of the steward's one route, each a row of its role's table, never a new census line.
-        Add(PipeClass.Role, "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER", "ROLE_ACT");
-        // One route, two forms. What a switch of git would change compares programs Daoris already knows (the PATH's, a
-        // managed version), and with `way: "file"` runs whatever file the payload names: that form is the person's.
-        table.Add("TOOLS_GIT", PipeRule.Of("way", PipeClass.Open, PipeClass.Person, "\"system\"", "\"managed\""));
-        // An update's preview reads what it would change; with `apply: true` it replaces the plugin.
-        table.Add("PLUGIN_UPDATE", PipeRule.Of("apply", PipeClass.Person, PipeClass.Open, "true"));
-        // KEEP1e: Free up space's list (`plan: true`) changes nothing; every other form starts a run removing what it names, their delete.
-        table.Add("SYSTEM_SPACE_FREE", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
-        // GITAPP2m: a history edit's plan (`plan: true`) changes nothing; every other form moves the person's branch, pinned to what it showed.
-        table.Add("GIT_HISTORY_EDIT", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true") with { Unless = ["said"] });
-        return table;
-
-        void Add(PipeClass @class, params string[] routes)
-        {
-            // A route classed twice is refused here, at first use, as a route marked twice is.
-            foreach (var route in routes) table.Add(route, Whole(@class));
-        }
-    }
-
-    /// <summary>
-    /// What an update's drain does with each of the driver's person's and role's routes (DRAINHOLD1, D156's DRAINHOLD1 note):
-    /// <c>PipeCensusTests</c> holds this table to the census's, both ways.
-    /// </summary>
-    /// <remarks>
-    /// The drain waits for the driven sessions this loop runs and the conversations with a turn in flight (D139 §2), and its look holds
-    /// every quest of a drivable repository from starting, resuming or carrying on, and every answered park from going on
-    /// (<c>InstallUpdate.Drained</c>). So a press whose work is a quest's start or a park's resume starts nothing until the restart, and
-    /// goes on; one that would add to what the drain waits on, or that the close's few seconds would cut, waits.
-    /// </remarks>
-    private static Dictionary<string, PipeDrain> DriverDrains()
-    {
-        var table = new Dictionary<string, PipeDrain>(StringComparer.Ordinal);
-        Add(PipeDrain.Waits,
-            // Work the drain counts, begun at once by the chat runner: a conversation started, carried on in a new part, handed to another
-            // agent, given words (between turns they open its next one, ended they go on with it) or a held word moved to it, sent a channel's
-            // message it may reopen on, or going on with an answer alone; an applied proposal, which acts through these doors; and a proposal's
-            // dismissal, which Ask Daoris is told as a turn.
-            "START_CHAT", "START_HELP", "HELP_START_FROM", "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_GO_ON_BRIEF", "SESSION_HAND_OVER",
-            "SESSION_HAND_OVER_APPROVE", "SESSION_INPUT", "SESSION_QUEUE_MOVE", "CHANNEL_FORWARD", "SESSION_ANSWER_ALONE", "HELP_APPLY", "HELP_DISMISS",
-            // Work begun at the next look that the drain's holds of quests do not reach: a helper, a partner, a second opinion.
-            "SESSION_HELPER_ASK", "SESSION_HELPER_APPROVE", "SESSION_PARTNER_ASK", "ASK_OPINION",
-            // LINESTOGETHER1d: the words that ask a head to bring sessions in, and again after a failed check, which its next turn takes.
-            "TOGETHER_PRESS", "TOGETHER_ASK_AGAIN",
-            // What lets the look start such work, or land, since every setting asks the look at once (`DriverContext.Change`). Helpers,
-            // whose admission no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again (a
-            // cooling helper starts again on it). A hand-over's rule, an opinion's, a landing's rule, review and line, and the opinion's
-            // answer over the gate. A workflow node's word and a run's accepted gates; a pause's release, which reaches more than its
-            // quests. The keeping rule, whose pass removes set-aside trees. A start held for a folder's trust, and a plugin, which may
-            // hold a start.
-            "SET_HELPERS", "SET_CAP", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
-            "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "PLACE_APPLY", "RECONCILE_APPLY", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
-            // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
-            // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
-            "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",
-            // A repository changed through git: a landing, a hand-off, a discard, a drop of recovery refs, a sweep, a sync, an abandon
-            // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
-            "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
-            "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
-            // GITAPP2c: a ref act moves the person's repository's refs through git; GITAPP2m: so does a history edit, its plan's git included.
-            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH", "GIT_HISTORY_EDIT", "GIT_FETCH",
-            // A role's act is a row of its role's table, which no act fills yet: the strictest until each is classed.
-            "ROLE_ACT");
-        Add(PipeDrain.Passes,
-            // A stop, which only shortens what the drain waits on.
-            "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "RESOLVE_SESSION", "WORK_PAUSE", "SESSION_QUIET_CARRY_ON",
-            "SESSION_QUIET_LEAVE", "SESSION_STOP_WAITING", "TOOLS_STOP",
-            // A take-back or a reword of a word that waits.
-            "SESSION_QUEUE_EDIT",
-            // An answer to a session under way, which hears it at once and was already counted.
-            "SESSION_PERMISSION_ANSWER",
-            // A word kept whose going on is a quest's start or a park's resume, which the drain's look holds until the restart: a go-ahead, a
-            // quest retried, a set-up's ask, a helper or hand-over declined, the supervisor's.
-            "SESSION_GO_AHEAD", "RETRY_QUEST", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
-            "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER",
-            // A record, a mark or a list cleared: no tree, no branch and no process (a history's clear never takes a tree). A memory row
-            // decided, which the service's applier settles and no session runs.
-            "SESSION_MEMORY_DECIDE", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "HELP_RENAME", "HELP_PIN", "CHANNEL_POST", "CHANNEL_MARK",
-            "NOTICES_READ", "NOTICE_DISMISS",
-            // LINESTOGETHER1d: the sessions being brought together let go, a record's phase and nothing more.
-            "TOGETHER_LET_GO",
-            // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
-            // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
-            // conversation at its turn's end and starts none.
-            "SET_ACCESS", "SET_GIT_ACCESS", "SET_AGENT_SETTINGS", "SET_CHECKOUT_WRITES", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
-            "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_TREES",
-            "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
-            // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,
-            // each a press or a look of its own the drain already holds.
-            "INTEGRATION_GATES",
-            // INTEGRATE1h: an integration act admits, drops, orders or decides a request, or tells a session to rebase, and the transport's pass
-            // runs the line, which the drain holds.
-            "INTEGRATE",
-            // A plugin made in a folder, which installs nothing, and a tool's files and location.
-            "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT", "TOOLS_GIT_SET",
-            // GITAUTH1e: a git identity's files and pointers; nothing a session runs reads them before its next act, which judges anew.
-            "GIT_IDENTITY", "GIT_USE",
-            // GITAUTH1f: a git go-ahead answered, a file its door reads; the act it lets on was started by its own session.
-            "GIT_ANSWER");
-        return table;
-
-        void Add(PipeDrain drain, params string[] routes)
-        {
-            // A route classed twice is refused here, at first use, as the census's own table refuses one.
-            foreach (var route in routes) table.Add(route, drain);
-        }
     }
 }

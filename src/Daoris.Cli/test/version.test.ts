@@ -119,13 +119,18 @@ test('release-prep reports the git ref, and a README that names no install line'
  * the README's table grew two rows, and a sentence nothing read went on naming the old count for two whole landings.
  *
  * Asserted as a SET rather than a count, because a count agrees with itself while naming the wrong command, and a renamed verb is
- * exactly the change that would keep the number right. ONEWAY1ai-i: the set is the one tree's, the doctrine commands the
- * dispatcher's own table (MOD7) and every group the desktop program's, read from the tree's `fixtures/command-tree.json`, and
- * `help`.
+ * exactly the change that would keep the number right. The set is the one tree's: the doctrine commands, the dispatcher's own
+ * rows; every group the desktop program's commands declare, read from their `[CommandGroup("…"` marks; and `help`.
  */
+const driverGroups = (): string[] => {
+  const library = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver');
+  return (readdirSync(library, { recursive: true }) as string[])
+    .filter((path) => path.endsWith('.cs') && !/(^|[\\/])(bin|obj)[\\/]/.test(path))
+    .flatMap((path) => [...readText(join(library, path)).matchAll(/^\s*\[CommandGroup\("([a-z-]+)"/gm)].map((mark) => mark[1]!));
+};
+
 const treeCommands = (): string[] => {
-  const tree = JSON.parse(read('src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/command-tree.json')) as { groups: { name: string }[] };
-  const names = [...COMMANDS.map((command) => command.name), ...tree.groups.map((group) => group.name), 'help'].sort();
+  const names = [...COMMANDS.map((command) => command.name), ...driverGroups(), 'help'].sort();
   assert.ok(names.length >= 30, 'the tree emptied — this test is worthless if it is');
   return names;
 };

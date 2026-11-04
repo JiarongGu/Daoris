@@ -134,12 +134,11 @@ public static class AgentRoutes
 }
 
 /// <summary>
-/// <c>daoris-driver agent</c> (PUSH1f2d, D194, the alone-path design §1.2): the agents' rules, trust and settings from a terminal, the words
-/// <c>daoris agent rules|trust|settings …</c> hands this program, what an agent runs as, and its pin taken back and its accounts
-/// (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3, <see cref="AgentAccountsCommand"/>), and the list of this machine's agents, its bare word too (PUSH1f2e4,
-/// <see cref="AgentListCommand"/>), and an agent's install and an API key's account, the long verbs no route takes (PUSH1f2e5,
-/// <see cref="AgentLongCommand"/>), an agent's sign-in (PUSH1f2e6, <see cref="AgentLoginCommand"/>), and its pin and update (PUSH1f2e,
-/// <see cref="AgentPinCommand"/>): the whole family, which <c>daoris agent</c> hands on whole. Each change a route
+/// <c>daoris agent</c> (D194, the alone-path design §1.2): the agents' rules, trust and settings from a terminal, what an agent runs as,
+/// and its pin taken back and its accounts (<see cref="AgentAccountsCommand"/>), and the list of this machine's agents, its bare word too
+/// (<see cref="AgentListCommand"/>), and an agent's install and an API key's account, the long verbs no route takes
+/// (<see cref="AgentLongCommand"/>), an agent's sign-in (<see cref="AgentLoginCommand"/>), and its pin and update
+/// (<see cref="AgentPinCommand"/>): the whole family. Each change a route
 /// takes is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else its
 /// operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). The rules and their proposals are
 /// <c>DAORIS_HOME</c>'s whatever <c>DAORIS_HARNESS_CONFIG</c> names, so they keep the door on that home; an account's settings and a
@@ -151,6 +150,8 @@ public static class AgentRoutes
 /// person's refusal in the window, its two minutes' end, or a session's terminal · 2 the usage, a refusal of the words, the operation or
 /// the route.
 /// </remarks>
+[CommandGroup("agent", "list", "install", "update", "login", "key", "pin", "unpin", "which", "trust", "settings", "rules", "account",
+    Nested = ["account: list add remove default order use ready rename join"])]
 public static class AgentsCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
@@ -193,7 +194,7 @@ public static class AgentsCommand
     /// <summary>The flags that take a value, as the CLI's agent family read them: a flag's value is no operand.</summary>
     internal static readonly HashSet<string> Valued = new(StringComparer.Ordinal)
     {
-        "--workspace", "--account", "--for", "--keep", "--switch", "--curve", "--early", "--near", "--name", "--join",
+        "--workspace", "--account", "--for", "--keep", "--switch", "--curve", "--early", "--near", "--name",
     };
 
     /// <summary>

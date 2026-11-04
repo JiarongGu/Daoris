@@ -22,6 +22,7 @@ namespace Daoris.Desktop;
 /// <para><b>Each change is one method</b> (HELP10) that its route and Ask Daoris's door both call, so the
 /// two cannot drift: the same check, the same refusal for a file it could not read, the same write.</para>
 /// </remarks>
+[WindowModule]
 public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
 {
     /// <summary>The module's name, as the page's bridge addresses it.</summary>

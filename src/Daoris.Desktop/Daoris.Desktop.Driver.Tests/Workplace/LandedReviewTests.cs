@@ -12,11 +12,6 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class LandedReviewTests : LandedFixture
 {
-    /// <summary>A branch rule that tidies: the landing takes the tree away, as on the installed window.</summary>
-    private void Tidies() =>
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
-
     private static readonly LandingSubject Subject = new("s1a2b3c4", "0fda18", "Fix the API gap");
 
     /// <summary>
@@ -28,10 +23,8 @@ public sealed class LandedReviewTests : LandedFixture
     public async Task A_tidied_landing_is_reviewed_from_its_branch_in_the_checkout_which_is_left_as_it_was()
     {
         var root = await RepositoryAsync("engine");
-        Tidies();
         var trees = new SessionTrees(Home);
-        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", Subject, extra: ("added.txt", "new\n"));
-        Assert.Contains("Cleaned up", landed.Message);
+        await LandAsync(trees, root, "shared.txt", "one\ntwo\n", Subject, extra: ("added.txt", "new\n"));
         // The person's checkout, mid-work on a branch of their own.
         await GitAsync(root, "checkout", "-q", "-b", "person/elsewhere");
         await File.WriteAllTextAsync(Path.Combine(root, "in-flight.txt"), "mine\n");
@@ -73,7 +66,6 @@ public sealed class LandedReviewTests : LandedFixture
     public async Task A_branch_the_clean_up_removed_is_gone_and_its_work_is_said_to_read_on_the_line()
     {
         var root = await RepositoryAsync("engine");
-        Tidies();
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", Subject);
         await SquashAsync(root, landed.Branch!);
@@ -114,7 +106,6 @@ public sealed class LandedReviewTests : LandedFixture
     public async Task A_gone_branch_whose_commits_git_pruned_is_not_guessed_about()
     {
         var root = await RepositoryAsync("engine");
-        Tidies();
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", Subject);
         await GitAsync(root, "branch", "-D", landed.Branch!);
@@ -168,7 +159,6 @@ public sealed class LandedReviewTests : LandedFixture
     public async Task A_file_is_previewed_from_the_landed_branch_once_the_tree_is_gone()
     {
         var root = await RepositoryAsync("engine");
-        Tidies();
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "shared.txt"), "one\ntwo\n");
@@ -176,7 +166,8 @@ public sealed class LandedReviewTests : LandedFixture
         await File.WriteAllBytesAsync(Path.Combine(tree.Path, "src", "blob.bin"), [1, 0, 2, 3]);
         await GitAsync(tree.Path, "add", "-A");
         await GitAsync(tree.Path, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", "work");
-        Assert.True((await trees.LandAsync(tree.Path, Subject)).Landed);
+        Assert.True((await trees.LandAsync(tree.Path, Subject, gate: Lands)).Landed);
+        await GitAsync(root, "worktree", "remove", "--force", tree.Path);
         Assert.True(TreeFolders.TreeGone(tree.Path));
         // The person's checkout holds something else under that name now: the branch's copy is what is shown.
         await File.WriteAllTextAsync(Path.Combine(root, "shared.txt"), "the person's own\n");

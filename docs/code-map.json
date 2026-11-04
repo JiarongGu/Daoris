@@ -7,6 +7,11 @@
       "summary": "Engineering doctrine for coding agents, kept the same in every repository: write a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, and fail an offline check when a copy drifts."
     },
     {
+      "id": "Daoris.Contracts",
+      "path": "src/Daoris.Contracts",
+      "summary": "the service's HTTP API, declared once: each route as its request record, and the records it answers"
+    },
+    {
       "id": "Daoris.Desktop.App",
       "path": "src/Daoris.Desktop/Daoris.Desktop.App",
       "summary": "the desktop window: carries the platform, runs the driver loop, hosts the machine's service"
@@ -100,9 +105,19 @@
       "id": "ChromiumProbe",
       "path": "tools/chromium-probe",
       "summary": ""
+    },
+    {
+      "id": "ContractsGen",
+      "path": "tools/contracts",
+      "summary": "writes the page's types for the service's routes from Daoris.Contracts"
     }
   ],
   "dependencies": [
+    {
+      "from": "ContractsGen",
+      "to": "Daoris.Contracts",
+      "kind": "project"
+    },
     {
       "from": "Daoris.Desktop.App",
       "to": "Daoris.Desktop.Driver",
@@ -111,6 +126,11 @@
     {
       "from": "Daoris.Desktop.App",
       "to": "Daoris.Desktop.Modules",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver",
+      "to": "Daoris.Contracts",
       "kind": "project"
     },
     {
@@ -166,6 +186,11 @@
     {
       "from": "Daoris.Devkit.Tests",
       "to": "Daoris.Devkit.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Http",
+      "to": "Daoris.Contracts",
       "kind": "project"
     },
     {

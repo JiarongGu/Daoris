@@ -4,10 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The pipe's wording table (NOTIFY2b, D196 point 4, the notification design §3.2): every route the census makes the person's has
-/// a row saying which of its values the card's sentence names and by what role, and its act's words in both catalogues, so no
-/// route's constant is ever the sentence a person reads before <b>Confirm</b>. The named values travel on the pipe's telling as
-/// <c>named</c>, a field added beside <c>fields</c>, never in place of it.
+/// The pipe's wording: a person's route's marks say which of its values the card's sentence names and by what role, and every
+/// person's route has its act's words in both catalogues, so no route's constant is ever the sentence a person reads before
+/// <b>Confirm</b>. The named values travel on the pipe's telling as <c>named</c>, a field added beside <c>fields</c>.
 /// </summary>
 public sealed class PipeWordingTests : Bridge
 {
@@ -16,18 +15,6 @@ public sealed class PipeWordingTests : Bridge
         PipeCensus.Daoris.Routes
             .Where(route => route.Route is not null && (route.Class == PipeClass.Person || route.When?.Class == PipeClass.Person))
             .Select(route => (route.Module, route.Route!));
-
-    [Fact]
-    public void Every_person_route_has_a_wording_row_and_every_row_names_a_person_route()
-    {
-        var person = PersonRoutes().ToList();
-        Assert.NotEmpty(person);
-
-        var missing = person.Where(each => PipeWording.For(each.Module, each.Route) is null).Select(each => $"{each.Module}.{each.Route}");
-        Assert.Empty(missing);
-        var stale = PipeWording.Rows.Keys.Where(key => !person.Contains(key)).Select(key => $"{key.Module}.{key.Route}");
-        Assert.Empty(stale);
-    }
 
     [Theory]
     [InlineData("en")]

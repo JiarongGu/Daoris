@@ -17,12 +17,12 @@ public sealed class LandingPluginPatienceTests : LandingPluginFixture
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         InstallRealPlugin(silent: true);
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var trees = new SessionTrees(Home, new LandingPlugins(Home, patience: TimeSpan.FromSeconds(3)));
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.True(landed.Plugin!.Failed);
