@@ -1,167 +1,83 @@
-import { type ComponentProps, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionConsole } from './console/SessionConsole';
 import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../app/opener';
-import { SESSIONS_SLICE, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
-import { usePushedResyncing } from '../bridge/state/slices';
+import { useAsks } from '../data/queries';
 import {
-  type TurnStop, useCancelTurn, useEditQueued, useMoveQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionRelatedRead, useSessionSpent, useSessionStreams, useSessionWhere,
-  useDecideSessionMemory, useSessionMemory,
-  useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
-  logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
-  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
-  useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
-  useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
-  useAnswerWaits, useAnswerAlone, useRunNodeWord, useResolveHeld, useSessionQuestion, useStopWaiting,
-  useBringTogether, useTogether, useTogetherAct, useConsidered, useAttention, useGitAnswer,
+  useSessionStreams, useStopTask, useTreeFile, useReviewedPatch, useTerminals, useRemotes, useWorkflowRun,
+  useSessionEvents, usePushedCalls, withCall, useRunNodeWord, useResolveHeld, useConsidered,
 } from '../bridge/shell';
-import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
-import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
-import { answerAloneSaid, type AnswerWaits } from './waits/AnswerAlone';
-import type { GitAskWaits } from './waits/GitAsk';
+import { useAttendedSession } from './head/useAttendedSession';
+import { useAttendedRecord } from './head/useAttendedRecord';
+import { useAttendedBox } from './conversation/useAttendedBox';
+import { type Refusal, useWords } from './conversation/useWords';
+import { useBoxWords } from './conversation/useBoxWords';
+import { useHeadAsks } from './head/useHeadAsks';
+import { useSessionLanding } from './review/useSessionLanding';
+import { useAttendedWaits } from './waits/useAttendedWaits';
+import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { AtWorkView } from './atWork/AtWorkView';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
 import { opinionAsked, opinionHolds } from './gates/opinion';
-import { useOpinionActs } from './gates/opinionActs';
 import { OpinionGate } from './gates/OpinionGate';
-import { reviewHolds, reviewState } from './gates/review';
+import { reviewState } from './gates/review';
 import { ReviewGate } from './gates/ReviewGate';
-import { useReviewActs } from './gates/reviewActs';
-import type { Session } from '../data/api';
-import type { HeadLink, HeadOpinion, HeadReview, WorkAsk } from './head/SessionHead';
-import type { EntryAccept } from './review/EntryAccept';
-import { type WaitProps, WaitStrip } from './waits/WaitStrip';
+import { WaitStrip } from './waits/WaitStrip';
 import { WaitPanel } from './waits/WaitPanel';
-import { useWaitPanelHeight } from './waits/waitPanelHeight';
-import { type AnchorWait, anchorOf, waitEvents } from './waits/anchors';
-import type { RuleAsk } from './waits/ProposedRules';
-import { useRuleAnswer } from './waits/ruleAnswer';
-import { conversationOffer, rulesAsked, waitsOf } from './waits/waits';
-import { useWaitsOnScreen } from './waits/waitsOnScreen';
+import { anchorOf } from './waits/anchors';
+import { rulesAsked } from './waits/waits';
 import { sayDiscard } from '../settings/Sweep';
-import { doorOf, toolOf } from '../agents/tools';
+import { toolOf } from '../agents/tools';
 import { agentOf, machineScope } from '../settings/accounts/accounts';
 import { namer } from '../settings/accounts/namer';
-import { accountNames } from './accountNames';
-import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitWaitSaid } from './waits/limitWait';
-import { LimitWaitLine } from './waits/LimitWaitLine';
-import {
-  boxOf, coolingFor, goesLine, goOnBriefRefusal, levelsOf, moveSaid, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
-} from './say';
+import { coolingFor, takesWords } from './say';
 import { SessionBox } from './conversation/SessionBox';
-import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing/pausing';
-import type { GoAheadAnswer } from '../asks/GoAheadList';
 import { lastWords } from './channel';
-import { goAheadsAsked, goAheadToast } from './waits/parkGoAheads';
-import { afterPress, choiceWords, openGoAheads } from './waits/parkQuestion';
-import { PauseAsk } from './pausing/WorkAsks';
+import { openGoAheads } from './waits/parkQuestion';
 import { FilePreview } from './review/FilePreview';
-import { type FileOpen, FileOpener, fileName } from './review/preview';
+import { FileOpener, fileName } from './review/preview';
 import { TerminalView } from './terminals/TerminalView';
-import { answeredPark, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/ui';
+import { failure, type Notify, SESSION_ACTIVE } from '../design/ui';
 import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
-import { type AnchorState, BackToBottom, SessionConversation, type TailState, ToTheTop } from './conversation/SessionConversation';
+import { BackToBottom, SessionConversation, ToTheTop } from './conversation/SessionConversation';
 import { type EarlierPart, EarlierParts } from './conversation/EarlierParts';
 import { ancestryOf } from './conversation/line';
-import { useAwayFromTop } from './conversation/followTail';
-import type { Level, RunningCall, Usage } from './conversation/conversation';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
-import { heavyLine, heavyRow } from './HeavySlotLine';
-import { askName, isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { heavyRow } from './HeavySlotLine';
+import { ownTree, sessionTitle } from './identity';
 import { doorLabel } from '../agents/tools';
-import type { QuestClose, Resolution } from './waits/AwaitingPerson';
 import { Composer } from './conversation/Composer';
 import { DiffPane } from './review/DiffPane';
-import { forgetDraft, keepDraft, useDraft } from './conversation/drafts';
-import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from './frame/RightDock';
+import { NothingFollowed, RightDock } from './frame/RightDock';
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
-import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
-import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry, placeOf } from './entries';
-import { useAccountUse, useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
+import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
-import type { Answered } from './InlineConfirm';
-import type { AgentChoice } from './start/AgentChip';
-import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
-import { AskHelper } from './start/AskHelper';
-import { partnersOf } from './pieces/pieceRows';
-import type { PieceSection } from './pieces/Pieces';
-import { handOverOffer, nextChoices } from './start/handOverOffer';
-import { HandOverOfferLine } from './start/HandOverOfferLine';
-import { DeleteAsk, SessionPageHead, StopAsk } from './head/SessionPageHead';
-import { type SessionDoors, useSessionActs } from './sessionActs';
+import type { HandOverRoster } from './start/HandOverAsk';
+import { useSessionActs } from './sessionActs';
 import { ListMore } from './frame/ListPane';
-import { AddProjectDrawer, ImportFolderDrawer } from '../projects/ProjectManage';
-import { useCheckoutBranch } from '../bridge/repositories/git';
-import { useIntegrationHead } from '../bridge/repositories/integrate';
-import { type CheckoutReader, NewConversation, type NewStart } from './start/NewConversation';
-import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './start/startRecent';
-import { type Carry, NO_CARRY } from '../compose/carry';
+import { useNewStart } from './start/useNewStart';
+import { StartPane } from './start/StartPane';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame/frame';
 import { panelTabs } from './console/streams';
-import { DOCK, dockRange, frameLayout, type ListMode } from './frame/layout';
-import { type FrameClosings, useFrameClosings } from './frame/closings';
-import { type ListPanes, useListPanes } from './frame/listPanes';
-import { listChoice, type ListSpec, useFrameWidth, useGoOver, useListMode, type ViewLayout, ViewListPane } from './frame/ViewFrame';
+import { dockRange, type ListMode } from './frame/layout';
+import type { FrameClosings } from './frame/closings';
+import type { ListPanes } from './frame/listPanes';
+import { type ListSpec, type ViewLayout, ViewListPane } from './frame/ViewFrame';
 import { ViewMain } from './frame/ViewMain';
-import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './frame/placements';
+import type { Place, Placements, ViewId } from './frame/placements';
 import { relationsOf } from './head/relations';
 import { beganLine } from './head/partsLife';
-import { store, stored } from '../lib/stored';
 import { cn } from '../lib/cn';
-
-// Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
-// a preference, never machine wiring and never a tracked file. A view's list keeps its own since FRAME1c
-// (`listPanes.ts`, D118 §3f).
-const PANEL_HEIGHT = 'daoris.panelHeight';
-// The dock's dragged width, as a SHARE of the window (LAYOUT1). `daoris.dockWidth` held pixels, and a
-// dock kept in pixels stayed the same while the window grew; one held there is read once, as its share
-// of the window it is read in, and then forgotten.
-const DOCK_SHARE = 'daoris.dockShare';
-const DOCK_WIDTH_PIXELS = 'daoris.dockWidth';
-
-/** The dock's share of the window the person dragged it to, or null where they never did. */
-function rememberedShare(): number | null {
-  const share = Number(stored(DOCK_SHARE));
-  if (Number.isFinite(share) && share > 0 && share < 1) return share;
-
-  const pixels = rememberedWidth(DOCK_WIDTH_PIXELS);
-  if (pixels === null || window.innerWidth <= 0) return null;
-  const converted = Math.min(pixels / window.innerWidth, DOCK.cap);
-  store(DOCK_SHARE, String(converted));
-  store(DOCK_WIDTH_PIXELS, null);
-  return converted;
-}
-
-function remembered(key: string, fallback: number): number {
-  const held = Number(stored(key));
-  return Number.isFinite(held) && held > 0 ? held : fallback;
-}
-
-/** A width the person dragged, or null where they never did — which is not the same as a default. */
-function rememberedWidth(key: string): number | null {
-  const held = Number(stored(key));
-  return Number.isFinite(held) && held > 0 ? held : null;
-}
-
-/**
- * The composer's tree chip reads the checkout's branch through this (NEW1e-b): a refusal or a pending read is no answer, and
- * the chip says the checkout plain. A module-level hook, so the molecule's prop is stable.
- */
-const readCheckout: CheckoutReader = (repository, workspace) => {
-  const { query } = useCheckoutBranch({ repository, workspace });
-  return { read: query.isError ? undefined : query.data, refresh: () => { void query.refetch(); } };
-};
+import { useFrameLayout } from './frame/useFrameLayout';
+import { useDockViews } from './frame/useDockViews';
 
 /** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
 const door = (structured?: boolean): 'structured' | 'text' | undefined =>
@@ -308,194 +224,34 @@ export function WorkFrame({
   const { t, i18n } = useTranslation();
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
   // palette, a quest's record) must not show one session's "went nowhere" on another's composer (REV3).
-  const [refusal, setRefusal] = useState<{ session: string; text: string } | null>(null);
-  // What *Go on in a new session* came to (MSG1g2), the session's own, as a refusal is: said under its words alone.
-  const [newSession, setNewSession] = useState<{ session: string; answer: NewSessionAnswer } | null>(null);
-  // *New conversation* (NEW1b, D162 point 1): bumped by each of its doors (the list's ＋, the menu, Ctrl+N, the palette),
-  // which puts the attended session down and the focus in the composer's prompt.
-  const [composing, setComposing] = useState(0);
-  // Whether that press's focus is still owed: met once the prompt took it, so a composer that comes back by another path
-  // (the attended session deleted) takes none.
-  const [focusOwed, setFocusOwed] = useState(false);
-  // The repository of the session attended at the press (NEW1f): the press puts the selection down, so the composer is told
-  // where the person was. Each press sets it afresh, to null where nothing was attended.
-  const [pressedFrom, setPressedFrom] = useState<string | null>(null);
-  const newConversationPressed = () => {
-    setPressedFrom(attended && sessionOrigin(attended) === null ? attended.repository : null);
-    setComposing((count) => count + 1);
-    setFocusOwed(true);
+  const [refusal, setRefusal] = useState<Refusal | null>(null);
+  const attend = (id: string) => {
+    onSelect(id);
+    setRefusal(null);
   };
-  // The composer's words and files, held here so a visit to a session and back keeps them; a start that opened a
-  // conversation lets them go. Its last refusal is said under Start until the next press (UX5 U68).
-  // The drawers the composer's picker opens over Sessions (NEW1c): Projects' own, on this frame's state, so the draft stays where
-  // it is and App's views are not asked to navigate. `pickNew` and `reveal` are the answers it hands the composer, each a counted
-  // ask; `refocus` is bumped when a drawer goes down, so the prompt takes the focus Radix would return to a press that is gone.
-  const [adding, setAdding] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [pickNew, setPickNew] = useState<{ repository: string; n: number } | null>(null);
-  const [reveal, setReveal] = useState<{ workspace: string; n: number } | null>(null);
-  const [refocus, setRefocus] = useState(0);
-  // An import that opened the picker keeps the focus in its field: the drawer's closing must not take it back to the prompt.
-  const listOpened = useRef(false);
-  const [newDraft, setNewDraft] = useState('');
-  const [newCarry, setNewCarry] = useState<Carry>(NO_CARRY);
-  const [startRefusal, setStartRefusal] = useState<string | null>(null);
-  // This machine's last starts and the repository last chosen (the entry design §1), read once and kept as they change.
-  const [recentStarts, setRecentStarts] = useState(readRecent);
-  const [chosenStart, setChosenStart] = useState(readChosen);
-  // Kept in step with the storage, which `chosenStart` alone would leave stale within a mount (NEW1f).
-  const chooseStart = (repository: string) => {
-    setChosenStart(repository);
-    keepChosen(repository);
-  };
-  // One press, one request id (NEW1a): a press again with the same words and choices after a failure carries the same id,
-  // so a start that did open is answered rather than repeated; an answer lets it go.
-  const pressed = useRef<{ key: string; id: string } | null>(null);
-  // *Archive what ended…* pressed in the list's ⋯ (SESSUX1e): its first press stands under the list's header until it
-  // archives or the person never minds. Not remembered: it is a question asked now.
-  const [archivingEnded, setArchivingEnded] = useState(false);
-  // The session whose stop asks under the header (SESSUX1d, D126 §3.3), from the header's *Stop…* or its row's: a
-  // question asked now, of that session only, so attending another closes it.
-  const [stopAsking, setStopAsking] = useState<string | null>(null);
-  // The session whose delete asks under the header (SESSUX1f, D126 §5.4), the stop's way: of that session only.
-  const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
-  // The session whose hand-over asks under the header (MIXAGENT1b-i, D163), the stop's way: of that session only.
-  const [handOverAsking, setHandOverAsking] = useState<string | null>(null);
-  // The session whose helper's ask opens under the header (MIXAGENT2b, D163), the stop's way: of that session only.
-  const [helperAsking, setHelperAsking] = useState<string | null>(null);
-  // The agent and account Daoris's offer named, and why, when *Choose…* opened that ask (MIXAGENT1b-ii): the ask opens with
-  // the choice made and its press carries the reason. Cleared by the head's own door, whose press is the person's.
-  const [handOverChosen, setHandOverChosen] = useState<{ why: 'near' | 'limit'; choice: AgentChoice } | null>(null);
-  // The conversations whose offer to hand over the person put down: for this run of the frame, never stored (MIXAGENT1b-ii).
-  const [offerDismissed, setOfferDismissed] = useState<ReadonlySet<string>>(() => new Set());
-  // LIMITRESUME1d: what *Try now* on a waiting line came to where it was refused, by the session it was pressed on.
-  const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
-  const accountUse = useAccountUse();
-  // LIMITRESUME1d2: a conversation's limit wait, as its events hold it, told by the conversation that reads them.
-  const [chatHeld, setChatHeld] = useState<{ session: string; held: ChatLimitHeld } | null>(null);
-  const stopWaiting = useStopWaiting();
-  // The session whose pause asks under the header (PAUSE1e, D132 §2.6), with the work it pauses: of that session only.
-  const [pauseAsking, setPauseAsking] = useState<{ session: string; target: WorkTarget } | null>(null);
-  // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
-  // once per press, including a second press on the same session.
-  const [answerFocus, setAnswerFocus] = useState<{ session: string; at: number } | null>(null);
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLElement>(null);
-  // Which dock surface each session has up (FRAME6: tabs per session). Not remembered across launches:
-  // unlike the attended session, this one is answered by what the person is doing in the next ten seconds.
-  const [docked, setDocked] = useState<Record<string, DockTab>>({});
-  const [height, setHeight] = useState(() => remembered(PANEL_HEIGHT, 200));
-
-  // The frame's columns (FRAME6): what the person chose, and what the window leaves room for.
-  const root = useRef<HTMLDivElement>(null);
-  const width = useFrameWidth(root);
-  const [dockShare, setDockShare] = useState(rememberedShare);
-  const ownLists = useListPanes();
-  const listed = lists ?? ownLists;
-  // What the person closed (DOCK1c): the application's where it holds them, so the strip's toggles and
-  // the View menu reach them from every view; this frame's own where it is rendered alone.
-  const own = useFrameClosings();
-  const closed = closings ?? own;
-  // Where each view stands (DOCK1b): the application's where it holds them, this frame's own alone.
-  const ownPlaces = usePlacements();
-  const placed = placements ?? ownPlaces;
-  const collapsed = closed.panel;
-  const dockClosed = closed.dock;
-  const [dockFull, setDockFull] = useState(false);
+  const {
+    root, width, listed, closed, placed, collapsed, dockClosed, dockFull, setDockFull, go, layout, list, chosen, resizeDock, closeDock,
+    height, resize, toggle,
+  } = useFrameLayout({ lists, closings, placements, viewLayout, group, onGroupBrought, onListMode });
   // Another view in the frame (DOCK1a): its own list or none, and its main area. Absent, it is Sessions.
   const elsewhere = viewLayout !== undefined;
-  const listView = elsewhere ? viewLayout.list?.view ?? null : 'sessions';
-  // A go's group lays the view's strip over the main area while it is brought into view (ENTRY1g).
-  const { listOver, setListOver } = closed;
-  const go = useGoOver(group, listOver, setListOver, onGroupBrought);
-  const layout = frameLayout(width.viewport, width.frame, {
-    list: listView ? listChoice(listView, listed, go.over) : null,
-    dockShare, dockClosed, dockFull,
-  });
-  const list = layout.list;
 
-  // What the list is now, told to the application, whose doors toggle it and say whether it is shown; and
-  // a list laid over the main area let go once the room makes it anything else (D118 §3f).
-  useListMode(list?.mode ?? null, onListMode, listOver, setListOver, go.bringing);
+  const {
+    sessions, sessionsResyncing, openings, groups, entries, where, quests, registry, harnesses, accounts, attended, attendedEntry,
+    channelAsk, quest, live, conversation, here, intake, oneTurn,
+  } = useAttendedSession({ selected, onSelect, notify });
+  const start = useNewStart({ t, notify, attended, selected, onSelect, compose, attend, setRefusal });
+  const { newConversationPressed } = start;
 
-  /** A choice in a list laid over closes it (D118 §3a), and lets a go still on its way go (ENTRY1g). */
-  const chosen = () => { if (list?.mode === 'over') go.setOver(false); };
-  /** A drag lands as the dock's share of the window it was dragged in; null is the default again. */
-  const resizeDock = (next: number | null) => {
-    const share = next === null || width.viewport <= 0 ? null : next / width.viewport;
-    setDockShare(share);
-    store(DOCK_SHARE, share === null ? null : String(share));
-  };
-  const closeDock = (shut: boolean) => {
-    closed.setDock(shut);
-    if (shut) setDockFull(false);
-  };
-
-  const sessions = useSessions(null, true);
-  const sessionsResyncing = usePushedResyncing(SESSIONS_SLICE);
-  // A conversation's name (RAIL1): the same answer the rail asks for, from the same list, so the head
-  // and the row read one name and the bridge is asked once.
-  const openings = useSessionOpenings(sessions.data);
-  // Where the attended session is listed, and where its work is (SESSUX1d): the rail's own two answers, asked under the
-  // same keys, so the page header and its row are offered one set of acts and the bridge is asked once.
-  const groups = useSessionGroups();
-  // The entries beside them (SESSONE1c, D167): the attended session's parts, and what an archive reaches. The same answer.
-  const entries = useSessionEntries().data;
-  const where = useSessionWhere(sessions.data);
-  const quests = useQuests(null, true);
-  const registry = useRegistry();
-  const harnesses = useHarnesses();
-  // Each account's cool-off (TOOL4g), which says when words a cooling account holds go on (MSG1g2).
-  const accounts = useAccounts();
-
-  const startChat = useStartChat();
-  const resolve = useResolveSession();
-  // The person's done on the quest a finish at a checkpoint leaves (QUESTCLOSE1): the service's own door for it.
-  const personDone = usePersonDone();
-  const send = useSendMessage();
-  const end = useEndChat();
-  const cancelTurn = useCancelTurn();
   // Which workspaces sync with a remote here: a pause's ask names an open quest another machine may still take (PAUSE1e).
   const wiring = useRemotes().data;
 
-  useErrorNotify(sessions.error, notify);
-
-  const attended = (sessions.data ?? []).find((session) => session.id === selected) ?? null;
-  // Its ask's channel (SESSONE2c, D167 points 6 to 8): the attended line of work's panel, where an ask began it. The same read the
-  // ask's page holds, under one key; a conversation, an intake and a line rooted in a quest alone have none.
-  const attendedEntry = attended ? entryOfSession(entries, attended.id) : null;
-  const channelAsk = attendedEntry && !isIntakeEntry(attendedEntry) ? askOfEntry(attendedEntry) : null;
-  // What each of its parts spent (SESSCTX1d), on each part's own row of the strip, from this machine's record.
-  const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
-  // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
-  const { rows: related, own: relatedOwn } = useSessionRelatedRead(attended?.id);
-  // LINESTOGETHER1d: the operation bringing sessions together it is in, and the head's presses on it.
-  const together = useTogether(attended?.id);
-  const bringTogether = useBringTogether();
-  const togetherAct = useTogetherAct();
-  // Its memory changes and the person's decision on them (KNOWCENTRAL2e): an end awaiting them, or what an ended session left staged.
-  const memoryRows = useSessionMemory(attended?.id);
-  const decideMemory = useDecideSessionMemory();
-  const sessionRecord = useSessionRecord(attended?.id ?? null, attended ? where[attended.id]?.treeGone === true : false);
-  const channel = useChannel(channelAsk);
-  // *All messages* in the At work view asks the session page's panel open (COWORKVIEW1c): a number, each new one a press.
-  const [channelOpened, setChannelOpened] = useState(0);
-  const postChannel = usePostChannel();
-  const forwardChannel = useForwardChannel();
-  const editQueued = useEditQueued(attended?.id ?? null);
-  const quest = attended?.quest
-    ? (quests.data ?? []).find((row) => row.id === attended.quest) ?? null
-    : null;
-  const live = attended ? SESSION_ACTIVE.has(attended.state) : false;
-  // What the attended session's own tree left (SESS1 S10): its branch in the clean-up's list, found by
-  // the name the trees give it — `daoris/` and the tree's folder.
-  const sweep = useSweepPlan();
-  const branch = attended?.tree && Array.isArray(sweep.data?.branches)
-    ? sweep.data.branches.find((row) => row.repository === attended.repository
-      && row.branch === `daoris/${attended.tree!.split(/[\\/]/).filter(Boolean).pop()}`) ?? null
-    : null;
-  // That branch discarded once its tree is gone, a failed attempt's (LAND3b): `daoris tree remove … --force`.
-  const discardBranch = useDiscardSessionBranch();
+  const {
+    spent, related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, channel, channelOpened,
+    setChannelOpened, postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone, integration,
+  } = useAttendedRecord({ attended, attendedEntry, channelAsk, where, here, intake });
 
   // What the session runs beside itself, a tab each in the panel (CONSOLE2c). The panel shows the
   // session's own console unless the person picked a stream of it, and one it no longer lists falls
@@ -511,644 +267,36 @@ export function WorkFrame({
   // it moves or another view of its region is shown: a shell outlives that, as VS Code's terminal does.
   const terminals = useTerminals();
 
-  // A conversation is the only thing there is anything to say to. A driven session also holds a
-  // tree, but it was given its whole target at once and has no channel to speak into — an input
-  // box nothing is listening to is worse than none (the reasoning Projects used to carry).
-  const conversation = attended?.kind === 'chat';
-  // A teammate's record came down with the sync (SYNC4) and its process is on THEIR machine: it is
-  // read here, and nothing this window sends could reach it — so it gets no moves and no composer.
-  const here = attended ? sessionOrigin(attended) === null : false;
-  // An intake takes no messages at all (INT4b, INT4g, INT4h): it is one turn, framed as one prompt.
-  // Parked, there is no process left to hear one, and its answer is on the ask. Running, the pipe
-  // door gave it no stdin and on the protocol door its stdin is the driver's own frames — so a box
-  // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
-  // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
-  const intake = attended ? isIntake(attended) : false;
-  // So does a second opinion's reviewer (XAGENT1g), and a helper (MIXAGENT3a-i, D163): one turn and no words, which its
-  // record's host refuses besides.
-  const oneTurn = intake || (attended ? isOpinion(attended) || isHelper(attended) : false);
-  // The process its own tree runs under, for its *Details* (PROCESS1e): this machine's own record, never an intake's, which is told
-  // none; the driver answers none for a session with no tree of its own here.
-  const told = useSessionProcess(attended && here && !intake ? attended.id : null);
-  // The go-aheads a park asked on its quest's ask (KNOWUSE1a2, D135 §2), read only for a driven park whose quest an ask
-  // asked: shown in its head, where answering the last one open sends it on (GOAHEAD2b). The asks are asked for nowhere
-  // else here.
-  const parkAsk = attended?.state === 'awaiting-person' && !intake ? askOf(quest) : null;
-  const asks = useAsks(false, parkAsk !== null);
   // The ask its entry came from, for the head's name: the rail's read, so it costs nothing it does not already ask.
   const entryAsks = useAsks(true, channelAsk !== null);
-  const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
-  const parkGoAhead = useParkGoAhead();
-  // PARKVIEW1 (the park's ask design §2-§3): its question as its agent asked it and the driver kept it for this park, read only for a
-  // driven park of this machine's still waiting on the person. Drawn in its box with its answers as presses, and in its head's card.
-  const parkWaits = Boolean(attended && here && !intake && attended.kind !== 'chat' && attended.state === 'awaiting-person'
-    && !answeredPark(attended));
-  const parkQuestion = useSessionQuestion(parkWaits ? attended!.id : null);
-  const question = parkWaits ? parkQuestion.data ?? null : null;
-  const talking = Boolean(attended && conversation && here && !oneTurn);
-  // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
-  // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
-  const steerable = Boolean(attended && here && !oneTurn && !conversation && attended.quest
-    && SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
-
-  // What the person was typing to this session, kept per session and across a reload (CONV4b): one draft for whichever
-  // box its page offers, so words typed as it ends are still there in the box that goes on with them (MSG1f).
-  const [draft, setDraft] = useDraft(attended && here && !oneTurn ? attended.id : null);
-  // Where each live conversation's turns stand, as the driver holds them: the attended one's stop and
-  // queue follow it, not the record, which learns a turn began only when its first event lands
-  // (CONV4a); and the rail and the head read a chat between turns as idle (UX5 U17).
-  const liveChats = (sessions.data ?? [])
-    .filter((session) => session.kind === 'chat' && SESSION_ACTIVE.has(session.state))
-    .map((session) => session.id);
-  // A driven session of this machine's that parked or ended, whose record the person's words may wait on (SAIDBACK1b): the
-  // driver lists them as its queue, each by its id, for the box's *Edit* and *Remove*.
-  const resting = Boolean(attended && here && !oneTurn && !conversation
-    && (attended.state === 'awaiting-person' || !SESSION_ACTIVE.has(attended.state)));
-  const chatTurns = useChatTurns(talking || steerable || resting ? [...liveChats, attended!.id] : liveChats);
-  const turns = (talking && chatTurns[attended!.id]) || NO_TURNS;
-  // What the driver holds for the attended driven session, and whether it hears anything at all.
-  const held = steerable ? chatTurns[attended!.id] : undefined;
-  const steering = held?.listening === true;
-  // The box at the foot (MSG1f, D137 §5.1): on every session that takes words, by what a word said now would do, and the
-  // line saying why on the rest. 🔴 A driven session parked to ask the person is answered from it, where a chat's is: the
-  // door was a button at the top of a record of 1,800 events, and the question is read at its foot. The card above keeps
-  // the endings and says the box carries it on: one owner for the answer (D56). Answered, a second word joins the first
-  // (D137 §2.4), so the box stays.
-  const reach = useSessionReach(attended && here && !oneTurn ? attended : null, steering);
-  const box = boxOf({ session: attended, here, intake, listening: steering, reach });
-  // LINESTOGETHER1b: where a word goes in a line with a head, and the press moving a word held beside the head to it.
-  const stands = attended ? placeOf(attendedEntry, attended.id) : null;
-  const goes = stands && (box.kind === 'steer' || box.kind === 'say') ? goesLine(t, {
-    ...stands, reaches: reach?.reaches ?? null,
-    holdsWhy: (groups.data ?? []).find((row) => row.session === attended?.id)?.holds?.why,
-  }) : undefined;
-  const moveQueued = useMoveQueued();
-  const onMoveWord = stands?.place === 'beside' && attendedEntry?.head && attended && box.kind === 'say' && box.mode === 'goOn'
-    ? (word: string) => {
-      const session = attended.id;
-      moveQueued.mutate({ session, id: word, to: attendedEntry.head! }, {
-        onSuccess: (moved) => {
-          if (moved.moved) { setRefusal(null); notify(t('work.say.moved')); return; }
-          setRefusal({ session, text: moveSaid(t, moved) });
-        },
-      });
-    }
-    : undefined;
-  // *To the head*: the unsent draft moves to the head's own draft and its page opens; nothing is sent.
-  const onDraftToHead = stands?.place === 'beside' && attendedEntry?.head && attended && draft.trim()
-    ? () => {
-      // Through the store: the draft hook re-reads it as the head is attended.
-      forgetDraft(attended.id);
-      keepDraft(attendedEntry.head!, draft);
-      attend(attendedEntry.head!);
-    }
-    : undefined;
-  // What the attended session's door does with a word while a turn runs (COWORK1a, D188): the levels its box offers, and the
-  // keeping stop where its door can stop a turn keeping the session. Nothing known, none: the box queues as it did.
-  const levels = levelsOf(reach);
-  const keepingStop = reach?.keepingStop === true;
-  const answering = box.kind === 'say' && box.mode === 'answer';
-  // QUESTIONUI1a (the supervisor design §8.4): the answer selected in the park's question, the frame's beside the draft, in memory, so a
-  // reload starts with none and the words kept. Drawn selected only on the question it was selected on: a replaced question is drawn
-  // with none, so a kept label never answers a question the park no longer asks.
-  const [parkChoice, setParkChoice] = useState<{ session: string; question: string; label: string } | null>(null);
-  const parkPicked = attended && answering && question && parkChoice?.session === attended.id && parkChoice.question === question.id
-    && question.choices.some((choice) => choice.label === parkChoice.label) ? parkChoice.label : null;
-  const onParkPick = (label: string | null) => {
-    setParkChoice(label !== null && attended && question ? { session: attended.id, question: question.id, label } : null);
-  };
-  // Words said as the attended session winds up, held for its record to end (D137 §2.1), shown above its box until then.
-  const [ending, setEnding] = useState<{ session: string; words: string[] } | null>(null);
-  useEffect(() => {
-    if (!attended || ending?.session !== attended.id || !SESSION_ACTIVE.has(attended.state)) setEnding(null);
-  }, [attended, ending?.session]);
-  // The person's words on their way to the attended session (SENDLOST1b, D137 §2.4): shown the moment they are sent, kept
-  // where the page stopped waiting on their send, and settled by its own queue and record (`SentSettler`, which reads it
-  // only while some wait). A chat that ended without them gives them back, said so; a driven session keeps words once they
-  // arrive.
-  const sending = useSending(attended && here && !oneTurn
-    ? { id: attended.id, queued: chatTurns[attended.id]?.queued, endedChat: conversation && !live, refused: box.kind === 'line' }
-    : null);
-  const giveBackSent = (sent: Sent) => {
-    setDraft((was) => [sent.words.text, was.trim()].filter(Boolean).join('\n\n'));
-    if (sent.words.files.length > 0) {
-      notify(t('work.composer.filesNotSent', { count: 1, names: sent.words.files.join(', ') }), 'error');
-    }
-    // SENDLOST1c: where the driver's refusal came after the page stopped waiting, the box is now a line, so the words are
-    // said under it as well as kept for the box.
-    setRefusal({
-      session: sent.session,
-      text: box.kind === 'line' ? t('work.composer.notSentLine', { text: sent.words.text }) : t('work.composer.notSent'),
-    });
-  };
-  const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
-  // When each live chat's last turn ended here (RAIL2): its *moved*, which its record never says.
-  const lastTurns = Object.fromEntries(Object.entries(chatTurns).flatMap(([id, held]) => (held.lastTurn ? [[id, held.lastTurn]] : [])));
-  // The conversation's model and effort as its agent offered them (AGT6b, D98) — asked of a live
-  // conversation only, since only a live process has options to change.
-  const offered = useSessionOptions(talking && live ? attended!.id : null);
-  const setOption = useSetSessionOption();
-  // The tree's files for `@` (CONV4d), asked for only while the person is writing a mention.
-  const [mentioning, setMentioning] = useState(false);
-  const treeFiles = useTreeFiles(talking ? attended!.id : null, mentioning);
-  // The conversation's context reading, as its record says (CONV5) — told by the conversation, and
-  // kept with the session it came from, so switching never shows one session's ring under another.
-  const [reading, setReading] = useState<{ session: string; usage?: Usage } | null>(null);
-  const onUsage = useCallback((session: string, usage?: Usage) => setReading({ session, usage }), []);
-  // When the attended session's agent was asked and has answered nothing (WAITSHOWN1), likewise told by the conversation.
-  // AGENTERRORS1a2: and when a transient episode tries again, while one of its waits runs.
-  const [waiting, setWaiting] = useState<{ session: string; since?: string; calling?: RunningCall; retrying?: string } | null>(null);
-  const onWaiting = useCallback(
-    (session: string, since?: string, calling?: RunningCall, retrying?: string) => setWaiting({ session, since, calling, retrying }), []);
-  // The head's *running … for …* steps with the clock (WAITSAY1), only while a call is named; and *Trying again at* leaves once past.
-  useNow(waiting?.calling || waiting?.retrying ? 15_000 : null);
-
-  // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
-  // attended, because the person is very likely reading exactly that. 🔴 And only a record this
-  // frame has SEEN can be gone: a session just started is attended before the list has caught up
-  // with it, and clearing on that first answer left "Nothing attended" beside a running chat (CONV3).
-  const seen = useRef(new Set<string>());
-  useEffect(() => {
-    if (!sessions.data) return;
-    for (const session of sessions.data) seen.current.add(session.id);
-    if (selected && seen.current.has(selected) && !sessions.data.some((session) => session.id === selected)) {
-      onSelect(null);
-    }
-  }, [selected, sessions.data, onSelect]);
-
-  const attend = (id: string) => {
-    onSelect(id);
-    setRefusal(null);
-  };
-  // How the attended session came to be (TRACE1b): read only while its section is open, for the session it was opened
-  // on, since the read takes every session record and quest. Attending another opens it folded.
-  const [tracing, setTracing] = useState<string | null>(null);
-  const trace = useTrace('session', tracing);
-  // A stop's ask is a question asked now, of the session it was asked of (D126 §3.3): attending another by any door
-  // puts it down, so coming back later does not find it still open.
-  useEffect(() => {
-    setStopAsking((asked) => (asked === selected ? asked : null));
-    setDeleteAsking((asked) => (asked === selected ? asked : null));
-    setHandOverAsking((asked) => (asked === selected ? asked : null));
-    setHelperAsking((asked) => (asked === selected ? asked : null));
-    setPauseAsking((asked) => (asked?.session === selected ? asked : null));
-  }, [selected]);
-
-  const resize = (next: number) => {
-    setHeight(next);
-    store(PANEL_HEIGHT, String(next));
-  };
-
-  const toggle = () => closed.setPanel(!collapsed);
-
-  // *New conversation* puts the attended session down, so the composer stands in the main area (NEW1b).
-  useEffect(() => {
-    if (composing > 0 && selected !== null) onSelect(null);
-    // Only a new press: the selection is read, not watched.
-  }, [composing]);
-
-  const onStart = (start: NewStart) => {
-    setStartRefusal(null);
-    const key = JSON.stringify([
-      start.repository, start.text, start.adapter ?? '', start.profile ?? '', start.ownTree ?? null,
-      start.files.map((file) => [file.name, file.size, file.lastModified]),
-    ]);
-    if (pressed.current?.key !== key) pressed.current = { key, id: crypto.randomUUID() };
-    const requestId = pressed.current.id;
-    startChat.mutate({ ...start, requestId }, {
-      onSuccess: (result) => {
-        pressed.current = null;
-        // The ledger's own sentence: the tree is busy, the repository has no checkout here, the
-        // harness is missing, the chosen account is logged out. Each names the action that fixes
-        // it, which is why it is shown rather than summarised — whole, under Start where it was
-        // pressed, with the words kept; it was a corner toast cut mid-sentence (UX5 U68).
-        if (!result.sessionId) {
-          setStartRefusal(result.message);
-          return;
-        }
-        const session = result.sessionId;
-        setRecentStarts(keepRecent(start.repository));
-        setNewDraft('');
-        setNewCarry(NO_CARRY);
-        // Opened without the words (NEW1a's `sent: false`): they wait in its box, put there before it is attended so its
-        // draft is read with them, and the driver's sentence stands beside them. The files are named, as a send handed
-        // back names them: the page no longer holds their bytes.
-        if (!result.sent) keepDraft(session, start.text);
-        attend(session);
-        if (!result.sent) {
-          setRefusal({ session, text: result.message });
-          if (start.files.length > 0) {
-            notify(t('work.composer.filesNotSent', { count: 1, names: start.files.map((file) => file.name).join(', ') }), 'error');
-          }
-        }
-      },
-      // No answer came: the bridge's sentence where Start was pressed, and the press keeps its id for the next.
-      onError: (error: unknown) => setStartRefusal(sentence(error)),
-    });
-  };
-
-  // Counted into the machine log once the words went, never their words (LOG1b): their length, how many files they carried,
-  // and where they reach the session as the driver answered (MSG1d, D137 §3.3).
-  const counted = (session: string, kind: string, text: string, files: number, said: WordsAnswer) =>
-    logEvent('message.sent', { session, kind, length: text.length, files, ...(said.reaches ? { reach: said.reaches } : {}) });
-
-  // Words nothing took, in the page's words: by the driver's code where it gave one (MSG1d), else that nothing took them.
-  const untaken = (said: WordsAnswer, fallback: string) =>
-    (said.why ? neverSentence(t, said.why, { quest: attended?.quest, to: said.to }) : fallback);
-
-  // 🔴 A send the page stopped waiting on (the bridge's TIMEOUT) may still be taken by the machine (SENDLOST1b): its words
-  // are kept above the box, saying so, never put back in it, where a second send would say them twice, and the sessions are
-  // read again; the session's own queue and record settle them. Any other failure lets them go, for the caller to give back.
-  const stillTaking = (n: number, error: unknown) => {
-    if (!stoppedWaiting(error)) {
-      sending.answered(n);
-      return false;
-    }
-    sending.unanswered(n);
-    void sessions.refetch();
-    return true;
-  };
-
-  // What words at *now* came to (STEER2b, COWORK1a), said where the person pressed it: one line that the door could not, and
-  // where the words go instead. Taken at once in the running turn says nothing here, since the conversation shows the words
-  // where they were taken. No turn is stopped for them (D188 point 3): the keeping stop is the person's own press.
-  // `now: false` carries one of three codes (STEER2a): `no-interrupt`, said by where the words go instead, `behind` and
-  // `opening`. A code not known here gets the generic line. `now: true` with no reach is an ordinary send (no turn was running).
-  const nowSaid = (result: WordsAnswer) => {
-    if (result.now !== false) return;
-    notify(t(result.why === 'opening' ? 'work.steer.notNowOpening'
-      : result.why === 'behind' ? 'work.steer.notNowBehind'
-      : result.why === 'no-interrupt' ? (result.reaches === 'next-step' ? 'work.steer.notNowNextStep' : 'work.steer.notNowTurnEnd')
-        : 'work.steer.notNow'));
-  };
-
-  const onSend = (text: string, files: File[] = [], level?: Level) => {
-    if (!attended) return;
-    const session = attended.id;
-    // 🔴 The composer lets go of the words when it sends; a send that did not arrive hands them back,
-    // into THIS session's draft (the setter is bound to it), and names the files — the page no longer
-    // holds their bytes. Losing a paragraph to a refusal is the failure the composer exists to prevent (REV3).
-    const giveBack = () => {
-      if (text) setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
-      if (files.length > 0) {
-        notify(t('work.composer.filesNotSent', { count: 1, names: files.map((file) => file.name).join(', ') }), 'error');
-      }
-    };
-    // Shown at once, as sending, until the answer says what came of them (SENDLOST1b).
-    const n = sending.begin(session, { text, files: files.map((file) => file.name) });
-    send.mutate({ id: session, text, files, ...(level ? { level } : {}) }, {
-      // False is an answer: the session ended while they were typing. It lands on the composer
-      // rather than in a toast, because that is where the person is looking — on THAT session's.
-      onSuccess: (result) => {
-        sending.answered(n);
-        if (result.sent) {
-          counted(session, 'chat', text, files.length, result);
-          setRefusal(null);
-          if (level === 'now') nowSaid(result);
-          return;
-        }
-        giveBack();
-        setRefusal({ session, text: untaken(result, t('work.composer.notListening')) });
-      },
-      onError: (error: unknown) => {
-        if (stillTaking(n, error)) return;
-        giveBack();
-        notify(sentence(error), 'error');
-      },
-    });
-  };
-
-  // A door that takes fewer characters at once than these says so before anything is sent, and the words stay in the box
-  // (D137 §2.4): a driven session on the native door, whose resumed run takes them as one argument.
-  // Why these words are not sent, or null: the box's refusal and the card's alike (PARKANSWER1).
-  const unaccepted = (text: string): string | null => {
-    // PARKVIEW1 (the park's ask design §4): where its question waits beside go-aheads still open, the go-aheads come first, each
-    // keeping the park for this answer, which then sends it on with them; the words stay in the box, said why.
-    if (attended && answering && question && openGoAheads(goAheads).length > 0) return t('work.park.goAheadsFirst');
-    if (!attended || !tooLong(text, { door: doorOf(attended.adapter, roster), kind: attended.kind })) return null;
-    return t('work.say.tooLong', { count: NATIVE_WORDS_LIMIT });
-  };
-  const accepts = (text: string) => {
-    const why = unaccepted(text);
-    if (why && attended) setRefusal({ session: attended.id, text: why });
-    return why === null;
-  };
-  // The box's judge (QUESTIONUI1a): its words with the answer selected, as they would go; refused alike for a choice and free words while
-  // the question's go-aheads are open, through Enter and *Send* (Codex's round-2 finding 14).
-  const boxAccepts = (text: string) => accepts(parkPicked ? choiceWords(parkPicked, text) : text);
-
-  // The person's words through the box at the foot (MSG1f, D137 §5.1): a working driven session's running door (SESS3), a
-  // park's answer, a session that ended, or one winding up. A send that did not arrive gives the words back to the box, as
-  // a message does (REV3).
-  const say = useSay();
-  // The rules agents proposed (PERM2, D74), the band's own read, and their answer's one owner: the attended session's own open
-  // ones are a wait where the person talks to it (PROPOSEHERE1b, D168 point 2). The machine's file, so a browser has none.
-  const ruleState = useRules();
-  const ruleAnswer = useRuleAnswer({ notify });
-  const onSay = (text: string, level?: Level) => {
-    if (!attended || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
-    // QUESTIONUI1a: the box's *Send* with an answer selected sends it, then the words, naming its question.
-    if (parkPicked && question) { onChoice(parkPicked, question.id, text); return; }
-    if (!text) return;
-    const session = attended.id;
-    const kind = box.kind === 'steer' ? 'steer' : box.mode === 'answer' ? 'answer' : 'say';
-    const winding = box.kind === 'say' && box.mode === 'ending';
-    const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
-    const n = sending.begin(session, { text, files: [] });
-    say.mutate({ id: session, text, ...(level ? { level } : {}) }, {
-      onSuccess: (result) => {
-        sending.answered(n);
-        if (!result.sent) {
-          giveBack();
-          setRefusal({ session, text: untaken(result, t('work.say.notTaken')) });
-          return;
-        }
-        counted(session, kind, text, 0, result);
-        setRefusal(null);
-        if (level === 'now') nowSaid(result);
-        if (kind === 'answer') notify(t('work.awaiting.answered'));
-        // Held until its record ends, and shown above the box meanwhile: the conversation shows them once kept.
-        if (winding) setEnding((was) => ({ session, words: [...(was?.session === session ? was.words : []), text] }));
-      },
-      onError: (error: unknown) => {
-        if (stillTaking(n, error)) return;
-        giveBack();
-        notify(sentence(error), 'error');
-      },
-    });
-  };
-  // *Say it again* (COWORK1c, the message-urgency design §6, §8.2): the person's own words that may have reached the agent before a
-  // restart were never sent again; this says them anew, a new word, as the person's default. What the session would not take goes back
-  // to the composer, said why, as a word said there does.
-  const onSayAgain = (words: string[]) => {
-    if (!attended || words.length === 0) return;
-    const session = attended.id;
-    const text = words.join('\n\n');
-    const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
-    say.mutate({ id: session, text }, {
-      onSuccess: (result) => {
-        if (result.sent) return;
-        giveBack();
-        setRefusal({ session, text: untaken(result, t('work.say.notTaken')) });
-      },
-      onError: (error: unknown) => {
-        giveBack();
-        notify(sentence(error), 'error');
-      },
-    });
-  };
-  // *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the repository, its first message the words
-  // this session could not go on with, attended once it opens. One act of the driver's (MSG1f2), which reads the words off
-  // the record and takes them off it, so the words the page shows are not sent. A refusal is said by its code; the driver's
-  // sentence when none could start is said whole.
-  const startFrom = useStartFrom();
-  const onStartFrom = () => {
-    if (!attended || startFrom.isPending) return;
-    startFrom.mutate({ session: attended.id }, {
-      onSuccess: (started) => {
-        if (started.why) {
-          notify(startFromRefusal(t, started.why, { quest: attended.quest }), 'error');
-          return;
-        }
-        if (!started.sessionId) {
-          notify(started.message, 'error');
-          return;
-        }
-        attend(started.sessionId);
-        if (!started.sent) notify(t('work.say.notTaken'), 'error');
-      },
-      onError: failure(notify),
-    });
-  };
-  // *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): the same session goes on in a new part of itself, handed Daoris's brief
-  // and then the words, attended once it opens. One act of the driver's; a refusal is said by its code, as the fresh start's is.
-  const goOnBrief = useGoOnBrief();
-  const onGoOnBrief = () => {
-    if (!attended || goOnBrief.isPending) return;
-    goOnBrief.mutate({ session: attended.id }, {
-      onSuccess: (moved) => {
-        if (moved.why) {
-          notify(goOnBriefRefusal(t, moved.why, { quest: attended.quest }), 'error');
-          return;
-        }
-        if (!moved.sessionId) {
-          notify(moved.message, 'error');
-          return;
-        }
-        attend(moved.sessionId);
-        if (!moved.sent) notify(t('work.say.notTaken'), 'error');
-      },
-      onError: failure(notify),
-    });
-  };
-  // *Go on in a new session* (MSG1g2, D137 §2.2): words a cooling account holds go on in a new session at the driver's next
-  // look. The driver judges and keeps the choice; what it came to is said under the words, in the page's words.
-  const goOnNew = useGoOnNew();
-  const onGoOnNew = () => {
-    if (!attended || goOnNew.isPending) return;
-    const session = attended.id;
-    goOnNew.mutate(session, {
-      onSuccess: (answer) => setNewSession({ session, answer }),
-      onError: failure(notify),
-    });
-  };
-
-  // The keeping stop (COWORK1a, the message-urgency design §3.2): the person's own press beside words held for the turn's end,
-  // asked once, `CANCEL_TURN` with `keep` for a conversation and a driven session alike, whose stop already keeps what is held.
-  // The turn stops and what waits goes next; nothing comes back to the box. No word presses it for them (D188 point 3).
-  const onKeepingStop = (answered: Answered) => {
-    if (!attended) return;
-    cancelTurn.mutate({ id: attended.id, keep: true }, {
-      onSuccess: ({ cancelled }: TurnStop) => {
-        answered.done();
-        notify(cancelled ? t('work.composer.turnStopping') : t('work.composer.noTurn'));
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    });
-  };
-
-  // Stopping the turn and keeping the conversation (CONV4a). What was waiting comes back into the box,
-  // ahead of whatever is being typed now, since it was written first; and the notice claims only the
-  // asking — a stop that lands after the words and before the turn's end leaves it ending normally.
-  const onStopTurn = () => {
-    if (!attended) return;
-    cancelTurn.mutate(attended.id, {
-      onSuccess: ({ cancelled, withdrawn }: TurnStop) => {
-        if (withdrawn.length > 0) {
-          setDraft((was) => [...withdrawn.map((message) => message.text), was.trim()].filter(Boolean).join('\n\n'));
-        }
-        // A file cannot come back into the box — the page no longer holds its bytes — so it is named,
-        // for the person to attach again (CONV4c).
-        const unsent = withdrawn.flatMap((message) => message.files);
-        const said = [
-          cancelled ? t('work.composer.turnStopping') : null,
-          withdrawn.length > 0 ? t('work.composer.withdrawn', { count: withdrawn.length }) : null,
-          unsent.length > 0 ? t('work.composer.filesNotSent', { count: withdrawn.length, names: unsent.join(', ') }) : null,
-        ].filter((sentence): sentence is string => Boolean(sentence));
-        // Sentences are joined the catalogue's way: English puts a space after a full stop, and
-        // Chinese does not (seen on the window, CONV4b).
-        notify(said.length > 0
-          ? said.reduce((first, second) => t('work.composer.twoSentences', { first, second }))
-          : t('work.composer.noTurn'));
-      },
-      onError: failure(notify),
-    });
-  };
-
-  // The person's answer to a parked session (design §4). The refusal — a move that is not theirs,
-  // a decline with nothing in it — is the host's own sentence and reaches them word for word.
-  // A finish that closes its quest (QUESTCLOSE1) sends the person's done once the finish stood: the session first, as the
-  // driver moves the process before the record, then the quest, whose refusal is the service's sentence, the finish kept.
-  // The ask the finish or decline was pressed in hears how the session's move ended (UXFIX2b2b): the refusal is said inside
-  // it, and it closes once the session landed, the quest's done being its own notice.
-  const onResolve = (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => {
-    if (!attended) return;
-    const closing = state === 'completed' && close?.as === 'done' ? attended.quest ?? null : null;
-    resolve.mutate({ id: attended.id, state, note: note ?? undefined }, {
-      onSuccess: () => {
-        answered?.done();
-        notify(t('work.awaiting.resolved', { id: attended.id, state: t(`sessionState.${state}`) }));
-        if (closing) {
-          personDone.mutate({ id: closing, note: close!.note }, {
-            onSuccess: (result) => notify(result.message),
-            onError: failure(notify),
-          });
-        }
-      },
-      onError: answered ? (error) => answered.refused(sentence(error)) : failure(notify),
-    });
-  };
-
-  // PARKANSWER1 (the owner report, 2026-10-23): a park's card answers it through the box's own say door (MSG1f), the one door that
-  // answers a park (ONEWAY1k), and as the box would (its refusals, a question changed under the page, words on their way). A choice
-  // names its question (PARKVIEW1). Settles with the sentence a refusal is said in, for the card to say beside its words.
-  const sayFromCard = (text: string, choice?: { label: string; question: string }) => new Promise<string | null>((settle) => {
-    if (!attended) { settle(null); return; }
-    const why = unaccepted(text);
-    if (why) { settle(why); return; }
-    const session = attended.id;
-    const n = sending.begin(session, { text, files: [] });
-    say.mutate({ id: session, text, ...(choice ? { question: choice.question } : {}) }, {
-      onSuccess: (result) => {
-        sending.answered(n);
-        if (!result.sent) {
-          settle(result.why === 'question-changed' ? t('work.park.changed') : untaken(result, t('work.say.notTaken')));
-          return;
-        }
-        counted(session, 'answer', text, 0, result);
-        notify(choice ? t('work.park.chose', { label: choice.label }) : t('work.awaiting.answered'));
-        settle(null);
-      },
-      // A send the page stopped waiting on may still land (SENDLOST1b): it is shown on its way, so it leaves the card.
-      onError: (error: unknown) => settle(stillTaking(n, error) ? null : sentence(error)),
-    });
+  const {
+    editQueued, parkAsk, goAheads, question, talking, draft, setDraft, chatTurns, turns, held, box, stands, goes, levels,
+    keepingStop, answering, taking, lastTurns, offered, setOption, setMentioning, treeFiles, reading, onUsage, waiting, onWaiting,
+  } = useAttendedBox({
+    t, attended, here, intake, oneTurn, conversation, live, quest, sessions: sessions.data, attendedEntry, groups: groups.data,
   });
-  const answerFromCard = (words: string) => sayFromCard(words);
-  const choiceFromCard = (label: string, words: string) =>
-    (question ? sayFromCard(choiceWords(label, words), { label, question: question.id }) : Promise.resolve(null));
-
-  // A go-ahead the park asked, answered on its page (KNOWUSE1a2, D135 §2): through one door, which sends the same session
-  // on once none of the go-aheads it asked is open, as the ask's page does (GOAHEAD2b). The person's words are the
-  // go-ahead's, never a message to the park, so nothing is counted as one; the toast names any go-ahead still open from the
-  // list as it stood at the press.
-  // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), not toasted.
-  // PARKVIEW1 (the park's ask design §4): where the park's question waits unanswered, a go-ahead keeps the park for that answer
-  // (`goesOn: false`, GOAHEAD2's provision for a caller that answers the park itself), which then sends it on with them all.
-  const onGoAhead: GoAheadAnswer = (number, approved, words, answered) => {
-    if (!attended || !parkAsk) { answered.done(); return; }
-    const sessionQuest = attended.quest;
-    const asked = goAheads;
-    parkGoAhead.mutate({ id: attended.id, ask: parkAsk, number, approved, words, ...(question ? { goesOn: false } : {}) }, {
-      onSuccess: (answer) => { notify(goAheadToast(t, number, approved, answer, { quest: sessionQuest, asked })); answered.done(); },
-      onError: (error) => answered.refused(sentence(error)),
-    });
-  };
-
-  // PARKVIEW1 (the park's ask design §4): a press in the park's box takes the box's words with it. They leave the box only once the
-  // door kept them, and only where it still begins with them, so words typed while the press was on its way stay; a refusal is said
-  // in the box, the words kept.
-  const onBoxGoAhead = (number: number, approved: boolean) => {
-    if (!attended) return;
-    const session = attended.id;
-    const words = draft;
-    setRefusal(null);
-    onGoAhead(number, approved, words.trim() || undefined, {
-      done: () => setDraft((was) => afterPress(was, words)),
-      refused: (said) => setRefusal({ session, text: said }),
-    });
-  };
-  // One of the answers its question offered, selected (QUESTIONUI1a): its label, then the words the box's *Send* took, as the park's answer
-  // through the box's one door, naming the question so a label never answers one the park no longer asks (`question-changed`). The
-  // box has let its words go: a refusal gives them back with the selection kept; a question changed keeps the words and draws the new
-  // one with none selected, as its id is another.
-  const onChoice = (label: string, asked: string, words: string) => {
-    if (!attended) return;
-    const session = attended.id;
-    const text = choiceWords(label, words);
-    const giveBack = () => { if (words) setDraft((was) => [words, was.trim()].filter(Boolean).join('\n\n')); };
-    setRefusal(null);
-    const n = sending.begin(session, { text, files: [] });
-    say.mutate({ id: session, text, question: asked }, {
-      onSuccess: (result) => {
-        sending.answered(n);
-        if (!result.sent) {
-          giveBack();
-          setRefusal({ session, text: result.why === 'question-changed' ? t('work.park.changed') : untaken(result, t('work.say.notTaken')) });
-          return;
-        }
-        setParkChoice(null);
-        counted(session, 'answer', text, 0, result);
-        notify(t('work.park.chose', { label }));
-      },
-      onError: (error: unknown) => {
-        // A send the page stopped waiting on may still land (SENDLOST1b): its words are shown on their way, so they stay out of the box.
-        if (stillTaking(n, error)) return;
-        giveBack();
-        setRefusal({ session, text: sentence(error) });
-      },
-    });
-  };
+  const words = useWords({
+    t, notify, attended, here, oneTurn, conversation, live, box, chatTurns, draft, setDraft, setRefusal, sessions, attendedEntry, stands,
+    attend,
+  });
+  const {
+    newSession, send, end, cancelTurn, onMoveWord, onDraftToHead, sending, giveBackSent, onSend, say, onSayAgain, onStartFrom,
+    onGoOnBrief, goOnNew, onGoOnNew, onKeepingStop, onStopTurn,
+  } = words;
+  const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
+  const boxWords = useBoxWords({ t, notify, attended, box, answering, question, goAheads, parkAsk, draft, setDraft, setRefusal, roster, words });
+  const { parkGoAhead, parkPicked, onParkPick, ending, boxAccepts, onSay, onBoxGoAhead } = boxWords;
 
   // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is (FIX-LOG 2026-09-23):
   // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
-  // The session a session's views follow (UX6b, D150 §8): on Sessions the attended one; off Sessions only while it runs or
-  // waits on the person, so an ended one's note no longer runs down every other view's side bar.
-  const following = followed(attended, elsewhere);
-  // The followed session's dock surface: the one it had, or the tab it opens on — the timeline (FRAME6), or Ask Daoris
-  // off Sessions with none followed.
-  const dockKey = following?.id ?? '';
-  // What stands where (DOCK1b): Ask Daoris only where a shell handed it in, and the terminal likewise.
-  // *Notifications* likewise (NOTIFY2b): where the application handed it in.
-  const present = (view: ViewId) => (view === 'ask' ? Boolean(ask) : view === 'terminal' ? terminal
-    : view === 'notifications' ? Boolean(notifications) : true);
-  const rightViews = viewsIn(placed.places, 'right', present);
-  const panelViews = viewsIn(placed.places, 'panel', present);
-  // Ask Daoris and *Notifications* are the machine's, not the attended session's: their tab stays whichever session is attended.
-  const [machineTab, setMachineTab] = useState<'ask' | 'notifications' | null>(null);
-  // A file's preview per session (PREVIEW1, D111): what a tool card or the review opened, and the tab it
-  // covered, which its × goes back to. Kept while the window is open, like the dock's tab.
-  const [previews, setPreviews] = useState<Record<string, FileOpen & { back: DockTab }>>({});
-  const previewing = following && here ? previews[following.id] ?? null : null;
-  const sessionTab = docked[dockKey] ?? dockOpensOn(elsewhere, following !== null);
-  const dock: DockTab | undefined = machineTab && rightViews.includes(machineTab)
-    ? machineTab
-    : sessionTab === 'preview'
-      ? (previewing ? 'preview' : rightViews[0])
-      : rightViews.includes(sessionTab) ? sessionTab : rightViews[0];
-  const setDock = (tab: DockTab) => {
-    const machine = tab === 'ask' || tab === 'notifications' ? tab : null;
-    setMachineTab(machine);
-    if (!machine) setDocked((was) => ({ ...was, [dockKey]: tab }));
-  };
-  // The panel's shown view: the machine's, like its height, not the attended session's.
-  const [panelPick, setPanelPick] = useState<ViewId>('console');
-  // The view being dragged (DOCK1e), so a region with nothing in it is drawn to be dropped on.
-  const [dragging, setDragging] = useState<ViewId | null>(null);
-  // 🔴 Told a beat after the drag starts, never inside it: Chromium drops a drag whose page changes
-  // under the pointer in the same task as `dragstart`, and drawing an emptied region is such a change.
-  const onDrag = (view: ViewId | null) => { window.setTimeout(() => setDragging(view), 0); };
-  const panelView = panelViews.includes(panelPick) ? panelPick : panelViews[0];
+  const {
+    setDocked, following, rightViews, panelViews, previewing, dock, setDock, setPanelPick, dragging, onDrag, panelView, openDock,
+    openPreview, closePreview, openView, moveView,
+  } = useDockViews({
+    attended, elsewhere, here, ask, notifications, terminal, placed, closed, collapsed, dockClosed, closeDock, askFocus,
+    notificationsShow, notificationsToggle,
+  });
   // Where the followed session's work stands (WORKFLOW1c, the workflow design §7): asked only while the Workflow view shows,
   // in whichever region it stands, and again at every tick under the driver's key.
   const workflowShown = following !== null && (placed.places.workflow === 'panel'
@@ -1168,114 +316,8 @@ export function WorkFrame({
   const runNodeWord = useRunNodeWord();
   // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
   const resolveHeld = useResolveHeld();
-  // The person opening the dock on a surface — from its strip.
-  const openDock = (tab: DockTab) => {
-    setDock(tab);
-    closeDock(false);
-  };
-  // A door opening a file's preview (PREVIEW1): the side bar opens on it, over the tab it covers. Handed to
-  // the conversation's cards through a context, so one stable function is handed and the latest state read.
-  const previewNow = useRef<(file: FileOpen) => void>(() => {});
-  previewNow.current = (file: FileOpen) => {
-    if (!following) return;
-    const covered = dock && dock !== 'preview' ? dock : previews[following.id]?.back ?? 'timeline';
-    setPreviews((was) => ({ ...was, [following.id]: { path: file.path, lines: file.lines ?? null, back: covered } }));
-    openDock('preview');
-  };
-  const openPreview = useCallback((file: FileOpen) => previewNow.current(file), []);
-  const closePreview = () => {
-    if (!following) return;
-    const back = previews[following.id]?.back ?? 'timeline';
-    setPreviews(({ [following.id]: _closed, ...rest }) => rest);
-    if (dock === 'preview') setDock(back);
-    // A side bar the preview leaves with nothing in it closes, as one a moved view leaves does (DOCK1b).
-    if (rightViews.length === 0) closeDock(true);
-  };
   const previewFile = useTreeFile(previewing ? following!.id : null, previewing?.path ?? null);
   const previewPatch = useReviewedPatch(previewing ? following!.id : null, previewing?.path ?? null);
-  // The person asking for a view by a door that does not know where it stands — the palette's review,
-  // Ask Daoris's `F1` — opens whichever region holds it, on it.
-  const openView = (view: ViewId) => {
-    if (placed.places[view] === 'panel') {
-      setPanelPick(view);
-      closed.setPanel(false);
-    } else {
-      openDock(view);
-    }
-  };
-  // A view moved (DOCK1b): shown where it went, as VS Code opens the container a view lands in, and a
-  // region it leaves with nothing closes, as VS Code hides an empty one.
-  const moveView = (view: ViewId, to: Place) => {
-    const from = placed.places[view];
-    // A drop ends the drag here: the tab it started from is gone by the time `dragend` fires on it.
-    setDragging(null);
-    if (from === to) return;
-    placed.move(view, to);
-    logEvent('panel.moved', { view, region: to });
-    // Not `openView`: this render's places still say where the view was.
-    if (to === 'panel') {
-      setPanelPick(view);
-      closed.setPanel(false);
-    } else {
-      openDock(view);
-    }
-    if (viewsIn({ ...placed.places, [view]: to }, from, present).length === 0) {
-      if (from === 'panel') closed.setPanel(true);
-      else closeDock(true);
-    }
-  };
-
-  // The person asked for Ask Daoris — the right side bar's toggle, `F1`, the palette: its region opens on it.
-  useEffect(() => {
-    if (askFocus <= 0) return;
-    openView('ask');
-    // Only a new ask for it; where it stands and the closings are read, not watched.
-  }, [askFocus]);
-
-  // NOTIFY2b (the notification design §2.1): *Notifications* shown where it stands, by a door that asks for it; and what its region
-  // showed before the bell opened it, so the bell's next press gives the region back: the view it held, or closed where it was.
-  const notificationsBack = useRef<{ place: Place; view: ViewId | DockTab | undefined; closed: boolean } | null>(null);
-  const notificationsShown = placed.places.notifications === 'panel'
-    ? !collapsed && panelView === 'notifications'
-    : !dockClosed && dock === 'notifications';
-  useEffect(() => {
-    if (notificationsShow <= 0) return;
-    if (!notificationsShown) {
-      const place = placed.places.notifications;
-      notificationsBack.current = { place, view: place === 'panel' ? panelView : dock, closed: place === 'panel' ? collapsed : dockClosed };
-    }
-    openView('notifications');
-    // Only a new ask for it, as Ask Daoris's.
-  }, [notificationsShow]);
-  useEffect(() => {
-    if (notificationsToggle <= 0) return;
-    const place = placed.places.notifications;
-    if (!notificationsShown) {
-      notificationsBack.current = { place, view: place === 'panel' ? panelView : dock, closed: place === 'panel' ? collapsed : dockClosed };
-      openView('notifications');
-      return;
-    }
-    const back = notificationsBack.current?.place === place ? notificationsBack.current : null;
-    notificationsBack.current = null;
-    const others: (ViewId | DockTab)[] = (place === 'panel' ? panelViews : rightViews).filter((view) => view !== 'notifications');
-    if (back?.closed) {
-      // Opened from a closed region: the region closes, as it was.
-      if (place === 'panel') closed.setPanel(true);
-      else closeDock(true);
-      return;
-    }
-    // The view the region held, where it still stands there (or the file's preview it covered); else the region's first other view.
-    const held = back?.view && back.view !== 'notifications' && (others.includes(back.view) || back.view === 'preview') ? back.view : others[0];
-    if (!held) {
-      if (place === 'panel') closed.setPanel(true);
-      else closeDock(true);
-    } else if (place === 'panel') {
-      setPanelPick(held as ViewId);
-    } else {
-      setDock(held);
-    }
-    // Only a new press of the bell; where it stands and what it showed are read, not watched.
-  }, [notificationsToggle]);
 
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
@@ -1286,19 +328,6 @@ export function WorkFrame({
     else if (intent === 'atWork') openView('atWork');
   }
   if (!intent && taken) setTaken(null);
-
-  // A go to New conversation (NEW1d-b): consumed by its id, as `intent` is by identity. The repository is NEW1c's pick, which waits
-  // until the registry lists it; the words go above what is typed, as `keepDraft` puts them. Files are not touched.
-  const [composed, setComposed] = useState<number | null>(null);
-  if (compose && compose.id !== composed) {
-    setComposed(compose.id);
-    newConversationPressed();
-    if (compose.repository) setPickNew((last) => ({ repository: compose.repository!, n: (last?.n ?? 0) + 1 }));
-    if (compose.sentence) {
-      const sentence = compose.sentence;
-      setNewDraft((was) => [sentence, was.trim()].filter(Boolean).join('\n\n'));
-    }
-  }
 
   // The console and its streams (CONSOLE2c), for whichever region it stands in. A session with nothing
   // held here says so as a sentence, not as an empty bordered well, which read as a field on the
@@ -1540,7 +569,6 @@ export function WorkFrame({
     : null;
   useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
 
-  const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   // Each actor's order (MODELROLE1e): the hand-over's offer and its ask draw from the session's actor's, empty in a browser.
   const actors = useActors();
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
@@ -1562,207 +590,15 @@ export function WorkFrame({
       return use ? machineScope(use).list : null;
     },
   };
-  // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
-  // lists those still on their way, with the person's yes to an agent's ask that waits on it and a door to each helper.
-  const helperAsks = useSessionHelpers(attended && here ? attended.id : null);
-  // The pieces it asked other agents to write (COAGENT1b, D199): this machine's own files, so only for its own record. A driven session
-  // working in a tree of its own leads them; a conversation's lead is COAGENT1c's, and a partner, a helper, a reviewer or an intake
-  // leads none.
-  const leads = Boolean(attended && here && attended.kind !== 'chat' && !attended.serves && !attended.opinion && !attended.ask && attended.tree);
-  const partnerPieces = useSessionPartners(attended && here ? attended.id : null);
-  // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3): this machine's own files, so only for its own record.
-  const handOverAsk = useSessionHandOverAsk(attended && here ? attended.id : null);
-  const approveHandOver = useApproveHandOver();
-  const declineHandOver = useDeclineHandOver();
-  // Where its work stands (FABRIC-MILESTONE1b): the driver's derivation for this session, read only for this machine's own record,
-  // whose branch and tree are this machine's. A session no record names a unit for (a chat with no tree) shows none.
-  const milestones = useWorkState(attended && here ? attended.id : null, Boolean(attended && here));
-  const milestoneUnits = milestones.data?.units ?? [];
-  const milestone = (attended && milestoneUnits.length === 1 ? milestoneUnits[0] : milestoneUnits.find((unit) => unit.session === attended?.id)) ?? null;
-  // INTEGRATE1h: its unit's integration state, one line in the head's facts, from the integration record.
-  const integration = useIntegrationHead(milestone?.unit);
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
     && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
   const coolsUntil = between ? coolingFor(attended, roster, accounts.data, new Date()) : null;
 
-  // What only this frame can do with a session (SESSUX1d, D126 §3.1), handed to the one owner of the acts at both doors,
-  // the page header and the rows: each attends the session first, as a press on its row would.
-  const doors: SessionDoors = {
-    answer: (id) => {
-      chosen();
-      attend(id);
-      setAnswerFocus((was) => ({ session: id, at: (was?.at ?? 0) + 1 }));
-    },
-    stop: (id) => {
-      chosen();
-      attend(id);
-      setDeleteAsking(null);
-      setHandOverAsking(null);
-      setHelperAsking(null);
-      setPauseAsking(null);
-      setStopAsking(id);
-    },
-    // *Delete…* (SESSUX1f): attended, its ask under its header, as a stop asks.
-    delete: (id) => {
-      chosen();
-      attend(id);
-      setStopAsking(null);
-      setHandOverAsking(null);
-      setHelperAsking(null);
-      setPauseAsking(null);
-      setDeleteAsking(id);
-    },
-    // *Go on with another agent…* and *Stop and hand over…* (MIXAGENT1b-i): attended, the hand-over's ask under its header.
-    handOver: (id) => {
-      chosen();
-      attend(id);
-      setStopAsking(null);
-      setDeleteAsking(null);
-      setHelperAsking(null);
-      setPauseAsking(null);
-      setHandOverChosen(null);
-      setHandOverAsking(id);
-    },
-    // *Ask another agent…* (MIXAGENT2b): attended, the helper's ask under its header, as a hand-over asks.
-    askHelper: (id) => {
-      chosen();
-      attend(id);
-      setStopAsking(null);
-      setDeleteAsking(null);
-      setHandOverAsking(null);
-      setPauseAsking(null);
-      setHelperAsking(id);
-    },
-    // The conversation a hand-over opened, attended as a start's is (MIXAGENT1b-i).
-    attend: (id) => {
-      chosen();
-      attend(id);
-    },
-    // *Pause quest…* and *Pause ask…* (PAUSE1e): attended, the pause's ask under its header, as a stop asks.
-    pause: (id, target) => {
-      chosen();
-      attend(id);
-      setStopAsking(null);
-      setDeleteAsking(null);
-      setHandOverAsking(null);
-      setHelperAsking(null);
-      setPauseAsking({ session: id, target });
-    },
-    // Its review: attended, with the dock open on its work.
-    review: (id) => {
-      chosen();
-      attend(id);
-      setDocked((was) => ({ ...was, [id]: 'review' }));
-      closeDock(false);
-    },
-    // A terminal in its folder (§3.5), only where the terminal is a view here: the panel's, shown if it was hidden.
-    ...(terminal ? {
-      terminal: (folder: string) => {
-        terminals.open({ cwd: folder });
-        openView('terminal');
-      },
-    } : {}),
-  };
+  const asks = useHeadAsks({ selected, chosen, attend, setDocked, closeDock, terminal, terminals, openView });
+  const { archivingEnded, setArchivingEnded, answerFocus, setAnswerFocus, doors } = asks;
   const actions = useSessionActs({ notify, doors, entries });
-  // The head's helpers (MIXAGENT2b): the asks read above, the yes and the no (HELPERNO1) through the acts' one owner, and a door
-  // to each helper.
-  const helperWaits = attended && here && helperAsks.data ? {
-    asks: helperAsks.data,
-    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
-    onApprove: (ask: string, answered: Answered) => actions.approveHelperNow(attended.id, ask, answered),
-    onDecline: (ask: string, answered: Answered) => actions.declineHelperNow(attended.id, ask, answered),
-    onOpen: (helper: string) => {
-      chosen();
-      attend(helper);
-    },
-    busy: actions.approvingHelper,
-  } : null;
-  // Its pieces (COAGENT1b, D199; the co-agent design §6.1): the pieces read above, the ask where it may lead one, a door to each
-  // partner and a working piece's stop, through the acts' one owner.
-  const pieceSection: PieceSection | null = attended && here && (leads || (partnerPieces.data?.length ?? 0) > 0) ? {
-    pieces: partnerPieces.data ?? [],
-    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
-    ask: leads ? {
-      from: attended.adapter,
-      roster: agentRoster,
-      busy: actions.askingPartner,
-      onAsk: (asked, answered) => actions.askPartnerNow(attended, asked, answered),
-    } : undefined,
-    onOpen: (partner: string) => {
-      chosen();
-      attend(partner);
-    },
-    onStop: (partner: string, answered: Answered) => actions.stopPartnerNow(partner, answered),
-    stopping: actions.stopping,
-  } : null;
-  // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3), with the person's yes and no: a wait at the foot while the look
-  // holds it on their word. A refusal is said beside the presses, in the page's words for its code.
-  const handOverWord = (answer: HandOverWord, answered: Answered) =>
-    (answer.stands ? answered.done() : answered.refused(handOverRefused(t, answer.why, answer.message)));
-  const handOverWait: HandOverAskWait | null = attended && here && handOverAsk.data ? {
-    ask: handOverAsk.data,
-    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
-    onApprove: (ask, answered) => approveHandOver.mutate({ session: attended.id, ask }, {
-      onSuccess: (answer) => handOverWord(answer, answered),
-      onError: (error) => answered.refused(sentence(error)),
-    }),
-    onDecline: (ask, answered) => declineHandOver.mutate({ session: attended.id, ask }, {
-      onSuccess: (answer) => handOverWord(answer, answered),
-      onError: (error) => answered.refused(sentence(error)),
-    }),
-    busy: approveHandOver.isPending || declineHandOver.isPending,
-  } : null;
-  // The tool calls the attended session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): the driver's own
-  // list, this machine's record alone, asked every few seconds while it runs (the routes publish nothing), and the answer's one
-  // owner, so the head and the foot press the same. A refusal of the answer is said where it was pressed, in the catalogue's words.
-  const permissionWaits = usePermissionWaits(Boolean(attended && here && (attended.state === 'working' || attended.state === 'starting')));
-  const answerPermission = useAnswerPermission();
-  const heldPermissions: PermissionWaits | null = attended && here && permissionWaits.data ? {
-    waits: permissionWaits.data,
-    onAnswer: (held, option, answered) => answerPermission.mutate({ session: held.session, request: held.request, option }, {
-      onSuccess: (answer) => (answer.answered ? answered.done() : answered.refused(permissionSaid(t, answer.why, answer.message))),
-      onError: (error) => answered.refused(sentence(error)),
-    }),
-    busy: answerPermission.isPending,
-  } : null;
-  // The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3): read off this
-  // machine's marks under the sessions' key, and the answer's one owner, so the head and the foot press the same. Its answer said where
-  // the press was made; a refusal in the catalogue's words.
-  const answerWaits = useAnswerWaits();
-  const answerAlone = useAnswerAlone();
-  const heldAnswers: AnswerWaits | null = attended && here && answerWaits.data ? {
-    waits: answerWaits.data,
-    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
-    onAnswer: (wait, goOn, answered) => answerAlone.mutate({ session: wait.session, goOn }, {
-      onSuccess: (answer) => {
-        if (!answer.answered) {
-          answered.refused(answerAloneSaid(t, answer.why, answer.message));
-          return;
-        }
-        notify(t(goOn ? 'work.wait.answer.wentOn' : 'work.wait.answer.kept'));
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    }),
-    busy: answerAlone.isPending,
-  } : null;
-  // The git go-aheads its git door holds (GITAUTH1f, D198 point 12): the rows What needs you was pushed, so the head, the foot and the
-  // band read one judgement and press one door; its answer said where it was pressed, a refusal in the driver's words.
-  const attention = useAttention();
-  const gitAnswer = useGitAnswer();
-  const heldGitAsks: GitAskWaits | null = attended && here && attention.state === 'known' ? {
-    waits: attention.rows.flatMap((row) => (row.kind === 'git-ask' && row.gitAsk ? [{ id: row.id, since: row.since, gitAsk: row.gitAsk }] : [])),
-    onAnswer: (ask, allow, answered) => gitAnswer.mutate({ ask: ask.id, answer: allow ? 'allow' : 'refuse' }, {
-      onSuccess: (answer) => {
-        notify(t(!allow ? 'work.wait.gitAsk.refused' : answer.waiting ? 'work.wait.gitAsk.allowed' : 'work.wait.gitAsk.kept'));
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    }),
-    busy: gitAnswer.isPending,
-  } : null;
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
   // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
@@ -1807,545 +643,27 @@ export function WorkFrame({
   };
   const heavyPart = attended && attendedRuns ? heavyPartOf(heavySlot.data, attended.id) : null;
   useNow(grouping?.calling || heavyPart ? 15_000 : null);
-  // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
-  // put it: the review's own plan, asked only where there is something to land, under the review's key.
-  const driverOffers = attended && here && grouping?.lands ? grouping.lands : null;
-  // ACCEPTFOOT1 (D164's note): an open conversation's record stays `working` between turns, so the driver's look offers its tree
-  // nothing; once its turn has ended, by the driver's word on its turns, the review's own answer says what is beyond the line.
-  const talksInTree = !driverOffers && talking && attended
-    ? ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root)
-    : null;
-  const turnHeld = talksInTree ? chatTurns[attended!.id] : undefined;
-  const turnEnded = Boolean(turnHeld && !turnHeld.taking && turnHeld.queued.length === 0);
-  // When this frame saw that turn end, or first saw the conversation at rest: its record need not move with a turn, so the review is
-  // read again from then, and an answer read before it, another turn's, offers nothing meanwhile.
-  const [restsSince, setRestsSince] = useState<{ session: string; at: number } | null>(null);
-  useEffect(() => {
-    setRestsSince(turnEnded && attended ? { session: attended.id, at: Date.now() } : null);
-  }, [attended?.id, turnEnded]);
-  const endedAt = restsSince && restsSince.session === attended?.id ? restsSince.at : null;
-  // How the tree stands against its line, from the review's own answer (REVIEWBASE5): the same query the review reads, so the
-  // head offers no *Accept…* where the review says nothing is beyond the line. Asked only where there is something offered, or a
-  // conversation's turn has ended in a tree of its own, whose read is as fresh as that end.
-  const reviewMoved = attended && endedAt !== null && endedAt > Date.parse(attended.updated) ? new Date(endedAt).toISOString() : attended?.updated;
-  const reviewRead = useSessionDiff(driverOffers || turnEnded ? attended!.id : null, attended ? { updated: reviewMoved!, live: SESSION_ACTIVE.has(attended.state) } : null);
-  const behind = reviewRead.data?.behind ?? null;
-  const lands = driverOffers ?? conversationOffer({
-    tree: talksInTree, turn: turnHeld, review: reviewRead.data, endedAt, readAt: reviewRead.dataUpdatedAt,
+  const work = useSessionLanding({
+    t, notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, runNodeWord,
+    attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  // The branch a moved tree is on (TREEFOLLOWWEB2): the head names it where the clean-up lists no `daoris/<folder>` row for it.
-  const ownBranch = attended && here ? grouping?.work?.branch ?? null : null;
-  // LANDNAME1b: the branch name typed in the head's land ask, so its plan is asked again with it and a refusal shows first.
-  const [landName, setLandName] = useState('');
-  const landing = useLanding(lands ? attended!.id : null, landName);
-  // Another session's page is another ask: a name typed for one is not carried to the next.
-  useEffect(() => setLandName(''), [attended?.id]);
-  const land = useLandSessionTree();
-  // CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused for what the page can word says it in the reader's language; any
-  // other refusal is the driver's sentence, as before.
-  const pressRefusal = (result: { message: string; press?: string | null }) =>
-    result.press && ['busy', 'elsewhere', 'moved', 'asked'].includes(result.press) ? t(`work.review.chatPress.${result.press}`) : result.message;
-  // A landing's answer told back to the press that made it, *Accept…*'s and *Accept without the look…*'s alike.
-  const landed = (answered: Answered) => ({
-    onSuccess: (result: { done: boolean; message: string; withheld?: string | null; press?: string | null; carried?: { told: boolean } | null }) => {
-      if (!result.done) {
-        // LANDBACK1 part 1: the press carried the session on and kept the person's yes: it took effect, so it is said, never refused.
-        if (result.carried?.told) {
-          notify(result.message);
-          answered.done();
-          return;
-        }
-
-        answered.refused(pressRefusal(result));
-        return;
-      }
-      // FABRIC-CLOSE1h9: a push held back is said as such, with the hand-off its review offers, never as an ordinary landing.
-      if (result.withheld) notify(`${result.message} ${t('work.review.pushHeldReview')}`, 'error');
-      else notify(result.message);
-      answered.done();
-    },
-    onError: (error: unknown) => answered.refused(sentence(error)),
+  const {
+    ownBranch, landing, gateHolds, headReview, headOpinion, discards, discardHeld, landsNow, workAskAt, entryOffered, landEntry, entryAt,
+    entryAccept,
+  } = work;
+  const {
+    partnerPieces, helperWaits, pieceSection, waits, answerBelow, standing, setAnchored, toEvent, waitsOnScreen, goToWait, seekAt,
+    ruleAskAt, waitPanel, tail, setTail, awayFromTop, toTop,
+  } = useAttendedWaits({
+    t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, onAnswerAsk,
+    boxWords, openView, work, talking, centre,
   });
-  // The review's gate where it holds that work (REVIEWENV1g, design §3.1): the set-up step's record, whether Daoris still serves
-  // its tab here, and the verdict's presses, each by the one owner; *Set it up* follows the session's own quest.
-  const reviewActs = useReviewActs({ notify });
-  const inReview = useDriver().data?.inReview;
-  const gateHolds = reviewHolds(landing.data);
-  const gateStep = gateHolds?.quest ? (quests.data ?? []).find((each) => each.id === gateHolds.quest) ?? null : null;
-  const headReview: HeadReview | null = gateHolds && attended ? {
-    step: gateStep,
-    served: inReview && gateHolds.quest ? inReview.find((row) => row.quest === gateHolds.quest)?.served ?? false : null,
-    busy: reviewActs.busy || runNodeWord.isPending,
-    acts: {
-      ...reviewActs.actsFor({
-        state: reviewState(gateHolds.state),
-        step: gateHolds.quest ?? null,
-        record: gateStep,
-        work: attended.quest ?? null,
-        open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
-      }),
-      // A chat run's look is a node of its graph: the person's skip of it, then the one Accept (WORKFLOWCLEAN1h).
-      ...(gateHolds.chatRun && gateHolds.lookNode && here ? {
-        withoutLook: (words: string | null, answered: Answered) => runNodeWord.mutate(
-          { run: gateHolds.chatRun!, node: gateHolds.lookNode!, act: 'skip', words },
-          {
-            onSuccess: (skipped) => {
-              if (!skipped.done) { answered.refused(skipped.message ?? skipped.refused ?? ''); return; }
-              land.mutate({ id: attended.id }, landed(answered));
-            },
-            onError: (error: unknown) => answered.refused(sentence(error)),
-          }),
-      } : {}),
-    },
-  } : null;
-  // The second opinion's gate before it (XAGENT1g, the second-agent design §7, §9): its findings beside their answers, read only
-  // where a level asks one, and its presses by the one owner; a finding's place opens the side bar's preview.
-  const opinionActs = useOpinionActs({ notify });
-  const secondOpinion = opinionAsked(landing.data);
-  const opinionRead = useOpinionGate(secondOpinion && attended ? attended.id : null);
-  const headOpinion: HeadOpinion | null = secondOpinion && attended ? {
-    detail: opinionRead.data?.detail ?? null,
-    busy: opinionActs.busy,
-    acts: opinionActs.actsFor({ session: attended.id, gate: secondOpinion, openSession: attend }),
-    onOpenFile: openPreview,
-  } : null;
-  // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
-  const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
-  const discardTree = useDiscardSessionTree();
-  // Its line of work's one Accept, or its ask's, lands it too (ACCEPTALL1h): the head's own press waits while either is under way.
-  const lineLandsNow = useUnderWaySubject('LAND_ENTRY', attendedEntry?.entry ?? null);
-  const askLandsNow = useUnderWaySubject('LAND_ASK', channelAsk);
-  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null) || lineLandsNow || askLandsNow;
-  const discardsNow = useUnderWay('DISCARD_SESSION_TREE', attended?.id ?? null);
-  // Its one press, for the head and, in Accept's place, the review (SQUASHTIDY1f): never forced from here, a refusal the
-  // driver's sentence inside the ask, and the review's Discard the door that asks twice.
-  const discardHeld = discards && attended ? (answered: Answered) => discardTree.mutate({ id: attended.id }, {
-    onSuccess: (result) => {
-      if (!result.done) {
-        answered.refused(result.message);
-        return;
-      }
-      notify(result.message);
-      answered.done();
-    },
-    onError: (error) => answered.refused(sentence(error)),
-  }) : undefined;
-  // What waits on the person, handed to the head and to the strip at the foot alike (WAITFOOT1b, D168 point 3): one object, so
-  // a press in either place is the same press with the same pending, and its answer, the record read again, settles both.
-  const waits: WaitProps | null = attended ? {
-    session: attended,
-    resolving: resolve.isPending || parkGoAhead.isPending || personDone.isPending,
-    onResolve: here ? onResolve : undefined,
-    // Its card's answer (PARKANSWER1): through the box's say door, the one door that answers a park (ONEWAY1k).
-    onAnswerSession: here ? answerFromCard : undefined,
-    onAnswerChoice: here && answering && question ? choiceFromCard : undefined,
-    // QUESTIONUI1a (the design §8.4): the head's card's rows are the frame's selection too, so a row chosen there is chosen below.
-    answerPick: here && answering && question ? { selected: parkPicked, onSelect: onParkPick } : undefined,
-    onAnswerAsk: here ? onAnswerAsk : undefined,
-    // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
-    goAheads,
-    onGoAhead: here ? onGoAhead : undefined,
-    // Its question (PARKVIEW1), and whether the box below is the park's answer box, which carries every press of what it asks: then
-    // the strip draws none of the park's waits, and the head lists them with no press. A parked chat's composer draws none of it.
-    question,
-    parkBox: answering,
-    // The rules it proposed (PROPOSEHERE1b): settled through the band's own door, then, on an *Allow*, the session told so as its
-    // next turn, which is composed with the rule. One that takes no words now (its box's line, an intake) is not told, and says so.
-    rules: {
-      proposals: ruleState.data?.proposals,
-      onAnswer: here
-        ? (proposal, accept, answered) => ruleAnswer.answer(proposal, accept, answered, intake || box.kind === 'line'
-          ? null
-          : { session: attended.id, say: (text) => say.mutateAsync({ id: attended.id, text }) })
-        : undefined,
-      busy: ruleAnswer.busy,
-      heard: !intake && box.kind !== 'line',
-    },
-    // The helpers it asked for (MIXAGENT2b), with the yes and the no: an agent's ask the look holds waiting on the person's word is
-    // one of its waits, at the head and at the foot alike (MIXAGENT2c, D168).
-    helpers: helperWaits,
-    // Its agent's own ask to hand it over (MIXAGENT1c): one of its waits while the look holds it on the person's word, the strip's.
-    handOver: handOverWait,
-    // The tool calls it holds for the person's answer (AUTONOMY1b3c): one of its waits, at the head and at the foot alike.
-    permissions: heldPermissions,
-    // A third answer alone the bound holds for the person (COWORK1e): one of its waits, at the head and at the foot alike.
-    answers: heldAnswers,
-    // A git go-ahead its git door holds (GITAUTH1f): one of its waits, at the head and at the foot alike.
-    gitAsks: heldGitAsks,
-    // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
-    onReview: () => openView('review'),
-    // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
-    // once it landed and a refusal said inside the ask (UXFIX2).
-    lands,
-    review: headReview,
-    behind,
-    opinion: headOpinion,
-    landing: landing.data,
-    planning: landing.isPlaceholderData,
-    // The second opinion's token rides with the press that answers what it showed (XAGENT1g).
-    onLand: lands ? (answered, answers, branch) => land.mutate({ id: attended.id, answers, branch }, landed(answered)) : undefined,
-    onSayRebase: (text) => say.mutateAsync({ id: attended.id, text }).then((answer) => answer.sent),
-    onName: lands ? setLandName : undefined,
-    // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).
-    discards,
-    onDiscardTree: discardHeld,
-    // Under way for this session from either place or another window (STATEHUB1c, D169 point 7), never another session's press.
-    workBusy: landsNow || discardsNow,
-  } : null;
-  // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3). The session's
-  // own press (REVIEWFLOW1a) is that ask in the place of a part's.
-  const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' | 'review' } | null>(null);
-  const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
-    open: workAsk?.session === attended.id && workAsk.at === at,
-    onOpen: (open) => setWorkAsk((was) => (open
-      ? { session: attended.id, at }
-      : was?.session === attended.id && was.at === at ? null : was)),
-  } : undefined);
-  // ACCEPTALL1 (D167's 2026-10-15 amendment), REVIEWFLOW1a: its line of work's one Accept, where its parts offer work to land and
-  // more than one does or the attended part has none of its own; the plan reads git for every part, so it is asked only once the ask
-  // is open.
-  const entryOffered = attendedEntry && here
-    ? attendedEntry.parts.filter((part) => (groups.data ?? []).some((row) => row.session === part.session && row.lands)).length
-    : 0;
-  const entryAccepts = attendedEntry && (entryOffered > 1 || (entryOffered === 1 && !lands)) ? attendedEntry.entry : null;
-  const entryPlan = useEntryLanding(entryAccepts, entryAccepts !== null && Boolean(attended && workAsk?.session === attended.id));
-  const landEntry = useLandEntry();
-  // Under way in any window (ACCEPTALL1e): this one's press from its send, another's from the driver's telling.
-  const entryLandsNow = useUnderWaySubject('LAND_ENTRY', entryAccepts);
-  const entryBase: ComponentProps<typeof EntryAccept> | undefined = entryAccepts && attendedEntry ? {
-    scope: 'entry',
-    offered: entryOffered,
-    open: false,
-    onOpen: () => {},
-    plans: entryPlan.data ? [entryPlan.data] : null,
-    reading: entryPlan.isFetching && !entryPlan.data,
-    busy: entryLandsNow,
-    numberOf: (session) => attendedEntry.parts.findIndex((part) => part.session === session) + 1 || null,
-    // Told back to its ask: every part landed, or the driver's sentence of what landed and what was refused, said inside it.
-    onLand: (leaveOut, answered) => landEntry.mutate({ entry: entryAccepts, parts: entryOffered, leaveOut }, {
-      onSuccess: (result) => {
-        if (!result.done) {
-          answered.refused(result.message);
-          return;
-        }
-        notify(result.message);
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    }),
-  } : undefined;
-  // The press where it is drawn: its ask open there, and held where the ask is open in another place (D168 point 3).
-  const entryAt = (at: 'head' | 'foot' | 'review'): ComponentProps<typeof EntryAccept> | undefined => {
-    if (!entryBase || !attended) return undefined;
-    const mine = workAsk?.session === attended.id ? workAsk.at : null;
-    return {
-      ...entryBase,
-      open: mine === at,
-      held: mine !== null && mine !== at,
-      onOpen: (open) => setWorkAsk((was) => (open
-        ? { session: attended.id, at }
-        : was?.session === attended.id && was.at === at ? null : was)),
-    };
-  };
-  const entryAccept = entryAt('head');
-  // WAITFOOT1c (D168 point 4): the waits that stand where the strip draws them, and the events that raised them, which the
-  // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
-  // leads to its line where it is on screen (WAITFOOT2b).
-  const answerBelow = answering || (talking && box.kind === 'chat');
-  const standing = attended && here && waits ? waitsOf({ ...waits, entry: entryAccept, answerBelow }) : [];
-  // PARKVIEW1: where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
-  const inTheBox = (wait: AnchorWait) => answering && (wait === 'question' || wait.startsWith('goAhead:'));
-  const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
-  const toEvent = attended && anchored?.session === attended.id ? waitEvents(anchored.anchored, anchored.show) : undefined;
-  // One wait in one place on the screen (WAITFOOT2a, D168's WAITFOOT2 note): while the head's waits are wholly on screen the
-  // strip stands aside, and a raising block's *To the wait* leads to the head's line instead of the strip's.
-  const waitsOnScreen = useWaitsOnScreen(centre);
-  const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'head' | 'foot' | 'box' } | null>(null);
-  // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
-  useEffect(() => { setToWait(null); }, [attended?.id]);
-  // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's question and
-  // go-aheads to the box that answers them (PARKVIEW1), which is always drawn. The head's *next* leads the same way (REVIEWFLOW1b).
-  const goToWait = (anchor: AnchorWait) => {
-    if (!attended) return;
-    const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
-    setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
-  };
-  const seekAt = (at: 'head' | 'foot' | 'box') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);
-  // And a rule's *Allow…* (PROPOSEHERE1b), by the proposal it asks about: open in the head or at the foot, never both.
-  const [ruleAsk, setRuleAsk] = useState<{ session: string; id: string; at: 'head' | 'foot' } | null>(null);
-  const ruleAskAt = (at: 'head' | 'foot'): RuleAsk | undefined => (attended ? {
-    open: ruleAsk?.session === attended.id && ruleAsk.at === at ? ruleAsk.id : null,
-    onOpen: (id) => setRuleAsk((was) => (id !== null
-      ? { session: attended.id, id, at }
-      : was?.session === attended.id && was.at === at ? null : was)),
-  } : undefined);
-  // The waiting panel's height, kept per viewer (WAITPANEL1); and the conversation's presses drawn above it, so neither is ever
-  // under it: *Back to bottom* told by the conversation (`onTail`), *To the top* once the reader is down from the head.
-  const waitPanel = useWaitPanelHeight();
-  const [tail, setTail] = useState<TailState | null>(null);
-  const awayFromTop = useAwayFromTop(centre, attended?.id);
-  // *To the top* (D168 point 1, above the waiting panel since WAITPANEL1): the record's head, where every wait stands with its
-  // reading, the focus with it.
-  const toTop = () => {
-    const element = centre.current;
-    if (!element) return;
-    // A test's DOM has no scrollTo on elements; a property set is the same place without the glide.
-    if (typeof element.scrollTo === 'function') element.scrollTo({ top: 0, behavior: 'smooth' });
-    else element.scrollTop = 0;
-    element.querySelector<HTMLElement>('[data-record-head]')?.focus({ preventScroll: true });
-  };
-  const attendedFacts: ActFacts | null = attended
-    ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
-    : null;
-  const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
-  // LIMITRESUME1d (D206 §3.7): a driven line an account's limit cut off, every account it may run on cooling, says under its header
-  // when it resumes by itself and how, with the person's ways out beside it: *Go on now with…* (the hand-over's ask), *Pause quest…*
-  // and the account's *Try now*. Read from the accounts the page holds, never a guess: no walk that waits, no line.
-  const attendedWorkspace = attended
-    ? (registry.data ?? []).find((row) => row.repository === attended.repository)?.workspace || 'default'
-    : 'default';
-  const limitWait = attended && here && limitedLine(attended, quest?.status, Boolean(grouping?.pausedBy))
-    ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts.data, now: new Date() })
-    : null;
-  // LIMITRESUME1d2 (D206 §3.5, §3.7): a conversation says its wait from its events alone (`chat.limit-waits`), worded by the walk
-  // where the page holds it, else by the driver's own line. Its ways out: *Go on now with…*, *Stop…* while it runs or *Stop waiting*
-  // once it ended, and *Try now*.
-  const conversationHeld = attended && here && attended.kind === 'chat' && chatHeld?.session === attended.id ? chatHeld.held : null;
-  const conversationWait = conversationHeld && attended
-    ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts.data, now: new Date() })
-    : null;
-  const conversationLines = conversationHeld && attended
-    ? chatLimitWaitSaid(t, {
-      held: conversationHeld,
-      wait: conversationWait,
-      label: (account) => nameOf(attended.adapter, account),
-      language: i18n.language,
-      names: accountNames(roster),
-      now: new Date(),
-    })
-    : null;
-  const waitLines = limitWait && attended
-    ? limitWaitSaid(t, limitWait, (account) => nameOf(attended.adapter, account))
-    : conversationLines;
-  const waitAccount = limitWait?.account ?? conversationWait?.account ?? attended?.profile ?? null;
-  // The line, the same at the head and the foot (D206 §3.7): one element, its presses the same presses.
-  const limitLine = (className: string) => (waitLines && attended ? (
-    <LimitWaitLine
-      // Keyed by the session and the place: a refusal said in one is never another's (RELSPAM1).
-      key={`limit:${attended.id}`}
-      className={className}
-      lines={waitLines}
-      busy={actions.handingOver || accountUse.isPending || stopWaiting.isPending}
-      refusal={limitRefusal?.session === attended.id ? limitRefusal.sentence : null}
-      onGoOnNow={headActs.includes('handOver') ? () => doors.handOver?.(attended.id) : undefined}
-      onPause={limitWait && attended.quest ? () => doors.pause?.(attended.id, { scope: 'quest', id: attended.quest! }) : undefined}
-      onStop={!limitWait && live && headActs.includes('stop') ? () => doors.stop?.(attended.id) : undefined}
-      onStopWaiting={!limitWait && !live ? () => {
-        setLimitRefusal(null);
-        stopWaiting.mutate(attended.id, {
-          onSuccess: (answer) => {
-            if (!answer.stopped) setLimitRefusal({ session: attended.id, sentence: answer.message });
-          },
-          onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }),
-        });
-      } : undefined}
-      onTryNow={() => {
-        setLimitRefusal(null);
-        accountUse.mutate(
-          { harness: attended.adapter, action: 'ready', ...(waitAccount ? { profile: waitAccount } : {}) },
-          { onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }) },
-        );
-      }}
-    />
-  ) : null);
-  // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
-  // account is cut or near its limit by its scope's near (never the agent's pace warning alone, USAGEREAD3b) and another agent
-  // has an account the walk would take. No driver read.
-  // MODELROLE1e (D205 §3.5(e)): its order is the session's actor's, Build's for a driven line and Chat's for a conversation, where that
-  // actor has an order of its own; the roster's order stands where it is as before.
-  const attendedActor = attended ? (actors.data ?? []).find((row) => row.id === (attended.kind === 'chat' ? 'chat' : 'build')) : undefined;
-  const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id) && !waitLines
-    ? handOverOffer({
-      session: attended,
-      workspace: attendedWorkspace,
-      doors: roster,
-      answer: accounts.data,
-      now: new Date(),
-      actor: attendedActor,
-    })
-    : null;
-  const offerTo = offer ? roster.find((row) => row.harness === offer.agent) : null;
-  const asked = attended ? stopAsk(attended, quest) : null;
-  // A pause's ask says what it stops from the driver's plan of the work (D132 §2.6); one that stops nothing applies at once.
-  const pausing = pauseAsking && attended?.id === pauseAsking.session ? pauseAsking : null;
-  const pausePlan = useWorkPlan(pausing?.target ?? null);
-  const pauseWired = wiredFor(wiring, quest?.workspace ?? attended?.workspace);
-  const pauseLines = pausePlan.plan ? pauseAsk(pausePlan.plan, { wired: pauseWired }) : null;
-  const pauseQuiet = Boolean(pausing && pausePlan.plan && pauseLines === null);
-  const pausedQuietly = useRef<string | null>(null);
-  useEffect(() => {
-    if (!pausing || !pauseQuiet) return;
-    const key = `${pausing.target.scope}:${pausing.target.id}`;
-    if (pausedQuietly.current === key) return;
-    pausedQuietly.current = key;
-    actions.work.pause(pausing.target, undefined, () => setPauseAsking(null));
-  }, [pausing, pauseQuiet, actions.work]);
-  useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
-  // Named as its row is (TITLEONE1): the entry's name, its ask's, where an ask began it, read under the rail's own key; otherwise
-  // the record's own.
-  const entryAsk = channelAsk ? (entryAsks.data ?? []).find((ask) => ask.id === channelAsk) : undefined;
-  const attendedTitle = attended
-    ? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})
-      ?? sessionTitle(attended, quest, openings[attended.id])
-    : '';
-  // Whom it continues and whom a helper helps (MIXAGENT3a-i): the record's own links, joined to the sessions the frame holds, for
-  // the head's facts and its *Details*. One the frame does not hold is said by its id, and its agent is not guessed.
-  const linked = attended
-    ? linkedSessions(attended, new Map((sessions.data ?? []).map((row): [string, Session] => [row.id, row])))
-    : null;
-  const headLink = (other: Session | null | undefined): HeadLink | null => (other ? {
-    session: other,
-    title: sessionTitle(other, other.quest ? (quests.data ?? []).find((row) => row.id === other.quest) : null, openings[other.id]),
-  } : null);
-  const continues = headLink(linked?.continues);
-  const helps = headLink(linked?.helps);
-  const headPrimary = primaryAct(headActs, grouping);
-  // A right-click on the session's page offers its header's acts, in the order the header draws them (CTX1, D138 §4).
-  const pageMenu = attended && attendedFacts
-    ? {
-      label: attendedTitle,
-      acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy, attended),
-    }
-    : null;
-  const attendedShown = attended ? shownOf(attended, grouping, taking[attended.id]) : null;
-  // Its facts line by its state (UX7c, D152 §7): the row's facts and the record's, so the head and the row agree.
-  const headFactsOf: SessionFactsOf | null = attended && attendedShown ? {
-    session: attended,
-    shown: attendedShown,
-    grouping,
-    ownSignIn: roster.some((row) => row.harness === attended.adapter),
-    branch,
-    nameOf,
-    // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
-    continuesAgent: continues
-      ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
-      : null,
-    leadingAgent: leadingAgentOf(attendedEntry, sessions.data ?? [], roster),
-    helping: helps?.title,
-    // COAGENT1b: its partners, the agents its pieces went to by the roster's names, and how many work now.
-    partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
-    waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
-    calling: waiting?.session === attended.id ? waiting.calling : undefined,
-    withIt: following?.id === attended.id ? withIt : 0,
-    windowOpened: atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.windowOpened : undefined,
-    // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
-    retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
-    // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
-    heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
-    integration: integration.data ?? null,
-    // REVIEWFLOW1b: where the work stands, from the same facts the head's waits are drawn from.
-    flow: { parts: entryOffered, landing: landsNow },
-  } : null;
-  const nextWait = nextPress(standing);
-  const nextAnchor = standing[0] ? anchorOf(standing[0]) : null;
-  const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
-    <SessionPageHead
-      session={attended}
-      title={attendedTitle}
-      shown={attendedShown}
-      facts={sessionFacts(t, headFactsOf)}
-      // RAILLINE1: the line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
-      factsTip={sessionFactsTip(t, headFactsOf)}
-      next={nextWait && nextAnchor ? { press: nextWait, onPress: () => goToWait(nextAnchor) } : null}
-      acts={headActs}
-      primary={headPrimary}
-      busy={actions.busy}
-      onAct={(act) => actions.run(act, attendedFacts)}
-      asking={stopAsking === attended.id && live && asked ? (
-        <StopAsk
-          // Keyed by the session: an ask open on one session, with its wait or its refusal, is never another's.
-          key={attended.id}
-          sentence={t(asked.key, asked.values)}
-          busy={actions.stopping}
-          onStop={(answered) => actions.stopNow(attended, answered)}
-          // A stop that lands after the person moved to another session closes only the ask it was pressed in.
-          onClose={() => setStopAsking((was) => (was === attended.id ? null : was))}
-        />
-      ) : deleteAsking === attended.id && headActs.includes('delete') ? (
-        <DeleteAsk
-          key={attended.id}
-          busy={actions.deleting}
-          onDelete={(answered) => actions.deleteNow(attended, answered)}
-          onClose={() => setDeleteAsking((was) => (was === attended.id ? null : was))}
-        />
-      ) : handOverAsking === attended.id && headActs.includes('handOver') ? (
-        <HandOverAsk
-          key={attended.id}
-          from={attended.adapter}
-          first={[...new Set(nextChoices(attended, roster, attendedActor).map((step) => step.door.harness))]}
-          working={SESSION_ACTIVE.has(attended.state)}
-          roster={agentRoster}
-          initial={handOverChosen?.choice}
-          busy={actions.handingOver}
-          onHandOver={(choice, told) => actions.handOverNow(attended, choice, told, handOverChosen?.why)}
-          onClose={() => {
-            setHandOverAsking((was) => (was === attended.id ? null : was));
-            setHandOverChosen(null);
-          }}
-        />
-      ) : helperAsking === attended.id && headActs.includes('askHelper') ? (
-        <AskHelper
-          key={attended.id}
-          from={attended.adapter}
-          roster={agentRoster}
-          busy={actions.askingHelper}
-          onAsk={(asked, answered) => actions.askHelperNow(attended, asked, answered)}
-          onClose={() => setHelperAsking((was) => (was === attended.id ? null : was))}
-        />
-      ) : pausing && !pauseQuiet ? (
-        <PauseAsk
-          className="mt-2.5"
-          target={pausing.target}
-          lines={pauseLines}
-          meanIt={t(pausing.target.scope === 'ask' ? 'asks.record.pauseMeanIt' : 'quests.detail.pauseMeanIt')}
-          busy={actions.work.pausing}
-          onPause={(answered) => actions.work.pause(pausing.target, answered)}
-          onClose={() => setPauseAsking(null)}
-        />
-      ) : waitLines && attended ? (
-        limitLine('mt-2.5')
-      ) : offer && attended ? (
-        <HandOverOfferLine
-          // Keyed by the session: a refusal or a kept answer said in one is never another's.
-          key={attended.id}
-          offer={offer}
-          actorName={attendedActor ? t(`work.role.name.${attendedActor.id}`) : undefined}
-          agentName={offerTo?.product || offer.agent}
-          accountName={offer.account ? nameOf(offerTo ? toolOf(offerTo) : offer.agent, offer.account) : null}
-          busy={actions.handingOver}
-          onGoOn={(told) => actions.handOverNow(
-            attended,
-            {
-              agent: offer.agent, account: offer.account ?? '', name: offerTo?.product || offer.agent,
-              model: offer.choice?.model, effort: offer.choice?.effort,
-            },
-            told,
-            offer.why,
-          )}
-          onChoose={() => {
-            chosen();
-            setStopAsking(null);
-            setDeleteAsking(null);
-            setHelperAsking(null);
-            setPauseAsking(null);
-            setHandOverChosen({ why: offer.why, choice: { adapter: offer.agent, profile: offer.account ?? '' } });
-            setHandOverAsking(attended.id);
-          }}
-          onDismiss={() => setOfferDismissed((was) => new Set(was).add(attended.id))}
-        />
-      ) : null}
-    />
-  );
+  const { setChatHeld, limitLine, headLink, continues, helps, pageMenu, pageHead } = useAttendedHead({
+    t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
+    actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
+    sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
+    heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking,
+  });
 
   // Sessions' list (D118 §3a): the rail, handed to the list pane as every view with a list hands its own.
   // NEW is one control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for
@@ -2436,49 +754,6 @@ export function WorkFrame({
   });
   const spec = elsewhere ? viewLayout.list : sessionsList();
 
-  // *New conversation* (NEW1b, D162 point 1), the main area while nothing is attended: what the drawer it replaced knew is
-  // its chips'.
-  const registered = registry.data ?? [];
-  const newConversation = (
-    <NewConversation
-      readCheckout={readCheckout}
-      // A checkout on this machine is what makes a repository choosable: there is nowhere else to talk, and a teammate's
-      // mirrored registration has no tree here (D48 §3/§7). One without is listed and says so.
-      repositories={registered
-        .map((row) => ({ name: row.repository, workspace: row.workspace || 'default', checkout: Boolean(row.root) }))
-        .sort((a, b) => a.name.localeCompare(b.name))}
-      // A checkout an active session on this machine holds refuses a second one (UX5 U68): with the session holding it.
-      busy={Object.fromEntries((sessions.data ?? [])
-        .filter((session) => SESSION_ACTIVE.has(session.state) && sessionOrigin(session) === null
-          && !ownTree(session, registered.find((row) => row.repository === session.repository)?.root))
-        .map((session) => [session.repository, session.id]))}
-      recent={mergeRecent(recentStarts, sessions.data ?? [])}
-      remembered={chosenStart}
-      attended={pressedFrom}
-      onChoose={chooseStart}
-      harnesses={agentRoster.harnesses}
-      labels={agentRoster.labels}
-      names={agentRoster.names}
-      defaultHarness={spawning?.harness}
-      accounts={agentRoster.accounts}
-      orderOf={agentRoster.orderOf}
-      draft={newDraft}
-      onDraft={setNewDraft}
-      carried={newCarry}
-      onCarry={setNewCarry}
-      pending={startChat.isPending}
-      refusal={startRefusal}
-      focus={(focusOwed ? composing : 0) + refocus}
-      onFocused={() => setFocusOwed(false)}
-      onStart={onStart}
-      onOpenSession={attend}
-      onAdd={() => setAdding(true)}
-      onImport={() => setImporting(true)}
-      pick={pickNew}
-      reveal={reveal}
-      onMakeTask={onMakeTask}
-    />
-  );
   // The line the attended part continues (SWITCHCTX1c-i; the switch-context design §2.7): each part's record and place as the strip
   // reads them, the parts it continues by `from` (a part running alongside is not among them), and how each began.
   const partRows = Object.fromEntries((sessions.data ?? []).map((row) => [row.id, {
@@ -2505,11 +780,6 @@ export function WorkFrame({
     const frame = requestAnimationFrame(() => partBox.current?.scrollIntoView?.({ block: 'start' }));
     return () => cancelAnimationFrame(frame);
   }, [seeking]);
-  const drawerDown = (close: () => void) => () => {
-    close();
-    if (listOpened.current) listOpened.current = false;
-    else setRefocus((count) => count + 1);
-  };
 
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
@@ -2534,33 +804,18 @@ export function WorkFrame({
           // handed, so the state's body is the composer.
           state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
         >
+          {/* *New conversation* (NEW1b, D162 point 1), the main area while nothing is attended. */}
           {!attended && (
-            <>
-              {newConversation}
-              {adding && (
-                // Once registered it is chosen, as Projects' list chooses what it registered, and the words stay (NEW1c).
-                <AddProjectDrawer
-                  onClose={drawerDown(() => setAdding(false))}
-                  onAdded={(repository) => setPickNew((last) => ({ repository, n: (last?.n ?? 0) + 1 }))}
-                  notify={notify}
-                />
-              )}
-              {importing && (
-                <ImportFolderDrawer
-                  onClose={drawerDown(() => setImporting(false))}
-                  onImported={({ repositories: landed, workspace }) => {
-                    // One is chosen; several, or none, leave the choice to the person, in the list opened on where they landed.
-                    if (landed.length === 1) {
-                      setPickNew((last) => ({ repository: landed[0]!, n: (last?.n ?? 0) + 1 }));
-                      return;
-                    }
-                    listOpened.current = true;
-                    setReveal((last) => ({ workspace: landed.length > 1 ? workspace ?? '' : '', n: (last?.n ?? 0) + 1 }));
-                  }}
-                  notify={notify}
-                />
-              )}
-            </>
+            <StartPane
+              start={start}
+              registered={registry.data ?? []}
+              sessions={sessions.data}
+              agentRoster={agentRoster}
+              defaultHarness={spawning?.harness}
+              notify={notify}
+              onMakeTask={onMakeTask}
+              attend={attend}
+            />
           )}
           {attended && waits && <AttendedSession
             // What waits on the person, and every press on it: the strip at the foot is handed the same (D168 point 3).
