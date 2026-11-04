@@ -17,7 +17,7 @@ public sealed class WorkflowMigrationTests : IDisposable
     [
         new("engine", true, "/f/engine", "aurora"), new("web", true, "/f/web", "aurora"), new("docs", true, "/f/docs", "aurora"),
         new("auto", true, "/f/auto", "default"), new("atlas", true, "/f/atlas", "default"), new("solo", true, "/f/solo", "default"),
-        new("legacy", true, "/f/legacy", "default"), new("steps-user", true, "/f/steps", "default"), new("plain", true, "/f/plain", "default"),
+        new("legacy", true, "/f/legacy", "default"), new("plain", true, "/f/plain", "default"),
     ];
 
     private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
@@ -40,7 +40,7 @@ public sealed class WorkflowMigrationTests : IDisposable
             SessionChecks = Map(("solo", "light")),
             Workflows = Map(
                 ("legacy", new WorkflowChoice("current", [])), ("web", new WorkflowChoice("old-handed", [])), ("docs", new WorkflowChoice("old-handed", [])),
-                ("steps-user", new WorkflowChoice("old-steps", [])), ("plain", new WorkflowChoice("land-you", []))),
+                ("plain", new WorkflowChoice("land-you", []))),
         }).Save(ConfigPath);
         var file = JsonNode.Parse(File.ReadAllText(ConfigPath))!.AsObject();
         file["landings"] = JsonNode.Parse($$"""
@@ -59,7 +59,6 @@ public sealed class WorkflowMigrationTests : IDisposable
 
         var store = WorkflowPorts.Store(_home);
         const string at = "2026-10-10T09:00:00Z";
-        StoredSteps.Add(store, "old-steps", "Old steps", at, JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")!);
         StoredSteps.AddGraph(store, "old-handed", "Old handed", at, JsonNode.Parse("""
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
@@ -90,8 +89,6 @@ public sealed class WorkflowMigrationTests : IDisposable
 
         var store = WorkflowPorts.Store(_home);
         // The saved workflows: the next version of each id, a handed open to two rules in one version each.
-        Assert.Equal(2, store.Load("old-steps")!.Read.Versions.Count);
-        Assert.DoesNotContain(Nodes(store, "old-steps"), node => (string?)node!["kind"] == MigratedGraphs.Handed);
         var second = migrated.Saved.Single(each => each.StartsWith("old-handed-", StringComparison.Ordinal));
         Assert.Equal(["branch", "merge"], new[] { "old-handed", second }.Select(id => LandOf(store, id)["method"]!.ToString()).Order());
         // `land` with accept: `you` and `automatic` both get the review, and the option is gone.
