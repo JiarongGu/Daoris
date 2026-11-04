@@ -232,7 +232,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         return fromOf;
     }
 
-    // The lead's repository's checkout is read with git, unless a test hands in a stand-in, since a real read spawns git (MOD8).
+    // The lead's repository's checkout is read with git, unless a test hands in a stand-in, since a real read spawns git.
     private async Task<string?> RootAsync(string tree, CancellationToken ct) =>
         _context.PartnerTrees is { } read ? await read(tree, ct).ConfigureAwait(false) : await TreeGates.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false);
 
@@ -677,7 +677,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 ("network", configuration.Network), ("system", configuration.System), ("digest", configuration.SettingsDigest));
             var opening = PartnerPass.Opening(repository, ask.Ask.Base);
 
-            return await _driver.HoldAsync(
+            return await _driver.Holds.HoldAsync(
                 "partner", adapter, info, target, sessionId, transcript, ask.Copy, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 refusesInput: PartnerPass.TakesNoWords(piece),
                 ct: ct,

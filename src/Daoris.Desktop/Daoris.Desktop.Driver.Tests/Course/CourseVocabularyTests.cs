@@ -164,6 +164,8 @@ public sealed class CourseVocabularyTests
         ["Course/Chat/BriefedMove.cs"] = "FOUNDATION1h branch 4: the briefed move",
         ["Course/GoOn/DrivenCourse.cs"] = "FOUNDATION1i: the driven paths' facts and answers",
         ["Loop/Driver.cs"] = "FOUNDATION1i path 1: the driven go-on's resume and the limit resume",
+        ["Loop/Run/IRunWiring.cs"] = "FOUNDATION1i path 1: the run's wiring of the driven go-on's resume and the limit resume",
+        ["Loop/Run/Choose/AccountWalk.cs"] = "FOUNDATION1i path 1: the run's account stage, which asks the driven go-on's resume and the limit resume",
         ["Loop/DriverContinuations.cs"] = "FOUNDATION1i path 1: the driven go-on",
         ["Loop/DriverHandOvers.cs"] = "FOUNDATION1i path 2: a quest's hand-over, its consent handed in as a fact",
         ["Course/HandOver/HandOverQuest.cs"] = "FOUNDATION1i path 2: a quest's hand-over",

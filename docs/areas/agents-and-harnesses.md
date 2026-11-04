@@ -42,7 +42,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AgentSettings`, `AgentOffers` | same names | An account's model and effort in the tool's own file; what an agent offered per version and account |
 | `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs` and same names | Rules in scopes and defaults, an agent's proposals, folder trust, reach into other checkouts |
 | `SpawnServers`, `SpawnSkills`, `DshProfile` | same names | The pipe door's servers file, plugin skills per session, the dsh home Daoris made |
-| `Driver.Prepare`, `Equip`, `HandRules` | `Loop/Driver.cs:3667-3839` | The spawn's assembly, shared by every kind of start |
+| `Driver.Prepare`, `Equip`, `HandRules` | `Loop/Driver.cs:2829-3001` | The spawn's assembly, shared by every kind of start |
 | `daoris agent …` verbs | `AgentsCommand.cs`, `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings |
 | `SessionProcesses`, `LineageTokens` | same names | The live process per session (never sent to the service), and the token each process runs under |
 
