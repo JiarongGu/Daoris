@@ -61,6 +61,18 @@ internal interface IRunWiring
     /// <summary>A move of a line from one choice to another, counted against its role's bound.</summary>
     void CountMove(string line, string role, string condition, ActorEffective from, string? to);
 
+    /// <summary>The move record a driven carry-on keeps, decided before its open.</summary>
+    ConversationMoves Moves { get; }
+
+    /// <summary>Told each answer the course gave a driven path as it is decided; a test's, no person's.</summary>
+    Action<LineCourse>? Decided { get; }
+
+    /// <summary>A park's question the disk would not let go at a run's opening or conclusion, logged.</summary>
+    void Questions(string sessionId, QuestionSettle settled);
+
+    /// <summary>The name of the role a design quest's start took, as its opening says it; null where the catalogue will not read.</summary>
+    string? DesignRoleName(Consideration start, string? named);
+
     /// <summary>The lines resumed in their own conversation on a limit's word, by quest, which the look says once it sees the line go on.</summary>
     System.Collections.Concurrent.ConcurrentDictionary<string, string> LimitResumed { get; }
 

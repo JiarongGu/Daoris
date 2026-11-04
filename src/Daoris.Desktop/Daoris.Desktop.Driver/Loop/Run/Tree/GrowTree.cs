@@ -82,11 +82,7 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
             : null;
 
         // The waited quest's result counts on the line this resume carries on, reserved once however often the start is tried.
-        if (answered is not null)
-        {
-            new AnswersAloneHold(context.Events, context.Marks, new ContinuationAdmissions(home)).Waited(
-                start.Resumes!, answered.Id, handsOn?.Waiting ?? [], await AnswersAloneHold.RecordsAsync(context.Service, ct).ConfigureAwait(false));
-        }
+        if (answered is not null) await wiring.GoOns.WaitedAsync(start.Resumes!, answered.Id, handsOn, ct).ConfigureAwait(false);
 
         // A session going on in a tree that stands starts from the line where the line came to hold some of its commits, and is told
         // what was done; a step whose source the person reopened is first brought up to date with the source's new submission. Asked

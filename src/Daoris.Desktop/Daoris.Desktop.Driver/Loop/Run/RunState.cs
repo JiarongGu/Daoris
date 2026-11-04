@@ -9,8 +9,10 @@ namespace Daoris.Driver;
 /// A member a stage writes is unwritten until that stage runs, and reading it earlier throws, naming the stage that writes it: a
 /// stage declared without the <c>after</c> its reads need fails at its first run, never on a value left over or a default.
 /// </remarks>
-internal sealed class RunState : IDisposable
+internal sealed class RunState : IDisposable, IAsyncDisposable
 {
+    private Slot<CarryOnRecord?> _carry;
+    private Slot<RecordOpened> _opened;
     private Slot<TreeLock> _starting;
     private Slot<TreeFound> _tree;
     private Slot<ISessionAdapter?> _preflight;
@@ -172,6 +174,27 @@ internal sealed class RunState : IDisposable
 
     /// <summary>Lets go of the repository's trees where the run never reached the record; once let go, a second does nothing.</summary>
     public void Dispose() => _starting.Peek()?.Dispose();
+
+    /// <summary>Lets go of the carry-on's move record, ended by its phase unless it is delivered, then of the repository's trees.</summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_carry.Peek() is { } carry) await carry.DisposeAsync().ConfigureAwait(false);
+        Dispose();
+    }
+
+    /// <summary>The carry-on's move record, kept from before its open until the run ends; null where the start keeps none.</summary>
+    public CarryOnRecord? Carry
+    {
+        get => _carry.Get(nameof(Carry), "open");
+        set => _carry.Set(value);
+    }
+
+    /// <summary>The session's record as the service opened it.</summary>
+    public RecordOpened Opened
+    {
+        get => _opened.Get(nameof(Opened), "open");
+        set => _opened.Set(value);
+    }
 
     /// <summary>The tree the session runs in: the one opened for it, the one its earlier session or part went on in, else the checkout.</summary>
     public string WorkTree

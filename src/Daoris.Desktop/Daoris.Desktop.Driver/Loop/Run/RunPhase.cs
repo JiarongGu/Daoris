@@ -30,4 +30,10 @@ internal enum RunPhase
     /// for, or move it to a new session. A hold here lets the fresh tree go only where the stage says so.
     /// </summary>
     Cleared,
+
+    /// <summary>
+    /// The record opens through the ledger and says how it was chosen: a refusal of the open is an answer, and the repository's trees
+    /// are let go once it is open.
+    /// </summary>
+    Opened,
 }

@@ -28,9 +28,9 @@ public sealed class DriverRunPartsTests : IDisposable
         var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
 
         var order = driver.RunStages.Order;
-        Assert.Equal(["agent", "clean", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue"], order.Select(part => part.Name));
+        Assert.Equal(["agent", "clean", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open"], order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(RunPhase.Choose, 4), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2)],
+            [.. Enumerable.Repeat(RunPhase.Choose, 4), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened],
             order.Select(part => (RunPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
@@ -50,6 +50,7 @@ public sealed class DriverRunPartsTests : IDisposable
             driver.RunStages.In(RunPhase.Cleared),
             stage => Assert.IsType<TrustedTree>(stage),
             stage => Assert.IsType<GoOnRecord>(stage));
+        Assert.Collection(driver.RunStages.In(RunPhase.Opened), stage => Assert.IsType<OpenRecord>(stage));
     }
 
     [Fact]
@@ -68,6 +69,8 @@ public sealed class DriverRunPartsTests : IDisposable
         Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.WorkTree).Message);
         Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.Tree).Message);
         Assert.Contains("written by the tree stage", Assert.Throws<InvalidOperationException>(() => state.Starting).Message);
+        Assert.Contains("written by the open stage", Assert.Throws<InvalidOperationException>(() => state.Opened).Message);
+        Assert.Contains("written by the open stage", Assert.Throws<InvalidOperationException>(() => state.Carry).Message);
         Assert.Contains("written by the continue stage", Assert.Throws<InvalidOperationException>(() => state.GoneOn).Message);
         Assert.Contains("written by the trust stage", Assert.Throws<InvalidOperationException>(() => state.Preflight).Message);
         Assert.Contains("written by the bind stage", Assert.Throws<InvalidOperationException>(() => state.Bound).Message);

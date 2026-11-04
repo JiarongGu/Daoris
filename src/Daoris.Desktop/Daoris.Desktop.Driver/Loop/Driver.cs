@@ -318,6 +318,14 @@ public sealed class Driver(
 
     void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => CountMove(line, role, condition, from, to);
 
+    ConversationMoves IRunWiring.Moves => Moves;
+
+    Action<LineCourse>? IRunWiring.Decided => Decided;
+
+    void IRunWiring.Questions(string sessionId, QuestionSettle settled) => Questions(sessionId, settled);
+
+    string? IRunWiring.DesignRoleName(Consideration start, string? named) => DesignRoleName(start, named);
+
     System.Collections.Concurrent.ConcurrentDictionary<string, string> IRunWiring.LimitResumed => LimitResumed;
 
     bool IRunWiring.HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
@@ -875,23 +883,6 @@ public sealed class Driver(
             // The choices this quest's line moved off in the last 30 minutes are passed.
             LineFacts = StaffCourse.LineFacts(Context.Harnesses.StaffFor(home), quest, start.Workspace, role),
         };
-    }
-
-    /// <summary>
-    /// A part the role's policy moved to another choice (STAFFPOLICY1e2): the record keeps its <c>chosen</c> (moved, with the condition and the
-    /// choice left), the machine log writes <c>actor.moved</c>, and the opening note says it. A service that will not answer costs the record this, never the run.
-    /// </summary>
-    private async Task SayPolicyMoveAsync(
-        ServiceClient service, string sessionId, string role, string line, StaffMoving moving, PriorSession left, string? to)
-    {
-        var staff = Context.Harnesses.StaffFor(home);
-        var read = staff.Moves.Of(line);
-        var (policy, said) = StaffCourse.MoveSaid(staff, role, line, left, moving.Condition, read.Moves);
-        ActorMoves.Write(Log, role, line, left.Choice, to, moving.Condition, StaffCourse.ActionOf(policy, moving.Condition), read.Moves);
-        await service.TryKeepActorAsync(
-                sessionId, Log, chosen: new ActorChosen(policy?.Rule ?? StaffRules.Order, StaffBy.Moved, moving.Condition, left.Choice))
-            .ConfigureAwait(false);
-        RotatedOpening.SayMovedChoice(Context.Events, sessionId, StaffCourse.ChoiceOf(left)?.Said ?? left.Adapter ?? "", said);
     }
 
     /// <summary>
@@ -1636,8 +1627,8 @@ public sealed class Driver(
 
         // The agent, a clean checkout, the account and the access setup, each of which may hold the start before anything is grown,
         // locked or opened.
-        using var state = new RunState();
-        var run = new RunRound(start, registry, untrusted, onOpened, movedOff, fresh, state);
+        await using var state = new RunState();
+        var run = new RunRound(start, registry, untrusted, onOpened, movedOff, movedOffModel, movedFrom, fresh, state);
         foreach (var stage in RunStages.In(RunPhase.Choose))
         {
             if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
@@ -1667,7 +1658,7 @@ public sealed class Driver(
         var (runBound, setUp) = (run.State.Bound, run.State.SetUp);
         var (entryTree, priorStands, entryStands, opened, resumedIn) = (run.State.Tree.EntryTree, run.State.Tree.PriorStands, run.State.Tree.EntryStands, run.State.Tree.Opened, run.State.Tree.ResumedIn);
         var (joinedIn, resuming, carryingOn) = (run.State.Tree.JoinedIn, run.State.Tree.Resuming, run.State.Tree.CarryingOn);
-        var (answered, handsOn, inSync, oneLook, starting) = (run.State.Tree.Answered, run.State.Tree.HandsOn, run.State.Tree.InSync, run.State.Tree.OneLook, run.State.Starting);
+        var (answered, handsOn, inSync, oneLook) = (run.State.Tree.Answered, run.State.Tree.HandsOn, run.State.Tree.InSync, run.State.Tree.OneLook);
 
         // What may still hold the start before the record: the tree's trust by the harness, and the record the words wait on.
         foreach (var stage in RunStages.In(RunPhase.Cleared))
@@ -1682,180 +1673,15 @@ public sealed class Driver(
         var (fellBack, answerKept, written, switched) = (goneOn.FellBack, goneOn.AnswerKept, goneOn.Written, goneOn.Switched);
         (selection, passedAccount) = (run.State.Selection, run.State.PassedAccount);
 
-        // A resume that was tried let go of the starting hold (LEFT2) when the park held the tree; the carry-on's open below
-        // needs it again, until its own record holds the tree.
-        using var restarting = answerKept ? TreeLock.TryStarting(home, root) : null;
-        if (answerKept && restarting is null) return Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
-
-        // Where the tree stands BEFORE anything runs in it (SURF6). Read here rather than after the
-        // spawn so it is genuinely the base: between this line and the process starting, the only
-        // thing that touches the tree is the process. It goes onto the record because the review
-        // reads it back on a later launch, long after this variable is gone — which is what makes
-        // the range a fact rather than something reconstructed from the evidence string.
-        var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
-
-        // The session this start continues, why and who asked (MIXAGENT1a-iii, D163 point 4): the one the quest was handed over
-        // from, or one a limit cut off when this runs on another account; named on the record as it opens. SESSCTX1b: every other
-        // carry-on names its link too, `retry` where its resume fell back, so the brief follows the line.
-        var continues = ContinuesFrom(
-            handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,
-            retried: fellBack is not null,
-            pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom),
-            agent: limitWalks ? agent : null, decided: Decided,
-            // STAFFPOLICY1e: the move the role's policy made at that end, which the link names (`transient`).
-            policy: policyMove is { } policied ? new CoursePolicy(new StaffAction(policied.Condition, StaffActions.Next, null, null, false, false), DateTimeOffset.UtcNow) : null);
-
-        // 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): a carry-on that hands the new session the words of the record it goes on
-        // from, its fallback's or a resume's asker's, opens it through the keyed door, which moves them in the open's own step, the words named and
-        // any of the person's kept there since they were read, so no word said between this start's read and its open stays behind on a record the
-        // line has left. Against a host whose `opens` mark is below 2 the key goes with no words to move, or none goes, and they are taken as before.
-        var handing = fellBack is not null ? written : handsOn;
-        var moves = handing is null
-            ? null
-            : MovedWords.Asked(
-                handing.Session, handing.Waiting.Where(DriverContinuations.Hands(resumed: fellBack is null, switched)).Select(word => word.Id),
-                handing.Waiting.Select(word => word.Id));
-
-        // 🔴 FOUNDATION1f-iv part a (the foundation design §3.3, §13.4 steps 1 and 3): a carry-on keeps its move record, decided before its open
-        // and asked under the key the open is sent with, so a crash between the old part's end and the new part's words is taken up and no word
-        // is sent twice. One the quest's hand-over starts (FOUNDATION1f-v part c) goes on from the hand-over's own move, decided at the ask and
-        // left at `old-ended` by the look's take: one move from ask to delivery, not two. A move already standing for the session it goes on
-        // from that is not that one, or a store that will not take the decision, holds the start for the next look: nothing is opened and
-        // nothing is written. The record is let go on every way out below, ended by its phase unless it is delivered.
-        CarryOnRecord? carry = null;
-        var openKey = MoveWords.DrivenKey();
-        if (CarryOnRecord.Decision(continues, agent, selection.Profile) is { } decision)
+        // The record opens, naming the account it opened on and why.
+        foreach (var stage in RunStages.In(RunPhase.Opened))
         {
-            var begun = await Moves.BeginAsync(decision, ct).ConfigureAwait(false);
-            if (CarryOnRecord.Of(Moves, begun, handedFrom, agent) is not { } decided)
-            {
-                await fresh.LetGoAsync().ConfigureAwait(false);
-                return Hold(begun.Refused is { } unwritten
-                    ? $"its move to a new part could not be written, so it waits: {unwritten}"
-                    : $"a move of `{decision.Left}` to a new part is still standing, so `#{quest.Id}` waits for it to end.");
-            }
-
-            carry = decided;
-            if ((carry.OldEnded() ?? carry.Opening(openKey)) is { } unasked)
-            {
-                await carry.EndAsync().ConfigureAwait(false);
-                await fresh.LetGoAsync().ConfigureAwait(false);
-                return Hold($"its move to a new part could not be written, so it waits: {unasked}");
-            }
+            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
         }
 
-        await using var recording = carry;
-
-        // The ledger judges the open — the same door any other client would use. A refusal here is
-        // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
-        // tree even where a close cuts its answer off, so a close from here leaves it (QUEUEDTREE1).
-        fresh.Asked();
-        // The tree this spawn will hold (D51) — its own where the repository opted in, the registered root otherwise. Stated rather than left to
-        // the service to infer, because this side is the one that knows where it is about to run a process. Whether this is a set-up, for the
-        // machine log alone, so a set-up's cost can be read back (WSSETUP11).
-        // FOUNDATION1f-iv part a: a carry-on that keeps its record is opened through the keyed door whether or not it hands a word, under the
-        // key its record names; it then asks no words to move where it hands none.
-        var keyed = moves is null && carry is null
-            ? null
-            : await service
-                .OpenSessionMovingAsync(
-                    quest.Id, agent, selection.Version, selection.Profile, workTree, before, continues, moves, ct,
-                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values, opens: carry is null ? null : openKey)
-                .ConfigureAwait(false);
-        var (sessionId, message) = keyed is not null
-            ? (keyed.SessionId, keyed.Message)
-            : await service
-                .OpenSessionAsync(
-                    quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
-                    setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values)
-                .ConfigureAwait(false);
-        if (sessionId is null)
-        {
-            // A fresh tree for a session that never opened has no work in it, so the clean removal
-            // path takes it — and if anything landed there in the meantime, the refusal keeps it.
-            await fresh.LetGoAsync().ConfigureAwait(false);
-
-            // The words of a record the person wrote to are the start's own to say (TICKSHOWN1, D137): carried as the hold's
-            // sentence, the consideration reads Blocked and the record's row says its words wait and why, not only going on.
-            // Any other start's refusal stays in the events: its quest's row has no words waiting to show it on.
-            return new StartRun(
-                $"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
-        }
-
-        // FOUNDATION1f-iv part a (§13.4 steps 2 to 4): the open's answer with every word it moved, by its id on the new session, then
-        // `delivering` and the prompt's mark before the take. A write the store refuses stops the take of the moved words, which wait on the new
-        // session for its own go-on, never attempted; the record is then ended by its phase below.
-        var fenced = carry is null ? null : await carry.FenceAsync(sessionId, keyed?.Moved ?? []).ConfigureAwait(false);
-
-        // TREELOCK1 (D51's note): its own tree locked in its name while it holds it, so no tool that prunes merged branches takes it;
-        // asked before the starting hold goes, so the look's let-go of unheld locks sees it held. Never a reason to hold the start.
-        var locksTree = Context.Trees.Holds(workTree);
-        if (locksTree && await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
-        {
-            Log?.Warn("tree.unlocked", ("session", sessionId), ("why", unlocked));
-        }
-
-        // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
-        starting?.Dispose();
-        restarting?.Dispose();
-        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this driver goes (QUEUED1).
-        Context.Processes.MarkOpening(sessionId);
-        onOpened();
-        var openedAt = DateTimeOffset.UtcNow;
-        // PARKVIEW1 (the park's ask design §2): no question stands while a run of its record works; one the disk keeps is logged.
-        Questions(sessionId, new QuestionFiles(home).Clear(sessionId));
-
-        // Which account it opened on and why (TOOL4f, D125 §3.6; TOOL6b, D130 §16.4): its record's first line names the step
-        // that chose it, and, for a carry-on, the cut-off session and the turn a limit refused; a start moved off where its
-        // scope begins is `account.rotated` in the log.
+        var (sessionId, keyed, fenced, continues, before) = (run.State.Opened.SessionId, run.State.Opened.Keyed, run.State.Opened.Fenced, run.State.Opened.Continues, run.State.Opened.Before);
+        var (openedAt, locksTree, carry) = (run.State.Opened.OpenedAt, run.State.Opened.LocksTree, run.State.Carry);
         var prior = carryingOn ? start.Resumes : null;
-        RotatedOpening.Say(
-            service, Context.Events, sessionId, agent, selection,
-            prior is null
-                ? null
-                : new RotatedOpening.Carried(
-                    prior.Session,
-                    prior.Limit ? Context.Events.TurnsEnded(prior.Session) + 1 : null,
-                    prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
-        // Where a later choice of Build's ran, its actor line beside it, naming each choice passed (D205 §4.6 item 1, MODELROLE1c2).
-        if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
-        if (movedOffModel is { } refusedModel) RotatedOpening.SayMovedOffModel(Context.Events, sessionId, refusedModel.Agent, refusedModel.Model);
-        // STAFFPOLICY1e2: a model its agent refused, or a sign-in that walked to another agent, is a move to another choice, counted against `most`.
-        var movedRole = policyRole;
-        if (movedOffModel is { } countedModel)
-        {
-            CountMove(quest.Id, movedRole, StaffConditions.ModelRefused, new ActorEffective(countedModel.Agent, countedModel.Model, null, ""), chosen?.From);
-        }
-        else if (movedOff is not null && movedFrom is { } wasAgent && !string.Equals(wasAgent, agent, StringComparison.OrdinalIgnoreCase))
-        {
-            CountMove(quest.Id, movedRole, StaffConditions.SignedOut, new ActorEffective(wasAgent, null, null, ""), chosen?.From);
-        }
-        if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
-        await RotatedOpening.SayStaffAsync(Context.Events, Context.Harnesses.Staff(), service, Log, sessionId, selection, "build").ConfigureAwait(false);
-        // STAFFPOLICY1e2: a part the role's policy moved here says so, on the record and the opening note, after the start's own why.
-        if (policyMove is { } movedByPolicy && start.Resumes is { } leftPart)
-        {
-            await SayPolicyMoveAsync(service, sessionId, policyRole, quest.Id, movedByPolicy, leftPart, chosen?.From).ConfigureAwait(false);
-        }
-        else
-        {
-            // A yes releases one move at the start that follows it: a start that moved nothing closes it, so it releases no later one.
-            Context.Harnesses.StaffFor(home).Moves.SpendApproval(quest.Id, policyRole);
-        }
-        // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
-        if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start, stepRole) is { } designer)
-        {
-            RotatedOpening.SayDesign(Context.Events, sessionId, designer);
-        }
-
-        // Its setup in one line, after the account's (AUTONOMY1a), and the mode it got on its harness (AUTONOMY1b), after the change
-        // from the session it goes on from where its permission prompts moved since: a start under today's behaviour going on from none
-        // that ran otherwise notes nothing, so its transcript reads as it always did; the record keeps the setup either way. Uncoded until
-        // the page's note catalogues word it (AUTONOMY1d).
-        if (DrivenAccess.StartNote(access, permissions, start.Resumes) is { } accessNote)
-        {
-            Context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = accessNote }, say: null);
-        }
 
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
