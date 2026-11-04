@@ -132,8 +132,8 @@ public sealed class AcpSession(
 
     /// <summary>
     /// Asked at a turn's end (LANDBACK1 part 2, D87's note): what the quest and its tree say, so a turn that ended with the quest done and
-    /// the tree uncommitted is carried on rather than the session's end (<see cref="CarryOnAsync"/>). Dirty, with carry-ons left, the run
-    /// also waits for the session's own background work as a park would have it wait (<see cref="Waits"/>), never cutting that wait on
+    /// the tree uncommitted is carried on rather than the session's end (<see cref="AcpWaits.CarryOnAsync"/>). Dirty, with carry-ons left, the run
+    /// also waits for the session's own background work as a park would have it wait (<see cref="AcpWaits.Of"/>), never cutting that wait on
     /// the closed quest. Null never carries on, and the end is as before.
     /// </summary>
     public Func<CancellationToken, Task<TurnCarry>>? CarriesOn
@@ -953,49 +953,13 @@ public sealed class AcpSession(
     /// <paramref name="ct"/>, which bounds only the opening: a conversation outlives the request that
     /// started it, and the updates of every later turn arrive on this same reader.
     /// </remarks>
-    public async Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
-    {
-        await HandshakeAsync(ct).ConfigureAwait(false);
-        var offered = Offer(servers);
+    public Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
+        Opening.OpenAsync(cwd, ct, servers);
 
-        // The rules composed for this session ride here when the adapter takes them (PERM1) —
-        // and a session given none sends exactly what it sent before they existed.
-        // AGENTERRORS1a2 (§5.6): a transient refusal of the raw operation is tried again on the schedule, never the handshake.
-        var openMeta = OpenMeta(meta, offered);
-        var created = await OpeningAsync(
-            () => RequestAsync(
-                "session/new",
-                openMeta is null
-                    ? new { cwd, mcpServers = offered }
-                    : (object)new { cwd, mcpServers = offered, _meta = openMeta },
-                ct),
-            ct).ConfigureAwait(false);
-        // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
-        // names this client's own failures, and a conversation waited for a session that never came.
-        _sessionId = created.ValueKind == JsonValueKind.Object && created.TryGetProperty("sessionId", out var id)
-                     && id.ValueKind == JsonValueKind.String
-            ? id.GetString()
-            : null;
-        if (string.IsNullOrEmpty(_sessionId))
-        {
-            throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
-        }
-
-        // What an answer to a park resumes (ANSWER1a), told before the first turn can fail or park.
-        Told(_sessionId);
-
-        // What the agent offers to change about this session — its mode, its model, its effort (AGT6b):
-        // kept as it said them, so a person may be offered the ones that are theirs.
-        KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
-            ? AcpConfigOption.Read(offeredOptions)
-            : []);
-        // The opening's own snapshot and the agent's offer reading, before the posture or any set (D205 §3.3, §9.2).
-        KeepOpening();
-
-        // What its actor asked, before the posture, which a model change can move, and before the first prompt (D205 §3.2).
-        var carried = await CarryAsync(ct).ConfigureAwait(false);
-        await SetPostureAsync(created, ct, again: carried).ConfigureAwait(false);
-    }
+    private AcpOpening Opening => LazyInitializer.EnsureInitialized(ref _opening, () => new AcpOpening(
+        meta, Options, HandshakeAsync, OpeningAsync, (method, args, ct) => RequestAsync(method, args, ct), SetPostureAsync,
+        id => _sessionId = id, replaying => _replaying = replaying, Told));
+    private AcpOpening? _opening;
 
     /// <summary>The reader started and the handshake answered: what every session asks before it is one. The agent's answer.</summary>
     private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
@@ -1890,64 +1854,10 @@ public sealed class AcpSession(
     /// <summary>The conversation whose replay is arriving while a <c>session/load</c> is answered, or null.</summary>
     private volatile string? _replaying;
 
-    /// <summary>
-    /// Resume a conversation instead of opening one (ANSWER1a, D131 §1): the reader started, the handshake, then
-    /// <c>session/resume</c> where the agent advertises it, else <c>session/load</c> where it advertises that, on the same
-    /// tree, with the servers and the rules a new session would be handed, and the posture set on its answer.
-    /// </summary>
-    /// <remarks>
-    /// <para><b><c>session/resume</c> first</b>: it resumes without replaying, and the record already holds the
-    /// conversation. A load replays every message as an update before it answers; those are dropped here, so nothing is
-    /// kept twice, and what the agent says after the answer is the conversation going on.</para>
-    ///
-    /// <para><b>Read from the adapter's own source</b> (<c>claude-agent-acp</c> 0.84.0): <c>initialize</c> answers
-    /// <c>agentCapabilities.loadSession</c> and <c>agentCapabilities.sessionCapabilities.resume</c>; both requests answer
-    /// <c>modes</c> and <c>configOptions</c> and no id, the id being the one asked for; a conversation not in the
-    /// account's home is refused <c>resource_not_found</c>.</para>
-    /// </remarks>
+    /// <summary>Resume a conversation instead of opening one (ANSWER1a, D131 §1): <c>session/resume</c> where the agent advertises it, else <c>session/load</c>.</summary>
     /// <exception cref="AcpResumeRefused">The agent offers neither, or refused this one.</exception>
-    public async Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
-    {
-        var initialized = await HandshakeAsync(ct).ConfigureAwait(false);
-        var method = ResumeMethod(initialized)
-            ?? throw new AcpResumeRefused(ContinueWhy.Of(ContinueWhy.Offered), words: null);
-
-        var offered = Offer(servers);
-        var openMeta = OpenMeta(meta, offered);
-        object parameters = openMeta is null
-            ? new { sessionId = conversation, cwd, mcpServers = offered }
-            : new { sessionId = conversation, cwd, mcpServers = offered, _meta = openMeta };
-
-        JsonElement resumed;
-        _replaying = method == "session/load" ? conversation : null;
-        try
-        {
-            // AGENTERRORS1a2 (§5.6): a transient refusal is tried again here, the raw operation alone; past the bound it ends exhausted.
-            resumed = await OpeningAsync(() => RequestAsync(method, parameters, ct), ct).ConfigureAwait(false);
-        }
-        catch (AcpRefusal refused)
-        {
-            // By the error's structure, never its words: another client holding the thread is its data's reason (MSG1b).
-            var why = refused.Code == ResourceNotFound ? ContinueWhy.Gone
-                : string.Equals(refused.Reason, ActiveWriter, StringComparison.Ordinal) ? ContinueWhy.Elsewhere
-                : ContinueWhy.Refused;
-            throw new AcpResumeRefused(ContinueWhy.Of(why), refused.Words);
-        }
-        finally
-        {
-            _replaying = null;
-        }
-
-        _sessionId = conversation;
-        KeepOptions(resumed.ValueKind == JsonValueKind.Object && resumed.TryGetProperty("configOptions", out var options)
-            ? AcpConfigOption.Read(options)
-            : []);
-        KeepOpening();
-        // A resume carries its record's asked choice again: a resumed conversation keeps no model of its own (D205 §4.2; MODELROLE1a).
-        var carried = await CarryAsync(ct).ConfigureAwait(false);
-        // 🔴 HELPMODE1a4 (D183 point 3): set on every answer, an object or not, so a required posture is never skipped here.
-        await SetPostureAsync(resumed, ct, again: carried).ConfigureAwait(false);
-    }
+    public Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
+        Opening.ResumeAsync(cwd, conversation, ct, servers);
 
     /// <summary>Whether an update is a load's replay of the conversation being resumed.</summary>
     private bool Replayed(JsonElement parameters) =>
