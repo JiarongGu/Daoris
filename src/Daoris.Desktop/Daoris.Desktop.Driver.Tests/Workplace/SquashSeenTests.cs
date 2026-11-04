@@ -40,7 +40,8 @@ public sealed class SquashSeenTests : LandedFixture
         {
             var before = await StateAsync(root, tree);
 
-            var landed = await trees.LandAsync(tree.Path, subject, gate: Lands);
+            // The head judges the work held by content where no graph's land governs: a land graph leaves it to its content.holds step.
+            var landed = await trees.LandAsync(tree.Path, subject);
 
             Assert.False(landed.Landed, landed.Message);
             Assert.Null(landed.Conflict);

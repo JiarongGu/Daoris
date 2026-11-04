@@ -37,8 +37,8 @@ public sealed class LandedNamedTests : LandedFixture
         var landedAt = Assert.IsType<DateTimeOffset>(item.LandedAt);
         var said = TreesPlanWords.CleanPlan(plan, [], new TreesAsk(TreesLook.Clean), landedAt.AddHours(29)).Out;
         Assert.Contains(said, line => line.Contains(branch) && line.Contains("landed 29 hours ago, and its quest #q2 is closed"));
-        var door = Assert.Single(said, line => line.Contains("trees remove"));
-        Assert.Contains($"trees remove {branch} --repository engine --why", door);
+        var door = Assert.Single(said, line => line.Contains("tree remove"));
+        Assert.Contains($"tree remove {branch} --repository engine --why", door);
 
         // The door: the withdrawal the list names, which the next list no longer holds.
         var done = await trees.WithdrawLandedAsync(root, "engine", branch, "the row landed another way, by hand");

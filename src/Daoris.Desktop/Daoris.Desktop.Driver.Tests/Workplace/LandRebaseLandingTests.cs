@@ -34,7 +34,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         var line = await HeadAsync(root);
         var before = await StateAsync(root, tree);
 
-        var plan = await trees.PlanAsync(tree.Path, Subject);
+        var plan = await trees.PlanAsync(tree.Path, Subject, process: Lands.Process);
 
         Assert.Equal(before, await StateAsync(root, tree));
         Assert.Empty(plan.LeftOut!);
@@ -71,7 +71,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await CommitAsync(root, "shared.txt", "one\nfrom the line\n", "the line's own");
         var before = await StateAsync(root, tree);
 
-        var plan = await trees.PlanAsync(tree.Path, Subject);
+        var plan = await trees.PlanAsync(tree.Path, Subject, process: Lands.Process);
         Assert.Contains("shared.txt", plan.Conflict!.Says);
 
         var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
@@ -122,7 +122,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await CommitAsync(root, "index/map.md", "map: one\nmap: the line\n", "the line's own");
         var line = await HeadAsync(root);
 
-        var plan = await trees.PlanAsync(tree.Path, Subject);
+        var plan = await trees.PlanAsync(tree.Path, Subject, process: Lands.Process);
         Assert.Null(plan.Conflict);
         Assert.Equal(["the work"], plan.Lands!.Select(commit => commit.Subject));
 
@@ -262,7 +262,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await CommitAsync(root, "index/map.md", "map: one\nmap: the line\n", "the line's own");
         var before = await StateAsync(root, tree);
 
-        var plan = await trees.PlanAsync(tree.Path, Subject);
+        var plan = await trees.PlanAsync(tree.Path, Subject, process: Lands.Process);
         Assert.Contains("shared.txt", plan.Conflict!.Says);
 
         var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
@@ -315,7 +315,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await GitAsync(tree.Path, "push", "--quiet", "-u", "origin", "feature/own");
         await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
 
-        var plan = await trees.PlanAsync(tree.Path, Subject);
+        var plan = await trees.PlanAsync(tree.Path, Subject, process: Lands.Process);
         var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.Null(plan.Lands);
