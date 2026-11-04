@@ -465,7 +465,6 @@ if (mode == ServiceMode.Shared)
 
 // Each domain's routes, declared in Daoris.Contracts and mapped by its module (Routes/), found by reflection. The routes
 // mapped below are the ones not declared yet.
-// transitional: routes-by-hand
 RouteModules.MapAll(app, new HostWiring(composed, mode, hostRun, homeId, personKey));
 
 // What each repository OWES, as opposed to what it knows. Held by the service rather than written

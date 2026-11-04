@@ -54,7 +54,6 @@ public sealed record AutoChosen(IReadOnlyList<AutoChoice> Chosen, IReadOnlyList<
 /// <see cref="AutoLandingCode.Completed"/>.</para>
 /// </remarks>
 /// <param name="log">Where a try's <c>landing.auto</c> line goes (D94): the service client's watchers, which write the machine log.</param>
-// transitional: auto-lander
 public sealed class AutoLander(
     string home, IWorkplaceLandingWorld world, SessionTrees trees, IWorkplaceEventHistory events, Action<LandingLine>? log = null,
     Func<DateTimeOffset>? clock = null)

@@ -47,16 +47,11 @@ describe('the driver domain', () => {
       ? {
         ...DRIVER_STATE,
         home: 'D:/somewhere/Daoris/data',
-        homeNotice: 'Daoris home: D:/somewhere/Daoris/data — moved in from D:/somewhere/.daoris: driver.json.',
-        hostNotice: 'the host at http://localhost:5177 was already running and serves a different page than this install carries.',
       }
       : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
 
     expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
-    expect(screen.getByText(/moved in from/)).toBeTruthy();
-    // The adopted host's page is a standing fact and gets a standing line, not only a toast.
-    expect(screen.getByText(/serves a different page/)).toBeTruthy();
   });
 
   /**
@@ -189,7 +184,7 @@ describe('the driver domain', () => {
    */
   it('keeps the Daoris home as a door to This Daoris', async () => {
     const home = 'D:/somewhere/Daoris/data';
-    const driver = { ...DRIVER_STATE, home, homeNotice: 'Daoris home: moved in from D:/somewhere/.daoris: driver.json.' };
+    const driver = { ...DRIVER_STATE, home };
     invoke.mockImplementation(async (module: string, type: string) => (module !== 'DAORIS.DRIVER' ? WIRING
       : type === 'SYSTEM_WIRING' ? { schema: 1 } : driver));
     const onGo = vi.fn();

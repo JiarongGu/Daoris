@@ -11,7 +11,4 @@ public static class OneSetWords
     /// <c>HARNESS_ENDED</c> and the terminal's <c>login</c> alike; a sign-back-in says nothing of it.
     /// </summary>
     public static string Joined(string account) => $"`{account}` joined Daoris's accounts: every workspace's work may run on it.";
-
-    /// <summary>A stored Ask Daoris <c>use</c> or <c>order</c> proposal written before the <c>set</c> mark, refused at its Apply.</summary>
-    public const string Unmarked = "written for a list that is gone (D197): propose it again";
 }

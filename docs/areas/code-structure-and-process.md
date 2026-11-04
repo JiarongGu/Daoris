@@ -21,7 +21,6 @@ finishes first and the whole set runs once.
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes, and says when they are stale |
-| The transitional register | `Driver/Transitional/Register.cs`, `tools/transitional-markers.mjs` | each kept older reading, with the condition that ends it and the row that deletes it |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |

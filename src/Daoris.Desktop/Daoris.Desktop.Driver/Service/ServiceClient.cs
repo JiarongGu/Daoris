@@ -54,7 +54,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     // A route the contracts do not declare yet has a method of its own below.
-    // transitional: routes-by-hand
     /// <summary>A route the contracts declare, sent as its record and read as its answer; a refusal comes back as one.</summary>
     public async Task<Sent<TAnswer>> SendAsync<TAnswer>(IRoute<TAnswer> request, CancellationToken ct = default) where TAnswer : class
     {
