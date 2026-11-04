@@ -91,9 +91,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
     private readonly ChatGoOn _goOn;
 
-    // SESSCTX1c part B: a conversation, or a closed quest's session, going on in a new part handed Daoris's brief.
-    private readonly BriefedMove _move;
-
     // LIMITRESUME1c: the conversations that wait for an account to be ready, and the look's limits stage that wakes them.
     private readonly LimitWaits _waits;
 
@@ -146,10 +143,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         _help = new ChatHelp(_context, this);
         _limit = new LimitMove(_context, this, _handOver, _help);
         _words = new ChatHelperWords(_context);
-        _move = new BriefedMove(_context, this, _handOver, _help);
 
         // The go-on hears the record's events from its construction: the person's words to an ended chat (MSG1d, MSG1c).
-        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words, _move, _limit);
+        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words, Executors.Of<BriefedMove>(), _limit);
 
         // LIMITRESUME1c (D206 §3.4, §3.5): a conversation with no other account waits for its limit, and the look wakes it.
         _waits = new LimitWaits(_context, _limit, _goOn);
@@ -239,7 +235,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <param name="onEnded">Told when the new part ends, as a start's is.</param>
     public Task<StartedFrom> GoOnBriefedAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _move.MoveAsync(sessionId, lost: null, HandOverBy.Person, config, onEnded, ct);
+        Executors.Of<BriefedMove>().MoveAsync(sessionId, lost: null, HandOverBy.Person, config, onEnded, ct);
 
     /// <summary>
     /// A closed quest's session whose own conversation is proven lost goes on by itself as a conversation in its tree (SESSCTX1c part B,
@@ -254,7 +250,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     public async Task<StartedFrom> GoOnLostAsync(
         string sessionId, ContinueReason lost, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        if (lost.Code != ContinueWhy.Account) return await _move.MoveAsync(sessionId, lost, HandOverBy.Daoris, config, onEnded, ct).ConfigureAwait(false);
+        if (lost.Code != ContinueWhy.Account) return await Executors.Of<BriefedMove>().MoveAsync(sessionId, lost, HandOverBy.Daoris, config, onEnded, ct).ConfigureAwait(false);
 
         if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation goes on now.");
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -395,7 +391,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     internal CurveMove Curve => _curve;
 
     /// <summary>The briefed move, whose <see cref="BriefedMove.Decided"/> a test hears (FOUNDATION1h branch 4): the runner names no course type.</summary>
-    internal BriefedMove Briefed => _move;
+    internal BriefedMove Briefed => Executors.Of<BriefedMove>();
 
     /// <summary>The conversation's go-on, whose <see cref="ChatGoOn.Decided"/> a test hears (FOUNDATION1h branch 7): the runner names no course type.</summary>
     internal ChatGoOn GoOn => _goOn;
@@ -2071,6 +2067,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         WalkAsync(actor, order, config, workspace, profile, ct, refused, counts, except);
 
     ChatContext IExecutorWiring.Context => _context;
+
+    ChatHandOver IExecutorWiring.HandOver => _handOver;
+
+    IChatHelping IExecutorWiring.Help => _help;
 
     Task IExecutorWiring.ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded) =>
         Conclude(sessionId, state, note, onEnded);

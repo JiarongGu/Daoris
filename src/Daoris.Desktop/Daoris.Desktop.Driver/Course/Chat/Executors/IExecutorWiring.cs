@@ -9,6 +9,12 @@ internal interface IExecutorWiring : IChatRunning
 {
     ChatContext Context { get; }
 
+    /// <summary>The hand-over the runner holds, made after the executors: read when an executor runs.</summary>
+    ChatHandOver HandOver { get; }
+
+    /// <summary>Ask Daoris's conversations the runner holds, made after the executors: read when an executor runs.</summary>
+    IChatHelping Help { get; }
+
     /// <summary>Hands a live conversation a person's message: false where nothing listens.</summary>
     /// <exception cref="DriverException">The files are more than a message carries.</exception>
     bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null);

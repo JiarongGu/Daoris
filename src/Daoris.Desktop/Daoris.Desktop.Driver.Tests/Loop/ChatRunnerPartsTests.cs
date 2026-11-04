@@ -25,9 +25,10 @@ public sealed class ChatRunnerPartsTests : IDisposable
             new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
 
         var order = runner.Executors.Order;
-        Assert.Equal(["help", "start-from", "help-access", "replacement"], order.Select(part => part.Name));
+        Assert.Equal(["help", "start-from", "briefed-move", "help-access", "replacement"], order.Select(part => part.Name));
         Assert.Equal(
-            [ExecutorPhase.Start, ExecutorPhase.Start, ExecutorPhase.Move, ExecutorPhase.Move], order.Select(part => (ExecutorPhase)part.Phase));
+            [ExecutorPhase.Start, ExecutorPhase.Start, ExecutorPhase.Move, ExecutorPhase.Move, ExecutorPhase.Move],
+            order.Select(part => (ExecutorPhase)part.Phase));
 
         // What each phase holds, in the order the runner built it.
         Assert.Collection(
@@ -36,6 +37,7 @@ public sealed class ChatRunnerPartsTests : IDisposable
             executor => Assert.IsType<WordsStart>(executor));
         Assert.Collection(
             runner.Executors.In(ExecutorPhase.Move),
+            executor => Assert.IsType<BriefedMove>(executor),
             executor => Assert.IsType<HelpAccessSwap>(executor),
             executor => Assert.IsType<ChatReplacement>(executor));
     }
