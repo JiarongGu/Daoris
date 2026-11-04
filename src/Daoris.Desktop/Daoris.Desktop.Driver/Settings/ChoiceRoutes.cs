@@ -17,7 +17,6 @@ public static class ChoiceRoutes
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
     public static InstanceRoute Language { get; } = Person("SET_LANGUAGE");
-    public static InstanceRoute Landing { get; } = Person("SET_LANDING");
     public static InstanceRoute ReadAcross { get; } = Person("SET_READ_ACROSS");
     public static InstanceRoute WriteAcross { get; } = Person("SET_WRITE_ACROSS");
     public static InstanceRoute Standing { get; } = Person("SET_STANDING");
@@ -45,7 +44,6 @@ public static class ChoiceRoutes
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),
         ("driver language", Language, "the session language"),
-        ("driver landing", Landing, "the landing rule, sent with its key and its squash named so the rule is replaced whole, as the verb replaces it"),
         ("driver across … read", ReadAcross, "reading across"),
         ("driver across … write-to", WriteAcross, "writing across"),
         ("driver standing", Standing, "the standing answer"),
@@ -59,7 +57,6 @@ public static class ChoiceRoutes
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
         ("driver retry <quest> --session <id>", null, "alone: RETRY_QUEST releases the stop its verdict names, never a session the person names"),
-        ("driver landing … --cycle <file>|--no-cycle", null, "alone: SET_LANDING has no field for the cycle, and keeps the one the rule holds"),
         ("driver work-cycle", null, "alone: no route sets a quest's or an ask's cycle of work"),
         ("driver brainstorms", null, "alone: no route sets the brainstorm policy"),
         ("driver workflow new|edit|apply|import", ChoiceRoutes.WorkflowSave, "the window's workflow save, a version at a time"),
