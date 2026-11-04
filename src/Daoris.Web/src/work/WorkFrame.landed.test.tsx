@@ -388,7 +388,7 @@ describe('a session’s page header and its acts', () => {
 
     const user = userEvent.setup();
     const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
     acts.getByRole('button', { name: 'More actions' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
@@ -433,7 +433,7 @@ describe('a session’s page header and its acts', () => {
 
     const user = userEvent.setup();
     const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
     acts.getByRole('button', { name: 'More actions' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitem', { name: 'Pause quest…' }));
@@ -475,7 +475,7 @@ describe('a session’s page header and its acts', () => {
 
     const user = userEvent.setup();
     const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
     acts.getByRole('button', { name: 'More actions' }).focus();
     await user.keyboard('{Enter}');
     await screen.findByRole('menuitem', { name: 'Archive' });

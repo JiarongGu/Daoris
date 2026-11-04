@@ -7,10 +7,10 @@ import { QUEST_CHAIN, SESSION_CHAIN } from './traceFixtures';
 /**
  * A trace's chain carries codes the driver declares and this page words (TRACE1b, D143), with no code shared: a twin, as an
  * instruction account's codes are (`.claude/knowledge/twins.md`). This side parses the driver's declarations in
- * `Trace.Chain.cs` and holds both catalogues to them both ways. The driver's `DriverModuleTraceTests` holds the route's side.
+ * `TraceCodes.cs` and holds both catalogues to them both ways. The driver's `DriverModuleTraceTests` holds the route's side.
  */
 
-const source = driverSource('Trace.Chain.cs');
+const source = driverSource('TraceCodes.cs');
 // LAND2b's codes, which the chain carries as their own declarations name them: a try's, who accepted, a rule's source.
 const landing = driverSource('AutoLandingCode.cs') + driverSource('WorkplaceFacts.cs');
 

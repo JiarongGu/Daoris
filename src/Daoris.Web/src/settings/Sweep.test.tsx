@@ -100,12 +100,11 @@ describe('a session branch a completed pull request carried', () => {
 
 /**
  * Every kind the clean-up's list can send (SWEEPCARRIED1). The modules' `SweepRow` sends the driver's `SweepItem.Kind` as it
- * is, one of the `SweepKind` constants in the driver's `Landing.cs`; this side parses that class, as `trace.test.ts`
- * parses the same file's codes, so a kind the driver adds fails here until the page words it. Each is drawn and must say a
+ * is, one of the `SweepKind` constants in the driver's `SweepKind.cs`; this side parses that class, so a kind the driver adds fails here until the page words it. Each is drawn and must say a
  * sentence of its own: never another kind's, and never the words for a kind this window does not know.
  */
 describe('every kind the driver sends a session branch as', () => {
-  const source = driverSource('Landing.cs');
+  const source = driverSource('SweepKind.cs');
   const block = /public static class SweepKind\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
   const declared = [...block.matchAll(/public const string \w+ = "([a-z-]+)";/g)].map((match) => match[1]! as SweepKind);
   const name = (kind: string) => `daoris/s-${kind}`;

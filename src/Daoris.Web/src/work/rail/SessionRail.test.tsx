@@ -651,7 +651,7 @@ describe('the session rail by state', () => {
 
     await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
     expect(groupHeadings()).toEqual(['Waiting on you (1)', 'Working (2)', 'Ended (1)']);
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {});
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} });
     // No group header names a repository by state, so each row's line does (§4.2).
     const working = screen.getByRole('heading', { level: 3, name: 'Working (2)' }).closest('section')!;
     expect(within(working).getByText(/^engine · driven/)).toBeInTheDocument();

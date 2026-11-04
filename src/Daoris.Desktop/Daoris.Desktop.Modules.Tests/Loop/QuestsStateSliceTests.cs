@@ -259,7 +259,7 @@ internal sealed class ServiceStandIn : HttpMessageHandler
 }
 
 /// <summary>
-/// The fields a page type declares (<c>data/api.ts</c>) and a service record answers (<c>ApiContracts.cs</c>), read from the sources as
+/// The fields a page type declares (<c>data/api.ts</c>) and a service record answers (<c>QuestRecords.cs</c>), read from the sources as
 /// the route table's test reads the bridge: comments left out, and a field's own inline shape, whose fields are not the type's.
 /// </summary>
 internal static partial class SourceFields
@@ -279,9 +279,9 @@ internal static partial class SourceFields
     /// <summary>The parameters of <c>record {name}(…);</c>, as its web defaults write them.</summary>
     public static IReadOnlyList<string> Service(string name)
     {
-        var text = Comments().Replace(System.IO.File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Http", "ApiContracts.cs")), "");
+        var text = Comments().Replace(System.IO.File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Contracts", "Quests", "QuestRecords.cs")), "");
         var block = Regex.Match(text, $@"record {name}\((?<body>.*?)\);", RegexOptions.Singleline);
-        Assert.True(block.Success, $"ApiContracts.cs declares no `record {name}(`");
+        Assert.True(block.Success, $"QuestRecords.cs declares no `record {name}(`");
         return [.. ServiceField().Matches(block.Groups["body"].Value).Select(field => char.ToLowerInvariant(field.Groups["name"].Value[0]) + field.Groups["name"].Value[1..])];
     }
 

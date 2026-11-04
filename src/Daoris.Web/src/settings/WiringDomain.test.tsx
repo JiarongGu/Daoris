@@ -61,7 +61,7 @@ describe('Settings → This Daoris', () => {
 
     expect(await screen.findByRole('region', { name: 'Folders' })).toBeTruthy();
     // The open itself asks no measure, so it walks no folder; the ask that follows does.
-    expect(invoke.mock.calls.some(([, type, request]) => type === 'SYSTEM_WIRING' && !request?.payload)).toBe(true);
+    expect(invoke.mock.calls.some(([, type, request]) => type === 'SYSTEM_WIRING' && !request?.payload?.measure)).toBe(true);
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYSTEM_WIRING', { payload: { measure: true } }));
     expect(invoke.mock.calls.filter(([, , request]) => request?.payload?.measure)).toHaveLength(1);
   });
@@ -345,7 +345,7 @@ describe('Settings → This Daoris', () => {
     expect(terminal.getAllByText('A development run has none').length).toBeGreaterThan(0);
     expect(terminal.getByText('Its process has ended')).toBeTruthy();
     expect(terminal.getByText('not taken')).toBeTruthy();
-    expect(terminal.getAllByText('None').length).toBe(2);
+    expect(terminal.getAllByText('None').length).toBe(1);
   });
 
   it('shows the knowledge store: its file and where that was named, its size, the family root and the tier, with a door to AI features', async () => {
@@ -580,7 +580,7 @@ describe('Settings → This Daoris', () => {
     expect(card.textContent).toContain('daoris settings keep history …');
     expect(card.textContent).toContain('daoris settings keep set-aside …');
     await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
-    expect(invoke.mock.calls.filter(([, type, request]) => type === 'SYSTEM_SPACE' && request?.payload)).toEqual([]);
+    expect(invoke.mock.calls.filter(([, type, request]) => type === 'SYSTEM_SPACE' && request?.payload?.measure)).toEqual([]);
   });
 
   it("counts one kind from its Count, and every kind from the card's Measure again", async () => {
