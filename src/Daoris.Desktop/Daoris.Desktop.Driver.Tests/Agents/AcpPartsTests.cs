@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The protocol door hands each frame to the stages its modules register, phase by phase in their order, each built from the
 /// session as its wiring; an order the marks cannot make, or a stage the session cannot build, is refused at its first frame and
-/// never part-way through one.
+/// never part-way through one. The open prompts' state its units share keeps its invariants on its own: a prompt is open from its
+/// admission, the shut door turns away only what it had not admitted, and a word is taken once.
 /// </summary>
 public sealed class AcpPartsTests
 {
@@ -49,6 +50,83 @@ public sealed class AcpPartsTests
         Assert.Null(session.NotOffered);
         Assert.Null(session.CarriesOn);
         Assert.Null(session.LastAcknowledgedOptions);
+        Assert.Empty(session.HandedBack);
+        Assert.Empty(session.Unreached);
+        Assert.Empty(session.LeftRunning);
+        Assert.False(session.NextStep);
+        Assert.False(session.Steers);
+    }
+
+    [Fact]
+    public void A_prompt_opens_as_it_is_admitted_and_the_shut_door_turns_away_only_what_it_had_not_admitted()
+    {
+        var open = new OpenPrompts();
+        ChatMessage first = new("first", []), second = new("second", []), late = new("late", []);
+
+        var written = open.Enter([first]);
+        var prompt = open.Opened(written, marked: true, first);
+        Assert.True(prompt.Opening);
+        Assert.False(open.Prompted);
+        Assert.True(open.Admit(written, prompt));
+        Assert.True(open.Prompted);
+
+        // Shut between two writes: the passage not yet admitted goes back, and so does one that comes to the door after.
+        var waiting = open.Enter([second]);
+        open.Shut();
+        Assert.True(open.DoorShut);
+        Assert.False(open.Admit(waiting, new OpenPrompt(second)));
+        Assert.Throws<AcpTurnedAway>(() => open.Enter([late]));
+        Assert.Equal<IAgentWord>([second, late], open.HandedBack);
+
+        // The admitted one is the session's, never handed back: untaken at the end, it is unreached.
+        Assert.Empty(open.Untaken(retry: null));
+        Assert.Equal<IAgentWord>([first], open.Unreached);
+        Assert.False(open.Prompted);
+    }
+
+    [Fact]
+    public void An_answer_hands_the_turn_to_the_words_behind_it_and_an_error_hands_it_to_nothing_until_the_agent_goes_on()
+    {
+        var open = new OpenPrompts();
+        ChatMessage first = new("first", []), second = new("second", []), third = new("third", []);
+        var prompts = new[] { first, second, third }.Select(words =>
+        {
+            var passage = open.Enter([words]);
+            var prompt = open.Opened(passage, marked: true, words);
+            Assert.True(open.Admit(passage, prompt));
+            return prompt;
+        }).ToList();
+
+        // Prompted to an idle session, the first words are taken by the first thing the agent does for them, never before the wire.
+        Assert.Same(prompts[0], open.TakeLate());
+        Assert.Same(prompts[1], open.Leaves(prompts[0], answered: true, retry: null, out var last));
+        Assert.False(last);
+        Assert.True(open.Took(prompts[1]));
+
+        // An error answers the second: the third is not taken by it, only by the agent's next update, once.
+        Assert.Null(open.Leaves(prompts[1], answered: false, retry: null, out last));
+        Assert.False(open.Took(prompts[2]));
+        Assert.Same(prompts[2], open.TakeLate());
+        Assert.Null(open.TakeLate());
+        Assert.Null(open.Leaves(prompts[2], answered: true, retry: null, out last));
+        Assert.True(last);
+    }
+
+    [Fact]
+    public void A_mark_that_comes_back_after_the_door_shut_or_unmarked_writes_nothing()
+    {
+        var open = new OpenPrompts();
+        ChatMessage unmarked = new("unmarked", []), late = new("late", []);
+
+        var refused = open.Enter([unmarked]);
+        Assert.Throws<AcpWordsUnmarked>(() => open.Opened(refused, marked: false, unmarked));
+
+        var cut = open.Enter([late]);
+        open.Shut();
+        Assert.Throws<AcpTurnedAway>(() => open.Marked(cut, marked: true));
+
+        // The unmarked words wait on their record, never handed back; the cut ones go back with the run's.
+        Assert.Equal<IAgentWord>([late], open.HandedBack);
     }
 
     [Fact]

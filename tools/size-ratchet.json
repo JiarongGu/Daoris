@@ -70,7 +70,6 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/IntegrationStoreTests.cs": 58630,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs": 48067,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountRotation.cs": 76427,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs": 96079,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters.cs": 154507,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs": 47764,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs": 54478,
