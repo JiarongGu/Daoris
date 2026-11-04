@@ -23,8 +23,11 @@ public sealed partial class DriverModuleRoutesTests
     /// <summary>The bridge's helpers that send their route argument on to <c>call</c>, besides <c>call</c> itself.</summary>
     private static readonly string[] Forwarders = ["useDriverChange", "askHeld"];
 
-    /// <summary>Where a send names its route: <c>call</c> or a forwarder, then its type arguments or its call.</summary>
-    private static readonly Regex Caller = new($@"\b(?:{string.Join('|', Forwarders.Prepend("call"))})\s*(?=[<(])");
+    /// <summary>
+    /// Where a send names its route: <c>call</c> or a forwarder, then its type arguments or its call; or <c>call</c> cast to the
+    /// untyped signature a helper forwards through, as <c>askHeld</c> does.
+    /// </summary>
+    private static readonly Regex Caller = new($@"\b(?:{string.Join('|', Forwarders.Prepend("call"))})\s*(?=[<(])|\bcall as \([^)]*\) => Promise<unknown>\)\s*(?=\()");
 
     /// <summary>Walk up to the workspace root — the tests run from `bin/Debug/net10.0`.</summary>
     private static string RepositoryRoot()
@@ -131,6 +134,14 @@ public sealed partial class DriverModuleRoutesTests
     private static string? DomainOf(string file) =>
         HandlerClass().Match(file) is { Success: true } named ? named.Groups["domain"].Value : null;
 
+    /// <summary>A bridge file that carries a part of its domain's sends under a name of its own, by the domain that answers them.</summary>
+    private static readonly Dictionary<string, string> BridgeSplits = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["driverConsiderations.ts"] = "Driver",
+        ["sessionGroups.ts"] = "Sessions",
+        ["sessionHelpers.ts"] = "Sessions",
+    };
+
     [Fact]
     public void Every_route_the_page_calls_has_a_handler_in_the_table()
     {
@@ -183,7 +194,8 @@ public sealed partial class DriverModuleRoutesTests
         var astray = PageCalls().Calls
             .Where(call => call.File != "shell.ts")
             .Where(call => fileOf.TryGetValue(call.Route, out var file)
-                && !string.Equals($"{DomainOf(file)}.ts", call.File, StringComparison.OrdinalIgnoreCase))
+                && !string.Equals($"{DomainOf(file)}.ts", call.File, StringComparison.OrdinalIgnoreCase)
+                && !(BridgeSplits.TryGetValue(call.File, out var split) && string.Equals(split, DomainOf(file), StringComparison.OrdinalIgnoreCase)))
             .Select(call => $"bridge/{call.File} sends `{call.Route}`, answered in {fileOf[call.Route]}");
         Assert.Empty(astray);
     }

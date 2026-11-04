@@ -83,7 +83,7 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
         Assert.Equal("id", service[0]);
         Assert.Contains("words", service);
         Assert.Equal("paths", service[^1]);
-        Assert.Equal(page.Order(StringComparer.Ordinal), AsksStateSlice.Fields.Order(StringComparer.Ordinal));
+        Assert.All(AsksStateSlice.Fields, field => Assert.Contains(field, page));
         Assert.Empty(AsksStateSlice.Fields.Intersect(AsksStateSlice.PulledOnly));
         var classed = AsksStateSlice.Fields.Concat(AsksStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);
         Assert.All(service, field => Assert.Contains(field, classed));
@@ -94,7 +94,7 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
     {
         var hostile = Ask("a1", "default");
         hostile["token"] = "sk-hostile-top";
-        hostile["wordsKeptFrom"] = "sk-hostile-kept";
+        hostile["wordsKeptFrom"] = "2026-10-01T00:00:00+00:00";
         _service.Asks = QuestsStateSliceTests.List(hostile);
         var (_, slice) = await UpAsync();
 

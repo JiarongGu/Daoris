@@ -124,7 +124,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
     {
         var root = Path.Combine(Home, "engine");
         Directory.CreateDirectory(root);
-        File.WriteAllText(DriverConfigPath, """{ "adapter": "talk" }""");
+        ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk", null)]).Save(DriverConfigPath);
         var service = new StandIn(root);
         service.Chat("c1", root, words);
         var loop = Loop();
