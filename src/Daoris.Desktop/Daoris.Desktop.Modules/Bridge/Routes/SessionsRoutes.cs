@@ -810,26 +810,16 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("SESSION_WHERE", PipeClass.Open)]
     [ByEvent("SESSION_WHERE", Reads = StateScopes.Sessions | StateScopes.Landing | StateScopes.Sweep, Slices = new[] { SweepStateSlice.Name })]
-    private async Task<object?> SessionWhereAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SessionWhereAsync(SessionWhereRead read, CancellationToken cancellationToken)
     {
         var trees = new SessionTrees(_loop.Home);
         var landings = trees.Recorded.Entries();
         var rows = new List<object>();
-        if (request.Payload is { } payload && payload.TryGetProperty("sessions", out var sessions)
-            && sessions.ValueKind == JsonValueKind.Array)
+        if (read.Sessions is { } sessions)
         {
-            foreach (var session in sessions.EnumerateArray())
+            foreach (var session in sessions)
             {
-                if (session.ValueKind != JsonValueKind.Object
-                    || !session.TryGetProperty("id", out var named) || named.ValueKind != JsonValueKind.String
-                    || !session.TryGetProperty("tree", out var at) || at.ValueKind != JsonValueKind.String)
-                {
-                    continue;
-                }
-
-                var id = named.GetString()!;
-                var tree = at.GetString()!;
-                if (!HeldTree(trees, tree)) continue;
+                if (session is not { Id: { } id, Tree: { } tree } || !HeldTree(trees, tree)) continue;
 
                 cancellationToken.ThrowIfCancellationRequested();
                 // As LandedBranches.Landing reads it: the newest entry naming the session.
