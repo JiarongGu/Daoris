@@ -346,7 +346,11 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Workflows/Nodes/NodeRuntime.cs": {
+    "Workflows/Nodes/NodeEvaluations.cs": {
+      "reads": "other",
+      "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
+    },
+    "Workflows/Nodes/NodeGoverning.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
