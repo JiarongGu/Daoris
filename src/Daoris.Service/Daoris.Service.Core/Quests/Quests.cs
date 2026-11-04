@@ -1653,7 +1653,7 @@ public sealed class QuestStore
     /// The chain's next step after <paramref name="closed"/>, published in the caller's transaction — or the one
     /// already published, since the id is the ask — or null when the chain ends here.
     /// </summary>
-    private async Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
+    internal async Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
     {
         if (NextStep(closed, now) is not { } next) return null;
         if (await FindAsync(next.Step.Id, transaction, ct).ConfigureAwait(false) is not { } standing)
@@ -1921,137 +1921,21 @@ public sealed class QuestStore
         CancellationToken ct = default) =>
         WriteAsync(tx => Operations.Of<QuestCloseOperation>().CloseOutcomeAsync(tx, named, close, now), ct);
 
-    /// <summary>
-    /// The person accepts a done as it stands (DRIFT1d, D133 §4; EVID1a, D144 §6): its departure, or its evidence unread
-    /// or missing. An <see cref="QuestOperationKind.Accepted"/> operation, judged against the replayed history inside the
-    /// write as every move is, and the chain's next step it held published in the same transaction, as a close publishes one.
-    /// </summary>
-    /// <returns>
-    /// The quest as it now stands, whether this call accepted it — false for a quest nothing holds — and the
-    /// step it published; a null quest means no such id.
-    /// </returns>
+    /// <inheritdoc cref="QuestAcceptOperation.AcceptAsync"/>
     public Task<QuestMove> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } quest)
-            {
-                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
-            }
+        WriteAsync(tx => Operations.Of<QuestAcceptOperation>().AcceptAsync(tx, id, now), ct);
 
-            // The replay's own rule: a departure or its evidence takes a yes, and a review's hold does not (REVIEWENV1b).
-            if (!QuestLog.Applies(quest, new QuestOperation(id, QuestOperationKind.Accepted, Machine, 0, now)))
-            {
-                return new QuestMove(quest, Moved: false);
-            }
-
-            var operation = await AppendAsync(
-                id, QuestOperationKind.Accepted, now, note: null, published: null, transaction, inside).ConfigureAwait(false);
-            var accepted = QuestLog.Step(quest, operation)!;
-            await WriteCacheAsync(accepted, transaction, inside).ConfigureAwait(false);
-            // A set-up step accepted for its departure still waits for its review, and what follows it waits with it.
-            return new QuestMove(
-                accepted, Moved: true,
-                accepted.Held ? null : await PublishNextAsync(accepted, now, transaction, inside).ConfigureAwait(false));
-        }, ct);
-
-    /// <summary>
-    /// A set-up step's set-up (REVIEWENV1b, D154 point 9): a <see cref="QuestOperationKind.SetUp"/> operation, judged against
-    /// the replayed history inside the write as every move is, so it applies only to a set-up step not declined, a second
-    /// post of the same set-up is no move, and one from a take this machine lost is refused (<see cref="QuestLog.OnALostTake"/>).
-    /// It releases nothing: a newer set-up holds a reviewed step for the person again.
-    /// </summary>
-    /// <returns>
-    /// The quest as it now stands and whether this call kept the set-up; a null quest means no such id. Refused with
-    /// <see cref="QuestMove.ClaimLost"/> where this machine's take on the quest lost.
-    /// </returns>
+    /// <inheritdoc cref="QuestSetUpOperation.SetUpAsync"/>
     public Task<QuestMove> SetUpAsync(string id, QuestSetUp setUp, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } quest)
-            {
-                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
-            }
+        WriteAsync(tx => Operations.Of<QuestSetUpOperation>().SetUpAsync(tx, id, setUp, now), ct);
 
-            // Its identity is made here, where its local address is still known, and crosses with it (REVIEWENV1b3).
-            var said = setUp with { At = null, Machine = null, Sequence = null };
-            var shown = said with { Id = said.Id ?? Reviews.IdentityOf(said) };
-            var judged = new QuestOperation(id, QuestOperationKind.SetUp, Machine, 0, now, SetUp: shown);
-            if (!QuestLog.Applies(quest, judged)) return new QuestMove(quest, Moved: false);
-            if (QuestLog.OnALostTake(quest, history, judged))
-            {
-                return new QuestMove(quest, Moved: false) { ClaimLost = true, LostToTheReopen = QuestLog.LostToTheReopen(history, Machine) };
-            }
-
-            var operation = await AppendAsync(
-                id, QuestOperationKind.SetUp, now, note: null, published: null, transaction, inside, setUp: shown).ConfigureAwait(false);
-            var kept = QuestLog.Step(quest, operation)!;
-            await WriteCacheAsync(kept, transaction, inside).ConfigureAwait(false);
-            return new QuestMove(kept, Moved: true);
-        }, ct);
-
-    /// <summary>
-    /// The person's verdict on a set-up step's review, or their skip of a review (REVIEWENV1b, D154 point 8): a
-    /// <see cref="QuestOperationKind.Verdict"/> operation, judged against the replayed history inside the write. A
-    /// <c>reviewed</c> or a skip that lets the step's review go publishes the chain's next step in the same transaction, as
-    /// the yes publishes one; a <c>not-yet</c> keeps it held.
-    /// </summary>
-    /// <returns>
-    /// The quest as it now stands, whether this call kept the verdict, and the step it published; a null quest means no
-    /// such id.
-    /// </returns>
+    /// <inheritdoc cref="QuestVerdictOperation.VerdictAsync"/>
     public Task<QuestMove> VerdictAsync(string id, QuestReviewVerdict verdict, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } quest)
-            {
-                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
-            }
+        WriteAsync(tx => Operations.Of<QuestVerdictOperation>().VerdictAsync(tx, id, verdict, now), ct);
 
-            var said = verdict with { At = null, Machine = null };
-            if (!QuestLog.Applies(quest, new QuestOperation(id, QuestOperationKind.Verdict, Machine, 0, now, Verdict: said)))
-            {
-                return new QuestMove(quest, Moved: false);
-            }
-
-            var operation = await AppendAsync(
-                id, QuestOperationKind.Verdict, now, note: null, published: null, transaction, inside, review: said).ConfigureAwait(false);
-            var given = QuestLog.Step(quest, operation)!;
-            await WriteCacheAsync(given, transaction, inside).ConfigureAwait(false);
-            var released = quest.Held && !given.Held;
-            return new QuestMove(
-                given, Moved: true, released ? await PublishNextAsync(given, now, transaction, inside).ConfigureAwait(false) : null);
-        }, ct);
-
-    /// <summary>
-    /// The person's kind and workflow on a quest before it starts (WORKFLOW1e2, the workflow design §4.1 row 1): a
-    /// <see cref="QuestOperationKind.Chosen"/> operation, judged against the replayed history inside the write, so a choice that
-    /// meets a quest already taken is no move. It releases nothing.
-    /// </summary>
-    /// <returns>The quest as it now stands and whether this call kept the choice; a null quest means no such id.</returns>
+    /// <inheritdoc cref="QuestChoiceOperation.ChooseAsync"/>
     public Task<QuestMove> ChooseAsync(string id, QuestWorkflowChoice choice, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async (transaction, inside) =>
-        {
-            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            if (QuestLog.Replay(history) is not { } quest)
-            {
-                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
-            }
-
-            var chosen = choice with { At = null };
-            if (!QuestLog.Applies(quest, new QuestOperation(id, QuestOperationKind.Chosen, Machine, 0, now, Choice: chosen)))
-            {
-                return new QuestMove(quest, Moved: false);
-            }
-
-            var operation = await AppendAsync(
-                id, QuestOperationKind.Chosen, now, note: null, published: null, transaction, inside, choice: chosen).ConfigureAwait(false);
-            var kept = QuestLog.Step(quest, operation)!;
-            await WriteCacheAsync(kept, transaction, inside).ConfigureAwait(false);
-            return new QuestMove(kept, Moved: true);
-        }, ct);
+        WriteAsync(tx => Operations.Of<QuestChoiceOperation>().ChooseAsync(tx, id, choice, now), ct);
 
     /// <summary>
     /// Every quest of the <c>follows</c> chain <paramref name="id"/> is on (D149 point 1; REVIEWENV1b3): its first quest, found by
@@ -2545,21 +2429,9 @@ public sealed class QuestStore
                     waitsLost.Add(on);
                 }
 
-                // A yes that lost takes the step it published with it, as a lost close's does (DRIFT1d). A verdict on a
-                // done that lost needs nothing more here: the done came first in the history, and its conflict took the
-                // step with it (EVID1a). A verdict that lost to another machine's, or to the person's yes, leaves the
-                // step standing, since the winner published the same one.
-                if (operation.Kind == QuestOperationKind.Accepted && quest is not { Accepted: not null })
-                {
-                    conflicts.AddRange(await ForgetFollowUpsAsync(id, lostClaim, "yes", transaction, ct).ConfigureAwait(false));
-                }
-
-                // A review's verdict that lost while the step is still held takes the step it published with it, as a lost
-                // yes does (REVIEWENV1b); one that lost to another machine's leaves the step the winner published.
-                if (operation.Kind == QuestOperationKind.Verdict && quest is { Held: true })
-                {
-                    conflicts.AddRange(await ForgetFollowUpsAsync(id, lostClaim, "review verdict", transaction, ct).ConfigureAwait(false));
-                }
+                // A verdict on a done that lost needs nothing more here: the done came first in the history, and its conflict took the
+                // step with it (EVID1a). A verdict that lost to another machine's, or to the person's yes, leaves the step standing,
+                // since the winner published the same one.
 
                 // A submission that lost takes the step it published with it, its publication pending on the same take
                 // (FABRIC-CLOSE1a, §E5), and the take's conflict names it. One that lost to another machine's done leaves the
@@ -3580,15 +3452,10 @@ public sealed class QuestStore
             Evidence = kind == QuestOperationKind.Evidenced && payload.TryGetProperty("evidence", out var found)
                 ? QuestEvidenceVerdict.Judged(found)
                 : null,
-            // A set-up and a review's verdict (REVIEWENV1b), each written only after the exchange judged it.
-            SetUp = kind == QuestOperationKind.SetUp && payload.TryGetProperty("setUp", out var shown) ? Reviews.JudgedSetUp(shown) : null,
-            Verdict = kind == QuestOperationKind.Verdict && payload.TryGetProperty("verdict", out var given) ? Reviews.JudgedVerdict(given) : null,
             // A rebind's submission (FABRIC-CLOSE1c), which this store wrote whole. A take's, absent from every take before
             // FABRIC-CLOSE1c18 and from one of a quest with no source: a take judged as before.
             Submission = Carries(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
             Session = KeepsSession(kind) ? ReadSession(payload) : null,
-            // A workflow choice (WORKFLOW1e2), written only after the exchange judged it.
-            Choice = kind == QuestOperationKind.Chosen && payload.TryGetProperty("choice", out var choice) ? WorkflowChoices.Judged(choice) : null,
         };
     }
 
@@ -3716,32 +3583,12 @@ public sealed class QuestStore
             evidence.Write(writer);
         }
 
-        // Only on a set-up or a verdict (REVIEWENV1b), for the evidence's reason: its when and machine are the operation's own.
-        if (kind == QuestOperationKind.SetUp && operation.SetUp is { } setUp)
-        {
-            writer.WritePropertyName("setUp");
-            Reviews.Write(writer, setUp);
-        }
-
-        if (kind == QuestOperationKind.Verdict && operation.Verdict is { } review)
-        {
-            writer.WritePropertyName("verdict");
-            Reviews.Write(writer, review);
-        }
-
         // Only on a rebind or a take (FABRIC-CLOSE1c, FABRIC-CLOSE1c18), for the lanes' reason: every other operation reads as it did.
         if (Carries(kind) && operation.Submission is { } submission) WriteRef(writer, "submission", submission);
 
         // Only on a submission, a done or a decline a session said (FABRIC-CLOSE1c4, HANDBACK1), for the lanes' reason: every other
         // operation reads as it did.
         if (KeepsSession(kind) && operation.Session is { } session) writer.WriteString("session", session);
-
-        // Only on a workflow choice (WORKFLOW1e2), for the evidence's reason: its when is the operation's own.
-        if (kind == QuestOperationKind.Chosen && operation.Choice is { } choice)
-        {
-            writer.WritePropertyName("choice");
-            WorkflowChoices.Write(writer, choice);
-        }
 
         writer.WriteEndObject();
     });

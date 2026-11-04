@@ -18,8 +18,14 @@ public sealed class QuestsPartsTests
     {
         var operations = QuestOperations.Registered;
 
-        Assert.Equal(["conflict", "dismissed", "done", "reopened"], operations.Order.Select(part => part.Name));
+        Assert.Equal(
+            ["accepted", "chosen", "conflict", "dismissed", "done", "reopened", "setup", "verdict"], operations.Order.Select(part => part.Name));
         Assert.All(operations.Order, part => Assert.Equal(QuestOperationPhase.Log, (QuestOperationPhase)part.Phase));
+        Assert.All(operations.Order, part => Assert.Equal(part.Name, QuestStore.KindText(Enum.Parse<QuestOperationKind>(part.Name, ignoreCase: true))));
+        Assert.IsType<QuestAcceptOperation>(operations.For(QuestOperationKind.Accepted));
+        Assert.IsType<QuestChoiceOperation>(operations.For(QuestOperationKind.Chosen));
+        Assert.IsType<QuestSetUpOperation>(operations.For(QuestOperationKind.SetUp));
+        Assert.IsType<QuestVerdictOperation>(operations.For(QuestOperationKind.Verdict));
         Assert.IsType<QuestConflictOperation>(operations.For(QuestOperationKind.Conflict));
         Assert.IsType<QuestDismissOperation>(operations.For(QuestOperationKind.Dismissed));
         Assert.IsType<QuestCloseOperation>(operations.For(QuestOperationKind.Done));
@@ -88,6 +94,12 @@ public sealed class QuestsPartsTests
             """{"note":"shipped","answers":[{"requirement":1,"met":"all of it"}],"close":{"key":"k1","token":"t1"},"session":"s1"}""",
             closed);
         AssertKept("""{}""", closed with { Note = null, Answers = null, Close = null, Session = null });
+    }
+
+    [Fact]
+    public void A_yes_writes_nothing_but_an_empty_payload_as_before_and_reads_back_as_itself()
+    {
+        AssertKept("""{}""", new QuestOperation("q1", QuestOperationKind.Accepted, "m1", 7, At));
     }
 
     /// <summary>The payload the store writes for <paramref name="operation"/>, and the operation a row of it reads back as.</summary>

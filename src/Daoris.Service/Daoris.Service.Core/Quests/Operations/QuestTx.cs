@@ -38,6 +38,9 @@ internal sealed class QuestTx(QuestStore store, SqliteTransaction transaction, C
     /// <summary>The step that seals <paramref name="quest"/>'s current submission, or null where none does.</summary>
     internal Task<Quest?> SealingAsync(Quest quest) => store.SealingAsync(quest, transaction, ct);
 
+    /// <summary>The chain's next step a close, a yes or a verdict on <paramref name="closed"/> lets go, published; null where none is.</summary>
+    internal Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now) => store.PublishNextAsync(closed, now, transaction, ct);
+
     /// <summary>A rebind of <paramref name="id"/> onto <paramref name="from"/>, judged by the replay's rule; null where it refused it.</summary>
     internal Task<Quest?> ReboundInAsync(string id, QuestOperationRef from, bool whileOpen, DateTimeOffset now) =>
         store.ReboundInAsync(id, from, whileOpen, now, transaction, ct);
