@@ -2,7 +2,7 @@ import type { NotePart } from '../data/api';
 import { figure, list, moment } from '../locales/format';
 import { windowName } from '../settings/accounts/accounts';
 import type { AccountNames } from './accountNames';
-import { NOTE_CODES, type NoteCode } from './noteCodes';
+import { NOTE_CODES, type NoteCode } from './notes/noteCodes';
 import { reasonOf } from './say';
 
 // A session's note as the page words it (LANG1b, D142; the language design §2, §5, §6): each coded part from its code and
@@ -11,8 +11,8 @@ import { reasonOf } from './say';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-export { NOTE_CODES } from './noteCodes';
-export type { NoteCode } from './noteCodes';
+export { NOTE_CODES } from './notes/noteCodes';
+export type { NoteCode } from './notes/noteCodes';
 
 /**
  * Whose words a resumed conversation goes on with (CONVNOTE2a; the driver's `NoteCodes.Resumed`), each its entry; none carries
