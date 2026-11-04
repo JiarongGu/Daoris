@@ -574,7 +574,7 @@ public sealed class DrivenInboxTests
             Callers(File.ReadAllText(Daoris.Desktop.Driver.Tests.SourceFiles.Driver("DrivenInbox.cs")), "StopThisTurn()"));
         Assert.Equal(
             ["StopKeepingAsync"],
-            Callers(File.ReadAllText(Daoris.Desktop.Driver.Tests.SourceFiles.Driver("ChatTurns.cs")), "StopKeeping()"));
+            Callers(File.ReadAllText(Daoris.Desktop.Driver.Tests.SourceFiles.Driver("TurnStops.cs")), "StopKeeping()"));
     }
 
     /// <summary>

@@ -25,7 +25,7 @@ public sealed partial class SettledReadersCensusTests
         ["PartnerDoors.cs"] = "reads `settled` before `said` through SolicitedHand.Read and answers SolicitedFate.Settled, with no word",
         ["OpinionDoors.cs"] = "the findings' hand to the working session's line asks settled and reads it through SolicitedHand.Read as SolicitedFate.Settled, with no word",
         ["OpinionDeliverer.cs"] = "the findings' hand reads a settled answer as handed, with nothing said for it; the chat run's send-back asks none",
-        ["ChatTurns.cs"] = "answers a retry of a word it holds already: holds, queues, steers, attempts and takes nothing",
+        ["TurnKeeps.cs"] = "answers a retry of a word it holds already: holds, queues, steers, attempts and takes nothing",
         ["DrivenInbox.cs"] = "answers a retry of a word it holds already: holds, sends, steers, attempts and takes nothing",
         ["ChatWords.cs"] = "maps the turns' settled answer to ChatSaid.Settled, with no reach and no word",
         ["SessionWords.cs"] = "the record path, the inbox and the chat answer sent, no word, nothing kept on the ask",
