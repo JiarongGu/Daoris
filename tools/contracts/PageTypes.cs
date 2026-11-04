@@ -28,7 +28,12 @@ public sealed class PageTypes
         foreach (var route in routes)
         {
             var request = page.Ts(route.Request);
-            table.Append($"  {route.Request.Name}: {{ method: '{route.Method}', path: '{route.Path}' }},\n");
+            // A route that takes a body names the values that travel in its query instead, by their wire names.
+            var query = route.TakesBody
+                ? ContractJson.Options.GetTypeInfo(route.Request).Properties
+                    .Where(property => route.Travels(property.Name) == RouteTravel.Query).Select(property => $"'{property.Name}'")
+                : [];
+            table.Append($"  {route.Request.Name}: {{ method: '{route.Method}', path: '{route.Path}', query: [{string.Join(", ", query)}] }},\n");
             answers.Append($"  {route.Request.Name}: {{ request: {request}; answer: {page.Ts(route.Answer)} }};\n");
         }
 
@@ -48,6 +53,8 @@ public sealed class PageTypes
         if (Nullable.GetUnderlyingType(type) is { } inner) return Ts(inner);
         if (type == typeof(string) || type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(Guid)) return "string";
         if (type == typeof(bool)) return "boolean";
+        // A byte array travels as its base64 text.
+        if (type == typeof(byte[])) return "string";
         if (type.IsPrimitive || type == typeof(decimal)) return "number";
         if (type == typeof(object) || type == typeof(JsonElement) || typeof(JsonNode).IsAssignableFrom(type)) return "unknown";
 

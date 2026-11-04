@@ -13,7 +13,7 @@ import { landingFlow, type LandingOf } from './landingLife';
 export type LandingDoor = {
   open: boolean;
   onToggle: () => void;
-  /** Once read: the trace's landing for the branch, its due entry and its units; null where no landing on this machine names it. */
+  /** Once read: the trace's landing for the branch and its units; null where no landing on this machine names it. */
   landing?: LandingOf | null;
   /** A first read is on its way. */
   reading?: boolean;
@@ -25,7 +25,7 @@ export type LandingDoor = {
 
 /**
  * **How a landed branch landed, drawn as a flowchart** (FLOWCHART1c; D186, the flowchart design §2.7): a section of its page above
- * its commits, folded to its line until it is opened, then its due entry and each try (three of one code stacked), the landing
+ * its commits, folded to its line until it is opened, then the landing
  * with who accepted it and each later done that moved it on, the push, the pull request's latest answer, the end each unit it
  * carries reached, the clean-up and the recovery kept.
  *

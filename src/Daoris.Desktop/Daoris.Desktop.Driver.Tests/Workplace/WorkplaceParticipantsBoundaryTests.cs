@@ -241,28 +241,6 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         }
     }
 
-    // ——— The merges note at each access source
-
-    [Theory]
-    [InlineData(null, "its", "default")]
-    [InlineData("repository", "its repository's", "repository")]
-    [InlineData("workspace", "its workspace's", "workspace")]
-    [InlineData("machine", "this machine's", "machine")]
-    [InlineData("anything else", "the default's", "anything else")]
-    public void The_merges_note_names_whose_setup_lands_and_carries_the_source_field(string? access, string whose, string field)
-    {
-        var said = AutoLandingNotes.Concluded(AutoConcluded.Merges, access);
-
-        Assert.Equal(
-            $"its quest was done, and {whose} access setup lands work by its rule, "
-            + "but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept.",
-            said.Text);
-        Assert.Equal(NoteCodes.LandingMerges.Code, said.Parts![0].Code);
-        Assert.Equal(field, said.Parts[0].Value("access"));
-        Assert.Equal("the default", AccessRules.Whose("default"));
-        Assert.Equal("default", AccessRules.DefaultSource);
-    }
-
     // ——— The piece keeper's outcomes and the ref reading
 
     [Theory]

@@ -42,7 +42,7 @@ public sealed class WorkRetirementTests : IDisposable
     /// <summary>The branch unit as the inventory derives it: its session branch removed with the line's proof, so its end is reached.</summary>
     private WorkUnit Unit(string unit)
     {
-        var facts = new InventoryFacts([Grown("daoris/s1", unit) with { GoneAt = Then, Held = Fact() }], [], [], [], [], new HashSet<string>(), _ => false, Then)
+        var facts = new InventoryFacts([Grown("daoris/s1", unit) with { GoneAt = Then, Held = Fact() }], [], [], [], new HashSet<string>(), _ => false, Then)
         {
             Owed = WorkObligations.Read(_home, Then),
         };

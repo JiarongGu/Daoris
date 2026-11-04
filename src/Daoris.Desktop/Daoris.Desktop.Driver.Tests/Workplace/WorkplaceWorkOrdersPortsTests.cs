@@ -34,7 +34,7 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
         Assert.Equal(0, WorkplaceWorkOrders.Current.ForgetAbandoned(_home, _ => true));
 
         Assert.Empty(WorkplaceWorkOrders.Current.Owing(_home));
-        var facts = new InventoryFacts([Grown("daoris/s1", "unit-a") with { GoneAt = At, Held = Fact() }], [], [], [], [], new HashSet<string>(), _ => false, At);
+        var facts = new InventoryFacts([Grown("daoris/s1", "unit-a") with { GoneAt = At, Held = Fact() }], [], [], [], new HashSet<string>(), _ => false, At);
         var unit = Assert.Single(WorkplaceWorkOrders.Current.Derive(facts));
         Assert.Equal(("unit-a", "engine", "daoris/s1", "ended"), (unit.Unit, unit.Repository, unit.Branch, unit.End.State));
         Assert.Equal(WorkInventory.Derive(facts).Single().Entries, unit.Entries);

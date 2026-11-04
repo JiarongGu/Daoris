@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The workflows' answer to where the <see cref="ChangeTopics.Gates"/> topic's files are (FOUNDATION1 mod-vii, the design §14.3): the second
-/// opinions' records and the workflows, whose runs are listed by the names the due entries' gates read (FABRIC-END7b,
-/// <see cref="LandingJudged.Runs"/>), so the deadline's listing grows with the due list, never with every run there ever was. Installed when
+/// opinions' records and the workflows' versions, never every run there ever was. Installed when
 /// the driver's assembly loads, before any watch is built.
 /// </summary>
 internal static class WorkflowHomeTopic
@@ -16,7 +15,7 @@ internal static class WorkflowHomeTopic
         home =>
         [
             HomePart.Records(DaorisHome.Entry(home, HomeEntry.OpinionGates), subfolders: false),
-            Workflows(WorkflowStore.FolderOf(home), () => LandingJudged.Runs(home)),
+            Workflows(WorkflowStore.FolderOf(home), () => []),
         ]);
 
     /// <summary>

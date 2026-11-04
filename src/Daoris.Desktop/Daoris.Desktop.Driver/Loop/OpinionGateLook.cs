@@ -48,7 +48,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             var world = new ServiceReviewWorld(Service);
             var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
             // FABRIC-CLOSE1h15: a branch made whose push is held back has not landed, so the opinion holding it stays owed and is asked.
-            var pushHeld = OpinionLook.PushHeld(Home);
+            var pushHeld = LandPerformer.PushHeld(Home);
             foreach (var due in open)
             {
                 if (await JudgeAsync(due, dues, world, quests, pushHeld, keep: judged is not null, beside: false, ct).ConfigureAwait(false) is not { } fact)
@@ -153,7 +153,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 {
                     var world = new ServiceReviewWorld(Service);
                     var quests = await world.QuestsAsync(token).ConfigureAwait(false);
-                    return await JudgeAsync(due, new OpinionDues(Home), world, quests, OpinionLook.PushHeld(Home), keep: true, beside: true, token)
+                    return await JudgeAsync(due, new OpinionDues(Home), world, quests, LandPerformer.PushHeld(Home), keep: true, beside: true, token)
                         .ConfigureAwait(false);
                 }, due.Run ?? $"#{due.Quest}", beside: true).ConfigureAwait(false);
                 _context.Runs.Facts.Judged($"opinion/{subject}");

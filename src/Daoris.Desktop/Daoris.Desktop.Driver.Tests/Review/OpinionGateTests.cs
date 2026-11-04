@@ -645,38 +645,6 @@ public sealed class OpinionGateTests
         }
     }
 
-    /// <summary>
-    /// FABRIC-CLOSE1h15: the sessions whose automatic landing made its branch and holds its push back, as the opinion look reads them:
-    /// an open entry whose last try is <c>push-held</c>; one waiting on its opinion, and one closed since, are not.
-    /// </summary>
-    [Fact]
-    public void The_sessions_whose_push_is_held_back_are_the_open_entries_last_tried_push_held()
-    {
-        var scratch = Path.Combine(RepoRoot(), "_fixtures", "opinion-closes", Guid.NewGuid().ToString("N")[..8]);
-        try
-        {
-            var home = Path.Combine(scratch, "home");
-            var due = new AutoLandings(home);
-            foreach (var session in new[] { "s1", "s2", "s3" })
-            {
-                due.Due(new AutoLanding(session, "q-" + session, "web-app", "work", Path.Combine(scratch, session), Asked));
-            }
-
-            due.Tried("s1", new AutoTry(Asked, AutoLandingCode.PushHeld) { Tip = Read }, close: false);
-            due.Tried("s2", new AutoTry(Asked, AutoLandingCode.Opinion) { Tip = Read }, close: false);
-            due.Tried("s3", new AutoTry(Asked, AutoLandingCode.PushHeld) { Tip = Read }, close: false);
-            due.Tried("s3", new AutoTry(Answered, AutoLandingCode.Landed) { Tip = Read }, close: true);
-
-            var held = OpinionLook.PushHeld(home);
-            Assert.Equal("s1", Assert.Single(held));
-            Assert.True(held.Contains("S1"));
-        }
-        finally
-        {
-            GitSeed.Discard(scratch);
-        }
-    }
-
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
     private static string RepoRoot() => GitSeed.RepoRoot();
 

@@ -5,10 +5,12 @@ import type { RolePolicyRow, RoleStructure, StructurePlaceAsk, StructureWork } f
 import { Button, Icon, type Notify, SettingList, SettingRow } from '../../design/ui';
 import type { Authored } from '../../locales/authored';
 import { InlineConfirm } from '../../work/InlineConfirm';
+import { appointedRows } from '../roles/appointedHold';
 import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, policyLine, roleName, RolesCard } from '../roles/Roles';
 import { useRoleEditing } from '../roles/RolesView';
 import { fieldsOf, policyDraftOf } from '../roles/staffPolicyDraft';
 import { stateText } from '../roles/StructureSections';
+import { AppointedRows } from './AppointedRows';
 
 type Kind = 'machine' | 'workspace' | 'repository';
 
@@ -60,8 +62,12 @@ export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceA
   const editor = useRoleEditing(notify);
   const chain = useRoleStructureChain(place);
   const read = chain.data ? 'ok' : chain.isError ? 'failed' : 'loading';
-  // The supervisor and the steward are catalogue roles (D233 point 2); their rows here are ROLEONE1's page row, still to come.
-  return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={null} onSource={onSource} />;
+  // The supervisor and the steward are catalogue roles (D233 point 2): their rows are the ones placed here.
+  const here = (scope: { kind: string; id?: string }) => placedHere(place, scope);
+  const appointed = appointedRows(editor.catalogue).some((row) => here({ kind: row.scopeKind ?? 'machine', id: row.scopeId ?? undefined }))
+    ? <AppointedRows placed={here} editor={editor} />
+    : null;
+  return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={appointed} onSource={onSource} />;
 }
 
 /** The door from a role's source mark to the place that sets it, at the same work (SETUPUX1h): its workspace's page, or this machine's. */

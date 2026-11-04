@@ -123,7 +123,7 @@ public sealed class ReopenTellingTests : IDisposable
             quest["submission"] = new JsonObject { ["machine"] = "desk", ["sequence"] = 45, ["session"] = session };
         }
 
-        return ServiceClient.ReadQuests(new JsonArray(quest).ToJsonString())[0];
+        return QuestViews.Read(new JsonArray(quest).ToJsonString())[0];
     }
 
     private static Snapshot Look(params QuestView[] quests) => new(quests, [], []);

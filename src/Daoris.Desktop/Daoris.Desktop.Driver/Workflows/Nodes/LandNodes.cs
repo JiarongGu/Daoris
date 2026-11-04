@@ -102,7 +102,7 @@ public static class LandNodes
         };
         var key = resolved?.GetValueOrDefault(KeyOption);
         var squash = land.Options.TryGetValue("squash", out var written) && NodeOptions.Value(written) is true && method is Branch or Push or PullRequest;
-        return new LandingRule(LandingForm.Branch, pattern, Tidy: false, plugin, AutoAccept: !reviewed, key, squash);
+        return new LandingRule(LandingForm.Branch, pattern, plugin, AutoAccept: !reviewed, key, squash);
     }
 
     /// <summary>Whether the person's Accept comes before the graph's landing: a <see cref="NodeKinds.Review"/>, which the graph rules hold before every landing.</summary>

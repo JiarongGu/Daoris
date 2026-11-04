@@ -86,8 +86,8 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         },
     };
 
-    private static HelpProposal Use(string agent, UseChange change, string? workspace = null, bool set = true) =>
-        new("p9", "agent", "use", agent, workspace, null, null, "the person asked", "h1", "proposed") { AccountUse = change, ForSet = set };
+    private static HelpProposal Use(string agent, UseChange change, string? workspace = null) =>
+        new("p9", "agent", "use", agent, workspace, null, null, "the person asked", "h1", "proposed") { AccountUse = change };
 
     /// <summary>
     /// TOOL4g's <c>use</c> (D130 §9, §16.6; POOL1b, §5.3): how the set is used, as <c>daoris agent account use</c> takes it, said in its
@@ -108,35 +108,6 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
             + "switch accounts while a session runs and holds its own curve's five-hour window at 85%.", machine.Describe);
         Assert.Equal("daoris agent account use claude-code --no-keep", none.Terminal);
         Assert.Contains("keeps no account for conversations", none.Describe);
-    }
-
-    /// <summary>
-    /// POOL1b (§5.3): a <c>use</c> or an <c>order</c> the service wrote before the <c>set</c> mark is refused as written for a list that
-    /// is gone, never applied to the set.
-    /// </summary>
-    [Fact]
-    public void An_unmarked_proposal_is_refused_in_d197_s_words()
-    {
-        var unmarked = HelpProposals.Plan(Use("claude-code", new UseChange(Use: "goal"), set: false), DriverConfig.Empty, Listed);
-        var unmarkedOrder = HelpProposals.Plan(Order("claude-code", ["work"]) with { ForSet = false }, DriverConfig.Empty, Walked);
-
-        Assert.Equal("this `use` was written for a list that is gone (D197): propose it again.", unmarked.Refusal);
-        Assert.Equal("this `order` was written for a list that is gone (D197): propose it again.", unmarkedOrder.Refusal);
-    }
-
-    /// <summary>An unmarked <c>use</c> or <c>order</c> that reaches its Apply is settled refused with nothing pressed (POOL1b, §5.3).</summary>
-    [Fact]
-    public async Task An_unmarked_proposal_is_settled_refused_at_its_apply_and_nothing_is_pressed()
-    {
-        var (use, useDoors, _) = await ApplyAsync(Use("claude-code", new UseChange(Use: "goal"), set: false), facts: Listed);
-        var (order, orderDoors, _) = await ApplyAsync(Order("claude-code", ["work"]) with { Id = "p15", ForSet = false }, facts: Walked);
-
-        Assert.False(use.Applied);
-        Assert.Contains("written for a list that is gone (D197): propose it again", use.Told);
-        Assert.Empty(useDoors.Calls);
-        Assert.False(order.Applied);
-        Assert.Empty(orderDoors.Calls);
-        Assert.Equal("refused", HelpProposals.Find(_home, "p15")!.State);
     }
 
     /// <summary>
@@ -268,23 +239,6 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Equal(["update", "pin", "use", "order", "ready"], new HelpAgentProposals().Doors);
     }
 
-    /// <summary>The <c>set</c> mark is read from a <c>use</c> or an <c>order</c> file (POOL1b, §5.3); one without it is unmarked.</summary>
-    [Fact]
-    public void The_set_mark_is_read_from_a_use_or_an_order_file()
-    {
-        void Write(string id, string door, string fields) => System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), $"{id}.json"), $$"""
-            { "id": "{{id}}", "kind": "agent", "door": "{{door}}", "target": "claude-code", "workspace": null, "value": null, {{fields}}
-              "why": "the person asked", "state": "proposed", "by": { "session": "h1" } }
-            """);
-        Write("m1", "use", """ "use": "goal", "set": true, """);
-        Write("m2", "order", """ "accounts": ["work"], "set": true, """);
-        Write("m3", "order", """ "accounts": ["work"], """);
-
-        Assert.True(HelpProposals.Find(_home, "m1")!.ForSet);
-        Assert.True(HelpProposals.Find(_home, "m2")!.ForSet);
-        Assert.False(HelpProposals.Find(_home, "m3")!.ForSet);
-    }
-
     /// <summary>
     /// The machine of an <c>order</c> (TOOL4l-b): <c>claude-code</c> has three accounts, a list of its own on the machine and a
     /// default and a kept account in it, and <c>lab</c> a list and a default of its own, <c>trial</c> a default only.
@@ -316,7 +270,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     private static HelpProposal Order(string agent, string[] accounts, string? workspace = null, bool clear = false) =>
         new("p11", "agent", "order", agent, workspace, null, null, "the person asked", "h1", "proposed")
         {
-            AccountOrder = new AccountOrder(accounts, clear), ForSet = true,
+            AccountOrder = new AccountOrder(accounts, clear),
         };
 
     /// <summary>

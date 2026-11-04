@@ -40,7 +40,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
     /// <summary>
     /// TOOL4l-a: a use door carries exactly the fields the driver reads; keep none is an explicit null, unchanged is absent. Since POOL1b
-    /// (§5.3) it is marked for the set, `set: true`, and names no workspace; it carried `lab` before.
+    /// (§5.3) it names no workspace; it carried `lab` before.
     /// </summary>
     [Fact]
     public void A_use_is_written_with_its_fields_and_keep_none_is_told_from_unchanged()
@@ -54,8 +54,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
         Assert.Equal(("agent", "use", "claude-code", "order", "work"),
             (file.GetProperty("kind").GetString(), file.GetProperty("door").GetString(), file.GetProperty("target").GetString(),
              file.GetProperty("use").GetString(), file.GetProperty("keep").GetString()));
-        Assert.Equal((JsonValueKind.Null, JsonValueKind.True), (file.GetProperty("workspace").ValueKind, file.GetProperty("set").ValueKind));
-        Assert.Equal(JsonValueKind.True, Written(none!).GetProperty("set").ValueKind);
+        Assert.Equal(JsonValueKind.Null, file.GetProperty("workspace").ValueKind);
         Assert.Equal((JsonValueKind.True, 80), (file.GetProperty("early").ValueKind, file.GetProperty("near").GetInt32()));
         Assert.Equal(JsonValueKind.Null, Written(none!).GetProperty("keep").ValueKind);
         Assert.False(Written(none!).TryGetProperty("use", out _));
@@ -132,10 +131,8 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
         Assert.Equal("order", file.GetProperty("door").GetString());
         Assert.Equal(["work", "play"], file.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()!).ToArray());
         Assert.False(file.TryGetProperty("clear", out _));
-        Assert.Equal(JsonValueKind.True, file.GetProperty("set").ValueKind);
         var cleared = Written(clear!);
         Assert.Equal((JsonValueKind.True, JsonValueKind.Null), (cleared.GetProperty("clear").ValueKind, cleared.GetProperty("workspace").ValueKind));
-        Assert.Equal(JsonValueKind.True, cleared.GetProperty("set").ValueKind);
         Assert.False(cleared.TryGetProperty("accounts", out _));
     }
 

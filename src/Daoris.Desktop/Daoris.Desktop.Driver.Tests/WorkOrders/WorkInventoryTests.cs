@@ -29,10 +29,10 @@ public sealed class WorkInventoryTests
         new(Path.Combine(Trees, ".tidied", $"{name}-{(at ?? Then):yyyyMMdd'T'HHmmssfff'Z'}"), "default", "engine", SessionTree.SetAside) { MovedAside = at ?? Then };
 
     private static InventoryFacts Facts(
-        GrownBranch[]? branches = null, LandedBranch[]? landings = null, SessionTree[]? trees = null, AutoLanding[]? autos = null,
+        GrownBranch[]? branches = null, LandedBranch[]? landings = null, SessionTree[]? trees = null,
         RecoveryRef[]? refs = null, string[]? inUse = null, string[]? history = null, StandingBranch[]? standing = null,
         RecordedTree[]? recorded = null) =>
-        new(branches ?? [], landings ?? [], trees ?? [], autos ?? [], refs ?? [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase),
+        new(branches ?? [], landings ?? [], trees ?? [], refs ?? [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase),
             session => (history ?? []).Contains(session), Then.AddDays(1))
         { Standing = standing ?? [], Recorded = recorded ?? [] };
 
@@ -220,26 +220,6 @@ public sealed class WorkInventoryTests
     }
 
     [Fact]
-    public void An_auto_landing_still_open_is_temporary_and_pending_with_its_last_try()
-    {
-        var auto = new AutoLanding("s1", "q1", "engine", "default", Path.Combine(Trees, "s1"), Then) { Tries = [new AutoTry(Then.AddMinutes(5), AutoLandingCode.Held)] };
-        var unit = One(Facts(branches: [Grown()], landings: [Landed()], autos: [auto]));
-
-        var entry = unit.Entries.Single(each => each.Kind == "auto-landing");
-        Assert.Equal(("temporary", "pending"), (entry.Role, entry.Disposition));
-        Assert.Contains("held", entry.Detail);
-    }
-
-    [Fact]
-    public void A_closed_auto_landing_is_evidence_kept()
-    {
-        var auto = new AutoLanding("s1", "q1", "engine", "default", Path.Combine(Trees, "s1"), Then) { Closed = Then.AddHours(1) };
-        var entry = One(Facts(branches: [Grown()], landings: [Landed()], autos: [auto])).Entries.Single(each => each.Kind == "auto-landing");
-
-        Assert.Equal(("evidence", "kept"), (entry.Role, entry.Disposition));
-    }
-
-    [Fact]
     public void A_sessions_history_on_this_machine_is_evidence_kept_and_never_the_ends()
     {
         var unit = One(Facts(branches: [Grown(held: Held(), gone: Then)], landings: [Landed(held: Held(), gone: Then)], history: ["s1"]));
@@ -328,12 +308,11 @@ public sealed class WorkInventoryTests
     [Fact]
     public void Every_entry_of_every_kind_has_a_role_and_a_disposition()
     {
-        var autoOpen = new AutoLanding("s1", "q1", "engine", "default", Path.Combine(Trees, "s1"), Then);
         var facts = Facts(
             branches: [Grown(), Grown("daoris/s2", "unit-b", Held(), Then), new GrownBranch("engine", "default", "daoris/old", "main", "f0", null, Then)],
             landings: [Landed(), Landed("feature/y", "unit-b", Held(), Then, LandedKind.Merged), new LandedBranch("engine", "default", "feature/o", "main", "t", "so", null, null, Then)],
             trees: [Tree(), Tree("stray", "daoris/stray"), Tree("odd", "(unreadable)"), Aside("s2", Then), Aside("zz", Then)],
-            autos: [autoOpen], refs: [new RecoveryRef("engine", "refs/daoris/discarded/daoris/s2"), new RecoveryRef("engine", "refs/daoris/discarded/daoris/nobody")],
+            refs: [new RecoveryRef("engine", "refs/daoris/discarded/daoris/s2"), new RecoveryRef("engine", "refs/daoris/discarded/daoris/nobody")],
             history: ["s1"]);
 
         var units = WorkInventory.Derive(facts);

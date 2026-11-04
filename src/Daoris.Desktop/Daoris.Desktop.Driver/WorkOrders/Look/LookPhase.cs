@@ -9,6 +9,6 @@ internal enum LookPhase
     /// <summary>The look's head, before it reads the plugins and anything local: the remote sync, then the lost-claim stop.</summary>
     Before,
 
-    /// <summary>After the starts are begun, their runs bound and what ended reported: the landings due.</summary>
+    /// <summary>After the starts are begun, their runs bound and what ended reported: the landing's settling of what a stopped run left.</summary>
     After,
 }

@@ -54,7 +54,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     // A route the contracts do not declare yet has a method of its own below.
-    // transitional: routes-by-hand
     /// <summary>A route the contracts declare, sent as its record and read as its answer; a refusal comes back as one.</summary>
     public async Task<Sent<TAnswer>> SendAsync<TAnswer>(IRoute<TAnswer> request, CancellationToken ct = default) where TAnswer : class
     {
@@ -337,7 +336,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
         var all = ReadSessions(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
         var running = ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false)).Select(s => s.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var quests = ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false))
+        var quests = (await this.EveryQuestAsync(ct).ConfigureAwait(false))
             .ToDictionary(quest => quest.Id, quest => quest.Paths, StringComparer.OrdinalIgnoreCase);
         return RelatedCandidates.Pick(all, running, quest => quests.TryGetValue(quest, out var paths) ? paths : [], id, Directory.Exists);
     }
@@ -345,14 +344,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
         ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
-
-    /// <summary>
-    /// One quest as it stands, closed ones included — how a session's end is observed, and what a
-    /// resumed session is told its question came back with (D79). Null when the service has none.
-    /// </summary>
-    public async Task<QuestView?> FindQuestAsync(string id, CancellationToken ct = default) =>
-        ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false))
-            .FirstOrDefault(quest => string.Equals(quest.Id, id.TrimStart('#'), StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Dismiss every conflict a quest carries (SYNC6c) — the terminal's form of the drawer's button. The
@@ -1108,10 +1099,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return [.. document.RootElement.EnumerateArray().Select(ReadAsk)];
     }
 
-    /// <summary>Every quest, closed ones included, each with the service's reading of whether it may be deleted (HELP6).</summary>
-    public async Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct = default) =>
-        ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false));
-
     /// <summary>One ask as it stands — how an intake's end is observed. Null when the service has none.</summary>
     public async Task<AskView?> FindAskAsync(string id, CancellationToken ct = default)
     {
@@ -1468,29 +1455,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         PostAskAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}/close", w => w.WriteString("reason", reason), ct);
 
     /// <summary>
-    /// Decline a quest with the person's reason, verbatim (PAUSE1d, D132 §4.1): an abandon's decline. With
-    /// <paramref name="whileOpen"/> it applies only while the quest is open (PAUSE1c, D132 point 10), so a take that reached
-    /// a remote first stands and the decline is kept on the quest as a conflict. The service's sentence comes back
-    /// verbatim, a refusal included: a decline refused because the quest was taken meanwhile is an answer, not an exception.
-    /// </summary>
-    public async Task<(bool Ok, string Message)> DeclineQuestAsync(string id, string reason, bool whileOpen, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("action", "decline");
-            writer.WriteString("reason", reason);
-            // Written only when set, so a plain decline is the request it always was.
-            if (whileOpen) writer.WriteBoolean("whileOpen", true);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/respond", body, ct).ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_base} has no respond door ({status}) — is it older than this driver?");
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
-
-    /// <summary>
     /// A person deletes an ask made by mistake, with every quest asked by it (D95). The service's
     /// sentence comes back verbatim, and a refusal is an answer too.
     /// </summary>
@@ -1500,106 +1464,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>A person deletes a quest made by mistake (D95) — refused, in the service's words, for one anything stands on.</summary>
     public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct = default) =>
         DeleteRecordAsync($"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}", ct);
-
-    /// <summary>
-    /// The person's yes to a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on. The
-    /// service's sentence comes back verbatim, a refusal (nothing waits for a yes) included.
-    /// </summary>
-    public async Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct = default)
-    {
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/accept", "{}", ct).ConfigureAwait(false);
-        // A host older than the accept door answers a bare 404 or 405 — said plainly, not parsed as nothing.
-        if (root is not { } answer)
-        {
-            return (false, $"the service at {_base} has no accept door ({status}) — is it older than this driver?");
-        }
-
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
-
-    /// <summary>
-    /// The person marks a quest done (QUESTCLOSE1, D126's note): their words, verbatim, to the service's own door for it, which
-    /// writes the sentence saying the done was theirs before them and answers none of their requirements. Never respond's
-    /// door, which is an agent's done. The service's sentence comes back verbatim, a refusal (a closed quest, no such quest)
-    /// included, and a host older than the door is said to be.
-    /// </summary>
-    public async Task<(bool Ok, string Message)> PersonDoneAsync(string id, string? note, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            // Written only when given: no words is the service's sentence alone.
-            if (!string.IsNullOrWhiteSpace(note)) writer.WriteString("note", note.Trim());
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/done", body, ct).ConfigureAwait(false);
-        if (root is not { } answer)
-        {
-            return (false, $"the service at {_base} has no done door for a person ({status}) — is it older than this driver?");
-        }
-
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
-
-    /// <summary>
-    /// The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): <c>POST /api/quests/{id}/reopen</c>, naming the
-    /// submission by its machine and sequence, with their words where they wrote any. The service's sentence comes back verbatim, a
-    /// refusal (another submission current, nothing published from it, a step closed on it) included.
-    /// </summary>
-    public Task<(bool Ok, string Message)> ReopenQuestAsync(
-        string id, QuestSubmissionRef submission, string? note, CancellationToken ct = default) =>
-        PersonMoveAsync(id, "reopen", WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartObject("submission");
-            writer.WriteString("machine", submission.Machine);
-            writer.WriteNumber("sequence", submission.Sequence);
-            writer.WriteEndObject();
-            // Written only when given: no words is the reopen alone.
-            if (!string.IsNullOrWhiteSpace(note)) writer.WriteString("note", note.Trim());
-            writer.WriteEndObject();
-        }), ct);
-
-    /// <summary>
-    /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): <c>POST /api/quests/{id}/continue</c>. A
-    /// refusal (its source not ready again, nothing holding it) is the service's sentence.
-    /// </summary>
-    public Task<(bool Ok, string Message)> ContinueQuestAsync(string id, CancellationToken ct = default) =>
-        PersonMoveAsync(id, "continue", "{}", ct);
-
-    #region Bring-forward (SYNCMERGE1c3)
-
-    /// <summary>
-    /// The person's bring-forward of one side of two machines' work on a quest (SYNCMERGE1c3; D178): <c>POST
-    /// /api/quests/{id}/conflicts/forward</c> with the side's machine and sequence. A refusal or a loss again (409) and a quest not
-    /// found (404) come back as the service's sentence, not as a tool error.
-    /// </summary>
-    public Task<(bool Ok, string Message)> ForwardConflictAsync(
-        string id, string machine, long sequence, CancellationToken ct = default) =>
-        PersonMoveAsync(id, "conflicts/forward", WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("machine", machine);
-            writer.WriteNumber("sequence", sequence);
-            writer.WriteEndObject();
-        }), ct);
-
-    #endregion
-
-    /// <summary>A person's door on one quest (FABRIC-CLOSE1c3): its sentence, a refusal's included, and a host older than it said to be.</summary>
-    private async Task<(bool Ok, string Message)> PersonMoveAsync(string id, string door, string body, CancellationToken ct)
-    {
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/{door}", body, ct).ConfigureAwait(false);
-        if (root is not { } answer)
-        {
-            return (false, $"the service at {_base} has no {door} door ({status}) — is it older than this driver?");
-        }
-
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
 
     /// <summary>
     /// Whether this client's host knows a closure graph's operations and doors (FABRIC-CLOSE1b's handshake): <c>/api/status</c>'s
@@ -1617,56 +1481,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<bool> KnowsRemoteClosureAsync(CancellationToken ct = default) =>
         (await SendAsync(new ReadStatus(), ct).ConfigureAwait(false)).Answered() is { Closure: true, CloseOutcome: true, CloseRemote: true };
 
-    /// <summary>
-    /// A workflow request's quest (INTEGRATE1p, <c>POST /api/quests</c> with the request's key): the same key sent again answers the quest it
-    /// made, so a lost answer is sent once more without a second quest. The service's refusal comes back as an answer; an unanswered host throws.
-    /// </summary>
-    public async Task<RequestPublished> PublishAsync(RequestAsk ask, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("from", ask.From);
-            writer.WriteString("to", ask.To);
-            writer.WriteString("title", ask.Title);
-            writer.WriteString("body", ask.Body);
-            writer.WriteString("request", ask.Key);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync("/api/quests", body, ct).ConfigureAwait(false);
-        if (root is not { } answer) return new(false, "no-door", $"the service at {_base} has no quest door ({status})", null);
-        if (!ok) return new(false, "refused", Text(answer, "error") ?? payload, null);
-        var quest = answer.TryGetProperty("quest", out var made) && made.ValueKind == JsonValueKind.Object
-            ? ReadQuests("[" + made.GetRawText() + "]").FirstOrDefault() : null;
-        return new(true, null, Text(answer, "message") ?? "", quest);
-    }
+    // The ports' halves the quest doors answer, sent through QuestViews.
+    Task<RequestPublished> IRequestPort.PublishAsync(RequestAsk ask, CancellationToken ct) => this.PublishAsync(ask, ct);
 
-    /// <summary>
-    /// The driver binds a quest it took to the graph that closes it (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/bind</c>), at its take. The
-    /// service's sentence comes back verbatim, a refusal included, and a host older than the door is said to be.
-    /// </summary>
-    public async Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, string session, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("graph", graph);
-            // FABRIC-CLOSE1l (CLOSE1f): named for the take as the first session opens, never bound after it; a host before it refuses an
-            // open quest's bind as not taken, and the quest closes by its done.
-            writer.WriteBoolean("atTake", true);
-            // FABRIC-CLOSE1o: the session opening, whose take alone binds it. A host before it reads it as absent, and binds as CLOSE1l did.
-            writer.WriteString("session", session);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/bind", body, ct).ConfigureAwait(false);
-        if (root is not { } answer)
-        {
-            return (false, $"the service at {_base} has no bind door ({status}) — is it older than this driver?");
-        }
-
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
+    Task<(bool Ok, string Message)> IClosureBindPort.BindQuestAsync(string id, string graph, string session, CancellationToken ct) =>
+        this.BindQuestAsync(id, graph, session, ct);
 
     /// <summary>
     /// The graph's close (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/close</c>, §E5 step 2): every quest named, with the submission it judged,
@@ -1720,7 +1539,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             if (ok && answer.TryGetProperty("quests", out var named) && named.ValueKind == JsonValueKind.Array)
             {
-                return new(QuestCloseOutcomes.Closed, null, Text(answer, "message") ?? "", ReadQuests(named.GetRawText()));
+                return new(QuestCloseOutcomes.Closed, null, Text(answer, "message") ?? "", QuestViews.Read(named.GetRawText()));
             }
 
             if (status is 400 or 404 or 409 && Text(answer, "code") is { } code && QuestCloseOutcomes.Codes.Contains(code))
@@ -1734,27 +1553,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
-    /// What Daoris read of a done's evidence, posted to the one door that takes it (EVID1a, EVID1b; D144 §3): the local host's
-    /// <c>POST /api/quests/{id}/evidence</c>, with this client's key, as records are written. A refusal is an answer, in the
-    /// service's words: the done no longer waits on evidence (409), the verdict does not read what it waits on (400), or no
-    /// such quest (404); and a host older than the door is said to be.
-    /// </summary>
-    /// <exception cref="HttpRequestException">The host did not answer: the caller says so, and posts again at a later read.</exception>
-    public async Task<EvidencePosted> EvidenceAsync(string id, EvidenceVerdict verdict, CancellationToken ct = default)
-    {
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/evidence", verdict.Json(), ct).ConfigureAwait(false);
-        if (root is not { } answer)
-        {
-            return new(EvidencePosted.NoDoor, $"the service at {_base} has no evidence door ({status}) — is it older than this driver?");
-        }
-
-        return ok ? new(EvidencePosted.Kept, Text(answer, "message") ?? "")
-            : status == (int)System.Net.HttpStatusCode.Conflict ? new(EvidencePosted.NotWaiting, Text(answer, "error") ?? payload)
-            : new(EvidencePosted.Refused, Text(answer, "error") ?? payload);
-    }
-
-    /// <summary>
     /// Every session record, closed ones included, as the service answers them, with this client's key: what the session
     /// list's reader and a session delete read (SESSUX1a, SESSUX1f).
     /// </summary>
@@ -1763,28 +1561,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>The same records as the service wrote them, for a reader that reads the strikes and the last runs from them too.</summary>
     public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => GetAsync(SessionRecords.Door, ct);
-
-    /// <summary>
-    /// Every quest, closed ones included, as the service wrote them: what a trace reads a quest's answers, its yes and its
-    /// moments from (TRACE1), which <see cref="QuestView"/> leaves out because no planner needs them.
-    /// </summary>
-    public Task<string> QuestsJsonAsync(CancellationToken ct = default) => GetAsync("/api/quests?includeClosed=true", ct);
-
-    /// <summary>
-    /// One quest's moves as the service wrote them (FLOWCHART1a2, <c>GET /api/quests/{id}/moves</c>), in the order its history
-    /// replays: what a trace's quest link carries. Null from a host from before the door, which answers the route not found: its
-    /// path is not kept there, which is no failure (the flowchart design §7, trap 18). The door answers every id, one with no history
-    /// with no moves, so its own answer is never a 404.
-    /// </summary>
-    /// <exception cref="DriverException">The host answered the door with a failure.</exception>
-    public async Task<string?> QuestMovesJsonAsync(string id, CancellationToken ct = default)
-    {
-        var answer = await _doors.SendAsync(
-            ServiceVerb.Get, $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/moves", null, ct).ConfigureAwait(false);
-        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
-        if (!answer.Ok) throw new DriverException($"the service would not read quest `#{id}`'s moves: {answer.Payload}");
-        return answer.Payload;
-    }
 
     /// <summary>
     /// One quest's handback as the service wrote it (HANDBACK1, <c>GET /api/handbacks/{id}</c>), by the quest's id or the id of the session
@@ -2118,134 +1894,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     // A refused read throws with the service's own sentence (IServiceDoors.GetAsync): a bare
     // EnsureSuccessStatusCode threw it away, and the driver's log said less than the service said.
     internal Task<string> GetAsync(string path, CancellationToken ct) => _doors.GetAsync(path, ct);
-
-    internal static IReadOnlyList<QuestView> ReadQuests(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        var quests = new List<QuestView>();
-        foreach (var quest in document.RootElement.EnumerateArray())
-        {
-            quests.Add(new QuestView(
-                Text(quest, "id") ?? "",
-                Text(quest, "from") ?? "",
-                Text(quest, "to") ?? "",
-                Text(quest, "title") ?? "",
-                Text(quest, "body") ?? "",
-                Text(quest, "status") ?? "")
-            {
-                // Absent is nothing carried: a service from before D65 answers without either.
-                Links = quest.TryGetProperty("links", out var links) && links.ValueKind == JsonValueKind.Array
-                    ? links.EnumerateArray().Select(l => l.GetString()).OfType<string>().ToList()
-                    : [],
-                Attachments = quest.TryGetProperty("attachments", out var files) && files.ValueKind == JsonValueKind.Array
-                    ? files.EnumerateArray().Select(file => new QuestFileView(
-                        Text(file, "name") ?? "",
-                        Text(file, "sha256") ?? "",
-                        file.TryGetProperty("bytes", out var bytes) && bytes.ValueKind == JsonValueKind.Number ? bytes.GetInt64() : 0,
-                        // The service answers a path only to this machine, and only when the bytes are here.
-                        Text(file, "path"))).ToList()
-                    : [],
-                Then = quest.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array
-                    ? then.EnumerateArray().Select(step => new QuestStepView(
-                        Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? "")
-                        {
-                            // A set-up step's environment (REVIEWENV1b). Absent on every other step, and from a host before it.
-                            SetUpIn = Text(step, "setUpIn"),
-                        }).ToList()
-                    : [],
-                Parent = Text(quest, "parent"),
-                // Who holds the quest and this machine's id where it is the page's (SYNCMERGE1b1). Absent is none: a quest no press settled.
-                Holder = Text(quest, "holder") is { Length: > 0 } held ? held : null,
-                Here = Text(quest, "here") is { Length: > 0 } here ? here : null,
-                // What a list calls it (SESSUX1j). Absent is a host from before the field: the title names it.
-                Short = Text(quest, "short") is { Length: > 0 } named ? named : null,
-                // The work's mark (FOUNDATION1x). Absent is a host from before it: the quest starts on Build's order.
-                Weight = Text(quest, "weight") is { Length: > 0 } weight ? weight : null,
-                // The paths it declares (INTEGRATE1l). Absent is a host from before them: none declared.
-                Paths = quest.TryGetProperty("paths", out var paths) && paths.ValueKind == JsonValueKind.Array
-                    ? paths.EnumerateArray().Select(p => p.ValueKind == JsonValueKind.String ? p.GetString() : null).OfType<string>().ToList()
-                    : [],
-                // A workflow request's key (INTEGRATE1p). Absent is a quest no request published, and a host from before it.
-                Request = Text(quest, "request") is { Length: > 0 } requested ? requested : null,
-                // Absent is not waiting: a host from before D79 answers without it.
-                Awaits = Text(quest, "awaits"),
-                // Absent is a person's publish or a chain's step: a host from before SESS1 answers without it.
-                PublishedBy = Text(quest, "publishedBy") is { Length: > 0 } by ? by : null,
-                Note = Text(quest, "note"),
-                NoteParts = NotePart.Read(quest),
-                Workspace = RemoteTarget.Workspace(Text(quest, "workspace")),
-                Deletable = Flag(quest, "deletable"),
-                // The lanes of `to` it addresses (D115 §2.2). Absent is none: the whole repository.
-                Lanes = quest.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
-                    ? lanes.EnumerateArray().Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null).OfType<string>().ToList()
-                    : [],
-                // What the person requires (DRIFT1c), in the service's order, which a done answers by number (DRIFT1d), so
-                // each keeps its place. Absent is none: a host from before requirements.
-                Requirements = quest.TryGetProperty("requirements", out var required) && required.ValueKind == JsonValueKind.Array
-                    ? required.EnumerateArray()
-                        .Select(r => new QuestRequirementView(Text(r, "quote") ?? "", Text(r, "check") ?? "") { Evidence = EvidenceOf(r) })
-                        .ToList()
-                    : [],
-                // Whether a done is held for the person's yes (DRIFT1d) or its evidence (EVID1a). Absent is false: a host from before.
-                Held = Flag(quest, "held"),
-                // Why, and whether its done waits on evidence, and what was last read of it (EVID1a, D144 §3, §6). Absent is
-                // none: a host from before evidence, whose one hold was a departure.
-                Hold = Text(quest, "hold") is { Length: > 0 } hold ? hold : null,
-                AwaitsEvidence = Flag(quest, "awaitsEvidence"),
-                Evidence = EvidenceVerdict.Read(quest),
-                // How its done answered each requirement (DRIFT1d), which an accept shows before the yes (DRIFT1d2). Absent
-                // is none: a quest no done answered, or a host from before answers. A number left out reads as 0, no requirement's.
-                Answers = quest.TryGetProperty("answers", out var answered) && answered.ValueKind == JsonValueKind.Array
-                    ? answered.EnumerateArray()
-                        .Select(a => new QuestAnswerView(
-                            a.TryGetProperty("requirement", out var number) && number.ValueKind == JsonValueKind.Number ? number.GetInt32() : 0,
-                            Text(a, "met"), Text(a, "departed"), Text(a, "quote")))
-                        .ToList()
-                    : [],
-                // When its status last moved: a taken quest's take, compared with its last session's end (CARRY2b).
-                Updated = Moment(quest, "updated"),
-                // The review on the record (REVIEWENV1b): each absent where there is none, and from a host before them.
-                Review = ReadReviewChoice(quest),
-                SetUpIn = Text(quest, "setUpIn"),
-                SetUps = ReadSetUps(quest),
-                Verdicts = ReadVerdicts(quest),
-                // FABRIC-CLOSE1a: the graph that closes it and its taker's current submission. Absent for a quest no closure graph holds,
-                // and from a host before them; a submission named only in half is none.
-                Closure = Text(quest, "closure") is { Length: > 0 } closure ? closure : null,
-                Submission = ReadSubmission(quest),
-                // FABRIC-CLOSE1c, read for FABRIC-WORKFLOW2d's seal: the submission a step grew from and the reopen standing on it. Absent
-                // from a step a done published and from a host before them; one named in half is none.
-                GrewFrom = ReadSubmissionRef(quest, "grewFrom"),
-                SourceReopened = ReadSubmissionRef(quest, "sourceReopened"),
-                // FABRIC-CLOSE1c4, read for FABRIC-CLOSE1c8: the source's own reopen no later submission answered. Absent once one did,
-                // and from a host before it; one named in half is none.
-                Reopened = ReadReopen(quest),
-                // WORKFLOW1e2: the person's kind and workflow on a quest no ask published, in an ask's shape. Absent is none.
-                WorkflowChoices = ReadWorkflowChoices(quest),
-            });
-        }
-
-        return quests;
-    }
-
-    /// <summary>
-    /// A requirement's evidence (EVID1a), each item exactly one of a path or a gate; an item naming both or neither is passed
-    /// over, as half of a fact is none. Empty, never a list of its own, where it names none.
-    /// </summary>
-    internal static IReadOnlyList<QuestEvidenceItem> EvidenceOf(JsonElement requirement)
-    {
-        if (requirement.ValueKind != JsonValueKind.Object || !requirement.TryGetProperty("evidence", out var items)
-            || items.ValueKind != JsonValueKind.Array)
-        {
-            return [];
-        }
-
-        var read = items.EnumerateArray()
-            .Select(item => new QuestEvidenceItem(Text(item, "path"), Text(item, "gate")))
-            .Where(item => (item.Path is null) != (item.Gate is null))
-            .ToList();
-        return read.Count == 0 ? [] : read;
-    }
 
     internal static IReadOnlyList<RepoView> ReadRegistry(string json)
     {
@@ -2863,7 +2511,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var listed = new HashSet<string>(open, StringComparer.OrdinalIgnoreCase);
         return
         [
-            .. ReadQuests(json).Where(quest =>
+            .. QuestViews.Read(json).Where(quest =>
                 !listed.Contains(quest.Id)
                 && lastRun.TryGetValue(quest.Id, out var last)
                 && last.WordsWaiting),
@@ -3097,94 +2745,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         By = Text(refusal, "by"),
     };
 
-    // The review on the record, read (REVIEWENV1b2): each field optional, so a quest or an ask no review touches, and one from a
-    // host before them, reads as it did. A set-up, a verdict, a choice or a proposal that is not whole is passed over, as the
-    // service passes over what it cannot read: never a failed read of the quest or the ask. Then the review's quest and ask
-    // doors.
-
-    /// <summary>A quest's chain choice (<c>review</c>), or null where it answers none, or one that names no choice.</summary>
-    private static QuestReviewChoiceView? ReadReviewChoice(JsonElement quest) =>
-        quest.TryGetProperty("review", out var review) && Text(review, "choice") is { Length: > 0 } choice
-            ? new QuestReviewChoiceView(choice, Text(review, "words"))
-            : null;
-
-    /// <summary>
-    /// A taker's current submission (FABRIC-CLOSE1a), or null: none, from a host before it, or named only in half. Its commit
-    /// (FABRIC-CLOSE1c5) only where it is a commit's full id, lowered as a verdict's is; absent from a host before it. The session
-    /// that said its ready (FABRIC-CLOSE1c4), absent where none did and from a host before it.
-    /// </summary>
-    private static QuestSubmissionView? ReadSubmission(JsonElement quest) =>
-        quest.TryGetProperty("submission", out var submission) && submission.ValueKind == JsonValueKind.Object
-        && Text(submission, "machine") is { Length: > 0 } machine
-        && submission.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
-        && sequence.TryGetInt64(out var number) && number > 0
-            ? new QuestSubmissionView(
-                machine, number, Moment(submission, "at"), Text(submission, "note"),
-                Text(submission, "commit") is { } commit && EvidenceCodes.IsObjectId(commit) ? commit.ToLowerInvariant() : null,
-                Text(submission, "session") is { Length: > 0 } session ? session : null)
-            : null;
-
-    /// <summary>
-    /// A source's own reopen no later submission answered (FABRIC-CLOSE1c4), or null: none, from a host before it, or named only in half,
-    /// the reopen's or the reopened submission's machine and sequence. The session that said the reopened ready (FABRIC-CLOSE1c8), absent
-    /// where none did and from a host before it.
-    /// </summary>
-    private static QuestReopenView? ReadReopen(JsonElement quest) =>
-        quest.TryGetProperty("reopened", out var reopen) && reopen.ValueKind == JsonValueKind.Object
-        && ReadSubmissionRef(quest, "reopened") is { } named && ReadSubmissionRef(reopen, "of") is { } of
-            ? new QuestReopenView(
-                named.Machine, named.Sequence, of, Text(reopen, "note"), Moment(reopen, "at"),
-                Text(reopen, "session") is { Length: > 0 } session ? session : null)
-            : null;
-
-    /// <summary>A submission a quest names by its machine and sequence (FABRIC-CLOSE1c), or null: none, from a host before it, or named only in half.</summary>
-    private static QuestSubmissionRef? ReadSubmissionRef(JsonElement quest, string name) =>
-        quest.TryGetProperty(name, out var named) && named.ValueKind == JsonValueKind.Object
-        && Text(named, "machine") is { Length: > 0 } machine
-        && named.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
-        && sequence.TryGetInt64(out var number) && number > 0
-            ? new QuestSubmissionRef(machine, number)
-            : null;
-
-    /// <summary>A set-up step's set-ups (<c>setUps</c>), each with a full commit: one without is half of one.</summary>
-    private static IReadOnlyList<QuestSetUpView> ReadSetUps(JsonElement quest) =>
-    [
-        .. Items(quest, "setUps")
-            .Where(setUp => EvidenceCodes.IsObjectId(Text(setUp, "commit")))
-            .Select(setUp => new QuestSetUpView(Text(setUp, "commit")!)
-            {
-                Look = Text(setUp, "look"),
-                Shows = Text(setUp, "shows"),
-                Again = Text(setUp, "again"),
-                Served = Text(setUp, "served"),
-                Run = Text(setUp, "run"),
-                Session = Text(setUp, "session"),
-                Local = Flag(setUp, "local"),
-                At = Moment(setUp, "at"),
-                Machine = Text(setUp, "machine"),
-                Sequence = Long(setUp, "sequence"),
-            }),
-    ];
-
-    /// <summary>The person's verdicts (<c>verdicts</c>), each saying one: a verdict that says nothing is none.</summary>
-    private static IReadOnlyList<QuestReviewVerdictView> ReadVerdicts(JsonElement quest) =>
-    [
-        .. Items(quest, "verdicts")
-            .Where(verdict => Text(verdict, "said") is { Length: > 0 })
-            .Select(verdict =>
-            {
-                var setUp = verdict.TryGetProperty("setUp", out var named) && named.ValueKind == JsonValueKind.Object ? named : default;
-                return new QuestReviewVerdictView(Text(verdict, "said")!)
-                {
-                    SetUpMachine = Text(setUp, "machine"),
-                    SetUpSequence = Long(setUp, "sequence"),
-                    Commit = Text(verdict, "commit"),
-                    Words = Text(verdict, "words"),
-                    At = Moment(verdict, "at"),
-                    Machine = Text(verdict, "machine"),
-                };
-            }),
-    ];
+    // An ask's review, read: each field optional, and a choice or a proposal that is not whole passed over, as the service passes
+    // over what it cannot read; never a failed read of the ask. Then the review's quest and ask doors.
 
     /// <summary>An ask's review choices (<c>reviewChoices</c>), each a choice with when it was made.</summary>
     private static IReadOnlyList<AskReviewChoiceView> ReadReviewChoices(JsonElement ask) =>

@@ -234,9 +234,6 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
     /// <summary>What a combined Accept brought each session into (LINESTOGETHER1d), read from its operation before any acceptance.</summary>
     public IReadOnlyDictionary<string, TogetherBrought> Brought { get; init; } = new Dictionary<string, TogetherBrought>();
 
-    /// <summary>The due list's entries for the run's sessions (LAND2b).</summary>
-    public IReadOnlyList<AutoLanding> AutoLandings { get; init; } = [];
-
     /// <summary>
     /// A chat run's own facts (CHATFLOW1c), where <see cref="Sessions"/> are its line's records in its tree and <see cref="Quests"/> none;
     /// null for a quest's run.
@@ -1016,26 +1013,10 @@ public static class WorkflowRuns
             return on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Merge, At = accepted };
         }
 
-        var due = facts.AutoLandings.LastOrDefault(entry => Same(entry.Session, newest.Id));
-        if (due is { Closed: { } closed, Last.Code: var code })
+        // Accepted automatically: the run's `land` lands it.
+        if (cell.Participation == WorkflowParticipation.Automatic)
         {
-            switch (code)
-            {
-                case AutoLandingCode.Already or AutoLandingCode.Carried:
-                    return on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Already, Code = code, At = closed };
-                case AutoLandingCode.Nothing:
-                    return on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Nothing, At = closed };
-                case AutoLandingCode.Gone:
-                    return on with { State = WorkflowRunStates.Stopped, Detail = WorkflowRunDetails.Gone, At = closed };
-            }
-        }
-
-        // Accepted automatically: Daoris's own look lands it, unless its last try met what only a change or a press moves on.
-        if (cell.Participation == WorkflowParticipation.Automatic && due is not { Closed: not null })
-        {
-            return due?.Last is { Code: AutoLandingCode.Uncommitted or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused } tried
-                ? on with { State = WorkflowRunStates.CannotStart, Detail = WorkflowRunDetails.Refused, Code = tried.Code, At = tried.At, Branch = tried.Branch }
-                : on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.Automatic, At = due?.DueAt };
+            return on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.Automatic };
         }
 
         return on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Accept, At = newest.Updated };

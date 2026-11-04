@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Contracts.Quests;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Http;
 

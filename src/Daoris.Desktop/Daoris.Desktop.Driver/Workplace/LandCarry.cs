@@ -71,7 +71,7 @@ public static class LandCarry
         CancellationToken ct = default)
     {
         if (WhyOf(landed) is not { } why || Skips(record)) return null;
-        var (tip, status, paths) = await AutoLander.ReadTreeAsync(tree, ct).ConfigureAwait(false);
+        var (tip, status, paths) = await LandPerformer.ReadTreeAsync(tree, ct).ConfigureAwait(false);
         if (tip is null) return new CarryAnswer(false, why, NotTold(session, "its tree's commit could not be read", WordsOf(why, landed.Conflict, paths)));
         var words = WordsOf(why, landed.Conflict, paths);
         // The yes is kept before the words go, and counted as the press's own carry-on (a new press starts the count again): a session that

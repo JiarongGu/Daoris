@@ -1175,7 +1175,7 @@ public sealed class PlannerTests
             [{ "id": "s1", "quest": "q1", "state": "failed", "created": "2026-10-07T09:00:00Z", "updated": "2026-10-07T09:30:00+00:00" },
              { "id": "s2", "quest": "q2", "state": "failed", "created": "2026-10-07T09:00:00Z" }]
             """);
-        var quests = ServiceClient.ReadQuests("""
+        var quests = QuestViews.Read("""
             [{ "id": "q1", "to": "Game", "status": "Taken", "updated": "2026-10-07T09:35:00Z" },
              { "id": "q2", "to": "Game", "status": "Taken" }]
             """);

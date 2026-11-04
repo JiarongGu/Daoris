@@ -400,25 +400,16 @@ public sealed record AutoTry(DateTimeOffset At, string Code)
 
 
 /// <summary>
-/// A session due to land automatically (LAND2b, D145 point 2): its quest, where it ran, the tree it ran in, when it became
-/// due, each try, and when the entry closed.
+/// A run's work as the performer of its <c>land</c> judges it (<see cref="LandPerformer"/>): its session, its quest, where it ran, the tree
+/// it ran in, when it was judged, and the last try kept of it.
 /// </summary>
-/// <param name="Tree">The tree its record names, under this home's trees (D51): machine-local, like the file that keeps it.</param>
+/// <param name="Tree">The tree its record names, under this home's trees (D51): machine-local.</param>
 public sealed record AutoLanding(string Session, string Quest, string Repository, string Workspace, string Tree, DateTimeOffset DueAt)
 {
     public IReadOnlyList<AutoTry> Tries { get; init; } = [];
 
-    /// <summary>When a try closed it (<see cref="AutoLandingCode.Closes"/>), or null while it waits.</summary>
-    public DateTimeOffset? Closed { get; init; }
-
     /// <summary>Its last try, or null before the first.</summary>
     public AutoTry? Last => Tries.Count == 0 ? null : Tries[^1];
-
-    /// <summary>
-    /// Whether a new conclusion made it due again after a try that closed it (FABRIC-CLOSE1h6): open, with a last try whose code
-    /// closes. Only <see cref="AutoLandings.Due"/> opens a closed entry, so that try was the earlier due's, and this one is judged afresh.
-    /// </summary>
-    public bool Reopened => Closed is null && Last is { Code: var code } && AutoLandingCode.Closes(code);
 }
 
 

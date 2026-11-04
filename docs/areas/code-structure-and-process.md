@@ -22,7 +22,6 @@ finishes first and the whole set runs once.
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes, and says when they are stale |
 | The parts kit | `src/Daoris.Contracts/Parts/`, each root's `<Root>PartsTests`, `docs/index/registered.md` | a module's parts registered with its seam's `PartAttribute`, found, ordered and built by the root that runs them |
-| The transitional register | `Driver/Transitional/Register.cs`, `tools/transitional-markers.mjs` | each kept older reading, with the condition that ends it and the row that deletes it |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
@@ -53,7 +52,9 @@ finishes first and the whole set runs once.
    registered, not written by hand. An HTTP route is its request record in `src/Daoris.Contracts/<Domain>/` (`IRoute<TAnswer>`:
    method, path, answer), which uses the standard library alone. The host finds its `IRouteModule`s by reflection and maps each
    handler through `RouteMap`, whose binder answers a value that does not bind 400 with no body, as the framework's binding
-   did; the driver sends the record through `ServiceClient.SendAsync`. The page's types and `ROUTES` table are written from the
+   did: a body is read only where the record has body values, is 415 when it is not JSON, and is required unless the record
+   is `[OptionalBody]`; a POST's `[FromQuery]` value travels in its query. The driver sends the record through
+   `ServiceClient.SendAsync`, its views read in `Service/Wire/<Domain>Views.cs`. The page's types and `ROUTES` table are written from the
    records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
    first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
    pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. `api.ts` sends a declared

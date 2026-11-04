@@ -36,7 +36,7 @@ public sealed class DriverPartsTests : IDisposable
             driver.LookPasses.In(LookPhase.Before),
             pass => Assert.IsType<LookSync>(pass),
             pass => Assert.IsType<LostClaimStop>(pass));
-        Assert.IsType<DueLandings>(Assert.Single(driver.LookPasses.In(LookPhase.After)));
+        Assert.IsType<UnresolvedDeliveries>(Assert.Single(driver.LookPasses.In(LookPhase.After)));
     }
 
     [Fact]
@@ -60,9 +60,9 @@ public sealed class DriverPartsTests : IDisposable
     public void A_name_declared_twice_an_after_that_is_no_part_or_runs_later_and_a_part_its_root_cannot_build_are_refused()
     {
         Assert.Equal(
-            "the part sync is declared twice, by LookSync and DueLandings",
+            "the part sync is declared twice, by LookSync and UnresolvedDeliveries",
             Assert.Throws<PartOrderException>(() => PartOrder.Of(
-                [Declared("sync", LookPhase.Before), Declared("sync", LookPhase.After, type: typeof(DueLandings))])).Message);
+                [Declared("sync", LookPhase.Before), Declared("sync", LookPhase.After, type: typeof(UnresolvedDeliveries))])).Message);
         Assert.Equal(
             "the part claims comes after sink, which is no part",
             Assert.Throws<PartOrderException>(() => PartOrder.Of([Declared("claims", LookPhase.Before, "sink")])).Message);
@@ -73,8 +73,8 @@ public sealed class DriverPartsTests : IDisposable
 
         // A constructor asking for wiring the root does not hand fails at the first look, naming the part.
         var unbuilt = Assert.Throws<PartOrderException>(() => Parts.Build<ILookPass>(
-            [Declared("landing", LookPhase.After, type: typeof(DueLandings))], type => (ILookPass)Activator.CreateInstance(type, new object())!));
-        Assert.StartsWith("the part landing (DueLandings) could not be built from its root's wiring: ", unbuilt.Message);
+            [Declared("landing", LookPhase.After, type: typeof(UnresolvedDeliveries))], type => (ILookPass)Activator.CreateInstance(type, new object())!));
+        Assert.StartsWith("the part landing (UnresolvedDeliveries) could not be built from its root's wiring: ", unbuilt.Message);
     }
 
     private static PartDeclaration Declared(string name, LookPhase phase, params string[] after) =>

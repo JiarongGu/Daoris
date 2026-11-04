@@ -139,7 +139,6 @@ public sealed class LinesRoutes(DriverContext context)
                     pair.line.Workspace,
                     pair.landing.Rule.Form,
                     pair.landing.Rule.Pattern,
-                    pair.landing.Rule.Tidy,
                     pair.landing.Rule.Plugin,
                     pair.landing.Rule.AutoAccept,
                     // The ticket's key and the squash, for the page to show and keep: none is left out.

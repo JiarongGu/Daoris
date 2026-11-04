@@ -24,8 +24,6 @@ internal interface ILookWiring
 
     SessionProcesses Processes { get; }
 
-    SessionEvents Events { get; }
-
     /// <summary>Each line the look says, classed where it is made.</summary>
     LookSaid Lines { get; }
 
@@ -40,7 +38,4 @@ internal interface ILookWiring
 
     /// <summary>A test's stand-in for stopping a session whose take lost; null stops its process.</summary>
     Func<string, Noted, bool>? Stops { get; }
-
-    /// <summary>Says once, while an update drains, that the work <paramref name="key"/> names waits for the drain to end.</summary>
-    void DrainHolds(List<string> events, string family, string key, string held);
 }

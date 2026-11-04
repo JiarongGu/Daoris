@@ -112,14 +112,6 @@ public static class OpinionLook
     }
 
     /// <summary>
-    /// The sessions whose automatic landing made its branch and holds its push back (FABRIC-CLOSE1h15): each open entry whose last try is
-    /// <c>push-held</c>, read once for a look's opinions. A due list that does not read is none.
-    /// </summary>
-    public static IReadOnlySet<string> PushHeld(string home) =>
-        new AutoLandings(home).Open().Where(entry => entry.Last?.Code == AutoLandingCode.PushHeld).Select(entry => entry.Session)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
     /// Whether <paramref name="landing"/> was made since <paramref name="due"/> was owed (FABRIC-CLOSE1h18): its session's work accepted onto
     /// it at or after the due's time, by the landing itself or by the advance the session's later done made (LAND2c), as the automatic
     /// landing reads a landing made since its entry's done. One older lands only the work it held then.

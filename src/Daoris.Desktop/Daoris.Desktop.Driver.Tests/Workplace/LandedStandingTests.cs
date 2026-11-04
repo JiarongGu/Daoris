@@ -30,7 +30,7 @@ public sealed class LandedStandingTests
         new(id, "a", "engine", "Title", "Body", status) { Held = held };
 
     private static InventoryFacts Facts(LandedBranch landing, DateTimeOffset now, params string[] closed) =>
-        new([], [landing], [], [], [], new HashSet<string>(), _ => false, now) { ClosedQuests = closed.ToHashSet(StringComparer.OrdinalIgnoreCase) };
+        new([], [landing], [], [], new HashSet<string>(), _ => false, now) { ClosedQuests = closed.ToHashSet(StringComparer.OrdinalIgnoreCase) };
 
     // ---- the words: the age, the closed quest, the door
 

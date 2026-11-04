@@ -184,7 +184,6 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 - **Routing**: `RoutingStanding` and `StandingBlock`; quest addressing is `Service/Quests/`.
 - ***What needs you***: `Modules/Loop/AttentionStateSlice.cs` and `Web/work/attention/`. **The steward desk**: `Modules/Platform/StewardDesk.cs`.
 - **What agents are told to do**: the canon skill, then sync this repository and the examples.
-- **An older record's read kept**: an entry in `Driver/Transitional/Register.cs` with its end condition and row.
 
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,

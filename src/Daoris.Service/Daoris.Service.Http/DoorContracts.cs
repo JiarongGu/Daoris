@@ -21,6 +21,9 @@ public sealed record ConfirmationValue(string Name, string Type, string Value);
 /// </summary>
 public sealed record DoorContract(JsonTypeInfo? Body, bool BodyOptional, IReadOnlySet<string> Query, JsonSerializerOptions Json)
 {
+    /// <summary>The body type's top-level names its door binds from the address instead, which a body may not name.</summary>
+    public IReadOnlySet<string> Unbound { get; init; } = new HashSet<string>();
+
     /// <summary>
     /// The values a card shows for <paramref name="query"/> and <paramref name="body"/>, each once and each a name the door
     /// binds, or the sentence the ask is refused with. The card must never show one act while its grant does another: a
@@ -68,7 +71,9 @@ public sealed record DoorContract(JsonTypeInfo? Body, bool BodyOptional, IReadOn
                 }
                 else
                 {
-                    var bound = type.Properties.FirstOrDefault(p => string.Equals(p.Name, property.Name, StringComparison.OrdinalIgnoreCase));
+                    var bound = pointer.Length == 0 && Unbound.Contains(property.Name)
+                        ? null
+                        : type.Properties.FirstOrDefault(p => string.Equals(p.Name, property.Name, StringComparison.OrdinalIgnoreCase));
                     if (bound is null) return $"`{at}` is not a name this door binds, so it would be shown and never kept.";
                     inner = TypeOf(bound.PropertyType);
                 }
@@ -137,6 +142,8 @@ public sealed class DoorContracts(IServiceProvider services)
                 continue;
             }
 
+            if (endpoint.Metadata.GetMetadata<RouteDeclaration>() is { } declared) return Declared(declared, json);
+
             var accepts = endpoint.Metadata.GetMetadata<IAcceptsMetadata>();
             var body = accepts?.RequestType is { } type && json.TryGetTypeInfo(type, out var info) ? info : null;
             var route = endpoint.RoutePattern.Parameters.Select(parameter => parameter.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -150,6 +157,21 @@ public sealed class DoorContracts(IServiceProvider services)
         }
 
         return null;
+    }
+
+    // A declared route binds as its record says (RouteBinder): the body's names are the record's body values alone, so a body naming
+    // an address's value is refused here as the binder would never keep it.
+    private static DoorContract Declared(RouteDeclaration route, JsonSerializerOptions json)
+    {
+        var type = json.GetTypeInfo(route.Request);
+        var body = type.Properties.Any(property => route.Travels(property.Name) == RouteTravel.Body) ? type : null;
+        var query = type.Properties.Where(property => route.Travels(property.Name) == RouteTravel.Query).Select(property => property.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return new DoorContract(body, route.BodyOptional, query, json)
+        {
+            Unbound = type.Properties.Where(property => route.Travels(property.Name) != RouteTravel.Body).Select(property => property.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase),
+        };
     }
 
     private static bool IsSimple(Type type)

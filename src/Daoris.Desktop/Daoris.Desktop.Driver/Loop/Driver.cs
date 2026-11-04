@@ -255,18 +255,6 @@ public sealed class Driver(
     public LookPart Part { get; init; } = LookPart.Look;
 
     /// <summary>
-    /// The wakes a plan was woken by (FABRIC-END7), which its landing looks at alone (<see cref="AutoLander.ChooseAsync"/>): null, as
-    /// the whole look hands it, lands on every due entry.
-    /// </summary>
-    public IReadOnlyCollection<LandingWake>? Woke { get; init; }
-
-    /// <inheritdoc cref="DueLandings.WokeSpent"/>
-    internal bool WokeSpent => LookPasses.Of<DueLandings>().WokeSpent;
-
-    /// <inheritdoc cref="DueLandings.LandingBusy"/>
-    internal bool LandingBusy => LookPasses.Of<DueLandings>().LandingBusy;
-
-    /// <summary>
     /// The look's passes, registered by their modules (<see cref="LookPassAttribute"/>), ordered once per process and built once per
     /// driver with this driver as their wiring; each phase's run at its anchor in <see cref="LookAsync"/>.
     /// </summary>
@@ -289,47 +277,21 @@ public sealed class Driver(
 
     SessionProcesses ILookWiring.Processes => Context.Processes;
 
-    SessionEvents ILookWiring.Events => Context.Events;
-
     LookSaid ILookWiring.Lines => Lines;
 
     bool ILookWiring.Beside => Context.Beside;
 
     Func<string, Noted, bool>? ILookWiring.Stops => Stops;
 
-    void ILookWiring.DrainHolds(List<string> events, string family, string key, string held) => Context.DrainHolds(events, family, key, held);
-
     SessionOutput? ILandingWiring.Output => output;
 
     HookSet? ILandingWiring.Hooks => Context.Hooks;
-
-    Action? ILandingWiring.WokeBack => WokeBack;
-
-    Action? ILandingWiring.PassAsked => PassAsked;
-
-    /// <summary>
-    /// Told once a landing pass this look started has ended and no longer runs (FABRIC-END7's review), so the loop offers again the wakes
-    /// it held back meanwhile.
-    /// </summary>
-    public Action? LandingEnded { get; init; }
-
-    /// <summary>
-    /// Hands back the wakes this look took (PARALLEL1g): told by a selection beside the look that failed before it judged with them, as a
-    /// look whose selection failed leaves them unspent (FABRIC-END7's review), so the next look judges them again.
-    /// </summary>
-    internal Action? WokeBack { get; init; }
 
     /// <summary>
     /// Told a run a start found bound already, to a named workflow (FABRIC-CUTOVER1c; the cutover design §3): where it is a graph run whose record
     /// holds its end, its chain has come back here, and the loop's runtime is asked for a pass that judges it. Null tells nobody.
     /// </summary>
     internal Action<string>? RunReturned { get; init; }
-
-    /// <summary>
-    /// Asks the loop's runtime for a whole pass (FABRIC-CUTOVER1d; the cutover design §4): the look's automatic landing held by a run's graph for a
-    /// judgement its next pass makes asks it, and tries again at its next look. Null asks nobody.
-    /// </summary>
-    internal Action? PassAsked { get; init; }
 
     /// <summary>
     /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
@@ -1668,18 +1630,15 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// A driven record that just concluded, read against its repository's rule (LAND2b): a done under the switch joins the due
-    /// list, and the rest under it is said in its conversation. Never a reason to fail the run: the record has concluded.
+    /// A driven record that just concluded: a done whose rule reads it is owed a second opinion, which a later look asks (XAGENT1f, the
+    /// second-agent design §2.1). Never a reason to fail the run: the record has concluded.
     /// </summary>
-    internal async Task ConcludedForLandingAsync(
+    internal async Task ConcludedForOpinionAsync(
         string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct)
     {
-        // WORKFLOW1f: its run's process, read once for both, so a named workflow's landing step and opinion step decide what is owed.
         var process = status == "Done"
             ? await WorkflowProcesses.ConcludedAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
             : null;
-        AutoLander.Concluded(home, config, Context.Events, sessionId, quest, status, state, workTree, workspace, process: process);
-        // XAGENT1f: a done whose rule reads it is owed a second opinion, which a later look asks (the second-agent design §2.1).
         OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree, process: process);
     }
 
@@ -3269,9 +3228,7 @@ public sealed class Driver(
                     await ReviewSetUps.PostAsync(service, config, Context.Events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
                         .ConfigureAwait(false);
 
-                    // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself. FABRIC-CLOSE1h
-                    // (§E5): in a closure graph its submission reads as that done, so it is due at the agent's `ready`.
-                    await ConcludedForLandingAsync(sessionId, quest, QuestResults.Status(after), conclusion.State, workTree, start.Workspace, ct)
+                    await ConcludedForOpinionAsync(sessionId, quest, QuestResults.Status(after), conclusion.State, workTree, start.Workspace, ct)
                         .ConfigureAwait(false);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51

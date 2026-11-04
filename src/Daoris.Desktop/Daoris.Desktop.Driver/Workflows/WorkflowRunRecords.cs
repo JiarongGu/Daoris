@@ -10,9 +10,6 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
     /// <summary>The landing record's entries.</summary>
     public IReadOnlyList<LandedBranch> Landings() => new LandedBranches(home).Entries();
 
-    /// <summary>The automatic landings due and closed.</summary>
-    public IReadOnlyList<AutoLanding> AutoLandings() => new AutoLandings(home).All();
-
     /// <summary>
     /// When each session's work was accepted into its line (D100): the newest acceptance its conversation's record keeps, read
     /// from the writer's own words (<see cref="LandingRules.IsAcceptance"/>). A teammate's record is on its machine.
