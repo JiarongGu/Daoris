@@ -35,7 +35,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | ChannelReach | `Driver/WorkOrders/ChannelReach.cs` | Hands channel and addressed messages to running parts at their level, by message id |
 | ChannelCommand | `Driver/WorkOrders/ChannelCommand.cs` | The terminal's channel verb |
 | RoutingStanding, StandingBlock | `Driver/Participants/Domain/RoutingStanding.cs`, `Driver/Context/Domain/StandingBlock.cs:214` | The routing line told to a lead or a chat |
-| DriverHelpers, HelperWaits, HelperKey | `Driver/Loop/DriverHelpers.cs`, `Driver/Participants/Domain/HelperWaits.cs`, `Driver/Settings/HelperKey.cs` | A helper's ask judged, run and answered; the lead's wait on its own helper; the `helpers` rule |
+| DriverHelpers, HelperTurn, HelperWaits, HelperKey | `Driver/Loop/DriverHelpers.cs`, `Driver/Loop/Helpers/HelperTurn.cs`, `Driver/Participants/Domain/HelperWaits.cs`, `Driver/Settings/HelperKey.cs` | A helper's ask judged, run and answered, its pass in `HelperTurn`; the lead's wait on its own helper; the `helpers` rule |
 | DriverPartners, PartnerAdmission | `Driver/Loop/DriverPartners.cs`, `Driver/Participants/Domain/PartnerAdmission.cs` | A piece's clone, one frozen commit, the two-piece bound, measured confinement |
 | OpinionDeliverer | `Driver/Loop/OpinionDeliverer.cs` | An opinion's findings through the one door (the gate is the review area's) |
 | DriverBrainstorms, DriverMeetings | `Driver/Loop/DriverBrainstorms.cs`, `DriverMeetings.cs` | Brainstorm passes and meeting turns at the look, under the cap |
