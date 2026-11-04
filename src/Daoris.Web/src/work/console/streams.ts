@@ -1,5 +1,5 @@
 import i18n from '../../locales/i18n';
-import type { PanelTab } from '../frame/frame';
+import type { PanelTab } from '../frame/OutputPanel';
 
 /**
  * A stream as the driver lists it (CONSOLE2c): something a session runs beside itself — a subagent,

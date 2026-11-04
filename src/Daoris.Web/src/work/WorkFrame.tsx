@@ -33,7 +33,7 @@ import { useSessionActs } from './sessionActs';
 import { useNewStart } from './start/useNewStart';
 import { StartPane } from './start/StartPane';
 import { agentRosterOf } from './start/agentRoster';
-import { OutputPanel, PANEL_MIN } from './frame/frame';
+import { OutputPanel, PANEL_MIN } from './frame/OutputPanel';
 import { dockRange, type ListMode } from './frame/layout';
 import type { FrameClosings } from './frame/closings';
 import type { ListPanes } from './frame/listPanes';

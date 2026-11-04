@@ -32,7 +32,7 @@ import { FilePreview } from '../review/FilePreview';
 import type { useSessionLanding } from '../review/useSessionLanding';
 import { takesWords } from '../say';
 import type { HandOverRoster } from '../start/HandOverAsk';
-import { StreamTabs } from './frame';
+import { StreamTabs } from './OutputPanel';
 import { NothingFollowed } from './RightDock';
 import type { Place, ViewId } from './placements';
 import type { useDockViews } from './useDockViews';

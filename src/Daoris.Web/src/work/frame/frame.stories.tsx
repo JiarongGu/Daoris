@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SessionConsole } from '../console/SessionConsole';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { OutputPanel, StatusBar } from './frame';
+import { StatusBar } from './frame';
+import { OutputPanel } from './OutputPanel';
 
 // The window's furniture (D55) — regions the platform had nowhere to put. Starting a conversation is
 // *New conversation*'s, with its own stories (NEW1b). The panel's console is absent here on purpose: a stream arrives over the shell's

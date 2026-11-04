@@ -8,7 +8,8 @@ import { en, zh } from '../../locales';
 import { SessionConsole } from '../console/SessionConsole';
 import { layTabs } from '../../test/tabRoom';
 import { FRAME_HELD, SESSION_ACTIVE } from '../../design/ui';
-import { ActivityBar, AppStrip, OutputPanel, type PanelTab, Splitter, StatusBar } from './frame';
+import { ActivityBar, AppStrip, Splitter, StatusBar } from './frame';
+import { OutputPanel, type PanelTab } from './OutputPanel';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
 const render = (node: ReactElement) => {
