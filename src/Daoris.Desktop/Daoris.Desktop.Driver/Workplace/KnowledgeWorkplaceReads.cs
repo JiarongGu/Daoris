@@ -12,15 +12,12 @@ internal sealed class KnowledgeWorkplaceReads : IKnowledgeWorkplace
     public IReadOnlyList<string> AcceptanceNotes =>
         [LandingRules.PersonAccepted, LandingRules.AutoAccepted, LandingRules.HandNote(new TreeHand(true, "")).Text!];
     public string LandingsFileName => LandedBranches.FileName;
-    public string AutoLandingsFileName => AutoLandings.FileName;
 
     public (IReadOnlyList<LandedBranch> Entries, string Path) Landings(string home)
     {
         var landed = new LandedBranches(home);
         return (landed.Entries(), landed.FilePath);
     }
-
-    public IReadOnlyList<AutoLanding> Due(string home) => new AutoLandings(home).All();
 
     public Task<(int Code, string Stdout, string Stderr)> GitAsync(string root, IReadOnlyList<string> arguments, TimeSpan patience, CancellationToken ct) =>
         WorkingTree.GitAsync(root, arguments, environment: null, patience, ct);

@@ -333,7 +333,6 @@ public static class WorkflowRunReader
             Process = process,
             Requests = RequestsOf(part, mine, sessions, reads),
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
-            AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
         };
         var record = reads.Records.Record(RunUnits.IdOf(run));
         // INTEGRATE1n part n3 (F50): what the integration record says promoted, asked only where the run's graph holds an `integrate`.
@@ -459,8 +458,6 @@ public static class WorkflowRunReader
         public Task<OpinionView?> OpinionAsync(string id, CancellationToken cancel) => sources.Service.Opinions.ReadAsync(id, cancel);
 
         public IReadOnlyList<LandedBranch> Landings { get; } = records.Landings();
-
-        public IReadOnlyList<AutoLanding> AutoLandings { get; } = records.AutoLandings();
 
         private IReadOnlyList<GrownBranch>? _branches;
 

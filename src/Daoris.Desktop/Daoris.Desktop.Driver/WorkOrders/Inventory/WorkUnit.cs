@@ -96,7 +96,7 @@ public static class WorkRecord
 /// <param name="Repository">The repository whose work it is; null for an ask, which is a workspace's.</param>
 /// <param name="Record">
 /// The canonical record that names the unit (<see cref="SessionBranches.FileName"/>, <see cref="LandedBranches.FileName"/>,
-/// <see cref="AutoLandings.FileName"/>, <see cref="WorkRecord.Quests"/>, <see cref="WorkRecord.Asks"/>); null where no record names
+/// <see cref="WorkRecord.Quests"/>, <see cref="WorkRecord.Asks"/>); null where no record names
 /// it, an unknown owner (canary 27), which blocks and is never guessed.
 /// </param>
 /// <param name="Writer">That record's one writer: <see cref="WorkRecord.DriverWriter"/> or <see cref="WorkRecord.ServiceWriter"/>.</param>

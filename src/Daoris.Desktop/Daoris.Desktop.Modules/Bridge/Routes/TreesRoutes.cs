@@ -511,7 +511,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             earlier = await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken);
             if (earlier is not null && earlier.ReadsAsLanded(TreeFolders.TreeGone(tree)))
             {
-                return new { Session = id, Said = TreesPlanWords.LandedPlan(id, earlier, new AutoLandings(_loop.Home).Of(id)).ToWire() };
+                return new { Session = id, Said = TreesPlanWords.LandedPlan(id, earlier).ToWire() };
             }
 
             if (string.IsNullOrWhiteSpace(tree)) return new { Session = id, Said = TreesWords.NoTreeToLand(id).ToWire() };

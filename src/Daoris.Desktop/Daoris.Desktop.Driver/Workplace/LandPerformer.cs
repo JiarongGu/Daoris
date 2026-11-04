@@ -57,6 +57,11 @@ public sealed class LandPerformer(
         if (unit is not null && tip is not null) LandOutcomes.Forget(unit, tip);
     }
 
+    /// <summary>The sessions of <paramref name="home"/> whose landing made its branch and holds its push back, by their last try.</summary>
+    public static IReadOnlySet<string> PushHeld(string home) =>
+        Tries.Where(each => each.Key.StartsWith($"{home}\n", StringComparison.OrdinalIgnoreCase) && each.Value.Code == AutoLandingCode.PushHeld)
+            .Select(each => each.Key[(home.Length + 1)..]).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Lands the work of a run whose <c>land</c> the runtime started. Null where there is nothing to land from here.</summary>
     public async Task<string?> PerformAsync(LandStart start, CancellationToken ct = default)
     {

@@ -274,44 +274,10 @@ public sealed class Driver(
     public LookPart Part { get; init; } = LookPart.Look;
 
     /// <summary>
-    /// The wakes a plan was woken by (FABRIC-END7), which its landing looks at alone (<see cref="AutoLander.ChooseAsync"/>): null, as
-    /// the whole look hands it, lands on every due entry.
-    /// </summary>
-    public IReadOnlyCollection<LandingWake>? Woke { get; init; }
-
-    /// <summary>
-    /// Whether this look's landing judged with <see cref="Woke"/> (FABRIC-END7's review): set once its selection read the due list, or
-    /// found it is not this process's to land. False where the look failed before it, the selection failed, or a landing still ran: the
-    /// loop puts the wakes back.
-    /// </summary>
-    internal bool WokeSpent { get; private set; }
-
-    /// <summary>Whether the selection was left because a landing still ran (FABRIC-END7's review): that landing's end offers the wakes again.</summary>
-    internal bool LandingBusy { get; private set; }
-
-    /// <summary>
-    /// Told once a landing pass this look started has ended and no longer runs (FABRIC-END7's review), so the loop offers again the wakes
-    /// it held back meanwhile.
-    /// </summary>
-    public Action? LandingEnded { get; init; }
-
-    /// <summary>
-    /// Hands back the wakes this look took (PARALLEL1g): told by a selection beside the look that failed before it judged with them, as a
-    /// look whose selection failed leaves them unspent (FABRIC-END7's review), so the next look judges them again.
-    /// </summary>
-    internal Action? WokeBack { get; init; }
-
-    /// <summary>
     /// Told a run a start found bound already, to a named workflow (FABRIC-CUTOVER1c; the cutover design §3): where it is a graph run whose record
     /// holds its end, its chain has come back here, and the loop's runtime is asked for a pass that judges it. Null tells nobody.
     /// </summary>
     internal Action<string>? RunReturned { get; init; }
-
-    /// <summary>
-    /// Asks the loop's runtime for a whole pass (FABRIC-CUTOVER1d; the cutover design §4): the look's automatic landing held by a run's graph for a
-    /// judgement its next pass makes asks it, and tries again at its next look. Null asks nobody.
-    /// </summary>
-    internal Action? PassAsked { get; init; }
 
     /// <summary>
     /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
@@ -1410,10 +1376,8 @@ public sealed class Driver(
 
         await Stages.TimeAsync("endings", () => EndingsAsync(events, concluded, ct)).ConfigureAwait(false);
 
-        // Done work lands itself (LAND2b, D145 point 2): after the endings and their sync, so a done that just closed is read
-        // as the service now holds it. The look chooses; the landings run beside it, as its starts do. PARALLEL1g: under the watch the
-        // choosing runs beside it too, in the landing's pass (SelectBeside).
-        await Stages.TimeAsync("landing", () => LandDueAsync(events, ct)).ConfigureAwait(false);
+        // A run's `land` is the runtime's; the look only settles the deliveries a stopped run left unresolved.
+        await Stages.TimeAsync("landing", () => SettleAsync(events, ct)).ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt, signedOutAt), events, progressed, snapshot.Active, concluded)
         {
@@ -1687,135 +1651,36 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// The sessions due to land automatically (LAND2b, D145 point 2, design §2): chosen in this look, landed beside it. One pass
-    /// at a time, since a plugin's two minutes may outlast a look; what it says joins a later look's report. A due list or a
-    /// service that does not answer is said, and its sessions are tried again at the next look: landing is never a dead look.
+    /// The deliveries a stopped run left unresolved, settled by the process holding the home's lease, as only it lands, and never while an
+    /// update drains (DRAINHOLD1). A delivery that could not be read is said, and settled at the next look.
     /// </summary>
-    /// <remarks>
-    /// FABRIC-END7's review: only the process holding the home's lease selects or launches one (finding 2), as only it keeps an end
-    /// (<see cref="EndKeeping"/>): a loop beside it (<c>drive --share</c>) has its own guard and its own looks, so both could land one
-    /// entry and each call its plugin. The person's press is unchanged. <see cref="Woke"/> is spent only where the selection judged
-    /// with it (finding 3, <see cref="WokeSpent"/>).
-    /// </remarks>
-    private async Task LandDueAsync(List<string> events, CancellationToken ct)
+    private async Task SettleAsync(List<string> events, CancellationToken ct)
     {
-        if (!HomeLease.HeldHere(home))
-        {
-            // Not this process's to land: the lease holder's looks land it, and its wakes are this loop's to drop.
-            WokeSpent = true;
-            return;
-        }
-
-        // DRAINHOLD1: a landing changes a tree and the repository's line, and its plugin may take minutes: none is chosen or begun while an
-        // update drains. The wakes are left unspent for the first look that does not.
-        if (config.Draining)
-        {
-            if (new AutoLandings(home).Open().Count > 0) Context.DrainHolds(events, "landing", "due", "the sessions due to land");
-            return;
-        }
-
-        if (Context.Runs.Landing)
-        {
-            LandingBusy = true;
-            return;
-        }
-
+        if (!HomeLease.HeldHere(home) || config.Draining) return;
         try
         {
-            // The rule's plugin says its lines on the console under its name, as at a press (D100), and what the landing did
-            // with it is logged where the loop's hooks are (PLUGUI1d).
+            // A plugin says its lines on the console under its name, as at a press (D100), and what it did is logged where the loop's hooks are.
             var plugins = new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log);
             await SettleDeliveriesAsync(plugins, events, ct).ConfigureAwait(false);
-            var lander = new AutoLander(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, plugins), Context.Events, service.LandingSaid)
-            {
-                Look = Lines, PassAsked = PassAsked,
-            };
-            if (Context.Beside)
-            {
-                SelectBeside(lander, ct);
-                return;
-            }
-
-            var (chosen, said) = await lander.ChooseAsync(config, ct, Woke).ConfigureAwait(false);
-            WokeSpent = true;
-            // Each line classed where the lander made it (NOTIFY2h2).
-            events.AddRange(said);
-            if (chosen.Count > 0 && !Context.Runs.Beside(token => lander.LandAsync(chosen, token), ct, LandingEnded))
-            {
-                // A pass began meanwhile (looks run one at a time, so none should): what was chosen is chosen again after it.
-                WokeSpent = false;
-                LandingBusy = true;
-            }
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
                                           or UnauthorizedAccessException)
         {
             events.Add(Lines.Retry(
-                "landing", $"landing  the sessions due to land could not be looked at this look, and are tried again at the next: {error.Message}"));
+                "landing", $"landing  the deliveries left unresolved could not be settled this look, and are settled at the next: {error.Message}"));
         }
     }
 
     /// <summary>
-    /// The selection and its landings, under the watch, as one landing pass beside the look (PARALLEL1g, D181 point 3): a due list, a
-    /// workflow, a quest or a tree slow to read holds that pass, never a start. The wakes this look took are the pass's to judge with, so
-    /// they are spent here, once (FABRIC-END7); a selection that fails hands them back (<see cref="WokeBack"/>) before it says so, and
-    /// its line wakes the look that judges them again. A look while the pass runs leaves its own wakes for the pass's end, as before.
+    /// A driven record that just concluded: a done whose rule reads it is owed a second opinion, which a later look asks (XAGENT1f, the
+    /// second-agent design §2.1). Never a reason to fail the run: the record has concluded.
     /// </summary>
-    private void SelectBeside(AutoLander lander, CancellationToken ct)
-    {
-        if (lander.Due.Open().Count == 0)
-        {
-            WokeSpent = true;
-            return;
-        }
-
-        var woke = Woke;
-        var back = WokeBack;
-        if (!Context.Runs.Beside(async token =>
-            {
-                AutoChosen chosen;
-                try
-                {
-                    chosen = await Stages.TimeAsync("landing", () => lander.ChooseAsync(config, token, woke), beside: true).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
-                                                  or UnauthorizedAccessException
-                                                  || (error is OperationCanceledException && !token.IsCancellationRequested))
-                {
-                    back?.Invoke();
-                    // Said once until a selection reads again, so one that keeps failing wakes no look of its own (LookFacts.Failed).
-                    return Context.Runs.Facts.Failed("landing")
-                        ? [Lines.Retry("landing", $"landing  the sessions due to land could not be looked at this time, and are tried again at a later look: {error.Message}")]
-                        : [];
-                }
-
-                Context.Runs.Facts.Judged("landing");
-                if (chosen.Chosen.Count == 0) return chosen.Said;
-                IReadOnlyList<string> landed = await lander.LandAsync(chosen.Chosen, token).ConfigureAwait(false);
-                return [.. chosen.Said, .. landed];
-            }, ct, LandingEnded))
-        {
-            // A pass began meanwhile (looks run one at a time, so none should): its end offers the wakes again.
-            LandingBusy = true;
-            return;
-        }
-
-        WokeSpent = true;
-    }
-
-    /// <summary>
-    /// A driven record that just concluded, read against its repository's rule (LAND2b): a done under the switch joins the due
-    /// list, and the rest under it is said in its conversation. Never a reason to fail the run: the record has concluded.
-    /// </summary>
-    internal async Task ConcludedForLandingAsync(
+    internal async Task ConcludedForOpinionAsync(
         string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct)
     {
-        // WORKFLOW1f: its run's process, read once for both, so a named workflow's landing step and opinion step decide what is owed.
         var process = status == "Done"
             ? await WorkflowProcesses.ConcludedAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
             : null;
-        AutoLander.Concluded(home, config, Context.Events, sessionId, quest, status, state, workTree, workspace, process: process);
-        // XAGENT1f: a done whose rule reads it is owed a second opinion, which a later look asks (the second-agent design §2.1).
         OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree, process: process);
     }
 
@@ -3502,9 +3367,7 @@ public sealed class Driver(
                     await ReviewSetUps.PostAsync(service, config, Context.Events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
                         .ConfigureAwait(false);
 
-                    // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself. FABRIC-CLOSE1h
-                    // (§E5): in a closure graph its submission reads as that done, so it is due at the agent's `ready`.
-                    await ConcludedForLandingAsync(sessionId, quest, QuestResults.Status(after), conclusion.State, workTree, start.Workspace, ct)
+                    await ConcludedForOpinionAsync(sessionId, quest, QuestResults.Status(after), conclusion.State, workTree, start.Workspace, ct)
                         .ConfigureAwait(false);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
