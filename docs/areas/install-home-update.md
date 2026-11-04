@@ -32,7 +32,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `StartConfirmation` | `Drv/Install/StartConfirmation.cs` | Whether this start can still be rolled back, read from the swap journal |
 | `HomeLastBuild` | `Drv/Install/HomeLastBuild.cs` | `data/last-build.json`: the newest build that ran on the home; the launcher's refusal of an older one. Compiled into the launcher |
 | `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build while a delivery is unresolved |
-| `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: numbered steps, the writer stamp, settled-gated imports |
+| `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: the connection, the writer stamp, settled-gated imports; its numbered steps are `DesktopStoreSteps.cs` beside it (`DesktopStore.Steps` is the door), its open options `DesktopStoreOptions.cs` |
 | `HomeMigration` | `Drv/Install/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
 | `Tools` | `Drv/Install/Tools.cs` | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |
 | `ToolInstall`, `ToolResources`, `ToolsCommand` | `Drv/Install/` same names | Download, verify, lay out; the lists and locations; `daoris tool` |
@@ -206,7 +206,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 - **A refusal to go back:** `Drv/Workplace/InstallRollback.cs`.
 - **A changed stored shape:** a step of its own in `Drv/Install/Migration/`, one entry of `HomeMigration.Steps`, and the old
   reader deleted in the same chunk.
-- **A store table or column:** a new numbered step in `DesktopStore.Steps`. Raise the writer stamp only when older builds must
+- **A store table or column:** a new numbered step in `DesktopStoreSteps.All` (`Store/DesktopStoreSteps.cs`). Raise the writer stamp only when older builds must
   stop writing.
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
