@@ -444,7 +444,7 @@
       ["tools/console3-probe.mjs", "\"claude\"", "-", "measurement", "a dated probe of the console names the program it runs"],
       ["tools/deployment-rehearsal.mjs", "\"acp-stub\"", "b", "behaviour", "the deployment rehearsal's stand-in, read from the registry's stand-in providers from row b"],
       ["tools/deployment-rehearsal.mjs", "\"stub\"", "b", "behaviour", "the deployment rehearsal's stand-in, read from the registry's stand-in providers from row b"],
-      ["tools/desktop-publish.mjs", ".mcp.json", "-", "words", "the publisher's help text names a repository's own connector file"],
+      ["tools/desktop-publish/install-note.mjs", ".mcp.json", "-", "words", "the install note names a repository's own connector file"],
       ["tools/fabric-probe/launch.mjs", "\"claude\"", "-", "measurement", "a dated probe of the fabric launches Claude Code's program"],
       ["tools/fabric-probe/launch.mjs", "\"codex\"", "-", "measurement", "a dated probe of the fabric launches Codex's program"],
       ["tools/fabric-probe/receipt.mjs", "x-codex-turn-metadata", "-", "measurement", "a dated probe reads Codex's turn header from a receipt"],
