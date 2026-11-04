@@ -7,9 +7,9 @@ namespace Daoris.Driver;
 internal enum TurnPhase
 {
     /// <summary>
-    /// Each <c>session/update</c> of the session's own, once a load's replay is passed over, the background work and the wake have read
-    /// it and a subagent's is routed to its own stream: what the agent says of itself, then the update rendered for the console and
-    /// the record.
+    /// Each <c>session/update</c>: a load's replay is passed over, the background work and the wake read it, a late-taken word is told,
+    /// a subagent's is routed to its own stream, then what the agent says of itself and the update rendered for the console and the
+    /// record.
     /// </summary>
     Update,
 

@@ -16,12 +16,18 @@ public sealed class AcpPartsTests
         var session = new AcpSession(new StringReader(""), TextWriter.Null, _ => { });
 
         var order = session.TurnStages.Order;
-        Assert.Equal(["measure", "render", "permission"], order.Select(part => part.Name));
-        Assert.Equal([TurnPhase.Update, TurnPhase.Update, TurnPhase.Request], order.Select(part => (TurnPhase)part.Phase));
+        Assert.Equal(["replay", "watch", "heard", "subagent", "measure", "render", "permission"], order.Select(part => part.Name));
+        Assert.Equal(
+            [.. Enumerable.Repeat(TurnPhase.Update, 6), TurnPhase.Request], order.Select(part => (TurnPhase)part.Phase));
 
-        // What each anchor runs, in the order it runs them: an update is measured before it is rendered.
+        // What each anchor runs, in the order it runs them: a replay is passed over first, a subagent's update is routed away before
+        // the session measures and renders its own.
         Assert.Collection(
             session.TurnStages.In(TurnPhase.Update),
+            stage => Assert.IsType<AcpReplay>(stage),
+            stage => Assert.IsType<AcpWatch>(stage),
+            stage => Assert.IsType<AcpHeard>(stage),
+            stage => Assert.IsType<AcpSubagent>(stage),
             stage => Assert.IsType<AcpMeasure>(stage),
             stage => Assert.IsType<AcpRender>(stage));
         Assert.IsType<AcpPermission>(Assert.Single(session.TurnStages.In(TurnPhase.Request)));
