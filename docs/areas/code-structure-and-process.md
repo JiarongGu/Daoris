@@ -19,6 +19,8 @@ finishes first and the whole set runs once.
 | The structure gates | each test project's `StructureTests`, its `fixtures/structure.json` | a file's subdomain is its first folder, and no file is listed; the fixture holds the subdomains in their order, the layer rules and the census of exceptions |
 | The size ratchet | `tools/size-ratchet.mjs`, `tools/size-ratchet.json` | a file over 40 KB does not grow; a new one does not start over it |
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
+| The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
+| The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes, and says when they are stale |
 | The transitional register | `Driver/Transitional/Register.cs`, `tools/transitional-markers.mjs` | each kept older reading, with the condition that ends it and the row that deletes it |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
@@ -41,8 +43,16 @@ finishes first and the whole set runs once.
    live in the commits and the decisions. (from D231)
 6. Each job is done one way. A change that supersedes an older way removes it in the same chunk. A kept older reading has a register
    entry with its end. (from D228)
-7. Each contract is declared once, beside its handler. The rest (clients, the page's types, tables, maps) is generated, not written
-   by hand. This is being built: CODESHAPE1. (from D231, D228)
+7. Each contract is declared once, beside its handler. The rest (clients, the page's types, tables, maps) is generated or
+   registered, not written by hand. An HTTP route is its request record in `src/Daoris.Contracts/<Domain>/` (`IRoute<TAnswer>`:
+   method, path, answer), which uses the standard library alone. The host finds its `IRouteModule`s by reflection and maps each
+   handler through `RouteMap`, whose binder answers a value that does not bind 400 with no body, as the framework's binding
+   did; the driver sends the record through `ServiceClient.SendAsync`. The page's types and `ROUTES` table are written from the
+   records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
+   first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
+   pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. `api.ts` sends a declared
+   route as `send(name, request)`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). (from
+   D231, D228)
 8. Drift is the disk against the lock; the canon is reconciled, not imposed. (from D19, D230)
 9. Only what must never reach history blocks a commit. The rest is verified as a local CI beside the work, and its reds are fixed
    forward. An install is staged only from a green run. (from D180)
@@ -64,6 +74,9 @@ finishes first and the whole set runs once.
 
 - A new rule of the process goes in this document, and in the canon when it holds for every repository.
 - A new gate goes in `daoris.gates.json` or `npm run quick`. Its failure names the file and the row to add.
+- A new HTTP route: its request and answer records in `src/Daoris.Contracts/<Domain>/` with the domain's JSON context (a new
+  context is listed in `ContractJson`), and its handler in the host's `Routes/<Domain>Routes.cs`. The host's
+  `RouteModulesTests` holds every declared route to one mapping.
 - The tests that pin the process: `tools/*.test.mjs` (the ratchet, partials, markers, the census of tool tests), the merge tool's
   tests, and the CLI's doctrine tests.
 

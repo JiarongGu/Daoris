@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using Daoris.Contracts.Knowledge;
 
 namespace Daoris.Driver;
 
@@ -79,7 +80,9 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => service.EveryQuestAsync(ct);
 
-    public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => service.EntryPathsAsync(repository, ct);
+    // The repository's own entries alone: canonical doctrine is not what the workspace knows of it.
+    public async Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) =>
+        [.. (await service.SendAsync(new ListEntries(repository), ct).ConfigureAwait(false)).Answered().Select(entry => entry.Path).OfType<string>()];
 
     public RepositoryDescription? Describe(string root) => SelfDescriptionFiles.Read(root);
 

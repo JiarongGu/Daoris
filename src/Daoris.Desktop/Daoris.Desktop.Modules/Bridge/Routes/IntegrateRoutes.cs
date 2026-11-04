@@ -20,7 +20,7 @@ public sealed class IntegrateRoutes(DriverContext context)
     /// superseded commits awaiting a disposition, the promoted history, and (INTEGRATE1h) the landed branches waiting for the owner's card, as
     /// the runtime last judged them. `unit` alone answers that unit's one line, its head.
     /// </summary>
-    [DriverRoute("INTEGRATION")]
+    [DriverRoute("INTEGRATION", PipeClass.Open)]
     [ByEvent("INTEGRATION", Untold = "the integration record, a file the window's ask must not wait on")]
     private Task<object?> IntegrationAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -38,7 +38,9 @@ public sealed class IntegrateRoutes(DriverContext context)
     /// `answer` a superseded commit (`request`, `commit`, `answer`: superseded, or rebase, which tells its session). Answered
     /// `{ done, why?, message }`, a refusal as data.
     /// </summary>
-    [DriverRoute("INTEGRATE")]
+    [DriverRoute("INTEGRATE", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("INTEGRATE", Repository = "repository")]
+    [GroundRepository("INTEGRATE", "repository")]
     [Publishes("INTEGRATE", Moves)]
     private async Task<object?> IntegrateAsync(IpcRequest request, CancellationToken cancellationToken)
     {

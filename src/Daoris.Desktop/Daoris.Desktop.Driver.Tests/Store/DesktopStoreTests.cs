@@ -184,11 +184,11 @@ public sealed class DesktopStoreTests : IDisposable
 
         var driver = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Daoris.Desktop.Driver.csproj"));
         Assert.Contains("""<PackageReference Include="Microsoft.Data.Sqlite" />""", driver);
-        Assert.DoesNotContain("ProjectReference", driver);
+        Assert.Equal(["../../Daoris.Contracts/Daoris.Contracts.csproj"], Regex.Matches(driver, "ProjectReference Include=\"([^\"]+)").Select(m => m.Groups[1].Value));
         Assert.DoesNotContain("PackageReference Include=\"Daoris", driver);
     }
 
-    // ——— Step 4, the course's move record (FOUNDATION1f-i; §3.3, §13.3's family *The course*, §19.1).
+    // ——— Step 4, the course's move record.
 
     /// <summary>The columns of <c>moves</c> a writer always sets: every other is one a later phase, a later row or an effect sets.</summary>
     private static readonly string[] MoveRequired = ["record_left", "executor", "how", "from_why", "from_by", "phase", "claim_run", "claim_generation", "decided_at"];
@@ -286,7 +286,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal((1L, 1L), (Count(older, "bindings"), Count(older, "binding_picks")));
     }
 
-    // ——— Step 5, what a box's move carries and a quiet move's telling (FOUNDATION1f-i part 2; §3.3, §13.5, §19.1).
+    // ——— Step 5, what a box's move carries and a quiet move's telling.
 
     [Fact]
     public void Step_5_adds_the_agent_the_refused_turns_bound_and_the_quiet_s_moment_to_moves_nullable_and_raises_no_stamp()

@@ -15,7 +15,7 @@ public sealed class TraceRoutes(DriverLoop loop)
     // The driver's own read, over the stores the terminal reads (the service, the home, `driver.json`): the chain as data,
     // each link with its store and a missing one with why. It writes nothing. What a failed read said, and a tree's path,
     // are the terminal's alone (D47 §4): the chain's records keep them off the wire.
-    [DriverRoute("TRACE")]
+    [DriverRoute("TRACE", PipeClass.Open)]
     private async Task<object?> TraceAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var kind = PayloadHelper.GetRequiredValue<string>(request.Payload, "kind");

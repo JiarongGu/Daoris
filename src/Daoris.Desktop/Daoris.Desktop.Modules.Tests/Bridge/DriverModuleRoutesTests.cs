@@ -222,7 +222,7 @@ public sealed partial class DriverModuleRoutesTests
     [GeneratedRegex(@"^[A-Za-z_]\w*$")]
     private static partial Regex BareName();
 
-    [GeneratedRegex(@"\[DriverRoute\(""(?<route>[A-Z][A-Z_]*)""\)\]")]
+    [GeneratedRegex(@"\[DriverRoute\(""(?<route>[A-Z][A-Z_]*)""[,)]")]
     private static partial Regex Mark();
 
     [GeneratedRegex(@"^(?<domain>[A-Z][A-Za-z]*)Routes\.cs$")]

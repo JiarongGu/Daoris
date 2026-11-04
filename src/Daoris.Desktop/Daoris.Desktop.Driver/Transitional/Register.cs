@@ -48,5 +48,14 @@ public static class TransitionalRegister
             Ends = "The page's handed account, its fixtures and its cuts name the standing block alone.",
             Row = "NOCOMPAT1",
         },
+        new()
+        {
+            Id = "routes-by-hand",
+            Kept = "Service/ServiceClient.cs:57",
+            Reaches = "Every HTTP route not yet declared in Daoris.Contracts: sent by a method of its own here, and mapped by hand in the HTTP "
+                + "host's Program.cs, whose own marker stands where its declared routes are mapped.",
+            Ends = "No app.Map* call is left in the host's Program.cs and no method that writes a route's path is left in ServiceClient.",
+            Row = "CODESHAPE1",
+        },
     ];
 }

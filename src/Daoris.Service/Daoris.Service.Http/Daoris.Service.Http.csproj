@@ -11,6 +11,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Daoris.Service.Core/Daoris.Service.Core.csproj" />
+    <!-- The routes' declarations and the records they answer, which the driver and the page's generator read too. -->
+    <ProjectReference Include="../../Daoris.Contracts/Daoris.Contracts.csproj" />
+    <Using Include="Daoris.Contracts" />
     <!-- Host-side composition both hosts share as SOURCE: it builds providers, so it cannot live in
          Core (D22, D24) — and it must not be written twice. -->
     <Compile Include="../Daoris.Service.Shared/HostComposition.cs" Link="HostComposition.cs" />

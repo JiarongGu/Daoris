@@ -25,7 +25,9 @@ public sealed class NoticesRoutes(DriverLoop loop)
     private readonly DriverLoop _loop = loop;
 
     /// <summary>The notices of <c>ids</c> read, as the view shows them or its <i>Mark all read</i> names them.</summary>
-    [DriverRoute("NOTICES_READ")]
+    [DriverRoute("NOTICES_READ", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("NOTICES_READ", None = OwnerNone.ActsOnNothing)]
+    [Timeless("NOTICES_READ", "marks news read")]
     [Publishes("NOTICES_READ", StateScopes.Notices)]
     private Task<object?> NoticesReadAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new NoticesWritten(_loop.Notices.MarkRead(Ids(request)) is null));
@@ -34,7 +36,9 @@ public sealed class NoticesRoutes(DriverLoop loop)
     /// The notice <c>id</c> dismissed; or with <c>all</c>, every notice of the window's <c>workspace</c> and every machine-wide one,
     /// every notice where it names none.
     /// </summary>
-    [DriverRoute("NOTICE_DISMISS")]
+    [DriverRoute("NOTICE_DISMISS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("NOTICE_DISMISS", None = OwnerNone.ActsOnNothing)]
+    [GroundFiles("NOTICE_DISMISS", "notices", "id", "all", "workspace", Quick = true)]
     [Publishes("NOTICE_DISMISS", StateScopes.Notices)]
     private Task<object?> NoticeDismissAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -55,7 +59,7 @@ public sealed class NoticesRoutes(DriverLoop loop)
     /// <para><b>Judged nothing for the asking</b>: the slices as last judged, from memory, as <c>STATE_SLICE</c> answers them; the record
     /// read as the slice reads it.</para>
     /// </remarks>
-    [DriverRoute("NOTIFICATIONS")]
+    [DriverRoute("NOTIFICATIONS", PipeClass.Open)]
     private Task<object?> NotificationsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
