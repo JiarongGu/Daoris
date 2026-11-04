@@ -12,10 +12,13 @@ namespace Daoris.Desktop;
 /// </summary>
 public sealed class SessionsRoutes(DriverContext context)
 {
-    private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
-    private readonly RelatedSessions _related = new(RelatedSessions.GitReads, () => DateTimeOffset.UtcNow);
     private readonly OpenFolder? _openFolder = context.OpenFolder;
+    private readonly SessionsAskDesk _asks = new(context);
+    private readonly SessionsGroupsDesk _groups = new(context);
+    private readonly SessionsWaitDesk _wait = new(context);
+    private readonly SessionsRecordDesk _records = new(context);
+    private readonly SessionsMoveDesk _moves = new(context);
 
     // What a session's own presses change: its record among the sessions, and the driver's state its loop,
     // nudged, reads again; a resolve moves its quest too.
@@ -24,34 +27,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("STOP_SESSION", "id")]
     [Says("STOP_SESSION", "id:session")]
     [Publishes("STOP_SESSION", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> StopSessionAsync(StopSession press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        // `sessions stop` sent over the pipe asks for the verb's own words; the page asks for none and its answer keeps its shape.
-        // a stop the standing confirmation admitted says so on each record it ends.
-        if (press.Said) return await SaidAsync(new SessionsAsk("stop") { Ids = [id], Standing = PipeDoor.Standing }, cancellationToken).ConfigureAwait(false);
-
-        // False is an answer, not an error: the session already finished, and its record says how.
-        // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
-        // left behind by an application that closed, or a crash. Then the person's stop is how
-        // it ends: pressing it used to change nothing and say nothing (2026-09-25).
-        // Which of the three it was is part of the answer: the page says it, and an orphan's
-        // ending is not the person's — its record says nothing ran it.
-        // 🔴 And when another Daoris process on this machine runs it — a terminal's chat — this
-        // host can neither stop it nor call it ended: the record still says working.
-        // The one implementation the terminal's request is honoured by too.
-        var answer = await SessionMoves.StopAsync(_loop.Processes, _loop.Service, id, cancellationToken).ConfigureAwait(false);
-        // the process that runs it takes the stop, as its own; none that does not is claimed to have stopped.
-        if (answer.Elsewhere
-            && await SessionMoves.StopThroughOwnerAsync(
-                _loop.Home, id, SessionMoves.OwnerWait, TimeSpan.FromMilliseconds(100), () => DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false))
-        {
-            answer = answer with { Stopped = true, Elsewhere = false };
-        }
-
-        _loop.Nudge();
-        return new { answer.Stopped, answer.Orphan, answer.Elsewhere };
-    }
+    private Task<object?> StopSessionAsync(StopSession press, CancellationToken cancellationToken) => _moves.StopAsync(press, cancellationToken);
 
     /// <summary>
     /// The person's answer to a parked session: `completed`, `declined` or `stopped`, with what the record should say. It goes
@@ -64,41 +40,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("RESOLVE_SESSION", "id")]
     [Says("RESOLVE_SESSION", "id:session", "note:words")]
     [Publishes("RESOLVE_SESSION", StateScopes.Sessions | StateScopes.Quests | StateScopes.Driver, Session = "id")]
-    private async Task<object?> ResolveAsync(ResolveSession press, CancellationToken cancellationToken)
-    {
-        var (id, state, note, said) = press;
-
-        if (state is not ("completed" or "declined" or "stopped"))
-        {
-            throw Refusals.Because(
-                Refusals.SessionMoveNotYours, PersonMoves,
-                ("state", state), ("moves", "completed, declined, stopped"));
-        }
-
-        if (state == "declined" && note is null)
-        {
-            throw Refusals.Because(Refusals.SessionDeclineNeedsReason, DeclineNeedsReason);
-        }
-
-        var service = _loop.Service ?? throw NotReady();
-
-        // `sessions finish` and `decline` sent over the pipe ask for the verb's own words (`stopped` is the page's alone).
-        if (said && state != "stopped")
-        {
-            // a finish the standing confirmation admitted never takes the request folder, and is moved only from awaiting-person.
-            return await SaidAsync(
-                    new SessionsAsk(state == "completed" ? "finish" : "decline") { Ids = [id], Note = note, Standing = PipeDoor.Standing }, cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        // The process first, then the record, with the person's words or the sentence that says they moved it: the one
-        // implementation the terminal's request is honoured by too. False from the stop is the common case.
-        var message = await SessionMoves.ResolveAsync(
-            session => _loop.Processes.Stop(session), service, id, state, note, cancellationToken).ConfigureAwait(false);
-        _loop.Nudge();
-
-        return new { Session = id, State = state, Message = message };
-    }
+    private Task<object?> ResolveAsync(ResolveSession press, CancellationToken cancellationToken) => _moves.ResolveAsync(press, cancellationToken);
 
     // *Go on in a new session*: words a resume holds while the account their session ran on cools go on now
     // in a new session, handed them, without that conversation. The driver's door judges and keeps the person's choice
@@ -110,19 +52,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_GO_ON_NEW", "id")]
     [Says("SESSION_GO_ON_NEW", "id:session")]
     [Publishes("SESSION_GO_ON_NEW", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SessionGoOnNewAsync(SessionGoOnNew press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var service = _loop.Service ?? throw NotReady();
-        if (press.Said) return await SaidAsync(new SessionsAsk("go-on-new") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
-
-        var answer = await GoOnNew.AskAsync(
-                service, _loop.Home, (adapter, profile) => _loop.Harnesses.CoolingOf(adapter ?? "", profile), id,
-                DateTimeOffset.UtcNow, cancellationToken)
-            .ConfigureAwait(false);
-        if (answer.Sent) _loop.Nudge();
-        return new { answer.Sent, answer.Why, answer.Message };
-    }
+    private Task<object?> SessionGoOnNewAsync(SessionGoOnNew press, CancellationToken cancellationToken) => _moves.GoOnNewAsync(press, cancellationToken);
 
     // *Ask another agent…*: the person's own ask of a helper for a session,
     // the file `daoris session helper` writes (`HelperFiles.WriteAsk`, asked by the person, so the `helpers` rule's `ask`
@@ -134,77 +64,13 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_HELPER_ASK", "id")]
     [Says("SESSION_HELPER_ASK", "id:session", "agent:agent", "question:words")]
     [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SessionHelperAskAsync(SessionHelperAsk press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var question = (press.Question ?? "").Trim();
-        var agent = press.Agent?.Trim();
-        var service = _loop.Service ?? throw NotReady();
-        // `sessions helper` sent over the pipe asks for the verb's own words, judged by the same code.
-        if (press.Said && question.Length > 0)
-        {
-            return await SaidAsync(new SessionsAsk("helper") { Ids = [id], Text = question, Agent = agent }, cancellationToken).ConfigureAwait(false);
-        }
-
-        static object Refused(string why, string sentence) => new { Asked = (string?)null, Why = why, Message = $"{sentence} Nothing was asked." };
-        if (question.Length == 0) return Refused(HelperAskWhy.Blank, "A helper is asked a question, and none was given.");
-        if (question.Length > SessionsHelperCommand.MaxQuestion)
-        {
-            return Refused(HelperAskWhy.TooLong,
-                $"A question is at most {SessionsHelperCommand.MaxQuestion} characters, and this is {question.Length}.");
-        }
-
-        if (agent is not null && agent.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)))
-        {
-            return Refused(HelperAskWhy.Agent, $"An agent is named as one word, as it is listed in Settings, and `{agent}` is not.");
-        }
-
-        // The verb's sentences, so the person reads the same one from either door; who may ask is the start layer's.
-        var asker = await service.RecordAsync(id, cancellationToken).ConfigureAwait(false);
-        var refused = asker is null or { Teammate: true }
-            ? (HelperAskWhy.NotHeld, $"No session `{id}` of this machine's is held to bring an answer back to.")
-            : SessionsHelperCommand.Unfit(id, asker);
-        if (refused is var (why, sentence)) return Refused(why, sentence);
-
-        var asked = new HelperFiles(_loop.Home).WriteAsk(id, question, agent, DateTimeOffset.UtcNow);
-        _loop.Nudge();
-        return new
-        {
-            Asked = asked,
-            Why = (string?)null,
-            Message = $"Asked #{asked} for session {id}: the driver starts a helper on another agent at its next look, read-only, and "
-                      + "its answer comes back to that session as its next turn, marked as the helper's.",
-        };
-    }
+    private Task<object?> SessionHelperAskAsync(SessionHelperAsk press, CancellationToken cancellationToken) => _asks.HelperAskAsync(press, cancellationToken);
 
     // The asks a session made of helpers, oldest first, each as the driver's look left it: its state and code, the
     // helper's session once started and the agent it started on. Read off the home's `helpers` folder, the driver's own files;
     // what the state keeps for the driver alone (the last words, the word it was handed as) is not the page's.
     [DriverRoute("SESSION_HELPERS", PipeClass.Open)]
-    private Task<object?> SessionHelpersAsync(SessionHelpers press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var files = new HelperFiles(_loop.Home);
-        var helpers = files.Asks()
-            .Where(ask => string.Equals(ask.Asker, id, StringComparison.Ordinal))
-            .Select(ask => (Ask: ask, State: files.ReadState(ask.Id)))
-            .Select(each => new
-            {
-                each.Ask.Id,
-                each.Ask.Question,
-                each.Ask.Agent,
-                each.Ask.AskedBy,
-                At = Moments.Write(each.Ask.At),
-                each.State?.State,
-                each.State?.Code,
-                each.State?.Helper,
-                StartedOn = each.State?.Agent,
-                // a cooling ask's account's reset, which its row says.
-                Until = each.State?.Until is { } until ? Moments.Write(until) : null,
-            })
-            .ToList();
-        return Task.FromResult<object?>(new { Helpers = helpers });
-    }
+    private Task<object?> SessionHelpersAsync(SessionHelpers press, CancellationToken cancellationToken) => _asks.HelpersAsync(press, cancellationToken);
 
     // *Ask another agent to work on a piece…*: the person's own ask of
     // a piece for a session, the file `daoris session partner` writes, by the one judge and writer both share
@@ -216,82 +82,21 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_PARTNER_ASK", "id")]
     [Says("SESSION_PARTNER_ASK", "id:session", "agent:agent", "piece:words")]
     [Publishes("SESSION_PARTNER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SessionPartnerAskAsync(SessionPartnerAsk press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var piece = (press.Piece ?? "").Trim();
-        var agent = press.Agent?.Trim();
-        IReadOnlyList<string> paths = press.Paths ?? [];
-        var service = _loop.Service ?? throw NotReady();
-        // `sessions partner` sent over the pipe asks for the verb's own words, judged by the same code.
-        if (press.Said)
-        {
-            return await SaidAsync(new SessionsAsk("partner") { Ids = [id], Text = piece, Agent = agent, Paths = paths }, cancellationToken).ConfigureAwait(false);
-        }
-
-        var asked = await PartnerPersonAsk.AskAsync(
-            _loop.Home, service, id, piece, paths, agent, _loop.PieceBases, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
-        if (asked.Asked is not null) _loop.Nudge();
-        return new { asked.Asked, asked.Why, asked.Message };
-    }
+    private Task<object?> SessionPartnerAskAsync(SessionPartnerAsk press, CancellationToken cancellationToken) => _asks.PartnerAskAsync(press, cancellationToken);
 
     // The pieces a session asked, oldest first, each as the driver's look left
     // it: the piece and its paths, the agent, where it stands and why, its partner's record once started, its frozen commit and ref
     // once imported, and the files Daoris read in it with those beyond its paths. Read off the home's `partners` folder, the driver's
     // own files; the partner's own words stay its answer's, which reaches the session as a word.
     [DriverRoute("SESSION_PARTNERS", PipeClass.Open)]
-    private Task<object?> SessionPartnersAsync(SessionPartners press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        // A read of files, off the window's thread.
-        return Task.Run<object?>(() =>
-        {
-            var files = new PartnerFiles(_loop.Home);
-            var pieces = files.Asks()
-                .Where(ask => string.Equals(ask.Asker, id, StringComparison.Ordinal))
-                .Select(ask =>
-                {
-                    var state = files.ReadState(ask.Id);
-                    var facts = state?.Commit is { Length: > 0 } ? files.ReadFacts(ask.Id) : null;
-                    return new
-                    {
-                        ask.Id,
-                        ask.Piece,
-                        ask.Paths,
-                        ask.Agent,
-                        ask.AskedBy,
-                        At = Moments.Write(ask.At),
-                        State = state?.State ?? (files.Unreadable(ask.Id, "state") ? PartnerStates.Uncertain : PartnerStates.Asked),
-                        state?.Code,
-                        state?.End,
-                        state?.Partner,
-                        StartedOn = state?.Agent,
-                        Commit = state?.Commit is { Length: > 0 } commit ? commit : null,
-                        Ref = state?.Commit is { Length: > 0 } ? PieceRefs.Of(ask.Id) : null,
-                        Files = facts?.Files,
-                        Beyond = facts?.Beyond,
-                    };
-                })
-                .ToList();
-            return new { Pieces = pieces };
-        }, cancellationToken);
-    }
+    private Task<object?> SessionPartnersAsync(SessionPartners press, CancellationToken cancellationToken) => _asks.PartnersAsync(press, cancellationToken);
 
     // What of the agents' asks waits on the person's word across this machine's sessions, for
     // *What needs you*: each the driver's look holds `waiting` with no code under the `helpers` rule's `ask`, the one state the yes
     // and the no answer, oldest first, with the session that asked. A read off the home's `helpers` folder: it declares nothing,
     // and sits under the sessions' key on the page, which every tick asks again; the look says a new one in its report.
     [DriverRoute("HELPER_WAITS", PipeClass.Open)]
-    private Task<object?> HelperWaitsAsync(NoPayload _, CancellationToken cancellationToken)
-    {
-        var files = new HelperFiles(_loop.Home);
-        var waits = files.Asks()
-            .Where(ask => ask.AskedBy == HelperAsk.ByAgent && files.ReadState(ask.Id) is { State: HelperStates.Waiting, Code: null })
-            .OrderBy(ask => ask.At)
-            .Select(ask => new { ask.Id, Session = ask.Asker, ask.Question, ask.Agent, At = Moments.Write(ask.At) })
-            .ToList();
-        return Task.FromResult<object?>(new { Waits = waits });
-    }
+    private Task<object?> HelperWaitsAsync(NoPayload _, CancellationToken cancellationToken) => _asks.HelperWaitsAsync();
 
     // The person's yes to an agent's ask under the `helpers` rule's `ask`: the `approved`
     // state the driver's look reads (`HelperJudge`), written where the ask waits on that yes: no state yet, or `waiting` with no
@@ -302,18 +107,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HELPER_APPROVE", nameof(PipeReads.HelperWait))]
     [Says("SESSION_HELPER_APPROVE", "session:session")]
     [Publishes("SESSION_HELPER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHelperApproveAsync(SessionHelperApprove press, CancellationToken cancellationToken)
-    {
-        var askId = press.Ask;
-        // `sessions helper --approve` names only the ask, and asks for the verb's own words.
-        if (press.Said) return await SaidAsync(new SessionsAsk("helper-approve") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
-
-        var session = press.Session ?? throw new DriverException("a helper's ask is answered for a `session` — name it.");
-        // The judge is the library's, which the terminal's `sessions helper --approve` shares.
-        var answer = HelperPersonWord.Approve(new HelperFiles(_loop.Home), session, askId);
-        if (answer.Wrote) _loop.Nudge();
-        return new { Approved = answer.Stands, answer.Why, answer.Message };
-    }
+    private Task<object?> SessionHelperApproveAsync(SessionHelperApprove press, CancellationToken cancellationToken) => _asks.HelperApproveAsync(press, cancellationToken);
 
     // The person's no to an agent's ask under the `helpers` rule's `ask`, beside the yes: the ask
     // refused `declined` at once, with the coded note the look writes on the asker's record for every refusal (`helper.refused`), so
@@ -327,33 +121,13 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HELPER_DECLINE", nameof(PipeReads.HelperWait))]
     [Says("SESSION_HELPER_DECLINE", "session:session")]
     [Publishes("SESSION_HELPER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHelperDeclineAsync(SessionHelperDecline press, CancellationToken cancellationToken)
-    {
-        var askId = press.Ask;
-        // `sessions helper --decline` names only the ask, and asks for the verb's own words.
-        if (press.Said) return await SaidAsync(new SessionsAsk("helper-decline") { Ids = [askId] }, cancellationToken).ConfigureAwait(false);
-
-        var session = press.Session ?? throw new DriverException("a helper's ask is answered for a `session` — name it.");
-        // The judge is the library's, which the terminal's `sessions helper --decline` shares.
-        var answer = HelperPersonWord.Decline(new HelperFiles(_loop.Home), _loop.Events, _loop.Output, session, askId);
-        return new { Declined = answer.Stands, answer.Why, answer.Message };
-    }
+    private Task<object?> SessionHelperDeclineAsync(SessionHelperDecline press, CancellationToken cancellationToken) => _asks.HelperDeclineAsync(press, cancellationToken);
 
     // A session's agent's ask to hand it over, as the driver's look left it, for the session's page: its
     // note (the agent's claim), when, its state, code and the agent it goes to; null where its agent asked none. A read off the home's
     // sessions folder, the driver's own files: it declares nothing, and the look says a change in its report.
     [DriverRoute("SESSION_HAND_OVER_ASK", PipeClass.Open)]
-    private Task<object?> SessionHandOverAskAsync(SessionHandOverAsk press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var files = new HandOverAskFiles(_loop.Home);
-        var ask = files.Ask(id);
-        var state = ask is null ? null : files.ReadState(id) is { } kept && kept.Id == ask.Id ? kept : null;
-        return Task.FromResult<object?>(new
-        {
-            Ask = ask is null ? null : new { ask.Id, ask.Note, At = Moments.Write(ask.At), state?.State, state?.Code, state?.Agent },
-        });
-    }
+    private Task<object?> SessionHandOverAskAsync(SessionHandOverAsk press, CancellationToken cancellationToken) => _asks.HandOverAskAsync(press);
 
     // A parked session's question to the person, as its agent asked it through `question_ask`
     // and the driver kept it for the park its last turn ended in: its words, the answers it offers with what it does on each, the one
@@ -363,39 +137,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // parked (Fable's read, Q7), whatever a file says. A read off the home's sessions folder, the files leaving the window's thread
     // first: it declares nothing, and the page asks it only of a park of this machine's.
     [DriverRoute("SESSION_QUESTION", PipeClass.Open)]
-    private async Task<object?> SessionQuestionAsync(SessionQuestion press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var record = _loop.Service is { } service ? await service.RecordAsync(id, cancellationToken).ConfigureAwait(false) : null;
-        if (record is not { Parked: true }) return new { Question = (object?)null };
-        return await Task.Run<object?>(() =>
-        {
-            var asked = new QuestionFiles(_loop.Home).Read(id);
-            // the supervisor's defer on this question, which the card says above its answers; never its holder.
-            var left = asked is null
-                ? null
-                : _loop.Supervisor.History(id).LastOrDefault(each => each.State == SupervisorState.Left && each.Question.Id == asked.Id);
-            return new
-            {
-                Question = asked is null ? null : new
-                {
-                    asked.Id,
-                    Question = asked.Question,
-                    Choices = asked.Choices.Select(choice => new { choice.Label, choice.Does }).ToArray(),
-                    asked.Recommend,
-                    asked.Why,
-                    asked.By,
-                    asked.Owner,
-                    Left = left is null ? null : new
-                    {
-                        left.Bound,
-                        Reasons = left.Reasons.Select(reason => new { reason.Says, reason.Source }).ToList(),
-                    },
-                    At = Moments.Write(asked.At),
-                },
-            };
-        }, cancellationToken);
-    }
+    private Task<object?> SessionQuestionAsync(SessionQuestion press, CancellationToken cancellationToken) => _asks.QuestionAsync(press, cancellationToken);
 
     // The person's yes to their session's agent's ask to hand it over under the `handOver` rule's `ask`:
     // the judge the terminal's `sessions hand-over <id> --approve` shares (`HandOverAskWord`). A conversation this shell's chat runner
@@ -408,39 +150,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HAND_OVER_APPROVE", nameof(PipeReads.HandOverAsk))]
     [Says("SESSION_HAND_OVER_APPROVE", "session:session")]
     [Publishes("SESSION_HAND_OVER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHandOverApproveAsync(SessionHandOverApprove press, CancellationToken cancellationToken)
-    {
-        var session = press.Session;
-        // `sessions hand-over <id> --approve` asks for the verb's own words.
-        if (press.Said) return await SaidAsync(new SessionsAsk("hand-over-approve") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
-
-        var files = new HandOverAskFiles(_loop.Home);
-        var askId = press.Ask ?? files.Ask(session)?.Id ?? "";
-        var record = _loop.Chat is not null && _loop.Service is { } service
-            ? await service.RecordAsync(session, cancellationToken).ConfigureAwait(false)
-            : null;
-        var taking = record is { Kind: "chat" } && files.ReadState(session) is { Id: var named, Agent: { Length: > 0 } } && named == askId;
-        var answer = HandOverAskWord.Approve(files, session, askId, taking);
-        if (taking && answer.Wrote && answer.Agent is { } agent)
-        {
-            var handed = await _loop.Chat!.HandOverAsync(
-                    session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(_loop.ConfigPath),
-                    onEnded: (ended, state) => DriverLoop.Ended(_context.Events, ended, state), cancellationToken)
-                .ConfigureAwait(false);
-            if (!handed.Kept && handed.SessionId is null)
-            {
-                // their yes stood, and the take could not go: not taken, by the take's own reason, never refused.
-                var why = HandOverAskWhy.Of(handed.Why);
-                files.WriteState(session, new HandOverAskState(askId, HandOverAskStates.Refused, why, null, DateTimeOffset.UtcNow));
-                HandOverAskNotes.Say(_loop.Events, _loop.Output, session, HandOverAskNotes.NotTaken(agent, why));
-                _loop.Nudge();
-                return new { Approved = false, Why = handed.Why ?? HandOverAskWhy.Cannot, handed.Message, Agent = agent };
-            }
-        }
-
-        if (answer.Wrote) _loop.Nudge();
-        return new { Approved = answer.Stands, answer.Why, answer.Message, answer.Agent };
-    }
+    private Task<object?> SessionHandOverApproveAsync(SessionHandOverApprove press, CancellationToken cancellationToken) => _asks.HandOverApproveAsync(press, cancellationToken);
 
     // The person's no to their session's agent's ask to hand it over, beside the yes: refused `declined` at
     // once, with the coded note the look writes for every refusal (`handover.refused`), where the look holds it waiting on their word.
@@ -450,17 +160,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_HAND_OVER_DECLINE", nameof(PipeReads.HandOverAsk))]
     [Says("SESSION_HAND_OVER_DECLINE", "session:session")]
     [Publishes("SESSION_HAND_OVER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private async Task<object?> SessionHandOverDeclineAsync(SessionHandOverDecline press, CancellationToken cancellationToken)
-    {
-        var session = press.Session;
-        // `sessions hand-over <id> --decline` asks for the verb's own words.
-        if (press.Said) return await SaidAsync(new SessionsAsk("hand-over-decline") { Ids = [session] }, cancellationToken).ConfigureAwait(false);
-
-        var files = new HandOverAskFiles(_loop.Home);
-        var askId = press.Ask ?? files.Ask(session)?.Id ?? "";
-        var answer = HandOverAskWord.Decline(files, _loop.Events, _loop.Output, session, askId);
-        return new { Declined = answer.Stands, answer.Why, answer.Message };
-    }
+    private Task<object?> SessionHandOverDeclineAsync(SessionHandOverDecline press, CancellationToken cancellationToken) => _asks.HandOverDeclineAsync(press, cancellationToken);
 
     // The person's *Leave it running* on a quiet session's row: the watcher stands down
     // for it until it is heard again, its episode ends `left` with its coded note, and the row goes. `{ left, why, message }`; a session
@@ -470,14 +170,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_QUIET_LEAVE", "id")]
     [Says("SESSION_QUIET_LEAVE", "id:session")]
     [Publishes("SESSION_QUIET_LEAVE", StateScopes.Sessions, Session = "id")]
-    private Task<object?> SessionQuietLeaveAsync(SessionQuietLeave press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var left = SessionWatch.Of(_loop.Events).Leave(id);
-        return Task.FromResult<object?>(left
-            ? new { Left = true, Why = (string?)null, Message = "Daoris looks in again once it is heard from." }
-            : new { Left = false, Why = (string?)QuietNot, Message = $"{id} is not quiet now: nothing was changed." });
-    }
+    private Task<object?> SessionQuietLeaveAsync(SessionQuietLeave press, CancellationToken cancellationToken) => _wait.QuietLeaveAsync(press);
 
     // The person's *End and carry on* on a quiet quest session's row: their
     // stop released in the same press, *Stop* and *Try again* at once. The release is written first, then the run ends as the person's
@@ -490,27 +183,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_QUIET_CARRY_ON", "id")]
     [Says("SESSION_QUIET_CARRY_ON", "id:session")]
     [Publishes("SESSION_QUIET_CARRY_ON", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private Task<object?> SessionQuietCarryOnAsync(SessionQuietCarryOn press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var watch = SessionWatch.Of(_loop.Events);
-        object Refused(string why, string message) => new { Stopped = false, Why = (string?)why, Message = message };
-        if (watch.RowOf(id) is not { Busy: false } row) return Task.FromResult<object?>(Refused(QuietNot, $"{id} is not quiet now, or something it runs keeps the machine busy: nothing was changed."));
-        if (row is not { Kind: SessionWatch.Quest, Quest: { } quest }) return Task.FromResult<object?>(Refused(QuietNotQuest, $"{id} is an intake: it is stopped, never carried on."));
-
-        StandingChoices.Write(_loop.ConfigPath, config => config.WithReleased(quest, id));
-        if (!_loop.Processes.Stop(id, note: Observation.QuietPressed(row.Minutes)))
-        {
-            return Task.FromResult<object?>(Refused(QuietGone, $"{id}'s run had already ended; its quest is released for the next look."));
-        }
-
-        watch.Pressed(id);
-        _loop.Nudge();
-        return Task.FromResult<object?>(new { Stopped = true, Why = (string?)null, Message = "Its run ends, and the work goes on in the same tree at the next look." });
-    }
-
-    /// <summary>A quiet row's press refused: the session brings no quiet row, is an intake, or ended first.</summary>
-    internal const string QuietNot = "not-quiet", QuietNotQuest = "not-quest", QuietGone = "gone";
+    private Task<object?> SessionQuietCarryOnAsync(SessionQuietCarryOn press, CancellationToken cancellationToken) => _wait.QuietCarryOnAsync(press);
 
     // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
     // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
@@ -518,8 +191,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // driver's memory (`HeldPermissions`), which a restart empties with the agents that asked; the attention slice's own projection,
     // so the pushed rows and the route say each hold alike.
     [DriverRoute("PERMISSION_WAITS", PipeClass.Open)]
-    private Task<object?> PermissionWaitsAsync(NoPayload _, CancellationToken cancellationToken) =>
-        Task.FromResult<object?>(new { Waits = AttentionStateSlice.PermissionWaits(HeldPermissions.Of(_loop.Events)) });
+    private Task<object?> PermissionWaitsAsync(NoPayload _, CancellationToken cancellationToken) => _wait.PermissionWaitsAsync();
 
     // The person's answer to a request a session holds for them: an option the agent offered, by its id, or none to
     // refuse it, which takes the offered one-time rejection, else none. The allow is the person's press for this call alone, and
@@ -530,19 +202,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [Owner("SESSION_PERMISSION_ANSWER", Session = "session")]
     [GroundRead("SESSION_PERMISSION_ANSWER", nameof(PipeReads.PermissionWait))]
     [Says("SESSION_PERMISSION_ANSWER", "session:session")]
-    private Task<object?> SessionPermissionAnswerAsync(SessionPermissionAnswer press, CancellationToken cancellationToken)
-    {
-        var answer = HeldPermissions.Of(_loop.Events).Answer(press.Session, press.Request, press.Option);
-        return Task.FromResult<object?>(new { answer.Answered, answer.Why, answer.Message });
-    }
+    private Task<object?> SessionPermissionAnswerAsync(SessionPermissionAnswer press, CancellationToken cancellationToken) => _wait.PermissionAnswerAsync(press);
 
     // What the answers-alone bound holds for the person across this machine's sessions (COWORK1e, D188 point 4; the message-urgency
     // design §8.3), oldest first: each session whose answers would take its line on a third time in a row with nobody between, the agent
     // that answered, the answers' ids and since when. A read off the home's marks (`GoOnMarks`), which the look and the conversations
     // write; it declares nothing, and sits under the sessions' key on the page, which every tick asks again.
     [DriverRoute("ANSWER_WAITS", PipeClass.Open)]
-    private Task<object?> AnswerWaitsAsync(NoPayload _, CancellationToken cancellationToken) =>
-        Task.FromResult<object?>(new { Waits = AttentionStateSlice.AnswerWaits(_loop.Home) });
+    private Task<object?> AnswerWaitsAsync(NoPayload _, CancellationToken cancellationToken) => _wait.AnswerWaitsAsync();
 
     // The person's answer to a third answer alone held for them: `goOn` true is *Go on with this answer*, their press
     // kept as their word and the mark taken away, so the driver's next look, nudged, or the conversation's own go-on takes the answer on;
@@ -553,48 +220,13 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SESSION_ANSWER_ALONE", nameof(PipeReads.AnswerAloneWait))]
     [Says("SESSION_ANSWER_ALONE", "session:session")]
     [Publishes("SESSION_ANSWER_ALONE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private Task<object?> SessionAnswerAloneAsync(SessionAnswerAlone press, CancellationToken cancellationToken)
-    {
-        var (session, goOn) = press;
-        var marks = new GoOnMarks(_loop.Home);
-        var answer = goOn
-            ? AnswersAloneWord.GoOn(marks, _loop.Events, session)
-            : AnswersAloneWord.NotNow(marks, _loop.Events, session, DateTimeOffset.UtcNow);
-        if (answer.Stands && goOn)
-        {
-            // A conversation this shell holds says it, or goes on with it where it ended; a driven record goes on at the look.
-            _loop.Chat?.AnswerGoesOn(session);
-            _loop.Nudge();
-        }
-
-        return Task.FromResult<object?>(new { Answered = answer.Stands, answer.Why, answer.Message });
-    }
+    private Task<object?> SessionAnswerAloneAsync(SessionAnswerAlone press, CancellationToken cancellationToken) => _wait.AnswerAloneAsync(press);
 
     // The supervisor's decisions on a session: those live in this shell's
     // memory as they stand, and every other read from the session's files as history (`earlier`), granting nothing. A read: `{ decisions }`,
     // oldest first, each its question's snapshot, choice, reasons, holder, state, when it goes on and when it last moved.
     [DriverRoute("SESSION_SUPERVISOR", PipeClass.Open)]
-    private Task<object?> SessionSupervisorAsync(SessionSupervisor press, CancellationToken cancellationToken)
-    {
-        return Task.FromResult<object?>(new { Decisions = _loop.Supervisor.History(press.Id).Select(SupervisorDecisionRow).ToList() });
-    }
-
-    /// <summary>One decision as the page reads it: never its receipt, its ticket nor its word's text.</summary>
-    internal static object SupervisorDecisionRow(SupervisorDecisionView view) => new
-    {
-        view.Id,
-        Question = new { view.Question.Id, Text = view.Question.Question, Choices = view.Question.Choices.Select(choice => choice.Label).ToList() },
-        view.Choice,
-        view.Bound,
-        Reasons = view.Reasons.Select(reason => new { reason.Says, reason.Source }).ToList(),
-        Holder = new { view.Holder.Kind, view.Holder.Parent },
-        State = SupervisorStates.Spell(view.State),
-        view.Why,
-        KeptAt = Moments.Write(view.KeptAt),
-        GoesOnAt = Moments.Write(view.GoesOnAt),
-        StateAt = Moments.Write(view.StateAt),
-        view.Earlier,
-    };
+    private Task<object?> SessionSupervisorAsync(SessionSupervisor press, CancellationToken cancellationToken) => _wait.SupervisorAsync(press);
 
     // The owner's *Overrule*: `{ id, decision }`, a press only the person may make,
     // taken under the session's decision lock. While held the decision is overruled with nothing to take back; while released its word
@@ -605,17 +237,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundRead("SUPERVISOR_OVERRULE", nameof(PipeReads.SupervisorDecision))]
     [Says("SUPERVISOR_OVERRULE", "id:session")]
     [Publishes("SUPERVISOR_OVERRULE", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SupervisorOverruleAsync(SupervisorOverrule press, CancellationToken cancellationToken)
-    {
-        var (id, decision) = press;
-        var service = _loop.Service ?? throw NotReady();
-        var state = await _loop.Supervisor.OverruleAsync(
-            id, decision,
-            async (session, word, token) => (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
-            DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
-        if (state == SupervisorState.Overruled) _loop.Nudge();
-        return new { Done = state == SupervisorState.Overruled, State = state is { } moved ? SupervisorStates.Spell(moved) : null };
-    }
+    private Task<object?> SupervisorOverruleAsync(SupervisorOverrule press, CancellationToken cancellationToken) => _wait.OverruleAsync(press, cancellationToken);
 
     // The supervisor's answer: `{ id, question, generation, proof, choice, reasons }`, a role's act, `Role` in
     // the pipe's census. Refused on every door but a terminal's the judge's role method covered (`PipeDoor.Role`, never the presses'
@@ -623,16 +245,14 @@ public sealed class SessionsRoutes(DriverContext context)
     // refused as data and keeping nothing.
     [DriverRoute("SUPERVISOR_ANSWER", PipeClass.Role, Drain = PipeDrain.Passes)]
     [Publishes("SUPERVISOR_ANSWER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SupervisorAnswerAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
-        await SupervisorDoor.AnswerAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
+    private Task<object?> SupervisorAnswerAsync(SupervisorActPress press, CancellationToken cancellationToken) => _wait.AnswerAsync(press, cancellationToken);
 
     // The supervisor's leaving a question to the owner: `{ id, question, generation, proof, bound, reasons }`,
     // the role's second act, `Role` in the pipe's census and judged as the answer is. Kept as a decision of state `left`, final at once:
     // nothing reaches the session, and the owner's card says *left to you* with the bound and the reasons. `{ kept, decision?, why? }`.
     [DriverRoute("SUPERVISOR_DEFER", PipeClass.Role, Drain = PipeDrain.Passes)]
     [Publishes("SUPERVISOR_DEFER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SupervisorDeferAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
-        await SupervisorDoor.DeferAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
+    private Task<object?> SupervisorDeferAsync(SupervisorActPress press, CancellationToken cancellationToken) => _wait.DeferAsync(press, cancellationToken);
 
     // A role's act: `{ role, act, generation, form, proof }`, `Role` in the pipe's census, judged by the
     // judge's role method as SUPERVISOR_ANSWER is, then admitted once with an id Daoris draws. Its handler checks the act once more
@@ -641,8 +261,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // roles, brief }`, refused as data.
     [DriverRoute("ROLE_ACT", PipeClass.Role, Drain = PipeDrain.Waits)]
     [Publishes("ROLE_ACT", StateScopes.Sessions | StateScopes.Driver)]
-    private async Task<object?> RoleActAsync(RoleActPress press, CancellationToken cancellationToken) =>
-        await SupervisorDoor.ActAsync(_loop.Pipe, press.Form.Json,cancellationToken, _context.OwnerScopesOf(), _context.StewardWorldOf()).ConfigureAwait(false);
+    private Task<object?> RoleActAsync(RoleActPress press, CancellationToken cancellationToken) => _wait.RoleActAsync(press, cancellationToken);
 
     // What waits for the supervisor's holder: the parked sessions here with a recorded question and no
     // decision on it, in a repository a live appointment names, each with its generation. Told by event: it reads the
@@ -651,16 +270,13 @@ public sealed class SessionsRoutes(DriverContext context)
     // `{ waiting: [{ session, repository, question, asked, generation }], at }`.
     [DriverRoute("SUPERVISOR_WAITING", PipeClass.Open)]
     [ByEvent("SUPERVISOR_WAITING", Untold = "the question files, and the verb waits for an answer made after its own ask")]
-    private async Task<object?> SupervisorWaitingAsync(NoPayload _, CancellationToken cancellationToken) =>
-        new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
+    private Task<object?> SupervisorWaitingAsync(NoPayload _, CancellationToken cancellationToken) => _wait.WaitingAsync(cancellationToken);
 
     // The steward's acts this run, newest first, and its live hold's generation, what its holder's verb
     // reads before it proves an act: from the judge's memory alone, so it answers at once. A read naming no key:
     // `{ generation, acts: [{ id, act, repository, quest, session, at, standing, waiting }] }`, the generation null where none is live.
     [DriverRoute("STEWARD_ACTS", PipeClass.Open)]
-    private object? StewardActs(NoPayload _) => _loop.Pipe?.StandingConfirmation is { } judge
-        ? new { Generation = judge.LiveGeneration(AppointedRoles.Steward), Acts = judge.StewardActsNow() }
-        : new { Generation = (string?)null, Acts = (IReadOnlyList<StewardActNow>)[] };
+    private object? StewardActs(NoPayload _) => _wait.StewardActs();
 
     // A request at the steward's desk: `{ act, target, why }`, `Open` in the pipe's census, any caller's, kept
     // in the judge's memory and counted against the caller's agent job or nearest long-lived ancestor (ten open each, a hundred in all).
@@ -669,47 +285,20 @@ public sealed class SessionsRoutes(DriverContext context)
     // steward, `form`, `not-role`, `desk-full`).
     [DriverRoute("STEWARD_REQUEST", PipeClass.Open)]
     [Publishes("STEWARD_REQUEST", StateScopes.Driver)]
-    private object? StewardRequest(DeskRequestPress press)
-    {
-        var filed = _loop.Pipe?.StandingConfirmation is { } judge
-            ? judge.FileRequest(press.Form.Json, PipeDoor.Client)
-            : new DeskFiled(false, null, DeskWhy.NotStaffed);
-        return new { filed.Filed, Request = filed.Id, filed.Why };
-    }
+    private object? StewardRequest(DeskRequestPress press) => _wait.StewardRequest(press);
 
     // The steward's desk, what its holder's `steward desk` prints, fenced, as the callers' claims: from the
     // judge's memory alone, newest first, never a caller's key. A read: `{ requests: [{ id, act, target, why, filed, state, closed,
     // answeredBy, reason }] }`, none where no pipe is served.
     [DriverRoute("STEWARD_DESK", PipeClass.Open)]
-    private object? StewardDeskRead(NoPayload _) => new
-    {
-        Requests = _loop.Pipe?.StandingConfirmation is { } judge ? judge.Desk.Now().Select(DeskRow).ToList() : new List<object>(),
-    };
-
-    /// <summary>One desk request as the verb and the page read it: its moments written as every route writes them.</summary>
-    internal static object DeskRow(DeskRequestNow each) => new
-    {
-        each.Id, each.Act, each.Target, each.Why, Filed = Moments.Write(each.Filed), each.State, Closed = Moments.Write(each.Closed),
-        each.AnsweredBy, each.Reason,
-    };
-
-    private const string PersonMoves =
-        "A person may finish, decline or stop a parked session — not move it anywhere else. "
-        + "Answering it so it carries on is a message, not a move.";
-
-    private const string DeclineNeedsReason =
-        "Declining needs a reason: it is the part whoever reads this record can act on.";
+    private object? StewardDeskRead(NoPayload _) => _wait.StewardDesk();
 
     // What a person first said in each of these sessions: a conversation's identity, from
     // this machine's own record — never the session record, which travels. Told by event: each record's
     // read held the window up to 7.5 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("SESSION_OPENINGS", PipeClass.Open)]
     [ByEvent("SESSION_OPENINGS", Untold = "a session's first words, which SESSION_EVENTS tells and no scope or slice does")]
-    private async Task<object?> SessionOpeningsAsync(SessionOpeningsRead press, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        return new { Openings = _loop.Events.Openings([.. press.Ids ?? []]) };
-    }
+    private Task<object?> SessionOpeningsAsync(SessionOpeningsRead press, CancellationToken cancellationToken) => _records.OpeningsAsync(press);
 
     /// <summary>
     /// The sessions beside one: every other session of its repository with a tree here,
@@ -718,14 +307,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SESSION_RELATED", PipeClass.Open)]
     [ByEvent("SESSION_RELATED", Untold = "the sessions' working trees, which git reads at each ask (an uncommitted edit counts)")]
-    private async Task<object?> SessionRelatedAsync(SessionRelatedRead press, CancellationToken cancellationToken)
-    {
-        var session = press.Session;
-        var service = _loop.Service ?? throw NotReady();
-        if (await service.RelatedCandidatesAsync(session, cancellationToken) is not var (mine, others)) return new { Session = session, Related = Array.Empty<object>() };
-        var look = await _related.AskAsync(mine, others, cancellationToken);
-        return new { Session = session, Related = look.Related, Own = look.Own is { } own ? new { Read = "not-read", own.ReadAt } : null };
-    }
+    private Task<object?> SessionRelatedAsync(SessionRelatedRead press, CancellationToken cancellationToken) => _records.RelatedAsync(press, cancellationToken);
 
     /// <summary>
     /// What each of these sessions spent: the *Parts* strip's cost on each part's own
@@ -734,16 +316,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// with no turn is left out.
     /// </summary>
     [DriverRoute("SESSION_SPENT", PipeClass.Open)]
-    private object? SpentOf(SessionSpentRead press)
-    {
-        var spent = new Dictionary<string, SessionSpent>(StringComparer.Ordinal);
-        foreach (var id in Ids(press.Ids) ?? [])
-        {
-            if (_loop.Events.Spent(id) is { Turns: > 0 } read) spent[id] = read;
-        }
-
-        return new { Spent = spent };
-    }
+    private object? SpentOf(SessionSpentRead press) => _records.SpentOf(press);
 
     /// <summary>
     /// The record of the finished tree a session ran in, for its page once its tree is let go: what the service kept of its
@@ -751,13 +324,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SESSION_RECORD", PipeClass.Open)]
     [ByEvent("SESSION_RECORD", Untold = "the service's record of the finished tree, kept when the driver posts it")]
-    private async Task<object?> SessionRecordAsync(SessionRecordRead press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var service = _loop.Service ?? throw NotReady();
-        var json = await service.SessionRecordAsync(id, cancellationToken).ConfigureAwait(false);
-        return new { Record = json is null ? (JsonElement?)null : JsonDocument.Parse(json).RootElement.Clone() };
-    }
+    private Task<object?> SessionRecordAsync(SessionRecordRead press, CancellationToken cancellationToken) => _records.RecordAsync(press, cancellationToken);
 
     /// <summary>
     /// A session's memory rows for its page, passed through as the service answers
@@ -765,13 +332,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SESSION_MEMORY", PipeClass.Open)]
     [ByEvent("SESSION_MEMORY", Untold = "the service's memory rows, which its applier and a quest's close move")]
-    private async Task<object?> SessionMemoryAsync(SessionMemoryRead press, CancellationToken cancellationToken)
-    {
-        var session = press.Session;
-        var service = _loop.Service ?? throw NotReady();
-        var json = await service.SessionMemoryAsync(session, cancellationToken).ConfigureAwait(false);
-        return json is null ? new { Ops = Array.Empty<object>() } : JsonDocument.Parse(json).RootElement.Clone();
-    }
+    private Task<object?> SessionMemoryAsync(SessionMemoryRead press, CancellationToken cancellationToken) => _records.MemoryAsync(press, cancellationToken);
 
     // the person's decision on a session's memory, an awaiting end approved or declined by its row
     // (`op`, `approve`), or the ended session's staged changes kept or dropped (`keep`). The service judges; a refusal is answered as data,
@@ -781,14 +342,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_MEMORY_DECIDE", "session")]
     [Says("SESSION_MEMORY_DECIDE", "session:session")]
     [Publishes("SESSION_MEMORY_DECIDE", StateScopes.Sessions, Session = "session")]
-    private async Task<object?> SessionMemoryDecideAsync(SessionMemoryDecide press, CancellationToken cancellationToken)
-    {
-        var (session, op, approve, keep) = press;
-        var yes = op is { Length: > 0 } ? approve : keep;
-        var service = _loop.Service ?? throw NotReady();
-        var (decided, message) = await service.DecideMemoryAsync(session, op, yes, cancellationToken).ConfigureAwait(false);
-        return new { Decided = decided, Why = decided ? null : "refused", Message = message };
-    }
+    private Task<object?> SessionMemoryDecideAsync(SessionMemoryDecide press, CancellationToken cancellationToken) => _records.MemoryDecideAsync(press, cancellationToken);
 
     /// <summary>
     /// Where each of these sessions' work is now, for the rail in one ask: whether the tree it opened is still
@@ -810,52 +364,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("SESSION_WHERE", PipeClass.Open)]
     [ByEvent("SESSION_WHERE", Reads = StateScopes.Sessions | StateScopes.Landing | StateScopes.Sweep, Slices = new[] { SweepStateSlice.Name })]
-    private async Task<object?> SessionWhereAsync(SessionWhereRead read, CancellationToken cancellationToken)
-    {
-        var trees = new SessionTrees(_loop.Home);
-        var landings = trees.Recorded.Entries();
-        var rows = new List<object>();
-        if (read.Sessions is { } sessions)
-        {
-            foreach (var session in sessions)
-            {
-                if (session is not { Id: { } id, Tree: { } tree } || !HeldTree(trees, tree)) continue;
-
-                cancellationToken.ThrowIfCancellationRequested();
-                // As LandedBranches.Landing reads it: the newest entry naming the session.
-                var landing = landings.LastOrDefault(entry => entry.Names(id));
-                rows.Add(new
-                {
-                    Session = id,
-                    TreeGone = TreeFolders.TreeGone(tree),
-                    Landed = landing is null
-                        ? null
-                        : new
-                        {
-                            landing.Repository,
-                            landing.Branch,
-                            State = landing.GoneAt is null ? LandedState.Standing : LandedState.Gone,
-                        },
-                });
-            }
-        }
-
-        await Task.CompletedTask;
-        return new { Sessions = rows };
-    }
-
-    /// <summary>Whether a path names a tree this home opened; a path no folder could have is none.</summary>
-    private static bool HeldTree(SessionTrees trees, string path)
-    {
-        try
-        {
-            return path.Length > 0 && trees.Holds(path);
-        }
-        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
-        {
-            return false;
-        }
-    }
+    private Task<object?> SessionWhereAsync(SessionWhereRead read, CancellationToken cancellationToken) => _groups.WhereAsync(read, cancellationToken);
 
     /// <summary>
     /// Where each session is listed by state: its group, its row's word and its second line, read by the driver library's one
@@ -864,41 +373,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// own words, transcript-class and answered over this bridge alone.
     /// </summary>
     [DriverRoute("SESSION_GROUPS", PipeClass.Open)]
-    private async Task<object?> SessionGroupsAsync(SessionGroupsRead press, CancellationToken cancellationToken)
-    {
-        var ids = Ids(press.Ids);
-        var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
-        // the entries beside the rows, which the page reads until SESSONE1c draws entries.
-        var sessions = grouped.Select(Grouped).ToArray();
-        var entries = SessionGroups.ReadEntries(look, ids).Select(Entry).ToArray();
-        if (!press.Said) return new { Sessions = sessions, Entries = entries };
-
-        // `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it was given),
-        // which the alone path prints from a look of its own through the same function (§7.3); the page asks for none.
-        var ask = new SessionsAsk("list") { Group = press.Group, Repository = press.Repository, Json = press.Json };
-        return new
-        {
-            Sessions = sessions, Entries = entries,
-            Said = new TreesSaid(SessionsCommand.ListLines(look, ask, _loop.Home, DateTimeOffset.UtcNow), [], 0).ToWire(),
-        };
-    }
-
-    /// <summary>
-    /// One entry of <c>SESSION_GROUPS</c>, field for field what <c>daoris session list --json</c> prints in <c>entries</c>
-    ///: its key and the key's halves, the group its leading part put it in, and its parts, oldest first, each with
-    /// how it began. Ids, words and counts only.
-    /// </summary>
-    public static object Entry(SessionEntry entry) => new
-    {
-        Entry = entry.Key,
-        entry.Origin,
-        entry.Repository,
-        entry.Group,
-        entry.Leading,
-        entry.Head,
-        entry.Opens,
-        Parts = entry.Parts.Select(part => new { part.Session, part.Quest, part.Shown, part.Group, part.Began, part.After, part.AskedBy, part.Head }).ToArray(),
-    };
+    private Task<object?> SessionGroupsAsync(SessionGroupsRead press, CancellationToken cancellationToken) => _groups.GroupsReadAsync(press, cancellationToken);
 
     /// <summary>
     /// Archive these sessions on this machine, or bring them back: the marks as they now stand.
@@ -918,54 +393,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_ARCHIVE", "ids", Many = true)]
     [Says("SESSION_ARCHIVE", "ids:sessions")]
     [Publishes("SESSION_ARCHIVE", StateScopes.Sessions)]
-    private async Task<object?> SessionArchiveAsync(SessionArchiveMark press, CancellationToken cancellationToken)
-    {
-        var archive = press.Archived;
-        var ids = Ids(press.Ids) ?? [];
-        var marks = new SessionArchive(_loop.Home);
-        // `sessions archive` and `unarchive` sent over the pipe ask for their words (`said: true`), the alone path's own, and a
-        // terminal's lines; the page asks for none, and its answers keep their shape.
-        var said = press.Said;
-
-        if (!archive)
-        {
-            var back = marks.Unarchive(ids);
-            var marked = back.Marks.Select(Mark).ToArray();
-            return said
-                ? new { Archived = marked, back.NotArchived, Said = SessionArchive.UnarchiveSaid(ids, back.NotArchived).ToWire() }
-                : new { Archived = marked, back.NotArchived };
-        }
-
-        var (look, grouped) = await GroupsAsync(ids, cancellationToken, walked: true).ConfigureAwait(false);
-        var answer = marks.Archive(ids, grouped, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
-        var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).ToList();
-        // counted in the machine log by the door it came in by: the screen's, or the terminal's over the pipe.
-        SessionArchive.Said(_loop.Log, answer.Outcomes.Count - kept.Count, PipeDoor.Now == PipeDoor.Terminal ? PluginEvents.Terminal : PluginEvents.Screen);
-        var archived = answer.Marks.Select(Mark).ToArray();
-        var keptRows = kept.Select(outcome => new { outcome.Session, Code = CodeOf(outcome.Verdict), outcome.Group }).ToArray();
-        // A terminal is told one kept in its own words and exit, as it says it alone, never thrown.
-        if (said) return new { Archived = archived, Kept = keptRows, Said = SessionArchive.ArchiveSaid(answer.Outcomes).ToWire() };
-        if (ids.Count == 1 && kept.Count == 1) throw Kept(kept[0]);
-
-        return new { Archived = archived, Kept = keptRows };
-    }
-
-    /// <summary>One look at the sessions, gathered by the driver library's one gatherer, which the terminal's <c>sessions</c> reads too.</summary>
-    /// <param name="walked">
-    /// Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them: a press is judged as the trees
-    /// stand when it is pressed, never as the facts last judged them, so archive never hides work a tree gained since. The list's
-    /// trees are the facts'.
-    /// </param>
-    private async Task<(SessionLook Look, IReadOnlyList<SessionGrouping> Grouped)> GroupsAsync(
-        IReadOnlyCollection<string>? only, CancellationToken cancellationToken, bool walked = false)
-    {
-        var service = _loop.Service ?? throw NotReady();
-        // the one look, in the groups slice's builder (PUSH1c1: no tree judged here unless walked; the waits, the calls and
-        // the kept look are laid there), so the route and the pushed slice cannot drift.
-        var look = await GroupsStateSlice.LookAsync(_loop, service, cancellationToken, only, walked).ConfigureAwait(false);
-
-        return (look, SessionGroups.Read(look, only));
-    }
+    private Task<object?> SessionArchiveAsync(SessionArchiveMark press, CancellationToken cancellationToken) => _groups.ArchiveAsync(press, cancellationToken);
 
     /// <summary>
     /// Delete a conversation that served no quest: its record through the ledger, then what this
@@ -986,116 +414,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_DELETE", "id")]
     [Says("SESSION_DELETE", "id:session", "ids:sessions")]
     [Publishes("SESSION_DELETE", StateScopes.Sessions | StateScopes.Help, Session = "id")]
-    private async Task<object?> SessionDeleteAsync(SessionDelete press, CancellationToken cancellationToken)
-    {
-        var (id, said, help) = press;
-        var service = _loop.Service ?? throw NotReady();
-        // `help delete <id> --yes` asks for its own words, its checks that the conversation is Ask Daoris's before the delete's.
-        if (said && help)
-        {
-            return await SessionsVerbs.HelpSaidAsync(_context, new HelpVerbAsk("delete") { Id = id, Yes = true }, cancellationToken).ConfigureAwait(false);
-        }
-
-        // `sessions delete` sent over the pipe asks for the verb's own words, a refusal said with its exit 1 as the alone path says it.
-        if (said) return await SaidAsync(new SessionsAsk("delete") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
-
-        var outcome = await new SessionDeletion(_loop.Home)
-            .DeleteAsync(service, id, PluginEvents.Screen, _loop.Log, _loop.Events, cancellationToken)
-            .ConfigureAwait(false);
-        if (outcome.Verdict != DeleteVerdict.Deleted) throw NotDeleted(outcome);
-
-        _loop.Nudge();
-        return new { Deleted = id, outcome.Removed, outcome.Stayed };
-    }
-
-    /// <summary>
-    /// A delete refused, as the catalogue says it: the session, and the fact its sentence names. Which named it, and the
-    /// archive's two codes asked of a delete, travel as the catalogue's <c>context</c>.
-    /// </summary>
-    private static Exception NotDeleted(DeleteOutcome outcome)
-    {
-        var session = ("session", outcome.Session);
-        return outcome.Verdict switch
-        {
-            DeleteVerdict.Unknown => Refusals.Because(Refusals.SessionUnknown, outcome.Message, session, ("context", "delete")),
-            DeleteVerdict.Live => Refusals.Because(Refusals.SessionLive, outcome.Message, session, ("context", "delete")),
-            DeleteVerdict.NotOurs => Refusals.Because(Refusals.SessionNotOurs, outcome.Message, session, ("machine", outcome.Machine ?? "")),
-            DeleteVerdict.ServedQuest => Refusals.Because(Refusals.SessionServedQuest, outcome.Message, session, ("quest", outcome.Quest ?? "")),
-            DeleteVerdict.Named => Refusals.Because(
-                Refusals.SessionNamed, outcome.Message, session, ("context", outcome.NamedBy ?? SessionDeletion.ByAsk),
-                ("ask", outcome.Ask ?? ""), ("quest", outcome.Quest ?? "")),
-            DeleteVerdict.TreeHere => Refusals.Because(Refusals.SessionTreeHere, outcome.Message, session),
-            _ => Refusals.Because(Refusals.SessionOnRemote, outcome.Message, session, ("workspace", outcome.Workspace ?? "")),
-        };
-    }
-
-    /// <summary>The verb's own lines and exit code for a press a terminal sent, as <see cref="SessionsVerbs"/> runs it.</summary>
-    private Task<object> SaidAsync(SessionsAsk ask, CancellationToken cancellationToken) =>
-        SessionsVerbs.SaidAsync(_context, ask, cancellationToken);
-
-    /// <summary>The session ids the page sent, or null where it sent none.</summary>
-    private static IReadOnlyCollection<string>? Ids(IReadOnlyList<string>? listed) =>
-        listed is null ? null : [.. listed.Distinct(StringComparer.Ordinal)];
-
-    /// <summary>One row of <c>SESSION_GROUPS</c>, field for field what <c>daoris session list --json</c> prints. Public, as <see cref="SweepRow"/> is, so its shape is tested without a service.</summary>
-    public static object Grouped(SessionGrouping row) => new
-    {
-        row.Session,
-        row.Group,
-        row.Shown,
-        row.Archived,
-        row.Teammate,
-        row.Strikes,
-        row.Awaits,
-        row.AwaitsOf,
-        Work = row.Work is { } work ? new { work.Commits, work.Uncommitted, work.Branch } : null,
-        // its stop holds its quest here, which its line says.
-        row.HoldsQuest,
-        // whose pause holds its quest, which its line says and whose *Resume* stands in *Try again*'s place.
-        PausedBy = row.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
-        // what holds the person's words on a record that resumes later, which its line says.
-        Holds = row.Holds is { } holds ? new { holds.Why, holds.Reason, holds.Repository, holds.Until, holds.Account, holds.AccountName } : null,
-        // *Delete…* is offered only where it would be taken.
-        row.Deletable,
-        // what its own tree offers to land, whatever group it rests in, which its page offers Accept beside. The tree's
-        // name, never its path.
-        Lands = row.Lands is { } lands ? new { lands.Branch, lands.Tree, lands.Commits, lands.Uncommitted } : null,
-        // where the line holds its commits by content, its discard instead, with the driver's sentences the page
-        // shows as they are: where its work is, and the ref an unforced discard keeps its commits at.
-        Discards = row.Discards is { } discards
-            ? new { discards.Branch, discards.Tree, discards.Says, discards.Work.Keeps, discards.KeptAt }
-            : null,
-        // the call a working session's agent is inside, as the loop heard it, which its row and head say with how long;
-        // whether it waits on the person's answer to its permission request.
-        Calling = row.Calling is { } call ? new { call.Title, call.Since, call.Waiting, call.Told } : null,
-    };
-
-    private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };
-
-    private static string CodeOf(ArchiveVerdict verdict) => verdict switch
-    {
-        ArchiveVerdict.Live => Refusals.SessionLive,
-        ArchiveVerdict.NeedsYou => Refusals.SessionNeedsYou,
-        _ => Refusals.SessionUnknown,
-    };
-
-    /// <summary>
-    /// The refusal for one session archive kept. A group travels as the catalogue's <c>context</c> too, so the page's
-    /// sentence names which: waiting on you, or to review.
-    /// </summary>
-    private static Exception Kept(ArchiveOutcome outcome) => outcome.Verdict switch
-    {
-        ArchiveVerdict.Live => Refusals.Because(
-            Refusals.SessionLive, $"{outcome.Session} is still running, so it was not archived. Stop it first.",
-            ("session", outcome.Session)),
-        ArchiveVerdict.NeedsYou => Refusals.Because(
-            Refusals.SessionNeedsYou,
-            $"{outcome.Session} {(outcome.Group == SessionGroup.Review ? "has work to review" : "is waiting on you")}, so it was not "
-            + "archived: archive never hides what needs you.",
-            ("session", outcome.Session), ("group", outcome.Group ?? SessionGroup.You), ("context", outcome.Group ?? SessionGroup.You)),
-        _ => Refusals.Because(
-            Refusals.SessionUnknown, $"No session here is {outcome.Session}.", ("session", outcome.Session)),
-    };
+    private Task<object?> SessionDeleteAsync(SessionDelete press, CancellationToken cancellationToken) => _groups.DeleteAsync(press, cancellationToken);
 
     /// <summary>
     /// *Open folder*: the folder a session worked in, its own tree or its repository's checkout,
@@ -1157,7 +476,7 @@ public sealed class SessionsRoutes(DriverContext context)
         if (record.Teammate) return null;
 
         var trees = new SessionTrees(_loop.Home);
-        if (record.Tree is { } tree && HeldTree(trees, tree)) return Directory.Exists(tree) ? tree : null;
+        if (record.Tree is { } tree && SessionsGroupsDesk.HeldTree(trees, tree)) return Directory.Exists(tree) ? tree : null;
 
         var root = (await service.RegistryAsync(cancellationToken).ConfigureAwait(false))
             .FirstOrDefault(row => string.Equals(row.Repository, record.Repository, StringComparison.Ordinal))?.Root;
