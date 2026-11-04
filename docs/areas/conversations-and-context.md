@@ -56,7 +56,7 @@ of everything it handed, section by section.
 | `Continuations`, `ResumeAsk` | `Course/Domain/Continuation.cs`, `ResumeAsk.cs` | Judges whether a record resumes; what a resumed run is told |
 | `ContinuationAdmissions`, `AnswersAloneHold` | `Course/ContinuationAdmissions.cs`, `Course/GoOn/` | A line's serialized go-on admission; the answers-alone bound |
 | `SaidDoor`, `DrivenInbox` | `Course/SaidDoor.cs`, `Course/DrivenInbox.cs` | Words kept on a record's `said`, and their delivery to a running session |
-| `ContextBrief`, `ContextBriefs` | `Context/Domain/ContextBrief.cs`, `Context/Events/ContextBriefs.cs` | The brief (pure), and the read of the line it is composed from |
+| `ContextBrief`, `ContextBriefs` | `Context/Domain/ContextBrief.cs`, `BriefLine.cs` (its input records), `BriefReading.cs` (the line read into turns), `Context/Events/ContextBriefs.cs` | The brief (pure), and the read of the line it is composed from |
 | `StandingBlock`, `StandingBlocks` | `Context/Domain/StandingBlock.cs`, `Context/StandingBlocks.cs` | The standing block (pure), and the facts a start reads for it |
 | `InstructionAccounting`, `HandedCodes` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A line's key, its counts, and Daoris's words for them |
