@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HelperWordsTests
 {
-    private static SaidWordView Word(string json) => ServiceClient.ReadWord(JsonDocument.Parse(json).RootElement)!;
+    private static SaidWordView Word(string json) => SessionReads.ReadWord(JsonDocument.Parse(json).RootElement)!;
 
     [Fact]
     public void A_word_marked_helper_is_read_as_the_helpers_and_is_never_the_persons()

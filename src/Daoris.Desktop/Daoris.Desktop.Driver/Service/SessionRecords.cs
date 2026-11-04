@@ -30,7 +30,7 @@ public static class SessionRecords
                 Ask = Text(session, "ask"),
                 Created = Time(session, "created"),
                 Updated = Time(session, "updated"),
-                Said = ServiceClient.ReadSaid(session),
+                Said = SessionReads.ReadSaid(session),
                 // A host older than the field says nothing, and nothing is no delete (SESSUX1f).
                 Deletable = session.TryGetProperty("deletable", out var deletable) && deletable.ValueKind == JsonValueKind.True,
                 BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
@@ -47,10 +47,10 @@ public static class SessionRecords
                 // HELPMODE1a2: an Ask Daoris record's mode, answered on loopback alone; absent from a host before it.
                 HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
                 Actor = Text(session, "actor"), Choice = Text(session, "choice"),
-                Asked = ServiceClient.ActorRead<ActorAsked>(session, "asked"),
-                Override = ServiceClient.ActorRead<JsonElement?>(session, "override"),
-                Ran = ServiceClient.ActorRead<ActorRan>(session, "ran"),
-                Chosen = ServiceClient.ActorRead<ActorChosen>(session, "chosen"),
+                Asked = SessionReads.ActorRead<ActorAsked>(session, "asked"),
+                Override = SessionReads.ActorRead<JsonElement?>(session, "override"),
+                Ran = SessionReads.ActorRead<ActorRan>(session, "ran"),
+                Chosen = SessionReads.ActorRead<ActorChosen>(session, "chosen"),
                 // COAGENT1b: a helper's or a partner's lead, and a partner's piece, kept only beside it, as the service keeps them.
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
                 Piece = Text(session, "serves") is { Length: > 0 } && Text(session, "piece") is { Length: > 0 } piece ? piece : null,
@@ -72,7 +72,7 @@ public static class SessionRecords
     /// </summary>
     public static string? PersonsSaid(JsonObject record) =>
         record["said"] is JsonArray said
-            ? SaidWordView.PersonsJoined(said.OfType<JsonNode>().Select(word => ServiceClient.ReadWord(JsonSerializer.SerializeToElement(word))).OfType<SaidWordView>())
+            ? SaidWordView.PersonsJoined(said.OfType<JsonNode>().Select(word => SessionReads.ReadWord(JsonSerializer.SerializeToElement(word))).OfType<SaidWordView>())
             : null;
 
     /// <summary>Whether a record's note carries a line of <paramref name="code"/>, read from its parts without composing them.</summary>

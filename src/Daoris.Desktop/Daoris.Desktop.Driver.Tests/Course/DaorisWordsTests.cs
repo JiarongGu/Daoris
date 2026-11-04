@@ -13,7 +13,7 @@ public sealed class DaorisWordsTests
 {
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-20T10:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
 
-    private static SaidWordView Word(string json) => ServiceClient.ReadWord(JsonDocument.Parse(json).RootElement)!;
+    private static SaidWordView Word(string json) => SessionReads.ReadWord(JsonDocument.Parse(json).RootElement)!;
 
     private static SaidWordView Persons() => new("w0", "Also add the changelog line.", At, [], Reopens: true);
 
