@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// FABRIC-RUN1 through the loop (the fabric events design §D6, §E7, §A3): the watch loop holding the home's lease and a hook set, a stand-in
-/// performer installed. Where a repository's quests are bound to a graph naming the stand-in's step, the loop's runtime awaits the
-/// quest's unit, the look's supervision starts the process, the step is sent once and its completion heard and kept. Where nothing names a
+/// performer installed. Where a quest's run is bound to a graph naming the stand-in's step, the loop's runtime awaits it on the branch the
+/// run's session worked, the look's supervision starts the process, the step is sent once and its completion heard and kept. Where nothing names a
 /// performed step (the owner's install today), the same loop starts no plugin process and writes no unit record.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -40,12 +40,28 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         }
         """;
 
-    /// <summary>Quest <c>q1</c>'s run bound to a graph whose entry is the plugin's performed deploy, ahead of the landing.</summary>
-    private void BindDeploy() => RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, """
-        {"schemaVersion":2,"entries":["deploy"],"end":"land",
-         "nodes":[{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
-         "wires":[{"id":"a","kind":"after","from":"deploy","to":"land"}]}
-        """), DateTimeOffset.UtcNow);
+    /// <summary>
+    /// Quest <c>q1</c>'s run bound to a graph whose entry is the plugin's performed deploy, ahead of the landing, and the branch its session
+    /// worked in the repository's checkout: a run's plugin node before its landing observes the run's branch at its tip (the cutover design
+    /// §2.2), so a run with no branch withholds it and sends nothing.
+    /// </summary>
+    private async Task BindDeployAsync()
+    {
+        var root = Path.Combine(_home, "engine");
+        Directory.CreateDirectory(root);
+        await GitFixture.GitAsync(root, "init", "-q");
+        await GitFixture.GitAsync(root, "symbolic-ref", "HEAD", "refs/heads/main");
+        await GitFixture.GitAsync(root, "-c", "user.name=Driver Tests", "-c", "user.email=tests@example.invalid", "commit", "-q", "--allow-empty", "-m", "base");
+        await GitFixture.GitAsync(root, "branch", "daoris/s1");
+        var tip = (await GitFixture.GitAsync(root, "rev-parse", "daoris/s1")).Trim();
+        new SessionBranches(_home).Record(new GrownBranch("engine", "default", "daoris/s1", "main", tip, null, DateTimeOffset.UtcNow) { Unit = "unit-b1" });
+        _ledger.Driven("s1", "q1", Path.Combine(_home, "trees", "s1"), state: "completed");
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, """
+            {"schemaVersion":2,"entries":["deploy"],"end":"land",
+             "nodes":[{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
+             "wires":[{"id":"a","kind":"after","from":"deploy","to":"land"}]}
+            """), DateTimeOffset.UtcNow);
+    }
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-runtimeloop-" + Guid.NewGuid().ToString("N")[..8]);
 
@@ -77,6 +93,8 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         {
             try
             {
+                // Git leaves its objects read-only on Windows.
+                foreach (var file in Directory.EnumerateFiles(_home, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
                 Directory.Delete(_home, recursive: true);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -113,7 +131,8 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
                 lock (reports) return until(reports);
             }, () =>
             {
-                lock (reports) return $"the loop never got there in {reports.Count} looks: " + string.Join(" | ", reports.SelectMany(report => report.Events));
+                var states = Record()?.Statuses.Select(each => $"{each.Key}={each.Value.State}") ?? ["no record"];
+                lock (reports) return $"the loop never got there in {reports.Count} looks ({string.Join(", ", states)}): " + string.Join(" | ", reports.SelectMany(report => report.Events));
             }, Poll.Patience);
             lock (reports) return reports.Count;
         }
@@ -130,7 +149,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     [Fact]
     public async Task A_governed_quests_performed_node_is_sent_once_by_the_loop_and_its_completion_kept()
     {
-        BindDeploy();
+        await BindDeployAsync();
         await RunAsync("", _ => Record()?.Statuses.GetValueOrDefault("deploy")?.State == NodeStates.Reached);
 
         var record = Record()!;
@@ -142,14 +161,16 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     /// <summary>
     /// FABRIC-RUN1d: with the look's deadline ten minutes off, the loop's start is its only look. The awaited set's own wake starts the
     /// stand-in's process and sends the step with no plan, and the completion the stand-in sends at once is heard by link 8 alone and kept
-    /// within a second of the attempt's record. The stand-in writes nothing into the plugins folder here, whose change wakes a plan.
+    /// within seconds of the attempt's record. A run's answer is judged at its branch's tip, so the pass
+    /// that hears it reads that checkout's refs first, one git start, about half a second on an idle machine, so the bound is three seconds.
+    /// The stand-in writes nothing into the plugins folder here, whose change wakes a plan.
     /// </summary>
     [Fact]
-    public async Task A_completion_heard_is_kept_within_a_second_with_no_look_after_the_loops_start()
+    public async Task A_completion_heard_is_kept_within_seconds_with_no_look_after_the_loops_start()
     {
         File.WriteAllText(Path.Combine(Folder, "work.mjs"), Script.Replace("appendFileSync(", "void (", StringComparison.Ordinal));
         DateTimeOffset? reached = null;
-        BindDeploy();
+        await BindDeployAsync();
         var looks = await RunAsync("", _ =>
         {
             if (Record()?.Statuses.GetValueOrDefault("deploy")?.State != NodeStates.Reached) return false;
@@ -160,7 +181,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         Assert.Equal(1, looks);
         var attempt = Assert.Single(Record()!.Attempts);
         Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (attempt.State, attempt.Outcome));
-        Assert.InRange(reached!.Value - attempt.RecordedAt, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        Assert.InRange(reached!.Value - attempt.RecordedAt, TimeSpan.Zero, TimeSpan.FromSeconds(3));
     }
 
     /// <summary>
