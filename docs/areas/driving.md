@@ -54,7 +54,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `LookStages` | `Platform/LookStages.cs` | Times each stage of a look and the work beside it, says a slow one |
 | `DriverIntakes` | `Loop/DriverIntakes.cs` | Asks due an intake, the intake's run, ending a parked intake once its ask is answered |
 | `DriverContinuations` | `Loop/DriverContinuations.cs` | The person's words continue their session: a park or an ended record goes on |
-| `Planner` | `WorkOrders/Domain/Planner.cs` | Pure plan over a `Snapshot`: `Start` or a `StartVerdict` with its sentence; strikes; the carry-on rule |
+| `Planner` | `WorkOrders/Domain/Planner.cs` | Pure plan over a `Snapshot`: `Start` or a `StartVerdict` with its sentence; strikes; the carry-on rule. `Plan` is one line into `PlanRound`, which holds a tick's state and weighs reasons in order through `RoundReading` (the records), `RoundSaying` (go-on, carry-on, resume, taken elsewhere), `RoundConsidering` (the start's reasons, the cap, trees and repository), `RoundJoining` and `HoldVerdicts`; the records (`Snapshot`, `Consideration`, `StartVerdict`, `SittingFact`) are files of their own |
+| `SessionsCommand` | `WorkOrders/SessionsCommand.cs`, `WorkOrders/Sessions/` | `daoris session`: the usage, the dispatch and the doors; the verb groups are `SessionsReading`, `SessionsListing`, `SessionsJson`, `SessionsEnding`, `SessionsSaying`, `SessionsKeeping`, `SessionsQueueEdit`, `SessionsGoingOn`, `SessionsArchiving`, `SessionsHandback` and `SessionsPresses`; `SessionsAsk`, `SessionsWorld`, `SessionGrouping`, `SessionLook`, `WordsHold` and `ShownState` are files of their own |
 | `CourseDecision` | `Course/Domain/LineCourse.Decide.cs` | The one decision of how a line goes on: resume, move to a new part, wait, hold, refuse |
 | `DrivenCourse` | `Course/GoOn/DrivenCourse.cs` | A driven line's facts handed to the course, and its answers |
 | `DrivenInbox` | `Course/DrivenInbox.cs` | Words to a working driven session: held, delivered at the next step or turn end; the person's turn stop |
@@ -254,7 +255,7 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
 
 ## Contradictions
 
-- D46 and D51 say one driven session per repository; `WorkOrders/Domain/Planner.cs:1416-1418` runs sessions side by
+- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `OpensOwnTree` branch) runs sessions side by
   side, one per tree, where the repository opens its own trees. The code reads right (as D115 and D167 already say).
 - D46 says a fresh session per quest; `Course/Domain/LineCourse.Decide.cs:164-185` resumes the agent's own conversation
   where it holds. D189 reads right.
