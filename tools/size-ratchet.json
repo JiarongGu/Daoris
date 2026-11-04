@@ -167,7 +167,6 @@
   "src/Daoris.Service/Daoris.Service.Core/Knowledge/Memory/MemoryOps.cs": 52094,
   "src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs": 171411,
   "src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs": 55552,
-  "src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs": 143229,
   "src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs": 156012,
   "src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs": 122984,
   "src/Daoris.Service/Daoris.Service.Core/Sessions/WorkRecords.cs": 44932,
