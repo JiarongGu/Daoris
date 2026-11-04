@@ -46,9 +46,6 @@ internal interface IWorkplaceWorkflows
     /// </summary>
     string? SkippedLook(string home, string run, string? node);
 
-    /// <summary>Current's landing graph for <paramref name="rule"/>: the method its <c>land</c> names, and the graph's digest (see <c>NodeGraphHomes.Landing</c>).</summary>
-    (string Method, string Graph) CurrentLand(LandingRule rule);
-
     /// <summary>
     /// The person's Accept kept as the review's word of <paramref name="process"/>'s run (WORKFLOWCLEAN1 1c), where its graph holds a review
     /// (see <c>RunNodeWords.Word</c>); a process whose graph holds none, or that is no run's, answers <see cref="ReviewWord.HasReview"/> false.

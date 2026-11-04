@@ -770,25 +770,6 @@ public sealed class DriverRoutes(DriverContext context)
                 .Select(p => new { Repository = p.Key, Branch = p.Value }).ToArray(),
             WorkspaceLines = config.WorkspaceLines.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Branch = p.Value }).ToArray(),
-            // The landing rules as set (WSR1), as rows for the same reason, with the ticket's key and the squash (DOORS1b).
-            Landings = config.Landings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new
-                {
-                    Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept, p.Value.Key,
-                    p.Value.Squash, Integrate = LinesRoutes.IntegrateWire(p.Value.Integrate),
-                }).ToArray(),
-            WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new
-                {
-                    Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept, p.Value.Key,
-                    p.Value.Squash, Integrate = LinesRoutes.IntegrateWire(p.Value.Integrate),
-                }).ToArray(),
-            // FABRIC-GRAPH1d: the rules the file keeps that read as no rule, which the rows above skip, so Setup names them: why
-            // (`object`, `form`, `refused`) and the driver's sentence.
-            UnreadLandings = config.UnreadLandings("landings")
-                .Select(rule => new { Repository = rule.Name, rule.Why, rule.Said }).ToArray(),
-            WorkspaceUnreadLandings = config.UnreadLandings("workspaceLandings")
-                .Select(rule => new { Workspace = rule.Name, rule.Why, rule.Said }).ToArray(),
             // Reading and writing across as set (D107), as rows for the same reason.
             ReadAcross = config.ReadAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Read = p.Value }).ToArray(),

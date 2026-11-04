@@ -23,7 +23,6 @@ public sealed class DeliveryBroughtGitTests : LandedFixture
     [Fact]
     public async Task An_Accept_carrying_several_sessions_performs_one_delivery_and_its_members_are_reached_as_brought_into_it()
     {
-        Rule(new LandingRule(LandingForm.Merge, "feature/{quest}-{slug}"));
         var (trees, root, _, beside, operation) = await ReadyAsync();
         var store = Store();
         var claim = Start(store, operation.Checked!, DeliveryMethods.Branch);
@@ -124,9 +123,6 @@ public sealed class DeliveryBroughtGitTests : LandedFixture
         Assert.True(start.Started, start.Refused ?? start.Held);
         return start.Claim!;
     }
-
-    private void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     private static async Task<string> TipAsync(string tree) => (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
 

@@ -16,12 +16,7 @@ public sealed class IntegrationAuthorityTests
 
     private static readonly LandingIntegrate Stewarded = new(Request: LandingIntegrate.Steward, Batch: 8, Gates: LandingIntegrate.Declared);
 
-    private static DriverConfig Rule(LandingIntegrate? integrate)
-    {
-        // `request: done` is the quest's done through the rule's own auto-accept, which the rule must have on.
-        var config = DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: integrate?.Request == LandingIntegrate.Done));
-        return integrate is null ? config : config.WithLandingIntegrate("engine", integrate);
-    }
+    private static DriverConfig Rule(LandingIntegrate? integrate) => DriverConfig.Empty.WithLinePolicy("engine", integrate);
 
     private static IntegrationRequest Request(IntegrationRequester requester) =>
         new("r1", "engine", "aurora", "feature/q1-fix", Tip, IntegrationRoutes.Recorded, "main", requester, Stewarded.Resolved(), At);

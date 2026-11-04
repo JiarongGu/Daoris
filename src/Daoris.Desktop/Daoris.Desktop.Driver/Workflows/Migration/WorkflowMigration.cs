@@ -188,16 +188,9 @@ public static class WorkflowMigration
     /// </summary>
     private static DriverConfig WithoutOldKeys(DriverConfig config)
     {
-        var emptied = config with
-        {
-            Landings = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase),
-            WorkspaceLandings = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase),
-            WorkCycles = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase),
-            WorkspaceWorkCycles = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase),
-        };
-        if (config.Source is not { } source || JsonNode.Parse(source) is not JsonObject root || !OldKeys.Any(root.ContainsKey)) return emptied;
+        if (config.Source is not { } source || JsonNode.Parse(source) is not JsonObject root || !OldKeys.Any(root.ContainsKey)) return config;
         foreach (var key in OldKeys) root.Remove(key);
-        return emptied with { Source = root.ToJsonString(), SourceFile = null };
+        return config with { Source = root.ToJsonString(), SourceFile = null };
     }
 
     private static WorkflowUse Use(string? workflow, string place, bool workspace) =>

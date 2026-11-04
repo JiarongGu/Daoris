@@ -32,22 +32,9 @@ public sealed class EndJudgementTests
     // The cycles, as Accept resolves them and as a landing recorded them.
 
     [Fact]
-    public void A_cycle_is_resolved_as_Accept_resolves_it_from_the_repository_then_the_workspace()
+    public void A_named_workflows_landing_decides_the_cycle()
     {
-        var config = DriverConfig.Empty
-            .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "forge"))
-            .WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "w/{quest}-{slug}", Squash: true));
-
-        Assert.Equal("branch with a plugin", EndCycle.Accepts(config, "engine", "aurora").Name);
-        Assert.Equal("squash", EndCycle.Accepts(config, "other", "aurora").Name);
-        Assert.Equal("merge", EndCycle.Accepts(config, "other", "elsewhere").Name);
-        Assert.Equal("no landing", EndCycle.NoLanding.Name);
-    }
-
-    [Fact]
-    public void A_named_workflows_landing_decides_the_cycle_over_the_repositorys_rule()
-    {
-        var config = DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge));
+        var config = DriverConfig.Empty;
         var process = new WorkflowProcess("engine", new Landing(new LandingRule(LandingForm.Branch, "docs/{quest}-{slug}", Plugin: "forge"), LandingSource.Repository), null, null)
         {
             Binding = new WorkflowRunBinding("q1", "engine", "aurora", "docs-to-pr", "task", DateTimeOffset.UnixEpoch) { Version = 2, Kind = "docs" },

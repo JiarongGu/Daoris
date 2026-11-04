@@ -576,10 +576,8 @@ close found partial since is said once. An open quest bound to a graph the choic
 the graph kept for it, naming the nodes it runs that the choices' graph does not, or, its graph kept nowhere here, waiting (`NodeRuntime.Bindings`,
 FABRIC-CLOSE1k). Every other quest is read and written as before.
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
-its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
-rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),
-and says what the file keeps there that no unit reads (`Strays`). The CLI's `cycles.ts` is its twin, and both read the CLI's
-`test/fixtures/graph-homes.json`. `DriverConfig.Save` makes an edit onto the file as it stands at write (`Store/JsonKeeping`), so
+its reading from JSON. Only a run's own bound graph and a closure graph a quest was bound to govern a unit; no graph is drawn from the
+driver's choices. `DriverConfig.Save` makes an edit onto the file as it stands at write (`Store/JsonKeeping`), so
 a key it has no field for stays where it stands, a value no edit changed keeps its value, and another writer's change made since the
 read stays; a file that does not read then is refused. The CLI's `jsonkeep.ts` is its twin (D173's FABRIC-GRAPH1 note says exactly
 what an edit keeps). `DriverConfig` and the keys it reads sit in `Settings/` (FOUNDATION1 mod-iii, D212): a key's record, limits, sentences,

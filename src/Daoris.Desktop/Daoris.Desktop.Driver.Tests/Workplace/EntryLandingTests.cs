@@ -30,7 +30,7 @@ public sealed class EntryLandingTests : LandedFixture
         var second = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
         await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path), Part("s5e6f7a8", second.Path)];
 
         var plan = await trees.PlanEntryAsync(parts, Subject);
 
@@ -63,7 +63,7 @@ public sealed class EntryLandingTests : LandedFixture
         var second = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "app.txt", "the first attempt\n", "an attempt at the fix");
         await CommitAsync(second.Path, "app.txt", "the fix\n", "the fix");
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path), Part("s5e6f7a8", second.Path)];
 
         var plan = await trees.PlanEntryAsync(parts, Subject);
 
@@ -92,7 +92,7 @@ public sealed class EntryLandingTests : LandedFixture
         await CommitAsync(first.Path, "app.txt", "the first attempt\n", "an attempt at the fix");
         await CommitAsync(second.Path, "app.txt", "the fix\n", "the fix");
         var secondTip = (await GitAsync(second.Path, "rev-parse", "HEAD")).Trim();
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path), Part("s5e6f7a8", second.Path)];
 
         var landed = await trees.LandEntryAsync(parts, Subject, Kept);
 
@@ -122,7 +122,7 @@ public sealed class EntryLandingTests : LandedFixture
         await CommitAsync(first.Path, "brief.txt", "line, as the records say\n", "the brief, for the records");
         await CommitAsync(second.Path, "quest.txt", "quest\n", "the quest");
         await CommitAsync(second.Path, "brief.txt", "line, as the quest says\n", "the brief, for the quest");
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path), Part("s5e6f7a8", second.Path)];
 
         var plan = await trees.PlanEntryAsync(parts, Subject);
 
@@ -143,7 +143,7 @@ public sealed class EntryLandingTests : LandedFixture
         await CommitAsync(first.Path, "fix.txt", "the fix\n", "the fix, first");
         await CommitAsync(second.Path, "fix.txt", "the fix\n", "the fix, again");
         await CommitAsync(second.Path, "notes.txt", "notes\n", "the notes");
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path), Part("s5e6f7a8", second.Path)];
 
         var plan = await trees.PlanEntryAsync(parts, Subject);
 
@@ -158,12 +158,12 @@ public sealed class EntryLandingTests : LandedFixture
         var trees = new SessionTrees(Home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
-        var once = await trees.LandEntryAsync([new("s1a2b3c4", first.Path)], Subject, Kept);
+        var once = await trees.LandEntryAsync([Part("s1a2b3c4", first.Path)], Subject, Kept);
         Assert.True(once.Landed, once.Message);
         await SquashAsync(root, Branch);
         var second = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
-        EntryLandingPart[] parts = [new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s5e6f7a8", second.Path)];
 
         var plan = await trees.PlanEntryAsync(parts, Subject);
         var landed = await trees.LandEntryAsync(parts, Subject, Kept);
@@ -189,7 +189,7 @@ public sealed class EntryLandingTests : LandedFixture
         await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
 
         var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
-        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        var once = await trees.LandAsync(first.Path, lead, joins: true, gate: Lands);
         Assert.True(once.Landed, once.Message);
         Assert.Equal(Branch, once.Branch);
 
@@ -197,7 +197,7 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.Equal(("s5e6f7a8", Branch), (joined.Session, joined.EntryBranch));
         Assert.Equal(Branch, (await trees.PlanAsync(second.Path, joined)).Target);
 
-        var landed = await trees.LandAsync(second.Path, joined, joins: true);
+        var landed = await trees.LandAsync(second.Path, joined, joins: true, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal(Branch, landed.Branch);
@@ -239,12 +239,12 @@ public sealed class EntryLandingTests : LandedFixture
             trees.OwnSubjectAsync(tree, session, quest, records, Find, _ => null, process: null);
 
         var later = await OwnAsync(second.Path, "s5e6f7a8", "1b2c3d");
-        var once = await trees.LandAsync(second.Path, later, joins: later.Joins);
+        var once = await trees.LandAsync(second.Path, later, joins: later.Joins, gate: Lands);
         Assert.True(once.Landed, once.Message);
         Assert.Equal(Branch, once.Branch);
 
         var lead = await OwnAsync(first.Path, "s1a2b3c4", "0fda18");
-        var landed = await trees.LandAsync(first.Path, lead, joins: lead.Joins);
+        var landed = await trees.LandAsync(first.Path, lead, joins: lead.Joins, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal(Branch, landed.Branch);
@@ -279,12 +279,12 @@ public sealed class EntryLandingTests : LandedFixture
 
         var later = await OwnAsync(second.Path, "s5e6f7a8");
         Assert.Equal(named, (await trees.PlanAsync(second.Path, later)).Target);
-        var once = await trees.LandAsync(second.Path, later, joins: later.Joins);
+        var once = await trees.LandAsync(second.Path, later, joins: later.Joins, gate: Lands);
         Assert.True(once.Landed, once.Message);
         Assert.Equal(named, once.Branch);
 
         var lead = await OwnAsync(first.Path, "s1a2b3c4");
-        var landed = await trees.LandAsync(first.Path, lead, joins: lead.Joins);
+        var landed = await trees.LandAsync(first.Path, lead, joins: lead.Joins, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal(named, landed.Branch);
@@ -306,7 +306,7 @@ public sealed class EntryLandingTests : LandedFixture
         await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
         var firstOwn = new LandingSubject("s1a2b3c4", "0fda18", "Fix the gap");
         var secondOwn = new LandingSubject("s5e6f7a8", "1b2c3d", "Check the gap");
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path) { Own = firstOwn }, new("s5e6f7a8", second.Path) { Own = secondOwn }];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path) with { Own = firstOwn }, Part("s5e6f7a8", second.Path) with { Own = secondOwn }];
 
         var landed = await trees.LandEntryAsync(parts, firstOwn, Kept);
 
@@ -336,7 +336,7 @@ public sealed class EntryLandingTests : LandedFixture
 
         var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
         Assert.False((await trees.PlanAsync(first.Path, lead)).Stands);
-        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        var once = await trees.LandAsync(first.Path, lead, joins: true, gate: Lands);
         Assert.True(once.Landed, once.Message);
 
         var plan = await trees.PlanAsync(second.Path, await trees.JoinEntryAsync(second.Path, "s5e6f7a8", Subject));
@@ -358,7 +358,7 @@ public sealed class EntryLandingTests : LandedFixture
         var second = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
         await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path), Part("s5e6f7a8", second.Path)];
 
         var landed = await trees.LandEntryAsync(parts, Subject, Kept);
 
@@ -385,12 +385,12 @@ public sealed class EntryLandingTests : LandedFixture
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
         var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
-        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        var once = await trees.LandAsync(first.Path, lead, joins: true, gate: Lands);
         Assert.True(once.Landed, once.Message);
         await CommitAsync(first.Path, "a2.txt", "a2\n", "more of the first part");
         var tip = (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim();
 
-        var again = await trees.LandAsync(first.Path, await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject), joins: true);
+        var again = await trees.LandAsync(first.Path, await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject), joins: true, gate: Lands);
 
         Assert.True(again.Landed, again.Message);
         Assert.Contains("1 more commit(s), squashed into one", again.Message);
@@ -427,8 +427,8 @@ public sealed class EntryLandingTests : LandedFixture
         var reads = new PressQuests((id, _) => Task.FromResult(quests.GetValueOrDefault(id)));
         EntryLandingPart[] parts =
         [
-            new("s1a2b3c4", first.Path) { Pressed = await reads.PressedAsync("s1a2b3c4", "q1", late: true) },
-            new("s5e6f7a8", second.Path) { Pressed = await reads.PressedAsync("s5e6f7a8", "q2", late: true) },
+            Part("s1a2b3c4", first.Path) with { Pressed = await reads.PressedAsync("s1a2b3c4", "q1", late: true) },
+            Part("s5e6f7a8", second.Path) with { Pressed = await reads.PressedAsync("s5e6f7a8", "q2", late: true) },
         ];
 
         Task<EntryLanding> landing;
@@ -463,7 +463,7 @@ public sealed class EntryLandingTests : LandedFixture
         await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
         await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
         await GitAsync(root, "remote", "set-url", "origin", Path.Combine(Scratch, "gone.git"));
-        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+        EntryLandingPart[] parts = [Part("s1a2b3c4", first.Path), Part("s5e6f7a8", second.Path)];
 
         var landed = await trees.LandEntryAsync(parts, Subject, Kept);
 
@@ -473,8 +473,9 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.All(landed.Parts, part => Assert.DoesNotContain(NotFetched, part.Landing!.Message));
     }
 
-    /// <summary>The repository's rule squashes each landing into one commit (PROCESS1b-ii), named as the default rule names it.</summary>
-    private void Squashing() =>
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+    /// <summary>Each landing squashed into one commit (PROCESS1b-ii), its branch named as the plain landing names it.</summary>
+    private void Squashing() => Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}", squash: true));
+
+    /// <summary>An entry's part that lands by the run's bound <c>land</c>.</summary>
+    private EntryLandingPart Part(string session, string tree) => new(session, tree) { Gate = Lands };
 }

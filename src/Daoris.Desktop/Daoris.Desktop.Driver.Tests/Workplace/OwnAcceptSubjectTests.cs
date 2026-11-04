@@ -39,7 +39,7 @@ public sealed class OwnAcceptSubjectTests : IDisposable
     [Fact]
     public async Task A_part_of_an_entry_with_others_joins_its_entrys_branch_named_for_its_first_part()
     {
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
 
         var later = await SubjectAsync("s2", "q2", Entry());
         var first = await SubjectAsync("s1", "q1", Entry());
@@ -52,7 +52,7 @@ public sealed class OwnAcceptSubjectTests : IDisposable
     [Fact]
     public async Task A_session_alone_or_with_no_record_lands_as_before()
     {
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
 
         var alone = await SubjectAsync("s3", "q3", [.. Entry(), Record("s3", "ask:a9/engine", "q3", 0)]);
         var unrecorded = await SubjectAsync("s4", "q3", Entry());
@@ -65,11 +65,11 @@ public sealed class OwnAcceptSubjectTests : IDisposable
     [Fact]
     public async Task A_merge_rule_or_an_entered_name_joins_nothing()
     {
-        Rule(LandingRule.Merge);
+        Rule(GraphLand.Merge);
         var merged = await SubjectAsync("s2", "q2", Entry());
         Assert.Equal(("s2", null, false), (merged.Session, merged.EntryBranch, merged.Joins));
 
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         var entered = await SubjectAsync("s2", "q2", Entry()) with { Entered = "feature/mine" };
         Assert.Equal((Branch, false), (entered.EntryBranch, entered.Joins));
     }
@@ -82,7 +82,7 @@ public sealed class OwnAcceptSubjectTests : IDisposable
     [Fact]
     public async Task The_subject_keeps_the_quest_its_session_served_and_its_submission_as_read()
     {
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        Rule(GraphLand.Branch("feature/{quest}-{slug}"));
         _quests["q2"] = _quests["q2"] with { Status = "Taken", Closure = "sha256:closure", Submission = new QuestSubmissionView("desk", 43, null, "ready") };
 
         var later = await SubjectAsync("s2", "q2", Entry());
@@ -106,9 +106,11 @@ public sealed class OwnAcceptSubjectTests : IDisposable
     private Task<LandingSubject> SubjectAsync(string session, string quest, IReadOnlyList<SessionRecord> records) =>
         new SessionTrees(_home).OwnSubjectAsync(
             DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "a1b2c3d4"), session, quest, records,
-            id => Task.FromResult(_quests.GetValueOrDefault(id)), _ => null, process: null);
+            id => Task.FromResult(_quests.GetValueOrDefault(id)), _ => null, process: _process);
 
-    private void Rule(LandingRule rule) => DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+    private IWorkplaceProcess? _process;
+
+    private void Rule(string land) => _process = GraphLand.Gate(_home, land).Process;
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
     private static string RepoRoot() => GitSeed.RepoRoot();

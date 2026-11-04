@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the first's outcome (F41), and waits queued: nothing here runs the integration. The same over real git is
 /// <see cref="IntegrateNodeGitTests"/>.
 /// </summary>
-public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
+public sealed class IntegrateNodeTests : IDisposable
 {
     private const string Unit = "unit-a";
     private const string Branch = "feature/q1-ship";
@@ -42,10 +42,9 @@ public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
 
     private NodeStatus Status(string node = "integrate", string unit = Unit) => Record(unit).Statuses[node];
 
-    private static DriverConfig Config(string request = LandingIntegrate.Owner, bool autoAccept = false) =>
+    private static DriverConfig Config(string request = LandingIntegrate.Owner) =>
         DriverConfig.Empty.WithLine("engine", "main")
-            .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}") { AutoAccept = autoAccept })
-            .WithLandingIntegrate("engine", new LandingIntegrate(Request: request, Gates: request == LandingIntegrate.Done ? LandingIntegrate.Declared : null));
+            .WithLinePolicy("engine", new LandingIntegrate(Request: request, Gates: request == LandingIntegrate.Done ? LandingIntegrate.Declared : null));
 
     private static LandedBranch Landed(string tip = T1, string by = AcceptedBy.Person, string? request = LandingIntegrate.Owner) =>
         new("engine", "default", Branch, "main", tip, "s1", "q1", null, Then)
@@ -327,7 +326,7 @@ public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
     {
         _units = [BranchUnit(Landed(by: by, request: stood))];
 
-        var pass = await PassAsync(Runtime(), Config(rule, autoAccept));
+        var pass = await PassAsync(Runtime(), Config(rule));
 
         Assert.Equal(NodeStates.Reached, Status("handed").State);
         Assert.Equal(asks, _door.Asked.Count == 1);
@@ -364,7 +363,7 @@ public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
         // A rule saying `request: done` leaves a landing that says neither to Daoris's sweep: no wait of the owner's.
         _units = [BranchUnit(Landed(request: null), id: "unit-b")];
         var swept = Runtime();
-        await PassAsync(swept, Config(LandingIntegrate.Done, autoAccept: true));
+        await PassAsync(swept, Config(LandingIntegrate.Done));
         Assert.Empty(swept.CardWaits());
         await PassAsync(swept, Config());
         Assert.Equal(IntegrationRefusals.NoRequest, Assert.Single(swept.CardWaits()).Code);
@@ -387,90 +386,6 @@ public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
         _door.Refuses = _ => new IntegrationAdmission(false, "git could not read the branch") { Refusal = IntegrationRefusals.Unread };
         await PassAsync(Runtime(), Config());
         Assert.Equal(NodeStates.Unknown, Status().State);
-    }
-
-    /// <summary>A repository whose rule carries no <c>integrate</c> arms nothing, writes no record and asks no door.</summary>
-    [Fact]
-    public async Task A_repository_whose_rule_carries_no_integrate_is_never_governed()
-    {
-        var plain = DriverConfig.Empty.WithLine("engine", "main").WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
-        var pass = await PassAsync(Runtime(), plain);
-
-        Assert.False(pass.Armed);
-        Assert.Empty(_door.Asked);
-        Assert.False(Directory.Exists(_home));
-    }
-
-    /// <summary>
-    /// F51: only the integrating repository's branch units are governed; another repository's units, and its quests, cost the pass no record.
-    /// </summary>
-    [Fact]
-    public void Only_the_integrating_repositorys_branch_units_are_governed()
-    {
-        var other = BranchUnit(Landed(), id: "unit-b") with { Owner = new WorkOwner("shop", "default", "session-branches.json", WorkRecord.DriverWriter) };
-        var read = new NodeUnitsRead([BranchUnit(Landed()), other], new Dictionary<string, string> { ["engine"] = "checkout" });
-
-        var governed = NodeRuntime.Govern(Config(), read, []);
-
-        Assert.Equal([Unit], governed.Select(each => each.Unit.Id));
-        Assert.Contains(governed[0].Graph.Nodes, node => node.Kind == NodeKinds.Integrate);
-    }
-
-    /// <summary>
-    /// F51, measured: the arming and the governing over a thousand branch units of forty repositories, one of which carries <c>integrate</c>.
-    /// Only that repository's units are governed, whatever the rest hold, and the cost is printed. The graph of a repository is judged once for
-    /// all its units, so the others cost a lookup each.
-    /// </summary>
-    [Fact]
-    public void The_arming_and_the_governing_are_measured_over_a_thousand_units_of_forty_repositories()
-    {
-        var config = Config();
-        for (var repository = 0; repository < 40; repository++)
-        {
-            config = config.WithLanding($"repo-{repository}", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
-        }
-
-        var units = Enumerable.Range(0, 1000).Select(index =>
-        {
-            var integrating = index % 40 == 0;
-            var unit = BranchUnit(Landed(), id: $"unit-{index:D4}");
-            return integrating ? unit : unit with { Owner = new WorkOwner($"repo-{index % 40}", "default", "session-branches.json", WorkRecord.DriverWriter) };
-        }).ToList();
-        var read = new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = "checkout" });
-
-        var clock = Stopwatch.StartNew();
-        var armed = Enumerable.Range(0, 1000).All(_ => NodeRuntime.Armed(config));
-        var armedIn = clock.Elapsed;
-        clock.Restart();
-        var governed = NodeRuntime.Govern(config, read, []);
-        var governedIn = clock.Elapsed;
-
-        Assert.True(armed);
-        Assert.Equal(25, governed.Count);
-        Assert.All(governed, each => Assert.Equal("engine", each.Unit.Owner.Repository));
-        output.WriteLine($"arming: {armedIn.TotalMilliseconds / 1000:F4} ms a call over 41 rules; governing: {governedIn.TotalMilliseconds:F1} ms for 1000 units, 25 governed");
-    }
-
-    /// <summary>
-    /// A schema-1 run's landed branch (its quest bound to a steps version) is no graph run's: Current's graph governs the branch, which asks
-    /// the door as any landed branch does, and the quest, run by that version, is never governed beside it.
-    /// </summary>
-    [Fact]
-    public async Task A_schema_1_runs_landed_branch_integrates_through_Currents_graph()
-    {
-        var quest = new WorkUnit("quest:q1", WorkUnitKind.Quest, new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter),
-            new WorkSubject("#q1", null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
-        {
-            Records = new WorkUnitRecords(null, [], new QuestView("q1", "", "engine", "", "", "Taken")),
-        };
-        _units = [quest, BranchUnit(Landed())];
-        var steps = new DecodedVersion(1, "wfv-steps", null, null, null);
-
-        await Runtime().PassAsync(Look(Config()) with { Bound = (unit, _) => unit.Kind == WorkUnitKind.Quest ? steps : null }, CancellationToken.None);
-
-        Assert.Equal(NodeStates.Active, Status().State);
-        Assert.Equal(Unit, Assert.Single(_door.Asked).Unit);
-        Assert.Empty(Files.Read("quest:q1")!.Statuses);
     }
 
     /// <summary>

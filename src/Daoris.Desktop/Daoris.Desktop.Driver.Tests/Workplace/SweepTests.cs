@@ -198,36 +198,6 @@ public sealed class SweepTests : IDisposable
         Assert.Equal(SweepKind.Landed, KindOf(plan, tree.Branch));
     }
 
-    /// <summary>The tidy rule: once a press lands the work, its tree and branch go — and the landed branch stays.</summary>
-    [Fact]
-    public async Task A_tidy_rule_removes_the_tree_and_branch_once_the_work_lands()
-    {
-        var root = await RepositoryAsync("engine");
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}", Tidy: true))
-            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
-        var trees = new SessionTrees(_home);
-        var tree = await TreeWithWorkAsync(trees, root);
-
-        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
-
-        Assert.True(landed.Landed, landed.Message);
-        Assert.False(Directory.Exists(tree.Path));
-        Assert.Empty((await GitAsync(root, "branch", "--list", tree.Branch)).Trim());
-        Assert.Contains("the work", await GitAsync(root, "log", "feature/0fda18", "--oneline"));
-        Assert.Contains("removed", landed.Message);
-        // 🔴 Found landing TK-2202 (2026-09-29): the message said the tree "is still there — discard it"
-        // and, a sentence later, that the tidy had removed it.
-        Assert.DoesNotContain("still there", landed.Message);
-    }
-
-    [Fact]
-    public void A_tidy_rule_is_kept_in_the_file_and_written_only_when_on()
-    {
-        var tidy = DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Tidy: true));
-        Assert.True(DriverConfig.Parse(tidy.ToJson()).Landings["engine"].Tidy);
-        Assert.DoesNotContain("tidy", DriverConfig.Empty.WithLanding("engine", LandingRule.Merge).ToJson(), StringComparison.Ordinal);
-    }
-
     private static string KindOf(IReadOnlyList<SweepItem> plan, string branch) => plan.Single(item => item.Branch == branch).Kind;
 
     private async Task<TreeOpened> TreeWithWorkAsync(SessionTrees trees, string root)

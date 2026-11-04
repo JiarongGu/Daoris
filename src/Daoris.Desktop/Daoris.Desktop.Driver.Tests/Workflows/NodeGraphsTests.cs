@@ -157,24 +157,6 @@ public sealed class NodeGraphsTests
     /// Each row of the shared table's <c>fragments</c>, through the landing rule that holds the cycle: a fragment's own refusal alone, a
     /// cycle's graph that does not hold under its rule's landing, and the cycles that hold.
     /// </summary>
-    [Theory]
-    [MemberData(nameof(FragmentCaseNames))]
-    public void Each_fragments_refusal_is_named_alone(string name)
-    {
-        var row = GraphProblemsTable.Row("fragments", name);
-        var form = (JsonObject)row["rule"]!;
-        var rule = new LandingRule((string)form["form"]!, (string?)form["pattern"], Plugin: (string?)form["plugin"])
-        {
-            Cycle = row["cycle"]!.ToJsonString(),
-            Integrate = form["integrate"] is JsonObject integrate ? new LandingIntegrate(Request: (string?)integrate["request"]) : null,
-        };
-        var home = NodeGraphHomes.OfLanding(rule, LandingSource.Repository);
-
-        Assert.Equal(GraphProblemsTable.Expected(row), GraphProblemsTable.Said(home.Problems));
-        Assert.Equal(home.Problems.Count == 0, home.Readable);
-        Assert.Equal(home.Problems.Count == 0, home.Graph is not null);
-    }
-
     /// <summary>
     /// INTEGRATE1n, F47: the refusal of a node that observes the landing before any <c>handed</c> is the save's alone. The same graph read
     /// from a file that kept it still reads, as a stored version that read before is never made unreadable by a rule added after it.

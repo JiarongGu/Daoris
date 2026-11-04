@@ -18,9 +18,6 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class CheckoutLockProcessTests : TreeSyncFixture
 {
-    public CheckoutLockProcessTests() =>
-        DriverConfig.Empty.WithLanding("engine", LandingRule.Merge).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
-
     private string TreesHome => DaorisHome.Entry(Home, HomeEntry.Trees);
 
     /// <summary>Another process holding a checkout alone, as a Daoris process does, until it is told to let go or is killed.</summary>

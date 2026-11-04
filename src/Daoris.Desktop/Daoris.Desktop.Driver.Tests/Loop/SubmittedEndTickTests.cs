@@ -82,8 +82,7 @@ public sealed class SubmittedEndTickTests : IDisposable
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
-        }).WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
-        // The look reads the rule again from the home's file just before each landing (FABRIC-END7's review).
+        });
         config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         return config;
     }

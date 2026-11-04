@@ -91,7 +91,7 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         {
             Workspace = "aurora", Set = new CommitSet { Mode = "ask", ModeGiven = true, Convention = "Say why.", ConventionGiven = true },
         });
-        config.WithLanding("engine", new LandingRule("branch", "feature/{ticket}-{slug}", Key: "ENG-\\d+", Squash: true)).Save(DriverConfigPath);
+        config.Save(DriverConfigPath);
         var sessions = JsonSerializer.Serialize(new object[]
         {
             new { id = "s1a2b3c4", tree = DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine", "s-1") },

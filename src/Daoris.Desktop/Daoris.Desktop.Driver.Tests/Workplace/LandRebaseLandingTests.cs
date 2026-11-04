@@ -42,7 +42,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Assert.Null(plan.Conflict);
         Assert.Contains("trees: the line moved since its work began, so it would replay its 1 commit(s) onto the line first: ", string.Join("\n", LandingSyncWords.Plan(plan)));
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.StartsWith($"put the work on `{Branch}` — 1 commit(s) replayed onto `main`, which moved since the work began.", landed.Message);
@@ -74,7 +74,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Contains("shared.txt", plan.Conflict!.Says);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
@@ -95,7 +95,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         var line = await HeadAsync(root);
         Assert.Equal(line, (await GitAsync(tree.Path, "rev-parse", "HEAD~1")).Trim());
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.StartsWith($"put the work on `{Branch}` — 1 commit(s) from `main`.", landed.Message);
@@ -126,7 +126,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Assert.Null(plan.Conflict);
         Assert.Equal(["the work"], plan.Lands!.Select(commit => commit.Subject));
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains("1 generated file(s) the line changed too took the line's copy (index/map.md), to be written again where the work is merged.",
@@ -156,7 +156,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
         var line = await HeadAsync(root);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains($"1 generated file(s) the line changed too took the line's copy (index/map.md), then were written again from the replayed tree by `{Writer}`.",
@@ -189,7 +189,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
         var line = await HeadAsync(root);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains("1 generated file(s) the line changed too took the line's copy (index/map.md), to be written again where the work is merged.",
@@ -215,7 +215,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
         await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains($"then were written again from the replayed tree by `{Writer}`.", landed.Message);
@@ -239,7 +239,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
         await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains("took the line's copy (index/map.md), to be written again where the work is merged.", landed.Message);
@@ -265,7 +265,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         var plan = await trees.PlanAsync(tree.Path, Subject);
         Assert.Contains("shared.txt", plan.Conflict!.Says);
 
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(refused.Landed, refused.Message);
         Assert.Contains("Merge conflict in shared.txt", refused.Conflict!.Says);
@@ -287,7 +287,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
         var line = await HeadAsync(root);
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("feature/own", landed.Branch);
@@ -316,7 +316,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
         await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
 
         var plan = await trees.PlanAsync(tree.Path, Subject);
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.Null(plan.Lands);
         Assert.Null(plan.Conflict);
@@ -330,7 +330,6 @@ public sealed class LandRebaseLandingTests : LandedFixture
     [Fact]
     public async Task The_merge_form_merges_the_work_replayed_onto_the_line_where_it_moved()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
@@ -354,7 +353,6 @@ public sealed class LandRebaseLandingTests : LandedFixture
     [Fact]
     public async Task The_merge_forms_press_is_carried_by_the_transport_and_the_checkout_only_fast_forwarded()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
