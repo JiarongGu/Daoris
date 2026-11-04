@@ -23,7 +23,8 @@ namespace Daoris.Driver;
 /// and who accepted it, are copied from the record as it holds them for its tip: the Accept it records is done. Only a record that does not
 /// say who accepted that tip, one from before that was kept, holds no proof to read.</para>
 /// </remarks>
-public sealed class IntegrationRequests(IIntegrationRecords records, IIntegrationRequestStore store, Func<DriverConfig> config)
+/// <param name="workflows">The saved workflows, whose place's <c>integrate</c> step says who requests outside a run (<see cref="PlaceIntegrate"/>).</param>
+public sealed class IntegrationRequests(IIntegrationRecords records, IIntegrationRequestStore store, Func<DriverConfig> config, IWorkflowStore workflows)
 {
     /// <summary>
     /// Admit <paramref name="ask"/>, or refuse it in a sentence that says why and that nothing was requested. An admitted request is kept in
@@ -39,7 +40,8 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             return Refuse(IntegrationRefusals.NoIntegrate, NoIntegrateSaid(ask.Repository));
         }
 
-        var policy = integrate.Resolved();
+        // Who requests and where a conflict goes are the place's workflow's `integrate` step's; the line's policy says the rest.
+        var policy = PlaceIntegrate.Of(workflows, settings, ask.Repository, ask.Workspace).Over(integrate);
         if (DoorRefusal(ask, policy) is { } closed) return Refuse(IntegrationRefusals.Door, closed);
         return ask.Route switch
         {
@@ -153,14 +155,20 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// The come-up sweep (§4.6): under <c>request: done</c>, every standing landing of <paramref name="repository"/> asked through the
-    /// recorded-landing door once, by Daoris, in the order they landed; what each answered comes back. Under any other <c>request</c>, or
-    /// where the rule carries no <c>integrate</c>, it asks nothing. Run once at each come-up and once when the rule is set, by callers to come.
+    /// The come-up sweep (§4.6): where the place's workflow's <c>integrate</c> says <c>request: done</c>, every standing landing of
+    /// <paramref name="repository"/> asked through the recorded-landing door once, by Daoris, in the order they landed; what each answered comes
+    /// back. Under any other <c>request</c>, or where the line carries no policy, it asks nothing. Run once at each come-up and once when the
+    /// workflow is set, by callers to come.
     /// </summary>
     public async Task<IReadOnlyList<IntegrationAdmission>> SweepAsync(string repository, string? workspace, string root, CancellationToken ct = default)
     {
-        var landing = LandingRules.Line(config(), repository, workspace);
-        if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate } || integrate.Resolved().Request != LandingIntegrate.Done) return [];
+        var settings = config();
+        if (LandingRules.Line(settings, repository, workspace).Rule is not { Form: LandingForm.Branch, Integrate: not null }
+            || PlaceIntegrate.Of(workflows, settings, repository, workspace).Request != LandingIntegrate.Done)
+        {
+            return [];
+        }
+
         var answers = new List<IntegrationAdmission>();
         var standing = records.Landings()
             .Where(entry => entry.GoneAt is null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
@@ -176,9 +184,9 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// Why <paramref name="ask"/>'s requester may not ask under <paramref name="policy"/>, or null: the owner's card under every
-    /// <c>request</c>, the steward's act under <c>steward</c> naming its act and generation, Daoris's sweep under <c>done</c> and for a
-    /// recorded landing alone.
+    /// Why <paramref name="ask"/>'s requester may not ask under <paramref name="policy"/>, whose <c>request</c> is the place's workflow's
+    /// <c>integrate</c> step's, or null: the owner's card under every <c>request</c>, the steward's act under <c>steward</c> naming its act and
+    /// generation, Daoris's sweep under <c>done</c> and for a recorded landing alone.
     /// </summary>
     private static string? DoorRefusal(IntegrationAsk ask, LandingIntegrate policy)
     {
@@ -187,16 +195,16 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         {
             IntegrationRequester.Person => null,
             IntegrationRequester.Steward when policy.Request != LandingIntegrate.Steward =>
-                $"the steward requests `{ask.Repository}`'s work only where its rule says `request: steward`, and it says `request: {policy.Request}`: "
-                + "nothing was requested.",
+                $"the steward requests `{ask.Repository}`'s work only where its workflow's `integrate` says `request: steward`, and it says "
+                + $"`request: {policy.Request}`: nothing was requested.",
             IntegrationRequester.Steward when string.IsNullOrWhiteSpace(requester.Act) || requester.Generation is null =>
                 "a steward's request names its act and its appointment's generation, and this one does not: nothing was requested.",
             IntegrationRequester.Steward => null,
             IntegrationRequester.Daoris when ask.Route != IntegrationRoutes.Recorded =>
-                $"Daoris requests no records branch: `{ask.Branch}` is requested by the owner's card, or by the steward's act where the rule says "
-                + "`request: steward`. Nothing was requested.",
+                $"Daoris requests no records branch: `{ask.Branch}` is requested by the owner's card, or by the steward's act where its workflow's "
+                + "`integrate` says `request: steward`. Nothing was requested.",
             IntegrationRequester.Daoris when policy.Request != LandingIntegrate.Done =>
-                $"the come-up sweep requests `{ask.Repository}`'s landings only where its rule says `request: done`, and it says "
+                $"the come-up sweep requests `{ask.Repository}`'s landings only where its workflow's `integrate` says `request: done`, and it says "
                 + $"`request: {policy.Request}`: nothing was requested.",
             IntegrationRequester.Daoris => null,
             _ => $"`{requester.Kind}` is no requester this door knows: nothing was requested.",

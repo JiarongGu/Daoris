@@ -447,7 +447,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             string? why;
             try
             {
-                why = await IntegrationAuthority.LapsedAsync(request, ask.Config, ask.Appointments, ct).ConfigureAwait(false);
+                why = await IntegrationAuthority.LapsedAsync(request, ask.Config, WorkflowPorts.Store(ask.Home), ask.Appointments, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {

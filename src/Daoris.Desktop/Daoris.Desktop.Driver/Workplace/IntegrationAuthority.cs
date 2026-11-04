@@ -32,23 +32,24 @@ internal sealed class IntegrationAppointments : IIntegrationAppointments
 /// </summary>
 /// <remarks>
 /// <para>A <b>person's</b> request (the owner's card, or an Accept) is the owner's own authority and is not withdrawn by any revoke, so it stands.
-/// <b>Daoris's sweep</b> stands while the rule still carries <c>integrate</c> and still says <c>request: done</c>. A <b>steward's</b> request
-/// stands while the rule still carries <c>integrate</c> and says <c>request: steward</c>, its act names its appointment's generation, and the
-/// seam (<see cref="IIntegrationAppointments"/>) says the appointment and generation are live and the owner has acted on nothing of its
-/// repository, quest or session since.</para>
+/// <b>Daoris's sweep</b> stands while the line still carries a policy and the place's workflow's <c>integrate</c> (<see cref="PlaceIntegrate"/>)
+/// still says <c>request: done</c>. A <b>steward's</b> request stands while the line still carries a policy and the step says
+/// <c>request: steward</c>, its act names its appointment's generation, and the seam (<see cref="IIntegrationAppointments"/>) says the
+/// appointment and generation are live and the owner has acted on nothing of its repository, quest or session since.</para>
 /// </remarks>
 internal static class IntegrationAuthority
 {
     /// <summary>Null where <paramref name="request"/>'s requester still has the authority it asked with; else the words that say why it does not.</summary>
+    /// <param name="workflows">The saved workflows, whose place's <c>integrate</c> step says who requests now.</param>
     public static async Task<string?> LapsedAsync(
-        IntegrationRequest request, DriverConfig config, IIntegrationAppointments appointments, CancellationToken ct)
+        IntegrationRequest request, DriverConfig config, IWorkflowStore workflows, IIntegrationAppointments appointments, CancellationToken ct)
     {
         var requester = request.Requester;
         if (requester.Kind == IntegrationRequester.Person) return null;
 
         // INTEGRATE1g: a node's request is its landing's acceptance (§17.4). The person's Accept stands as their card does; a version's own step,
-        // its gate proof naming the version, stands whatever the rule says, since a bound version is never edited; an automatic landing under
-        // Current stands while the rule says `request: done`, as the sweep's does.
+        // its gate proof naming the version, stands whatever the place follows now, since a bound version is never edited; an automatic landing
+        // with no version behind it stands while the place's workflow says `request: done`, as the sweep's does.
         if (requester.Door == IntegrationDoors.Node && request.Proof is { } proof
             && (proof.AcceptedBy == AcceptedBy.Person || proof.Workflow is not null))
         {
@@ -56,22 +57,22 @@ internal static class IntegrationAuthority
         }
 
         var landing = LandingRules.Line(config, request.Repository, request.Workspace);
-        if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate })
+        if (landing.Rule is not { Form: LandingForm.Branch, Integrate: not null })
         {
             return $"`{request.Repository}`'s landing rule no longer carries `integrate`, so a request made under it is no longer admitted";
         }
 
-        var policy = integrate.Resolved();
+        var asks = PlaceIntegrate.Of(workflows, config, request.Repository, request.Workspace).Request;
         switch (requester.Kind)
         {
             case IntegrationRequester.Daoris:
-                return policy.Request == LandingIntegrate.Done
+                return asks == LandingIntegrate.Done
                     ? null
-                    : $"the rule now says `request: {policy.Request}`, and the come-up's sweep requests only where it says `request: done`";
+                    : $"the place's workflow's `integrate` now says `request: {asks}`, and the come-up's sweep requests only where it says `request: done`";
             case IntegrationRequester.Steward:
-                if (policy.Request != LandingIntegrate.Steward)
+                if (asks != LandingIntegrate.Steward)
                 {
-                    return $"the rule now says `request: {policy.Request}`, and the steward requests only where it says `request: steward`";
+                    return $"the place's workflow's `integrate` now says `request: {asks}`, and the steward requests only where it says `request: steward`";
                 }
 
                 if (string.IsNullOrWhiteSpace(requester.Act) || requester.Generation is null)

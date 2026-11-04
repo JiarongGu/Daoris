@@ -57,7 +57,7 @@ public sealed class IntegrateRoutes(DriverContext context)
                 if (root.Root is null) return new Answered(false, "no-checkout", $"`{repository}` has no checkout here, so nothing was requested.");
                 var route = press.Landed ? IntegrationRoutes.Recorded : IntegrationRoutes.Records;
                 var home = _loop.Home;
-                var admitted = await new IntegrationRequests(new HomeIntegrationRecords(home), store, () => DriverConfig.Load(_loop.ConfigPath))
+                var admitted = await new IntegrationRequests(new HomeIntegrationRecords(home), store, () => DriverConfig.Load(_loop.ConfigPath), new WorkflowFiles(home))
                     .AdmitAsync(new IntegrationAsk(repository, root.Workspace, root.Root, branch, route, IntegrationRequester.Card), cancellationToken)
                     .ConfigureAwait(false);
                 if (admitted.Admitted) _loop.Nudge();

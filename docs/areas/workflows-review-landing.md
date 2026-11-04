@@ -47,7 +47,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs`, `Workplace/LandingRules.cs` | The merge, the branch and the squash; the plan and its refusals; `LandingRules` and the line's landing outside a run. `TreeLands` is the front: `TreeLandPlans` says the plan before the press, `TreeMerges` is the merge form, `TreeBranches` the branch form and a chain's advance, `LandingPress` the landing itself, `LandingSayings` the words; a landing's records (`LandingSubject`, `LandingPlan`, `TreeLanding`, `SweepItem` and the rest) each sit in a file of their own beside them. `SessionTrees` keeps one-line doors; opening a tree is `TreeOpening`, reading where the trees stand `TreeListings` |
 | Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
 | Landed branches, pull requests | `Workplace/LandedBranches.cs`, `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestBounds.cs`, `BranchTidying.cs` | `landings.json` (`LandedBranchJson` writes and reads it by hand), a pull request's state from its plugin, the look's tidy (`TidyHolders` the trees sessions hold, `TidyKeeping` what the look keeps beside the branches; `BranchTidying` keeps their doors and the saying) |
-| Integration | `Workflows/Nodes/IntegrateNode.cs`, `Workflows/IntegrationTransport.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement; the store's step keeping is `IntegrationStepKeeping` and its row reading `IntegrationRows` |
+| Integration | `Workflows/Nodes/IntegrateNode.cs`, `Workflows/IntegrationTransport.cs`, `Workflows/PlaceIntegrate.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement; `PlaceIntegrate` the place's requester outside a run; the store's step keeping is `IntegrationStepKeeping` and its row reading `IntegrationRows` |
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs` (with `OpinionGateFacts.cs`, `OpinionGateState.cs`, `OpinionGateWords.cs`, `OpinionAskKept.cs`, `OpinionPersonWord.cs`, `LandingGate.cs`), `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
 | Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan |
@@ -148,8 +148,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 38. A pull request's state is asked of the plugin that opened it, at most once a minute per pull request. A landed session's
     review reads its landed branch. (from D113, D148)
 39. Integration is one run per line, outside every run, with fixed steps. `done` and `steward` requests need declared, accepted
-    gates. The line's policy is `linePolicies`, the only `integrate` read. A failure is confirmed once before it is blamed.
-    (from D215, D227, D232)
+    gates. The line's policy is `linePolicies`, how the line is integrated; who requests and where a conflict goes are the
+    `integrate` step's, the bound version's in a run and, outside one (the sweep, the steward's door, the recheck at promotion, the
+    card's wait), the newest version of the place's default workflow (`PlaceIntegrate`), the owner's where it has none. A failure is
+    confirmed once before it is blamed. (from D215, D227, D232)
 40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. One run per line at a time, each batch
     run to its verdict. A failure becomes a fix ask, by the person's press or a standing `ask`. (from D192)
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (from D184, D227)

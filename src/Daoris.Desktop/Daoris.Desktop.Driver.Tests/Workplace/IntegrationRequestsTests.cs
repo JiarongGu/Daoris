@@ -45,9 +45,16 @@ public sealed class IntegrationRequestsTests : IDisposable
     private static DriverConfig Config(LandingIntegrate? integrate) =>
         DriverConfig.Empty.WithLine("engine", "main").WithLinePolicy("engine", integrate);
 
-    // A line's policy names no requester: who requests is the workflow's `integrate` step's, so outside a run the policy reads `request: owner`.
+    // A line's policy names no requester: who requests is the place's workflow's `integrate` step's, and with none it reads `request: owner`.
     private static readonly DriverConfig Owner = Config(new LandingIntegrate());
     private static readonly DriverConfig Gated = Config(new LandingIntegrate(Gates: LandingIntegrate.Declared));
+
+    /// <summary>The home whose saved workflows the door reads the place's <c>integrate</c> step from.</summary>
+    private string Workflows => Path.Combine(_homes, "workflows");
+
+    /// <summary>The gated line, its place following a workflow whose <c>integrate</c> says <paramref name="request"/> and <paramref name="conflicts"/>.</summary>
+    private DriverConfig Following(string request, string conflicts = LandingIntegrate.Session) =>
+        IntegratingWorkflow.Follow(Workflows, Gated, request, conflicts);
 
     /// <summary>A landing the person accepted, its review skipped in the person's words, its unit and the quest it served.</summary>
     private static LandedBranch Landed(string branch = Branch, string tip = Tip, string session = "s1") =>
@@ -86,7 +93,7 @@ public sealed class IntegrationRequestsTests : IDisposable
         WorkingTree.Answered.Value = Git;
         try
         {
-            return await new IntegrationRequests(records, store ?? Fresh(), () => config).AdmitAsync(ask);
+            return await new IntegrationRequests(records, store ?? Fresh(), () => config, new WorkflowFiles(Workflows)).AdmitAsync(ask);
         }
         finally
         {
@@ -116,24 +123,22 @@ public sealed class IntegrationRequestsTests : IDisposable
     }
 
     /// <summary>
-    /// Outside a run the line's policy reads <c>request: owner</c>, so the owner's card opens the door under any policy, and the steward's act
-    /// and the come-up sweep find it closed, the sweep never for a records branch. Each closed door says what it reads, and asks git nothing.
+    /// A place following no workflow whose <c>integrate</c> names a requester reads <c>request: owner</c>, so the owner's card opens the door
+    /// under any policy, and the steward's act and the come-up sweep find it closed. Each closed door says what it reads, and asks git nothing.
     /// </summary>
     [Fact]
-    public async Task Outside_a_run_only_the_owners_card_comes_through_the_door()
+    public async Task With_no_workflow_naming_a_requester_only_the_owners_card_comes_through_the_door()
     {
         var records = new Records([Landed()]);
 
         foreach (var config in new[] { Owner, Gated })
         {
             Refused(await AdmitAsync(config, records, Card() with { Requester = IntegrationRequester.StewardAct("act-7", 3) }), IntegrationRefusals.Door,
-                "the steward requests `engine`'s work only where its rule says `request: steward`, and it says `request: owner`");
+                "the steward requests `engine`'s work only where its workflow's `integrate` says `request: steward`, and it says `request: owner`");
             Refused(await AdmitAsync(config, records, Card() with { Requester = IntegrationRequester.Sweep }), IntegrationRefusals.Door,
-                "the come-up sweep requests `engine`'s landings only where its rule says `request: done`, and it says `request: owner`");
+                "the come-up sweep requests `engine`'s landings only where its workflow's `integrate` says `request: done`, and it says `request: owner`");
         }
 
-        Refused(await AdmitAsync(Gated, records, Card("notes/records", IntegrationRoutes.Records) with { Requester = IntegrationRequester.Sweep }),
-            IntegrationRefusals.Door, "Daoris requests no records branch");
         Assert.Empty(_asked);
 
         foreach (var config in new[] { Owner, Gated })
@@ -142,6 +147,40 @@ public sealed class IntegrationRequestsTests : IDisposable
             Assert.True(admitted.Admitted, admitted.Message);
             Assert.Equal(IntegrationRequester.Card, admitted.Request!.Requester);
         }
+    }
+
+    /// <summary>
+    /// Who requests is the place's workflow's <c>integrate</c> step's: where it says <c>steward</c> the steward's act, naming its act and
+    /// generation, comes through, and where it says <c>done</c> the come-up sweep does, each request keeping the step's requester and conflict
+    /// route over the line's policy. The other stays closed, a steward's act naming no generation is refused, and the sweep requests no
+    /// records branch.
+    /// </summary>
+    [Fact]
+    public async Task The_steward_and_the_sweep_come_through_where_the_places_workflow_names_them()
+    {
+        var records = new Records([Landed()]);
+        var steward = Following(LandingIntegrate.Steward, LandingIntegrate.Hold);
+        var done = Following(LandingIntegrate.Done);
+
+        Refused(await AdmitAsync(steward, records, Card() with { Requester = IntegrationRequester.Sweep }), IntegrationRefusals.Door,
+            "the come-up sweep requests `engine`'s landings only where its workflow's `integrate` says `request: done`, and it says `request: steward`");
+        Refused(await AdmitAsync(done, records, Card() with { Requester = IntegrationRequester.StewardAct("act-7", 3) }), IntegrationRefusals.Door,
+            "the steward requests `engine`'s work only where its workflow's `integrate` says `request: steward`, and it says `request: done`");
+        Refused(await AdmitAsync(steward, records, Card() with { Requester = new IntegrationRequester(IntegrationRequester.Steward, IntegrationDoors.Act) }),
+            IntegrationRefusals.Door, "a steward's request names its act and its appointment's generation");
+        Refused(await AdmitAsync(done, records, Card("notes/records", IntegrationRoutes.Records) with { Requester = IntegrationRequester.Sweep }),
+            IntegrationRefusals.Door, "Daoris requests no records branch");
+        Assert.Empty(_asked);
+
+        var acted = await AdmitAsync(steward, records, Card() with { Requester = IntegrationRequester.StewardAct("act-7", 3) });
+        Assert.True(acted.Admitted, acted.Message);
+        Assert.Equal((IntegrationRequester.StewardAct("act-7", 3), LandingIntegrate.Steward, LandingIntegrate.Hold, LandingIntegrate.Declared),
+            (acted.Request!.Requester, acted.Request.Policy.Request, acted.Request.Policy.Conflicts, acted.Request.Policy.Gates));
+
+        var swept = await AdmitAsync(done, records, Card() with { Requester = IntegrationRequester.Sweep });
+        Assert.True(swept.Admitted, swept.Message);
+        Assert.Equal((IntegrationRequester.Sweep, LandingIntegrate.Done, LandingIntegrate.Session),
+            (swept.Request!.Requester, swept.Request.Policy.Request, swept.Request.Policy.Conflicts));
     }
 
     /// <summary>
@@ -309,29 +348,36 @@ public sealed class IntegrationRequestsTests : IDisposable
         _refs["refs/heads/notes/records"] = Other;
         Refused(await AdmitAsync(Owner, records, Card("notes/records", IntegrationRoutes.Records) with { Tip = Next }), IntegrationRefusals.Moved,
             "`notes/records` stands at 33333333, not 22222222");
-        var admitted = await AdmitAsync(Gated, records, Card("notes/records", IntegrationRoutes.Records));
+        var admitted = await AdmitAsync(Following(LandingIntegrate.Steward), records,
+            Card("notes/records", IntegrationRoutes.Records) with { Requester = IntegrationRequester.StewardAct("act-7", 3) });
         Assert.True(admitted.Admitted, admitted.Message);
-        Assert.Equal("`notes/records` at 33333333 is requested for `main` as a records branch, by the person's card: it carries no workflow gate.",
+        Assert.Equal("`notes/records` at 33333333 is requested for `main` as a records branch, by the steward's act `act-7`: it carries no workflow gate.",
             admitted.Message);
         Assert.True(admitted.Request is { Tip: Other, Route: IntegrationRoutes.Records, Proof: null, Unit: null, Session: null, LandedAt: null });
     }
 
     /// <summary>
-    /// The come-up sweep requests only under <c>request: done</c>, which a line's policy never says: over standing landings it requests
-    /// nothing and asks git nothing, under any policy.
+    /// The come-up sweep, where the place's workflow's <c>integrate</c> says <c>request: done</c>: every standing landing of the repository is
+    /// requested once, a trace and another repository's never, and a second sweep requests nothing more. Where the step says <c>owner</c>, or
+    /// the place follows no workflow naming a requester, it requests nothing and asks git nothing.
     /// </summary>
     [Fact]
-    public async Task The_sweep_requests_nothing_under_a_lines_policy()
+    public async Task The_sweep_requests_each_standing_landing_once_where_the_places_workflow_says_done()
     {
-        var records = new Records([Landed(), Landed("feature/q2-more", Next, "s2")]);
+        _refs["refs/heads/feature/q2-more"] = Next;
+        var records = new Records(
+        [
+            Landed(), Landed("feature/q2-more", Next, "s2"), Landed("feature/q0-gone", Other, "s0") with { GoneAt = At },
+            Landed("feature/q3-elsewhere", Other, "s3") with { Repository = "portal" },
+        ]);
         var store = Fresh();
 
-        foreach (var config in new[] { Owner, Gated })
+        async Task<IReadOnlyList<IntegrationAdmission>> SweepAsync(DriverConfig config)
         {
             WorkingTree.Answered.Value = Git;
             try
             {
-                Assert.Empty(await new IntegrationRequests(records, store, () => config).SweepAsync("engine", "aurora", Root));
+                return await new IntegrationRequests(records, store, () => config, new WorkflowFiles(Workflows)).SweepAsync("engine", "aurora", Root);
             }
             finally
             {
@@ -339,8 +385,19 @@ public sealed class IntegrationRequestsTests : IDisposable
             }
         }
 
+        foreach (var config in new[] { Owner, Gated, Following(LandingIntegrate.Owner) }) Assert.Empty(await SweepAsync(config));
         Assert.Empty(store.Open());
         Assert.Empty(_asked);
+
+        var done = Following(LandingIntegrate.Done);
+        var swept = await SweepAsync(done);
+        Assert.Equal([Branch, "feature/q2-more"], swept.Select(each => each.Request!.Branch));
+        Assert.All(swept, each => Assert.Equal(IntegrationRequester.Sweep, each.Request!.Requester));
+        Assert.Equal(2, store.Open().Count);
+
+        var again = await SweepAsync(done);
+        Assert.All(again, each => Assert.Equal(IntegrationRefusals.Open, each.Refusal));
+        Assert.Equal(2, store.Open().Count);
     }
 
     /// <summary>
