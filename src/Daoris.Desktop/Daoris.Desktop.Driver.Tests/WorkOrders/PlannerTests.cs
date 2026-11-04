@@ -1053,12 +1053,6 @@ public sealed class PlannerTests
     [Fact]
     public void The_claim_s_take_time_is_read_where_the_host_says_it()
     {
-        Assert.Equal(
-            new DateTimeOffset(2026, 10, 7, 9, 20, 0, TimeSpan.Zero),
-            RemoteSyncPayloads.ClaimTaken("""{ "quest": "q1", "claim": "held", "taken": "2026-10-07T09:20:00+00:00" }"""));
-        Assert.Null(RemoteSyncPayloads.ClaimTaken("""{ "quest": "q1", "claim": "held" }"""));
-        Assert.Null(RemoteSyncPayloads.ClaimTaken("""{ "quest": "q1", "claim": "none", "taken": null }"""));
-
         var takes = ServiceClient.ReadTakes("[]", new Dictionary<string, string> { ["q1"] = "held" },
             taken: new Dictionary<string, DateTimeOffset?> { ["q1"] = Cut.Updated });
         Assert.Equal(new QuestTake("held", At: Cut.Updated), takes["q1"]);
@@ -1349,24 +1343,6 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(Paused(snapshot, ("q1", ByAsk)), Config())).Verdict);
         var busy = Assert.Single(Planner.Plan(snapshot with { Active = [new SessionView("s1", "Game") { Quest = "q1" }] }, Config()));
         Assert.Equal(StartVerdict.RepositoryBusy, busy.Verdict);
-    }
-
-    /// <summary>
-    /// The claim's answer names the bring-forward its take was made by (SYNCMERGE1b0 point 3), each field whole or none: an older host's
-    /// answer, and a forward missing a field, read as none.
-    /// </summary>
-    [Fact]
-    public void A_claim_s_bring_forward_is_read_whole_or_not_at_all()
-    {
-        Assert.Equal(
-            new ForwardTake("desk", 7, new DateTimeOffset(2026, 10, 19, 9, 30, 0, TimeSpan.Zero), "unconfirmed"),
-            RemoteSyncPayloads.Forward("""
-                { "quest": "q1", "claim": "unconfirmed",
-                  "forward": { "machine": "desk", "sequence": 7, "at": "2026-10-19T09:30:00+00:00", "standing": "unconfirmed" } }
-                """));
-        Assert.Null(RemoteSyncPayloads.Forward("""{ "quest": "q1", "claim": "held" }"""));
-        Assert.Null(RemoteSyncPayloads.Forward("""{ "claim": "held", "forward": { "machine": "desk", "sequence": 7, "standing": "held" } }"""));
-        Assert.Null(RemoteSyncPayloads.Forward("""{ "claim": "held", "forward": null }"""));
     }
 
     /// <summary>

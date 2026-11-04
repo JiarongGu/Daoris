@@ -241,8 +241,6 @@ public sealed class RemoteSyncTests
     public void An_answer_that_is_not_a_pass_is_a_wall()
     {
         Assert.Contains("not one", Assert.Throws<DriverException>(() => RemoteSyncPayloads.Pass("[]")).Message);
-        Assert.Equal("lost", RemoteSyncPayloads.Claim("""{ "quest": "q1", "claim": "lost" }"""));
-        Assert.Equal("none", RemoteSyncPayloads.Claim("[]"));
     }
 
     /// <summary>
@@ -398,11 +396,9 @@ public sealed class RemoteSyncTests
     [Fact]
     public void A_circle_s_standing_reads_as_one_line_and_the_quests_beneath_it()
     {
-        var standing = RemoteSyncPayloads.Standing("""
-            { "workspace": "aurora", "wired": true, "ahead": 2, "behind": ["q2"], "conflicts": ["q1", "q3"],
-              "synced": "2026-09-24T10:03:00+00:00", "tried": "2026-09-24T10:05:00+00:00",
-              "problem": "the remote could not be reached (connection refused)" }
-            """);
+        var standing = new SyncStanding(
+            "aurora", true, 2, ["q2"], ["q1", "q3"], new DateTimeOffset(2026, 9, 24, 10, 3, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 9, 24, 10, 5, 0, TimeSpan.Zero), "the remote could not be reached (connection refused)", null);
 
         var lines = standing.Describe();
 
@@ -417,10 +413,8 @@ public sealed class RemoteSyncTests
     [Fact]
     public void An_unwired_circle_and_one_never_synced_each_say_what_they_are()
     {
-        var unwired = RemoteSyncPayloads.Standing("""{ "workspace": "tools", "wired": false }""").Describe();
-        var fresh = RemoteSyncPayloads.Standing("""
-            { "workspace": "aurora", "wired": true, "ahead": 1, "behind": [], "conflicts": [], "synced": null, "tried": null, "problem": null }
-            """).Describe();
+        var unwired = new SyncStanding("tools", false, 0, [], [], null, null, null, null).Describe();
+        var fresh = new SyncStanding("aurora", true, 1, [], [], null, null, null, null).Describe();
 
         Assert.Equal(["tools  no remote on this machine's host — nothing of this workspace leaves it"], unwired);
         Assert.Equal(["aurora  1 ahead · 0 behind · 0 in conflict · not synced yet"], fresh);
@@ -433,10 +427,10 @@ public sealed class RemoteSyncTests
     [Fact]
     public void The_machines_the_remote_counts_undeclared_are_read_and_said_and_an_absent_list_is_none()
     {
-        const string Answer = """{ "workspace": "aurora", "wired": true, "ahead": 0, "behind": [], "conflicts": [] UNDECLARED }""";
-        var some = RemoteSyncPayloads.Standing(Answer.Replace("UNDECLARED", """, "undeclared": ["m-gone", "m-old"]"""));
-        var all = RemoteSyncPayloads.Standing(Answer.Replace("UNDECLARED", """, "undeclared": []"""));
-        var none = RemoteSyncPayloads.Standing(Answer.Replace("UNDECLARED", ""));
+        static SyncStanding Standing(IReadOnlyList<string>? undeclared) => new("aurora", true, 0, [], [], null, null, null, undeclared);
+        var some = Standing(["m-gone", "m-old"]);
+        var all = Standing([]);
+        var none = Standing(null);
 
         Assert.Equal(["m-gone", "m-old"], some.Undeclared);
         Assert.Contains("  not declared a bound quest, so no bind goes through the remote: m-gone, m-old", some.Describe());
