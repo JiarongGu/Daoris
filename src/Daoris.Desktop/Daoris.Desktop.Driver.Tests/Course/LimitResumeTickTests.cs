@@ -168,7 +168,7 @@ public sealed class LimitResumeTickTests : IDisposable
         Assert.StartsWith("limit-reset/s1/", key);
         Assert.Empty(service.Said("s1"));
         Assert.Empty(await new ServiceClient(service.Url, null).StrikesAsync());
-        Assert.Contains(look.Events, line => line.Contains(Daoris.Driver.Driver.LimitResumedLine, StringComparison.Ordinal));
+        Assert.Contains(look.Events, line => line.Contains(LimitedStart.ResumedLine, StringComparison.Ordinal));
     }
 
     /// <summary>
