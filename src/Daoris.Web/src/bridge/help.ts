@@ -120,7 +120,7 @@ export const useHelpProposals = (session: string | null, live: boolean) => {
 
 /** One conversation's proposals. Told by event (NOBLOCK1): the shell answers what it holds, and its judgement of each comes as `ANSWERED`. */
 const readProposals = (client: QueryClient, session: string) =>
-  askHeld('HELP_PROPOSALS', client, [...HELP_PROPOSALS, session], { session }, (answer) => {
+  askHeld('HELP_PROPOSALS', client, [...HELP_PROPOSALS, session], { session }, (answer): HelpProposal[] => {
     const proposals = (answer as { proposals?: unknown } | null)?.proposals;
     return Array.isArray(proposals) ? proposals as HelpProposal[] : [];
   });
@@ -241,7 +241,7 @@ export const useHelpConversations = (search: string, enabled = true, workspace: 
   const words = search.trim();
   return useInfiniteQuery({
     queryKey: [...HISTORY, workspace ?? '*', words],
-    queryFn: async ({ pageParam }) => listingPage(await call<unknown>('HELP_CONVERSATIONS', {
+    queryFn: async ({ pageParam }) => listingPage(await call('HELP_CONVERSATIONS', {
       ...(workspace ? { workspace } : {}),
       ...(words ? { q: words } : {}),
       ...(pageParam > 0 ? { offset: pageParam } : {}),
@@ -318,7 +318,7 @@ export const useHelpWired = (session: string | null, enabled = true) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: [...HELP_WIRED, session],
-    queryFn: async () => wiredAnswer(await call<unknown>('HELP_WIRED', { session: session! }), session!),
+    queryFn: async () => wiredAnswer(await call('HELP_WIRED', { session: session! }), session!),
     enabled: isAvailable && session !== null && enabled,
   });
 };
@@ -352,7 +352,7 @@ export const useHelpPublished = (session: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: [...HELP_PUBLISHED, session],
-    queryFn: async () => publishedAnswer(await call<unknown>('HELP_PUBLISHED', { session: session! })),
+    queryFn: async () => publishedAnswer(await call('HELP_PUBLISHED', { session: session! })),
     enabled: isAvailable && session !== null,
     staleTime: Infinity,
   });

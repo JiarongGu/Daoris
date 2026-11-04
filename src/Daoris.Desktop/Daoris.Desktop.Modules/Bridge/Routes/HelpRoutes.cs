@@ -393,9 +393,9 @@ public sealed class HelpRoutes(DriverContext context)
     // the service's facts held the window up to 1.3 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("HELP_PROPOSALS", PipeClass.Open)]
     [ByEvent("HELP_PROPOSALS", Untold = "each proposal judged against the checkouts' git and the service's records, which no scope tells")]
-    private async Task<object?> HelpProposalsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpProposalsAsync(HelpProposalsRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var service = _loop.Service ?? throw NotReady();
         var pending = HelpProposals.Pending(_loop.Home, session);
         var (config, facts) = await HelpFactsAsync(service, pending, cancellationToken).ConfigureAwait(false);
@@ -1184,9 +1184,9 @@ public sealed class HelpRoutes(DriverContext context)
     // asks and sessions. A read of this machine's home, off the window's thread: it declares nothing, and its key is under
     // `help`, which an Apply publishes. Desktop-only, as the conversation is.
     [DriverRoute("HELP_PUBLISHED", PipeClass.Open)]
-    private Task<object?> HelpPublishedAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> HelpPublishedAsync(HelpPublishedRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var home = _loop.Home;
         return Task.Run<object?>(() => PublishedAnswer(session, new HelpPublished(home).Read(session)), cancellationToken);
     }
@@ -1210,19 +1210,19 @@ public sealed class HelpRoutes(DriverContext context)
     // terminal's `--workspace`: that workspace's conversations, searched and counted
     // before the page; none named is every workspace's, as the list was and as `--all` says, each row naming its own.
     [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
-    private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HelpConversationsAsync(HelpConversationsRead press, CancellationToken cancellationToken)
     {
         // `help list` in the verb's words, `--json` its own answer.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
             var listed = new HelpVerbAsk("list")
             {
-                Search = Optional(request, "q")?.Trim(),
-                Offset = (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
-                Limit = Number(request, "limit") is { } limit ? (int)Math.Clamp(limit, 1, HelpConversations.PageLimit) : null,
-                Workspace = Optional(request, "workspace"),
-                All = Flag(request, "all"),
-                Json = Flag(request, "json"),
+                Search = press.Q?.Trim(),
+                Offset = (int)Math.Clamp(press.Offset ?? 0, 0, int.MaxValue),
+                Limit = press.Limit is { } limit ? (int)Math.Clamp(limit, 1, HelpConversations.PageLimit) : null,
+                Workspace = press.Workspace,
+                All = press.All,
+                Json = press.Json,
             };
             return await SessionsVerbs.HelpSaidAsync(_context, listed, cancellationToken).ConfigureAwait(false);
         }
@@ -1230,10 +1230,10 @@ public sealed class HelpRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var records = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false));
         var listing = new HelpConversations(_loop.Home).List(
-            records, _loop.Events, Resumes, Optional(request, "q"),
-            (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
-            (int)Math.Clamp(Number(request, "limit") ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit),
-            Optional(request, "workspace"));
+            records, _loop.Events, Resumes, press.Q,
+            (int)Math.Clamp(press.Offset ?? 0, 0, int.MaxValue),
+            (int)Math.Clamp(press.Limit ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit),
+            press.Workspace);
         return HistoryAnswer(listing);
     }
 
@@ -1259,9 +1259,9 @@ public sealed class HelpRoutes(DriverContext context)
     // `recorded: false`. Read from the home alone, off the window's thread, answered as the file's own JSON so a null is
     // kept. A read: it declares nothing. Desktop-only: its folders are this machine's, and no shared host or feed carries it.
     [DriverRoute("HELP_WIRED", PipeClass.Open)]
-    private Task<object?> HelpWiredAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> HelpWiredAsync(HelpWiredRead press, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var session = press.Session;
         var home = _loop.Home;
         return Task.Run<object?>(() => HelpWired.Answer(session, new HelpWired(home).Read(session)), cancellationToken);
     }
