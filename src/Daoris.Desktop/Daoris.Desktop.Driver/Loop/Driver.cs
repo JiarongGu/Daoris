@@ -305,6 +305,10 @@ public sealed class Driver(
 
     DriverMeetings ILookStagesWiring.Meetings => Meetings;
 
+    DriverIntakes ILookStagesWiring.Intakes => Intakes;
+
+    LookSync ILookStagesWiring.SyncPass => LookPasses.Of<LookSync>();
+
     SessionOutput? ILandingWiring.Output => output;
 
     HookSet? ILandingWiring.Hooks => Context.Hooks;
@@ -573,10 +577,6 @@ public sealed class Driver(
         return GoOns.CannotGoOn(quest, park, why);
     }
 
-    /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
-    internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
-        HandOvers.HandOversAsync(snapshot, events, ct);
-
     /// <summary>The asks for a helper at a look (MIXAGENT2a-ii): <see cref="DriverHelpers.HelpersAsync"/>.</summary>
     internal Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Helpers.HelpersAsync(snapshot, taken, events, ct);
@@ -589,18 +589,9 @@ public sealed class Driver(
         Helpers.WaitsOnOwnHelperAsync(
             session, quest, Context.Events.LastHandedAt(session) is { } handed && handed > openedAt ? handed : openedAt, ct);
 
-    /// <summary>The asks due an intake at a look (D65 §1b): <see cref="DriverIntakes.IntakesDueAsync"/>.</summary>
-    private Task<IReadOnlyList<AskView>> IntakesDueAsync(int slots, List<string> events, CancellationToken ct) =>
-        Intakes.IntakesDueAsync(slots, events, ct);
-
     /// <summary>One intake run in its room (D65 §1b): <see cref="DriverIntakes.RunIntakeAsync"/>.</summary>
     private Task<StartRun> RunIntakeAsync(AskView ask, List<TrustHold> untrusted, Action onOpened, CancellationToken ct) =>
         Intakes.RunIntakeAsync(ask, untrusted, onOpened, ct);
-
-    /// <summary>Every parked intake whose ask was answered since is ended: <see cref="DriverIntakes.ConcludeAnsweredAsync"/>.</summary>
-    private Task ConcludeAnsweredAsync(
-        IReadOnlyList<SessionView> active, List<string> events, List<SessionEnded> concluded, CancellationToken ct) =>
-        Intakes.ConcludeAnsweredAsync(active, events, concluded, ct);
 
     /// <summary>The record the person's words wait on, continued or ended saying why (ANSWER1a): <see cref="DriverContinuations.ContinueAsync"/>.</summary>
     private Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
@@ -701,18 +692,6 @@ public sealed class Driver(
         Gate.OpinionsAsync(snapshot, events, ct, judged);
 
     /// <summary>
-    /// The look's bind (WORKFLOW1e, D157 point 11 as D190 amends it; the workflow design §4.5, the cutover design §8): what the starts
-    /// bound before their take since the last look (<see cref="BindAtStartAsync"/>), said; then each run whose session opened in this look
-    /// and that no binding names yet, bound to the workflow §4.1 chooses for it now, which only a run opened before FABRIC-CUTOVER1g or a
-    /// start a test stands in for leaves. Workflows' use case (<see cref="WorkflowRunStart"/>), composed here over the loop's service,
-    /// home, choices and plugins, and the clock.
-    /// </summary>
-    private Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct) =>
-        WorkflowRunStart.BindAsync(
-            [.. opened.Select(start => new WorkflowStarted(start.Quest, start.Workspace))], new StartWorld(service), home, config,
-            WorkflowSteps.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines, made: [.. Context.Runs.TakeBound().Cast<WorkflowBind>()]);
-
-    /// <summary>
     /// A start's bind of its run before its take (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8): Workflows' use case
     /// (<see cref="WorkflowRunStart.AtStartAsync(WorkflowStarted, IWorkflowStartWorld, string, DriverConfig, IReadOnlyList{WorkflowPlugin}, Func{DateTimeOffset}, CancellationToken)"/>)
     /// over the loop's service, home, choices and plugins. A binding it made is kept for the next look's bind to say.
@@ -737,25 +716,6 @@ public sealed class Driver(
                 new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowSteps.PluginsOf(Context.Catalog),
                 () => DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false))?.RoleOf(NodeKinds.Claimed)?.Role;
-
-    /// <summary>What binding a run reads and says through the loop's service: its quests, its asks, and the machine log's line.</summary>
-    private sealed class StartWorld(ServiceClient service) : IWorkflowStartWorld
-    {
-        public Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct) => service.EveryQuestAsync(ct);
-
-        public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
-
-        public void Chosen(LandingLine line) => service.LandingSaid(line);
-
-        public async Task<string?> RemoteHostAsync(string repository, CancellationToken ct)
-        {
-            var row = (await service.RegistryAsync(ct).ConfigureAwait(false))
-                .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
-            return row?.Root is { Length: > 0 } root && Directory.Exists(root)
-                ? GitWords.HostOf(await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false))
-                : null;
-        }
-    }
 
     /// <summary>
     /// The door this machine's starts ride — the protocol door where any entry of Build's order rides it, else the first entry's wire
@@ -1108,19 +1068,10 @@ public sealed class Driver(
             .Select(c => c with { Channel = ChannelEntry.ForQuest(c.Quest, snapshot) })
             .ToList();
 
-        // A parked intake has no process left to watch — it asked the person and ended — so its record
-        // ends when the person answers the ask (D65 §1b). Looked at every tick, whatever the intake
-        // setting says now: turning intakes off must not strand one that is waiting.
-        await Stages.TimeAsync("answered", () => ConcludeAnsweredAsync(snapshot.Active, events, concluded, ct)).ConfigureAwait(false);
-
-        // The asks this machine answers with a session (D65 §1b) — only where a harness is named for
-        // it, and only in the slots the quests left: work somebody already asked for goes first. PARALLEL1b: a start still opening
-        // holds its slot, and an ask whose intake is still opening is not begun again. A start a plugin will hold still counts here,
-        // since each start asks its plugins on its own below: the intakes may wait a look for a slot a hold left, never overrun the cap.
-        var slotsLeft = config.Cap - snapshot.SlotsHeld - Planner.Opening(snapshot).Count - starts.Count - passes;
-        var intakes = (await Stages.TimeAsync("intakes", () => IntakesDueAsync(slotsLeft, events, ct)).ConfigureAwait(false))
-            .Where(ask => !snapshot.Starting.Any(start => string.Equals(start.Ask, ask.Id, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
+        state.Snapshot = snapshot;
+        state.Starts = starts;
+        foreach (var pass in LookPasses.In(LookPhase.Planned)) await pass.RunAsync(round, ct).ConfigureAwait(false);
+        var intakes = state.Intakes;
 
         // 🔴 One run per record the person's words wait on (ANSWER2, D131 §3): a run that took a record up moves it to working a
         // moment after the look planned it (before its spawn since SAIDBACK1e), so a look in between still reads it waiting and
@@ -1224,18 +1175,12 @@ public sealed class Driver(
 
         var waits = Waits(outcomes);
 
-        // WORKFLOW1e (design §4.5), as FABRIC-CUTOVER1g moves it (D190, the cutover design §8): a start binds its run itself, before its
-        // take, and the look says what the starts bound since the last look, a start held or refused after its bind included. A run whose
-        // session opened in this look and that no binding names yet (one opened before that build, or a start a test stands in for) is
-        // bound here. PARALLEL1b: what a start an earlier look let go of bound is said by the look after it.
-        var openedStarts = outcomes
+        state.OpenedStarts = outcomes
             .Where(each => each.Opened && each.Started.Start is not null)
             .Select(each => (Consideration)each.Started.Start!)
             .DistinctBy(start => start.Quest.Id, StringComparer.Ordinal)
             .ToList();
-        await Stages.TimeAsync("bind", () => BindRunsAsync(openedStarts, events, ct)).ConfigureAwait(false);
-
-        await Stages.TimeAsync("endings", () => EndingsAsync(events, concluded, ct)).ConfigureAwait(false);
+        foreach (var pass in LookPasses.In(LookPhase.Begun)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
         foreach (var pass in LookPasses.In(LookPhase.After)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
@@ -1505,55 +1450,6 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// What ended since the last look, into the report (DEV3): each run's line and what it ended as, then
-    /// everything that ended told to the plugins that listen, then one more sync.
-    /// </summary>
-    /// <remarks>
-    /// Taken last, so an ending is never lost with a look that failed before its report. The sync carries what
-    /// those sessions did — a take, a close, a chain's next step — in the look that reports them, rather than a
-    /// look later (sync design §8). Nothing concluded, nothing new to carry.
-    /// </remarks>
-    private async Task EndingsAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
-    {
-        foreach (var ended in Context.Runs.Drain())
-        {
-            // As the pass that made it classed it (NOTIFY2h2); else an end the watch announces, or the person's own (NOTIFY2h, the
-            // design §5.1: `:1246` is `progress`).
-            events.Add(Lines.Ran(ended.Look, ended.Ended is { ByPerson: true }, ended.Line));
-            if (ended.Ended is not null) concluded.Add(ended.Ended);
-        }
-
-        // Contained: nothing a plugin says here changes the record, which moved on the exit code and the
-        // quest before this line ran (D46 §4). PARALLEL1b: under the watch, as the `hooks` topic's judge beside the look, a session's
-        // ending told once and HooksAtOnce endings at a time, so a plugin slow to hear holds no later look; what it says joins a later
-        // report. A one-look run and a gate's run-until-idle tell them in the look, as before.
-        if (Context.Hooks is { } hooks)
-        {
-            foreach (var ended in concluded)
-            {
-                if (Wanted is not null)
-                {
-                    Context.Runs.Judge("hooks", ended.Session, HooksAtOnce,
-                        token => Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, token, Lines), ended.Session, beside: true), ct);
-                    continue;
-                }
-
-                events.AddRange(await Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct, Lines), ended.Session).ConfigureAwait(false));
-            }
-        }
-
-        // Under the watch, beside the look: the report after it carries what the sync said.
-        if (concluded.Count == 0) return;
-        await LookPasses.Of<LookSync>().SyncAsync(events, ct).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// How many endings the plugins hear at once beside the looks (PARALLEL1b; a topic bounded, the events design §A3): one slow answer
-    /// holds its own ending, and a burst of endings reaches each plugin's one process two requests at a time, never all at once.
-    /// </summary>
-    internal const int HooksAtOnce = 2;
-
-    /// <summary>
     /// Look until nothing runs and a look starts nothing — the deterministic mode a gate drives (D115 §3.1):
     /// a queue that is empty, held, or waiting on the person, with no session of this driver's still working
     /// and no ending left unreported.
@@ -1718,7 +1614,7 @@ public sealed class Driver(
 
             try
             {
-                await EndingsAsync(pending, concluded, ct).ConfigureAwait(false);
+                await LookPasses.Of<EndingsLook>().EndAsync(pending, concluded, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (!ct.IsCancellationRequested)
             {

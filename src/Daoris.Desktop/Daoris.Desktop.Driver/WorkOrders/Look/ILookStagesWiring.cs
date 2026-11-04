@@ -23,4 +23,9 @@ internal interface ILookStagesWiring : ILookWiring
     DriverBrainstorms Brainstorms { get; }
 
     DriverMeetings Meetings { get; }
+
+    DriverIntakes Intakes { get; }
+
+    /// <summary>The look's sync pass, which an ending asks for one more sync.</summary>
+    LookSync SyncPass { get; }
 }

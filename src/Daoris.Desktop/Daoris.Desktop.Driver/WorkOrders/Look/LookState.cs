@@ -18,6 +18,9 @@ internal sealed class LookState(List<SessionEnded> concluded)
     private AnswersAloneHold? _alone;
     private Snapshot? _looked;
     private int? _passes;
+    private IReadOnlyList<Consideration>? _starts;
+    private IReadOnlyList<AskView>? _intakes;
+    private IReadOnlyList<Consideration>? _openedStarts;
     private List<OpinionJudged>? _judgedOpinions;
 
     /// <summary>
@@ -76,6 +79,27 @@ internal sealed class LookState(List<SessionEnded> concluded)
     {
         get => _judgedOpinions ?? throw Unwritten(nameof(JudgedOpinions), "opinions");
         set => _judgedOpinions = value;
+    }
+
+    /// <summary>The starts the plan chose, each with its line of work on an ask: written by the look's plan, before the Planned phase.</summary>
+    public IReadOnlyList<Consideration> Starts
+    {
+        get => _starts ?? throw Unwritten(nameof(Starts), "plan");
+        set => _starts = value;
+    }
+
+    /// <summary>The asks an intake is begun for, in the slots the quests left.</summary>
+    public IReadOnlyList<AskView> Intakes
+    {
+        get => _intakes ?? throw Unwritten(nameof(Intakes), "intakes");
+        set => _intakes = value;
+    }
+
+    /// <summary>The starts whose session opened in this look or a look before it, written by the look's starts before the Begun phase.</summary>
+    public IReadOnlyList<Consideration> OpenedStarts
+    {
+        get => _openedStarts ?? throw Unwritten(nameof(OpenedStarts), "start");
+        set => _openedStarts = value;
     }
 
     /// <summary>What ended this look: a parked intake it ends, and every session that ended since the last look.</summary>

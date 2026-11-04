@@ -18,6 +18,12 @@ internal enum LookPhase
     /// </summary>
     Read,
 
-    /// <summary>After the starts are begun, their runs bound and what ended reported: the landing's settling of what a stopped run left.</summary>
+    /// <summary>After the plan has chosen the starts, before any is begun: the answered intakes ended, then the asks an intake is due for.</summary>
+    Planned,
+
+    /// <summary>After the starts are begun, the runs they opened bound and what ended reported.</summary>
+    Begun,
+
+    /// <summary>After the starts are begun and what ended reported, their runs bound and what ended reported: the landing's settling of what a stopped run left.</summary>
     After,
 }
