@@ -197,12 +197,12 @@ public sealed class HandOffTests : LandedFixture
         var trees = new SessionTrees(Home);
         var entry = trees.Recorded.Of("engine", b.Branch!)!;
 
-        var missing = await trees.HandPlanAsync(root, entry);
+        var missing = await trees.HandPlanAsync(root, entry, plugin: Id);
         Assert.Equal((b.Branch, Id, 1), (missing.Branch, missing.Plugin, missing.Commits));
         Assert.Contains("not installed", missing.Problem);
 
         InstallManifest();
-        Assert.Null((await trees.HandPlanAsync(root, entry)).Problem);
+        Assert.Null((await trees.HandPlanAsync(root, entry, plugin: Id)).Problem);
     }
 
     /// <summary>What the conversation's record keeps of a hand-off: the whole sentence, the plugin's part in it.</summary>

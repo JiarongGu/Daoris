@@ -41,7 +41,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         (await PrepareHandAsync(root, entry, plugin, ct).ConfigureAwait(false)).Plan;
 
     /// <summary>
-    /// Hand a branch a landing made to a landing plugin (WSR5b): the one named, else the repository's rule's,
+    /// Hand a branch a landing made to a landing plugin (WSR5b): the one the door names, since a workflow's <c>land</c> holds the plugin,
     /// told D100's own frame for the branch as it stands — the line as its base, the commits the line lacks,
     /// the quest, session and title the landing recorded.
     /// </summary>

@@ -133,7 +133,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
     }
 
     [Fact]
-    public async Task Show_says_the_start_nodes_routes_before_the_steps()
+    public async Task Show_says_the_start_nodes_routes_of_a_place_that_follows_no_workflow()
     {
         var root = await RepositoryAsync(Declared);
         await VerificationAsync(root);
@@ -146,16 +146,15 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
 
         var (_, shown) = await RunAsync(root, "show", "--repository", "web-app");
 
-        Assert.Matches("^daoris: `web-app` follows Current: in the workspace `work`, read from the rules as they stand at each gate \\(version [0-9a-f]{12}\\)\\.$", shown[0]);
+        Assert.Equal(WorkflowListing.NoneSaid("`web-app`"), shown[0]);
         Assert.Equal(
             [
                 "  Its start node routes the work that comes here:",
-                "    the default → Current, since nothing names a workflow",
+                "    the default → no workflow, since nothing names a workflow",
                 "    kind `docs` (Documentation, `docs/**`) → `docs-to-pr`, chosen by the workspace `work` for Documentation",
-                "    kind `feature` (Feature) → Current, since nothing names a workflow",
+                "    kind `feature` (Feature) → no workflow, since nothing names a workflow",
                 $"    landed work → `web-verify`, as `web-app` chooses; its gates accepted at blob `{blob[..7]}`",
             ],
-            shown.Skip(1).Take(5));
-        Assert.Matches("^ {2}\\S", shown[6]);
+            shown.SkipWhile(line => !line.StartsWith("  Its start node", StringComparison.Ordinal)).Take(5));
     }
 }
