@@ -547,7 +547,7 @@ export const isHeavyGate = (gate) => !isProcessLane(gate)
  * (a test holds it), so gates of two components never build one project.
  */
 export function dotnetComponent(run) {
-  const command = run.trim().replace(/^node tools\/as-merged\.mjs\s+/, '');
+  const command = run.trim().replace(/^node tools\/orient-index\.mjs\s+&&\s+/, '').replace(/^node tools\/as-merged\.mjs\s+/, '');
   const verb = /^dotnet\s+(?:test|build|run|publish)(?=\s|$)(.*)$/.exec(command);
   if (!verb) return null;
   const args = verb[1].trim().split(/\s+/).filter(Boolean);
@@ -923,7 +923,7 @@ export const slug = (name) => name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-
  * what it runs: the universal gates read history as the merge would commit it, and are still the devkit's check.
  */
 export function gateKind(run) {
-  const command = run.trim().replace(/^node tools\/as-merged\.mjs\s+/, '');
+  const command = run.trim().replace(/^node tools\/orient-index\.mjs\s+&&\s+/, '').replace(/^node tools\/as-merged\.mjs\s+/, '');
   if (/^dotnet run\b/.test(command) || /^node tools\/\S+\.mjs --check$/.test(command)) return 'check';
   const script = /^npm run (\S+)$/.exec(command)?.[1];
   if (script && /^(typecheck\b|check:)/.test(script)) return 'check';

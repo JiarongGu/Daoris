@@ -3287,6 +3287,7 @@ test("a .NET gate's component is the first two folders of the project its comman
   assert.equal(tool.dotnetComponent(processRun('src/Daoris.Desktop/Daoris.Desktop.Modules.Tests')), 'src/Daoris.Desktop');
   assert.equal(tool.dotnetComponent('dotnet test src/Daoris.Service'), 'src/Daoris.Service');
   assert.equal(tool.dotnetComponent('node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only'), 'src/Daoris.Devkit');
+  assert.equal(tool.dotnetComponent('node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only'), 'src/Daoris.Devkit');
   assert.equal(tool.dotnetComponent('dotnet build "src\\Daoris.Service\\Daoris.Service.Http"'), 'src/Daoris.Service');
   assert.equal(tool.dotnetComponent('dotnet build-server shutdown'), null);
   assert.equal(tool.dotnetComponent('dotnet test'), null);
