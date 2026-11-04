@@ -432,11 +432,11 @@
     }
   },
   "service": {
-    "Core/Asks/Channel.cs": {
+    "Core/Asks/ChannelDesk.cs": {
       "reads": "tells",
       "note": "refuses a channel post to a record that serves or reads an opinion, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
     },
-    "Core/Asks/History.cs": {
+    "Core/Asks/HistoryDesk.cs": {
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
     },

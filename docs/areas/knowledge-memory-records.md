@@ -17,7 +17,11 @@ one job each, checked by `verify`.
 
 | Unit | File | Its job |
 |---|---|---|
-| `KnowledgeService` | `Core/Knowledge/KnowledgeService.cs` (130-1611) | The one face every door calls: search (230-312), standing, cite and recheck (492-576), register, feed (962-1131), refresh (1228-1381) |
+| `KnowledgeService` | `Core/Knowledge/KnowledgeService.cs` | The one face every door calls; it keeps the index's reading state (refresh, the registered roots, the registry reload) and one-line doors to the types below |
+| `KnowledgeAnswers`, `KnowledgeStandings`, `KnowledgeCitations` | `Core/Knowledge/` | Search with its tier and the records merged in; each hit's standing (`RootProbes` asks a root's uncommitted status once, `DecisionMarks` reads a decision's notes); cite and recheck |
+| `KnowledgeFeeds`, `KnowledgeRegistrar`, `KnowledgeCodeMaps` | `Core/Knowledge/` | The feed doors (a declaration, knowledge, a code map) behind one gate; register, retire and re-stamp; a code map read or held |
+| Feed records | `Core/Knowledge/Records/` | `FeedProvenance`, `FeedOutcome`, `FeedRefusal`, `RepositorySummary` |
+| `WorkRecordStore` | `Core/Sessions/WorkRecordStore.cs`, records in `Core/Sessions/Records/` | A finished tree's record, kept in `knowledge.db` and searched through `work_records_fts`; `NewerWorkRecordsException` when a newer build stamped them |
 | `RepositoryScanner` | `Core/Registry/RepositoryScanner.cs` (`Scan` 94-204) | Reads one checkout into entries, in a fixed order; one file is one place |
 | `RepositoryLayout`, `RepositoryDocuments`, `DaorisLock` | `Core/Registry/` | Where a checkout keeps its doctrine, which roles `daoris.json` declares, and which files are canonical |
 | Ingest | `Core/Knowledge/Ingest/` | Splits files: `DecisionNotes`, `IndexSections`, `IndexRows`, `MarkdownSections`, `MarkdownFence`, `EntryPieces` |
@@ -36,7 +40,7 @@ one job each, checked by `verify`.
 | `ToolClasses` | `Mcp/ToolClasses.cs` | Each tool's class: read, restricted or publish |
 | `CallTable`, `SessionWorks` | `Mcp/CallTable.cs` (`Refusal` 121-144), `Mcp/RoleFilter.cs` | What each kind of work is served; filters `tools/list` and every call |
 | Call guards | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage proof, missing arguments, the waiting line |
-| `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOps.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change |
+| `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOpStore.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change; its read sets are `MemoryOpReads`, its changes since a cursor `MemoryOpChanges`, its rows' types `Memory/Records/` |
 | `LyntaiMemory`, `MemoryEngine` | `Core/Knowledge/Memory/` | One engine per repository over `memory.db`, and its read-only view for others |
 | `MemoryApplier`, `MemoryCoordinator` | `Core/Knowledge/Memory/` | Applies released rows, recovers at start, paces the sweep |
 | `MemorySweep`, `MemoryPresenter`, `MemoryView` | `Core/Knowledge/Memory/` | Rechecks citations, shows an entry as current only when checked, reads another repository's memory |
@@ -160,7 +164,7 @@ one job each, checked by `verify`.
   the HTTP host's `Routes/KnowledgeRoutes.cs`.
 - **A new connector tool:** its own `*Tools.cs` in `Mcp/`, one line in `KnowledgeServer.ToolTypes`, a class in `ToolClasses`,
   its cells in `CallTable` and `fixtures/call-table.json`.
-- **Memory behaviour:** `Knowledge/Memory/`; a new state or kind goes in `MemoryOps.cs`'s tables, never as a branch elsewhere.
+- **Memory behaviour:** `Knowledge/Memory/`; a new state or kind goes in `Memory/Records/MemoryOpKind.cs` and `MemoryOpState.cs`, never as a branch elsewhere.
 - **A new kind that syncs:** a `<Kind>Sync.cs` in `Remote/`, a door on `IRemote`, and its route in the HTTP host's `PersonDoors`
   as a shared door.
 - **Record checks and merges:** `tools/` (`orient-index`, `doc-duplicates`, `doc-current`, `merge-rows`, `index-hook`).
