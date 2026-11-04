@@ -1,165 +1,237 @@
+using Microsoft.Data.Sqlite;
+using static Daoris.Driver.IntegrationRows;
+using static Daoris.Driver.IntegrationStore;
+using static Daoris.Driver.IntegrationStore;
+
 namespace Daoris.Driver;
 
-/// <summary>
-/// The integration run's steps over the store (INTEGRATE1e part e2, D215; the integration design §5.6): each step's start written before its
-/// effect and its end after, each in one <c>BEGIN IMMEDIATE</c> transaction under the candidate's claim, and the come-up's recovery, which
-/// judges a promotion by ancestry before anything is retried. The replay and the promotion make the steps' effects.
-/// </summary>
-/// <remarks>
-/// <para><b>The rule.</b> A step's start is one write; its effect (a tree made, a replay, a gate, the line moved) is made with nothing of the
-/// store held; its end is one write, with everything the step made of its candidate, its members and their requests. A crash leaves the store
-/// at one of three places: no start (the step never began), a start with no end (the effect may or may not be made), or the end (the step is
-/// done). Only the middle one is judged.</para>
-/// <para><b>The recovery asks git, never the store alone.</b> Where the candidate has a tip, git is asked whether the line holds it
-/// (<c>merge-base --is-ancestor</c>), since the line may move before its record: a promotion's <c>update-ref</c> made and its end never
-/// written. Held, and the store not yet saying so, the promotion is recorded at the come-up (its open step ended <c>promoted</c>, or a
-/// promotion's start and end written where none was open) and never made again. Not held, the open step ends <c>interrupted</c> and runs again
-/// from its start as its next attempt, once the candidate's job holds no process, so two attempts never run at once. Where git cannot say,
-/// nothing is written and the step stays as it stands, to be asked again; where the store records a promotion the line no longer holds,
-/// nothing is retried. A step is idempotent from its start because its start records the line's commit it goes from, and a promotion's one
-/// <c>update-ref</c> verifies that old value, so an attempt run again never moves a line that moved under it.</para>
-/// </remarks>
-public sealed class IntegrationSteps(IntegrationStore store)
+/// <summary>The candidate's steps in the family: a stale claim taken up, a step begun before its effect and ended after it (§5.6), each under the claim's check.</summary>
+internal sealed class IntegrationStepKeeping(IntegrationStore store)
 {
-    /// <summary>
-    /// Run one step: its start written, then <paramref name="effect"/>, then its end as the effect answers it. An effect that throws leaves the
-    /// start with no end, as a crash would: the claim's holder resumes it (<see cref="ResumeAsync"/>) at its next look, a taker at its come-up.
-    /// </summary>
-    /// <param name="request">The member a member's step is of.</param>
-    /// <param name="lineCommit">The line's commit the step read at its start, which its effect goes from.</param>
-    public async Task<IntegrationStep> RunAsync(
-        IntegrationClaim claim, string step, Func<IntegrationStep, CancellationToken, Task<IntegrationStepEnd>> effect, string? request = null,
-        string? lineCommit = null, CancellationToken ct = default)
-    {
-        var begun = store.Begin(claim, step, request, lineCommit);
-        var end = await effect(begun, ct).ConfigureAwait(false);
-        return store.End(claim, begun.Id, end);
-    }
+    private DesktopStore Writer() => store.Writer();
+
+    private string Now() => store.Now();
+
+    private string Run => store.Run;
+
+    private Func<StoreRun, bool> _alive => store._alive;
 
     /// <summary>
-    /// Resume a candidate the claim holds, at the come-up or after a step's effect threw (§5.6's recovery): its promotion judged by ancestry
-    /// first, in the registered checkout at <paramref name="root"/>, then its open step ended for its next attempt. What to do next is the
-    /// answer's (<see cref="IntegrationResumes"/>).
+    /// Take up a candidate whose claim's run is dead by the lease's test (§5.6, as the move record's take), in one guarded update that writes
+    /// this store's run and raises the generation: refused, nothing written, where the candidate is gone or ended, where its claim is this
+    /// run's own, where the generation moved since <paramref name="generation"/> was read, or where its run lives or cannot be told dead.
     /// </summary>
-    /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
-    public async Task<IntegrationResumed> ResumeAsync(IntegrationClaim claim, string root, CancellationToken ct = default)
+    public IntegrationTaken Take(string candidate, long generation)
     {
-        var candidate = store.Candidate(claim.Candidate) ?? throw new IntegrationClaimLostException(claim, "the store holds no such candidate");
-        if (!candidate.Stands)
-        {
-            return new IntegrationResumed(IntegrationResumes.Ended, $"candidate {candidate.Id} ended ({candidate.EndedWhy}): there is nothing to resume.")
-            {
-                Candidate = candidate,
-            };
-        }
-
-        var open = store.OpenStep(candidate.Id);
-        var (held, unread) = candidate.Tip is { } tip ? await HoldsAsync(root, candidate.Line, tip, ct).ConfigureAwait(false) : (false, null);
-        if (unread is not null)
-        {
-            return new IntegrationResumed(IntegrationResumes.Unread,
-                $"git could not say whether `{candidate.Line}` holds candidate {candidate.Id}'s tip {Short(candidate.Tip!)} ({unread}): nothing was written, "
-                + "and it is asked again at the next look.")
-            {
-                Candidate = candidate, Step = open,
-            };
-        }
-
-        if (held && candidate.PromotedAt is null)
-        {
-            var said = $"`{candidate.Line}` holds the candidate's tip {Short(candidate.Tip!)} by ancestry: its promotion is recorded at the come-up, and never made again.";
-            var promoted = open is not null
-                ? store.End(claim, open.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Promoted) { Said = said, Promoted = true })
-                : await RunAsync(claim, IntegrationStepNames.Promote,
-                    (_, _) => Task.FromResult(new IntegrationStepEnd(IntegrationStepOutcomes.Promoted) { Said = said, Promoted = true }), ct: ct).ConfigureAwait(false);
-            return new IntegrationResumed(IntegrationResumes.Promoted, said) { Candidate = store.Candidate(candidate.Id), Step = promoted };
-        }
-
-        if (!held && candidate.PromotedAt is { } at)
-        {
-            return new IntegrationResumed(IntegrationResumes.Unheld,
-                $"the store records candidate {candidate.Id} promoted at {Moments.Write(at)}, and `{candidate.Line}` does not hold its tip {Short(candidate.Tip ?? "")}: "
-                + "nothing is retried or written, since a line moved back is the person's to settle.")
-            {
-                Candidate = candidate, Step = open,
-            };
-        }
-
-        if (open is null)
-        {
-            var last = store.Steps(candidate.Id).LastOrDefault();
-            return new IntegrationResumed(IntegrationResumes.Next,
-                last is null ? $"candidate {candidate.Id} has begun no step." : $"candidate {candidate.Id}'s last step, {last.Step}, ended {last.Outcome}: it goes on after it.")
-            {
-                Candidate = candidate, Step = last,
-            };
-        }
-
-        // The attempt a crash cut runs again from its start, once nothing it started is still running: the candidate's one job is ended first.
         try
         {
-            await ProcessJob.EndNamedAsync(candidate.Job).ConfigureAwait(false);
-        }
-        catch (System.ComponentModel.Win32Exception error)
-        {
-            return new IntegrationResumed(IntegrationResumes.Unread,
-                $"candidate {candidate.Id}'s job could not be opened to end what its {open.Step} started ({error.Message}): nothing was written, and it is "
-                + "asked again at the next look.")
+            using var store = Writer();
+            return store.Write(Family, write =>
             {
-                Candidate = candidate, Step = open,
-            };
+                var found = CandidateIn(write, candidate) ?? throw Refused(null, IntegrationTakeRefusals.Gone);
+                if (!found.Stands) throw Refused(found, IntegrationTakeRefusals.Ended);
+                if (string.Equals(found.ClaimRun, Run, StringComparison.Ordinal)) throw Refused(found, IntegrationTakeRefusals.Own);
+                if (found.ClaimGeneration != generation) throw Refused(found, IntegrationTakeRefusals.Moved);
+
+                // A run the store holds no row of cannot be told dead, so it holds, as a start that cannot be read does.
+                if (RunIn(write, found.ClaimRun) is not { } holder || _alive(holder)) throw Refused(found, IntegrationTakeRefusals.Live);
+                var taken = write.Execute(
+                    """
+                    UPDATE integration_candidates SET claim_run = $mine, claim_generation = claim_generation + 1
+                    WHERE id = $id AND claim_run = $run AND claim_generation = $generation AND ended_at IS NULL
+                    """,
+                    ("$mine", Run), ("$id", candidate), ("$run", found.ClaimRun), ("$generation", generation));
+                if (taken != 1) throw Refused(found, IntegrationTakeRefusals.Moved);
+                var now = CandidateIn(write, candidate)!;
+                return new IntegrationTaken(now, new IntegrationClaim(candidate, Run, now.ClaimGeneration), null);
+            });
+        }
+        catch (Unwritten unwritten)
+        {
+            return (IntegrationTaken)unwritten.Answer!;
         }
 
-        var again = $"its {open.Step} attempt {open.Attempt} began at {Moments.Write(open.BeganAt)} and has no end"
-                    + (candidate.Tip is null ? "" : held ? ", the candidate's promotion recorded" : $", and `{candidate.Line}` does not hold the candidate's tip")
-                    + ": it runs again from its start.";
-        var ended = store.End(claim, open.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Interrupted) { Said = again });
-        return new IntegrationResumed(IntegrationResumes.Again, again) { Candidate = store.Candidate(candidate.Id), Step = ended };
+        static Unwritten Refused(IntegrationCandidate? found, string why) => new(new IntegrationTaken(found, null, why));
     }
 
-    /// <summary>Whether the line holds <paramref name="tip"/>, asked of git: yes, no, or git's words where it could not say.</summary>
-    private static async Task<(bool Held, string? Unread)> HoldsAsync(string root, string line, string tip, CancellationToken ct)
+    // ——— A superseded member's pending dispositions (§5.7).
+
+    /// <summary>
+    /// A step's start, written before its effect (§5.6), in one transaction under the claim's check: its next attempt, the member it is of and
+    /// the line's commit it read. Refused while another step of the candidate is open, which must end first (a resume ends a cut one), and
+    /// for an ended candidate.
+    /// </summary>
+    /// <exception cref="ArgumentException">A step no candidate has.</exception>
+    /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
+    /// <exception cref="IntegrationRefusedException">A step is open, the candidate ended, or the member is not its own.</exception>
+    public IntegrationStep Begin(IntegrationClaim claim, string step, string? request = null, string? lineCommit = null)
     {
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, $"refs/heads/{line}"], ct).ConfigureAwait(false);
-        return code switch
+        IntegrationStore.Known(step, IntegrationStepNames.All, "step");
+        using var store = Writer();
+        return store.Write(Family, write =>
         {
-            0 => (true, null),
-            1 => (false, null),
-            _ => (false, ContentHolds.Said(err)),
-        };
+            var candidate = Claimed(write, claim);
+            if (!candidate.Stands) throw new IntegrationRefusedException(claim.Candidate, $"it ended ({candidate.EndedWhy}) and takes no step");
+            if (request is not null && MemberIn(write, claim.Candidate, request) is not { Stands: true })
+            {
+                throw new IntegrationRefusedException(claim.Candidate, $"request {request} is no standing member of it");
+            }
+
+            try
+            {
+                return InsertStep(write, claim, step, request, lineCommit, Now());
+            }
+            catch (SqliteException error) when (error.SqliteExtendedErrorCode == UniqueRefused)
+            {
+                var open = OpenStepIn(write, claim.Candidate);
+                throw new IntegrationRefusedException(
+                    claim.Candidate,
+                    $"its {open?.Step} begun at {Moments.Write(open?.BeganAt)} has no end, and a candidate runs one step at a time: a step a crash cut is the resume's to judge");
+            }
+        });
     }
 
-    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
-}
+    /// <summary>
+    /// A step's end, written after its effect (§5.6), in one transaction under the claim's check: its outcome and words, the candidate's tip,
+    /// its promotion, its members' changes, the requests it closes and the candidate's end, all or none. An end written again is the first
+    /// end's, and changes nothing.
+    /// </summary>
+    /// <exception cref="ArgumentException">An outcome, a member's state, a close or an end no step writes.</exception>
+    /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
+    /// <exception cref="IntegrationRefusedException">The step is not the candidate's, or a change names what the candidate does not hold: nothing is written.</exception>
+    public IntegrationStep End(IntegrationClaim claim, long step, IntegrationStepEnd end)
+    {
+        IntegrationStore.Known(end.Outcome, IntegrationStepOutcomes.All, "outcome");
+        foreach (var change in end.Members) IntegrationStore.Known(change.State, IntegrationMemberStates.All, "member's state");
+        foreach (var close in end.Closes) IntegrationStore.Known(close.Why, IntegrationRequestCloses.All, "request's close");
+        if (end.Ends is { } ends) IntegrationStore.Known(ends, IntegrationCandidateEnds.All, "candidate's end");
+        try
+        {
+            using var store = Writer();
+            return store.Write(Family, write =>
+            {
+                Claimed(write, claim);
+                var found = StepIn(write, step);
+                if (found is null || !string.Equals(found.Candidate, claim.Candidate, StringComparison.Ordinal))
+                {
+                    throw new IntegrationRefusedException(claim.Candidate, $"it has no step {step}");
+                }
 
-/// <summary>What a resume found, in words, with the candidate as it now stands and the step it names.</summary>
-/// <param name="Kind">One of <see cref="IntegrationResumes"/>.</param>
-public sealed record IntegrationResumed(string Kind, string Said)
-{
-    public IntegrationCandidate? Candidate { get; init; }
+                if (!found.Open) throw new Unwritten(found);
+                var at = Now();
+                Fenced(write, claim,
+                    "UPDATE integration_steps SET ended_at = $at, outcome = $outcome, said = $said WHERE id = $step AND ended_at IS NULL",
+                    ("$at", at), ("$outcome", end.Outcome), ("$said", end.Said), ("$step", step));
+                if (end.Tip is { } tip) Fenced(write, claim, "UPDATE integration_candidates SET tip = $tip WHERE id = $candidate", ("$tip", tip));
+                if (end.Promoted)
+                {
+                    Fenced(write, claim, "UPDATE integration_candidates SET promoted_at = COALESCE(promoted_at, $at) WHERE id = $candidate", ("$at", at));
+                }
 
-    /// <summary>The step the answer is of: the promotion recorded, the attempt ended for its next, the last ended, or the open one left as it stands.</summary>
-    public IntegrationStep? Step { get; init; }
-}
+                foreach (var change in end.Members)
+                {
+                    if (MemberIn(write, claim.Candidate, change.Request) is not { Stands: true })
+                    {
+                        throw new IntegrationRefusedException(claim.Candidate, $"request {change.Request} is no standing member of it");
+                    }
 
-/// <summary>What a resume answers, and what its caller does next.</summary>
-public static class IntegrationResumes
-{
-    /// <summary>The line holds the candidate's tip and its promotion is now recorded: the caller settles.</summary>
-    public const string Promoted = "promoted";
+                    Fenced(write, claim,
+                        """
+                        UPDATE integration_members
+                        SET state = $state, replayed = COALESCE($replayed, replayed), contained_by = COALESCE($containedBy, contained_by),
+                            said = COALESCE($said, said), ended_at = CASE WHEN $ends THEN $at ELSE ended_at END
+                        WHERE candidate = $candidate AND request = $request AND ended_at IS NULL
+                        """,
+                        ("$state", change.State), ("$replayed", change.Replayed), ("$containedBy", change.ContainedBy), ("$said", change.Said),
+                        ("$ends", change.Ends), ("$at", at), ("$request", change.Request));
+                }
 
-    /// <summary>The open step was cut and ended <c>interrupted</c>: the caller runs <see cref="IntegrationResumed.Step"/>'s step again from its start.</summary>
-    public const string Again = "again";
+                foreach (var close in end.Closes)
+                {
+                    if (MemberIn(write, claim.Candidate, close.Request) is null || RequestIn(write, close.Request) is not { ClosedAt: null })
+                    {
+                        throw new IntegrationRefusedException(claim.Candidate, $"request {close.Request} is no open request of its members");
+                    }
 
-    /// <summary>No step was open: the caller goes on after <see cref="IntegrationResumed.Step"/>, the last ended.</summary>
-    public const string Next = "next";
+                    Fenced(write, claim,
+                        "UPDATE integration_requests SET closed_at = $at, closed_why = $why WHERE id = $request AND closed_at IS NULL",
+                        ("$at", at), ("$why", close.Why), ("$request", close.Request));
+                }
 
-    /// <summary>The candidate ended: nothing to resume.</summary>
-    public const string Ended = "ended";
+                // A superseded commit's disposition is visible from the moment its member settles, in the same transaction (§5.7).
+                foreach (var disposition in end.Dispositions)
+                {
+                    if (MemberIn(write, claim.Candidate, disposition.Request) is null)
+                    {
+                        throw new IntegrationRefusedException(claim.Candidate, $"request {disposition.Request} is no member of it, so it has no disposition to keep");
+                    }
 
-    /// <summary>git, or the candidate's job, could not answer: nothing was written, and the resume is asked again at the next look.</summary>
-    public const string Unread = "unread";
+                    write.Execute(
+                        """
+                        INSERT INTO integration_dispositions (request, commit_id, candidate, reference, by_commit, files, subject, at)
+                        VALUES ($request, $commit, $candidate, $reference, $by, $files, $subject, $at)
+                        ON CONFLICT (request, commit_id) DO NOTHING
+                        """,
+                        ("$request", Required(disposition.Request, "its request")), ("$commit", Required(disposition.Commit, "its commit")), ("$candidate", claim.Candidate),
+                        ("$reference", Required(disposition.Reference, "its recovery ref")), ("$by", Required(disposition.By, "the commit that superseded it")),
+                        ("$files", FilesText(disposition.Files)), ("$subject", disposition.Subject), ("$at", at));
+                }
 
-    /// <summary>The store records a promotion the line does not hold: nothing was retried or written.</summary>
-    public const string Unheld = "unheld";
+                if (end.Ends is { } why)
+                {
+                    Fenced(write, claim, "UPDATE integration_candidates SET ended_at = $at, ended_why = $why WHERE id = $candidate AND ended_at IS NULL",
+                        ("$at", at), ("$why", why));
+                    write.Execute(
+                        "UPDATE integration_members SET ended_at = $at WHERE candidate = $candidate AND ended_at IS NULL",
+                        ("$at", at), ("$candidate", claim.Candidate));
+                }
+
+                return StepIn(write, step)!;
+            });
+        }
+        catch (Unwritten unwritten)
+        {
+            return (IntegrationStep)unwritten.Answer!;
+        }
+    }
+
+    // ——— The writes' own parts.
+
+    /// <summary>One attempt's start: its attempt is one more than the step's attempts for that member so far.</summary>
+    internal static IntegrationStep InsertStep(DesktopWrite write, IntegrationClaim claim, string step, string? request, string? lineCommit, string at)
+    {
+        var attempts = write.Scalar<long>(
+            "SELECT COUNT(*) FROM integration_steps WHERE candidate = $candidate AND step = $step AND request IS $request",
+            ("$candidate", claim.Candidate), ("$step", step), ("$request", request));
+        write.Execute(
+            """
+            INSERT INTO integration_steps (candidate, step, attempt, claim_run, claim_generation, began_at, request, line_commit)
+            VALUES ($candidate, $step, $attempt, $run, $generation, $at, $request, $lineCommit)
+            """,
+            ("$candidate", claim.Candidate), ("$step", step), ("$attempt", attempts + 1), ("$run", claim.Run), ("$generation", claim.Generation),
+            ("$at", at), ("$request", request), ("$lineCommit", lineCommit));
+        return StepIn(write, write.Scalar<long>("SELECT last_insert_rowid()"))!;
+    }
+
+    /// <summary>The claim's check, inside the write's transaction: the candidate is there and its run and generation are the claim's, which is this store's run.</summary>
+    private IntegrationCandidate Claimed(DesktopWrite write, IntegrationClaim claim)
+    {
+        if (!string.Equals(claim.Run, Run, StringComparison.Ordinal)) throw new IntegrationClaimLostException(claim, $"this store writes under run {Run}");
+        var candidate = CandidateIn(write, claim.Candidate) ?? throw new IntegrationClaimLostException(claim, "the store holds no such candidate");
+        if (!string.Equals(candidate.ClaimRun, claim.Run, StringComparison.Ordinal) || candidate.ClaimGeneration != claim.Generation)
+        {
+            throw new IntegrationClaimLostException(claim, $"run {candidate.ClaimRun} holds it at generation {candidate.ClaimGeneration}");
+        }
+
+        return candidate;
+    }
+
+    /// <summary>An update of the candidate's rows under its claim, named in the update's own condition, which must change exactly one row.</summary>
+    private static void Fenced(DesktopWrite write, IntegrationClaim claim, string update, params (string Name, object? Value)[] values)
+    {
+        var changed = write.Execute(
+            update + " AND EXISTS (SELECT 1 FROM integration_candidates WHERE id = $candidate AND claim_run = $claimRun AND claim_generation = $claimGeneration)",
+            [.. values, ("$candidate", claim.Candidate), ("$claimRun", claim.Run), ("$claimGeneration", claim.Generation)]);
+        if (changed != 1) throw new IntegrationClaimLostException(claim, "its row changed under the write");
+    }
 }

@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
+using static Daoris.Driver.IntegrationRows;
+using static Daoris.Driver.IntegrationStepKeeping;
 
 namespace Daoris.Driver;
 
@@ -57,7 +59,7 @@ public sealed class IntegrationStore(
     private const string CandidateSubject = "candidate";
 
     /// <summary>SQLite's refusal of a row a unique index already holds.</summary>
-    private const int UniqueRefused = 2067;
+    internal const int UniqueRefused = 2067;
 
     private const string RequestColumns =
         "id, repository, workspace, branch, tip, route, line, requester, door, act, generation, policy_request, policy_commit, policy_batch, "
@@ -79,7 +81,7 @@ public sealed class IntegrationStore(
 
     private readonly Func<StoreSettled> _settled = settled ?? StartConfirmation.Read;
 
-    private readonly Func<StoreRun, bool> _alive = alive ?? Lives;
+    internal readonly Func<StoreRun, bool> _alive = alive ?? Lives;
 
     private readonly TimeProvider _clock = clock ?? TimeProvider.System;
 
@@ -415,45 +417,18 @@ public sealed class IntegrationStore(
                 $"SELECT {StepColumns} FROM integration_steps WHERE candidate = $candidate AND ended_at IS NULL", MapStep, ("$candidate", candidate))
             .FirstOrDefault(), null);
 
-    /// <summary>
-    /// Take up a candidate whose claim's run is dead by the lease's test (§5.6, as the move record's take), in one guarded update that writes
-    /// this store's run and raises the generation: refused, nothing written, where the candidate is gone or ended, where its claim is this
-    /// run's own, where the generation moved since <paramref name="generation"/> was read, or where its run lives or cannot be told dead.
-    /// </summary>
-    public IntegrationTaken Take(string candidate, long generation)
-    {
-        try
-        {
-            using var store = Writer();
-            return store.Write(Family, write =>
-            {
-                var found = CandidateIn(write, candidate) ?? throw Refused(null, IntegrationTakeRefusals.Gone);
-                if (!found.Stands) throw Refused(found, IntegrationTakeRefusals.Ended);
-                if (string.Equals(found.ClaimRun, Run, StringComparison.Ordinal)) throw Refused(found, IntegrationTakeRefusals.Own);
-                if (found.ClaimGeneration != generation) throw Refused(found, IntegrationTakeRefusals.Moved);
+    private IntegrationStepKeeping? _steps;
 
-                // A run the store holds no row of cannot be told dead, so it holds, as a start that cannot be read does.
-                if (RunIn(write, found.ClaimRun) is not { } holder || _alive(holder)) throw Refused(found, IntegrationTakeRefusals.Live);
-                var taken = write.Execute(
-                    """
-                    UPDATE integration_candidates SET claim_run = $mine, claim_generation = claim_generation + 1
-                    WHERE id = $id AND claim_run = $run AND claim_generation = $generation AND ended_at IS NULL
-                    """,
-                    ("$mine", Run), ("$id", candidate), ("$run", found.ClaimRun), ("$generation", generation));
-                if (taken != 1) throw Refused(found, IntegrationTakeRefusals.Moved);
-                var now = CandidateIn(write, candidate)!;
-                return new IntegrationTaken(now, new IntegrationClaim(candidate, Run, now.ClaimGeneration), null);
-            });
-        }
-        catch (Unwritten unwritten)
-        {
-            return (IntegrationTaken)unwritten.Answer!;
-        }
+    private IntegrationStepKeeping Keeper => _steps ??= new(this);
 
-        static Unwritten Refused(IntegrationCandidate? found, string why) => new(new IntegrationTaken(found, null, why));
-    }
+    /// <inheritdoc cref="IntegrationStepKeeping.Take"/>
+    public IntegrationTaken Take(string candidate, long generation) => Keeper.Take(candidate, generation);
 
-    // ——— A superseded member's pending dispositions (§5.7).
+    /// <inheritdoc cref="IntegrationStepKeeping.Begin"/>
+    public IntegrationStep Begin(IntegrationClaim claim, string step, string? request = null, string? lineCommit = null) => Keeper.Begin(claim, step, request, lineCommit);
+
+    /// <inheritdoc cref="IntegrationStepKeeping.End"/>
+    public IntegrationStep End(IntegrationClaim claim, long step, IntegrationStepEnd end) => Keeper.End(claim, step, end);
 
     /// <summary>Every disposition a request has, pending and answered, in the order they were kept; none where the home has no store or one from before them.</summary>
     public IReadOnlyList<IntegrationDisposition> Dispositions(string request) =>
@@ -541,147 +516,6 @@ public sealed class IntegrationStore(
 
     // ——— A step's two writes (§5.6).
 
-    /// <summary>
-    /// A step's start, written before its effect (§5.6), in one transaction under the claim's check: its next attempt, the member it is of and
-    /// the line's commit it read. Refused while another step of the candidate is open, which must end first (a resume ends a cut one), and
-    /// for an ended candidate.
-    /// </summary>
-    /// <exception cref="ArgumentException">A step no candidate has.</exception>
-    /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
-    /// <exception cref="IntegrationRefusedException">A step is open, the candidate ended, or the member is not its own.</exception>
-    public IntegrationStep Begin(IntegrationClaim claim, string step, string? request = null, string? lineCommit = null)
-    {
-        Known(step, IntegrationStepNames.All, "step");
-        using var store = Writer();
-        return store.Write(Family, write =>
-        {
-            var candidate = Claimed(write, claim);
-            if (!candidate.Stands) throw new IntegrationRefusedException(claim.Candidate, $"it ended ({candidate.EndedWhy}) and takes no step");
-            if (request is not null && MemberIn(write, claim.Candidate, request) is not { Stands: true })
-            {
-                throw new IntegrationRefusedException(claim.Candidate, $"request {request} is no standing member of it");
-            }
-
-            try
-            {
-                return InsertStep(write, claim, step, request, lineCommit, Now());
-            }
-            catch (SqliteException error) when (error.SqliteExtendedErrorCode == UniqueRefused)
-            {
-                var open = OpenStepIn(write, claim.Candidate);
-                throw new IntegrationRefusedException(
-                    claim.Candidate,
-                    $"its {open?.Step} begun at {Moments.Write(open?.BeganAt)} has no end, and a candidate runs one step at a time: a step a crash cut is the resume's to judge");
-            }
-        });
-    }
-
-    /// <summary>
-    /// A step's end, written after its effect (§5.6), in one transaction under the claim's check: its outcome and words, the candidate's tip,
-    /// its promotion, its members' changes, the requests it closes and the candidate's end, all or none. An end written again is the first
-    /// end's, and changes nothing.
-    /// </summary>
-    /// <exception cref="ArgumentException">An outcome, a member's state, a close or an end no step writes.</exception>
-    /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
-    /// <exception cref="IntegrationRefusedException">The step is not the candidate's, or a change names what the candidate does not hold: nothing is written.</exception>
-    public IntegrationStep End(IntegrationClaim claim, long step, IntegrationStepEnd end)
-    {
-        Known(end.Outcome, IntegrationStepOutcomes.All, "outcome");
-        foreach (var change in end.Members) Known(change.State, IntegrationMemberStates.All, "member's state");
-        foreach (var close in end.Closes) Known(close.Why, IntegrationRequestCloses.All, "request's close");
-        if (end.Ends is { } ends) Known(ends, IntegrationCandidateEnds.All, "candidate's end");
-        try
-        {
-            using var store = Writer();
-            return store.Write(Family, write =>
-            {
-                Claimed(write, claim);
-                var found = StepIn(write, step);
-                if (found is null || !string.Equals(found.Candidate, claim.Candidate, StringComparison.Ordinal))
-                {
-                    throw new IntegrationRefusedException(claim.Candidate, $"it has no step {step}");
-                }
-
-                if (!found.Open) throw new Unwritten(found);
-                var at = Now();
-                Fenced(write, claim,
-                    "UPDATE integration_steps SET ended_at = $at, outcome = $outcome, said = $said WHERE id = $step AND ended_at IS NULL",
-                    ("$at", at), ("$outcome", end.Outcome), ("$said", end.Said), ("$step", step));
-                if (end.Tip is { } tip) Fenced(write, claim, "UPDATE integration_candidates SET tip = $tip WHERE id = $candidate", ("$tip", tip));
-                if (end.Promoted)
-                {
-                    Fenced(write, claim, "UPDATE integration_candidates SET promoted_at = COALESCE(promoted_at, $at) WHERE id = $candidate", ("$at", at));
-                }
-
-                foreach (var change in end.Members)
-                {
-                    if (MemberIn(write, claim.Candidate, change.Request) is not { Stands: true })
-                    {
-                        throw new IntegrationRefusedException(claim.Candidate, $"request {change.Request} is no standing member of it");
-                    }
-
-                    Fenced(write, claim,
-                        """
-                        UPDATE integration_members
-                        SET state = $state, replayed = COALESCE($replayed, replayed), contained_by = COALESCE($containedBy, contained_by),
-                            said = COALESCE($said, said), ended_at = CASE WHEN $ends THEN $at ELSE ended_at END
-                        WHERE candidate = $candidate AND request = $request AND ended_at IS NULL
-                        """,
-                        ("$state", change.State), ("$replayed", change.Replayed), ("$containedBy", change.ContainedBy), ("$said", change.Said),
-                        ("$ends", change.Ends), ("$at", at), ("$request", change.Request));
-                }
-
-                foreach (var close in end.Closes)
-                {
-                    if (MemberIn(write, claim.Candidate, close.Request) is null || RequestIn(write, close.Request) is not { ClosedAt: null })
-                    {
-                        throw new IntegrationRefusedException(claim.Candidate, $"request {close.Request} is no open request of its members");
-                    }
-
-                    Fenced(write, claim,
-                        "UPDATE integration_requests SET closed_at = $at, closed_why = $why WHERE id = $request AND closed_at IS NULL",
-                        ("$at", at), ("$why", close.Why), ("$request", close.Request));
-                }
-
-                // A superseded commit's disposition is visible from the moment its member settles, in the same transaction (§5.7).
-                foreach (var disposition in end.Dispositions)
-                {
-                    if (MemberIn(write, claim.Candidate, disposition.Request) is null)
-                    {
-                        throw new IntegrationRefusedException(claim.Candidate, $"request {disposition.Request} is no member of it, so it has no disposition to keep");
-                    }
-
-                    write.Execute(
-                        """
-                        INSERT INTO integration_dispositions (request, commit_id, candidate, reference, by_commit, files, subject, at)
-                        VALUES ($request, $commit, $candidate, $reference, $by, $files, $subject, $at)
-                        ON CONFLICT (request, commit_id) DO NOTHING
-                        """,
-                        ("$request", Required(disposition.Request, "its request")), ("$commit", Required(disposition.Commit, "its commit")), ("$candidate", claim.Candidate),
-                        ("$reference", Required(disposition.Reference, "its recovery ref")), ("$by", Required(disposition.By, "the commit that superseded it")),
-                        ("$files", FilesText(disposition.Files)), ("$subject", disposition.Subject), ("$at", at));
-                }
-
-                if (end.Ends is { } why)
-                {
-                    Fenced(write, claim, "UPDATE integration_candidates SET ended_at = $at, ended_why = $why WHERE id = $candidate AND ended_at IS NULL",
-                        ("$at", at), ("$why", why));
-                    write.Execute(
-                        "UPDATE integration_members SET ended_at = $at WHERE candidate = $candidate AND ended_at IS NULL",
-                        ("$at", at), ("$candidate", claim.Candidate));
-                }
-
-                return StepIn(write, step)!;
-            });
-        }
-        catch (Unwritten unwritten)
-        {
-            return (IntegrationStep)unwritten.Answer!;
-        }
-    }
-
-    // ——— The writes' own parts.
-
     private static void Validate(IntegrationRequest request)
     {
         Required(request.Id, "its id");
@@ -718,54 +552,16 @@ public sealed class IntegrationStore(
             ("$proof", ProofText(request.Proof)), ("$at", Moments.Write(request.At)));
     }
 
-    /// <summary>One attempt's start: its attempt is one more than the step's attempts for that member so far.</summary>
-    private static IntegrationStep InsertStep(DesktopWrite write, IntegrationClaim claim, string step, string? request, string? lineCommit, string at)
-    {
-        var attempts = write.Scalar<long>(
-            "SELECT COUNT(*) FROM integration_steps WHERE candidate = $candidate AND step = $step AND request IS $request",
-            ("$candidate", claim.Candidate), ("$step", step), ("$request", request));
-        write.Execute(
-            """
-            INSERT INTO integration_steps (candidate, step, attempt, claim_run, claim_generation, began_at, request, line_commit)
-            VALUES ($candidate, $step, $attempt, $run, $generation, $at, $request, $lineCommit)
-            """,
-            ("$candidate", claim.Candidate), ("$step", step), ("$attempt", attempts + 1), ("$run", claim.Run), ("$generation", claim.Generation),
-            ("$at", at), ("$request", request), ("$lineCommit", lineCommit));
-        return StepIn(write, write.Scalar<long>("SELECT last_insert_rowid()"))!;
-    }
-
-    /// <summary>The claim's check, inside the write's transaction: the candidate is there and its run and generation are the claim's, which is this store's run.</summary>
-    private IntegrationCandidate Claimed(DesktopWrite write, IntegrationClaim claim)
-    {
-        if (!string.Equals(claim.Run, Run, StringComparison.Ordinal)) throw new IntegrationClaimLostException(claim, $"this store writes under run {Run}");
-        var candidate = CandidateIn(write, claim.Candidate) ?? throw new IntegrationClaimLostException(claim, "the store holds no such candidate");
-        if (!string.Equals(candidate.ClaimRun, claim.Run, StringComparison.Ordinal) || candidate.ClaimGeneration != claim.Generation)
-        {
-            throw new IntegrationClaimLostException(claim, $"run {candidate.ClaimRun} holds it at generation {candidate.ClaimGeneration}");
-        }
-
-        return candidate;
-    }
-
-    /// <summary>An update of the candidate's rows under its claim, named in the update's own condition, which must change exactly one row.</summary>
-    private static void Fenced(DesktopWrite write, IntegrationClaim claim, string update, params (string Name, object? Value)[] values)
-    {
-        var changed = write.Execute(
-            update + " AND EXISTS (SELECT 1 FROM integration_candidates WHERE id = $candidate AND claim_run = $claimRun AND claim_generation = $claimGeneration)",
-            [.. values, ("$candidate", claim.Candidate), ("$claimRun", claim.Run), ("$claimGeneration", claim.Generation)]);
-        if (changed != 1) throw new IntegrationClaimLostException(claim, "its row changed under the write");
-    }
-
     private static IntegrationRequest? OpenIn(DesktopWrite write, string repository, string branch) =>
         write.Query(
                 $"SELECT {Read(int.MaxValue)} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch AND closed_at IS NULL",
                 MapRequest, ("$repository", repository), ("$branch", branch))
             .FirstOrDefault();
 
-    private static IntegrationRequest? RequestIn(DesktopWrite write, string id) =>
+    internal static IntegrationRequest? RequestIn(DesktopWrite write, string id) =>
         write.Query($"SELECT {Read(int.MaxValue)} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault();
 
-    private static IntegrationCandidate? CandidateIn(DesktopWrite write, string id) =>
+    internal static IntegrationCandidate? CandidateIn(DesktopWrite write, string id) =>
         write.Query($"SELECT {CandidateColumns} FROM integration_candidates WHERE id = $id", MapCandidate, ("$id", id)).FirstOrDefault();
 
     private static IntegrationCandidate? StandingIn(DesktopWrite write, string repository, string line) =>
@@ -774,138 +570,26 @@ public sealed class IntegrationStore(
                 MapCandidate, ("$repository", repository), ("$line", line))
             .FirstOrDefault();
 
-    private static IntegrationMember? MemberIn(DesktopWrite write, string candidate, string request) =>
+    internal static IntegrationMember? MemberIn(DesktopWrite write, string candidate, string request) =>
         write.Query(
                 $"SELECT {MemberColumns} FROM integration_members WHERE candidate = $candidate AND request = $request", MapMember,
                 ("$candidate", candidate), ("$request", request))
             .FirstOrDefault();
 
-    private static IntegrationStep? StepIn(DesktopWrite write, long id) =>
+    internal static IntegrationStep? StepIn(DesktopWrite write, long id) =>
         write.Query($"SELECT {StepColumns} FROM integration_steps WHERE id = $id", MapStep, ("$id", id)).FirstOrDefault();
 
-    private static IntegrationStep? OpenStepIn(DesktopWrite write, string candidate) =>
+    internal static IntegrationStep? OpenStepIn(DesktopWrite write, string candidate) =>
         write.Query($"SELECT {StepColumns} FROM integration_steps WHERE candidate = $candidate AND ended_at IS NULL", MapStep, ("$candidate", candidate))
             .FirstOrDefault();
 
-    private static StoreRun? RunIn(DesktopWrite write, string run) =>
+    internal static StoreRun? RunIn(DesktopWrite write, string run) =>
         write.Query(
             "SELECT run, kind, pid, started, began FROM store_runs WHERE run = $run",
             row => new StoreRun(row.GetString(0), row.GetString(1), row.GetInt32(2), row.IsDBNull(3) ? null : row.GetInt64(3), row.GetString(4)),
             ("$run", run)).FirstOrDefault();
 
     // ——— The rows read.
-
-    private static string? Text(SqliteDataReader row, string column)
-    {
-        var at = row.GetOrdinal(column);
-        return row.IsDBNull(at) ? null : row.GetString(at);
-    }
-
-    private static long? Number(SqliteDataReader row, string column)
-    {
-        var at = row.GetOrdinal(column);
-        return row.IsDBNull(at) ? null : row.GetInt64(at);
-    }
-
-    private static DateTimeOffset Moment(SqliteDataReader row, string column) =>
-        Moments.Read(Text(row, column)) ?? throw new DesktopStoreException($"the integration's `{column}` does not read as a moment");
-
-    private static IntegrationRequest MapRequest(SqliteDataReader row)
-    {
-        var generation = Number(row, "generation");
-        var requester = new IntegrationRequester(Text(row, "requester")!, Text(row, "door")!) { Act = Text(row, "act"), Generation = generation };
-        var policy = new LandingIntegrate(
-            Text(row, "policy_request"), Text(row, "policy_commit"), (int?)Number(row, "policy_batch"), Text(row, "policy_order"), Text(row, "policy_gates"),
-            Text(row, "policy_unreached"), Text(row, "policy_reached"), Text(row, "policy_conflicts"), Text(row, "policy_overlap"), Text(row, "policy_line"));
-        return new IntegrationRequest(
-            Text(row, "id")!, Text(row, "repository")!, Text(row, "workspace")!, Text(row, "branch")!, Text(row, "tip")!, Text(row, "route")!,
-            Text(row, "line")!, requester, policy, Moment(row, "at"))
-        {
-            RuleSource = Text(row, "rule_source"),
-            Unit = Text(row, "unit"),
-            Session = Text(row, "session"),
-            Quest = Text(row, "quest"),
-            LandedAt = Moments.Read(Text(row, "landed_at")),
-            Proof = ProofOf(Text(row, "proof")),
-            ClosedAt = Moments.Read(Text(row, "closed_at")),
-            ClosedWhy = Text(row, "closed_why"),
-            Order = Has(row, "queue_order") ? Number(row, "queue_order") : null,
-            Epoch = Has(row, "epoch") ? Text(row, "epoch") : null,
-        };
-    }
-
-    private static IntegrationCandidate MapCandidate(SqliteDataReader row) =>
-        new(Text(row, "id")!, Text(row, "repository")!, Text(row, "workspace")!, Text(row, "line")!, Text(row, "base")!, Text(row, "job")!,
-            Text(row, "claim_run")!, Number(row, "claim_generation")!.Value, Moment(row, "formed_at"))
-        {
-            Tip = Text(row, "tip"),
-            PromotedAt = Moments.Read(Text(row, "promoted_at")),
-            EndedAt = Moments.Read(Text(row, "ended_at")),
-            EndedWhy = Text(row, "ended_why"),
-        };
-
-    private static IntegrationMember MapMember(SqliteDataReader row) =>
-        new(Text(row, "candidate")!, Text(row, "request")!, (int)Number(row, "position")!.Value, Text(row, "state")!, Moment(row, "joined_at"))
-        {
-            Replayed = Text(row, "replayed"),
-            ContainedBy = Text(row, "contained_by"),
-            Said = Text(row, "said"),
-            EndedAt = Moments.Read(Text(row, "ended_at")),
-        };
-
-    private static IntegrationStep MapStep(SqliteDataReader row) =>
-        new(Number(row, "id")!.Value, Text(row, "candidate")!, Text(row, "step")!, (int)Number(row, "attempt")!.Value, Text(row, "claim_run")!,
-            Number(row, "claim_generation")!.Value, Moment(row, "began_at"))
-        {
-            Request = Text(row, "request"),
-            LineCommit = Text(row, "line_commit"),
-            EndedAt = Moments.Read(Text(row, "ended_at")),
-            Outcome = Text(row, "outcome"),
-            Said = Text(row, "said"),
-        };
-
-    /// <summary>
-    /// The gate proof in the landing record's own shape (<c>acceptedBy</c>, <c>review</c>, <c>opinion</c>, <c>workflow</c>), written by that
-    /// record's own writers so a request keeps it as its landing kept it; null for a records branch's, which carries none.
-    /// </summary>
-    private static string? ProofText(IntegrationProof? proof)
-    {
-        if (proof is null) return null;
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("acceptedBy", proof.AcceptedBy);
-            if (proof.Review is { } review) LandedBranches.WriteReview(writer, review);
-            if (proof.Opinion is { } opinion) LandedBranches.WriteOpinion(writer, opinion);
-            if (proof.Workflow is { } workflow) LandedBranches.WriteWorkflow(writer, workflow);
-            writer.WriteEndObject();
-        }
-
-        return Encoding.UTF8.GetString(stream.ToArray());
-    }
-
-    /// <summary>The gate proof as <see cref="ProofText"/> wrote it, read by the landing record's own readers; null where none was kept or it does not read.</summary>
-    private static IntegrationProof? ProofOf(string? text)
-    {
-        if (text is null) return null;
-        try
-        {
-            using var document = JsonDocument.Parse(text);
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("acceptedBy", out var by) || by.ValueKind != JsonValueKind.String) return null;
-            return new IntegrationProof(by.GetString()!)
-            {
-                Review = LandedBranches.ReviewOf(root),
-                Opinion = LandedBranches.OpinionOf(root),
-                Workflow = LandedBranches.WorkflowOf(root),
-            };
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
 
     /// <summary>A read of a store that holds the family (or <paramref name="since"/>, a later step's table), or <paramref name="none"/> where the home has no store or one from before it.</summary>
     private T Reading<T>(Func<DesktopStoreReader, T> read, T none, int since = Since)
@@ -914,55 +598,21 @@ public sealed class IntegrationStore(
         return reader is not null && reader.Version >= since ? read(reader) : none;
     }
 
-    private static IntegrationDisposition MapDisposition(SqliteDataReader row) =>
-        new(Text(row, "request")!, Text(row, "commit_id")!, Text(row, "reference")!, Text(row, "by_commit")!, FilesOf(Text(row, "files")), Text(row, "subject")!)
-        {
-            Candidate = Text(row, "candidate")!,
-            At = Moment(row, "at"),
-            AnsweredAt = Moments.Read(Text(row, "answered_at")),
-            Answer = Has(row, "answer") ? Text(row, "answer") : null,
-        };
-
-    /// <summary>Whether the row's query named <paramref name="column"/>: a later step's column is named only of a store that holds it.</summary>
-    private static bool Has(SqliteDataReader row, string column)
-    {
-        for (var at = 0; at < row.FieldCount; at++)
-        {
-            if (string.Equals(row.GetName(at), column, StringComparison.Ordinal)) return true;
-        }
-
-        return false;
-    }
-
-    private static string FilesText(IReadOnlyList<string> files) => JsonSerializer.Serialize(files);
-
-    private static IReadOnlyList<string> FilesOf(string? text)
-    {
-        try
-        {
-            return text is null ? [] : JsonSerializer.Deserialize<string[]>(text) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-    }
-
     /// <summary>The store opened for one write, made and migrated where it must be, under this store's run.</summary>
-    private DesktopStore Writer() => DesktopStore.Open(Location, StoreProcess.Options(_settled) with { Run = Run, Kind = kind ?? StoreProcess.Kind, Clock = _clock });
+    internal DesktopStore Writer() => DesktopStore.Open(Location, StoreProcess.Options(_settled) with { Run = Run, Kind = kind ?? StoreProcess.Kind, Clock = _clock });
 
-    private string Now() => Moments.Write(_clock.GetUtcNow());
+    internal string Now() => Moments.Write(_clock.GetUtcNow());
 
-    private static string Required(string? value, string what) =>
+    internal static string Required(string? value, string what) =>
         string.IsNullOrWhiteSpace(value) ? throw new ArgumentException($"an integration's write needs {what}") : value;
 
-    private static string Known(string? value, IReadOnlyList<string> words, string what) =>
+    internal static string Known(string? value, IReadOnlyList<string> words, string what) =>
         value is not null && words.Contains(value, StringComparer.Ordinal)
             ? value
             : throw new ArgumentException($"`{value}` is no integration {what}: one of {string.Join(", ", words)}");
 
     /// <summary>A write's answer that writes nothing: thrown out of the store's transaction, so it is rolled back, no revision moved and no wake touched.</summary>
-    private sealed class Unwritten(object? answer) : Exception
+    internal sealed class Unwritten(object? answer) : Exception
     {
         public object? Answer { get; } = answer;
     }
