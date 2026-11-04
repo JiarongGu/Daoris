@@ -1,74 +1,37 @@
-import { type ReactNode, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, fileKept, type Quest, type Session, type SubmissionRef } from '../data/api';
-import { isImage } from '../compose/attachments';
-import { ago, sessionTool, size, stamp } from '../locales/format';
-import { ExternalLink } from '../design/links';
-import type { ChainStep } from '../map/chain';
-import { ChainStrip } from '../map/ChainStrip';
-import type { AccountNamer } from '../agents/tools';
-import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../data/signals';
-import { Button, Icon, type IconName, Inline, Menu, personsSaid, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../design/ui';
+import { type Quest, type Session, type SubmissionRef } from '../data/api';
+import { type ChainStep } from '../map/chain';
+import { type AccountNamer } from '../agents/tools';
+import { type Consideration, type TrustHold } from '../data/signals';
+import { Button, Icon, Inline, Menu, personsSaid, Pill, Prose, QUEST_TONE, SectionTitle } from '../design/ui';
 import { type SessionGrouping, shownOf } from '../work/groups';
-import { joinLines, liveParts } from '../work/noteLines';
 import { placedFact } from '../work/rail/SessionRow';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing/pausing';
-import { ClearAsk } from '../work/history/ClearAsk';
-import { DetailsFold } from '../work/head/DetailsFold';
-import { endOffersStop, endSentences, type GraphEnd } from '../work/head/milestone';
+import { type GraphEnd } from '../work/head/milestone';
 import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/history/history';
 import { questFacts, questNext } from '../work/head/headFacts';
 import { NextDoor } from '../work/head/NextDoor';
-import { HowItCameToBe, type TraceDoor } from '../work/head/HowItCameToBe';
+import { type TraceDoor } from '../work/head/HowItCameToBe';
 import { questName, sessionOrigin } from '../work/identity';
-import { type Answered, InlineConfirm } from '../work/InlineConfirm';
-import { Note } from '../work/Note';
+import { type Answered } from '../work/InlineConfirm';
 import { stepState } from '../work/gates/review';
 import { ReviewGate, type ReviewGateActs } from '../work/gates/ReviewGate';
 import { QuestConflicts, readConflicts, SettledConflicts } from './Conflicts';
-import { QuestFlow, type QuestMovesDoor } from './QuestFlow';
-import { QuestRequirements, Quoted } from './Requirements';
+import { type QuestMovesDoor } from './QuestFlow';
+import { QuestRequirements } from './Requirements';
 import { shownStatus } from './records';
 import { TrustAsk } from '../work/waits/TrustAsk';
-import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
-import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/pausing/WorkAsks';
-import type { RunLineDoor } from '../workflow/run';
+import { type MainNotice, PageHead, ViewMain } from '../work/frame/ViewMain';
+import { AbandonedWork } from '../work/pausing/WorkAsks';
+import { type RunLineDoor } from '../workflow/run';
 import { WorkflowLine } from '../workflow/WorkflowLine';
+import { QuestContent } from './page/QuestContent';
+import { QuestFacts } from './page/QuestFacts';
+import { QuestAsks } from './page/QuestAsks';
+import { type QuestAct, QUEST_ACT, buttonOf } from './page/questActs';
+import { QuestRecord } from './page/QuestRecord';
 
-/** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
-type QuestAct =
-  | 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'clear' | 'clearFailed' | 'accept' | 'resume' | 'retry'
-  | 'trust' | 'session' | 'reopen' | 'goOn';
-
-/** Each act's name, the one its button says, and its glyph in a menu. */
-const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
-  take: { label: 'quests.detail.take' },
-  done: { label: 'quests.detail.done', icon: 'check' },
-  pause: { label: 'quests.detail.pause', icon: 'pause' },
-  decline: { label: 'quests.detail.decline' },
-  abandon: { label: 'quests.detail.abandon' },
-  delete: { label: 'quests.detail.delete', icon: 'remove' },
-  clear: { label: 'quests.detail.clear' },
-  clearFailed: { label: 'quests.detail.clearFailed' },
-  accept: { label: 'quests.requirements.accept', icon: 'check' },
-  resume: { label: 'quests.detail.resume', icon: 'resume' },
-  retry: { label: 'quests.detail.retry', icon: 'refresh' },
-  trust: { label: 'trust.open', icon: 'shield' },
-  session: { label: 'work.open', icon: 'frameWork' },
-  reopen: { label: 'quests.detail.reopen' },
-  goOn: { label: 'quests.reopened.goOn', icon: 'resume' },
-};
-
-/**
- * A header act's button: the one loud control is the quest's next step (UX5 U31), taking it while it is open and closing
- * it once it is taken; Pause… plain; the rest quiet.
- */
-function buttonOf(act: QuestAct, status: Quest['status']): 'primary' | 'default' | 'ghost' {
-  if (act === 'take') return 'primary';
-  if (act === 'done') return status === 'Taken' ? 'primary' : 'default';
-  if (act === 'pause') return 'default';
-  return 'ghost';
-}
 
 /**
  * A quest's body as its page shows it under the head (UX7c, D152 §7): its first line left out where it is the title the
@@ -85,16 +48,6 @@ export function bodyUnderHead(title: string, body: string, shortTitled: boolean)
 
 /** A title longer than this (two lines of the head, about) is read whole in the request below. */
 const LONG_TITLE = 80;
-
-/** A record's row of facts: its name, and what it holds. */
-function Fact({ name, children }: { name: string; children: ReactNode }) {
-  return (
-    <>
-      <dt className="text-ink-faint">{name}</dt>
-      <dd className="m-0">{children}</dd>
-    </>
-  );
-}
 
 /**
  * **A quest's page** (FRAME1d, D118 §3d): its record in Quests' main area, where it was a drawer that lay
@@ -506,288 +459,11 @@ export function QuestPage({
 
   return (
     <ViewMain header={head} menu={menu}>
-      {asking === 'pause' && work && pauseLines && (
-        <PauseAsk
-          className="mb-4"
-          target={target}
-          lines={pauseLines}
-          meanIt={t('quests.detail.pauseMeanIt')}
-          busy={waiting}
-          onPause={(answered) => work.onPause(answered)}
-          onClose={() => setAsking(null)}
-        />
-      )}
-
-      {asking === 'abandon' && work && listed && (
-        <AbandonAsk
-          target={target}
-          plan={listed}
-          meanIt={t('quests.detail.abandonMeanIt')}
-          placeholder={t('quests.detail.abandonWhy')}
-          busy={waiting}
-          onAbandon={(why, answered) => work.onAbandon(why, listed.abandon.pieces, answered)}
-          onClose={() => { setAsking(null); setListed(null); }}
-        />
-      )}
-
-      {history && (asking === 'clear' || asking === 'clearFailed') && (asking === 'clear' ? history.plan : history.failed) && (
-        /* 🔴 A clear removes what this machine kept, which nothing gives back (D153): the first press lists what goes and
-           what stays, held from here, and the second sends exactly that (§5). */
-        <ClearAsk
-          key={asking}
-          className="mb-4"
-          target={clearTarget(asking)}
-          plan={(asking === 'clear' ? history.plan : history.failed)!}
-          meanIt={asking === 'clear'
-            ? t('quests.detail.clearMeanIt')
-            : (list) => t('quests.detail.clearFailedMeanIt', { count: list.sessions })}
-          busy={waiting}
-          onClear={(units, answered) => history.onClear(clearTarget(asking), units, answered)}
-          onClose={() => setAsking(null)}
-        />
-      )}
-
-      {deleting && deletable && (
-        /* 🔴 A delete removes the record, which nothing gives back (D95) — so the first press only asks, the
-           way removing an account does, and the second is the one that deletes. It stays open until the service
-           answers, and says a refusal inside itself (UXFIX2). */
-        <InlineConfirm
-          className="mb-4"
-          label={t('quests.detail.deleteTitle')}
-          says={t('quests.detail.deleteConfirm')}
-          meanIt={t('quests.detail.deleteMeanIt')}
-          busy={busy}
-          onConfirm={onDelete!}
-          onClose={() => setAsking((was) => (was === 'delete' ? null : was))}
-        />
-      )}
-
-      {asking === 'done' && moving && (
-        /* The person's done (QUESTCLOSE1): it asks once, since a done does not move again, with their note, which the
-           record keeps after the sentence saying the done was theirs. Open until the service answers, a refusal said inside
-           it (UXFIX2). */
-        <InlineConfirm
-          className="mb-4"
-          label={t('quests.detail.doneTitle')}
-          says={[
-            ...(requirements.length > 0 ? [t('quests.detail.doneRequirements')] : []),
-            ...(lostHere ? [t('quests.conflict.doneChoices')] : []),
-          ].reduce((first, second) => t('quests.requirements.join', { first, second }), t('quests.detail.doneConfirm', { id: quest.id }))}
-          meanIt={t('quests.detail.doneMeanIt')}
-          busy={busy}
-          onConfirm={(answered) => onRespond('done', doneNote.trim() || null, answered)}
-          onClose={() => {
-            setAsking((was) => (was === 'done' ? null : was));
-            setDoneNote('');
-          }}
-        >
-          <input
-            aria-label={t('quests.detail.doneNote')}
-            placeholder={t('quests.detail.doneNote')}
-            value={doneNote}
-            onChange={(e) => setDoneNote(e.target.value)}
-            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-          />
-        </InlineConfirm>
-      )}
-
-      {asking === 'reopen' && reopenable && (
-        /* The person's reopen of a sealed submission (FABRIC-CLOSE1c3, D156): it asks once, naming the step it holds, and sends
-           the submission this page showed, which the door refuses once another is current. Open until the service answers, a
-           refusal said inside it (UXFIX2). */
-        <InlineConfirm
-          className="mb-4"
-          label={t('quests.detail.reopenTitle')}
-          says={t('quests.detail.reopenConfirm', { id: quest.id, step: reopen!.step })}
-          meanIt={t('quests.detail.reopenMeanIt')}
-          busy={busy}
-          onConfirm={(answered) => reopen!.onReopen(reopenNote.trim() || null, answered)}
-          onClose={() => {
-            setAsking((was) => (was === 'reopen' ? null : was));
-            setReopenNote('');
-          }}
-        >
-          <input
-            aria-label={t('quests.detail.reopenNote')}
-            placeholder={t('quests.detail.reopenNote')}
-            value={reopenNote}
-            onChange={(e) => setReopenNote(e.target.value)}
-            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-          />
-        </InlineConfirm>
-      )}
-
-      {declining && moving && (
-        /* Declining without a reason is refused by the service; the ask does not offer the mistake. It stays open until
-           the service answers, a refusal said inside it (UXFIX2b2b). */
-        <InlineConfirm
-          className="mb-4"
-          label={t('quests.detail.declineTitle')}
-          says={t('quests.detail.declineSays', { id: quest.id })}
-          meanIt={t('quests.detail.declineConfirm')}
-          busy={busy}
-          ready={reason.trim() !== ''}
-          onConfirm={(answered) => onRespond('decline', reason, answered)}
-          onClose={() => {
-            setAsking((was) => (was === 'decline' ? null : was));
-            setReason('');
-          }}
-        >
-          <input
-            aria-label={t('quests.detail.declinePlaceholder')}
-            placeholder={t('quests.detail.declinePlaceholder')}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-          />
-        </InlineConfirm>
-      )}
+      <QuestAsks asking={asking} work={work} pauseLines={pauseLines} target={target} t={t} waiting={waiting} setAsking={setAsking} listed={listed} setListed={setListed} history={history} clearTarget={clearTarget} deleting={deleting} deletable={deletable} busy={busy} onDelete={onDelete} moving={moving} requirements={requirements} lostHere={lostHere} quest={quest} onRespond={onRespond} doneNote={doneNote} setDoneNote={setDoneNote} reopenable={reopenable} reopen={reopen} reopenNote={reopenNote} setReopenNote={setReopenNote} declining={declining} reason={reason} setReason={setReason} />
 
       {/* What its head leaves out (UX7c, D152 §7): its id with *Copy*, whom it asks and who asked, its lanes, and the full
           times. Folded, since these are looked up rather than read. */}
-      <DetailsFold
-        className="mb-4"
-        summary={[
-          `#${quest.id}`,
-          t('quests.facts.filedAt', { at: stamp(quest.filed) }),
-          ...(quest.updated !== quest.filed ? [t('quests.facts.movedAt', { at: stamp(quest.updated) })] : []),
-        ].join(' · ')}
-        rows={[
-          { label: t('work.head.id'), value: `#${quest.id}`, mono: true, copy: quest.id },
-          { label: t('quests.detail.from'), value: quest.from },
-          { label: t('quests.detail.to'), value: quest.to },
-          // Each lane as the repository declares it, named where its registration says (D115 §2.2).
-          { label: t('quests.detail.lanes'), value: lanes || null },
-          { label: t('quests.detail.filed'), value: `${stamp(quest.filed)} · ${ago(quest.filed)}` },
-          { label: t('quests.detail.moved'), value: quest.updated !== quest.filed ? `${stamp(quest.updated)} · ${ago(quest.updated)}` : null },
-          // The short title its publisher gave (SESSUX1j), where the head says it and the whole title stands below.
-          { label: t('quests.field.short'), value: quest.short && quest.short !== quest.title ? quest.short : null },
-        ]}
-      />
-
-      <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-body empty:hidden">
-        {question && (
-          // What its taker asked and waits on (D79), opened in place: the answer is read there.
-          <Fact name={t(answered ? 'quests.detail.asked' : 'quests.detail.waitsOn')}>
-            <span className="inline-flex flex-wrap items-baseline gap-1.5">
-              {question.quest ? (
-                <button
-                  type="button"
-                  className="cursor-pointer border-0 bg-transparent p-0 text-left text-body text-accent underline-offset-2 hover:underline"
-                  onClick={() => onOpenQuest(question.id)}
-                >
-                  <span className="font-mono text-meta">#{question.id}</span> {question.quest.title}
-                </button>
-              ) : (
-                <span className="font-mono text-meta">#{question.id}</span>
-              )}
-              {question.quest && (
-                <>
-                  <span className="text-meta text-ink-faint">→ {question.quest.to}</span>
-                  <Pill tone={QUEST_TONE[question.quest.status]}>{t(`status.${question.quest.status}`)}</Pill>
-                </>
-              )}
-            </span>
-            <span className="mt-0.5 block text-small text-ink-soft">
-              {t(answered ? 'quests.detail.answered' : 'quests.detail.waitsWhy')}
-            </span>
-          </Fact>
-        )}
-        {(because || hold || pausedUnseen) && (
-          // Why this machine's driver is not starting it, in its own words (D46 §3) — the whole sentence here,
-          // where there is room. The trust hold stands on its own: it arrives in the same tick as the sentence,
-          // and the grant must not wait on a second list having arrived too.
-          <Fact name={t('quests.detail.sitting')}>
-            {/* A wait for an account (TOOL4g, D125 §4): not parked, so no Retry; it starts by itself at the reset. */}
-            {waitsForAccount(because) && (
-              <span className="mb-1 block"><Pill tone="neutral">{t('work.waitsForAccount')}</Pill></span>
-            )}
-            <Inline
-              text={because ? sittingSentence(because) : pausedUnseen ? t('quests.detail.pausedOwn') : t('work.attention.trustWhy')}
-            />
-            {/* A pause comes before every other reason (D132 §2.3): its own is resumed here, where Try again stands for a
-                stop; an ask's, or the quest's whose question this is, is resumed on that page, a door away. */}
-            {(ownPause || pausedUnseen) && work && (
-              <span className="mt-1.5 block">
-                <Button disabled={waiting} onClick={() => press('resume')}>{t('quests.detail.resume')}</Button>
-              </span>
-            )}
-            {pausedBy?.scope === 'ask' && onOpenAsk && (
-              <span className="mt-1.5 block">
-                <Button variant="ghost" onClick={() => onOpenAsk(pausedBy.id)}>{t('quests.detail.openAsk', { id: pausedBy.id })}</Button>
-              </span>
-            )}
-            {pausedBy?.scope === 'quest' && !ownPause && (
-              <span className="mt-1.5 block">
-                <Button variant="ghost" onClick={() => onOpenQuest(pausedBy.id)}>{t('quests.detail.openPausing', { id: pausedBy.id })}</Button>
-              </span>
-            )}
-            {/* The one hold only the person can lift, offered where it is read (D73). */}
-            {hold && onGrant && onTrusting && !trusting && (
-              <span className="mt-1.5 block"><Button onClick={() => press('trust')}>{t('trust.open')}</Button></span>
-            )}
-            {/* And the other two: a quest parked by its strikes, started again on the press (RETRY1), counted from
-                where it stands so the next failures park it again; and one the person's stop holds, released from that
-                stop (SESSUX1b, D126 §3.4). One act and one word, on this page and on the session that holds it. */}
-            {(because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry && (
-              <span className="mt-1.5 block">
-                <Button disabled={retrying} onClick={() => press('retry')}>{t('quests.detail.retry')}</Button>
-              </span>
-            )}
-          </Fact>
-        )}
-        {endedHere && (
-          /* QUESTCLOSE1: no verdict says why it sits, since nothing here carries a finished session's quest on, so the page
-             says it, with the person's done where it is read, as Try again stands under a stop's sentence. */
-          <Fact name={t('quests.detail.sitting')}>
-            <Inline text={t('quests.detail.endedTaken', { session: session!.id })} />
-            {asking !== 'done' && (
-              <span className="mt-1.5 block">
-                <Button disabled={waiting} onClick={() => press('done')}>{t(QUEST_ACT.done.label)}</Button>
-              </span>
-            )}
-          </Fact>
-        )}
-        {reads === 'Submitted' && quest.submission && (
-          /* When its agent made it ready (FABRIC-CLOSE1d), and the person's reopen of it where a step stands on it (CLOSE1c3). */
-          <Fact name={t('quests.detail.submitted')}>
-            {stamp(quest.submission.at)} · {ago(quest.submission.at)}
-            {quest.submission.session && <> · {t('quests.detail.submittedBy', { session: quest.submission.session })}</>}
-            {reopenable && asking !== 'reopen' && (
-              <span className="mt-1.5 block">
-                <Button disabled={waiting} onClick={() => press('reopen')}>{t(QUEST_ACT.reopen.label)}</Button>
-              </span>
-            )}
-          </Fact>
-        )}
-        {quest.status === 'Taken' && !quest.submission && quest.reopened && (
-          /* A source the person reopened (FABRIC-CLOSE1d3, after CLOSE1c4 and CLOSE1c8): taken with no submission, which would
-             otherwise read as one whose taker has not said ready yet; when, their words as they wrote them, and the session told. */
-          <Fact name={t('quests.detail.reopened')}>
-            {stamp(quest.reopened.at)} · {ago(quest.reopened.at)}
-            <span className="mt-1 block">{t('quests.detail.reopenedWaits')}</span>
-            <div className="mt-1.5">
-              {quest.reopened.note ? <Quoted words={quest.reopened.note} /> : t('quests.detail.reopenedNoWords')}
-            </div>
-            {quest.reopened.session && (
-              <span className="mt-1.5 block">{t('quests.detail.reopenedTold', { session: quest.reopened.session })}</span>
-            )}
-          </Fact>
-        )}
-        {ends.length > 0 && (
-          /* Its closure graph's end (FABRIC-CLOSE1j2): no milestone carries a quest's unit, so its page says what the work's foot says
-             of one, in the same words; a stop offered wears the danger ink, and its press is What needs you's (CLOSE1j's choice 5). */
-          <Fact name={t('work.milestone.closed.label')}>
-            {ends.flatMap((end, index) => endSentences(t, end).map((said, part) => (
-              <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'block text-ink-danger' : 'block'}>{said}</span>
-            )))}
-          </Fact>
-        )}
-        {abandoned && (
-          /* When its work was abandoned on this machine (§4.2); the reason is the decline's note, on the record below. */
-          <Fact name={t('quests.detail.abandonedAt')}>{stamp(abandoned.at)} · {ago(abandoned.at)}</Fact>
-        )}
-      </dl>
+      <QuestFacts quest={quest} t={t} lanes={lanes} question={question} answered={answered} onOpenQuest={onOpenQuest} because={because} hold={hold} pausedUnseen={pausedUnseen} ownPause={ownPause} work={work} waiting={waiting} press={press} pausedBy={pausedBy} onOpenAsk={onOpenAsk} onGrant={onGrant} onTrusting={onTrusting} trusting={trusting} onRetry={onRetry} retrying={retrying} endedHere={endedHere} session={session} asking={asking} reads={reads} reopenable={reopenable} ends={ends} abandoned={abandoned} />
 
       {abandoned && (
         <div className="mb-4">
@@ -877,164 +553,10 @@ export function QuestPage({
       {/* The ask itself, as the asker wrote it: content, wrapping at the column's edge with the title above it (D141: a
           65ch body beside a title that ran the pane left 750 px empty on the install). Its first line is left out where
           the head already said it (UX7c). */}
-      {body && (
-        <p
-          ref={request}
-          id="quest-request"
-          tabIndex={-1}
-          className="m-0 whitespace-pre-wrap text-body leading-relaxed outline-none"
-        >
-          {body}
-        </p>
-      )}
-
-      {!held && requirements.length > 0 && (
-        /* What the person required (DRIFT1c, D133 §3), in their words: the measure, where the body above is the intake's
-           reading of the ask. Then how its done answered each, and when a departure was accepted. */
-        <QuestRequirements
-          className="mt-4"
-          id={quest.id}
-          requirements={requirements}
-          answers={quest.answers}
-          status={quest.status}
-          accepted={quest.accepted}
-        />
-      )}
-
-      {(quest.links?.length ?? 0) > 0 && (
-        /* The asker's addresses, as links — the service accepted only http and https, so each is an address
-           and nothing that would run. They open where the person chose, their browser or Daoris's (BRW7). */
-        <div className="mt-4">
-          <PageSection title={t('quests.detail.links')}>
-            <ul className="m-0 grid list-none gap-1 p-0">
-              {quest.links!.map((link) => (
-                <li key={link} className="min-w-0">
-                  <ExternalLink
-                    href={link}
-                    className="inline-flex max-w-full items-center gap-1.5 text-body text-accent underline-offset-2 hover:underline"
-                  >
-                    <Icon name="link" size={12} />
-                    <span className="truncate">{link}</span>
-                  </ExternalLink>
-                </li>
-              ))}
-            </ul>
-          </PageSection>
-        </div>
-      )}
-
-      {(quest.attachments?.length ?? 0) > 0 && (
-        /* The files, by name (D65 §2). One this machine keeps opens through the host's own route — never by its
-           path, which a page does not show — and a picture is shown as one. One named on the record and kept
-           elsewhere says so, rather than looking like a broken link. Kept here is a path pulled or `kept` pushed (PUSH1d3). */
-        <div className="mt-4">
-          <PageSection title={t('quests.detail.files')}>
-            <ul className="m-0 grid list-none gap-2 p-0">
-              {quest.attachments!.map((file) => (
-                <li key={file.sha256} className="min-w-0 text-body">
-                  {fileKept(file) ? (
-                    <ExternalLink href={api.attachmentUrl(quest.id, file.sha256)} className="group inline-grid max-w-full gap-1.5 text-accent">
-                      <span className="inline-flex min-w-0 items-center gap-1.5">
-                        <Icon name="attach" size={12} />
-                        <span className="truncate underline-offset-2 group-hover:underline">{file.name}</span>
-                        <span className="shrink-0 font-mono text-meta text-ink-faint">{size(file.bytes)}</span>
-                      </span>
-                      {isImage(file.name) && (
-                        <img
-                          src={api.attachmentUrl(quest.id, file.sha256)} alt={file.name}
-                          className="max-h-60 max-w-full rounded-control border border-line object-contain"
-                        />
-                      )}
-                    </ExternalLink>
-                  ) : (
-                    <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-ink-soft">
-                      <Icon name="attach" size={12} />
-                      <span className="truncate">{file.name}</span>
-                      <span className="font-mono text-meta text-ink-faint">{size(file.bytes)} · {t('quests.detail.fileElsewhere')}</span>
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </PageSection>
-        </div>
-      )}
-
-      {/* How its conflicts ended (SYNCMERGE1c2, D178 point 7): history, so below what it carries, with nothing to press. */}
+      <QuestContent body={body} request={request} held={held} requirements={requirements} quest={quest} t={t} />
       <SettledConflicts quest={quest} />
 
-      {chain.length > 1 && (
-        /* The chain this quest belongs to (MAP1): the ask, the steps before and after it, what its close will
-           still publish (D65 §4, `{parent}` as the asker wrote it), and on what each step ran. */
-        <div className="mt-4">
-          <ChainStrip
-            chain={chain}
-            onQuest={(other) => onOpenQuest(other.id)}
-            onSession={onAttend ? (ran) => onAttend(ran.id) : undefined}
-            nameOf={nameOf}
-          />
-        </div>
-      )}
-
-      {/* Its statuses drawn as a flowchart (FLOWCHART1a1, D186): after the chain, folded until it is opened, and the way it went
-          once its moves are read (FLOWCHART1a2). */}
-      <QuestFlow quest={quest} moves={moves} className="mt-4" />
-
-      {quest.note && (quest.noteParts?.length
-        // Daoris's lines in the reader's language, the person's words as theirs; a note without parts as kept (QUESTCLOSE1b2).
-        ? <Note note={quest.note} parts={quest.noteParts} className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic" />
-        : <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>)}
-
-      {session && (
-        /* The driven session's RECORD (D46 §4) — read-only here: a quest is decided on its page, and its sessions
-           are managed on theirs (D126 §3.6), so the stop is the session's page header's, behind the door below. Its
-           note's Daoris lines are worded in the reader's language and the agent's words shown as written (LANG1b);
-           the evidence is the driver's observation and renders verbatim. */
-        <section className="mt-5" aria-label={t('quests.session.title')}>
-          <SectionTitle>{t('quests.session.title')}</SectionTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <Pill tone={SESSION_TONE[shown ?? session.state]}>{t(shownKey(shown ?? session.state))}</Pill>
-            <span className="font-mono text-meta text-ink-faint">
-              {session.id} · {sessionTool(session, false, nameOf)}
-              {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
-            </span>
-          </div>
-          {/* What it waits on, in the row's own words (D126 §2.4): its last end reads as finished beside a quest that is not. */}
-          {waitsOn && <p className="m-0 mt-2 text-body text-ink-soft">{t(waitsOn.line, waitsOn.values)}</p>}
-          {/* Its limit's wait, the head's own sentence (LIMITRESUME1d2): when it goes on by itself, and how. */}
-          {limitWait && limitWait.length > 0 && <p className="m-0 mt-2 text-body text-ink-soft">{joinLines(t, limitWait)}</p>}
-          {/* A working session's past ending is left out of the reading, never of the record (WAITSHOWN1, D137 §2.3). */}
-          <Note
-            note={session.state === 'working' ? (session.noteParts?.length ? undefined : session.note) : session.note}
-            parts={session.state === 'working' ? liveParts(session.noteParts) : session.noteParts}
-            className="mt-2 text-body text-ink-soft"
-          />
-          {session.evidence && (
-            <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line-strong bg-raised px-3 py-2.5 font-mono text-small">
-              {session.evidence}
-            </pre>
-          )}
-          {/* One home for the stream (design §3, D55): a session's console is the frame's panel. This keeps the
-              record summary and becomes a DOOR — which is only offered where Sessions exists at all. */}
-          {onAttend && <Button className="mt-2.5" onClick={() => press('session')}>{t('work.open')}</Button>}
-          <p className="mt-2 mb-0 text-small text-ink-faint">{t('quests.session.hint')}</p>
-        </section>
-      )}
-
-      {trace && (
-        /* How it came to be (TRACE1b): folded, so nothing is read until the person opens it. Its sessions open in
-           Sessions, its other quests here and its ask on its page, each where this page already has the door. */
-        <HowItCameToBe
-          className="mt-5"
-          kind="quest"
-          id={quest.id}
-          {...trace}
-          onSession={onAttend}
-          onQuest={onOpenQuest}
-          onAsk={onOpenAsk}
-          nameOf={nameOf}
-        />
-      )}
+      <QuestRecord chain={chain} onOpenQuest={onOpenQuest} onAttend={onAttend} nameOf={nameOf} quest={quest} moves={moves} session={session} t={t} shown={shown} waitsOn={waitsOn} limitWait={limitWait} press={press} trace={trace} onOpenAsk={onOpenAsk} />
     </ViewMain>
   );
 }
