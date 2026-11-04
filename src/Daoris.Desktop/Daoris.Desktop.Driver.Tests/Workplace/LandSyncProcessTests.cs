@@ -38,7 +38,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         await CommitAsync(root, "picked.txt", "picked\nand the line's own\n", "the line goes on with it");
         var line = await HeadAsync(root);
 
-        var plan = await trees.PlanAsync(tree.Path, Subject);
+        var plan = await trees.PlanAsync(tree.Path, Subject, process: Lands.Process);
 
         var left = Assert.Single(plan.LeftOut!);
         Assert.Equal((picked, LeftOutWhy.Patch, onLine), (left.Sha, left.Why, left.On));
@@ -81,7 +81,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         await GitAsync(root, "push", "--quiet", "origin", "main");
         var before = await StateAsync(root, tree);
 
-        var plan = await trees.PlanAsync(tree.Path, Subject);
+        var plan = await trees.PlanAsync(tree.Path, Subject, process: Lands.Process);
         var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.Equal(picked, Assert.Single(plan.LeftOut!).Sha);

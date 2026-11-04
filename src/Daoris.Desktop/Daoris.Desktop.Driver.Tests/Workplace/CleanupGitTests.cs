@@ -668,9 +668,9 @@ public sealed class CleanupGitTests : LandedFixture
         InventoryEntry WaitOf(string session) => Assert.Single(units.Single(unit => unit.Session == session).Cleanup.Waits);
         var kept = WaitOf("c0ffee01");
         Assert.Contains("session.db", kept.Facts!["keeps"]);
-        Assert.Contains($"trees remove {own} --force", kept.Detail);
+        Assert.Contains($"tree remove {own} --force", kept.Detail);
         var taken = WaitOf("c0ffee02");
         Assert.False(taken.Facts!.ContainsKey("keeps"));
-        Assert.DoesNotContain("trees remove", taken.Detail);
+        Assert.DoesNotContain("tree remove", taken.Detail);
     }
 }
