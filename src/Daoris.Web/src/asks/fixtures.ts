@@ -1,11 +1,12 @@
 import type { Ask, Session } from '../data/api';
+import { anAsk } from './anAsk';
 
 // Asks in each state a real machine reaches, for the stories and the molecule tests alike — one set, so
 // what a reviewer designs against is what the tests assert against.
 
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
 
-export const PROPOSED: Ask = {
+export const PROPOSED: Ask = anAsk({
   id: '7c1e9a04b2d5', workspace: 'aurora', state: 'Proposed', tier: 'declarations',
   sentence: 'The chunk streamer stalls on a cold cache — cap its hydration per frame.\n\n'
     + 'Seen on the test rig after a fresh install; the trace is attached.',
@@ -16,8 +17,7 @@ export const PROPOSED: Ask = {
     { repository: 'engine', score: 5, matched: ['chunk', 'stream', 'frame'] },
     { repository: 'game', score: 2, matched: ['cache'] },
   ],
-  quests: [],
-};
+});
 
 /**
  * Its sentence names a repository (ASKNAME1), proposed first with that name alone as the evidence, here in another case

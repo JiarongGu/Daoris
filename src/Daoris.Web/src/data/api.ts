@@ -7,7 +7,8 @@
 // The knowledge reads' shapes are the service's declarations (`generated/service.ts`, written from src/Daoris.Contracts),
 // under the names the page reads them by.
 import type {
-  HitResponse, ProvenanceResponse, QuestAnswerResponse, QuestAttachmentResponse, QuestConflictResponse, QuestRequirementResponse,
+  AskActionResponse, AskResponse, DeclarationMatchResponse, GoAheadRequestResponse, GoAheadResponse, HitResponse, ProvenanceResponse,
+  QuestAnswerResponse, QuestAttachmentResponse, QuestConflictResponse, QuestRequirementResponse,
   QuestResponse, QuestSetUpWire,
 } from './generated/service';
 export type {
@@ -152,86 +153,28 @@ export type QuestAction = { quest: Quest; message: string };
  */
 export type MachineRetired = { workspace: string; machine: string; retired: boolean; undeclared: string[]; message: string };
 /**
- * An ask (D65 §1a): a sentence entered at a WORKSPACE rather than at a repository, held as a record of
- * what became of it. `tier` names what answered it, on every record (`model-decoupling`); a tier this
- * page has no word for is shown as the service wrote it. Optional fields are absent rather than null
- * on the wire — the host leaves nulls out.
+ * An ask: a sentence entered at a WORKSPACE rather than at a repository, held as a record of what became of it, as the service
+ * declares it (`generated/service.ts`). `tier` names what answered it, on every record; a tier this page has no word for is shown
+ * as the service wrote it. A part a host older than its field leaves out reads as none. Its files' `kept` is what the shell pushes in
+ * place of a path (PUSH1d3).
  */
+export type Ask = Omit<AskResponse, 'attachments'> & { attachments: QuestAttachment[] };
 /**
- * `Done` is derived by the service (USE1c): the ask became quests and every one of them has closed.
- * The default list leaves it out, as it leaves out a closed one.
+ * `Done` is derived by the service: the ask became quests and every one of them has closed. The default list leaves it out, as it
+ * leaves out a closed one.
  */
-export type AskState = 'Open' | 'Proposed' | 'Published' | 'Done' | 'Closed';
+export type AskState = Ask['state'];
 /** A repository the declarations tier proposed, with the words its declarations share with the ask. */
-export type DeclarationMatch = { repository: string; score: number; matched: string[] };
-export type Ask = {
-  id: string; workspace: string; sentence: string; state: AskState; tier: string;
-  asked: string; updated: string;
-  /** Who asked, when the door knows; absent is this machine's person. */
-  asker?: string | null;
-  /** Why it was closed, or the service's sentence about the receiver it named — verbatim. */
-  note?: string | null;
-  links: string[];
-  /** Its files, by name — kept on this machine until the ask becomes quests. `path` is never shown. */
-  attachments: QuestAttachment[];
-  proposal: DeclarationMatch[];
-  /** The quests it became, in the order they were published. */
-  quests: string[];
-  /** The intake session that served it (D65 §1b), once one opened — absent for every other ask. */
-  intake?: string | null;
-  /**
-   * The short title its asker gave (HEAD2e, D162 point 4), as a quest's (SESSUX1j): at most 40 characters, as written. Absent
-   * for an ask with none, every ask from before it, and a host older than the field.
-   */
-  short?: string | null;
-  /**
-   * Whether the host would delete it, with every quest asked by it (D95): nothing stands on any of
-   * them. The service's judgement, like a quest's; absent from a host older than the field.
-   */
-  deletable?: boolean;
-  /**
-   * The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, one per act; absent from a host
-   * older than them.
-   */
-  goAheads?: GoAhead[];
-  /**
-   * The person's review choices on it (REVIEWENV1b, design §1.5), oldest first, the latest standing: `off`, `on` or an
-   * environment's name, with their words. Absent where they made none, and from a host older than the field.
-   */
-  reviewChoices?: { choice: string; at: string; words?: string | null }[];
-  /**
-   * Its intake's review proposals (REVIEWENV1b, design §1.5–§1.6), each with its reason and the quest it came with: only the
-   * person's press applies one. Absent where there is none.
-   */
-  reviewProposals?: { choice: string; reason: string; at: string; session?: string | null; quest?: string | null }[];
-  /**
-   * The person's kind choices on it (WORKFLOW1i-c, workflow design §4.3), oldest first, the latest standing: a kind, a workflow,
-   * or both. Absent where they made none.
-   */
-  workflowChoices?: { kind?: string | null; workflow?: string | null; at: string; words?: string | null }[];
-  /**
-   * Its intake's kind proposals (WORKFLOW1i-c), each with its reason, the person's words as quoted: only the person's press
-   * applies one. Absent where there is none.
-   */
-  workflowProposals?: { kind: string; reason: string; at: string; session?: string | null; quest?: string | null }[];
-};
+export type DeclarationMatch = DeclarationMatchResponse;
 /** One session's request for a go-ahead: who asked, on which quest, when, and why, in its words. */
-export type GoAheadRequest = { session: string; quest?: string | null; at: string; why: string };
+export type GoAheadRequest = GoAheadRequestResponse;
 /**
- * A go-ahead (KNOWUSE1a): the person's yes for one act outside a repository, asked once on the ask. `kind` is the
- * service's word (write, release, push, sign-in, run); `on` and `act` are the session's words for where it lands and
- * what it touches, shown as written. `answer` is absent while it waits on the person.
+ * A go-ahead: the person's yes for one act outside a repository, asked once on the ask. `kind` is the service's word (write,
+ * release, push, sign-in, run); `on` and `act` are the session's words for where it lands and what it touches, shown as written.
+ * `answer` is absent while it waits on the person.
  */
-export type GoAhead = {
-  number: number; kind: string; on: string; act: string; state: 'asked' | 'approved' | 'refused';
-  asked: GoAheadRequest[];
-  answer?: { approved: boolean; words?: string | null; at: string } | null;
-  /** The go-ahead whose words it shared where they could not tell, when that is why it was asked again. */
-  near?: number | null;
-};
-export type AskAction = { ask: Ask; message: string; quest?: Quest | null };
-/** What a delete did (D95): the record it removed, and the service's sentence, shown as said. */
-export type Deleted = { id: string; message: string };
+export type GoAhead = GoAheadResponse;
+export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; quest?: Quest | null };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
   owns: string[]; accepts: string[]; packs: string[]; entries: number; workspace?: string;
@@ -679,8 +622,8 @@ export const api = {
   },
   // Asks (D65 §1a), a local host's doors: the screen twin of `daoris ask` (INT4c, D50). Files
   // travel whole, as a quest's do, because the host keeps them until the ask becomes quests.
-  asks: (includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
-    get<Ask[]>(`/api/asks${qs({ includeClosed, workspace })}`, signal),
+  asks: async (includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    (await send('ListAsks', { includeClosed, workspace }, signal)).answer,
   ask: (body: {
     workspace: string; sentence: string; links?: string[]; attachments?: { name: string; content: string }[];
     to?: string;
@@ -688,28 +631,26 @@ export const api = {
     review?: string; reviewWords?: string;
     /** The person's short title for it (HEAD2e), at most 40 characters; the service refuses a longer one in its words. */
     short?: string;
-  }) => asThePerson<AskAction>('/api/asks', body),
+  }) => send('PostAsk', body).then(({ answer }) => answer),
   // The person's review choice on an ask's page, or its intake's proposal applied (REVIEWENV1b, design §1.5): the latest stands.
   chooseAskReview: (id: string, choice: string, words?: string) =>
-    asThePerson<AskAction>(`/api/asks/${encodeURIComponent(id)}/review`, { choice, ...(words ? { words } : {}) }),
+    send('ChooseAskReview', { id, choice, ...(words ? { words } : {}) }).then(({ answer }) => answer),
   // An intake's kind proposal applied (WORKFLOW1i-c, design §4.3): a post replaces the latest choice whole, so the workflow it
   // has is sent again. No words: the reason is the agent's quoting, not the person's act.
   chooseAskWorkflow: (id: string, kind: string, workflow?: string | null) =>
-    asThePerson<AskAction>(`/api/asks/${encodeURIComponent(id)}/workflow`, { kind, ...(workflow ? { workflow } : {}) }),
-  publishAsk: (id: string, to: string) =>
-    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/publish`, { to }),
-  closeAsk: (id: string, reason: string) =>
-    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/close`, { reason }),
+    send('ChooseAskWorkflow', { id, kind, ...(workflow ? { workflow } : {}) }).then(({ answer }) => answer),
+  publishAsk: (id: string, to: string) => send('PublishAsk', { id, to }).then(({ answer }) => answer),
+  closeAsk: (id: string, reason: string) => send('CloseAsk', { id, reason }).then(({ answer }) => answer),
   // The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a), with their words where they give any;
   // `daoris ask go-ahead` is the terminal's twin. `goesOn` false says no park goes on with the answer (GOAHEAD2's door):
   // a stale go-ahead's refusal runs nothing (GOAHEADSTALE1). Absent, the host reads it as true, as it always has.
   answerGoAhead: (id: string, number: number, approved: boolean, words?: string, goesOn = true) =>
-    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/go-aheads/${number}`, {
-      answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}), ...(goesOn ? {} : { goesOn: false }),
-    }),
+    send('AnswerGoAhead', {
+      id, number: String(number), answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}), ...(goesOn ? {} : { goesOn: false }),
+    }).then(({ answer }) => answer),
   // Deleting a record made by mistake (D95) — `daoris ask delete` and `quest delete` are the
   // terminal's twins. A refusal is the service's sentence, verbatim, like every other write's.
-  deleteAsk: (id: string) => post<Deleted>(`/api/asks/${encodeURIComponent(id)}`, undefined, 'DELETE'),
+  deleteAsk: (id: string) => send('DeleteAsk', { id }).then(({ answer }) => answer),
   deleteQuest: (id: string) => send('DeleteQuest', { id }).then(({ answer }) => answer),
   registry: (workspace: string | null, signal?: AbortSignal) =>
     get<Registration[]>(`/api/registry${qs({ workspace })}`, signal),
