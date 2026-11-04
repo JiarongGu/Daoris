@@ -26,13 +26,12 @@ public sealed record StandingBranch(string Repository, string Branch);
 /// <param name="Branches">Every session branch entry, standing and traces.</param>
 /// <param name="Landings">Every landing entry, standing and traces.</param>
 /// <param name="Trees">The trees under the home's trees folder, and the folders moved aside.</param>
-/// <param name="AutoLandings">The auto-landing entries.</param>
 /// <param name="Refs">The recovery refs found in each repository read.</param>
 /// <param name="InUse">The trees a session still running or waiting holds.</param>
 /// <param name="HasHistory">Whether a session's record folder is on this machine.</param>
 public sealed record InventoryFacts(
     IReadOnlyList<GrownBranch> Branches, IReadOnlyList<LandedBranch> Landings, IReadOnlyList<SessionTree> Trees,
-    IReadOnlyList<AutoLanding> AutoLandings, IReadOnlyList<RecoveryRef> Refs, IReadOnlySet<string> InUse,
+    IReadOnlyList<RecoveryRef> Refs, IReadOnlySet<string> InUse,
     Func<string, bool> HasHistory, DateTimeOffset Now)
 {
     /// <summary>

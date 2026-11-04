@@ -385,7 +385,7 @@ internal static class TreesConsole
                 {
                     if (args.Contains("--plan"))
                     {
-                        var landedPlan = TreesPlanWords.LandedPlan(session, before, new AutoLandings(home).Of(session));
+                        var landedPlan = TreesPlanWords.LandedPlan(session, before);
                         landedPlan.Print(Console.Out, Console.Error);
                         return landedPlan.Code;
                     }

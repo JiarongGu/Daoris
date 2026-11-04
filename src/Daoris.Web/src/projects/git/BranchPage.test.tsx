@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { BranchPage, type BranchRead } from './BranchPage';
 import type { LandingDoor } from './LandingFlow';
-import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS } from './landingFixtures';
+import { SHARED_BRANCH, SHARED_UNITS } from './landingFixtures';
 import { GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE } from '../fixtures';
 
 // A branch's page (UX6h3b, the built-in Git design §2.3): its header names it and its kind, says in one line where it stands
@@ -168,15 +168,14 @@ describe("a landed branch's page: how it landed (FLOWCHART1c; the flowchart desi
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('draws it once read: the tries stacked, the landing and its advances, the push, the pull request, the end, the clean-up', () => {
-    shown({ open: true, onToggle: () => {}, landing: { name: LANDED, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS } });
+  it('draws it once read: the landing and its advances, the push, the pull request, the end, the clean-up', () => {
+    shown({ open: true, onToggle: () => {}, landing: { name: LANDED, branch: SHARED_BRANCH, units: SHARED_UNITS } });
     const flow = screen.getByRole('list', { name: `How ${LANDED} landed` });
     const names = within(flow).getAllByRole('listitem').map((item) => item.getAttribute('data-flow-node'));
     // In reading order, rank by rank: the push, the pull request and the first advance each hang from the landing, beside each other.
     expect(names).toEqual([
-      'due', 'try:0', 'stack:try:1', 'try:4', 'landed', 'advance:0', 'pushed', 'pull-request', 'stack:advance:1', 'end', 'cleanup', 'recovery',
+      'landed', 'advance:0', 'pushed', 'pull-request', 'stack:advance:1', 'end', 'cleanup', 'recovery',
     ]);
-    expect(within(flow).getByRole('listitem', { name: /^its quest is held for your yes ×3/ })).toBeInTheDocument();
     expect(within(flow).getByRole('listitem', { name: /^Moved on by session s4 ×3/ })).toBeInTheDocument();
     const pull = within(flow).getByRole('listitem', { name: /^Its pull request/ });
     expect(within(pull).getByRole('link', { name: 'Open the pull request' })).toHaveAttribute('href', 'https://example.test/pull/42');
@@ -197,7 +196,7 @@ describe("a landed branch's page: how it landed (FLOWCHART1c; the flowchart desi
 
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
-    shown({ open: true, onToggle: () => {}, landing: { name: LANDED, branch: SHARED_BRANCH, due: SHARED_DUE, units: SHARED_UNITS } });
+    shown({ open: true, onToggle: () => {}, landing: { name: LANDED, branch: SHARED_BRANCH, units: SHARED_UNITS } });
     expect(screen.getByRole('region', { name: '它是如何落地的' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: `${LANDED} 是如何落地的` })).toBeInTheDocument();
   });

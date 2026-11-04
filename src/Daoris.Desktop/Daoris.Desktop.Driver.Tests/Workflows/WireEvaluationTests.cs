@@ -628,7 +628,7 @@ public sealed class WireEvaluationTests
             Units = [Unit], Pushed = true, PushedTip = "t1", Plugin = "acme-pr",
         };
         var grown = new GrownBranch("engine", "default", "daoris/s1", "main", "f0", null, Then) { Unit = Unit };
-        var unit = Assert.Single(WorkInventory.Units(new InventoryFacts([grown], [landing], [], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
+        var unit = Assert.Single(WorkInventory.Units(new InventoryFacts([grown], [landing], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
         Assert.Equal((Unit, WorkUnitKind.Branch), (unit.Id, unit.Kind));
         return unit;
     }

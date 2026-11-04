@@ -462,7 +462,7 @@ function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
 
 /**
  * How a landed branch landed, read once its section opens (FLOWCHART1c; the flowchart design §2.7): the trace of the session its
- * landing record names (`TRACE`), which carries the landing with its advances and units and that session's due entry, and the units
+ * landing record names (`TRACE`), which carries the landing with its advances and units, and the units
  * of work the branch carries (`WORK_STATE` by the branch, in this repository), which carry the end, the clean-up and the recovery.
  * Never by a unit's executor, which is any of its sessions: the record names the one it was made for. Absent where the branch is no
  * landing's, and where nothing reads the trace (a browser, D47 §4).

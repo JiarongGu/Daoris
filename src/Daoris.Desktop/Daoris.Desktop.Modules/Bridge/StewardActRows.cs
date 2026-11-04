@@ -176,19 +176,6 @@ public static class StewardActRows
         LandingRules.Line(config, repository, await world.WorkspaceOfAsync(repository, ct).ConfigureAwait(false)).Rule
             is { Form: LandingForm.Branch, Plugin: not null };
 
-    /// <summary>
-    /// Whether moving <paramref name="record"/> to <paramref name="state"/> would make a pushed landing due (§3.1 rows 6 and 7): its quest
-    /// <c>Done</c>, the effective rule accepting by itself through a plugin that pushes, and the record in a tree this home opened.
-    /// </summary>
-    internal static async Task<bool> ReleasesPushAsync(IStewardWorld world, PriorSession record, string state, CancellationToken ct)
-    {
-        if (record.Quest is not { } quest || record.Repository is not { } repository) return false;
-        var status = await world.QuestStatusAsync(quest, ct).ConfigureAwait(false);
-        if (status != "Done") return false;
-        var landing = LandingRules.Line(world.Config(), repository, await world.WorkspaceOfAsync(repository, ct).ConfigureAwait(false));
-        return landing.Rule.Plugin is not null && AutoLandingRules.Concluded(landing, status, world.OwnTree(record.Tree), state) == AutoConcluded.Due;
-    }
-
     /// <summary>A quest's own session (§3.1): driven, with a quest, never a conversation's, an intake's, a teammate's, a helper's or a partner's.</summary>
     internal static bool QuestSession(PriorSession record) =>
         record is { Kind: not "chat", Quest: not null, Ask: null, Teammate: false, Serves: null, Piece: null };
@@ -260,7 +247,6 @@ public static class StewardActRows
             if (!record.Parked && !record.Running) return StewardWhy.Ended;
             // The driver's own stop reaches only this instance's processes; one another Daoris process runs is refused with nothing written.
             if (!record.Parked && !world.RunsHere(id)) return StewardWhy.RunningElsewhere;
-            if (await ReleasesPushAsync(world, record, "stopped", ct).ConfigureAwait(false)) return StewardWhy.LandingPushes;
             return null;
         }
 
@@ -304,7 +290,6 @@ public static class StewardActRows
             if (world.RunsHere(id) || world.AliveOnThisMachine(id)) return StewardWhy.RunningHere;
             if (!record.Parked) return StewardWhy.NotParked;
             if (record.Waiting.Count > 0) return StewardWhy.WordsWaiting;
-            if (await ReleasesPushAsync(world, record, "completed", ct).ConfigureAwait(false)) return StewardWhy.LandingPushes;
             return null;
         }
 

@@ -280,7 +280,6 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         if (sessions.Count > 0)
         {
             Each(HeldWordsFile.PathOf(home), sessions, () => HeldWordsFile.Forget(home, sessions), Held);
-            Each(new AutoLandings(home).FilePath, sessions, () => new AutoLandings(home).Forget(sessions), Landing);
             // LANDBACK1 part 1: the person's Accept kept on a session goes with its record: a deleted session's tree is never landed.
             Each(new CarriedAccepts(home).FilePath, sessions, () => new CarriedAccepts(home).Forget(sessions), Landing);
 

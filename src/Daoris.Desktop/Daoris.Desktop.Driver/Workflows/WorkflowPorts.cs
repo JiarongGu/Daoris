@@ -61,9 +61,6 @@ public interface IWorkflowRunRecords
     /// <summary>The landing record's entries (<see cref="LandedBranch"/>), read once per read of several runs.</summary>
     IReadOnlyList<LandedBranch> Landings();
 
-    /// <summary>The automatic landings due and closed (<see cref="AutoLanding"/>), read once per read of several runs.</summary>
-    IReadOnlyList<AutoLanding> AutoLandings();
-
     /// <summary>
     /// When each session's work was accepted into its line (D100): the newest acceptance its conversation's record keeps, by its id.
     /// A teammate's record is on its machine, and a record that does not read keeps none.
