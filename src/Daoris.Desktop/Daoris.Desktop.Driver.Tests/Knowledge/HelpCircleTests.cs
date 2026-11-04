@@ -30,13 +30,13 @@ public sealed class HelpCircleTests : IDisposable
     [Fact]
     public void A_conversation_is_bound_to_its_room_s_workspace_and_default_s_to_none()
     {
-        var alpha = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home, "alpha"), [], "alpha");
+        var alpha = HelpPlacement.In(_home, HelpRoom.PathOf(_home, "alpha"), [], "alpha");
 
         Assert.Equal("alpha", alpha.Circle);
-        Assert.Equal("alpha", ChatRunner.HelpUnder(alpha, HelpAccess.For(HelpModes.Full, Adapter("claude-code-acp"))).Circle);
-        Assert.Null(ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), [], "alpha").Circle);
-        Assert.Null(ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []).Circle);
-        Assert.Null(ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home, "default"), [], "Default").Circle);
+        Assert.Equal("alpha", HelpPlacement.Under(alpha, HelpAccess.For(HelpModes.Full, Adapter("claude-code-acp"))).Circle);
+        Assert.Null(HelpPlacement.In(_home, HelpRoom.PathOf(_home), [], "alpha").Circle);
+        Assert.Null(HelpPlacement.In(_home, HelpRoom.PathOf(_home), []).Circle);
+        Assert.Null(HelpPlacement.In(_home, HelpRoom.PathOf(_home, "default"), [], "Default").Circle);
     }
 
     /// <summary>
@@ -98,7 +98,7 @@ public sealed class HelpCircleTests : IDisposable
                 ["default"] = new([], [], ["Read(//default/secret/**)"]),
             },
         };
-        var alpha = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home, "alpha"), [new("engine", "alpha", "/alpha/engine")], "alpha");
+        var alpha = HelpPlacement.In(_home, HelpRoom.PathOf(_home, "alpha"), [new("engine", "alpha", "/alpha/engine")], "alpha");
 
         var rules = alpha.Rules(file, "s1");
         // HELPMODE1c4: its checkouts are read through the judged tool, not a rule on the checkout.
@@ -108,11 +108,11 @@ public sealed class HelpCircleTests : IDisposable
         Assert.DoesNotContain("Read(//beta/secret/**)", rules.Deny);
         Assert.DoesNotContain("Read(//default/secret/**)", rules.Deny);
 
-        var full = ChatRunner.HelpUnder(alpha, HelpAccess.For(HelpModes.Full, Adapter("claude-code-acp"))).Rules(file, "s1");
+        var full = HelpPlacement.Under(alpha, HelpAccess.For(HelpModes.Full, Adapter("claude-code-acp"))).Rules(file, "s1");
         Assert.Contains("Read(//alpha/secret/**)", full.Deny);
         Assert.DoesNotContain("Read(//beta/secret/**)", full.Deny);
 
-        var machine = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []).Rules(file, "s1");
+        var machine = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []).Rules(file, "s1");
         Assert.Contains("Read(//default/secret/**)", machine.Deny);
         Assert.DoesNotContain("Read(//alpha/secret/**)", machine.Deny);
     }

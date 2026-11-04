@@ -94,7 +94,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Domain/Trace.Words.cs": 41260,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/HelpFacts.cs": 56590,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/HelpRoomDoors.cs": 46180,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs": 207044,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs": 195654,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatTurns.cs": 71800,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs": 318014,
   "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs": 55612,

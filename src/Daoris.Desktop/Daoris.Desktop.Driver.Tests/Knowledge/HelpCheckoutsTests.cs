@@ -145,7 +145,7 @@ public sealed class HelpCheckoutsTests : IDisposable
         HelpRead[] reads = [new("engine", "aurora", Root("engine")), new("game", "aurora", Root("game"))];
         Choose("""{ "checkouts-off": ["engine"] }""");
 
-        var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home, "aurora"), reads, "aurora");
+        var place = HelpPlacement.In(_home, HelpRoom.PathOf(_home, "aurora"), reads, "aurora");
         var allow = place.Rules(file, "h1").Allow;
 
         Assert.Equal(["game"], place.Reads.Select(read => read.Name));
@@ -155,7 +155,7 @@ public sealed class HelpCheckoutsTests : IDisposable
         Assert.DoesNotContain(HelpRoom.Allowed, rule => rule.EndsWith(HelpCheckouts.Tool, StringComparison.Ordinal));
 
         Choose("""{ "checkouts-off": ["engine", "game"] }""");
-        var none = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home, "aurora"), reads, "aurora");
+        var none = HelpPlacement.In(_home, HelpRoom.PathOf(_home, "aurora"), reads, "aurora");
         Assert.Empty(none.Reads);
         Assert.DoesNotContain(none.Rules(file, "h1").Allow, rule => rule.EndsWith(HelpCheckouts.Tool, StringComparison.Ordinal));
     }
