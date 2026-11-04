@@ -43,7 +43,7 @@ export const useHistoryPlan = (target: HistoryTarget | null, { enabled = true }:
   const { isAvailable } = useShenora();
   const query = useQuery({
     queryKey: target ? historyKey(target) : [...ALL_HISTORY, 'none'],
-    queryFn: async () => historyPlanOf(await call<unknown>('HISTORY_PLAN', historyPayload(target!), { timeoutMs: HISTORY_BOUND })),
+    queryFn: async () => historyPlanOf(await call('HISTORY_PLAN', historyPayload(target!), { timeoutMs: HISTORY_BOUND })),
     enabled: isAvailable && enabled && target !== null,
     refetchOnWindowFocus: false,
   });
@@ -70,11 +70,11 @@ export const useClearHistory = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ target, units }: { target: HistoryTarget; units: readonly HistoryUnitName[] }) =>
-      call<HistoryClearAnswer>(
+      call(
         'HISTORY_CLEAR',
         { ...historyPayload(target), units: units.map(({ kind, id }) => ({ kind, id })) },
         { timeoutMs: HISTORY_BOUND },
-      ),
+      ) as Promise<HistoryClearAnswer>,
     onSettled: () => void client.invalidateQueries({ queryKey: ALL_HISTORY }, { cancelRefetch: false }),
   });
 };

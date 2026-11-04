@@ -16,7 +16,7 @@ public sealed class WorkflowEditRoutes(DriverContext context)
 
     [DriverRoute("WORKFLOW_LIST", PipeClass.Open)]
     [ByEvent("WORKFLOW_LIST", Untold = "the workflow files under the home and the choices in the driver's file")]
-    private Task<object?> WorkflowListAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> WorkflowListAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var (saved, presets) = WorkflowOperations.Listing(_loop.Home, DriverConfig.Load(_loop.ConfigPath));
         return Task.FromResult<object?>(new
@@ -54,14 +54,14 @@ public sealed class WorkflowEditRoutes(DriverContext context)
 
     [DriverRoute("WORKFLOW_SHOW", PipeClass.Open)]
     [ByEvent("WORKFLOW_SHOW", Untold = "a workflow's file under the home")]
-    private Task<object?> WorkflowShowAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> WorkflowShowAsync(WorkflowShowRead read, CancellationToken cancellationToken)
     {
-        var id = Optional(request, "id")?.Trim();
+        var id = read.Id?.Trim();
         if (string.IsNullOrEmpty(id)) throw new DriverException("a workflow is shown by its `id` — name it.");
         WorkflowShown shown;
         try
         {
-            shown = WorkflowOperations.Show(_loop.Home, id, Number(request, "version") is { } version ? (int)version : null);
+            shown = WorkflowOperations.Show(_loop.Home, id, read.Version is { } version ? (int)version : null);
         }
         catch (ChoiceWords refused)
         {
@@ -87,7 +87,7 @@ public sealed class WorkflowEditRoutes(DriverContext context)
 
     [DriverRoute("WORKFLOW_PALETTE", PipeClass.Open)]
     [ByEvent("WORKFLOW_PALETTE", Untold = "the plugins' manifests under the home")]
-    private Task<object?> WorkflowPaletteAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> WorkflowPaletteAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(PaletteOf(_loop.Home));
 
     /// <summary>What a step graph may hold under <paramref name="home"/>: the built-in kinds and the steps its plugins contribute.</summary>

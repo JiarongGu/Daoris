@@ -198,11 +198,11 @@ export const useWorkState = (unit: string | null = null, enabled = true) => {
   // asks the shell again. Elsewhere each variant keeps its own pull, after the first snapshot where one is on its way.
   const pushed = usePushedLive(workSlice.name);
   const select = useCallback((all: WorkState) => workOf(all, unit), [unit]);
-  const pull = async () => readWorkState(await call<unknown>('WORK_STATE', unit ? { unit } : {}));
+  const pull = async () => readWorkState(await call('WORK_STATE', unit ? { unit } : {}));
   return useQuery(pushed
     ? {
       queryKey: keys.workState(null),
-      queryFn: () => readPushed(client, workSlice.name, async () => readWorkState(await call<unknown>('WORK_STATE', {}))),
+      queryFn: () => readPushed(client, workSlice.name, async () => readWorkState(await call('WORK_STATE', {}))),
       select, enabled: isAvailable && enabled, staleTime: Infinity, refetchOnWindowFocus: false,
     }
     : {
@@ -242,7 +242,7 @@ export const useSweep = () =>
 export const useDiscardSessionBranch = () =>
   useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
-      call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
+      call('DISCARD_SESSION_BRANCH', { repository, branch, force: true }) as Promise<BranchDiscard>,
   });
 
 /**
@@ -254,7 +254,7 @@ export const useDiscardSessionBranch = () =>
 export const useWithdrawLandingBranch = () =>
   useMutation({
     mutationFn: ({ repository, branch, why }: { repository: string; branch: string; why: string }) =>
-      call<LandedWithdrawal>('WITHDRAW_LANDING_BRANCH', { repository, branch, why }),
+      call('WITHDRAW_LANDING_BRANCH', { repository, branch, why }) as Promise<LandedWithdrawal>,
   });
 
 /**
@@ -265,7 +265,7 @@ export const useWithdrawLandingBranch = () =>
 export const useResolveHeld = () =>
   useMutation({
     mutationFn: ({ unit, node, attempt, resolution }: { unit: string; node: string; attempt: number; resolution: HeldResolution }) =>
-      call<{ done: boolean; refused?: string | null; message: string }>('WORK_HELD', { unit, node, attempt, resolution }),
+      call('WORK_HELD', { unit, node, attempt, resolution }) as Promise<{ done: boolean; refused?: string | null; message: string }>,
   });
 
 /**

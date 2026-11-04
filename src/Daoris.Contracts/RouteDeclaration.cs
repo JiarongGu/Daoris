@@ -23,6 +23,9 @@ public sealed partial record RouteDeclaration(Type Request, Type Answer, string 
     /// <summary>Whether the body may be left out (<see cref="OptionalBodyAttribute"/>).</summary>
     public bool BodyOptional { get; private init; }
 
+    /// <summary>Whether the handler reads the body itself (<see cref="OwnBodyAttribute"/>).</summary>
+    public bool OwnBody { get; private init; }
+
     /// <summary>The properties of a route that takes a body which travel in its query (<see cref="FromQueryAttribute"/>).</summary>
     public IReadOnlyList<string> QueryNames { get; private init; } = [];
 
@@ -52,6 +55,7 @@ public sealed partial record RouteDeclaration(Type Request, Type Answer, string 
         return new RouteDeclaration(type, answer, method, path, [.. Segment().Matches(path).Select(match => match.Groups[1].Value)])
         {
             BodyOptional = type.IsDefined(typeof(OptionalBodyAttribute), inherit: false),
+            OwnBody = type.IsDefined(typeof(OwnBodyAttribute), inherit: false),
             QueryNames = [.. type.GetProperties().Where(property => property.IsDefined(typeof(FromQueryAttribute), inherit: false)).Select(property => property.Name)],
         };
     });

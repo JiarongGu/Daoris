@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Contracts;
 using Daoris.Contracts.Review;
 using static Daoris.Driver.Json;
 
@@ -22,21 +23,35 @@ public sealed class OpinionDoors
     public async Task<OpinionAsked> AskAsync(OpinionAskBody body, CancellationToken ct = default)
     {
         const string Door = "/api/opinions";
-        var (ok, status, payload, root) = await _service.SendJsonAsync(body.Route(), ct).ConfigureAwait(false);
-        if (root is not { } answer) return new(null, null, $"the service at {_service.BaseUrl} has no `{Door}` door ({status}) — is it older than this driver?");
-        if (!ok) return new(null, null, Text(answer, "error") ?? payload);
+        var sent = await _service.SendAsync(body.Route(), ct).ConfigureAwait(false);
+        var payload = sent.Reply.Payload;
+        if (!IsJson(payload)) return new(null, null, $"the service at {_service.BaseUrl} has no `{Door}` door ({sent.Reply.Status}) — is it older than this driver?");
+        if (!sent.Reply.Ok) return new(null, null, DriverHttp.ErrorOf(payload));
 
-        var opinion = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("opinion", out var kept) ? Text(kept, "id") : null;
-        var session = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var record) ? record : default;
-        var id = Text(session, "id");
-        if (opinion is null || id is null) return new(null, null, $"the service at {_service.BaseUrl} answered `{Door}` with no opinion and no record.");
+        if (sent.Answer is not { Opinion.Id: { } opinion, Session: { } session })
+        {
+            return new(null, null, $"the service at {_service.BaseUrl} answered `{Door}` with no opinion and no record.");
+        }
 
         // The door the record opened by, for the session log (LOG1b): a reviewer's record is a chat that serves no quest.
-        _service.RecordOpened(new SessionOpened(id, OpinionPass.OpenedKind, Text(session, "adapter") ?? body.Adapter, Text(session, "repository") ?? body.Candidate.Repository)
+        _service.RecordOpened(new SessionOpened(session.Id, OpinionPass.OpenedKind, session.Adapter ?? body.Adapter, session.Repository ?? body.Candidate.Repository)
         {
-            Workspace = Text(session, "workspace"),
+            Workspace = session.Workspace,
         });
-        return new(opinion, id, Text(answer, "message") ?? "");
+        return new(opinion, session.Id, sent.Answer.Message ?? "");
+    }
+
+    private static bool IsJson(string payload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -49,7 +64,7 @@ public sealed class OpinionDoors
         var sent = await _service.SendAsync(new ReadOpinion(id), ct).ConfigureAwait(false);
         if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
         if (!sent.Reply.Ok) throw new DriverException(sent.Refusal);
-        return OpinionViews.Read(sent.Reply.Payload);
+        return OpinionViews.Read(sent.Answer);
     }
 
     /// <summary>
@@ -71,7 +86,9 @@ public sealed class OpinionDoors
         var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         var answer = SolicitedHand.Read(ok, status, root, payload, door, _service.BaseUrl);
         if (!answer.Handed || root is not { ValueKind: JsonValueKind.Object } read) return new(answer, null, null);
-        var opinion = read.TryGetProperty("opinion", out var kept) ? OpinionViews.Read(kept) : null;
+        var opinion = read.TryGetProperty("opinion", out var kept)
+            ? OpinionViews.Read(kept.Deserialize((System.Text.Json.Serialization.Metadata.JsonTypeInfo<OpinionResponse>)ContractJson.Options.GetTypeInfo(typeof(OpinionResponse))))
+            : null;
         var word = read.TryGetProperty("said", out var said) ? ServiceClient.ReadWord(said) : null;
         return new(answer, opinion, word);
     }

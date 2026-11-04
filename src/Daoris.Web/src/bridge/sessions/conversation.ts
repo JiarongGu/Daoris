@@ -258,7 +258,7 @@ export function useSessionOptions(session: string | null): SessionOption[] {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: keys.sessionOptions(session ?? ''),
-    queryFn: async () => optionsOf(await call<unknown>('SESSION_OPTIONS', { id: session })),
+    queryFn: async () => optionsOf(await call('SESSION_OPTIONS', { id: session ?? '' })),
     enabled: isAvailable && session !== null,
   });
 
@@ -291,7 +291,7 @@ export const useSetSessionOption = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (change: { id: string; option: string; value: string }) =>
-      optionsOf(await call<unknown>('SET_SESSION_OPTION', change)),
+      optionsOf(await call('SET_SESSION_OPTION', change)),
     onSuccess: (options, change) => client.setQueryData(keys.sessionOptions(change.id), options),
   });
 };
@@ -309,7 +309,7 @@ export const useCancelTurn = () =>
     // The id alone is the withdrawal; `withdrawn` then comes back empty under `keep`.
     mutationFn: async (stop: string | { id: string; keep?: boolean }): Promise<TurnStop> => {
       const { id, keep } = typeof stop === 'string' ? { id: stop, keep: false } : stop;
-      const answer = await call<{ cancelled?: unknown; withdrawn?: unknown }>('CANCEL_TURN', { id, ...(keep ? { keep: true } : {}) });
+      const answer = (await call('CANCEL_TURN', { id, ...(keep ? { keep: true } : {}) })) as { cancelled?: unknown; withdrawn?: unknown } | null;
       return { cancelled: answer?.cancelled === true, withdrawn: messagesOf(answer?.withdrawn) };
     },
   });
@@ -326,10 +326,10 @@ export const useEditQueued = (session: string | null) => {
   const edit = useMutation({
     mutationFn: async (change: { id: string; text?: string; level?: Level }): Promise<QueueEdit> => {
       if (session === null) return { done: false, why: 'taken' };
-      const answer = await call<{ done?: unknown; why?: unknown }>('SESSION_QUEUE_EDIT', {
+      const answer = (await call('SESSION_QUEUE_EDIT', {
         session, id: change.id, ...(change.text === undefined ? {} : { text: change.text }),
         ...(change.level === undefined ? {} : { level: change.level }),
-      });
+      })) as { done?: unknown; why?: unknown } | null;
       return answer?.done === true ? { done: true } : { done: false, why: 'taken' };
     },
   });
@@ -351,7 +351,7 @@ export const useMoveQueued = () =>
   useMutation({
     mutationFn: async (move: { session: string; id: string; to: string }): Promise<QueueMove> => {
       try {
-        const answer = await call<{ moved?: unknown; why?: unknown; message?: unknown; to?: unknown }>('SESSION_QUEUE_MOVE', move);
+        const answer = (await call('SESSION_QUEUE_MOVE', move)) as { moved?: unknown; why?: unknown; message?: unknown; to?: unknown } | null;
         return {
           moved: answer?.moved === true,
           why: typeof answer?.why === 'string' && answer.why ? answer.why : null,
@@ -486,7 +486,7 @@ export const useSessionReach = (session: { id: string; state: string } | null, l
   const answer = useQuery({
     queryKey: told ? keys.sessionReachTold(id) : keys.sessionReach(id, session?.state ?? '', listening),
     queryFn: async () => {
-      const answered = await call<unknown>('SESSION_QUEUE', { id });
+      const answered = await call('SESSION_QUEUE', { id });
       const live = toldReach(answered);
       if (!live) return reachOf(answered);
       // Kept where the live key reads it before that key is the one read, so switching to it asks nothing again.
@@ -581,7 +581,7 @@ export const useParkGoAhead = () => {
     mutationFn: async (answer: {
       id: string; ask: string; number: number; approved: boolean; words?: string; goesOn?: boolean;
     }): Promise<GoAheadAnswered> => {
-      const answered = await call<unknown>('SESSION_GO_AHEAD', {
+      const answered = await call('SESSION_GO_AHEAD', {
         id: answer.id, ask: answer.ask, number: answer.number, approved: answer.approved,
         ...(answer.words ? { words: answer.words } : {}),
         ...(answer.goesOn === false ? { goesOn: false } : {}),
@@ -623,7 +623,7 @@ const startedOf = (answer: unknown): StartedFrom => {
  */
 export const useStartFrom = () => useMutation({
   mutationFn: async (from: { session: string }): Promise<StartedFrom> =>
-    startedOf(await call<unknown>('SESSION_START_FROM', { id: from.session })),
+    startedOf(await call('SESSION_START_FROM', { id: from.session })),
 });
 
 /**
@@ -634,7 +634,7 @@ export const useStartFrom = () => useMutation({
  */
 export const useGoOnBrief = () => useMutation({
   mutationFn: async (from: { session: string }): Promise<StartedFrom> =>
-    startedOf(await call<unknown>('SESSION_GO_ON_BRIEF', { id: from.session })),
+    startedOf(await call('SESSION_GO_ON_BRIEF', { id: from.session })),
 });
 
 /**
@@ -666,7 +666,7 @@ export const useHandOver = () => useMutation({
     /** The model and effort of the choice the offer named (STAFFPOLICY1d): started as approved, never picked again. */
     model?: string | null; effort?: string | null;
   }): Promise<HandedOver> =>
-    handedOf(await call<unknown>('SESSION_HAND_OVER', {
+    handedOf(await call('SESSION_HAND_OVER', {
       id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}),
       ...(over.model ? { model: over.model } : {}), ...(over.effort ? { effort: over.effort } : {}),
       ...(over.why ? { why: over.why, askedBy: 'daoris' } : { why: 'press' }),
@@ -682,7 +682,7 @@ export type StoppedWaiting = { stopped: boolean; message: string };
  */
 export const useStopWaiting = () => useMutation({
   mutationFn: async (session: string): Promise<StoppedWaiting> => {
-    const answer = await call<{ stopped?: unknown; message?: unknown } | null>('SESSION_STOP_WAITING', { id: session });
+    const answer = (await call('SESSION_STOP_WAITING', { id: session })) as { stopped?: unknown; message?: unknown } | null;
     return { stopped: answer?.stopped === true, message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
@@ -696,5 +696,5 @@ export const useStopWaiting = () => useMutation({
  */
 export const useEndChat = () =>
   useMutation({
-    mutationFn: (id: string) => call<{ ended: boolean }>('END_CHAT', { id }),
+    mutationFn: (id: string) => call('END_CHAT', { id }) as Promise<{ ended: boolean }>,
   });

@@ -235,11 +235,11 @@ const writtenOf = (answer: unknown): boolean => keyed(answer)?.written === true;
  */
 export const useMarkNoticesRead = () =>
   useMutation({
-    mutationFn: async (ids: string[]): Promise<boolean> => writtenOf(await call<unknown>('NOTICES_READ', { ids })),
+    mutationFn: async (ids: string[]): Promise<boolean> => writtenOf(await call('NOTICES_READ', { ids })),
   });
 
 /** The person's *Dismiss* of one notice (`NOTICE_DISMISS`): removed from every window by the slice's push. */
 export const useDismissNotice = () =>
   useMutation({
-    mutationFn: async (id: string): Promise<boolean> => writtenOf(await call<unknown>('NOTICE_DISMISS', { id })),
+    mutationFn: async (id: string): Promise<boolean> => writtenOf(await call('NOTICE_DISMISS', { id })),
   });

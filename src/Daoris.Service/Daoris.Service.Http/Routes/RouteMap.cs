@@ -18,9 +18,19 @@ public sealed class RouteMap(IEndpointRouteBuilder app)
     public IEndpointConventionBuilder Map<TRequest, TAnswer>(Func<TRequest, HttpContext, CancellationToken, Task<Answer<TAnswer>>> handler)
         where TRequest : class, IRoute<TAnswer>
     {
-        var route = RouteDeclaration.Of(typeof(TRequest));
         var json = Json;
-        var type = (JsonTypeInfo<TRequest>)json.GetTypeInfo(typeof(TRequest));
+        return Endpoint<TRequest>(async (request, http) => await (await handler(request, http, http.RequestAborted)).WriteAsync(http, json));
+    }
+
+    /// <summary>Maps a route whose answer is a file's bytes: the handler answers the result itself, a refusal in the house's shape.</summary>
+    public IEndpointConventionBuilder MapFile<TRequest>(Func<TRequest, HttpContext, CancellationToken, Task<IResult>> handler)
+        where TRequest : class, IRoute<QuestFileBytes> =>
+        Endpoint<TRequest>(async (request, http) => await (await handler(request, http, http.RequestAborted)).ExecuteAsync(http));
+
+    private IEndpointConventionBuilder Endpoint<TRequest>(Func<TRequest, HttpContext, Task> answered) where TRequest : class
+    {
+        var route = RouteDeclaration.Of(typeof(TRequest));
+        var type = (JsonTypeInfo<TRequest>)Json.GetTypeInfo(typeof(TRequest));
         RouteBinder.Check(route, type);
 
         RequestDelegate answer = async http =>
@@ -32,7 +42,7 @@ public sealed class RouteMap(IEndpointRouteBuilder app)
                 return;
             }
 
-            await (await handler(request, http, http.RequestAborted)).WriteAsync(http, json);
+            await answered(request, http);
         };
         // The declaration rides as the endpoint's metadata, so a confirmation reads what the door binds from it (DoorContracts).
         return app.MapMethods(route.Path, [route.Method], answer).WithMetadata(route);

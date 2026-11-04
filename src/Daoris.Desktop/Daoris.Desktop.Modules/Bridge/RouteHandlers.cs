@@ -28,7 +28,7 @@ internal static class RouteHandlers
     public static RouteShape ShapeOf(string route, Type handler, MethodInfo method)
     {
         var (payload, answer, _) = Parts(handler, method);
-        return new RouteShape(route, payload == typeof(IpcRequest) ? null : payload, answer == typeof(object) ? null : answer);
+        return new RouteShape(route, payload == typeof(IpcRequest) || payload == typeof(NoPayload) ? null : payload, answer == typeof(object) ? null : answer);
     }
 
     private static (Type Payload, Type Answer, bool Later) Parts(Type handler, MethodInfo method)

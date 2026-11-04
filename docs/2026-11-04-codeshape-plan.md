@@ -109,8 +109,9 @@ one way. Each moved part has its comments cut, as it moves, to why, the trap and
 
 **Register entries until the series ends (D228):**
 
-- `routes-by-hand`: ends when no `app.Map*` call is left in `Program` and no per-route method is left in `ServiceClient`. A9
-  deletes it.
+- `routes-by-hand`: ended (A9). No `app.Map*` call is left in `Program` and `ApiContracts.cs` is gone. The per-route reads of
+  `ServiceClient` that parse a route's JSON by field are what remains: the sessions, quests and asks readers (`ReadSessions`,
+  `ReadRecords`, `ReadClosed` and their kin), `RegistryAsync`/`ReadRegistry`, and `PostJsonAsync` callers.
 - `route-payload-by-hand`: ends when no handler reads `IpcRequest`. B8 deletes it.
 - `inline-look-passes`, with the follow-on rows below.
 

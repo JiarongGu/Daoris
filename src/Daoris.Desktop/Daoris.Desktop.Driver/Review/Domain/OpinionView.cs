@@ -1,5 +1,5 @@
 using System.Globalization;
-using System.Text.Json;
+using Daoris.Contracts.Review;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -129,76 +129,52 @@ public static class OpinionViews
     /// An opinion as the host answers it, or null where the answer is not one: no id, no candidate or no reviewer, which says
     /// nothing anyone can act on.
     /// </summary>
-    public static OpinionView? Read(string json)
+    public static OpinionView? Read(OpinionResponse? root)
     {
-        try
-        {
-            using var document = JsonDocument.Parse(json);
-            return Read(document.RootElement);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    /// <inheritdoc cref="Read(string)"/>
-    public static OpinionView? Read(JsonElement root)
-    {
-        if (root.ValueKind != JsonValueKind.Object
-            || Text(root, "id") is not { Length: > 0 } id || Text(root, "working") is not { } working || Text(root, "session") is not { } session
-            || !root.TryGetProperty("candidate", out var candidate) || candidate.ValueKind != JsonValueKind.Object
-            || Text(candidate, "repository") is not { } repository || Text(candidate, "base") is not { } @base || Text(candidate, "tip") is not { } tip
-            || !root.TryGetProperty("reviewer", out var reviewer) || reviewer.ValueKind != JsonValueKind.Object
-            || Text(reviewer, "adapter") is not { } adapter)
+        if (root is not { Id.Length: > 0, Working: not null, Session: not null, Candidate: { Repository: { } repository, Base: { } @base, Tip: { } tip }, Reviewer.Adapter: { } adapter })
         {
             return null;
         }
 
-        var given = root.TryGetProperty("given", out var said) && said.ValueKind == JsonValueKind.Object ? said : (JsonElement?)null;
-        var handed = root.TryGetProperty("handed", out var went) && went.ValueKind == JsonValueKind.Object ? went : (JsonElement?)null;
+        var given = root.Given;
         return new OpinionView(
-            id, Text(root, "occasion") ?? "", Text(root, "pass") ?? FirstPass, working, session, repository, @base, tip, adapter,
-            Text(reviewer, "label") ?? "", Text(root, "state") ?? "")
+            root.Id, root.Occasion ?? "", root.Pass ?? FirstPass, root.Working, root.Session, repository, @base, tip, adapter,
+            root.Reviewer.Label ?? "", root.State ?? "")
         {
-            Rechecks = Text(root, "rechecks"),
-            Product = Text(reviewer, "product"),
-            Maker = Text(reviewer, "maker"),
-            Why = Text(root, "why"),
-            Minutes = Int(root, "minutes"),
-            Commits = Strings(candidate, "commits"),
-            Findings = given is { } opinion ? [.. Items(opinion, "findings").Select(Finding).OfType<OpinionFindingView>()] : null,
-            Read = given is { } reading ? Text(reading, "read") : null,
-            Limits = given is { } limits ? Text(limits, "limits") : null,
-            Rechecked = given is { } rechecked
-                ? Items(rechecked, "rechecked")
-                    .Where(each => Int(each, "finding") is > 0 && Text(each, "says") is { Length: > 0 })
-                    .GroupBy(each => Int(each, "finding")!.Value)
-                    .ToDictionary(each => each.Key, each => Text(each.Last(), "says")!)
-                : new Dictionary<int, string>(),
-            HandedTo = handed is { } to ? Text(to, "session") : null,
-            HandedWord = handed is { } word ? Text(word, "word") : null,
-            Answers = [.. Items(root, "answers").Select(Answer).OfType<OpinionAnswerView>()],
+            Rechecks = root.Rechecks,
+            Product = root.Reviewer.Product,
+            Maker = root.Reviewer.Maker,
+            Why = root.Why,
+            Minutes = root.Minutes,
+            // Empty strings are kept here, as the copy this replaced kept them.
+            Commits = [.. (root.Candidate.Commits ?? []).OfType<string>()],
+            Findings = given is null ? null : [.. (given.Findings ?? []).Select(Finding).OfType<OpinionFindingView>()],
+            Read = given?.Read,
+            Limits = given?.Limits,
+            Rechecked = given is null
+                ? new Dictionary<int, string>()
+                : (given.Rechecked ?? [])
+                    .Where(each => each.Finding > 0 && each.Says is { Length: > 0 })
+                    .GroupBy(each => each.Finding)
+                    .ToDictionary(each => each.Key, each => each.Last().Says),
+            HandedTo = root.Handed?.Session,
+            HandedWord = root.Handed?.Word,
+            Answers = [.. (root.Answers ?? []).Select(Answer).OfType<OpinionAnswerView>()],
         };
     }
 
-    private static OpinionFindingView? Finding(JsonElement each) =>
-        Int(each, "number") is { } number and > 0
-        && Text(each, "weight") is { } weight && Text(each, "where") is { } where && Text(each, "claim") is { } claim
-            ? new OpinionFindingView(
-                number, weight, where, claim, Text(each, "consequence") ?? "", Text(each, "reproduce") ?? "", Text(each, "sure") ?? "")
+    private static OpinionFindingView? Finding(OpinionFindingResponse each) =>
+        each is { Number: > 0, Weight: not null, Where: not null, Claim: not null }
+            ? new OpinionFindingView(each.Number, each.Weight, each.Where, each.Claim, each.Consequence ?? "", each.Reproduce ?? "", each.Sure ?? "")
             {
-                Proposal = Text(each, "proposal"),
+                Proposal = each.Proposal,
             }
             : null;
 
-    private static OpinionAnswerView? Answer(JsonElement each) =>
-        Int(each, "finding") is { } finding and > 0 && Text(each, "said") is { Length: > 0 } said
-            ? new OpinionAnswerView(finding, said) { Commit = Text(each, "commit"), Evidence = Text(each, "evidence"), Why = Text(each, "why") }
+    private static OpinionAnswerView? Answer(OpinionAnswerResponse each) =>
+        each is { Finding: > 0, Said: { Length: > 0 } }
+            ? new OpinionAnswerView(each.Finding, each.Said) { Commit = each.Commit, Evidence = each.Evidence, Why = each.Why }
             : null;
-
-    // Empty strings are kept here, as the copy this replaced kept them.
-    private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 
     /// <summary>A moment as the store writes it: ISO 8601, round trip.</summary>
     internal static string Moment(DateTimeOffset at) => Moments.Write(at);

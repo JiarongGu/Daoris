@@ -1076,7 +1076,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// waiting a whole poll, and the tick the loop forwards when what waits changes has the page ask again.</para>
     /// </remarks>
     [DriverRoute("OPINION_WAITS", PipeClass.Open)]
-    private Task<object?> OpinionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> OpinionWaitsAsync(NoPayload none, CancellationToken cancellationToken)
     {
         _ = _loop.Service ?? throw NotReady();
         return Task.FromResult<object?>(new { Waits = OpinionWaits(_loop.Judged.Latest) });

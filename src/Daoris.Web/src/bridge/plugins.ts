@@ -96,7 +96,7 @@ export const usePluginAction = () => useMutation({
   mutationFn: (action: {
     id: string; action: 'enable' | 'disable' | 'remove' | 'help-approve' | 'help-reads' | 'help-withdraw'; server?: string; writes?: string[];
   }) =>
-    call<{ id: string; action: string; data: string | null }>('PLUGIN_ACTION', action),
+    call('PLUGIN_ACTION', action) as Promise<{ id: string; action: string; data: string | null }>,
 });
 
 /**
@@ -106,7 +106,7 @@ export const usePluginAction = () => useMutation({
  * press asks them again too.
  */
 export const usePluginUpdate = () => useMutation({
-  mutationFn: (target: { id: string; apply?: boolean; shipped?: boolean }) => call<PluginUpdatePlanShown>('PLUGIN_UPDATE', target),
+  mutationFn: (target: { id: string; apply?: boolean; shipped?: boolean }) => call('PLUGIN_UPDATE', target) as Promise<PluginUpdatePlanShown>,
 });
 
 /**
@@ -114,7 +114,7 @@ export const usePluginUpdate = () => useMutation({
  * copy. Nothing runs at the press; the catalogue and the roster are asked again by the state hub.
  */
 export const usePluginInstall = () => useMutation({
-  mutationFn: (offer: string) => call<{ id: string; name: string; version: string }>('PLUGIN_INSTALL', { offer }),
+  mutationFn: (offer: string) => call('PLUGIN_INSTALL', { offer }) as Promise<{ id: string; name: string; version: string }>,
 });
 
 /**
@@ -124,7 +124,7 @@ export const usePluginInstall = () => useMutation({
 export const usePluginNew = () =>
   useMutation({
     mutationFn: (plugin: NewPlugin) =>
-      call<{ id: string; folder: string; points: string[]; files: string[] }>('PLUGIN_NEW', plugin),
+      call('PLUGIN_NEW', plugin) as Promise<{ id: string; folder: string; points: string[]; files: string[] }>,
   });
 
 /**
@@ -133,7 +133,7 @@ export const usePluginNew = () =>
  */
 export const usePluginTools = () =>
   useMutation({
-    mutationFn: (plugin: { id: string }) => call<{ id: string; tools: ToolShown[] }>('PLUGIN_TOOLS', plugin),
+    mutationFn: (plugin: { id: string }) => call('PLUGIN_TOOLS', plugin) as Promise<{ id: string; tools: ToolShown[] }>,
   });
 
 /** What the person's press of a check's fix came to (`PLUGIN_TOOL_FIX`): refused with a `why` code, or run with the tool read again. */
@@ -159,7 +159,7 @@ export type PluginToolFixed = {
 export const usePluginToolFix = () =>
   useMutation({
     mutationFn: (press: { id: string; tool: string; check: number }) =>
-      call<PluginToolFixed>('PLUGIN_TOOL_FIX', press, { timeoutMs: 30 * 60_000 }),
+      call('PLUGIN_TOOL_FIX', press, { timeoutMs: 30 * 60_000 }) as Promise<PluginToolFixed>,
   });
 
 /**
@@ -168,5 +168,5 @@ export const usePluginToolFix = () =>
  */
 export const usePluginTry = () =>
   useMutation({
-    mutationFn: (target: { id: string } | { folder: string }) => call<PluginTrialResult>('PLUGIN_TRY', target),
+    mutationFn: (target: { id: string } | { folder: string }) => call('PLUGIN_TRY', target) as Promise<PluginTrialResult>,
   });

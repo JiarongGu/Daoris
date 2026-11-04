@@ -185,10 +185,13 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
             client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), events);
         var runner = new Opening(client, context, wire);
-        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner), new NoHelp())
+        var stand = new ExecutorStand(runner, context);
+        stand.Add<IChatHelping>(new NoHelp());
+        stand.Add(new ChatHandOver(stand));
+        var limit = stand.Add(new LimitMove(stand)
         {
             Moves = new ConversationMoves(_home, client, events, store: Store("run-shell")),
-        };
+        });
         return new World(context, runner, limit, ledger, client);
     }
 

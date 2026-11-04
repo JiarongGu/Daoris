@@ -1153,10 +1153,10 @@ public static class SessionsCommand
     /// </summary>
     private static async Task<int> HandbackAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
     {
-        string? answer;
+        Daoris.Contracts.Quests.HandbackResponse? answer;
         try
         {
-            answer = await world.Service.HandbackJsonAsync(ask.Ids[0], ct).ConfigureAwait(false);
+            answer = await world.Service.HandbackAsync(ask.Ids[0], ct).ConfigureAwait(false);
         }
         catch (DriverException refused)
         {
@@ -1170,12 +1170,10 @@ public static class SessionsCommand
             return 2;
         }
 
-        using var read = JsonDocument.Parse(answer);
-        var found = read.RootElement.TryGetProperty("found", out var named) && named.ValueKind == JsonValueKind.True;
         output.WriteLine(ask.Json
-            ? answer
-            : read.RootElement.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.String ? said.GetString() : answer);
-        return found ? 0 : 1;
+            ? JsonSerializer.Serialize(answer, Daoris.Contracts.ContractJson.Options.GetTypeInfo(typeof(Daoris.Contracts.Quests.HandbackResponse)))
+            : answer.Said);
+        return answer.Found ? 0 : 1;
     }
 
     /// <summary>This machine's record of one session, or null with why it is not one this machine can act on.</summary>

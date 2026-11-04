@@ -15,18 +15,18 @@ public sealed class DriverRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     [DriverRoute("STATE", PipeClass.Open)]
-    private object? GetState(IpcRequest request) => State(_loop);
+    private object? GetState(NoPayload _) => State(_loop);
 
     /// <summary>What is under way, numbered as the last <c>UNDER_WAY</c> telling, for a window opened mid-press.</summary>
     [DriverRoute("UNDER_WAY", PipeClass.Open)]
-    private object? GetUnderWay(IpcRequest request) => _loop.UnderWay.Now();
+    private object? GetUnderWay(NoPayload _) => _loop.UnderWay.Now();
 
     /// <summary>
     /// A slice's snapshot, read from memory as last judged, never judged for the asking, so a second window judges nothing.
     /// </summary>
     [DriverRoute("STATE_SLICE", PipeClass.Open)]
-    private object? GetStateSlice(IpcRequest request) =>
-        _loop.Slices.Find(PayloadHelper.GetRequiredValue<string>(request.Payload, "slice"))?.Snapshot();
+    private object? GetStateSlice(StateSliceRead press) =>
+        _loop.Slices.Find(press.Slice)?.Snapshot();
 
     [DriverRoute("SET_DRIVABLE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_DRIVABLE", Repository = "repository")]
@@ -136,9 +136,9 @@ public sealed class DriverRoutes(DriverContext context)
     /// with no git, null with <c>refusal</c> where it cannot be told.
     /// </summary>
     [DriverRoute("HEAVY_MARKS", PipeClass.Open)]
-    private async Task<object?> HeavyMarksAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HeavyMarksAsync(HeavyRead press, CancellationToken cancellationToken)
     {
-        var repository = (Optional(request, "repository") ?? "").Trim();
+        var repository = (press.Repository ?? "").Trim();
         var service = _loop.Service ?? throw NotReady();
         var root = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken), repository, null)
             .Select(row => row.Root).FirstOrDefault(path => Directory.Exists(path));
@@ -162,9 +162,9 @@ public sealed class DriverRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("HEAVY_SLOT", PipeClass.Open)]
     [ByEvent("HEAVY_SLOT", Untold = "a run's records beside the slot and whether its process lives")]
-    private async Task<object?> HeavySlotAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> HeavySlotAsync(HeavyRead press, CancellationToken cancellationToken)
     {
-        var repository = (Optional(request, "repository") ?? "").Trim();
+        var repository = (press.Repository ?? "").Trim();
         var service = _loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken);
         // Files and processes, off the window's thread (UIFREEZE1).
@@ -303,7 +303,7 @@ public sealed class DriverRoutes(DriverContext context)
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES", PipeClass.Open)]
     [ByEvent("ROLES", Untold = "the store's roles, role policies, rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
-    private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> RolesAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
         // Each role's last seven days: names and counts from the machine log's actor.chose lines; a role with no start is not listed.
@@ -549,10 +549,9 @@ public sealed class DriverRoutes(DriverContext context)
     [Owner("TRUST_FOLDER", None = OwnerNone.MachineSetting)]
     [GroundWait("TRUST_FOLDER", "trust", "folder", "trustFile")]
     [Publishes("TRUST_FOLDER", StateScopes.Driver)]
-    private object? TrustFolder(IpcRequest request)
+    private object? TrustFolder(TrustFolderPress press)
     {
-        var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
-        var trustFile = PayloadHelper.GetRequiredValue<string>(request.Payload, "trustFile");
+        var (folder, trustFile) = (press.Folder, press.TrustFile);
         var hold = _loop.Trust.Holding(folder, trustFile)
             ?? throw new DriverException(
                 $"the driver is not holding `{folder}` for this agent's trust, so there is nothing "
@@ -604,9 +603,9 @@ public sealed class DriverRoutes(DriverContext context)
     [GroundQuest("RETRY_QUEST", "quest")]
     [Says("RETRY_QUEST", "quest:quest")]
     [Publishes("RETRY_QUEST", StateScopes.Sessions | StateScopes.Driver)]
-    private async Task<object?> RetryQuestAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> RetryQuestAsync(QuestPress press, CancellationToken cancellationToken)
     {
-        var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
+        var quest = press.Quest.Trim().TrimStart('#');
         var config = DriverConfig.Load(_loop.ConfigPath);
         var considered = _loop.Look.Latest
             ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken, _loop.Home)
@@ -632,9 +631,9 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("SHOW_REVIEW_AGAIN", PipeClass.Window)]
     [Owner("SHOW_REVIEW_AGAIN", Quest = "quest")]
     [Publishes("SHOW_REVIEW_AGAIN", StateScopes.Driver)]
-    private async Task<object?> ShowReviewAgainAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ShowReviewAgainAsync(QuestPress press, CancellationToken cancellationToken)
     {
-        var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
+        var quest = press.Quest.Trim().TrimStart('#');
         var desk = _loop.Reviews
                    ?? throw new DriverException("this window carries no browser to show a review in, so nothing was shown again.");
         var service = _loop.Service ?? throw NotReady();
@@ -645,7 +644,7 @@ public sealed class DriverRoutes(DriverContext context)
 
     // "Look now": a person who just published a quest should not watch a poll countdown.
     [DriverRoute("NUDGE", PipeClass.Open)]
-    private async Task<object?> NudgeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> NudgeAsync(NoPayload _, CancellationToken cancellationToken)
     {
         _loop.Nudge();
         // The one verb with nothing to answer — and `await` keeps this method honestly async.
@@ -659,10 +658,9 @@ public sealed class DriverRoutes(DriverContext context)
     // the quests and sessions it fed, and the registry, and a wall it hit is answered as its report (STATEHUB1d, D169).
     [DriverRoute("SYNC_NOW", PipeClass.Open)]
     [Publishes("SYNC_NOW", StateScopes.Sessions | StateScopes.Quests | StateScopes.Sync | StateScopes.Registry)]
-    private async Task<object?> SyncNowAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> SyncNowAsync(SyncNowPress press, CancellationToken cancellationToken)
     {
-        var workspace = RemoteTarget.Workspace(
-            PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace"));
+        var workspace = RemoteTarget.Workspace(press.Workspace);
         var pass = _loop.SyncNowAsync(workspace, cancellationToken)
             ?? throw NotReady();
         var report = await pass;

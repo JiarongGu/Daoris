@@ -35,11 +35,11 @@ public sealed class WorkRoutes(DriverContext context)
     /// what the second press sends back.
     /// </summary>
     [DriverRoute("WORK_PLAN", PipeClass.Open)]
-    private async Task<object?> WorkPlanAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkPlanAsync(WorkPlanRead press, CancellationToken cancellationToken)
     {
-        var (scope, id) = WorkNamed(request);
+        var (scope, id) = WorkNamed(press.Ask, press.Quest);
         // RPC1e: `ask --abandon <id>` and `quest abandon <id>`, the abandon's list in the verb's words.
-        if (Flag(request, "said")) return await SaidAsync(new WorkAsk(scope, "abandon", id), cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SaidAsync(new WorkAsk(scope, "abandon", id), cancellationToken).ConfigureAwait(false);
         var abandon = await WorkAbandoning.PlanAsync(WorldOf(_context), scope, id, cancellationToken).ConfigureAwait(false)
                       ?? throw WorkUnknown(scope, id);
         var plan = abandon.Work;
@@ -131,12 +131,12 @@ public sealed class WorkRoutes(DriverContext context)
     [GroundQuest("WORK_ABANDON", "quest")]
     [GroundRead("WORK_ABANDON", nameof(PipeReads.WorkToAbandon))]
     [Publishes("WORK_ABANDON", Moves)]
-    private async Task<object?> WorkAbandonAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkAbandonAsync(WorkAbandonPress press, CancellationToken cancellationToken)
     {
-        var (scope, id) = WorkNamed(request);
-        var reason = Optional(request, "reason");
+        var (scope, id) = WorkNamed(press.Ask, press.Quest);
+        var reason = press.Reason;
         // RPC1e: the terminal's `--yes`, which abandons what the list holds now, as the verb does alone; its words say a missing reason.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
             return await SaidAsync(new WorkAsk(scope, "abandon", id) { Reason = reason, Yes = true }, cancellationToken).ConfigureAwait(false);
         }
@@ -147,7 +147,8 @@ public sealed class WorkRoutes(DriverContext context)
             throw Refusals.Because(Refusals.WorkReason, WorkAbandoning.NeedsReason);
         }
 
-        var pieces = Pieces(request);
+        var pieces = press.Pieces
+            ?? throw new DriverException("an abandon sends the pieces its list held: the first press's `pieces`, as they were listed.");
         var outcome = await WorkAbandoning.AbandonAsync(WorldOf(_context), scope, id, reason, pieces, PluginEvents.Screen, cancellationToken)
             .ConfigureAwait(false);
         if (outcome.Verdict == AbandonVerdict.Unknown) throw WorkUnknown(scope, id);
@@ -172,14 +173,6 @@ public sealed class WorkRoutes(DriverContext context)
             outcome.StillPaused,
         };
     }
-
-    /// <summary>The pieces the first press listed: a list of keys, which a second press must send.</summary>
-    /// <exception cref="DriverException">No list: the driver's sentence, said verbatim.</exception>
-    private static IReadOnlyList<string> Pieces(IpcRequest request) =>
-        request.Payload is { ValueKind: System.Text.Json.JsonValueKind.Object } payload
-        && payload.TryGetProperty("pieces", out var pieces) && pieces.ValueKind == System.Text.Json.JsonValueKind.Array
-            ? [.. pieces.EnumerateArray().Where(piece => piece.ValueKind == System.Text.Json.JsonValueKind.String).Select(piece => piece.GetString()!)]
-            : throw new DriverException("an abandon sends the pieces its list held: the first press's `pieces`, as they were listed.");
 
     /// <summary>A kept piece as the page reads it. What refused it goes only for a quest or the ask, whose words are the service's: git's may name a path.</summary>
     private static object Keep(AbandonKeep keep) => new
@@ -224,10 +217,10 @@ public sealed class WorkRoutes(DriverContext context)
     [GroundQuest("WORK_PAUSE", "quest")]
     [GroundRead("WORK_PAUSE", nameof(PipeReads.WorkToPause))]
     [Publishes("WORK_PAUSE", Moves)]
-    private async Task<object?> WorkPauseAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkPauseAsync(WorkPausePress press, CancellationToken cancellationToken)
     {
-        var (scope, id) = WorkNamed(request);
-        if (Flag(request, "said")) return await SaidAsync(new WorkAsk(scope, "pause", id), cancellationToken).ConfigureAwait(false);
+        var (scope, id) = WorkNamed(press.Ask, press.Quest);
+        if (press.Said) return await SaidAsync(new WorkAsk(scope, "pause", id), cancellationToken).ConfigureAwait(false);
         var outcome = await WorkPausing.PauseAsync(WorldOf(_context), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
         if (outcome.Verdict == PauseVerdict.Unknown) throw WorkUnknown(scope, id);
         _loop.Nudge();
@@ -253,10 +246,10 @@ public sealed class WorkRoutes(DriverContext context)
     [GroundRead("WORK_RESUME", nameof(PipeReads.PauseToResume))]
     [Says("WORK_RESUME", "quest:quest", "ask:ask")]
     [Publishes("WORK_RESUME", Moves)]
-    private async Task<object?> WorkResumeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> WorkResumeAsync(WorkPausePress press, CancellationToken cancellationToken)
     {
-        var (scope, id) = WorkNamed(request);
-        if (Flag(request, "said")) return await SaidAsync(new WorkAsk(scope, "resume", id), cancellationToken).ConfigureAwait(false);
+        var (scope, id) = WorkNamed(press.Ask, press.Quest);
+        if (press.Said) return await SaidAsync(new WorkAsk(scope, "resume", id), cancellationToken).ConfigureAwait(false);
         var outcome = await WorkPausing.ResumeAsync(WorldOf(_context), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
         if (outcome.Verdict == ResumeVerdict.Unknown) throw WorkUnknown(scope, id);
         _loop.Nudge();
@@ -308,8 +301,8 @@ public sealed class WorkRoutes(DriverContext context)
 
     /// <summary>The ask or the quest a work route names: exactly one of <c>ask</c> and <c>quest</c>.</summary>
     /// <exception cref="DriverException">Neither, or both: the driver's sentence, said verbatim.</exception>
-    private static (WorkScope Scope, string Id) WorkNamed(IpcRequest request) =>
-        (Optional(request, "ask"), Optional(request, "quest")) switch
+    private static (WorkScope Scope, string Id) WorkNamed(string? ofAsk, string? ofQuest) =>
+        (ofAsk, ofQuest) switch
         {
             ({ } ask, null) => (WorkScope.Ask, ask.Trim().TrimStart('#')),
             (null, { } quest) => (WorkScope.Quest, quest.Trim().TrimStart('#')),

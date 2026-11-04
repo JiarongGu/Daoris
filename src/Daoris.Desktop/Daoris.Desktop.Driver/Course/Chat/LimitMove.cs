@@ -16,8 +16,17 @@ namespace Daoris.Driver;
 /// <para><b>Where no other account has room</b> it stays where it is and its words with it: the next refused turn tries again. A teammate's
 /// record, an intake and a conversation that went on already never move; a conversation the person ended has no refused turn.</para>
 /// </remarks>
-internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help)
+[Executor("limit-move", ExecutorPhase.Move)]
+internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 {
+    private ChatContext context => wiring.Context;
+
+    private IChatRunning runner => wiring;
+
+    private ChatHandOver handOver => wiring.Of<ChatHandOver>();
+
+    private IChatHelping help => wiring.Of<IChatHelping>();
+
     /// <summary>
     /// The <see cref="StartedFrom.Why"/> of an ended move that left its conversation waiting for the account the person picked (PICKLOST1):
     /// the go-on of a lost conversation reads it, so it waits there rather than going on in the brief's move, which would refuse the same
@@ -65,14 +74,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
     /// The conversations' move record (FOUNDATION1f-ii part a): the live move's record is written there, and the shell's come-up takes a dead
     /// shell's moves up through it. A test hands one over a store of its own run.
     /// </summary>
-    internal ConversationMoves Moves { get; set; } = new(context.Home, context.Service, context.Events, context.Output);
-
-    /// <summary>
-    /// Where no other account has room (LIMITRESUME1c, D206 §3.5): the conversation waits for its limit, its words with it, rather than
-    /// staying to be refused turn by turn (<see cref="LimitWaits.Wait"/>). Told the session, its turns, the adapter it runs on and, where the
-    /// person picked its account, that account, whose reset its wait is (FOUNDATION1a-ii).
-    /// </summary>
-    internal Func<string, ITurnedChat, string, string?, bool>? Stays { get; set; }
+    internal ConversationMoves Moves { get; set; } = new(wiring.Context.Home, wiring.Context.Service, wiring.Context.Events, wiring.Context.Output);
 
     /// <summary>A turn's end, told as the turns move: judged on a task of its own, as <see cref="CurveMove.Due"/> is.</summary>
     public void Due(string sessionId, DriverConfig config, Func<string, string, Task>? onEnded)
@@ -167,7 +169,8 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         Decided?.Invoke(sessionId, course);
         if (picked)
         {
-            if (!chat.Turns.Limited) Stays?.Invoke(sessionId, chat, ranOn, prior.Profile);
+            // FOUNDATION1a-ii: the account the person picked is the one whose reset it waits for.
+            if (!chat.Turns.Limited) wiring.Of<LimitWaits>().Wait(sessionId, chat, ranOn, prior.Profile);
             return new StartedFrom(null, false, null, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
         }
 
@@ -177,7 +180,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             if (!chat.Turns.Limited)
             {
                 context.Note(sessionId, elsewhere.Stays!);
-                Stays?.Invoke(sessionId, chat, ranOn, null);
+                wiring.Of<LimitWaits>().Wait(sessionId, chat, ranOn);
             }
 
             return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");

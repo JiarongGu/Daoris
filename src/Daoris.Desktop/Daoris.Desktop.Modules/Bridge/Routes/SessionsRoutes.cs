@@ -282,7 +282,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // and the no answer, oldest first, with the session that asked. A read off the home's `helpers` folder: it declares nothing,
     // and sits under the sessions' key on the page, which every tick asks again; the look says a new one in its report.
     [DriverRoute("HELPER_WAITS", PipeClass.Open)]
-    private Task<object?> HelperWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> HelperWaitsAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var files = new HelperFiles(_loop.Home);
         var waits = files.Asks()
@@ -518,7 +518,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // driver's memory (`HeldPermissions`), which a restart empties with the agents that asked; the attention slice's own projection,
     // so the pushed rows and the route say each hold alike.
     [DriverRoute("PERMISSION_WAITS", PipeClass.Open)]
-    private Task<object?> PermissionWaitsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> PermissionWaitsAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new { Waits = AttentionStateSlice.PermissionWaits(HeldPermissions.Of(_loop.Events)) });
 
     // The person's answer to a request a session holds for them: an option the agent offered, by its id, or none to
@@ -541,7 +541,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // that answered, the answers' ids and since when. A read off the home's marks (`GoOnMarks`), which the look and the conversations
     // write; it declares nothing, and sits under the sessions' key on the page, which every tick asks again.
     [DriverRoute("ANSWER_WAITS", PipeClass.Open)]
-    private Task<object?> AnswerWaitsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private Task<object?> AnswerWaitsAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new { Waits = AttentionStateSlice.AnswerWaits(_loop.Home) });
 
     // The person's answer to a third answer alone held for them: `goOn` true is *Go on with this answer*, their press
@@ -651,14 +651,14 @@ public sealed class SessionsRoutes(DriverContext context)
     // `{ waiting: [{ session, repository, question, asked, generation }], at }`.
     [DriverRoute("SUPERVISOR_WAITING", PipeClass.Open)]
     [ByEvent("SUPERVISOR_WAITING", Untold = "the question files, and the verb waits for an answer made after its own ask")]
-    private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
+    private async Task<object?> SupervisorWaitingAsync(NoPayload _, CancellationToken cancellationToken) =>
         new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
 
     // The steward's acts this run, newest first, and its live hold's generation, what its holder's verb
     // reads before it proves an act: from the judge's memory alone, so it answers at once. A read naming no key:
     // `{ generation, acts: [{ id, act, repository, quest, session, at, standing, waiting }] }`, the generation null where none is live.
     [DriverRoute("STEWARD_ACTS", PipeClass.Open)]
-    private object? StewardActs(IpcRequest request) => _loop.Pipe?.StandingConfirmation is { } judge
+    private object? StewardActs(NoPayload _) => _loop.Pipe?.StandingConfirmation is { } judge
         ? new { Generation = judge.LiveGeneration(AppointedRoles.Steward), Acts = judge.StewardActsNow() }
         : new { Generation = (string?)null, Acts = (IReadOnlyList<StewardActNow>)[] };
 
@@ -681,7 +681,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // judge's memory alone, newest first, never a caller's key. A read: `{ requests: [{ id, act, target, why, filed, state, closed,
     // answeredBy, reason }] }`, none where no pipe is served.
     [DriverRoute("STEWARD_DESK", PipeClass.Open)]
-    private object? StewardDeskRead(IpcRequest request) => new
+    private object? StewardDeskRead(NoPayload _) => new
     {
         Requests = _loop.Pipe?.StandingConfirmation is { } judge ? judge.Desk.Now().Select(DeskRow).ToList() : new List<object>(),
     };

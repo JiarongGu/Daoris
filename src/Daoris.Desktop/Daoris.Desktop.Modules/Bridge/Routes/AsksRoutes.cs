@@ -27,12 +27,12 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// mark. <c>entry</c> reads as that entry would, and <c>since</c> only the items after a moment.
     /// </summary>
     [DriverRoute("CHANNEL_READ", PipeClass.Open)]
-    private async Task<object?> ChannelReadAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ChannelReadAsync(ChannelReadRequest press, CancellationToken cancellationToken)
     {
-        var ask = Asked(request);
+        var ask = Asked(press.Ask);
         var service = _loop.Service ?? throw NotReady();
-        var since = Optional(request, "since") is { } moment ? Moments.Read(moment) : null;
-        var view = await service.ChannelAsync(ask, Optional(request, "entry"), cancellationToken, since).ConfigureAwait(false);
+        var since = press.Since is { } moment ? Moments.Read(moment) : null;
+        var view = await service.ChannelAsync(ask, press.Entry, cancellationToken, since).ConfigureAwait(false);
         return view is null ? ChannelAnswers.Empty(ask) : ChannelAnswers.Read(view);
     }
 
@@ -46,19 +46,19 @@ public sealed class AsksRoutes(DriverLoop loop)
     [GroundAsk("CHANNEL_POST", "ask")]
     [Says("CHANNEL_POST", "text:words")]
     [Publishes("CHANNEL_POST", StateScopes.Asks)]
-    private async Task<object?> ChannelPostAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ChannelPostAsync(ChannelPostPress press, CancellationToken cancellationToken)
     {
-        var ask = Asked(request);
+        var ask = Asked(press.Ask);
         var service = _loop.Service ?? throw NotReady();
         // RPC1e: `ask channel <id> "…"` sent over the pipe asks for the verb's own words, its level as the verb sends it.
-        if (Flag(request, "said"))
+        if (press.Said)
         {
-            var asked = new ChannelAsk(ask, Optional(request, "to"), Optional(request, "re"), Optional(request, "text") ?? "", Flag(request, "ordinary"));
+            var asked = new ChannelAsk(ask, press.To, press.Re, press.Text ?? "", press.Ordinary);
             return await TerminalSaid.RunAsync(output => ChannelCommand.RunAsync(asked, service, output, cancellationToken)).ConfigureAwait(false);
         }
 
         var posted = await service.ChannelPostAsync(
-            ask, Optional(request, "text") ?? "", Optional(request, "to"), Optional(request, "re"), cancellationToken).ConfigureAwait(false);
+            ask, press.Text ?? "", press.To, press.Re, cancellationToken).ConfigureAwait(false);
         return ChannelAnswers.Posted(posted);
     }
 
@@ -71,11 +71,11 @@ public sealed class AsksRoutes(DriverLoop loop)
     [Owner("CHANNEL_MARK", None = OwnerNone.ActsOnNothing)]
     [Timeless("CHANNEL_MARK", "a read mark, which never moves back")]
     [Publishes("CHANNEL_MARK", StateScopes.Asks)]
-    private async Task<object?> ChannelMarkAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ChannelMarkAsync(ChannelMarkPress press, CancellationToken cancellationToken)
     {
-        var ask = Asked(request);
+        var ask = Asked(press.Ask);
         var service = _loop.Service ?? throw NotReady();
-        var through = Optional(request, "through") is { } moment ? Moments.Read(moment) : null;
+        var through = press.Through is { } moment ? Moments.Read(moment) : null;
         var view = await service.ChannelMarkAsync(ask, through, cancellationToken).ConfigureAwait(false);
         return view is null ? ChannelAnswers.Empty(ask) : ChannelAnswers.Read(view);
     }
@@ -93,12 +93,12 @@ public sealed class AsksRoutes(DriverLoop loop)
     [GroundRepository("CHANNEL_FORWARD", "repository")]
     [Says("CHANNEL_FORWARD", "repository:repository")]
     [Publishes("CHANNEL_FORWARD", StateScopes.Asks)]
-    private async Task<object?> ChannelForwardAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> ChannelForwardAsync(ChannelForwardPress press, CancellationToken cancellationToken)
     {
-        var ask = Asked(request);
+        var ask = Asked(press.Ask);
         var service = _loop.Service ?? throw NotReady();
-        var message = Optional(request, "message")?.Trim() is { Length: > 0 } id ? id : throw new DriverException("name the message to send on.");
-        var repository = Optional(request, "repository")?.Trim() is { Length: > 0 } named
+        var message = press.Message?.Trim() is { Length: > 0 } id ? id : throw new DriverException("name the message to send on.");
+        var repository = press.Repository?.Trim() is { Length: > 0 } named
             ? named
             : throw new DriverException("name the repository whose session the message goes to.");
         var records = await service.RecordsAsync(cancellationToken).ConfigureAwait(false);
@@ -111,7 +111,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// Each is read at <c>CHANNEL_READ</c> by its id; the service holds no record of it, so it has no title.
     /// </summary>
     [DriverRoute("ASKS_ELSEWHERE", PipeClass.Open)]
-    private async Task<object?> AsksElsewhereAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> AsksElsewhereAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         return new ElsewhereAnswer(await service.ElsewhereAsksAsync(cancellationToken).ConfigureAwait(false));
@@ -119,6 +119,6 @@ public sealed class AsksRoutes(DriverLoop loop)
 
     /// <summary>The ask a route is about, as the service names it.</summary>
     /// <exception cref="DriverException">None named: the driver's sentence, said verbatim.</exception>
-    private static string Asked(IpcRequest request) =>
-        Optional(request, "ask")?.Trim().TrimStart('#') is { Length: > 0 } ask ? ask : throw new DriverException("a channel is an ask's: name the ask.");
+    private static string Asked(string? named) =>
+        named?.Trim().TrimStart('#') is { Length: > 0 } ask ? ask : throw new DriverException("a channel is an ask's: name the ask.");
 }

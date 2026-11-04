@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Ask Daoris's conversations, kept (ASKHIST1): an earlier one goes on in its own harness conversation with the person's words,
-/// as a repository's chat does (MSG1c, D137 §2.2), and a new one can start from an earlier one's words. A class over the runner's
-/// context (PART10h, D166); the going-on of an ended one is <see cref="ChatGoOn"/>'s, which reads this class's set-aside and room.
+/// as a repository's chat does (MSG1c, D137 §2.2), and a new one can start from an earlier one's words. A registered executor; the
+/// going-on of an ended one is <see cref="ChatGoOn"/>'s, which reads this class's set-aside and room.
 /// </summary>
 /// <remarks>
 /// <para><b>One conversation runs in each workspace at a time</b> (HELP1a, ASKSCOPE1a), so going back to an earlier conversation,
@@ -15,11 +15,16 @@ namespace Daoris.Driver;
 /// machine; where nothing hands one, the room as last written serves and nothing outside it is read. It is the room of the
 /// conversation's workspace (ASKSCOPE1b, <see cref="HelpRoom.GoesOnIn"/>), the machine projected to it.</para>
 ///
-/// <para>It holds the runner for the new conversation it opens and for whether a turn is taking, as <see cref="ChatHandOver"/>
-/// does: they are the runner's own start and the runner's own turns.</para>
+/// <para>It opens through the runner's own start and asks the runner's own turns whether one is taking, as <see cref="ChatHandOver"/>
+/// does.</para>
 /// </remarks>
-internal sealed class ChatHelp(ChatContext context, ChatRunner runner) : IChatHelping
+[Executor("help-rooms", ExecutorPhase.Start, "help")]
+internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
 {
+    private ChatContext context => wiring.Context;
+
+    private IChatRunning runner => wiring;
+
     /// <summary>How long a conversation set aside is waited for to end, so the ledger sees the room free.</summary>
     private static readonly TimeSpan SetAsideBound = TimeSpan.FromSeconds(10);
 
@@ -137,7 +142,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner) : IChatHe
             try
             {
                 // The help start's own read and bound, so a conversation going on waits for the machine exactly as one opening does.
-                var start = runner.Executors.Of<HelpStart>();
+                var start = wiring.Of<HelpStart>();
                 var (read, late, waited) = await start.ReadAsync(describe, workspace, ct).ConfigureAwait(false);
                 if (read?.Within(workspace) is { } machine)
                 {

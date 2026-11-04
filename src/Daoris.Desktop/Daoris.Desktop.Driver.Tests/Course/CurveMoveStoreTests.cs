@@ -206,10 +206,12 @@ public sealed class CurveMoveStoreTests : IDisposable
         var old = Talking(context, "c1");
         var runner = new Opening(client, context, wire);
         shape?.Invoke(runner);
-        var curve = new CurveMove(context, new ChatHandOver(context, runner))
+        var stand = new ExecutorStand(runner, context);
+        stand.Add(new ChatHandOver(stand));
+        var curve = stand.Add(new CurveMove(stand)
         {
             Moves = new ConversationMoves(_home, client, events, store: Store("run-shell")),
-        };
+        });
         var world = new World(context, runner, curve, ledger, client, old);
         ledger.BeforeRequest = (request, _) =>
         {
@@ -425,7 +427,7 @@ public sealed class CurveMoveStoreTests : IDisposable
         using var c = world.Client;
         var asked = new HandOverRequest("talk", "account-2", HandOverWhy.Curve, HandOverBy.Daoris, Now);
         new HandOverBox(_home).Write("c1", asked);
-        var handOver = new ChatHandOver(world.Context, world.Runner);
+        var handOver = new ChatHandOver(new ExecutorStand(world.Runner, world.Context));
 
         var taken = await handOver.TakeAsync("c1", Config(), null);
 
