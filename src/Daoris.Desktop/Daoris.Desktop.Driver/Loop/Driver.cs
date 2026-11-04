@@ -43,7 +43,7 @@ public sealed class Driver(
     // The sessions still running (DEV3), shared by the watch across the driver it builds for each look,
     // since a session outlives the look that started it. Null keeps this driver's own, which is what a
     // one-look run and a gate's run-until-idle want.
-    RunningSessions? running = null) : ILandingWiring, IPluginWiring, ISetupWiring
+    RunningSessions? running = null) : ILandingWiring, IPluginWiring, ISetupWiring, ILookStagesWiring
 {
     /// <summary>
     /// How one quest's start is run, from its holds to its record's conclusion: <see cref="RunAsync"/>, unless a
@@ -288,6 +288,22 @@ public sealed class Driver(
     QuestionSupervisorDecisions ILookWiring.Supervisor => Context.Supervisor;
 
     GoOnMarks ILookWiring.Marks => Context.Marks;
+
+    LoopContext ILookStagesWiring.Context => Context;
+
+    ReviewDesk? ILookStagesWiring.Reviews => Reviews;
+
+    DriverHandOvers ILookStagesWiring.HandOvers => HandOvers;
+
+    OpinionGateLook ILookStagesWiring.Gate => Gate;
+
+    DriverHelpers ILookStagesWiring.Helpers => Helpers;
+
+    DriverPartners ILookStagesWiring.Partners => Partners;
+
+    DriverBrainstorms ILookStagesWiring.Brainstorms => Brainstorms;
+
+    DriverMeetings ILookStagesWiring.Meetings => Meetings;
 
     SessionOutput? ILandingWiring.Output => output;
 
@@ -1062,112 +1078,8 @@ public sealed class Driver(
         // What the passes left in the state, which the stages not yet passes read and the snapshot they go on shaping.
         var state = round.State;
         var snapshot = state.Snapshot;
-        // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers that would take their line on alone a third time in a row
-        // with nobody between are marked for the person first, so the planner leaves them waiting. A record needs its line read only where
-        // answers alone wait on it.
-        var lookedAt = snapshot;
-        // A record a supervisor's held decision holds is not picked (SUPERVISOR1a-i, §6.3): nothing goes on from it inside the window.
-        await Stages.TimeAsync("alone", () => state.Alone
-            .LookAsync(
-                service,
-                lookedAt.LastRun.Values.Concat(lookedAt.NamedByReopen.Values).Where(record => !lookedAt.SupervisorHolds(record)),
-                DateTimeOffset.UtcNow, ct)).ConfigureAwait(false);
-        // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a
-        // reopen names is one the planner goes on with too (FABRIC-CLOSE1c9).
-        snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)) };
-        // COAGENT1b (the co-agent design §5): the pieces on file, whose reservations every starter below counts under the cap.
-        snapshot = snapshot with { Pieces = new PartnerFiles(home).Reservations() };
-        // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
-        // stands read for the planner, which reads the stop that handed one over as released.
-        var read = snapshot;
-        snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
-        // STAFFPOLICY1e: a quest whose last session ended past its transient bound under a role that moves on it: the course decides once, and
-        // the move is written down before the planner reads it, so a restart or a second look reads the one decision.
-        snapshot = snapshot with { FailuresAt = StaffCourse.FailuresAt(Context.Harnesses.StaffFor(home), snapshot) };
-        var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, Context.Harnesses.Clock());
-        var limitHolds = StaffCourse.LimitHolds(Context.Harnesses.StaffFor(home), snapshot);
-        snapshot = snapshot with { PolicyMoving = policyMoving, PolicyHolds = limitHolds.Count == 0 ? policyHolds : policyHolds.Concat(limitHolds).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
-        // RETRYWORK1: the commits a failed session left beyond its start, for each open quest it failed before taking, so the planner
-        // carries the quest on in that tree rather than building its work again in a new one. No git starts where no such quest is.
-        var handed = snapshot;
-        snapshot = await Stages.TimeAsync("committed", () => CommittedWork.LookAsync(handed, CommittedWork.CountAsync, ct)).ConfigureAwait(false);
-        // INTEGRATE1l (the integration design §9): what each running unit changed, one git read per running session, and the quests whose
-        // integration request is open, for the planner's comparison at a start; two running units changing one path are each told once.
-        var committedLook = snapshot;
-        var integrating = new IntegrationStore(home).Open().Select(request => request.Quest).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
-        snapshot = await Stages.TimeAsync("overlaps", () => WorkOverlaps.LookAsync(committedLook, integrating, WorkOverlaps.DiffAsync, ct)).ConfigureAwait(false);
-        var overlapLook = snapshot;
-        await Stages.TimeAsync("overlaps-told", () => WorkOverlaps.TellAsync(home, overlapLook, async (session, text, key, token) =>
-            await service.SayAsync(session, text, ct: token, from: DaorisWords.From, key: key, running: true).ConfigureAwait(false), ct)).ConfigureAwait(false);
-        Context.Harnesses.Look(snapshot.Started, state.Mark);
-
-        // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
-        // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
-        var looked = snapshot;
-        events.AddRange(await Stages.TimeAsync("channel", () => Context.Channel
-            .LookAsync(new ServiceChannelDoors(service), looked, Context.Processes, ct, Lines))
-            .ConfigureAwait(false));
-
-        // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,
-        // and the planner's go-on resumes it at the next look; a running one this loop runs at its next step, through its inbox
-        // (COWORK1b). Read from the quests this look read: nothing more where none is reopened.
-        // LIMITSWITCH3: and the words it took off a record because what they said no longer holds are off the snapshot the plan reads too.
-        var takenOff = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
-        events.AddRange(await Stages.TimeAsync("reopens", () => Context.Reopens
-                .LookAsync(
-                    new ServiceReopenDoors(service, Context.Processes, Context.Events, Context.Trees), looked, ct, Lines,
-                    taken: (session, ids) => takenOff[session] = takenOff.TryGetValue(session, out var before) ? [.. before, .. ids] : ids))
-            .ConfigureAwait(false));
-        snapshot = ReopenTelling.Without(snapshot, takenOff);
-
-        // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
-        // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
-        if (Reviews is { } showing)
-        {
-            try
-            {
-                events.AddRange(await Stages.TimeAsync("reviews", () => showing.LookAsync(looked.Quests, service.FindQuestAsync, ct, Lines))
-                    .ConfigureAwait(false));
-            }
-            catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                events.Add(Lines.Retry("review", $"review  the set-ups' tabs were not looked at this look: {error.Message}"));
-            }
-        }
-
-        // The second opinions owed (XAGENT1f, the second-agent design §2.1, §7, §8.1): asked and delivered beside the look, and the
-        // starts they sit held. A pass finishes work already done, so it takes its slot before any quest's first start (D130).
-        // PARALLEL1g (D181 point 3): under the watch each is judged as its topic's judge beside the look, and the plan reads what each last
-        // found; one not judged yet holds its chain. The facts' wake is taken first, so a judgment landing after this wakes the next look.
-        Context.Runs.TakeFactsMoved();
-        var judgedOpinions = new List<OpinionJudged>();
-        var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => Context.Beside
-            ? Task.FromResult(Gate.OpinionsBeside(looked, judgedOpinions, Stages, ct, events))
-            : OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
-        snapshot = snapshot with { Opinions = opinionSits };
-
-        // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
-        // the cap as a pass does, and each answer handed to the session that asked. PARALLEL1g: under the watch an asker's record, an
-        // answer's handing and a restart's settling are the `helper` topic's judge's; the verdict and its start stay here.
-        var judged = snapshot;
-        var taken = passes;
-        passes += await Stages.TimeAsync("helpers", () => HelpersAsync(judged, taken, events, ct)).ConfigureAwait(false);
-
-        // The pieces asked of partners (COAGENT1b, D199 points 2 to 4): judged and reserved in the common admission, each started beside
-        // the look in its copy and its strict job, and carried from where it stands to its answer.
-        taken = passes;
-        passes += await Stages.TimeAsync("partners", () => PiecesAsync(judged, taken, events, ct)).ConfigureAwait(false);
-
-        // The brainstorms on file (BRAINSTORM1a, D176): each request frozen into its packet for the person to read, and each one the
-        // person sent run beside the look, taking a slot under the cap as a pass does.
-        taken = passes;
-        passes += await Stages.TimeAsync("brainstorms", () => BrainstormsAsync(judged, taken, events, ct)).ConfigureAwait(false);
-
-        // The meetings on file (AGENTROOM1a, D177): each round's packet frozen for the person to read, and each round they sent run
-        // beside the look, its turns one at a time through a brainstorm's pass, each taking a slot under the cap.
-        taken = passes;
-        passes += await Stages.TimeAsync("meetings", () => MeetingsAsync(judged, taken, events, ct)).ConfigureAwait(false);
+        var passes = state.Passes;
+        var judgedOpinions = state.JudgedOpinions;
 
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
         IReadOnlyList<Consideration> plan;

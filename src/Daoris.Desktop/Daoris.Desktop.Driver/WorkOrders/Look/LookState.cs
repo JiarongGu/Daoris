@@ -16,6 +16,9 @@ internal sealed class LookState(List<SessionEnded> concluded)
     private long? _mark;
     private IReadOnlyList<StartReservation>? _reservedBefore;
     private AnswersAloneHold? _alone;
+    private Snapshot? _looked;
+    private int? _passes;
+    private List<OpinionJudged>? _judgedOpinions;
 
     /// <summary>
     /// The quests, sessions and records the plan reads: read by the <c>snapshot</c> pass, and set again by each pass that shapes it,
@@ -52,6 +55,27 @@ internal sealed class LookState(List<SessionEnded> concluded)
     {
         get => _alone ?? throw Unwritten(nameof(Alone), "supervisor");
         set => _alone = value;
+    }
+
+    /// <summary>The snapshot as the roster pass left it, which the channel, the reopens, the reviews and the opinions read.</summary>
+    public Snapshot Looked
+    {
+        get => _looked ?? throw Unwritten(nameof(Looked), "roster");
+        set => _looked = value;
+    }
+
+    /// <summary>The slots the look's passes started, counted under the cap: the opinions' write it, and each pass after them adds.</summary>
+    public int Passes
+    {
+        get => _passes ?? throw Unwritten(nameof(Passes), "opinions");
+        set => _passes = value;
+    }
+
+    /// <summary>What the second opinions judged this look, for its report.</summary>
+    public List<OpinionJudged> JudgedOpinions
+    {
+        get => _judgedOpinions ?? throw Unwritten(nameof(JudgedOpinions), "opinions");
+        set => _judgedOpinions = value;
     }
 
     /// <summary>What ended this look: a parked intake it ends, and every session that ended since the last look.</summary>
