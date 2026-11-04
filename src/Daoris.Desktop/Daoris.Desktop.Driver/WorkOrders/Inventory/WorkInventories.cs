@@ -100,7 +100,7 @@ public static class WorkInventories
         }
 
         var gathered = new InventoryFacts(
-            branches, landings, trees, Ours(new AutoLandings(home).All(), entry => entry.Repository), refs, inUse,
+            branches, landings, trees, [], refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
         {
             Standing = standing, Recorded = recorded ?? [], SetAsideFor = days, Owed = WorkObligations.Read(home, at),

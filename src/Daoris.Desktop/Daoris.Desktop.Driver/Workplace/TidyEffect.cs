@@ -71,7 +71,7 @@ public sealed class TidyEffect : IChainEffect
     {
         var grown = new SessionBranches(home).Entries();
         var facts = new InventoryFacts(
-            grown, new LandedBranches(home).Entries(), [], new AutoLandings(home).All(), [], new HashSet<string>(), _ => false, now);
+            grown, new LandedBranches(home).Entries(), [], [], [], new HashSet<string>(), _ => false, now);
         var treesRoot = new SessionTrees(home).TreesRoot;
         var pending = new List<TidyUnit>();
         foreach (var unit in WorkplaceWorkOrders.Current.Derive(facts))

@@ -27,9 +27,6 @@ public static class TraceStores
 
     /// <summary>This machine's <c>driver.json</c>, for the standing answers (D135 §3).</summary>
     public const string Config = "config";
-
-    /// <summary>This machine's due list (LAND2b, D145), each session due to land automatically and each try.</summary>
-    public const string AutoLandings = "auto-landings";
 }
 
 // Why a link is missing (D143 point 3), one family per kind of link, each a code the screen words where the link would
@@ -688,12 +685,6 @@ public sealed record TraceLanding
     public string? Missing { get; init; }
 
     public IReadOnlyList<TraceBranch> Branches { get; init; } = [];
-
-    /// <summary>
-    /// Its entry on the due list (LAND2b), where it has one: a session never due has none. Read where its landings are, as the
-    /// terminal says it beside them.
-    /// </summary>
-    public TraceDue? Due { get; init; }
 }
 
 /// <summary>A branch a landing made, standing or gone.</summary>
@@ -825,38 +816,6 @@ public sealed record TraceGoAheadStood(int Number, string State)
 }
 
 public sealed record TraceWordsBefore(string Ask, int Before, int Of);
-
-/// <summary>
-/// A session's entry on the due list (LAND2b, D145, design §8): when it became due, when a try closed it, and each try by its
-/// code. Never its tree, which the entry keeps as a machine path.
-/// </summary>
-public sealed record TraceDue(DateTimeOffset Since)
-{
-    /// <summary>Its store: <see cref="TraceStores.AutoLandings"/>.</summary>
-    public string Source => TraceStores.AutoLandings;
-
-    /// <summary>When a try closed it, or null while it still waits.</summary>
-    public DateTimeOffset? Closed { get; init; }
-
-    /// <summary>Each try, oldest first; none before the first.</summary>
-    public IReadOnlyList<TraceTry> Tries { get; init; } = [];
-}
-
-/// <summary>One try to land a due session: its code, one of <see cref="AutoLandingCode"/>, and the facts it was made at.</summary>
-public sealed record TraceTry(DateTimeOffset At, string Code)
-{
-    /// <summary>The branch it made, or the one it found standing.</summary>
-    public string? Branch { get; init; }
-
-    /// <summary>How many commits it carried, where it landed.</summary>
-    public int? Commits { get; init; }
-
-    /// <summary>How many paths were uncommitted, where that is what held it.</summary>
-    public int? Uncommitted { get; init; }
-
-    /// <summary>The tree's commit when it was tried.</summary>
-    public string? Tip { get; init; }
-}
 
 /// <summary>The landing rule a branch was made under, as it stood then (LAND2b, D145 point 6).</summary>
 /// <param name="Source">Where the rule came from, one of <see cref="LandingSource"/>.</param>
@@ -1259,39 +1218,15 @@ internal static partial class TraceChains
 
         // FLOWCHART1c: every landing that names it, the one made for it and each it moved on, so a shared branch is read from each.
         var branches = facts.Landings.Where(each => each.Names(session.Id)).Select(Branch).ToList();
-        var due = Due(session, facts);
-        if (branches.Count > 0) return new TraceLanding { Branches = branches, Due = due };
+        if (branches.Count > 0) return new TraceLanding { Branches = branches };
 
         return new TraceLanding
         {
             Missing = events is null || events.Missing is not null ? TraceLandingGaps.Unknown
                 : events.Accepted.Count == 0 ? TraceLandingGaps.None
                 : TraceLandingGaps.MergeAccepted,
-            Due = due,
         };
     }
-
-    /// <summary>
-    /// Its entry on the due list (LAND2b, design §8), where it has one: when it became due, when a try closed it, and each try by
-    /// its code with the branch it made or met. The entry's tree and status fingerprint stay on this machine.
-    /// </summary>
-    private static TraceDue? Due(TracedSession session, TraceFacts facts) =>
-        facts.AutoLandings.FirstOrDefault(each => Same(each.Session, session.Id)) is not { } entry
-            ? null
-            : new TraceDue(entry.DueAt)
-            {
-                Closed = entry.Closed,
-                Tries =
-                [
-                    .. entry.Tries.Select(tried => new TraceTry(tried.At, tried.Code)
-                    {
-                        Branch = tried.Branch,
-                        Commits = tried.Commits,
-                        Uncommitted = tried.Uncommitted,
-                        Tip = tried.Tip,
-                    }),
-                ],
-            };
 
     /// <summary>A landing whose session the service holds no record of: what the landing alone says.</summary>
     private static TraceUnrecordedLink Unrecorded(string session, TraceFacts facts) =>

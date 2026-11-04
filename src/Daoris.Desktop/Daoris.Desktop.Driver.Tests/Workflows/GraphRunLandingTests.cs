@@ -73,8 +73,8 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     }
 
     /// <summary>The runtime's door, landing as the performer does: over the fixture's world, trees and faked plugin.</summary>
-    private LandingDoor Door() => new(() => new AutoLander(
-        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { Performs = true, HoldsLease = () => true });
+    private LandingDoor Door() => new(() => new LandPerformer(
+        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true });
 
     /// <summary>A branch made for the person, no plugin asked.</summary>
     private const string BranchLand = """{"method":"branch","plugin":"none","pattern":"feature/{quest}-{slug}"}""";

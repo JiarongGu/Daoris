@@ -83,40 +83,10 @@ public static class TreesPlanWords
     }
 
     /// <summary>
-    /// A session's entry on the due list (LAND2b, design §8), for <c>trees land --plan</c>: when it became due, and its last try
-    /// by its code; null where it was never due.
+    /// <c>trees land &lt;session&gt; --plan</c> for a session whose review reads as landed (REVIEW2, D113): why, which lands nothing again.
     /// </summary>
-    public static string? Due(AutoLanding? entry)
-    {
-        if (entry is null) return null;
-        var due = $"trees: due to land automatically since {Minute(entry.DueAt)} UTC";
-        if (entry.Last is not { } last) return $"{due}; not tried yet — the loop's next look tries it.";
-        var tried = $"{due}; last tried {Minute(last.At)} UTC: {last.Code}"
-                    + (last.Branch is { } branch ? $" (`{branch}`)" : "");
-        return entry.Closed is null
-            ? $"{tried}. It waits: " + last.Code switch
-            {
-                AutoLandingCode.Held => "its quest's release lands it.",
-                // FABRIC-CLOSE1h2: its branch is made and its push held back, so the release hands the branch on; nothing lands again.
-                AutoLandingCode.PushHeld => "its quest's release hands its branch on, or `trees hand` does now.",
-                _ => "a change in its tree, or your press lands it.",
-            }
-            : $"{tried}.";
-    }
-
-    private static string Minute(DateTimeOffset at) =>
-        at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
-
-    /// <summary>
-    /// <c>trees land &lt;session&gt; --plan</c> for a session whose review reads as landed (REVIEW2, D113): why, and where it is due,
-    /// which lands nothing again.
-    /// </summary>
-    public static TreesSaid LandedPlan(string session, LandedReview before, AutoLanding? due)
-    {
-        var said = new List<string> { $"trees: {LandedReviewWords.Describe(session, before)}" };
-        if (Due(due) is { } line) said.Add(line);
-        return new(said, [], 0);
-    }
+    public static TreesSaid LandedPlan(string session, LandedReview before) =>
+        new([$"trees: {LandedReviewWords.Describe(session, before)}"], [], 0);
 
     /// <summary>
     /// <c>trees land &lt;session&gt; --plan</c>: where accepting would put the work, what the line already holds of it, the work it holds by
@@ -136,8 +106,6 @@ public static class TreesPlanWords
         said.AddRange(gate.PlanLines());
         // Landed before, its branch gone since, its tree still here: said, as the review's note says it.
         if (before is not null) said.Add($"trees: {LandedReviewWords.Describe(session, before)}");
-        // Due to land at its quest's done (LAND2b): what its tries came to, which the review's note shows.
-        if (Due(new AutoLandings(home).Of(session)) is { } due) said.Add(due);
         return new(said, [], 0);
     }
 

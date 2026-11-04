@@ -154,10 +154,7 @@ public static class Trace
         }
 
         var landed = KnowledgeWorkplace.Current.Landings(sources.Home);
-        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries, LandingsProblem(landed.Path))
-        {
-            AutoLandings = KnowledgeWorkplace.Current.Due(sources.Home),
-        };
+        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries, LandingsProblem(landed.Path));
     }
 
     /// <summary>

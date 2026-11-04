@@ -51,17 +51,15 @@ public abstract class AutoLandingFixture : IDisposable
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "engine", "aurora", null, task, [], DateTimeOffset.UtcNow)));
     }
 
-    /// <summary>A done session in its own tree, concluded as the driver concludes one: its run's process read, then the switch.</summary>
+    /// <summary>A done session in its own tree, whose run follows a saved workflow as its conclusion reads it.</summary>
     protected async Task<string> NamedDoneAsync(string root, string session, string quest)
     {
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
         _world.Quests[quest] = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", "Done");
         _world.Records.Add(new SessionRecord(session, "engine", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
-        var process = await AutoLander.ProcessAsync(_home, Config(), _world, _world.Quests[quest], opened.Path, "aurora");
+        var process = await WorkflowProcesses.ConcludedAsync(_home, Config(), _world, _world.Quests[quest], opened.Path, "aurora");
         Assert.True(process!.Named);
-        Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
-            _world.Quests[quest], "Done", "completed", opened.Path, "aurora", process: process));
         return opened.Path;
     }
 
@@ -83,42 +81,6 @@ public abstract class AutoLandingFixture : IDisposable
     }
 
     protected const string PushBranch = "feature/q1-fix-the-gap";
-
-    /// <summary>
-    /// One look's landing of the due entries it chose (one, unless <paramref name="choices"/> says more), whose push waits behind another
-    /// push of its branch, held here, while <paramref name="quest"/> moves as <paramref name="change"/> says; then the branch's hold is let
-    /// go and the landing ends. What the landing said comes back.
-    /// </summary>
-    protected Task<IReadOnlyList<string>> HeldAtThePushAsync(
-        string root, Func<QuestView, QuestView> change, string quest = "q1", int choices = 1) =>
-        HeldAtThePushAsync(root, () => _world.Quests[quest] = change(_world.Quests[quest]), choices);
-
-    /// <summary>
-    /// The same, while <paramref name="change"/> moves anything the push is judged on (FABRIC-CLOSE1h12): a quest, the configuration's
-    /// rules, a set-up step the review reads.
-    /// </summary>
-    protected async Task<IReadOnlyList<string>> HeldAtThePushAsync(string root, Action change, int choices = 1)
-    {
-        var lander = Lander();
-        var (chosen, _) = await lander.ChooseAsync(Config());
-        Assert.Equal(choices, chosen.Count);
-        Task<IReadOnlyList<string>> landing;
-        using (var pushing = await LandingHolds.BranchAsync(_home, root, PushBranch))
-        {
-            Assert.NotNull(pushing);
-            using (ExecutionContext.SuppressFlow())
-            {
-                landing = Task.Run(() => lander.LandAsync(chosen));
-            }
-
-            Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || landing.IsCompleted,
-                // TESTWAIT8: the hold's own signal, or the landing ending; the bound only elapses on a real failure, so it is minutes.
-                TimeSpan.FromMinutes(5)), "the push waits for its branch");
-            change();
-        }
-
-        return await landing;
-    }
 
     protected static async Task<IReadOnlyList<string>> FeatureBranchesAsync(string root) =>
         (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/heads/feature/"))
@@ -196,9 +158,6 @@ public abstract class AutoLandingFixture : IDisposable
     // The plugin's next answer, once, where a test names one (LANDRACE1's review).
     protected Func<PluginLanding>? _answer;
 
-    protected AutoLander Lander() => new(
-        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add);
-
     /// <summary>The rule's plugin, faked on its channel: every frame it is told is kept, whichever door told it.</summary>
     protected LandingPlugins Plugins() => new(_home, start: (_, _, _) =>
     {
@@ -221,15 +180,6 @@ public abstract class AutoLandingFixture : IDisposable
 
     protected static JsonElement Json(object frame) => JsonDocument.Parse(JsonSerializer.Serialize(frame)).RootElement.Clone();
 
-    /// <summary>One look: what it chose, then what landing those beside it said.</summary>
-    protected async Task<IReadOnlyList<string>> LookAsync(bool pushes = true)
-    {
-        _pushes = pushes;
-        var lander = Lander();
-        var (chosen, said) = await lander.ChooseAsync(Config());
-        return [.. said, .. await lander.LandAsync(chosen)];
-    }
-
     protected DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done, made due as the driver's conclusion makes it.</summary>
@@ -250,19 +200,8 @@ public abstract class AutoLandingFixture : IDisposable
         {
             Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow, Entry = entry,
         });
-        // The status the driver's conclusion hands on, as it reads the quest after the run (Driver.ConcludedForLandingAsync's callers).
-        AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session, _world.Quests[quest],
-            QuestResults.Status(_world.Quests[quest]), "completed", opened.Path, "aurora");
         return opened.Path;
     }
-
-    /// <summary>
-    /// The session's record concluding again on its quest as it stands now, as the driver's conclusion of a carried-on run hands it on
-    /// (D137's words that went on, or the agent's next <c>ready</c>): due again.
-    /// </summary>
-    protected void ConcludeAgain(string session, string quest, string tree) =>
-        Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
-            _world.Quests[quest], QuestResults.Status(_world.Quests[quest]), "completed", tree, "aurora"));
 
     /// <summary>What a session in this repository's tree would be told of its landing, as a start composes it.</summary>
     protected string Instruction(string root)
@@ -309,7 +248,7 @@ public abstract class AutoLandingFixture : IDisposable
     /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it (FABRIC-CLOSE1h15), or null where it is still owed.</summary>
     protected Task<string?> ClosesAsync(OpinionDue due) =>
         OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None,
-            pushHeld: OpinionLook.PushHeld(_home));
+            pushHeld: LandPerformer.PushHeld(_home));
 
     protected void InstallManifest()
     {

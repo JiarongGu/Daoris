@@ -31,8 +31,7 @@ public static class LandingForm
 /// <i>Accept automatically</i> (LAND2a, D145): a quest's done lands its work as the person's Accept would, and the rule's
 /// plugin pushes it and opens the pull request with no press, the pull request being the last human step. A merge rule takes it
 /// too, since the workflow decides (D145's note of 2026-11-01); off, the default, is the press as it always was. It rides the rule, so a repository's own rule replaces
-/// its workspace's switch with the rest of it. LAND2b acts on it: a session concluding on a done quest becomes due
-/// (<see cref="AutoLandings"/>), and the next look lands it (<see cref="AutoLander"/>).
+/// its workspace's switch with the rest of it.
 /// </param>
 /// <param name="Key">
 /// The shape of the repository's ticket keys (PROCESS1b-i, D164's amendment point 2): a regular expression the pattern's

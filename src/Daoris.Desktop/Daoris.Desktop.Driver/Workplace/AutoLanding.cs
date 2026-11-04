@@ -1,86 +1,18 @@
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
-using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-
-/// <summary>How a concluded record stands to the switch (<see cref="AutoLandingRules.Concluded"/>).</summary>
-public static class AutoConcluded
-{
-    /// <summary>A done, in a tree of its own: due to land.</summary>
-    public const string Due = "due";
-
-    /// <summary>A done in the repository's own checkout: its work is already there, and nothing lands (design §2).</summary>
-    public const string NoTree = "no-tree";
-
-    /// <summary>An end that is not a done — declined, failed, stood down, stopped: it keeps today's review (design §2).</summary>
-    public const string NotDone = "not-done";
-
-    /// <summary>
-    /// A done in a tree of its own whose access setup lands work by its rule, under a rule that merges (AUTONOMY1c2): a merge lands
-    /// nothing by itself (D51 rule 6), so it waits for the person's Accept, and its conversation says why.
-    /// </summary>
-    public const string Merges = "merges";
-}
-
-/// <summary>The due list's rules (LAND2b): pure, so the tables hold them without a process.</summary>
+/// <summary>The performer's rules for its tries: pure, so the tables hold them without a process.</summary>
 public static class AutoLandingRules
 {
-    /// <summary>The ends a record may conclude in that are not a done, and are said under the switch.</summary>
-    private static readonly HashSet<string> Ends = new(StringComparer.Ordinal) { "declined", "failed", "stood-down", "stopped" };
-
     /// <summary>
-    /// How a driven record that just concluded stands to its repository's rule (design §2): due, a done in no tree of its own,
-    /// an end that is not a done, or null where the rule does not accept automatically, or the record is not an end.
-    /// </summary>
-    /// <param name="status">Its quest's status as the conclusion read it.</param>
-    /// <param name="ownTree">Whether it ran in a tree this home opened (D51), the only kind a landing reaches.</param>
-    /// <param name="state">The state its record concluded in.</param>
-    public static string? Concluded(LandingRule rule, string? status, bool ownTree, string state)
-    {
-        // The workflow decides (D145's note of 2026-11-01): a rule that accepts automatically, a merge's too, is Current's graph with no review.
-        if (rule is not { AutoAccept: true } || SessionStates.IsParked(state)) return null;
-        if (status == "Done") return ownTree ? AutoConcluded.Due : AutoConcluded.NoTree;
-        return Ends.Contains(state) ? AutoConcluded.NotDone : null;
-    }
-
-    /// <summary>
-    /// How a concluded record stands to the rule it lands by (AUTONOMY1c2, <see cref="LandingRules.Effective"/>): as
-    /// <see cref="Concluded(LandingRule, string?, bool, string)"/> says of its rule, and <see cref="AutoConcluded.Merges"/> for a done in a
-    /// tree of its own under a merge rule its access setup would have land by the rule, which lands nothing by itself (D51 rule 6). A done
-    /// in the checkout is there already, and another end keeps today's review, so neither is said.
-    /// </summary>
-    public static string? Concluded(Landing landing, string? status, bool ownTree, string state) =>
-        landing is { Access: not null, Rule.Form: LandingForm.Merge }
-            ? status == "Done" && ownTree && !SessionStates.IsParked(state) ? AutoConcluded.Merges : null
-            : Concluded(landing.Rule, status, ownTree, state);
-
-    /// <summary>
-    /// How a driven record that just concluded stands where the person's Accept is kept on it (LANDBACK1 part 1, <see cref="CarriedAccepts"/>):
-    /// <see cref="Concluded(LandingRule, string?, bool, string)"/> with the rule's switch read as on, since the person's yes stands for it. A
-    /// merge rule lands by the same yes, which the person's press is.
-    /// </summary>
-    public static string? ConcludedCarried(string? status, bool ownTree, string state)
-    {
-        if (SessionStates.IsParked(state)) return null;
-        if (status == "Done") return ownTree ? AutoConcluded.Due : AutoConcluded.NoTree;
-        return Ends.Contains(state) ? AutoConcluded.NotDone : null;
-    }
-
-    /// <summary>
-    /// Whether a due entry is worth a try now (design §2): its first, and a hold's at every look; a refusal only once its
-    /// tree's tip or status moved since it, so a look never repeats one that nothing changed. One due again after a try that closed it
-    /// is judged afresh, as a first is (<see cref="AutoLanding.Reopened"/>).
+    /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status moved
+    /// since it, so a pass never repeats one that nothing changed.
     /// </summary>
     public static bool ShouldTry(AutoLanding entry, string? tip, string status) => entry.Last switch
     {
         null => true,
-        // FABRIC-CLOSE1h6: due again by D137's words that went on, or a closure graph's next `ready`. The landing's own checks keep a
-        // commit from landing twice.
-        _ when entry.Reopened => true,
         { Code: var code } last when AutoLandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
@@ -113,176 +45,6 @@ public static class AutoLandingRules
         if (landed.Plugin is { Failed: true } or { Pushed: false }) return AutoLandingCode.PluginFailed;
         return landed.AdvancedFrom is not null ? AutoLandingCode.Advanced : AutoLandingCode.Landed;
     }
-}
-
-/// <summary>
-/// The sessions due to land automatically (LAND2b, D145 point 2): <c>&lt;home&gt;/sessions/auto-landings.json</c>. Written when a
-/// record concludes due, read and tried at each look, and kept once closed, so what each try came to can still be read by
-/// the trace and a terminal (D143).
-/// </summary>
-/// <remarks>
-/// <para><b>Machine-local, under the home (D63)</b>, beside the conversations it is about: which sessions this machine lands is
-/// a fact about this machine, like its landings.</para>
-///
-/// <para><b>A file that does not read is no due list, never a failure.</b> A landing missed that way waits for the person's
-/// press, as it did before the switch: the safe side.</para>
-///
-/// <para><b>Bounded</b>: the newest <see cref="ClosedKept"/> closed entries are kept, an open one always.</para>
-///
-/// <para><b>Edited under its record's lock</b> (FABRIC-RECLOCK2, D173's note): the look's pass and a conclusion in the instance, and a
-/// terminal's verb beside it (a look, a history clear), each read, change and write the whole file, so each edit holds <see cref="LockPath"/> as
-/// <c>landings.json</c>'s do.</para>
-/// </remarks>
-public sealed class AutoLandings(string home)
-{
-    public const string FileName = "auto-landings.json";
-
-    /// <summary>How many closed entries are kept, the newest by when they closed; an open entry is never dropped.</summary>
-    public const int ClosedKept = 200;
-
-    // One writer at a time in this process: the look's pass and a conclusion may write at once.
-    private static readonly object Gate = new();
-
-    private static readonly RecordList<AutoLanding> List = new(Gate, "due", Read, ToJson, Bounded);
-
-    public string FilePath => DaorisHome.Entry(home, HomeEntry.Sessions, FileName);
-
-    /// <summary>The record's lock across processes (FABRIC-RECLOCK2): the loop and a verb beside it edit this file one at a time.</summary>
-    public string LockPath => RecordLock.PathOf(home, FileName);
-
-    /// <summary>Every entry, open and closed, in the order they became due.</summary>
-    public IReadOnlyList<AutoLanding> All() => List.Read(FilePath);
-
-    /// <summary>The entries still waiting to land, in the order they became due.</summary>
-    public IReadOnlyList<AutoLanding> Open() => [.. All().Where(entry => entry.Closed is null)];
-
-    /// <summary>One session's entry, open or closed, or null.</summary>
-    public AutoLanding? Of(string session) =>
-        All().LastOrDefault(entry => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>
-    /// Make a session due. One due before, open or closed, is opened again with its tries kept: a session words went on with
-    /// after its landing (D137) concludes again, and what it came to the first time stays a fact. One that a try had closed is
-    /// judged afresh at the next look (FABRIC-CLOSE1h6, <see cref="AutoLanding.Reopened"/>); one still open keeps its last try's rule.
-    /// </summary>
-    public void Due(AutoLanding entry) => Edit(all =>
-    {
-        var before = all.FirstOrDefault(each => Same(each, entry.Session));
-        var opened = entry with { Tries = before?.Tries ?? entry.Tries, Closed = null };
-        return [.. all.Where(each => !Same(each, entry.Session)), opened];
-    });
-
-    /// <summary>Keep one try on a session's entry, and close it where the try ends it.</summary>
-    public void Tried(string session, AutoTry tried, bool close) => Edit(all =>
-        [.. all.Select(each => Same(each, session) ? each with { Tries = [.. each.Tries, tried], Closed = close ? tried.At : each.Closed } : each)]);
-
-    /// <summary>
-    /// The closed entries of sessions whose records are gone (HIST1c, the history-clearing design §2.2), dropped: what each try
-    /// came to is read only beside its record. An open entry stays, since a clear refuses a landing still trying. The sessions
-    /// whose entry went come back; nothing is written when none did.
-    /// </summary>
-    public IReadOnlyCollection<string> Forget(IReadOnlyCollection<string> sessions)
-    {
-        lock (Gate)
-        {
-            using var held = RecordLock.Take(LockPath);
-            var all = All();
-            var gone = all.Where(entry => entry.Closed is not null && sessions.Any(session => Same(entry, session))).ToList();
-            if (gone.Count == 0) return [];
-            AtomicFile.WriteText(FilePath, ToJson([.. all.Where(entry => !gone.Any(each => ReferenceEquals(each, entry)))]));
-            return [.. sessions.Where(session => gone.Any(entry => Same(entry, session)))];
-        }
-    }
-
-    private static bool Same(AutoLanding entry, string session) => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase);
-
-    private void Edit(Func<IReadOnlyList<AutoLanding>, IReadOnlyList<AutoLanding>> change) => List.Edit(FilePath, change, LockPath);
-
-    /// <summary>The entries with the closed ones beyond the newest <see cref="ClosedKept"/> dropped, the rest in their order.</summary>
-    private static IReadOnlyList<AutoLanding> Bounded(IReadOnlyList<AutoLanding> entries)
-    {
-        var dropped = entries
-            .Select((entry, at) => (Entry: entry, At: at))
-            .Where(each => each.Entry.Closed is not null)
-            .OrderByDescending(each => each.Entry.Closed).ThenByDescending(each => each.At)
-            .Skip(ClosedKept)
-            .Select(each => each.At)
-            .ToHashSet();
-        return dropped.Count == 0 ? entries : [.. entries.Where((_, at) => !dropped.Contains(at))];
-    }
-
-    /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(IReadOnlyList<AutoLanding> entries) => JsonFile.Serialize(writer =>
-    {
-        writer.WriteStartObject();
-        writer.WriteStartArray("due");
-        foreach (var entry in entries)
-        {
-            writer.WriteStartObject();
-            writer.WriteString("session", entry.Session);
-            writer.WriteString("quest", entry.Quest);
-            writer.WriteString("repository", entry.Repository);
-            writer.WriteString("workspace", entry.Workspace);
-            writer.WriteString("tree", entry.Tree);
-            writer.WriteString("dueAt", Stamp(entry.DueAt));
-            if (entry.Closed is { } closed) writer.WriteString("closed", Stamp(closed));
-            writer.WriteStartArray("tries");
-            foreach (var tried in entry.Tries)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("at", Stamp(tried.At));
-                writer.WriteString("code", tried.Code);
-                if (tried.Tip is not null) writer.WriteString("tip", tried.Tip);
-                if (tried.Status is not null) writer.WriteString("status", tried.Status);
-                if (tried.Uncommitted is { } uncommitted) writer.WriteNumber("uncommitted", uncommitted);
-                if (tried.Branch is not null) writer.WriteString("branch", tried.Branch);
-                if (tried.Commits is { } commits) writer.WriteNumber("commits", commits);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndArray();
-        writer.WriteEndObject();
-    });
-
-    /// <summary>One entry, or null where it lacks what makes it one: a session, a quest, a repository, a tree and when it became due.</summary>
-    private static AutoLanding? Read(JsonElement element)
-    {
-        if (element.ValueKind != JsonValueKind.Object) return null;
-        if (Text(element, "session") is not { } session || Text(element, "quest") is not { } quest
-            || Text(element, "repository") is not { } repository || Text(element, "tree") is not { } tree
-            || When(Text(element, "dueAt")) is not { } dueAt)
-        {
-            return null;
-        }
-
-        var tries = element.TryGetProperty("tries", out var list) && list.ValueKind == JsonValueKind.Array
-            ? list.EnumerateArray()
-                .Where(each => each.ValueKind == JsonValueKind.Object && When(Text(each, "at")) is not null && Text(each, "code") is not null)
-                .Select(each => new AutoTry(When(Text(each, "at"))!.Value, Text(each, "code")!)
-                {
-                    Tip = Text(each, "tip"),
-                    Status = Text(each, "status"),
-                    Uncommitted = Int(each, "uncommitted"),
-                    Branch = Text(each, "branch"),
-                    Commits = Int(each, "commits"),
-                })
-                .ToList()
-            : [];
-        return new AutoLanding(session, quest, repository, Text(element, "workspace") ?? RemoteTarget.DefaultWorkspace, tree, dueAt)
-        {
-            Tries = tries,
-            Closed = When(Text(element, "closed")),
-        };
-    }
-
-    private static string Stamp(DateTimeOffset at) => Moments.Write(at.ToUniversalTime());
-
-    private static DateTimeOffset? When(string? text) => Moments.Read(text);
-
 }
 
 /// <summary>
@@ -388,23 +150,6 @@ public static class AutoLandingNotes
 
         // The landing's own sentence beneath, as written: it carries git's and the plugin's words beside Daoris's.
         var said = landed is { Message.Length: > 0 } ? lead.Then(" ", Noted.Said(landed.Message, NoteBy.Program)) : lead;
-        return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
-    }
-
-    /// <summary>What a record that concluded under the switch and lands nothing says (design §2).</summary>
-    /// <param name="concluded"><see cref="AutoConcluded.NoTree"/>, <see cref="AutoConcluded.NotDone"/> or <see cref="AutoConcluded.Merges"/>.</param>
-    /// <param name="access">Where the access setup that lands work by its rule was set, which a merge's note names (<see cref="Landing.Access"/>).</param>
-    public static SessionEvent Concluded(string concluded, string? access = null)
-    {
-        var said = concluded == AutoConcluded.Merges
-            ? Noted.Of(NoteCodes.LandingMerges,
-                $"its quest was done, and {(access is null ? "its" : WorkplaceAccessSetup.Current.Whose(access) + "'s")} access setup lands work by its rule, "
-                + "but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept.",
-                ("access", access ?? WorkplaceAccessSetup.Current.DefaultSource))
-            : concluded == AutoConcluded.NoTree
-            ? Noted.Of(NoteCodes.LandingNoTree,
-                "its quest was done, and it worked in the repository's own checkout, so its work is already there: nothing lands automatically.")
-            : Noted.Of(NoteCodes.LandingNotDone, "it did not end on a done, so nothing lands automatically: its work waits for your review.");
         return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
     }
 }
