@@ -22,8 +22,8 @@
       "exit": 1,
       "lines": [
         "place: `web`, `docs` — A pull request",
-        "  `web`: now Merge after you accept · after A pull request · suggested A pull request",
-        "  `docs`: now Merge after you accept · after Merge after you accept · suggested Merge after you accept",
+        "  `web`: now 1 change of your own (no workflow is chosen) · after A pull request · suggested A pull request",
+        "  `docs`: now 1 change of your own (no workflow is chosen) · after 1 change of your own (no workflow is chosen) · suggested Merge after you accept",
         "changes, each said once:",
         "  `web`: a saved copy of the workflow Daoris ships, none → `pull-request`",
         "  `web`: the workflow its work follows, Current → `pull-request`",
@@ -38,7 +38,7 @@
       "exit": 0,
       "lines": [
         "place: `engine` — Integrated into the line; adoption, for a library or package",
-        "  `engine`: now Merge after you accept · after Integrated into the line · suggested Integrated into the line",
+        "  `engine`: now 1 change of your own (no workflow is chosen) · after Integrated into the line · suggested Integrated into the line",
         "changes, each said once:",
         "  `engine`: a saved copy of the workflow Daoris ships, none → `integrated`",
         "  `engine`: the workflow its work follows, Current → `integrated`",
@@ -102,7 +102,7 @@
       "exit": 0,
       "lines": [
         "place: `solo` — Keep how it lands; general driving",
-        "  `solo`: now Not driven · after Merge after you accept · suggested Merge after you accept",
+        "  `solo`: now Not driven · after 1 change of your own (no workflow is chosen) ·suggested Merge after you accept",
         "changes, each said once:",
         "  `solo`: a tree per session, off → on",
         "  `solo`: general driving, off → on",

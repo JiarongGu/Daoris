@@ -420,7 +420,9 @@ public static class PlacePlans
         var (followed, steps) = WorkflowProcesses.Otherwise(store, config, repository, workspace);
         var land = steps is null ? null : SetupPresets.LandOf(steps);
         var match = !driven ? new SetupMatch(SetupPresets.NotDriven, [])
-            : land is null ? new SetupMatch(null, [$"{followed} cannot be read here"]) : SetupPresets.Match(true, land);
+            : land is null ? new SetupMatch(null, [steps is null && WorkflowSelection.Resolve(config, repository, workspace, task: null).Workflow == WorkflowSelection.Current
+                ? "no workflow is chosen" : $"{followed} cannot be read here"])
+            : SetupPresets.Match(true, land);
         var policies = RoleWork.Codes.Select(work =>
         {
             try

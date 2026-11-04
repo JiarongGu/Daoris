@@ -161,7 +161,7 @@ public sealed class RoleStructureTests : IDisposable
         AccountReads.Keep(_home, "fake", "work", LoginState.Out, read);
         var before = File.ReadAllText(AccountReads.PathOf(_home));
         var roster = Roster();
-        var config = DriverConfig.Empty with { Adapter = "fake" };
+        var config = DriverConfig.Empty with { Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["build"] = [new ActorChoice("fake")] } };
 
         var build = Work(RoleStructure.Of(() => RoleCatalog.Of([]), config, roster, [new RolePlace()], [RoleWork.Build]), 0, RoleWork.Build);
 
@@ -206,7 +206,7 @@ public sealed class RoleStructureTests : IDisposable
         Accounts("work", "spare");
         var seen = Now.AddMinutes(-30);
         AccountCooling.Cool(_home, new CoolingEntry("fake", "work", Now.AddHours(2), true, null, seen, "s1"), seen);
-        var config = DriverConfig.Empty with { Adapter = "fake" };
+        var config = DriverConfig.Empty with { Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["build"] = [new ActorChoice("fake")] } };
 
         var cooling = Work(RoleStructure.Of(() => RoleCatalog.Of([]), config, Roster(), [new RolePlace()], [RoleWork.Build]), 0, RoleWork.Build);
         Assert.Equal(new ChoiceState(ChoiceStates.NotRead, null, "spare"), Assert.Single(cooling.Choices).State);
@@ -248,7 +248,7 @@ public sealed class RoleStructureTests : IDisposable
     [Fact]
     public void A_failure_is_said_on_its_own_item_and_the_rest_reads()
     {
-        var config = DriverConfig.Parse("""{ "adapter": "fake", "actors": { "intake": "nope" } }""");
+        var config = DriverConfig.Parse("""{ "actors": { "build": [{ "agent": "fake" }], "intake": "nope" } }""");
 
         var structure = RoleStructure.Of(() => RoleCatalog.Of([]), config, Roster(), [new RolePlace()], [RoleWork.Intake, RoleWork.Build]);
 
@@ -274,7 +274,7 @@ public sealed class RoleStructureTests : IDisposable
         new HarnessSettings().WithDefault("fake", "work").Save(Settings);
         var roster = Roster();
         var mark = roster.Mark();
-        var config = DriverConfig.Empty with { Adapter = "fake" };
+        var config = DriverConfig.Empty with { Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["build"] = [new ActorChoice("fake")] } };
 
         var structure = RoleStructure.Of(() => RoleCatalog.Of([]), config, roster, [new RolePlace(), new RolePlace("aurora")], RoleWork.Codes);
 

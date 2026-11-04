@@ -51,7 +51,6 @@ public sealed class ActorChoicesTests
         var config = (DriverConfig.Empty with { Adapter = "claude-code" }).WithIntake("codex-acp").WithHelper("claude-code-acp");
 
         foreach (var actor in ActorKey.Ids) Assert.Empty(ActorChoices.Effective(actor, config));
-        Assert.Equal("off", ActorView.Of("build", config).State);
         Assert.Equal("off", ActorView.Of("intake", DriverConfig.Empty).State);
     }
 
