@@ -269,7 +269,7 @@ public sealed class LineageRaceProcessTests : IDisposable
             var target = new SessionTarget("q1", "The race", "", "game", "engine", _root, StandInLedger.Url) { Home = _home };
             var info = adapter.Prepare(target, ["node", _script, "agent", ChildLineage.PathOf(_home, "s1"), _signals, name, child, holds ? "holds" : "alone"]);
             var moved = movedFirst ? ChildLineage.Opened(_home, "s1") : null;
-            return await driver.HoldAsync(
+            return await driver.Holds.HoldAsync(
                 "build", adapter, info, target, "s1", Path.Combine(_home, $"{name}.log"), _root, harnessNotice: null, rules: (null, null, null),
                 handed: null, refusesInput: null,
                 conclude: async (exitCode, _, _, _) =>

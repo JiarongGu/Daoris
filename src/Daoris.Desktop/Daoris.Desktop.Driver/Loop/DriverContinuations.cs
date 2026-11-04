@@ -450,7 +450,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => _context.Runs.Live.TryRemove(quest.Id, out var _));
 
-            var (run, refusedWhy) = await _driver.HoldAsync(
+            var (run, refusedWhy) = await _driver.Holds.HoldAsync(
                 park.Actor ?? "build", adapter, info, target, sessionId, transcript, workTree, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
                 refusesInput: Driver.TakesNoMessages(quest),
                 ct: ct,
