@@ -37,8 +37,8 @@ import { useHarnesses } from './agents/agents';
  */
 export const useStartHelp = () =>
   useMutation({
-    mutationFn: (workspace?: string) => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>(
-      'START_HELP', workspace ? { workspace } : undefined),
+    mutationFn: (workspace?: string) => call('START_HELP', workspace ? { workspace } : {}) as Promise<
+      { sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>,
   });
 
 /**
@@ -366,13 +366,13 @@ export const useHelpPublished = (session: string | null) => {
 export const useRenameHelp = () =>
   useMutation({
     mutationFn: (rename: { id: string; name: string | null }) =>
-      call<{ session: string; name: string | null }>('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }),
+      call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
   });
 
 /** Pin an Ask Daoris conversation to the top of its history, or unpin it (ASKHIST1). */
 export const usePinHelp = () =>
   useMutation({
-    mutationFn: (pin: { id: string; pinned: boolean }) => call<{ session: string; pinned: string | null }>('HELP_PIN', pin),
+    mutationFn: (pin: { id: string; pinned: boolean }) => call('HELP_PIN', pin) as Promise<{ session: string; pinned: string | null }>,
   });
 
 /**
@@ -383,7 +383,7 @@ export const usePinHelp = () =>
 export const useHelpStartFrom = () =>
   useMutation({
     mutationFn: ({ id, workspace }: { id: string; workspace?: string }) =>
-      call<{ sessionId: string | null; message: string; from: string }>('HELP_START_FROM', workspace ? { id, workspace } : { id }),
+      call('HELP_START_FROM', workspace ? { id, workspace } : { id }) as Promise<{ sessionId: string | null; message: string; from: string }>,
   });
 
 /**
@@ -399,11 +399,15 @@ export const useSettleHelp = () => {
   return useMutation({
     // A draft card's Apply from its editor names each change taken into the draft and each left (FLOWCHART2e, 2f): that settles it.
     mutationFn: (settle: { id: string; apply: boolean; taken?: readonly string[]; left?: readonly string[] }) =>
-      call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS',
-        settle.apply
-          ? { id: settle.id, revision: shownRevision(client, settle.id), ...(settle.taken ? { taken: settle.taken, left: settle.left ?? [] } : {}) }
-          : { id: settle.id },
-        settle.apply ? { timeoutMs: settleBound(client, settle.id) } : undefined),
+      (settle.apply
+        ? call(
+          'HELP_APPLY',
+          {
+            id: settle.id, revision: shownRevision(client, settle.id),
+            ...(settle.taken ? { taken: [...settle.taken], left: [...(settle.left ?? [])] } : {}),
+          },
+          { timeoutMs: settleBound(client, settle.id) })
+        : call('HELP_DISMISS', { id: settle.id })) as Promise<HelpSettled>,
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,
     onSuccess: (answer, settle) => {
