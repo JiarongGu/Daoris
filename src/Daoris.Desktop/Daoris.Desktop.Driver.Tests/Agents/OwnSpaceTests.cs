@@ -74,7 +74,7 @@ public sealed class OwnSpaceTests : IDisposable
         "driven" or "carry-on" => (await roster.SelectHandedAsync("fake", Config, "aurora", null, StartKind.Driven)).Selection,
         // DriverIntakes.cs: an intake is driven work.
         "intake" => await roster.SelectAsync("fake", Config, "aurora", chosen: null, StartKind.Driven),
-        // ChatRunner.cs: a conversation the person picked no account for; HelpStart.cs: Ask Daoris's room, which has no workspace.
+        // ChatStarts.cs: a conversation the person picked no account for; HelpStart.cs: Ask Daoris's room, which has no workspace.
         "conversation" => await roster.SelectAsync("fake", Config, "aurora", chosen: null, StartKind.Conversation),
         "room" => await roster.SelectAsync("fake", Config, null, null, StartKind.Conversation),
         // HelperChoice and ReviewerChoice: the walk over the rule's agents, whose sentence says what held each where none ran.

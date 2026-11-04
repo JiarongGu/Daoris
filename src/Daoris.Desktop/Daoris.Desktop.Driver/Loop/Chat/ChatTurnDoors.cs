@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// What a person reads of a live conversation's turns and does to them: where they stand, what a word said now would do, the press that holds
 /// them, the words waiting for a turn, and stopping the one taking place.
 /// </summary>
-internal sealed class ChatTurnDoors(ChatContext context)
+internal sealed class ChatTurnDoors(ChatContext context, AttentionWatch answers)
 {
     /// <summary>Whether a conversation's turn is on its way to the harness or running there — false on a text-only door.</summary>
     public bool Taking(string sessionId) => context.Turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running;
@@ -91,7 +91,7 @@ internal sealed class ChatTurnDoors(ChatContext context)
             if (keep) return chat.Turns.StopKeepingAsync();
 
             // The turn ends on the person's own press: no answer to tell them of.
-            context.Answers.Stopped(sessionId);
+            answers.Stopped(sessionId);
             return chat.Turns.StopAsync();
         }
 

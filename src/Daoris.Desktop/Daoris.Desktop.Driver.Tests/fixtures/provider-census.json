@@ -160,6 +160,8 @@
     ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", ".Wire", "g", "behaviour", "a conversation's door reads"],
     ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "SessionWire.Acp", "g", "behaviour", "a conversation's protocol door tests"],
     ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "SessionWire.Pipe", "g", "behaviour", "a conversation's native door tests"],
+    ["Daoris.Desktop.Driver/Loop/Chat/ChatStarts.cs", ".Wire", "g", "behaviour", "a conversation's door reads"],
+    ["Daoris.Desktop.Driver/Loop/Chat/ChatStarts.cs", "SessionWire.Acp", "g", "behaviour", "a conversation's protocol door tests"],
     ["Daoris.Desktop.Driver/Loop/Driver.cs", ".Wire", "g", "behaviour", "the driven run's door reads"],
     ["Daoris.Desktop.Driver/Loop/Driver.cs", "ClaudeTrust", "e", "behaviour", "the trust file written at start, by type"],
     ["Daoris.Desktop.Driver/Loop/Driver.cs", "DshAdapter", "h", "behaviour", "dsh's profile written at start, by type"],

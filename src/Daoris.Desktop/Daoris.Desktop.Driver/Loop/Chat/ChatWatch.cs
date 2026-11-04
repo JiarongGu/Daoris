@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// The watch over a conversation's run from its open to its end: records it, opens or resumes its agent, reads how it ended, concludes its
 /// record, and lets go of everything the run held.
 /// </summary>
-internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConclusion conclusion)
+internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConclusion conclusion, AttentionWatch answers)
 {
     private ChatContext Context => wiring.Context;
 
@@ -60,7 +60,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             chat?.Turns.Gone(personStopped);
             native?.Gone(personStopped);
             // Last, so the queue told empty above judges nothing it still waited on.
-            Context.Answers.Forget(sessionId);
+            answers.Forget(sessionId);
         });
         // Its background work stoppable from its tab for as long as the conversation lasts, on the session the run holds.
         using var stops = chat is null || Context.Output is null

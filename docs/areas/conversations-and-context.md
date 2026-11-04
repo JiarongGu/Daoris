@@ -38,6 +38,9 @@ of everything it handed, section by section.
 | `ChatWatch`, `ChatWatched` | `Loop/Chat/` | The watch over a conversation's run from its open to its end: opens or resumes its agent, reads how it ended, concludes its record and lets go of what the run held |
 | `ChatConclusion` | `Loop/Chat/ChatConclusion.cs` | How a conversation's record ends: the state and note, the limit a last turn met, the ending note of a run that simply ended |
 | `ProtocolHeld` | `Loop/Chat/ProtocolHeld.cs` | A conversation's session on the protocol door as its run holds it open: what it is handed and set before its first prompt, and what its open's failure says |
+| `ChatStarts` | `Loop/Chat/ChatStarts.cs` | A conversation's start in a repository: its role, harness and account asked before any record exists, then its tree, its open and the run over its process |
+| `ChatClosing` | `Loop/Chat/ChatClosing.cs` | How conversations end at the driver's hand and a person's: the shell closing stops every one and keeps the update's restart word; a person finishing one |
+| `RepositoryPlacement` | `Loop/Chat/RepositoryPlacement.cs` | Where a conversation in a repository runs and what its agent may do there: its tree, its rules, what it may reach across |
 | `ChatWalk` | `Loop/Chat/ChatWalk.cs` | A new conversation's walk over its actor's effective order, choice by choice, remembering the passes it has said |
 | `ChatServers` | `Loop/Chat/ChatServers.cs` | The servers a conversation is handed at its open: the knowledge connector carrying who it is, and the plugins' servers with the browser brought up for one that drives it |
 | `ChatTold` | `Loop/Chat/ChatTold.cs` | What a new conversation is told with its first message, held from its start: its process, its execution's checks, its standing block's facts |

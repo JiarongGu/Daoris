@@ -78,7 +78,7 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "Bring them together's word to a line's head (LINESTOGETHER1d): Daoris's word said at its head under the operation's key"),
         ],
-        ["ChatRunner.cs"] =
+        ["ChatClosing.cs"] =
         [
             (How.NotOn, "Daoris's restart word to a conversation this shell runs, at its close: the word is this run's, and refused it is logged unkept as any refusal is"),
         ],

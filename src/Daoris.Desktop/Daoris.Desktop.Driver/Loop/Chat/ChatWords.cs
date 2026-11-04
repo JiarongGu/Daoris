@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// the ones kept on the record first; and the ones said at <c>now</c>. A message is composed here with what a conversation is handed once, ahead
 /// of its first words.
 /// </summary>
-internal sealed class ChatWords(ChatContext context, ChatTold told)
+internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWatch answers)
 {
     /// <summary>
     /// Send a person's message to a live chat, saying when it reaches it: <c>next-step</c> where its door took them into the turn on the wire,
@@ -27,7 +27,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told)
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             // Before it is taken, so even a turn that ends at once is the answer the person waits on.
-            context.Answers.Asked(sessionId);
+            answers.Asked(sessionId);
             var reach = chat.Turns.Take(said);
             reaches = Spelled(reach);
             return reach is not null;
@@ -56,7 +56,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told)
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             // As the person's words are: the answer to it is one the person waits on.
-            context.Answers.Asked(sessionId);
+            answers.Asked(sessionId);
             return chat.Turns.Take(said) is not null;
         }
 
@@ -88,7 +88,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told)
         }
 
         var said = Compose(sessionId, message, files, preface) with { Level = level, Key = key };
-        context.Answers.Asked(sessionId);
+        answers.Asked(sessionId);
         var kept = await chat.Turns.KeepAsync(new SaidDoor(context.Service, sessionId), said, ct).ConfigureAwait(false);
         return kept switch
         {
@@ -116,7 +116,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told)
         if (context.Turned.TryGetValue(sessionId, out var chat))
         {
             // Before it is taken: the stopped turn's end is no answer while these words wait.
-            context.Answers.Asked(sessionId);
+            answers.Asked(sessionId);
             return await chat.Turns.TakeNowAsync(said).ConfigureAwait(false);
         }
 

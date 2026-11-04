@@ -146,8 +146,11 @@ internal sealed class ChatContext(
     /// </summary>
     public ChatPendings Pending { get; } = new();
 
-    /// <summary>What the conversations' turns are judged by: the person's words, their stops and each turn's end.</summary>
-    public AttentionWatch Answers { get; } = new();
+    /// <summary>The starts under way, by key, which a close and the update drain wait on.</summary>
+    public ConcurrentDictionary<string, Task> Opening { get; } = new();
+
+    /// <summary>A conversation's chat run, bound when its tree opens or at a turn's end.</summary>
+    public ChatRunBinds ChatRuns { get; } = new(home, service, events);
 
     /// <summary>Closing: no conversation starts, goes on or moves from here.</summary>
     public bool Closing => _closing;
