@@ -21,7 +21,7 @@ import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
 import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip } from './AgentsModes';
-import { type AgentsMode, isRoleSection, MACHINE, readAgentsMode, repositoryId, type RoleSection, storeAgentsMode } from './modes';
+import { type AgentsMode, MACHINE, readAgentsMode, repositoryId, storeAgentsMode } from './modes';
 import { AllRoles } from './roles/AllRoles';
 import { MachineNotes } from './setup/MachineNotes';
 import { ReconcileNote } from './setup/ReconcileNote';
@@ -43,11 +43,10 @@ const STALE_AFTER = 60_000;
 
 /**
  * The Agents place's mode as the application holds it (COMPANYVIEW1b): the one it was left in, remembered for the place, and a change of
- * it; and the Roles section last left (`daoris.list.roles.chosen`), Working roles where none is kept.
+ * it; and the place Setup last chose (`daoris.list.roles.chosen`).
  *
  * @remarks
- * **A switch to Agents is a door that names no item** (UX6b, D150 §1 rule 6): the agent chosen is read again before it is shown. A
- * section never closes or goes, so a switch to Roles reopens nothing.
+ * **A switch to Agents is a door that names no item** (UX6b, D150 §1 rule 6): the agent chosen is read again before it is shown.
  */
 export function useAgentsMode(lists: ListPanes) {
   const [mode, setMode] = useState<AgentsMode>(readAgentsMode);
@@ -59,11 +58,7 @@ export function useAgentsMode(lists: ListPanes) {
     setMode(next);
     storeAgentsMode(next);
   }, [reopen]);
-  const kept = lists.pane('roles').chosen;
-  const section: RoleSection = isRoleSection(kept) ? kept : 'working';
-  const onSection = useCallback((next: RoleSection) => choose('roles', next), [choose]);
-  // Lit, Setup keeps the place chosen under the same memory, which a section id is never mistaken for.
-  const place = kept && !isRoleSection(kept) ? kept : null;
+  const place = lists.pane('roles').chosen || null;
   const onPlace = useCallback((next: string) => choose('roles', next), [choose]);
   // AGENTSPLACE1k: an ask Ask Daoris proposed for a place's *Set up…*, held until the place's page has opened on it.
   const [seeded, setSeeded] = useState<{ place: string; ask: PlaceAsk } | null>(null);
@@ -76,7 +71,7 @@ export function useAgentsMode(lists: ListPanes) {
     setArrival(at.section || at.row || at.back || at.edit ? { place: next, at } : null);
   }, [choose]);
   const onArrived = useCallback(() => setArrival(null), []);
-  return { mode, onMode, section, onSection, place, onPlace, onPlaceAt, arrival, onArrived, seeded, onSeed, onSeeded };
+  return { mode, onMode, place, onPlace, onPlaceAt, arrival, onArrived, seeded, onSeed, onSeeded };
 }
 
 /**
@@ -136,8 +131,8 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
    * and the section chosen in the Roles mode and a change of it. Absent, the place is the Agents list alone, as a browser's is.
    */
   modes?: {
-    mode: AgentsMode; onMode: (mode: AgentsMode) => void; section: RoleSection; onSection: (section: RoleSection) => void;
-    /** The place Setup has chosen, once lit, and a change of it. */
+    mode: AgentsMode; onMode: (mode: AgentsMode) => void;
+    /** The place Setup has chosen, and a change of it. */
     place: string | null; onPlace: (place: string) => void;
     /** A door's section and row at a place, and the way back (SETUPUX1h), which the page opens on once. */
     onPlaceAt?: (place: string, at: PlaceAt) => void;

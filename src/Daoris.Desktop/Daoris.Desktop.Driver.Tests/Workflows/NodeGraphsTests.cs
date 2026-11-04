@@ -74,8 +74,6 @@ public sealed class NodeGraphsTests
 
     public static TheoryData<string> CaseNames() => GraphProblemsTable.Names("graphs");
 
-    public static TheoryData<string> FragmentCaseNames() => GraphProblemsTable.Names("fragments");
-
     public static TheoryData<string> UnreadableNames() => GraphProblemsTable.Names("unreadable");
 
     [Fact]
@@ -100,7 +98,7 @@ public sealed class NodeGraphsTests
     public void Each_refusal_is_named_alone_with_its_code_and_words(string name)
     {
         var row = GraphProblemsTable.Row("graphs", name);
-        // The table is the graph rules'; the save's own two refusals (a `handed`, a `land` with no method) are proved by their tests below.
+        // The table is the graph rules'; the save's own refusal (a `land` with no method) is proved by its test below.
         Assert.Equal(GraphProblemsTable.Expected(row), GraphProblemsTable.Said(NodeGraphs.Problems(GraphProblemsTable.Graph(row)).Where(GraphProblemsTable.IsRule)));
     }
 
@@ -154,11 +152,7 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// Each row of the shared table's <c>fragments</c>, through the landing rule that holds the cycle: a fragment's own refusal alone, a
-    /// cycle's graph that does not hold under its rule's landing, and the cycles that hold.
-    /// </summary>
-    /// <summary>
-    /// INTEGRATE1n, F47: the refusal of a node that observes the landing before any <c>handed</c> is the save's alone. The same graph read
+    /// INTEGRATE1n, F47: the refusal of a node that observes the landing before any <c>land</c> is the save's alone. The same graph read
     /// from a file that kept it still reads, as a stored version that read before is never made unreadable by a rule added after it.
     /// </summary>
     [Fact]

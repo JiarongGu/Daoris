@@ -1,5 +1,5 @@
 import type { AgentPart } from '../agents/agents';
-import { type AgentsMode, MACHINE, repositoryId, type RoleSection, workspaceId } from '../agents/modes';
+import { type AgentsMode, MACHINE, repositoryId, workspaceId } from '../agents/modes';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { PlaceAt, PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
 import type { PlanDoor } from '../person/Confirmations';
@@ -50,13 +50,16 @@ const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { you: 'sessions', review:
  */
 export type Compose = { repository?: string; sentence?: string };
 
+/** The parts of This machine's page a door opens at: its Appointed roles row, or the All roles section. */
+export type RoleDoor = 'appointed' | 'allRoles';
+
 /**
  * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, a repository page's tab
  * or a workspace page's tab and Setup section, the repository whose code map the Map opens on, Knowledge's mode, or a group of
  * Sessions' or Quests' list.
  */
 export type OpenPart = {
-  anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; code?: string; agentPart?: AgentPart; agentsMode?: AgentsMode; roleSection?: RoleSection;
+  anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; code?: string; agentPart?: AgentPart; agentsMode?: AgentsMode; roleSection?: RoleDoor;
   workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode; group?: OpenGroup;
   compose?: Compose;
   /** A landed branch of the repository the door names, whose page opens with how it landed (FLOWCHART1c). */
@@ -125,8 +128,8 @@ export type Opening = {
    * names Agents. A door into the place names none, and it opens in the mode it was left in.
    */
   agentsMode?: AgentsMode;
-  /** The Roles section a door opens (COMPANYVIEW1e): it names Roles' mode, and the section is chosen in Roles' list. */
-  roleSection?: RoleSection;
+  /** The part of This machine's page a door opens: it names the Setup mode, and the page opens at that part. */
+  roleSection?: RoleDoor;
   /** The place the Setup mode opens at (AGENTSPLACE1f), by the id its list chooses it under (`repositoryId`, `workspaceId`). */
   place?: string;
   /**
@@ -219,11 +222,11 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
  * `workspaceOfRepository` answers the workspace a repository sits in, as the registry holds it.
  */
 export function placeOpening(plan: Opening, workspaceOfRepository: (repository: string) => string): Opening {
-  // SETUPUX1m: the Roles mode's doors name This machine's page. Appointed roles is its Roles section's row; the lists of Working roles, Work,
-  // Accounts and By repository are All roles; a door naming the mode alone opens the page at Roles.
+  // SETUPUX1m: a door into the Setup mode names This machine's page. Appointed roles is its Roles section's row; All roles is its own
+  // section; a door naming the mode alone opens the page at Roles.
   if (plan.view === 'agents' && plan.agentsMode === 'setup' && !plan.place) {
     const { roleSection: _section, ...rest } = plan;
-    const at: PlaceAt = plan.roleSection === 'appointed' ? { section: 'roles', row: 'appointed' } : plan.roleSection ? { section: 'allRoles' } : { section: 'roles' };
+    const at: PlaceAt = plan.roleSection === 'appointed' ? { section: 'roles', row: 'appointed' } : plan.roleSection === 'allRoles' ? { section: 'allRoles' } : { section: 'roles' };
     return { ...rest, place: MACHINE, placeAt: at };
   }
   if (plan.view !== 'projects') return plan;

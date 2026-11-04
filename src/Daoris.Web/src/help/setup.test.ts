@@ -193,7 +193,7 @@ describe('each step: its state, its doors and its commands', () => {
     });
     // Ask Daoris and the intake are roles, set on Agents → Roles and by `daoris role`.
     expect(steps.helper).toMatchObject({
-      doors: [{ view: 'agents', agentsMode: 'setup', roleSection: 'working' }],
+      doors: [{ view: 'agents', agentsMode: 'setup', roleSection: 'allRoles' }],
       commands: ['daoris role'],
     });
     expect(steps.repositories).toMatchObject({
