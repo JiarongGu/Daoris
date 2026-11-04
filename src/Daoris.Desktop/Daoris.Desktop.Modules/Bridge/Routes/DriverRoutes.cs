@@ -723,10 +723,6 @@ public sealed class DriverRoutes(DriverContext context)
             // Where this machine's Daoris lives (D63), and what establishing it did this start — a
             // machine-local path, answered only over this bridge, like every path here.
             loop.Home,
-            loop.HomeNotice,
-            // How that home stands to the account's DAORIS_HOME (LEFT2): what the page's hint says of a terminal.
-            loop.HomeAccount,
-            loop.HostNotice,
             config.Drivable,
             config.Holds,
             // TERMTRUST1a (D201, the terminal-trust design §6.1): the person's standing confirmation as This Daoris's row and the line in
