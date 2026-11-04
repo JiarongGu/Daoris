@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Daoris.Contracts.Parts;
 
 namespace Daoris.Driver;
 
@@ -25,7 +26,7 @@ namespace Daoris.Driver;
 /// <para><b>An ended chat goes on</b> (MSG1c, D137 §2.2): the person's words kept on its record are taken up here at
 /// once, its record reopening and its own conversation resumed with them (<see cref="ChatGoOn"/>).</para>
 /// </remarks>
-public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IChatRunning
+public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IExecutorWiring
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
 
@@ -96,9 +97,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     // LIMITRESUME1c: the conversations that wait for an account to be ready, and the look's limits stage that wakes them.
     private readonly LimitWaits _waits;
 
-    // The requests *Start a conversation on its first words* has answered (NEW1a), made when the first carries an id.
-    private StartRequests? _starts;
-
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
     /// home's own where nobody passes one, which is the headless chat door's case.
@@ -158,7 +156,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
         Moves = _limit.Moves;
+
+        Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
     }
+
+    /// <summary>
+    /// The kinds of run a conversation takes, registered by their modules (<see cref="ExecutorAttribute"/>), ordered once per process and
+    /// built once per runner with the runner as their wiring. A door for a kind reaches its executor by type.
+    /// </summary>
+    internal PartSet<IExecutor> Executors { get; }
+
+    private static readonly Lazy<IReadOnlyList<PartDeclaration>> ExecutorOrder =
+        new(() => Parts.Declared<ExecutorAttribute>(typeof(ChatRunner).Assembly));
 
     /// <summary>
     /// The hand-overs this run holds that wait to be taken (FOUNDATION1f-v part a), at a look: a dead shell's or an older build's the come-up or
@@ -335,63 +344,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
         _help.StartHelpFromAsync(earlier, adapter, config, machine, onEnded, ct);
 
-    /// <summary>
-    /// *Start a conversation with these words* (MSG1f2): <see cref="StartFrom.RunAsync"/> through this runner's own start, on
-    /// the adapter and account a new conversation takes, and its own first message. The record they were written to goes on
-    /// nowhere meanwhile: a word said to it while this runs waits rather than reopening it under the words handed on.
-    /// </summary>
-    /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
-    /// <param name="order">Chat's effective order, walked where it holds more than one entry (MODELROLE1d); null runs on <paramref name="adapter"/>.</param>
-    public async Task<StartedFrom> StartFromAsync(
+    /// <inheritdoc cref="WordsStart.StartFromAsync"/>
+    public Task<StartedFrom> StartFromAsync(
         string sessionId, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default,
-        IReadOnlyList<ActorEffective>? order = null)
-    {
-        if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation starts now.");
+        IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<WordsStart>().StartFromAsync(sessionId, adapter, config, onEnded, ct, order);
 
-        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_context.GoingOn.TryAdd(sessionId, going.Task))
-        {
-            return new StartedFrom(null, false, StartFrom.Running, $"conversation `{sessionId}` is going on with its words already.");
-        }
-
-        try
-        {
-            return await StartFrom.RunAsync(
-                _service, _home, _events, _output, sessionId,
-                (repository, moves, token) => StartAsync(repository, adapter, config, onEnded, ct: token, order: order, moves: moves),
-                SayShown, ct).ConfigureAwait(false);
-        }
-        finally
-        {
-            _context.GoingOn.TryRemove(sessionId, out _);
-            going.TrySetResult();
-        }
-    }
-
-    /// <summary>
-    /// Open a conversation on its first words (NEW1a): <see cref="StartAsync"/>, then <see cref="Say"/> with the words and
-    /// files. A request id makes a retry answer the first start (<see cref="StartRequests"/>).
-    /// </summary>
-    /// <param name="ownTree">Absent is the driver's choice; true a tree of its own; false the checkout.</param>
-    /// <exception cref="DriverException">The request id is malformed.</exception>
-    /// <param name="order">Chat's effective order, walked where it holds more than one entry (MODELROLE1d); null runs on <paramref name="adapter"/>.</param>
+    /// <inheritdoc cref="WordsStart.StartWithAsync"/>
     public Task<StartedFrom> StartWithAsync(
         string repository, string adapter, DriverConfig config, string text, IReadOnlyList<ChatUpload> files, string? requestId,
         bool? ownTree = null, string? profile = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default,
-        IReadOnlyList<ActorEffective>? order = null)
-    {
-        Task<StartedFrom> Run() => _context.Closing
-            ? Task.FromResult(new StartedFrom(null, false, null, "the application is closing, so no conversation starts now."))
-            : StartWith.RunAsync(
-                token => StartAsync(
-                    repository, adapter, config, onEnded, profile, ownTree, token, order: order, picked: !string.IsNullOrWhiteSpace(profile)),
-                (id, words, attached, preface) => Say(id, words, attached, preface),
-                text, files, ct);
-
-        if (requestId is null) return Run();
-        _starts ??= new StartRequests(_home);
-        return _starts.RunAsync(requestId, Run);
-    }
+        IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<WordsStart>().StartWithAsync(repository, adapter, config, text, files, requestId, ownTree, profile, onEnded, ct, order);
 
     /// <summary>Whether a conversation opens in a tree of its own: said, or else the repository's standing choice (D51).</summary>
     public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
@@ -2323,26 +2287,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     }
 
     /// <summary>
-    /// A person's message that is a new conversation's first, showing the words a keyed open moved to it each under its id (FOUNDATION1d-ii
-    /// part 4, <see cref="ChatContext.Shown"/>): held for the turn that writes it, which records them before the write. A text-only door records
-    /// no turn, so nothing is held for one; null <paramref name="shown"/> is <see cref="Say(string, string, IReadOnlyList{ChatUpload}?, string?)"/>.
-    /// </summary>
-    /// <exception cref="DriverException">The files are more than a message carries.</exception>
-    private bool SayShown(string sessionId, string message, IReadOnlyList<ChatUpload> files, string preface, IReadOnlyList<SessionEvent>? shown)
-    {
-        if (shown is not null && _context.Turned.ContainsKey(sessionId)) _context.Shown[sessionId] = (message, shown);
-        var took = false;
-        try
-        {
-            return took = Say(sessionId, message, files, preface);
-        }
-        finally
-        {
-            if (!took && shown is not null) _context.Shown.TryRemove(sessionId, out _);
-        }
-    }
-
-    /// <summary>
     /// The record a conversation's id answers for (MODELROLE1d2, D205 §3.5(b)): the replacement its start moved to where its agent refused
     /// the choice at the open, else itself, as a conversation that went on in another is answered for today.
     /// </summary>
@@ -2763,6 +2707,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, string? workspace, string? profile, CancellationToken ct,
         (ActorEffective Entry, string? Account)? refused, bool counts, long except) =>
         WalkAsync(actor, order, config, workspace, profile, ct, refused, counts, except);
+
+    ChatContext IExecutorWiring.Context => _context;
+
+    Task IExecutorWiring.ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded) =>
+        Conclude(sessionId, state, note, onEnded);
+
+    RotatedOpening.Carried? IExecutorWiring.LimitCarried(string? carries) => LimitCarried(carries);
 
     /// <summary>What a turn's message puts in the record as it is sent (<see cref="ChatRecorded.Recorded"/>).</summary>
     internal static IEnumerable<SessionEvent> Recorded(ChatMessage message, IReadOnlyList<SessionEvent>? shown = null) =>
