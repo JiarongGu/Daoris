@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Shenora;
@@ -16,7 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Composed as the shell composes its dispatcher (the kit's <c>UseMessageDispatcher</c>, the middleware in its application
 /// slot), over the kit's real bus, which the bridge's base subscribes to: so what is asserted is the event a window receives.
 /// </remarks>
-public sealed partial class StatePublisherTests : DriverModuleBridge
+public sealed class StatePublisherTests : DriverModuleBridge
 {
     private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -784,82 +783,4 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [Fact]
     public void Only_the_driver_s_requests_are_read_against_its_marks() =>
         Assert.Null(DriverModule.Declared(new IpcRequest { Id = "x", Module = "DAORIS.WINDOWS", Type = "LAND_SESSION_TREE" }));
-
-    /// <summary>
-    /// PUBLISHTWIN1: the page's tests press the driver through a seam that publishes what each press declares, as this publisher
-    /// does (<c>src/Daoris.Web/src/test/publishing.ts</c>'s <c>DECLARED</c>, STATEHUB1f), a copy of the marks in another language
-    /// with no compiler between them. Each press it names declares here what it says there, scope for scope in the wire's order,
-    /// with the same session field, so a mark changed on one side alone fails.
-    /// </summary>
-    [Fact]
-    public void The_page_s_publishing_seam_copies_each_press_s_mark()
-    {
-        var copied = PageDeclared();
-
-        Assert.NotEmpty(copied);
-        foreach (var (route, scopes, session, subject) in copied)
-        {
-            // The seam answers for the driver's routes and the browser module's, as the publisher reads both.
-            var declared = StatePublisher.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route })
-                ?? StatePublisher.Declared(new IpcRequest { Id = "x", Module = BrowserModule.Name, Type = route });
-            // The route with each side's words, so a failure names the press and both its declarations.
-            Assert.Equal(
-                (route, scopes, session, subject),
-                (route, string.Join(",", StatePublisher.Names(declared?.Scopes ?? StateScopes.None)), declared?.Session, declared?.Subject));
-        }
-    }
-
-    /// <summary>
-    /// PUBLISHTWIN2: the twin is two-way. A route that declares a change with no entry in the page's table is a press a test of the
-    /// page could make and never hear the change of, so every mark of the driver's and the browser module's is in it.
-    /// </summary>
-    [Fact]
-    public void Every_mark_has_an_entry_in_the_page_s_publishing_seam()
-    {
-        var copied = PageDeclared().Select(entry => entry.Route).ToHashSet(StringComparer.Ordinal);
-        string[] browser = ["ADD_FAVORITE", "REMOVE_FAVORITE", "SET_EXTENSIONS", "SET_BROWSER", "SET_LINKS"];
-
-        var marked = DriverModule.Routes
-            .Where(route => DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route }) is { Scopes: not StateScopes.None })
-            .Concat(browser)
-            .Where(route => !copied.Contains(route))
-            .Order(StringComparer.Ordinal)
-            .ToList();
-
-        Assert.True(marked.Count == 0, "marks with no entry in test/publishing.ts's DECLARED: " + string.Join(", ", marked));
-    }
-
-    /// <summary>
-    /// The page's publishing seam's table, each press as it names it: its route, its scopes joined in their order, and the field
-    /// naming its session. Every route the table holds is read, or the test fails: one the pattern missed would go unchecked.
-    /// </summary>
-    private static List<(string Route, string Scopes, string? Session, string? Subject)> PageDeclared()
-    {
-        var text = File.ReadAllText(Path.Combine(SourceFiles.WorkspaceFolder(), "src", "Daoris.Web", "src", "test", "publishing.ts"));
-        var start = text.IndexOf("export const DECLARED", StringComparison.Ordinal);
-        Assert.True(start >= 0, "the page's publishing seam names no DECLARED table");
-        var table = text[start..text.IndexOf("\n};", start, StringComparison.Ordinal)];
-
-        var copied = PageEntry().Matches(table)
-            .Select(entry => (
-                entry.Groups["route"].Value,
-                string.Join(",", PageScope().Matches(entry.Groups["scopes"].Value).Select(scope => scope.Groups["scope"].Value)),
-                entry.Groups["session"].Success ? entry.Groups["session"].Value : null,
-                entry.Groups["subject"].Success ? entry.Groups["subject"].Value : null))
-            .ToList();
-        Assert.Equal(PageRoute().Matches(table).Count, copied.Count);
-        return copied;
-    }
-
-    /// <summary>One press in the seam's table: <c>ROUTE: { scopes: ['a', 'b'], session: 'id', subject: 'entry' }</c>, over one line or several.</summary>
-    [GeneratedRegex(@"\b(?<route>[A-Z][A-Z_]+):\s*\{\s*scopes:\s*\[(?<scopes>[^\]]*)\]\s*(?:,\s*session:\s*'(?<session>\w+)'\s*)?(?:,\s*subject:\s*'(?<subject>\w+)'\s*)?,?\s*\}")]
-    private static partial Regex PageEntry();
-
-    /// <summary>A scope's word in a press's list.</summary>
-    [GeneratedRegex(@"'(?<scope>\w+)'")]
-    private static partial Regex PageScope();
-
-    /// <summary>A route's key at the start of a line of the table, however its value is written.</summary>
-    [GeneratedRegex(@"^\s*[A-Z][A-Z_]+:", RegexOptions.Multiline)]
-    private static partial Regex PageRoute();
 }

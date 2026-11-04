@@ -109,13 +109,18 @@
     {
       "id": "ContractsGen",
       "path": "tools/contracts",
-      "summary": "writes the page's types for the service's routes from Daoris.Contracts"
+      "summary": "writes the page's types for the service's routes and the window's routes"
     }
   ],
   "dependencies": [
     {
       "from": "ContractsGen",
       "to": "Daoris.Contracts",
+      "kind": "project"
+    },
+    {
+      "from": "ContractsGen",
+      "to": "Daoris.Desktop.Modules",
       "kind": "project"
     },
     {
@@ -171,6 +176,11 @@
     {
       "from": "Daoris.Desktop.Modules",
       "to": "Daoris.Desktop.Driver",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Modules.Tests",
+      "to": "ContractsGen",
       "kind": "project"
     },
     {

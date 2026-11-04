@@ -82,7 +82,7 @@ door's rows: the service's `Help<Kind>ProposalWriter.cs`, its line in `HelpPropo
 fields it judges by under a comment of its own in `HelpMachineFacts` and `HelpPlan`, its `IHelp<Kind>Doors` in `IHelpDoors`
 and `HelpStandInDoors`; the modules' gate and the facts read only for it in `HelpRoutes.HelpFactsAsync`, its card data in
 `HELP_PROPOSALS`, its door in `ScreenDoors`, a nudge after `HELP_APPLY` where it moves work, and what it changes in `Applies`
-(with `StatePublisherTests` and `test/publishing.ts`); the page's union in `ProposalCard.tsx`, its title in both catalogues,
+(with `StatePublisherTests`); the page's union in `ProposalCard.tsx`, its title in both catalogues,
 the room's `HelpRoomMayPropose` row and the Ask Daoris design's §3 list. A kind whose facts start a process takes its world
 through a seam the modules' fast half stands in for (`DriverContext.SetupWorlds`).
 

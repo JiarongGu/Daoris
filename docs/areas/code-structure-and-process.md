@@ -20,7 +20,7 @@ finishes first and the whole set runs once.
 | The size ratchet | `tools/size-ratchet.mjs`, `tools/size-ratchet.json` | a file over 40 KB does not grow; a new one does not start over it |
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
-| The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes, and says when they are stale |
+| The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes and the window routes' marks, and says when they are stale |
 | The transitional register | `Driver/Transitional/Register.cs`, `tools/transitional-markers.mjs` | each kept older reading, with the condition that ends it and the row that deletes it |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
@@ -51,8 +51,10 @@ finishes first and the whole set runs once.
    records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
    first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
    pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. `api.ts` sends a declared
-   route as `send(name, request)`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). (from
-   D231, D228)
+   route as `send(name, request)`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). A window
+   route is its handler's marks in the desktop modules (`[DriverRoute]` and those beside it); the same tool writes from them the
+   ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
+   publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. (from D231, D228)
 8. Drift is the disk against the lock; the canon is reconciled, not imposed. (from D19, D230)
 9. Only what must never reach history blocks a commit. The rest is verified as a local CI beside the work, and its reds are fixed
    forward. An install is staged only from a green run. (from D180)

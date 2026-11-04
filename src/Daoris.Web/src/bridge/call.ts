@@ -1,13 +1,15 @@
 import { getBridge } from '@shenora/react';
+import type { DriverRoute } from './generated/routes';
 
 // The bridge's own helper, shared by its domains and re-exported by none: a page reaches the driver
 // through a domain's named calls, never by naming a route itself (MOD3).
 
 /**
- * One call onto the driver's module, with its payload when it has one. A route whose work is long passes its own
- * bound (WSR7): without one the bridge gives up after its default 30 seconds, while the host carries on unheard.
+ * One call onto the driver's module, with its payload when it has one; the route is one the module answers, as generated from
+ * its marks. A route whose work is long passes its own bound: without one the bridge gives up after its default 30 seconds,
+ * while the host carries on unheard.
  */
-export const call = <TData,>(type: string, payload?: Record<string, unknown>, options?: { timeoutMs?: number }): Promise<TData> =>
+export const call = <TData,>(type: DriverRoute, payload?: Record<string, unknown>, options?: { timeoutMs?: number }): Promise<TData> =>
   getBridge().invoke<TData>('DAORIS.DRIVER', type, {
     ...(payload ? { payload } : {}),
     ...(options?.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),

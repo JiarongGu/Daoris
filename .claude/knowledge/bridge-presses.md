@@ -17,8 +17,8 @@ same change.**
 Each place is held by a test, and the tests sit in three suites in three lanes, so a branch that runs its own gates can
 pass every one of them and still fail at the merge:
 
-- **The page's copy of a mark drifts silently.** Before PUBLISHTWIN2 eighteen presses had no entry in the page's
-  publishing seam, so a test of the page pressed them and heard no change; the twin is held both ways now.
+- **A copy of a mark drifts silently.** Eighteen presses once had no entry in the page's hand-copied publishing table, so a
+  test of the page pressed them and heard no change; the page's table is generated from the marks now.
 - **A shape is read too.** EVID1a added `evidence: []` to a route's answer and failed four family-rehearsal checks that
   compare that answer whole, which no branch runs.
 
@@ -37,7 +37,7 @@ Paths are under `src/`. A **press** changes something; a **read** changes nothin
 | 1 | The handler | `Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/<Domain>Routes.cs`, the class named as the bridge file that sends it (`SessionsRoutes.cs` for `bridge/sessions/sessions.ts`) | A private `Task<object?> …Async(IpcRequest, CancellationToken)` marked `[DriverRoute("ROUTE", PipeClass.…)]` (row 11), its payload read with `PayloadHelper`. A refusal the person can act on is answered as data, `{ …, why, message }` with a code the page words, never thrown; one thrown is a `Refusals` code with its catalogue entries. A comment above it names the row and the decision point. | `DriverModuleRoutesTests`: `Each_route_is_marked_in_the_domain_named_as_the_bridge_file_that_sends_it`, `Every_route_the_page_calls_has_a_handler_in_the_table`, `Every_handler_in_the_table_is_called_by_the_page_or_a_test`; `RefusalCatalogueTests` for a thrown code |
 | 2 | A new domain | `Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs`, `Domains` | One line, in alphabetical order, building the class over `context.Loop`, or over the `DriverContext` where it uses more; and its bridge file `Daoris.Web/src/bridge/<domain>.ts` and its README row (row 5). A route in an existing domain needs no line. | A class with no line is no part of the table, and `Each_route_is_marked_…` fails on its marks |
 | 3 | What it changes | Beside the press's mark, the same file | `[Publishes("ROUTE", StateScopes.A \| StateScopes.B, Session = "field")]`: the scopes a successful answer moved, and the payload field naming the session it was about, where it is one session's (`Subject` for an entry or an ask, ACCEPTALL1e). A read carries none. A new scope is added after the others, with its family of query keys in `Daoris.Web/src/bridge/state/stateHub.ts` (D169 point 3). | `StatePublisherTests` (`Daoris.Desktop.Modules.Tests/Platform/`): a row `[InlineData("ROUTE", "scopes,in,wire,order", "field")]` in the theory of the note that declared it, and a read's row with `""` and `null` |
-| 4 | The page's copy | `Daoris.Web/src/test/publishing.ts`, `DECLARED` | `ROUTE: { scopes: [...], session: '...' }` for every press that declares a change, in the shape the test reads; a read has no entry. | `StatePublisherTests`: `The_page_s_publishing_seam_copies_each_press_s_mark` and `Every_mark_has_an_entry_in_the_page_s_publishing_seam` (a twin, `twins.md`); and every web test file that imports it |
+| 4 | The page's names | Generated: `node tools/contracts.mjs` writes `Daoris.Web/src/bridge/generated/routes.ts` from the marks (the web's pre-scripts do it when stale) | Nothing by hand: the route joins `DriverRoute`, which `call` takes, a press's `[Publishes]` joins `PUBLISHES`, which `test/publishing.ts` reads, and a person's press joins `PERSON_WORDS`, which the names check requires worded in every language. | `PageRoutesTests`; the web typecheck; `names-check --strict` in the web's build |
 | 5 | The README | `Daoris.Desktop/README.md`, the routes table's row that begins with the domain's name in backticks | The route in backticks with its payload and what it answers, in the row's own prose, beside its siblings. | `DriverModuleRoutesTests.The_readme_names_each_route_in_its_domains_row` |
 | 6 | The page's call | `Daoris.Web/src/bridge/<domain>.ts` | A hook calling `call('ROUTE', payload)` (or the forwarder `useDriverChange`): `useMutation` for a press, which asks nothing again by hand since the state hub does (D169 point 6); `useQuery` for a read, keyed under the family its scope invalidates (a session's helper asks sit under `['sessions', …]`, so `sessions` asks them again). The answer is read field by field, so a refusal keeps its code. The types of an answer a molecule draws live beside the molecule and the bridge file re-exports them, since `presentational.test.ts` refuses a molecule's import from `bridge/`, a type's included (`workflow/edit/answers.ts`, WORKFLOWEDIT1b). | Rows 1's route tests read the call's literal as text; the hook's own test presses it through `publishing` with the hub mounted |
 | 7 | Ask Daoris's row | `Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/HelpRoomDoors.cs` | Only where one is wanted (D233 point 1): a row saying the act, its screen and its command, and whether Ask Daoris proposes it through a door its kind takes. No census asks a row of every press. | `HelpRoomDoorAsksTests` |
@@ -66,7 +66,7 @@ each is still held:
 1. **Its handler** in the domain class named after the bridge file that sends it (row 1), with no `[Publishes]`: a read
    never declares a change (D169 point 2), and one that did would make every window read again without end (the
    `HARNESSES` split, D169's HARNESSREFRESH1 note). Its `StatePublisherTests` row says so, `""` and `null` (row 3), and it
-   has no entry in `DECLARED` (row 4). A read that fans out over every checkout (git per repository) says
+   has no entry in the generated `PUBLISHES` (row 4). A read that fans out over every checkout (git per repository) says
    `[OneFlight("ROUTE")]` beside its mark, so the identical asks every window makes share the one under way (SWEEPFLIGHT1);
    `DriverModuleOneFlightTests` names the routes that do. A read whose answer is computed (a file, the service, git or a
    process before it answers) says `[ByEvent("ROUTE")]` instead (NOBLOCK1, D56's note): it answers from what is held and tells
@@ -109,7 +109,7 @@ null out of what it serializes. Answer the reader's own JSON as a `JsonElement`,
   and `SESSION_HELPERS`, a read under the sessions' key; its two hooks' coverage rows were added at HELPERNO1.
 - **HELPERNO1** (D163's note): `SESSION_HELPER_DECLINE`, a press beside the yes, walked through rows 1, 3 to 7, 9 and 10 in
   one change; and MIXAGENT2c's `HELPER_WAITS` (D168's note), a read: no mark, its `StatePublisherTests` row saying so, no
-  `DECLARED` entry, no coverage row, its key under the sessions' family.
+  `PUBLISHES` entry, no coverage row, its key under the sessions' family.
 - **ACCEPTALL1e** (D169's note): a declaration's `Subject`, a second payload field a press carries under way.
 
 ## What this does not cover

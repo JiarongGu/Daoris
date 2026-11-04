@@ -22,6 +22,7 @@ import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
 import type { ReviewShown } from '../work/gates/ReviewChip';
 import { type HeavySlot, readHeavySlot } from '../work/heavySlot';
 import { call, refusedNotReady } from './call';
+import type { DriverRoute } from './generated/routes';
 import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
 import { askHeld } from './state/held';
 
@@ -419,7 +420,7 @@ export const useTrustFolder = () => useMutation({
  * not at the poll. The window that pressed writes the state it was answered; the route publishes the change, and every window's
  * state hub asks the driver's state and what is read under its key again (STATEHUB1h, D169).
  */
-export function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {
+export function useDriverChange<TVariables extends Record<string, unknown>>(type: DriverRoute) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (variables: TVariables) => call<DriverState>(type, variables),
