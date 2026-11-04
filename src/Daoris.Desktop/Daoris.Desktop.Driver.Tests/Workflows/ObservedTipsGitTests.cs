@@ -15,27 +15,46 @@ public sealed class ObservedTipsGitTests : LandedFixture
 
     private static readonly NodeDeclaration Deployed = new(Plugin + "/deployed", Plugin + "/deployed", 1, NodeReach.Observed);
 
+    /// <summary>A graph observing the plugin's deploy ahead of the landing, which every run here is bound to.</summary>
     private const string ObservedOnly = """
-        { "landings": { "engine": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
-            "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } } } }
+        {"schemaVersion":2,"entries":["deployed"],"end":"landing",
+         "nodes":[{"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
+         "wires":[{"id":"d>l","kind":"after","from":"deployed","to":"landing"}]}
         """;
 
-    /// <summary>Two repositories, each observing the deploy (FABRIC-PERFORM1m's count, one read of each checkout a pass).</summary>
-    private const string ObservedInBoth = """
-        { "landings": {
-          "engine": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
-            "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } },
-          "other": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
-            "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } } } }
-        """;
+    /// <summary>One run per branch, each bound to <see cref="ObservedOnly"/>: the unit of a run is <see cref="RunUnits.IdOf"/> of its id.</summary>
+    private void Bind(params (string Run, string Repository)[] runs)
+    {
+        var digest = RunHome.SaveGraph(Home, ObservedOnly);
+        foreach (var (run, repository) in runs)
+        {
+            Assert.True(new WorkflowRunFiles(Home).Bind(
+                new WorkflowRunBinding(run, repository, "default", "docs", WorkflowLevels.Repository, DateTimeOffset.UtcNow) { Version = 1, Digest = digest }));
+        }
+    }
 
-    /// <summary>A branch unit as the inventory gives it: its revision the end fact's, never read again here, so it lags any move.</summary>
-    private static WorkUnit BranchUnit(string id, string branch, string tip, string repository = "engine") => new(id, WorkUnitKind.Branch,
-        new WorkOwner(repository, "default", "session-branches.json", WorkRecord.DriverWriter), new WorkSubject(branch, tip),
-        new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
+    /// <summary>
+    /// Each run's quest and the branch unit its session worked, as the inventory gives them: the unit's revision the end fact's, never read
+    /// again here, so it lags any move.
+    /// </summary>
+    private static IReadOnlyList<WorkUnit> Runs(params (string Run, string Branch, string Tip, string Repository)[] runs) =>
+    [
+        .. runs.Select(each => RunHome.QuestUnit(RunHome.Quest(each.Run, to: each.Repository))),
+        .. runs.Select(each => RunHome.Branch("branch-" + each.Run, each.Branch, DateTimeOffset.UtcNow.AddHours(-1), [each.Run]) with
+        {
+            Owner = new WorkOwner(each.Repository, "default", SessionBranches.FileName, WorkRecord.DriverWriter),
+            Subject = new WorkSubject(each.Branch, each.Tip),
+        }),
+    ];
+
+    private NodeRuntimeLook Look(IReadOnlyList<WorkUnit> units, IReadOnlyDictionary<string, string> roots, bool whole) => new(DriverConfig.Empty, whole)
+    {
+        Units = _ => Task.FromResult(new NodeUnitsRead(units, roots)),
+        Steps = () => [Deployed],
+        Bound = NodeRuntime.BoundIn(Home),
+        Tips = NodeTips.ReadAsync,
+    };
 
     private static WorkStepHeard Event(ObservedPort port, string branch, string commit, string id, string repository = "engine") =>
         new(Plugin, port.Generation!.Value, new WorkStepFrame("deployed", new WorkOutcome(WorkStates.Reached), DateTimeOffset.UtcNow, id, repository, branch, commit));
@@ -47,17 +66,13 @@ public sealed class ObservedTipsGitTests : LandedFixture
         var tip = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
         string[] branches = ["feature/a", "feature/b", "feature/c"];
         foreach (var branch in branches) await GitAsync(root, "branch", branch);
-        IReadOnlyList<WorkUnit> units = [.. branches.Select((branch, at) => BranchUnit($"engine~{at}", branch, tip))];
+        Bind(("r0", "engine"), ("r1", "engine"), ("r2", "engine"));
+        var units = Runs([.. branches.Select((branch, at) => ($"r{at}", branch, tip, "engine"))]);
 
         var port = new ObservedPort();
         var records = new NodeRecordFiles(Home, () => true);
         var runtime = new NodeRuntime(records, port, () => DateTimeOffset.UtcNow, () => true);
-        NodeRuntimeLook Look(bool whole) => new(DriverConfig.Parse(ObservedOnly), whole)
-        {
-            Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),
-            Steps = () => [Deployed],
-            Tips = NodeTips.ReadAsync,
-        };
+        NodeRuntimeLook Look(bool whole) => this.Look(units, new Dictionary<string, string> { ["engine"] = root }, whole);
 
         var started = new List<string>();
         WorkingTree.Started.Value = arguments =>
@@ -90,9 +105,9 @@ public sealed class ObservedTipsGitTests : LandedFixture
             WorkingTree.Started.Value = null;
         }
 
-        Assert.Equal(NodeStates.Reached, records.Read("engine~0")!.Statuses["deployed"].State);
-        Assert.Equal(NodeStates.Reached, records.Read("engine~1")!.Statuses["deployed"].State);
-        Assert.Equal(NodeStates.Active, records.Read("engine~2")!.Statuses["deployed"].State);
+        Assert.Equal(NodeStates.Reached, records.Read(RunUnits.IdOf("r0"))!.Statuses["deployed"].State);
+        Assert.Equal(NodeStates.Reached, records.Read(RunUnits.IdOf("r1"))!.Statuses["deployed"].State);
+        Assert.Equal(NodeStates.Active, records.Read(RunUnits.IdOf("r2"))!.Statuses["deployed"].State);
         Assert.Equal([(Plugin, WorkRefusals.Stale)], port.Refusals);
     }
 
@@ -106,18 +121,13 @@ public sealed class ObservedTipsGitTests : LandedFixture
         await GitAsync(engine, "branch", "feature/a");
         await GitAsync(engine, "branch", "feature/b");
         await GitAsync(other, "branch", "feature/a");
-        IReadOnlyList<WorkUnit> units =
-            [BranchUnit("engine~a", "feature/a", tip), BranchUnit("engine~b", "feature/b", tip), BranchUnit("other~a", "feature/a", otherTip, "other")];
+        Bind(("ea", "engine"), ("eb", "engine"), ("oa", "other"));
+        var units = Runs(("ea", "feature/a", tip, "engine"), ("eb", "feature/b", tip, "engine"), ("oa", "feature/a", otherTip, "other"));
 
         var port = new ObservedPort();
         var records = new NodeRecordFiles(Home, () => true);
         var runtime = new NodeRuntime(records, port, () => DateTimeOffset.UtcNow, () => true);
-        NodeRuntimeLook Look(bool whole) => new(DriverConfig.Parse(ObservedInBoth), whole)
-        {
-            Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = engine, ["other"] = other })),
-            Steps = () => [Deployed],
-            Tips = NodeTips.ReadAsync,
-        };
+        NodeRuntimeLook Look(bool whole) => this.Look(units, new Dictionary<string, string> { ["engine"] = engine, ["other"] = other }, whole);
 
         var started = new List<string>();
         WorkingTree.Started.Value = arguments =>
@@ -143,7 +153,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
             await runtime.PassAsync(Look(whole: false), CancellationToken.None);
             Assert.Equal(2, started.Count);
             Assert.All(started, line => Assert.StartsWith("for-each-ref", line, StringComparison.Ordinal));
-            Assert.Equal(moved, records.Read("engine~a")!.Statuses["deployed"].Binding!.SubjectRevision);
+            Assert.Equal(moved, records.Read(RunUnits.IdOf("ea"))!.Statuses["deployed"].Binding!.SubjectRevision);
 
             // The moved tip's event reached at the next pass: engine read once; other awaits nothing, so its checkout is not read.
             port.Heard.Enqueue(Event(port, "feature/a", moved, "e-a"));
@@ -156,8 +166,8 @@ public sealed class ObservedTipsGitTests : LandedFixture
             WorkingTree.Started.Value = null;
         }
 
-        Assert.All(["engine~a", "engine~b", "other~a"], unit => Assert.Equal(NodeStates.Reached, records.Read(unit)!.Statuses["deployed"].State));
-        Assert.Equal(moved, records.Read("engine~a")!.Statuses["deployed"].Acceptance!.SubjectRevision);
+        Assert.All(["ea", "eb", "oa"], run => Assert.Equal(NodeStates.Reached, records.Read(RunUnits.IdOf(run))!.Statuses["deployed"].State));
+        Assert.Equal(moved, records.Read(RunUnits.IdOf("ea"))!.Statuses["deployed"].Acceptance!.SubjectRevision);
         Assert.Empty(port.Refusals);
     }
 
@@ -167,17 +177,13 @@ public sealed class ObservedTipsGitTests : LandedFixture
         var root = await RepositoryAsync("engine");
         var tip = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
         await GitAsync(root, "branch", "feature/a");
-        IReadOnlyList<WorkUnit> units = [BranchUnit("engine~a", "feature/a", tip)];
+        Bind(("ea", "engine"));
+        var units = Runs(("ea", "feature/a", tip, "engine"));
 
         var port = new ObservedPort();
         var records = new NodeRecordFiles(Home, () => true);
         var runtime = new NodeRuntime(records, port, () => DateTimeOffset.UtcNow, () => true);
-        NodeRuntimeLook Look(bool whole) => new(DriverConfig.Parse(ObservedOnly), whole)
-        {
-            Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),
-            Steps = () => [Deployed],
-            Tips = NodeTips.ReadAsync,
-        };
+        NodeRuntimeLook Look(bool whole) => this.Look(units, new Dictionary<string, string> { ["engine"] = root }, whole);
 
         var started = new List<string>();
         WorkingTree.Started.Value = arguments =>
@@ -206,7 +212,7 @@ public sealed class ObservedTipsGitTests : LandedFixture
             WorkingTree.Started.Value = null;
         }
 
-        var deployed = records.Read("engine~a")!.Statuses["deployed"];
+        var deployed = records.Read(RunUnits.IdOf("ea"))!.Statuses["deployed"];
         Assert.Equal((NodeStates.Reached, moved), (deployed.State, deployed.Acceptance!.SubjectRevision));
         Assert.Equal([(Plugin, WorkRefusals.Stale)], port.Refusals);
     }
