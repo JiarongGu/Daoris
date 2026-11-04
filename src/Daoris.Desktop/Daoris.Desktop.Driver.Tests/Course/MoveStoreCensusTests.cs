@@ -196,7 +196,7 @@ public sealed class MoveStoreCensusTests
     [Fact]
     public void The_driven_take_up_runs_at_the_watch_s_first_look_through_the_drivers_holder_before_uncertain_words_are_settled()
     {
-        var watch = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Loop", "DriverWatch.cs")));
+        var watch = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Loop", "Watch", "WatchRun.cs")));
         var sweep = watch.IndexOf("Supervisor.SweepAtStart(", StringComparison.Ordinal);
         var take = watch.IndexOf(".TakeUpMovesAsync(ct)", StringComparison.Ordinal);
         var uncertain = watch.IndexOf("UncertainWords.SettleAsync(", StringComparison.Ordinal);

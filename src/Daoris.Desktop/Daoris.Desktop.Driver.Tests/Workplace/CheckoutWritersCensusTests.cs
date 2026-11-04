@@ -108,7 +108,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
         ["TreesTidyDesk.cs"] = "the window's Bring up to date",
         ["HelpScreenDoors.cs"] = "Ask Daoris's Bring up to date",
-        ["DriverWatch.cs"] = "the integration transport's promotions",
+        ["WatchNodes.cs"] = "the integration transport's promotions",
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
     };
 

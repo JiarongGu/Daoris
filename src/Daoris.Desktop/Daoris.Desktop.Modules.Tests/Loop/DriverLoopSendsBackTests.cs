@@ -33,7 +33,7 @@ public sealed class DriverLoopSendsBackTests : IDisposable
         Assert.Contains("SendsBack = chat,", watch, StringComparison.Ordinal);
         Assert.Contains("using var chat = new ChatRunner(", loop[..loop.IndexOf("_watch = new DriverWatch(", StringComparison.Ordinal)], StringComparison.Ordinal);
 
-        var looks = File.ReadAllText(SourceFiles.Driver("DriverWatch.cs"));
+        var looks = File.ReadAllText(SourceFiles.Driver("WatchRun.cs"));
         Assert.Contains("HandsOver = HandsOver, SendsBack = SendsBack,", looks, StringComparison.Ordinal);
     }
 
