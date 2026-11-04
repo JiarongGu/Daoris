@@ -68,7 +68,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
         Assert.True(admitted.Admitted, admitted.Message);
         var entry = trees.Recorded.Of("engine", branch)!;
         Assert.Equal((tip, "s-q1", Assert.Single(entry.Units), "main"), (admitted.Request!.Tip, admitted.Request.Session, admitted.Request.Unit, admitted.Request.Line));
-        Assert.Equal(new IntegrationProof(AcceptedBy.Person) { Review = entry.Review, Opinion = entry.Opinion }, admitted.Request.Proof);
+        Assert.Equal(new IntegrationProof(AcceptedBy.Person) { Review = entry.Review, Opinion = entry.Opinion, Workflow = entry.Workflow }, admitted.Request.Proof);
         Assert.Single(store.Open());
     }
 
@@ -149,44 +149,64 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// The landing writes, beside who accepted it and the rule, that <c>integrate</c> stood with its <c>request</c> and the rule as its
-    /// source; an advance made under the rule as it then stands writes its own, as it writes its own <c>acceptedBy</c>, and the landing's
+    /// The landing writes, beside who accepted it, that <c>integrate</c> stood with its <c>request</c> and its bound version's step as its
+    /// source; an advance made under another version writes that version's own, as it writes its own <c>acceptedBy</c>, and the landing's
     /// stays as it was accepted.
     /// </summary>
     [Fact]
     public async Task A_landing_and_its_advance_each_write_the_integrate_that_stood_at_its_acceptance()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingIntegrate());
+        Save(new LandingIntegrate(Gates: LandingIntegrate.Declared));
         var trees = new SessionTrees(Home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the work\n", "the work");
-        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: Lands);
+        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: Integrating("q2", LandingIntegrate.Owner));
         Assert.True(landed.Landed, landed.Message);
 
         var entry = trees.Recorded.Of("engine", landed.Branch!)!;
-        Assert.Equal((AcceptedBy.Person, new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule)), (entry.AcceptedBy, entry.Integrate));
+        Assert.Equal((AcceptedBy.Person, new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Version)), (entry.AcceptedBy, entry.Integrate));
 
-        Save(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
         var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
         await CommitAsync(next.Path, "more.txt", "more work\n", "more work");
-        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"), gate: Lands);
+        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"), gate: Integrating("q3", LandingIntegrate.Done));
         Assert.True(advanced.Landed, advanced.Message);
         Assert.Equal(landed.Branch, advanced.Branch);
 
         var moved = trees.Recorded.Of("engine", landed.Branch!)!;
         var advance = Assert.Single(moved.Advances);
-        Assert.Equal((AcceptedBy.Person, new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Rule)), (advance.AcceptedBy, advance.Integrate));
-        Assert.Equal(new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule), moved.Integrate);
+        Assert.Equal((AcceptedBy.Person, new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Version)), (advance.AcceptedBy, advance.Integrate));
+        Assert.Equal(new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Version), moved.Integrate);
     }
 
-    private const string IntegratingGraph = """
+    /// <summary>A version whose graph lands the work on a branch, then its <c>integrate</c> step saying <paramref name="request"/>, then the line.</summary>
+    private static string IntegratingGraph(string request) => $$$"""
         {"schemaVersion":2,"entries":["handed"],"end":"line",
-         "nodes":[{"id":"handed","kind":"land","version":1,"reach":"performed"},
-                  {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"steward"}},
+         "nodes":[{"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"integrate","pattern":"{{{Pattern}}}"}},
+                  {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}},
                   {"id":"line","kind":"line","version":1,"reach":"observed"}],
          "wires":[{"id":"h>i","kind":"after","from":"handed","to":"integrate"},{"id":"i>l","kind":"after","from":"integrate","to":"line"}]}
         """;
+
+    /// <summary>
+    /// Run <paramref name="run"/> bound to the workflow <c>version-&lt;request&gt;</c>, whose step says <paramref name="request"/>, and a gate that
+    /// lets the work go under its process. The fixture's <c>q1</c> is bound already, and a binding is never bound again.
+    /// </summary>
+    private LandingGate Integrating(string run, string request)
+    {
+        var workflow = "version-" + request;
+        var digest = RunHome.SaveGraph(Home, IntegratingGraph(request), workflow);
+        Assert.True(WorkflowRunBindings.Bind(Home,
+            new WorkflowRunBinding(run, "engine", "aurora", workflow, WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = digest }));
+        var process = WorkflowProcesses.Read(Home, DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), "engine", "aurora", run, new AcceptedGates(["build"]));
+        Assert.True(process.Problem is null, process.Problem);
+        Assert.True(process.Named);
+        return new LandingGate(new OpinionGateState(OpinionGateStates.None, "engine"),
+            new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = "engine" }))
+        {
+            Workflow = new WorkflowGateState(WorkflowGateStates.Follows, process),
+        };
+    }
 
     /// <summary>
     /// INTEGRATE1r part r3's check (the integration design §17.4): a landing under a named version whose graph holds <c>integrate</c> writes
@@ -199,31 +219,17 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     {
         var root = await RepositoryAsync("engine");
         Save(new LandingIntegrate(Gates: LandingIntegrate.Declared), LandingIntegrate.Done);
-        Directory.CreateDirectory(WorkflowStore.FolderOf(Home));
-        File.WriteAllText(WorkflowStore.PathOf(Home, "integrated"),
-            $$"""{"id":"integrated","name":"Integrated","versions":[{"version":1,"at":"2026-10-30T09:00:00Z","door":"terminal","schema":2,"graph":{{IntegratingGraph}}}]}""");
-        var version = Assert.Single(new WorkflowFiles(Home).Load("integrated")!.Read.Versions);
-        Assert.True(version.Problem is null, version.Problem);
-        Assert.True(WorkflowRunBindings.Bind(Home,
-            new WorkflowRunBinding("q1", "engine", "aurora", "integrated", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest }));
-        var process = WorkflowProcesses.Read(Home, DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), "engine", "aurora", "q1", new AcceptedGates(["build"]));
-        Assert.True(process.Problem is null, process.Problem);
-        Assert.True(process.Named);
-        Assert.Null(process.Landing.Rule.Integrate);
+        var gate = Integrating("q2", LandingIntegrate.Steward);
+        Assert.Null(gate.Workflow!.Process.Landing.Rule.Integrate);
 
-        var gate = new LandingGate(new OpinionGateState(OpinionGateStates.None, "engine"),
-            new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = "engine" }))
-        {
-            Workflow = new WorkflowGateState(WorkflowGateStates.Follows, process),
-        };
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: gate);
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1", "q2", "Fix the gap"), gate: gate);
         Assert.True(landed.Landed, landed.Message);
 
         var entry = trees.Recorded.Of("engine", landed.Branch!)!;
         Assert.Equal(new LandedIntegrate(LandingIntegrate.Steward, LandedIntegrate.Version), entry.Integrate);
-        Assert.Equal("integrated", entry.Workflow?.Workflow);
+        Assert.Equal("version-steward", entry.Workflow?.Workflow);
     }
 }
