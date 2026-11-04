@@ -188,7 +188,10 @@ web paths are under `src/Daoris.Web/src/`.
 **Daoris's browser**
 
 54. The browser is this executable started with `--daoris-browser` first. It runs in Chromium's own windows, in a
-    process of its own, on a profile at `<home>/browser/engine`. The shell stops it once the shell is gone. (from D99, D85)
+    process of its own, on a profile at `<home>/browser/engine`. The shell stops it once the shell is gone. The engine
+    is the kit's codecs package (`Shenora.Chromium.Codecs.win-x64`, its own build of CEF), so the browser plays H.264,
+    AAC and HEVC, HEVC through the machine's decoder. The codecs are patent-licensed, and the package carries no
+    licence. (from D99, D85, D234)
 55. Sessions drive it through an MCP server a plugin declares with `${browser}`, its loopback CDP endpoint. The
     person's Edge on a Daoris profile stays an option. Daoris keeps sign-ins across a restart itself. (from D78, D84)
 

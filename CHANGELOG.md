@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- Daoris's browser plays H.264, AAC and HEVC video.
 - Sessions working together can now speak to one part of their own line of work. A lead and the lane part it published beside it address each other by session id in `channel_post`'s `to`, and only that part reads it (or the part that carries it on after a hand-over); a session outside the line is refused rather than reached. Work on no ask, such as a chat and the quests it published, has a channel of its own too. An ask's page shows the messages to one part each beneath its channel, read-only, with what each reached, and `daoris ask channel <id>` prints them under *To one part alone*.
 - The steward's desk is kept across a restart: a request still open when Daoris stopped shows as *Interrupted when Daoris stopped*, never as waiting, and the desk's answered and declined requests keep their outcome.
 - *At work*'s *Co-workers* lists the line's reviewer (*Codex, as reviewer*), the line waiting on it while it reads; `daoris session at-work <id>` prints it too. Ask Daoris knows what each of this machine's sessions waits on of others, so it can say it when asked.
