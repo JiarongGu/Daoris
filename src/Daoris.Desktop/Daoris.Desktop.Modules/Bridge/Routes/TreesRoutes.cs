@@ -417,13 +417,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [GroundFiles("DISCARD_SESSION_TREE", "tree", "id", "path", "force")]
     [Says("DISCARD_SESSION_TREE", "id:session")]
     [Publishes("DISCARD_SESSION_TREE", Discards, Session = "id")]
-    private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DiscardTreeAsync(DiscardSessionTree press, CancellationToken cancellationToken)
     {
         // `trees remove <path>` names a tree by its path, where the page names its session. A tree by its path is removed as
         // the verb removes it, and its session, where the records name one, is answered; the page's `id` is read as it always was.
-        var path = Optional(request, "path");
-        var id = path is null ? PayloadHelper.GetRequiredValue<string>(request.Payload, "id") : null;
-        var force = Flag(request, "force");
+        var path = press.Path;
+        var id = path is null ? press.Id ?? throw new DriverException("a tree is discarded by its session `id`, or by its `path` — name one.") : null;
+        var force = press.Force;
 
         var service = _loop.Service ?? throw NotReady();
 

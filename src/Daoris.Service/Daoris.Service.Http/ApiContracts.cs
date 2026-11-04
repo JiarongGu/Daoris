@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Daoris.Contracts.Asks;
 using Daoris.Knowledge;
 
 namespace Daoris.Knowledge.Http;
@@ -7,120 +8,6 @@ namespace Daoris.Knowledge.Http;
 // The wire shapes not yet declared in Daoris.Contracts beside their routes, and their source-generated serializer
 // context. A domain's shapes move there with its routes.
 
-// An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
-// and `To` is the asker naming the receiver, which publishes at once.
-// `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
-// `Kind`, `Workflow` and `WorkflowWords` (WORKFLOW1e, the workflow design §4.3): the person's kind and workflow for its work.
-// `Short` (HEAD2e): the asker's short title, at most 40 characters, judged as a quest's is; absent for none.
-// `Paths` (INTEGRATE1l): the paths the asker declares the work touches, judged as a quest's are; each quest it publishes carries them.
-public sealed record AskRequestBody(
-    string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
-    IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
-    string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
-    IReadOnlyList<string>? Paths = null);
-// A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
-// names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own. Its
-// `Requirements` quote the person (DRIFT1c), judged against the ask's words. `Review` is the chain's choice, an intake's only on
-// the person's quoted words; `ReviewProposal` an intake's proposal with its reason, kept on the ask (REVIEWENV1b).
-public sealed record AskPublishRequest(
-    string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
-    IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire?>? Then = null,
-    string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null,
-    QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null, WorkflowProposalWire? WorkflowProposal = null,
-    // INTEGRATE1l: the paths an intake declares, added to the ask's own and never in place of them.
-    IReadOnlyList<string>? Paths = null);
-// An intake's review proposal (REVIEWENV1b, design §1.5): a choice and its reason, at most 300 characters.
-public sealed record ReviewProposalWire(string? Choice, string? Reason);
-// An intake's kind proposal (WORKFLOW1i, design §4.3): a kind and its reason, the person's own words it quotes, at most 300 characters.
-public sealed record WorkflowProposalWire(string? Kind, string? Reason);
-// The person's review choice on an ask's page (REVIEWENV1b, design §1.5), and their words with it.
-public sealed record AskReviewRequest(string? Choice, string? Words = null);
-// The person's kind and workflow on an ask (WORKFLOW1e, the workflow design §4.3): either, both, or neither to clear them.
-public sealed record AskWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
-public sealed record AskCloseRequest(string? Reason);
-public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
-// `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is
-// the session that served it (D65 §1b), once one opened — the record a reader follows to its question.
-// `State` is the desk's reading of it, `Done` included (USE1c); `Deletable` whether the desk would delete
-// it with every quest asked by it (D95).
-// `Words` (DRIFT1a, D133 §1) is every word the person gave on it, oldest first: its sentence, then each
-// answer and each message added to a session, with when, the session and its quest. `WordsKeptFrom` is
-// said only of an ask made before the words were kept: from when they are, since nothing is back-filled.
-// `GoAheads` (KNOWUSE1a, D135 §2) is every go-ahead its sessions asked the person for, oldest first, one per act.
-// `ReviewChoices` (REVIEWENV1b, design §1.5) is the person's review choices on it, oldest first, the latest standing;
-// `ReviewProposals` its intake's proposals, each with its reason and the quest it came with. Each absent where there is none.
-// `WorkflowChoices` (WORKFLOW1e, the workflow design §4.3) is the person's kind and workflow choices on it, oldest first, the
-// latest standing, one naming neither a choice cleared; absent where there is none. `WorkflowProposals` (WORKFLOW1i) is its intake's
-// kind proposals, each with its reason and the quest it came with, kept beside the choices and applied only by the person's press;
-// absent where there is none. `Short` (HEAD2e) is the asker's short title, null for none (every ask from before).
-public sealed record AskResponse(
-    string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
-    DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
-    IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
-    IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
-    IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
-    IReadOnlyList<GoAheadResponse>? GoAheads = null,
-    IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
-    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null,
-    string? Short = null,
-    // INTEGRATE1l: the paths its asker declared, empty for none; absent from a host before it.
-    IReadOnlyList<string>? Paths = null);
-public sealed record AskWorkflowProposalResponse(string Kind, string Reason, DateTimeOffset At, string? Session, string? Quest);
-public sealed record AskReviewChoiceResponse(string Choice, DateTimeOffset At, string? Words);
-public sealed record AskReviewProposalResponse(string Choice, string Reason, DateTimeOffset At, string? Session, string? Quest);
-// One word (DRIFT1a): `kind` is `asked`, `answered`, `added` or `reopened` (MSG1a: said after its session ended, which
-// went on with it), or a review's `reviewed`, `not-yet` or `skipped` (REVIEWENV1b); the ask's own sentence names no session.
-public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
-// An ask's channel (SESSONE2a, D167 points 6 to 8). The person's post: `to` is one of the ask's repositories or `everyone`, `re` the id
-// of a message it answers.
-// COWORK1d: `urgent` false keeps the person's message ordinary; absent, it is their default, urgent (D188 point 2).
-public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null, bool? Urgent = null);
-// Moves an entry's read mark (the person's, `person`, when `entry` is left out) to `through`, else to the newest item.
-public sealed record ChannelReadRequest(string? Entry = null, DateTimeOffset? Through = null);
-// One item of the channel, in time order: a `message` or one of Daoris's coded `line`s, read from the ask's quests and never stored. A
-// message's `to` absent is everyone; `person` true is the person's own words, a session's that agent's claim; `urgent` absent only on
-// one from before. Read for an entry, its `ack` and `ackSession`; for the person, `receipts`, one per repository it addresses. A message
-// to one part names its `part`, its `channel` and, for the person, its `receipt`.
-public sealed record ChannelItemResponse(
-    string Kind, DateTimeOffset At, string? Id = null, bool? Person = null, string? Session = null, string? Repository = null,
-    string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
-    bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null,
-    bool? Urgent = null, string? Ack = null, string? AckSession = null, IReadOnlyList<ChannelReceiptResponse>? Receipts = null,
-    string? Part = null, string? Channel = null, string? Receipt = null);
-// What a message reached in one repository it addresses (COWORK1d): `waiting`, `held`, `sent`, `taken`, `read`, `partly`, `answered`
-// or `not-reached`, never more than was observed.
-public sealed record ChannelReceiptResponse(string Repository, string State);
-// An entry's acknowledgment of messages by id (COWORK1d): `taking` claims each for `session`'s part, one part's only; `released` lets a
-// claim go; `sent`, `taken`, `read` and `partly` raise what the entry holds, never lowering it. Answers the ids it changed.
-public sealed record ChannelAckRequest(string? Entry, string? Session, string? State, IReadOnlyList<string>? Messages);
-public sealed record ChannelAckResponse(IReadOnlyList<string> Acknowledged);
-// The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none). The
-// person's `unread` (NOTIFY2g) counts only what an agent or a teammate wrote, never their own posts nor Daoris's lines.
-public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark)
-{
-    // For the person, the messages to one part each, never among `items`, which an older page reads as to everyone.
-    public IReadOnlyList<ChannelItemResponse>? Addressed { get; init; }
-}
-public sealed record ChannelPostResponse(ChannelItemResponse Message);
-// The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. There is no ask record here,
-// so no title: `workspace` is from the messages, `origins` the machines they came from, `unread` is against the person's local mark,
-// counted as the person's channel `unread` is (NOTIFY2g).
-public sealed record ElsewhereAskResponse(
-    string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
-public sealed record ElsewhereAsksResponse(IReadOnlyList<ElsewhereAskResponse> Asks);
-// One go-ahead (KNOWUSE1a): the act by its `kind` (write, release, push, sign-in, run), where it lands (`on`) and what it
-// touches (`act`); `state` is `asked`, `approved` or `refused`; `asked` is each session's request, oldest first; `answer`
-// the person's, absent while it waits; `near` the go-ahead whose words it shared where they could not tell.
-public sealed record GoAheadResponse(
-    int Number, string Kind, string On, string Act, string State, IReadOnlyList<GoAheadRequestResponse> Asked,
-    GoAheadAnswerResponse? Answer, int? Near);
-public sealed record GoAheadRequestResponse(string Session, string? Quest, DateTimeOffset At, string Why);
-public sealed record GoAheadAnswerResponse(bool Approved, string? Words, DateTimeOffset At);
-// The person's answer to a go-ahead (KNOWUSE1a): `answer` is `approved` or `refused`; `words` theirs, where they give any.
-// `goesOn` false leaves a parked session that waited on it to its caller, which answers that park itself (GOAHEAD2, the
-// session page's door); absent or true, the answer that leaves none of a park's go-aheads waiting is its answer.
-public sealed record GoAheadAnswerRequest(string? Answer, string? Words, bool? GoesOn = null);
-public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 // DRIFT1a: what the person added to a running session, as its driver reports it.
 public sealed record AddedRequest(string? Text);
 // `Kept` false is no error: the session is on no ask, and the message says so. `Ask` is the ask it was kept on.
@@ -660,21 +547,6 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 
 [JsonSerializable(typeof(ChangesResponse))]
 [JsonSerializable(typeof(JournalPage))]
-[JsonSerializable(typeof(AskReviewRequest))]
-[JsonSerializable(typeof(AskWorkflowRequest))]
-[JsonSerializable(typeof(AskRequestBody))]
-[JsonSerializable(typeof(AskPublishRequest))]
-[JsonSerializable(typeof(AskCloseRequest))]
-[JsonSerializable(typeof(AskActionResponse))]
-[JsonSerializable(typeof(AskResponse))]
-[JsonSerializable(typeof(IEnumerable<AskResponse>))]
-[JsonSerializable(typeof(GoAheadAnswerRequest))]
-[JsonSerializable(typeof(ChannelPostRequest))]
-[JsonSerializable(typeof(ChannelReadRequest))]
-[JsonSerializable(typeof(ChannelResponse))]
-[JsonSerializable(typeof(ChannelPostResponse))]
-[JsonSerializable(typeof(ChannelAckRequest))]
-[JsonSerializable(typeof(ChannelAckResponse))]
 [JsonSerializable(typeof(AddedRequest))]
 [JsonSerializable(typeof(AddedResponse))]
 [JsonSerializable(typeof(RefreshResponse))]

@@ -25,7 +25,7 @@ internal static class GraphProblemsTable
 
     /// <summary>Every code the table's rows name.</summary>
     public static IEnumerable<string> Codes() =>
-        new[] { "wires", "graphs", "fragments", "unreadable" }.SelectMany(section => Table()[section]!.AsArray())
+        new[] { "wires", "graphs", "unreadable" }.SelectMany(section => Table()[section]!.AsArray())
             .SelectMany(row => row!["problems"]!.AsArray()).Select(problem => (string)problem!["code"]!);
 
     /// <summary>The problems a row says the save names, in its order.</summary>

@@ -580,5 +580,5 @@ export const useDiscardSessionTree = () =>
   useMutation({
     mutationKey: ['DISCARD_SESSION_TREE'],
     mutationFn: (act: { id: string; force?: boolean }) =>
-      call<TreeAct>('DISCARD_SESSION_TREE', { id: act.id, ...(act.force ? { force: true } : {}) }),
+      call('DISCARD_SESSION_TREE', { id: act.id, ...(act.force ? { force: true } : {}) }) as Promise<TreeAct>,
   });

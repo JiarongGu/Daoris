@@ -58,7 +58,10 @@ finishes first and the whole set runs once.
    records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
    first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
    pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. `api.ts` sends a declared
-   route as `send(name, request)`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). A window
+   route as `send(name, request)`. The quest doors are `QuestRoutes` (the reads, the publish and the respond, on both hosts) and
+   `QuestPersonRoutes` (a local host's person and driver doors: the close, the set-up and review doors, the workflow choice, a
+   conflict's dismissal and a delete); the ask doors, a local host's alone, are `AskRoutes`, which answer through `AskAnswers` and
+   send from `AskDoorViews`. A route not declared there is still mapped by hand in `Program.cs` (CODESHAPE1). A window
    route is its handler's marks in the desktop modules (`[DriverRoute]` and those beside it); the same tool writes from them the
    ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
    publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. A handler takes its

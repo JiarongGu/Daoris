@@ -231,10 +231,10 @@ public static class TreesWords
 
     /// <summary>
     /// <c>trees land --entry</c> and <c>--ask</c>: the plugins' lines first, then each repository's landing sentence with each part's
-    /// outcome under it, the notes kept on the error; 1 where any entry did not land entirely.
+    /// outcome under it; 1 where any entry did not land entirely.
     /// </summary>
     public static TreesSaid EntryLand(
-        IReadOnlyList<(string Repository, EntryLanding Landed)> landings, IReadOnlyList<string> pluginLines, IReadOnlyList<string> notes)
+        IReadOnlyList<(string Repository, EntryLanding Landed)> landings, IReadOnlyList<string> pluginLines)
     {
         var said = new List<string>(pluginLines);
         foreach (var (repository, landed) in landings)
@@ -246,6 +246,6 @@ public static class TreesWords
             }
         }
 
-        return new(said, notes, landings.All(each => each.Landed.Landed) ? 0 : 1);
+        return new(said, [], landings.All(each => each.Landed.Landed) ? 0 : 1);
     }
 }

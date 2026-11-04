@@ -65,12 +65,6 @@ public static class GraphRefusal
     /// <summary>A node whose own declaration does not hold (<see cref="NodeDeclarations.Problem"/>).</summary>
     public const string Declaration = "declaration";
 
-    /// <summary>A cycle after the landing declaring a node of a landing's kind: the graph holds one landing, and under Current the rule's <c>land</c> is it.</summary>
-    public const string LandingKind = "landing-kind";
-
-    /// <summary>A cycle's wire into the landing's nodes: the cycle comes after the landing, and the rules' gates come before it.</summary>
-    public const string IntoLanding = "into-landing";
-
     /// <summary>A graph with no entry: nothing would start.</summary>
     public const string NoEntry = "no-entry";
 
@@ -126,12 +120,6 @@ public static class GraphRefusal
     public const string IntegrateUnlanded = "integrate-unlanded";
 
     /// <summary>
-    /// An <c>integrate</c> beside a plugin's landing (INTEGRATE1n; D215 §4.1): a <c>pushed</c> or a <c>pull-request</c>, since the
-    /// integration is the step of a branch no plugin lands.
-    /// </summary>
-    public const string IntegratePlugin = "integrate-plugin";
-
-    /// <summary>
     /// A node that observes the landing with a way to it that passes no <c>land</c> (INTEGRATE1n, F47; §17.4): <c>pushed</c>,
     /// <c>pull-request</c>, <c>line</c> or <c>integrate</c> would wait for ever before a landing record. Said in a graph that holds a <c>land</c>.
     /// </summary>
@@ -154,7 +142,7 @@ public static class GraphRefusal
 
     /// <summary>
     /// A <c>land</c> whose method and tail disagree (LANDNODE1a): <c>pull-request</c> brings <c>pushed</c> then <c>pull-request</c>, <c>push</c> brings
-    /// <c>pushed</c>, <c>integrate</c> an <c>integrate</c>, and <c>merge</c> and <c>branch</c> nothing. Replaces <see cref="IntegratePlugin"/> for a <c>land</c>.
+    /// <c>pushed</c>, <c>integrate</c> an <c>integrate</c>, and <c>merge</c> and <c>branch</c> nothing.
     /// </summary>
     public const string LandTail = "land-tail";
 
@@ -399,12 +387,6 @@ public static class NodeGraphs
             if (landings.Count == 0)
             {
                 Say(GraphRefusal.IntegrateUnlanded, null, integrates[0].Id, $"node `{integrates[0].Id}`: an `{NodeKinds.Integrate}` integrates the landing a `{NodeKinds.Land}` makes, and the graph holds no `{NodeKinds.Land}`.");
-            }
-
-            // A `land` brings its own tail, which land-tail judges (LANDNODE1a).
-            foreach (var plugged in byId.Values.Where(node => lands.Count == 0 && node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest))
-            {
-                Say(GraphRefusal.IntegratePlugin, null, plugged.Id, $"node `{plugged.Id}`: a `{plugged.Kind}` is a plugin's landing node, and an `{NodeKinds.Integrate}` is the step of a branch no plugin lands.");
             }
         }
 

@@ -62,7 +62,7 @@ export function setupSteps(machine: Machine): SetupStep[] {
       id: 'helper',
       state: machineState(machine.helper !== null),
       // Ask Daoris and the intake are roles: Agents → Roles, where each work's role and its choices are set (COMPANYVIEW1g).
-      doors: doors({ view: 'agents', agentsMode: 'setup', roleSection: 'working' }),
+      doors: doors({ view: 'agents', agentsMode: 'setup', roleSection: 'allRoles' }),
       commands: ['daoris role'],
     },
     {

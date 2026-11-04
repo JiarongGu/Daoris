@@ -42,6 +42,7 @@ public sealed partial class SettledReadersCensusTests
         ["DriverContinuations.cs"] = "the limit word of a cool-off: kept with no word, so no word id is handed on and the line goes on as the carry-on it was planned",
         ["AgentCourseWiring.cs"] = "the episode's go-on: no word to keep, so the try's go-on is the plain block",
         ["WordsLeft.cs"] = "a word kept again on the record: kept, with no view to show",
+        ["ChatReplacement.cs"] = "a refused start's moved word kept at the head of the record it waits on: kept, nothing read from the answer",
         ["ReopenTelling.cs"] = "Daoris's reopen and go-on words: kept, the mark written",
         ["DriverWatch.cs"] = "the integration transport's word about a conflict: kept, the conflict told to the session",
         ["IntegrateRoutes.cs"] = "the owner's *rebase it* of a superseded commit (INTEGRATE1h): kept, the disposition answered only then",

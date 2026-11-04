@@ -7,6 +7,7 @@ import i18n from '../locales/i18n';
 import type { Ask } from '../data/api';
 import type { Answered } from '../work/InlineConfirm';
 import { AskPage } from './AskPage';
+import { anAsk } from './anAsk';
 import { CLOSED, PROPOSED } from './fixtures';
 
 // WORKFLOW1i-c (workflow design §4.3, D157): the ask's page shows the person's kind choice and each proposal its intake kept,
@@ -14,14 +15,14 @@ import { CLOSED, PROPOSED } from './fixtures';
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
-const CHOSEN: Ask = {
+const CHOSEN: Ask = anAsk({
   ...PROPOSED,
   workflowChoices: [{ kind: 'bug', workflow: 'fix-flow', at: new Date(Date.now() - 3_600_000).toISOString() }],
-};
-const PROPOSING: Ask = {
+});
+const PROPOSING: Ask = anAsk({
   ...PROPOSED,
   workflowProposals: [{ kind: 'docs', reason: 'Only the README changes.', at: '2026-10-09T09:00:00Z', quest: 'q1' }],
-};
+});
 const page = (ask: Ask, props: object = {}) => (
   <AskPage ask={ask} receivers={[]} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onOpenQuest={vi.fn()} {...props} />
 );

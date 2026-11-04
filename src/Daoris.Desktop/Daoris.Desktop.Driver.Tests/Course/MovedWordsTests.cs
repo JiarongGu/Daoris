@@ -31,9 +31,25 @@ public sealed class MovedWordsTests : IDisposable
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>The runner's port with only its start: the record opened as the chat runner's open point opens it, nothing spawned.</summary>
-    private sealed class Opening(ServiceClient client) : IChatRunning
+    private sealed class Opening(ServiceClient client) : IExecutorWiring
     {
         public List<MoveWords?> Asked { get; } = [];
+
+        public ChatContext Context { get; set; } = null!;
+
+        public ChatHandOver HandOver { get; set; } = null!;
+
+        public IChatHelping Help { get; } = new NoHelp();
+
+        public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null) =>
+            throw new NotSupportedException();
+
+        public bool Finish(string sessionId) => throw new NotSupportedException();
+
+        public Task ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded) =>
+            throw new NotSupportedException();
+
+        public RotatedOpening.Carried? LimitCarried(string? carries) => throw new NotSupportedException();
 
         public async Task<ChatStart> StartAsync(
             string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, string? profile = null,
@@ -115,8 +131,9 @@ public sealed class MovedWordsTests : IDisposable
         var context = new ChatContext(
             client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), Events);
-        var runner = new Opening(client);
-        return (context, runner, new ChatHandOver(context, runner), ledger, client);
+        var runner = new Opening(client) { Context = context };
+        runner.HandOver = new ChatHandOver(context, runner);
+        return (context, runner, runner.HandOver, ledger, client);
     }
 
     /// <summary>A word kept on <paramref name="session"/> the first time a chat's open is asked, after the move read its words.</summary>
@@ -149,7 +166,7 @@ public sealed class MovedWordsTests : IDisposable
         ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
         LateWord(ledger, "c1", "w2", "And add a test.");
         var config = ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]);
-        var move = new BriefedMove(context, runner, handOver, new NoHelp());
+        var move = new BriefedMove(runner);
 
         StartedFrom answer;
         if (notOffered)

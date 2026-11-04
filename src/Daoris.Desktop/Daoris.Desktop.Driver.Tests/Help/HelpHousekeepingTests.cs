@@ -130,19 +130,19 @@ public sealed class HelpHousekeepingTests : IDisposable
     {
         var file = PermissionRules.Load(_home);
         Assert.DoesNotContain(HelpRoom.Allowed, rule => rule.Contains("housekeeping_", StringComparison.Ordinal));
-        var none = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var none = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []);
         Assert.Empty(none.Housekeeping);
         Assert.DoesNotContain(none.Rules(file, "h1").Allow, rule => rule.Contains("housekeeping_", StringComparison.Ordinal));
 
         Choose("""{ "housekeeping": ["clean-up", "inspect"] }""");
-        var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var place = HelpPlacement.In(_home, HelpRoom.PathOf(_home), []);
 
         Assert.Equal([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp], place.Housekeeping);
         var allow = place.Rules(file, "h1").Allow;
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_inspect", allow);
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", allow);
         Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__housekeeping_discard_branch", allow);
-        Assert.Equal(place.Housekeeping, ChatRunner.HelpUnder(place, HelpAccess.For(HelpModes.Full, AdapterSet.Built().Resolve("claude-code"))).Housekeeping);
+        Assert.Equal(place.Housekeeping, HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, AdapterSet.Built().Resolve("claude-code"))).Housekeeping);
     }
 
     /// <summary>

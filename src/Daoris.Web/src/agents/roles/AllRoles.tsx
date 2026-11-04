@@ -31,15 +31,13 @@ export function AllRoles({ notify, page, doors, onGo }: {
   const back = { place: MACHINE, name: t('agents.setup.machine'), section: 'allRoles' as const };
   const openAtPlace: RoleOpeners = {
     ...doors,
-    // The mode's sections are this one, so a node of another kind is chosen where it stands.
-    section: () => {},
     repository: (repository) => {
       const row = (registry.data ?? []).find((each) => each.repository === repository);
       onGo(repositoryId(workspaceOf(row ?? {}), repository), { section: 'roles', back });
     },
     workspace: (workspace) => onGo(workspaceId(workspace), { section: 'roles', back }),
   };
-  const mode = useRolesMode({ notify, section: 'working', doors: openAtPlace, page, placed: true });
+  const mode = useRolesMode({ notify, doors: openAtPlace, page, placed: true });
   return <AllRolesView view={page.view} onView={page.onView}>{page.view === 'diagram' ? mode.diagram : mode.card}</AllRolesView>;
 }
 

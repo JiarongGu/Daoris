@@ -338,10 +338,7 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
     // The Appointed roles section is the Roles section's *Appointed* row (Settings' and the supervisor's doors say it).
     expect(placeOpening(opening('agents', null, { roleSection: 'appointed' }), where))
       .toEqual({ ...machine, placeAt: { section: 'roles', row: 'appointed' } });
-    // Working roles, Work, Accounts and By repository were All roles' lists: one section now.
-    for (const roleSection of ['working', 'work', 'accounts', 'repository'] as const) {
-      expect(placeOpening(opening('agents', null, { roleSection }), where)).toEqual({ ...machine, placeAt: { section: 'allRoles' } });
-    }
+    expect(placeOpening(opening('agents', null, { roleSection: 'allRoles' }), where)).toEqual({ ...machine, placeAt: { section: 'allRoles' } });
     // Settings' *Roles* button, the help room's Roles step and Get started's name the mode alone.
     expect(placeOpening(doorOpening({ view: 'agents', agentsMode: 'setup' }), where)).toEqual({ ...machine, placeAt: { section: 'roles' } });
     expect(placeOpening(opening('agents', null, { agentsMode: 'setup' }), where)).toEqual({ ...machine, placeAt: { section: 'roles' } });

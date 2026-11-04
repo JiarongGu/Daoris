@@ -1,3 +1,4 @@
+using Daoris.Contracts.Asks;
 using Daoris.Knowledge.Hosting;
 
 namespace Daoris.Knowledge.Http;

@@ -52,12 +52,12 @@ public sealed class EntriesRoutes(DriverContext context)
 
 
         // RPC1b4: what `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
-        var (plugins, notes) = (new List<string>(), new List<string>());
+        var plugins = new List<string>();
         var landed = await LandingAsync(Accepts(service, plugins), entry, rows, LeaveOut(request), cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
         // RPC1b5: the lines it moved are registered at once where the verb asks (`follow`), said after its words; none where nothing landed.
         var followed = entries.Count > 0 ? await FollowAsync(request, service, cancellationToken).ConfigureAwait(false) : null;
-        var said = entries.Count == 0 ? TreesWords.EntryNone(isAsk: false, key) : TreesWords.EntryLand([(entry.Repository, landed)], plugins, notes).Followed(followed);
+        var said = entries.Count == 0 ? TreesWords.EntryNone(isAsk: false, key) : TreesWords.EntryLand([(entry.Repository, landed)], plugins).Followed(followed);
         return LandedSaid(entry.Key, entry.Repository, landed, said, followed);
     }
 
@@ -99,7 +99,7 @@ public sealed class EntriesRoutes(DriverContext context)
         var leaveOut = LeaveOut(request);
         var answers = new List<object>();
         var landings = new List<(string Repository, EntryLanding Landed)>();
-        var (plugins, notes) = (new List<string>(), new List<string>());
+        var plugins = new List<string>();
         var accepts = Accepts(service, plugins);
         var done = true;
         foreach (var entry in own.Where(entry => PartsOf(entry, rows).Count > 0))
@@ -123,7 +123,7 @@ public sealed class EntriesRoutes(DriverContext context)
         _loop.Nudge();
         // RPC1b4: what `trees land --ask` prints beside the page's fields, or its sentence where no entry of the ask has work to land.
         var followed = landings.Count > 0 ? await FollowAsync(request, service, cancellationToken).ConfigureAwait(false) : null;
-        var said = landings.Count == 0 ? TreesWords.EntryNone(isAsk: true, ask) : TreesWords.EntryLand(landings, plugins, notes).Followed(followed);
+        var said = landings.Count == 0 ? TreesWords.EntryNone(isAsk: true, ask) : TreesWords.EntryLand(landings, plugins).Followed(followed);
         return new { Ask = ask, Done = done && answers.Count > 0, Repositories = answers, Said = said.ToWire(), Followed = followed?.Out ?? [] };
     }
 
