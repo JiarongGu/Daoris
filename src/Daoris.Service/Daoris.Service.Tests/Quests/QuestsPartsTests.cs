@@ -18,10 +18,11 @@ public sealed class QuestsPartsTests
     {
         var operations = QuestOperations.Registered;
 
-        Assert.Equal(["conflict", "dismissed", "reopened"], operations.Order.Select(part => part.Name));
+        Assert.Equal(["conflict", "dismissed", "done", "reopened"], operations.Order.Select(part => part.Name));
         Assert.All(operations.Order, part => Assert.Equal(QuestOperationPhase.Log, (QuestOperationPhase)part.Phase));
         Assert.IsType<QuestConflictOperation>(operations.For(QuestOperationKind.Conflict));
         Assert.IsType<QuestDismissOperation>(operations.For(QuestOperationKind.Dismissed));
+        Assert.IsType<QuestCloseOperation>(operations.For(QuestOperationKind.Done));
         Assert.IsType<QuestReopenOperation>(operations.For(QuestOperationKind.Reopened));
 
         // A kind no module registers yet is written and read by the store's own fields.
@@ -76,6 +77,19 @@ public sealed class QuestsPartsTests
         AssertKept("""{"submission":{"machine":"m1","sequence":2}}""", onTheQuest with { Quest = "q2", Note = null });
     }
 
+    [Fact]
+    public void A_done_writes_its_note_answers_close_and_session_as_before_and_reads_them_back()
+    {
+        var closed = new QuestOperation(
+            "q1", QuestOperationKind.Done, "m1", 6, At, Note: "shipped", Answers: [new QuestAnswer(1, "all of it", null, null)],
+            Close: new QuestClose("k1", "t1"), Session: "s1");
+
+        AssertKept(
+            """{"note":"shipped","answers":[{"requirement":1,"met":"all of it"}],"close":{"key":"k1","token":"t1"},"session":"s1"}""",
+            closed);
+        AssertKept("""{}""", closed with { Note = null, Answers = null, Close = null, Session = null });
+    }
+
     /// <summary>The payload the store writes for <paramref name="operation"/>, and the operation a row of it reads back as.</summary>
     private static void AssertKept(string payload, QuestOperation operation)
     {
@@ -83,7 +97,9 @@ public sealed class QuestsPartsTests
 
         using var document = JsonDocument.Parse(payload);
         var columns = new QuestOperation(operation.Quest, operation.Kind, operation.Machine, operation.Sequence, operation.At);
-        Assert.Equal(operation, QuestStore.ReadPayload(columns, document.RootElement));
+        var read = QuestStore.ReadPayload(columns, document.RootElement);
+        Assert.Equal(operation with { Answers = null }, read with { Answers = null });
+        Assert.Equal(operation.Answers, read.Answers);
     }
 
     private static PartDeclaration Declared(string name, Type type) => new(name, QuestOperationPhase.Log, [], type);
