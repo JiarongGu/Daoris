@@ -353,8 +353,8 @@ public sealed class IntakeTests : IDisposable
         var concluded = IntakeObservation.Conclude(0, before: 0, Ask());
 
         Assert.Equal("awaiting-person", concluded.State);
-        Assert.Contains("--publish a1b2c3", concluded.Note);
-        Assert.Contains("--close a1b2c3", concluded.Note);
+        Assert.Contains("`daoris ask publish a1b2c3 --to <repository>`", concluded.Note);
+        Assert.Contains("`daoris ask close a1b2c3 --reason", concluded.Note);
     }
 
     [Fact]
