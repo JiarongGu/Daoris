@@ -34,8 +34,11 @@ public sealed class PullRequestPresetPluginTests : LandingPluginFixture
         Assert.True(exit == 0, error.ToString());
         var version = Assert.Single(new WorkflowFiles(Home).Load("made")!.Read.Versions);
         Assert.True(version.Problem is null, version.Problem);
+        // The preset leaves its landing's plugin open: the bind resolves it to the plugin serving the remote's platform, here the stand-in.
+        var land = LandNodes.Resolve(version.Graph!.Nodes.Single(node => node.Kind == NodeKinds.Land), Id);
+        Assert.Equal(Id, land["plugin"]);
         Assert.True(WorkflowRunBindings.Bind(Home,
-            new WorkflowRunBinding("q1", "engine", "aurora", "made", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest }));
+            new WorkflowRunBinding("q1", "engine", "aurora", "made", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest, Land = land }));
         var process = WorkflowProcesses.Read(Home, DriverConfig.Load(ConfigPath), "engine", "aurora", "q1", new AcceptedGates([]));
         Assert.True(process is { Problem: null, Named: true }, process.Problem);
         var gate = new LandingGate(new OpinionGateState(OpinionGateStates.None, "engine"),
