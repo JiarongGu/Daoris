@@ -92,9 +92,10 @@ describe("the sync menu's doors", () => {
 
     const main = await screen.findByRole('main');
     expect(await within(main).findByRole('heading', { level: 1, name: 'aurora' })).toBeInTheDocument();
-    expect(within(main).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
-    await waitFor(() => expect(within(main).getByRole('button', { name: 'Remote and reach' })).toHaveAttribute('aria-expanded', 'true'));
-    expect(within(main).getByText('https://aurora.example.com')).toBeInTheDocument();
+    // The remote is a row of Details now (SETUPUX1v).
+    expect(within(main).getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+    expect(await within(main).findByRole('region', { name: 'Remote' })).toBeInTheDocument();
+    expect(await within(main).findByText('https://aurora.example.com')).toBeInTheDocument();
   });
 
   /** D150 §2.4: the Workspace menu's *This workspace's setup* opens the workspace in view's page at Setup (UX6g). */
