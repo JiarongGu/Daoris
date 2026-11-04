@@ -79,6 +79,9 @@ const ORGANISMS = new Set<string>([
   './work/conversation/useBoxWords.ts',
   './work/start/useNewStart.ts',
   './work/start/StartPane.tsx',
+  './work/head/useHeadAsks.ts',
+  './work/review/useSessionLanding.ts',
+  './work/waits/useAttendedWaits.ts',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',
   // Ask Daoris's conversation (HELP1a): the newest help session's record and its composer.
