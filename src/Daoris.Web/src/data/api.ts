@@ -609,9 +609,8 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 type Scalar = string | number | boolean | null | undefined;
 
 /**
- * A route the service declares (`generated/service.ts`), by its record's name: each `{name}` of its path filled from the request,
- * then the rest in the query of a read, or in the body of a write, sent with the person key as every write is, but for the values
- * the route names to travel in its query. Its answer is typed by the declaration, and its response rides along for its headers.
+ * A route the service declares (`generated/service.ts`), by its record's name: its path filled from the request, the rest in a
+ * read's query or a write's body (but for what it names for its query), a write sent as every write is. Typed by the declaration.
  */
 async function send<N extends RouteName>(name: N, request: Routes[N]['request'], signal?: AbortSignal) {
   const route = ROUTES[name];
@@ -634,10 +633,7 @@ async function send<N extends RouteName>(name: N, request: Routes[N]['request'],
   return { answer: await response.json() as Routes[N]['answer'], response };
 }
 
-/**
- * A quest door's answer as the page reads it. The page reads the host's words for a status, a hold and a conflict's standing
- * narrower than the wire declares them (`Quest`), so the declared answer is taken as the page's reading here, once.
- */
+/** A quest door's answer as the page reads it: the host's words for a status or a hold, narrower than the wire declares them. */
 const asQuests = (answer: QuestResponse[]): Quest[] => answer as unknown as Quest[];
 const asAction = (answer: QuestActionResponse): QuestAction => answer as unknown as QuestAction;
 
@@ -791,11 +787,7 @@ export const api = {
     (await send('FindConvergence', { minimumSimilarity, limit: PAGE_SHOWN + 1, workspace }, signal)).answer,
   quests: async (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     asQuests((await send('ListQuests', { includeClosed, repository, workspace }, signal)).answer),
-  /**
-   * One quest's moves, in the order its history replays (FLOWCHART1a2): the service's own door on both hosts, so a browser draws
-   * its flowchart as the window does. Null from a host from before the door, which answers it not found: its path is not kept
-   * there, which is no failure (the flowchart design §7, trap 18). The door answers every id, so its own answer is never a 404.
-   */
+  /** One quest's moves, in the order its history replays, on both hosts; null from a host without the door, which answers 404. */
   questMoves: async (id: string, signal?: AbortSignal): Promise<QuestMove[] | null> => {
     try {
       const { answer } = await send('ReadQuestMoves', { id }, signal);
@@ -873,8 +865,7 @@ export const api = {
   importFolder: (folder: string, workspace?: string) =>
     post<{ folder: string; imported: number; repositories: string[]; message: string; workspace?: string }>(
       '/api/registry/import', { folder, ...(workspace ? { workspace } : {}) }),
-  // Files travel WHOLE to the local host, which keeps them under this machine's home (D65 §2); a
-  // shared deployment refuses content outright, and the platform is only ever served by a local one.
+  // Files travel whole to the local host, the only one that serves the platform; a shared one refuses content.
   publishQuest: (quest: {
     from: string; to: string; title: string; body: string;
     links?: string[]; attachments?: { name: string; content: string }[]; then?: QuestStep[];
@@ -886,22 +877,17 @@ export const api = {
     onHost(`/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
     send('RespondQuest', { id, action, reason }).then(({ answer }) => asAction(answer)),
-  // The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): what it held goes on. A local
-  // host's door, as a delete is; `daoris quest accept` is the terminal's twin.
+  // The person's yes to a done's departure from what they required: what it held goes on.
   acceptQuest: (id: string) => send('AcceptQuest', { id }).then(({ answer }) => asAction(answer)),
-  // The person marks a quest done (QUESTCLOSE1, D126's note): their done, with their words where they wrote any, which the
-  // service keeps after the sentence saying the done was theirs. A local host's door, as the yes is; `daoris-driver quest
-  // done` is the terminal's twin. Never respond's door, which is an agent's done.
+  // The person's own done, with their words where they wrote any; never respond's door, which is an agent's done.
   personDone: (id: string, note: string | null) =>
     send('MarkQuestDone', { id, ...(note ? { note } : {}) }).then(({ answer }) => asAction(answer)),
-  // The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): the submission the page showed, named whole, which the
-  // host refuses once another is current, and their words. `daoris quest reopen` is the terminal's twin.
+  // The person's reopen of the submission the page showed, named whole, which the host refuses once another is current.
   reopenQuest: (id: string, submission: SubmissionRef, note: string | null) =>
     send('ReopenQuest', {
       id, submission: { machine: submission.machine, sequence: submission.sequence }, ...(note ? { note } : {}),
     }).then(({ answer }) => asAction(answer)),
-  // The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): it grows from the source's current
-  // submission, refused until that is unheld. `daoris quest go-on` is the terminal's twin; abandoning it is the decline.
+  // The person's word to go on with a step its source's reopen held, refused until the source's submission is unheld.
   continueQuest: (id: string) => send('ContinueQuest', { id }).then(({ answer }) => asAction(answer)),
   // The person's verdict on a review (REVIEWENV1g, D154 point 8; design §3.3, §3.6): `reviewed` or `not-yet` on the set-up their
   // view drew, named whole, which the host refuses as stale where a newer one was shown since (REVIEWENV1b3); a skip names
@@ -920,9 +906,7 @@ export const api = {
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),
-  // The person bringing this machine's lost take forward (SYNCMERGE1a, D178 point 3), by the conflict's name: a fresh take of the step and
-  // the conflict's dismissal marked with it, which the kept session goes on from. A refusal, or a loss again, is a 409 in the host's words.
-  // `daoris remote sync forward` is the terminal's twin.
+  // The person bringing this machine's lost take forward by the conflict's name; a refusal, or a loss again, is a 409.
   forwardConflict: (id: string, machine: string, sequence: number) =>
     send('ForwardConflict', { id, machine, sequence }).then(({ answer }) => asAction(answer)),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,

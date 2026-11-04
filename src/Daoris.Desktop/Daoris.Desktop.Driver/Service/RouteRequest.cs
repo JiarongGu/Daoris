@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A declared route's request as the host binds it: the record's path values in its path, the rest in the query of a GET or
-/// DELETE or in the body otherwise. A value left null is not sent, so the host reads its default.
+/// DELETE or in the body otherwise, but for a <see cref="FromQueryAttribute"/> value, which travels in the query. A value left null is not sent, so the host reads its default.
 /// </summary>
 internal static class RouteRequest
 {
